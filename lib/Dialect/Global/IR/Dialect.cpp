@@ -33,8 +33,7 @@ public:
   using Base::Base;
 
   LogicalResult upgradeFromVersion(
-      Operation *root, const LLZKDialectVersion & /*current*/,
-      const LLZKDialectVersion & /*requested*/
+      Operation *root, const LLZKDialectVersion & /*current*/, const LLZKDialectVersion &requested
   ) const final {
     auto res = root->walk([](global::GlobalDefOp global) -> WalkResult {
       if (Attribute initialValue = global.getInitialValueAttr()) {
@@ -53,6 +52,25 @@ public:
       }
       return WalkResult::advance();
     });
+    if (res.wasInterrupted()) {
+      return failure();
+    }
+
+    // Before version 3, global reads did not carry a `constant` property.
+    // Reads of const definitions are equivalent to the new `global.read const`
+    // form, so upgrade them to preserve their effect-free semantics.
+    if (requested.majorVersion < 3) {
+      SymbolTableCollection tables;
+      res = root->walk([&tables](global::GlobalReadOp read) -> WalkResult {
+        auto globalRef = llvm::cast<global::GlobalRefOpInterface>(read.getOperation());
+        FailureOr<SymbolLookupResult<global::GlobalDefOp>> target =
+            globalRef.getGlobalDefOp(tables);
+        if (succeeded(target) && target->get().isConstant()) {
+          read.setConstant(true);
+        }
+        return WalkResult::advance();
+      });
+    }
     return failure(res.wasInterrupted());
   }
 };

@@ -27,7 +27,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"

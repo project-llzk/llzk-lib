@@ -81,3 +81,55 @@ function.def @example_res_name_body(%x: i1) -> (i1 {function.res_name = "out"}) 
 //CHECK-NEXT:     function.return %arg0 : i1
 //CHECK-NEXT:   }
 // -----
+
+// Template call arguments may name a parameter, expression, or constant global.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N
+    function.def @id() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+  module @globals {
+    global.def const @G : index = 7
+  }
+  poly.template @Caller {
+    poly.param @P
+    poly.expr @E {
+      %seven = arith.constant 7 : index
+      poly.yield %seven : index
+    }
+    function.def @use() -> index {
+      %from_param = function.call @Target::@id<[@P]>() : () -> index
+      %from_expr = function.call @Target::@id<[@E]>() : () -> index
+      %from_global = function.call @Target::@id<[@globals::@G]>() : () -> index
+      function.return %from_global : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Target {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      function.def @id() -> index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @globals {
+// CHECK-NEXT:      global.def const @G : index = 7
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      poly.expr @E {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        poly.yield %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @use() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Target::@id<[@P]>() : () -> index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @Target::@id<[@E]>() : () -> index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @Target::@id<[@globals::@G]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

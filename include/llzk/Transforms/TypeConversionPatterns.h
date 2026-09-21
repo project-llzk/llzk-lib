@@ -16,13 +16,16 @@
 #pragma once
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/ConversionUtils.h"
 
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/IR/Attributes.h>
@@ -33,8 +36,12 @@
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Casting.h>
 
+#include <cassert>
 #include <tuple>
 
 namespace llzk {
@@ -64,16 +71,6 @@ inline bool defaultLegalityCheck(const mlir::TypeConverter &tyConv, mlir::Operat
     }
   }
   return true;
-}
-
-/// Wrapper for `PatternRewriter::replaceOpWithNewOp()` that automatically copies discardable
-/// attributes (i.e., attributes other than those specifically defined as part of the op in ODS).
-template <typename OpClass, typename Rewriter, typename... Args>
-inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
-  mlir::DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-  OpClass newOp = rewriter.template replaceOpWithNewOp<OpClass>(op, std::forward<Args>(args)...);
-  newOp->setDiscardableAttrs(attrs);
-  return newOp;
 }
 
 /// Lists all LLZK op classes that may contain a StructType in their results or attributes.
@@ -117,6 +114,46 @@ static struct OpClassesWithStructTypes {
 } OpClassesWithStructTypes;
 
 namespace {
+
+/// Convert the result types of `scf.execute_region` while keeping its region in
+/// the dialect conversion worklist. MLIR's SCF structural conversion patterns
+/// do not currently cover this operation.
+class ExecuteRegionTypeConversionPattern
+    : public mlir::OpConversionPattern<mlir::scf::ExecuteRegionOp> {
+public:
+  using OpConversionPattern::OpConversionPattern;
+
+  mlir::LogicalResult matchAndRewrite(
+      mlir::scf::ExecuteRegionOp op, OneToNOpAdaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override {
+    mlir::SmallVector<mlir::Type> newResultTypes;
+    mlir::SmallVector<unsigned> resultOffsets {0};
+    for (mlir::Type resultType : op.getResultTypes()) {
+      if (mlir::failed(getTypeConverter()->convertTypes(resultType, newResultTypes))) {
+        return rewriter.notifyMatchFailure(op, "could not convert result type");
+      }
+      resultOffsets.push_back(newResultTypes.size());
+    }
+
+    if (mlir::failed(rewriter.convertRegionTypes(&op.getRegion(), *getTypeConverter()))) {
+      return rewriter.notifyMatchFailure(op, "could not convert region types");
+    }
+
+    auto newOp = rewriter.create<mlir::scf::ExecuteRegionOp>(op.getLoc(), newResultTypes);
+    newOp->setAttrs(op->getAttrs());
+    rewriter.inlineRegionBefore(op.getRegion(), newOp.getRegion(), newOp.getRegion().end());
+
+    mlir::SmallVector<mlir::ValueRange> replacements;
+    replacements.reserve(op.getNumResults());
+    for (unsigned i = 0; i < op.getNumResults(); ++i) {
+      replacements.push_back(
+          newOp.getResults().slice(resultOffsets[i], resultOffsets[i + 1] - resultOffsets[i])
+      );
+    }
+    rewriter.replaceOpWithMultiple(op, replacements);
+    return mlir::success();
+  }
+};
 
 /// Pattern for ops that define the general builder:
 ///   `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
@@ -277,6 +314,20 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   // Add builtin FunctionType and SCF op converters
   mlir::populateFunctionOpInterfaceTypeConversionPattern<function::FuncDefOp>(patterns, tyConv);
   mlir::scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
+  patterns.add<ExecuteRegionTypeConversionPattern>(tyConv, ctx);
+  target.addDynamicallyLegalOp<mlir::scf::ExecuteRegionOp>([&](mlir::scf::ExecuteRegionOp op) {
+    return tyConv.isLegal(op.getResultTypes());
+  });
+  target.addDynamicallyLegalOp<mlir::scf::YieldOp>([&](mlir::scf::YieldOp op) {
+    mlir::Operation *parent = op->getParentOp();
+    if (!llvm::isa<
+            mlir::scf::ExecuteRegionOp, mlir::scf::ForOp, mlir::scf::IfOp, mlir::scf::WhileOp>(
+            parent
+        )) {
+      return true;
+    }
+    return tyConv.isLegal(op.getOperandTypes());
+  });
   return patterns;
 }
 

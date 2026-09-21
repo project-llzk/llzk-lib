@@ -18,18 +18,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   struct.def @AddRoot {
-// CHECK:           function.def @compute(%[[C_A:.*]]: !felt.type, %[[C_B:.*]]: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type) -> !struct.type<@AddRoot>{{.*}} {
-// CHECK:             %[[C_SELF:.*]] = struct.new : <@AddRoot>
-// CHECK:             %[[C_AB:.*]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
+// CHECK:           function.def @compute(%[[C_A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C_B:[0-9a-zA-Z_\.]+]]: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type) -> !struct.type<@AddRoot>{{.*}} {
+// CHECK:             %[[C_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AddRoot>
+// CHECK:             %[[C_AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[C_AB]] : <@AddRoot>, !felt.type
 // CHECK:             function.return %[[C_SELF]] : !struct.type<@AddRoot>
 // CHECK:           }
-// CHECK:           function.def @constrain(%[[SELF:.*]]: !struct.type<@AddRoot>, %[[A:.*]]: !felt.type, %[[B:.*]]: !felt.type, %[[C:.*]]: !felt.type, %[[D:.*]]: !felt.type, %[[OUT:.*]]: !felt.type){{.*}} {
-// CHECK:             %[[AB:.*]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
-// CHECK:             %[[AUX:.*]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@AddRoot>, !felt.type
+// CHECK:           function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@AddRoot>, %[[A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[B:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C:[0-9a-zA-Z_\.]+]]: !felt.type, %[[D:[0-9a-zA-Z_\.]+]]: !felt.type, %[[OUT:[0-9a-zA-Z_\.]+]]: !felt.type){{.*}} {
+// CHECK:             %[[AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
+// CHECK:             %[[AUX:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@AddRoot>, !felt.type
 // CHECK:             constrain.eq %[[AUX]], %[[AB]] : !felt.type, !felt.type
-// CHECK:             %[[ABC:.*]] = felt.mul %[[AUX]], %[[C]] : !felt.type, !felt.type
-// CHECK:             %[[RHS:.*]] = felt.add %[[ABC]], %[[D]] : !felt.type, !felt.type
+// CHECK:             %[[ABC:[0-9a-zA-Z_\.]+]] = felt.mul %[[AUX]], %[[C]] : !felt.type, !felt.type
+// CHECK:             %[[RHS:[0-9a-zA-Z_\.]+]] = felt.add %[[ABC]], %[[D]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[OUT]], %[[RHS]] : !felt.type, !felt.type
 // CHECK:           struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 
@@ -52,9 +52,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   struct.def @DegreeTwoAddRoot {
-// CHECK:           function.def @constrain(%[[SELF:.*]]: !struct.type<@DegreeTwoAddRoot>, %[[A:.*]]: !felt.type, %[[B:.*]]: !felt.type, %[[D:.*]]: !felt.type, %[[OUT:.*]]: !felt.type){{.*}} {
-// CHECK:             %[[AB:.*]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
-// CHECK:             %[[RHS:.*]] = felt.add %[[AB]], %[[D]] : !felt.type, !felt.type
+// CHECK:           function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@DegreeTwoAddRoot>, %[[A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[B:[0-9a-zA-Z_\.]+]]: !felt.type, %[[D:[0-9a-zA-Z_\.]+]]: !felt.type, %[[OUT:[0-9a-zA-Z_\.]+]]: !felt.type){{.*}} {
+// CHECK:             %[[AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
+// CHECK:             %[[RHS:[0-9a-zA-Z_\.]+]] = felt.add %[[AB]], %[[D]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[OUT]], %[[RHS]] : !felt.type, !felt.type
 // CHECK-NOT:       struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 
@@ -78,18 +78,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   struct.def @SubRoot {
-// CHECK:           function.def @compute(%[[C_A:.*]]: !felt.type, %[[C_B:.*]]: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type) -> !struct.type<@SubRoot>{{.*}} {
-// CHECK:             %[[C_SELF:.*]] = struct.new : <@SubRoot>
-// CHECK:             %[[C_AB:.*]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
+// CHECK:           function.def @compute(%[[C_A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C_B:[0-9a-zA-Z_\.]+]]: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type) -> !struct.type<@SubRoot>{{.*}} {
+// CHECK:             %[[C_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@SubRoot>
+// CHECK:             %[[C_AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[C_AB]] : <@SubRoot>, !felt.type
 // CHECK:             function.return %[[C_SELF]] : !struct.type<@SubRoot>
 // CHECK:           }
-// CHECK:           function.def @constrain(%[[SELF:.*]]: !struct.type<@SubRoot>, %[[A:.*]]: !felt.type, %[[B:.*]]: !felt.type, %[[C:.*]]: !felt.type, %[[D:.*]]: !felt.type, %[[OUT:.*]]: !felt.type){{.*}} {
-// CHECK:             %[[AB:.*]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
-// CHECK:             %[[AUX:.*]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@SubRoot>, !felt.type
+// CHECK:           function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@SubRoot>, %[[A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[B:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C:[0-9a-zA-Z_\.]+]]: !felt.type, %[[D:[0-9a-zA-Z_\.]+]]: !felt.type, %[[OUT:[0-9a-zA-Z_\.]+]]: !felt.type){{.*}} {
+// CHECK:             %[[AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
+// CHECK:             %[[AUX:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@SubRoot>, !felt.type
 // CHECK:             constrain.eq %[[AUX]], %[[AB]] : !felt.type, !felt.type
-// CHECK:             %[[ABC:.*]] = felt.mul %[[AUX]], %[[C]] : !felt.type, !felt.type
-// CHECK:             %[[RHS:.*]] = felt.sub %[[ABC]], %[[D]] : !felt.type, !felt.type
+// CHECK:             %[[ABC:[0-9a-zA-Z_\.]+]] = felt.mul %[[AUX]], %[[C]] : !felt.type, !felt.type
+// CHECK:             %[[RHS:[0-9a-zA-Z_\.]+]] = felt.sub %[[ABC]], %[[D]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[OUT]], %[[RHS]] : !felt.type, !felt.type
 // CHECK:           struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 
@@ -113,18 +113,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   struct.def @NegRoot {
-// CHECK:           function.def @compute(%[[C_A:.*]]: !felt.type, %[[C_B:.*]]: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type) -> !struct.type<@NegRoot>{{.*}} {
-// CHECK:             %[[C_SELF:.*]] = struct.new : <@NegRoot>
-// CHECK:             %[[C_AB:.*]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
+// CHECK:           function.def @compute(%[[C_A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C_B:[0-9a-zA-Z_\.]+]]: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type) -> !struct.type<@NegRoot>{{.*}} {
+// CHECK:             %[[C_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@NegRoot>
+// CHECK:             %[[C_AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[C_AB]] : <@NegRoot>, !felt.type
 // CHECK:             function.return %[[C_SELF]] : !struct.type<@NegRoot>
 // CHECK:           }
-// CHECK:           function.def @constrain(%[[SELF:.*]]: !struct.type<@NegRoot>, %[[A:.*]]: !felt.type, %[[B:.*]]: !felt.type, %[[C:.*]]: !felt.type, %[[OUT:.*]]: !felt.type){{.*}} {
-// CHECK:             %[[AB:.*]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
-// CHECK:             %[[AUX:.*]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@NegRoot>, !felt.type
+// CHECK:           function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@NegRoot>, %[[A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[B:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C:[0-9a-zA-Z_\.]+]]: !felt.type, %[[OUT:[0-9a-zA-Z_\.]+]]: !felt.type){{.*}} {
+// CHECK:             %[[AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
+// CHECK:             %[[AUX:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@NegRoot>, !felt.type
 // CHECK:             constrain.eq %[[AUX]], %[[AB]] : !felt.type, !felt.type
-// CHECK:             %[[ABC:.*]] = felt.mul %[[AUX]], %[[C]] : !felt.type, !felt.type
-// CHECK:             %[[RHS:.*]] = felt.neg %[[ABC]] : !felt.type
+// CHECK:             %[[ABC:[0-9a-zA-Z_\.]+]] = felt.mul %[[AUX]], %[[C]] : !felt.type, !felt.type
+// CHECK:             %[[RHS:[0-9a-zA-Z_\.]+]] = felt.neg %[[ABC]] : !felt.type
 // CHECK:             constrain.eq %[[OUT]], %[[RHS]] : !felt.type, !felt.type
 // CHECK:           struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 
@@ -163,23 +163,23 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL:   struct.def @CompositeCallArg {
 // CHECK:           struct.member @target : !struct.type<@CallTarget>
-// CHECK:           function.def @compute(%[[C_A:.*]]: !felt.type, %[[C_B:.*]]: !felt.type, %[[C_C:.*]]: !felt.type, %[[C_D:.*]]: !felt.type) -> !struct.type<@CompositeCallArg>{{.*}} {
-// CHECK:             %[[C_SELF:.*]] = struct.new : <@CompositeCallArg>
-// CHECK:             %[[C_AB:.*]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
+// CHECK:           function.def @compute(%[[C_A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C_B:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C_C:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C_D:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@CompositeCallArg>{{.*}} {
+// CHECK:             %[[C_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CompositeCallArg>
+// CHECK:             %[[C_AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[C_AB]] : <@CompositeCallArg>, !felt.type
-// CHECK:             %[[C_ABC:.*]] = felt.mul %[[C_AB]], %[[C_C]] : !felt.type, !felt.type
-// CHECK:             %[[C_ARG:.*]] = felt.add %[[C_ABC]], %[[C_D]] : !felt.type, !felt.type
+// CHECK:             %[[C_ABC:[0-9a-zA-Z_\.]+]] = felt.mul %[[C_AB]], %[[C_C]] : !felt.type, !felt.type
+// CHECK:             %[[C_ARG:[0-9a-zA-Z_\.]+]] = felt.add %[[C_ABC]], %[[C_D]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_1] = %[[C_ARG]] : <@CompositeCallArg>, !felt.type
 // CHECK:             function.return %[[C_SELF]] : !struct.type<@CompositeCallArg>
 // CHECK:           }
-// CHECK:           function.def @constrain(%[[SELF:.*]]: !struct.type<@CompositeCallArg>, %[[A:.*]]: !felt.type, %[[B:.*]]: !felt.type, %[[C:.*]]: !felt.type, %[[D:.*]]: !felt.type){{.*}} {
-// CHECK:             %[[AB:.*]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
-// CHECK:             %[[AUX0:.*]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@CompositeCallArg>, !felt.type
+// CHECK:           function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@CompositeCallArg>, %[[A:[0-9a-zA-Z_\.]+]]: !felt.type, %[[B:[0-9a-zA-Z_\.]+]]: !felt.type, %[[C:[0-9a-zA-Z_\.]+]]: !felt.type, %[[D:[0-9a-zA-Z_\.]+]]: !felt.type){{.*}} {
+// CHECK:             %[[AB:[0-9a-zA-Z_\.]+]] = felt.mul %[[A]], %[[B]] : !felt.type, !felt.type
+// CHECK:             %[[AUX0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@CompositeCallArg>, !felt.type
 // CHECK:             constrain.eq %[[AUX0]], %[[AB]] : !felt.type, !felt.type
-// CHECK:             %[[ABC:.*]] = felt.mul %[[AUX0]], %[[C]] : !felt.type, !felt.type
-// CHECK:             %[[ARG:.*]] = felt.add %[[ABC]], %[[D]] : !felt.type, !felt.type
-// CHECK:             %[[TARGET:.*]] = struct.readm %[[SELF]][@target] : <@CompositeCallArg>, !struct.type<@CallTarget>
-// CHECK:             %[[AUX1:.*]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_1] : <@CompositeCallArg>, !felt.type
+// CHECK:             %[[ABC:[0-9a-zA-Z_\.]+]] = felt.mul %[[AUX0]], %[[C]] : !felt.type, !felt.type
+// CHECK:             %[[ARG:[0-9a-zA-Z_\.]+]] = felt.add %[[ABC]], %[[D]] : !felt.type, !felt.type
+// CHECK:             %[[TARGET:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@target] : <@CompositeCallArg>, !struct.type<@CallTarget>
+// CHECK:             %[[AUX1:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@__llzk_poly_lowering_pass_aux_member_1] : <@CompositeCallArg>, !felt.type
 // CHECK:             constrain.eq %[[AUX1]], %[[ARG]] : !felt.type, !felt.type
 // CHECK:             function.call @CallTarget::@constrain(%[[TARGET]], %[[AUX1]]) : (!struct.type<@CallTarget>, !felt.type) -> ()
 // CHECK:           struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type

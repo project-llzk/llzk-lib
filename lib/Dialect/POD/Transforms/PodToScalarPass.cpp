@@ -96,7 +96,7 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
@@ -137,26 +137,6 @@ using namespace llzk::polymorphic;
 #define DEBUG_TYPE "llzk-pod-to-scalar"
 
 namespace {
-
-/// Copy discardable attributes from `src` to `dst`.
-template <typename OpTy> static OpTy preserveDiscardableAttrs(Operation *src, OpTy dst) {
-  dst->setDiscardableAttrs(src->getDiscardableAttrDictionary());
-  return dst;
-}
-
-/// Copy discardable attributes from `src` to `dst` while omitting one internal attr.
-template <typename OpTy>
-static OpTy preserveDiscardableAttrsExcept(Operation *src, OpTy dst, StringRef excludedAttr) {
-  auto original = src->getDiscardableAttrDictionary();
-  SmallVector<NamedAttribute> attrs;
-  for (NamedAttribute attr : original.getValue()) {
-    if (attr.getName().getValue() != excludedAttr) {
-      attrs.push_back(attr);
-    }
-  }
-  dst->setDiscardableAttrs(DictionaryAttr::get(src->getContext(), attrs));
-  return dst;
-}
 
 /// Path of nested POD record names from the original member to a scalar leaf record.
 struct RecordChain {
@@ -2100,7 +2080,7 @@ class NondetToNewPod : public OpConversionPattern<NonDetOp> {
       NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (auto pt = dyn_cast<PodType>(nondetOp.getType())) {
-      preserveDiscardableAttrs(nondetOp, rewriter.replaceOpWithNewOp<NewPodOp>(nondetOp, pt));
+      replaceOpWithNewOp<NewPodOp>(rewriter, nondetOp, pt);
       return success();
     }
     return failure();
@@ -2328,10 +2308,8 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(op.getType(), splitTypes);
     if (splitTypes.empty()) {
-      preserveDiscardableAttrs(
-          op, rewriter.replaceOpWithNewOp<NonDetOp>(
-                  op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
-              )
+      replaceOpWithNewOp<NonDetOp>(
+          rewriter, op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
       );
       return success();
     }
@@ -2382,15 +2360,13 @@ public:
     if (splitTypes.empty()) {
       ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
       if (adaptor.getMapOperands().empty()) {
-        preserveDiscardableAttrs(op, rewriter.replaceOpWithNewOp<CreateArrayOp>(op, carrierTy));
+        replaceOpWithNewOp<CreateArrayOp>(rewriter, op, carrierTy);
         return success();
       }
 
       FlattenedConvertedValueRangeStorage mapOperands(adaptor.getMapOperands());
-      preserveDiscardableAttrs(
-          op, rewriter.replaceOpWithNewOp<CreateArrayOp>(
-                  op, carrierTy, mapOperands.ranges, op.getNumDimsPerMapAttr()
-              )
+      replaceOpWithNewOp<CreateArrayOp>(
+          rewriter, op, carrierTy, mapOperands.ranges, op.getNumDimsPerMapAttr()
       );
       return success();
     }
@@ -2525,7 +2501,7 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
     if (splitTypes.empty()) {
-      preserveDiscardableAttrs(op, rewriter.replaceOpWithNewOp<NewPodOp>(op, podTy));
+      replaceOpWithNewOp<NewPodOp>(rewriter, op, podTy);
       return success();
     }
 
@@ -2892,9 +2868,7 @@ public:
           op.getLoc(), operand, convertedValues, newOperands, rewriter
       );
     }
-    preserveDiscardableAttrs(
-        op, rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands))
-    );
+    replaceOpWithNewOp<ReturnOp>(rewriter, op, ValueRange(newOperands));
     return success();
   }
 };
@@ -3484,10 +3458,8 @@ public:
       return success();
     }
     Value arrRef = selectArrayLengthShapeSource(op, adaptor.getArrRef(), rewriter);
-    preserveDiscardableAttrs(
-        op, rewriter.replaceOpWithNewOp<ArrayLengthOp>(
-                op, arrRef, getSingleConvertedValue(adaptor.getDim())
-            )
+    replaceOpWithNewOp<ArrayLengthOp>(
+        rewriter, op, arrRef, getSingleConvertedValue(adaptor.getDim())
     );
     return success();
   }
@@ -3643,12 +3615,9 @@ public:
     splitPodArrayTypeTo(op.getResult().getType(), splitResultTypes);
     if (splitResultTypes.empty()) {
       ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
-      preserveDiscardableAttrs(
-          op, rewriter.replaceOpWithNewOp<ExtractArrayOp>(
-                  op, getPodArrayShapeCarrierType(resultTy),
-                  getSingleConvertedValue(adaptor.getArrRef()),
-                  flattenConvertedValues(adaptor.getIndices())
-              )
+      replaceOpWithNewOp<ExtractArrayOp>(
+          rewriter, op, getPodArrayShapeCarrierType(resultTy),
+          getSingleConvertedValue(adaptor.getArrRef()), flattenConvertedValues(adaptor.getIndices())
       );
       return success();
     }

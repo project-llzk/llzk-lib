@@ -33,21 +33,21 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: struct.def @Component {
 // CHECK-NEXT:    struct.member @matrix : !array.type<7,3 x !felt.type>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.type>) -> !struct.type<@Component> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      %[[VAL_2:.*]] = struct.readm %[[VAL_1]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
-// CHECK-NEXT:      %[[VAL_3:.*]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_4:.*]] = arith.constant 4 : index
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type>) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_5:.*]]: !struct.type<@Component>, %[[VAL_6:.*]]: !array.type<3 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_7:.*]] = struct.readm %[[VAL_5]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
-// CHECK-NEXT:      %[[VAL_8:.*]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[VAL_9:.*]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_10:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <7,3 x !felt.type>
-// CHECK-NEXT:      %[[VAL_11:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_9]]] : <7,3 x !felt.type>
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Component>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <7,3 x !felt.type>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_9]]] : <7,3 x !felt.type>
 // CHECK-NEXT:      constrain.eq %[[VAL_10]], %[[VAL_11]] : !array.type<3 x !felt.type>, !array.type<3 x !felt.type>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -83,20 +83,20 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: struct.def @Component {
 // CHECK-NEXT:    struct.member @matrix : !array.type<7,3 x !felt.type>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.type>, %[[VAL_1:.*]]: i1) -> !struct.type<@Component> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_2:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      %[[VAL_3:.*]] = struct.readm %[[VAL_2]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
-// CHECK-NEXT:      %[[VAL_4:.*]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_5:.*]] = arith.constant 4 : index
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Component>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      scf.if %[[VAL_1]] {
 // CHECK-NEXT:        array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      } else {
-// CHECK-NEXT:        %[[VAL_6:.*]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_4]]] : <7,3 x !felt.type>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_4]]] : <7,3 x !felt.type>
 // CHECK-NEXT:        array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !struct.type<@Component>, %[[VAL_8:.*]]: !array.type<3 x !felt.type>, %[[VAL_9:.*]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Component>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -116,25 +116,25 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        struct.def @ValU32 {
 // CHECK-NEXT:          struct.member @low : !felt.type
 // CHECK-NEXT:          struct.member @high : !felt.type
-// CHECK-NEXT:          function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@risc0::@ValU32> attributes {function.allow_witness} {
-// CHECK-NEXT:            %[[VAL_2:.*]] = struct.new : <@risc0::@ValU32>
+// CHECK-NEXT:          function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@risc0::@ValU32> attributes {function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@ValU32>
 // CHECK-NEXT:            struct.writem %[[VAL_2]][@low] = %[[VAL_0]] : <@risc0::@ValU32>, !felt.type
 // CHECK-NEXT:            struct.writem %[[VAL_2]][@high] = %[[VAL_1]] : <@risc0::@ValU32>, !felt.type
 // CHECK-NEXT:            function.return %[[VAL_2]] : !struct.type<@risc0::@ValU32>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_3:.*]]: !struct.type<@risc0::@ValU32>, %[[VAL_4:.*]]: !felt.type, %[[VAL_5:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@risc0::@ValU32>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
 // CHECK-NEXT:        }
 // CHECK-NEXT:        struct.def @Reg {
 // CHECK-NEXT:          struct.member @reg : !felt.type {llzk.pub}
-// CHECK-NEXT:          function.def @compute(%[[VAL_6:.*]]: !felt.type) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
-// CHECK-NEXT:            %[[VAL_7:.*]] = struct.new : <@risc0::@Reg>
+// CHECK-NEXT:          function.def @compute(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Reg>
 // CHECK-NEXT:            struct.writem %[[VAL_7]][@reg] = %[[VAL_6]] : <@risc0::@Reg>, !felt.type
 // CHECK-NEXT:            function.return %[[VAL_7]] : !struct.type<@risc0::@Reg>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !struct.type<@risc0::@Reg>, %[[VAL_9:.*]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:            %[[VAL_10:.*]] = struct.readm %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.type
+// CHECK-NEXT:          function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@risc0::@Reg>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:            %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.type
 // CHECK-NEXT:            constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
@@ -142,21 +142,21 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        struct.def @Div {
 // CHECK-NEXT:          struct.member @reciprocal : !felt.type
 // CHECK-NEXT:          struct.member @synthetic_return : !felt.type {llzk.pub}
-// CHECK-NEXT:          function.def @compute(%[[VAL_11:.*]]: !felt.type, %[[VAL_12:.*]]: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:            %[[VAL_13:.*]] = struct.new : <@risc0::@Div>
-// CHECK-NEXT:            %[[VAL_14:.*]] = felt.inv %[[VAL_12]] : !felt.type
+// CHECK-NEXT:          function.def @compute(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Div>
+// CHECK-NEXT:            %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.inv %[[VAL_12]] : !felt.type
 // CHECK-NEXT:            struct.writem %[[VAL_13]][@reciprocal] = %[[VAL_14]] : <@risc0::@Div>, !felt.type
-// CHECK-NEXT:            %[[VAL_15:.*]] = felt.mul %[[VAL_14]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:            %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_14]], %[[VAL_11]] : !felt.type, !felt.type
 // CHECK-NEXT:            struct.writem %[[VAL_13]][@synthetic_return] = %[[VAL_15]] : <@risc0::@Div>, !felt.type
 // CHECK-NEXT:            function.return %[[VAL_13]] : !struct.type<@risc0::@Div>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_16:.*]]: !struct.type<@risc0::@Div>, %[[VAL_17:.*]]: !felt.type, %[[VAL_18:.*]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:            %[[VAL_19:.*]] = struct.readm %[[VAL_16]][@reciprocal] : <@risc0::@Div>, !felt.type
-// CHECK-NEXT:            %[[VAL_20:.*]] = felt.mul %[[VAL_19]], %[[VAL_18]] : !felt.type, !felt.type
-// CHECK-NEXT:            %[[VAL_21:.*]] = felt.const  1
+// CHECK-NEXT:          function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@risc0::@Div>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:            %[[VAL_19:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@reciprocal] : <@risc0::@Div>, !felt.type
+// CHECK-NEXT:            %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_19]], %[[VAL_18]] : !felt.type, !felt.type
+// CHECK-NEXT:            %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.const  1
 // CHECK-NEXT:            constrain.eq %[[VAL_20]], %[[VAL_21]] : !felt.type, !felt.type
-// CHECK-NEXT:            %[[VAL_22:.*]] = struct.readm %[[VAL_16]][@synthetic_return] : <@risc0::@Div>, !felt.type
-// CHECK-NEXT:            %[[VAL_23:.*]] = felt.mul %[[VAL_19]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:            %[[VAL_22:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@synthetic_return] : <@risc0::@Div>, !felt.type
+// CHECK-NEXT:            %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_19]], %[[VAL_17]] : !felt.type, !felt.type
 // CHECK-NEXT:            constrain.eq %[[VAL_22]], %[[VAL_23]] : !felt.type, !felt.type
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
@@ -165,38 +165,38 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @C1 {
 // CHECK-NEXT:      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_24:.*]]: !felt.type, %[[VAL_25:.*]]: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_26:.*]] = struct.new : <@C1>
-// CHECK-NEXT:        %[[VAL_27:.*]] = felt.add %[[VAL_24]], %[[VAL_25]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_28:.*]] = function.call @std::@risc0::@Reg::@compute(%[[VAL_27]]) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
+// CHECK-NEXT:      function.def @compute(%[[VAL_24:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = struct.new : <@C1>
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_24]], %[[VAL_25]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = function.call @std::@risc0::@Reg::@compute(%[[VAL_27]]) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
 // CHECK-NEXT:        struct.writem %[[VAL_26]][@z] = %[[VAL_28]] : <@C1>, !struct.type<@std::@risc0::@Reg>
 // CHECK-NEXT:        function.return %[[VAL_26]] : !struct.type<@C1>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_29:.*]]: !struct.type<@C1>, %[[VAL_30:.*]]: !felt.type, %[[VAL_31:.*]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_32:.*]] = struct.readm %[[VAL_29]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
-// CHECK-NEXT:        %[[VAL_33:.*]] = felt.add %[[VAL_30]], %[[VAL_31]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_29:[0-9a-zA-Z_\.]+]]: !struct.type<@C1>, %[[VAL_30:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_31:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_29]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_30]], %[[VAL_31]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[VAL_32]], %[[VAL_33]]) : (!struct.type<@std::@risc0::@Reg>, !felt.type) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @C2 {
 // CHECK-NEXT:      struct.member @fc1 : !struct.type<@C1>
-// CHECK-NEXT:      function.def @compute(%[[VAL_34:.*]]: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_35:.*]] = struct.new : <@C2>
-// CHECK-NEXT:        %[[VAL_36:.*]] = struct.readm %[[VAL_34]][@low] : <@std::@risc0::@ValU32>, !felt.type
-// CHECK-NEXT:        %[[VAL_37:.*]] = struct.readm %[[VAL_34]][@high] : <@std::@risc0::@ValU32>, !felt.type
-// CHECK-NEXT:        %[[VAL_38:.*]] = function.call @C1::@compute(%[[VAL_36]], %[[VAL_37]]) : (!felt.type, !felt.type) -> !struct.type<@C1>
+// CHECK-NEXT:      function.def @compute(%[[VAL_34:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_35:[0-9a-zA-Z_\.]+]] = struct.new : <@C2>
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_34]][@low] : <@std::@risc0::@ValU32>, !felt.type
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_34]][@high] : <@std::@risc0::@ValU32>, !felt.type
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = function.call @C1::@compute(%[[VAL_36]], %[[VAL_37]]) : (!felt.type, !felt.type) -> !struct.type<@C1>
 // CHECK-NEXT:        struct.writem %[[VAL_35]][@fc1] = %[[VAL_38]] : <@C2>, !struct.type<@C1>
 // CHECK-NEXT:        function.return %[[VAL_35]] : !struct.type<@C2>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_39:.*]]: !struct.type<@C2>, %[[VAL_40:.*]]: !struct.type<@std::@risc0::@ValU32>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_41:.*]] = struct.readm %[[VAL_39]][@fc1] : <@C2>, !struct.type<@C1>
-// CHECK-NEXT:        %[[VAL_42:.*]] = struct.readm %[[VAL_40]][@low] : <@std::@risc0::@ValU32>, !felt.type
-// CHECK-NEXT:        %[[VAL_43:.*]] = struct.readm %[[VAL_40]][@high] : <@std::@risc0::@ValU32>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !struct.type<@C2>, %[[VAL_40:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@fc1] : <@C2>, !struct.type<@C1>
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_40]][@low] : <@std::@risc0::@ValU32>, !felt.type
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_40]][@high] : <@std::@risc0::@ValU32>, !felt.type
 // CHECK-NEXT:        function.call @C1::@constrain(%[[VAL_41]], %[[VAL_42]], %[[VAL_43]]) : (!struct.type<@C1>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:        %[[VAL_44:.*]] = struct.readm %[[VAL_41]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
-// CHECK-NEXT:        %[[VAL_45:.*]] = struct.readm %[[VAL_44]][@reg] : <@std::@risc0::@Reg>, !felt.type
-// CHECK-NEXT:        %[[VAL_46:.*]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_41]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_44]][@reg] : <@std::@risc0::@Reg>, !felt.type
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = felt.const  0
 // CHECK-NEXT:        constrain.eq %[[VAL_45]], %[[VAL_46]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -259,10 +259,10 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: struct.def @A {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@A>
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@A>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -270,10 +270,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @B {
 // CHECK-NEXT:    struct.member @a : !struct.type<@A>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@B>
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@B>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@B>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -281,10 +281,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @C {
 // CHECK-NEXT:    struct.member @b : !struct.type<@B>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@C> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@C>
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@C>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@C>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@C>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@C>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -292,10 +292,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Main {
 // CHECK-NEXT:    struct.member @c : !struct.type<@C>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -321,8 +321,8 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: struct.def @NondetCSE {
 // CHECK:        function.def @constrain
-// CHECK-NEXT:     %[[NONDET_0:.*]] = llzk.nondet : !felt.type
-// CHECK-NEXT:     %[[NONDET_1:.*]] = llzk.nondet : !felt.type
+// CHECK-NEXT:     %[[NONDET_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:     %[[NONDET_1:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
 // CHECK-NEXT:     constrain.eq %[[NONDET_0]], %{{.*}} : !felt.type, !felt.type
 // CHECK-NEXT:     constrain.eq %[[NONDET_1]], %{{.*}} : !felt.type, !felt.type
 // CHECK-NEXT:     function.return

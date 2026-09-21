@@ -21,23 +21,23 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   struct.def @CmpConstraint {
-// CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
-// CHECK:             %[[VAL_2:.*]] = struct.new : <@CmpConstraint>
-// CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK:           function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
+// CHECK:             %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@CmpConstraint>
+// CHECK:             %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_3]] : <@CmpConstraint>, !felt.type
-// CHECK:             %[[VAL_4:.*]] = felt.mul %[[VAL_3]], %[[VAL_0]] : !felt.type, !felt.type
+// CHECK:             %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_3]], %[[VAL_0]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_4]] : <@CmpConstraint>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@CmpConstraint>
 // CHECK:           }
-// CHECK:           function.def @constrain(%[[VAL_6:.*]]: !struct.type<@CmpConstraint>, %[[VAL_7:.*]]: !felt.type, %[[VAL_8:.*]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_10:.*]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_1] : <@CmpConstraint>, !felt.type
+// CHECK:           function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@CmpConstraint>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:             %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK:             %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_1] : <@CmpConstraint>, !felt.type
 // CHECK:             constrain.eq %[[VAL_10]], %[[VAL_9]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_11:.*]] = felt.mul %[[VAL_10]], %[[VAL_10]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_12:.*]] = felt.mul %[[VAL_10]], %[[VAL_7]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_13:.*]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_0] : <@CmpConstraint>, !felt.type
+// CHECK:             %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_10]] : !felt.type, !felt.type
+// CHECK:             %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK:             %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_0] : <@CmpConstraint>, !felt.type
 // CHECK:             constrain.eq %[[VAL_13]], %[[VAL_12]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_14:.*]] = felt.mul %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK:             %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[VAL_14]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[VAL_11]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK:             function.return
@@ -65,13 +65,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   struct.def @CmpConstraint {
-// CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
-// CHECK:             %[[VAL_2:.*]] = struct.new : <@CmpConstraint>
+// CHECK:           function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
+// CHECK:             %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@CmpConstraint>
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@CmpConstraint>
 // CHECK:           }
-// CHECK:           function.def @constrain(%[[VAL_3:.*]]: !struct.type<@CmpConstraint>, %[[VAL_4:.*]]: !felt.type, %[[VAL_5:.*]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK:             %[[VAL_6:.*]] = felt.mul %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_7:.*]] = felt.mul %[[VAL_6]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK:           function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@CmpConstraint>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:             %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK:             %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_6]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[VAL_7]], %[[VAL_6]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }

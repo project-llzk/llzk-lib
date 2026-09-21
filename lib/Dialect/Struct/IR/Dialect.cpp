@@ -15,9 +15,9 @@
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/Shared/TypeConversionPatterns.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Transforms/TypeConversionPatterns.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/Builders.h>

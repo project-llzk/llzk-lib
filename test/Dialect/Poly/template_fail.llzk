@@ -121,12 +121,27 @@ module attributes {llzk.lang} {
 }
 // -----
 
+// TEST: `global.read` without `const` cannot be used in a template expression
+module attributes {llzk.lang} {
+  global.def const @b : !felt.type = 999
+
+  poly.template @T4 {
+    poly.expr @D {
+      // expected-error@+1 {{'global.read' op without `const` is not allowed within a `poly.expr` initializer}}
+      %c = global.read @b : !felt.type
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+// TEST: `global.read` without `const` cannot be used in a template expression (regardless of def constness)
 module attributes {llzk.lang} {
   global.def @b : !felt.type = 999
 
   poly.template @T4 {
     poly.expr @D {
-      // expected-error@+1 {{'global.read' op is not allowed within a `poly.expr` initializer}}
+      // expected-error@+1 {{'global.read' op without `const` is not allowed within a `poly.expr` initializer}}
       %c = global.read @b : !felt.type
       poly.yield %c : !felt.type
     }

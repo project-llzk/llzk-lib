@@ -1,0 +1,28 @@
+// RUN: llzk-opt -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// TEST: A mutable GlobalReadOp targeting a constant GlobalDefOp is discouraged.
+module attributes {llzk.lang} {
+  global.def const @g : !felt.type = 6546
+  struct.def @Component03 {
+    function.def @compute() -> !struct.type<@Component03> {
+      // expected-remark@+1 {{recommend adding 'const' when targeting 'global.def' marked as 'const'}}
+      %t = global.read @g : !felt.type
+      %self = struct.new : !struct.type<@Component03>
+      function.return %self : !struct.type<@Component03>
+    }
+    function.def @constrain(%self: !struct.type<@Component03>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @g : !felt.type =  6546
+// CHECK-NEXT:    struct.def @Component03 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Component03> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component03>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Component03>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component03>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

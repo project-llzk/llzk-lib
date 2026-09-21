@@ -280,11 +280,11 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: struct.def @verifyTargetAttributes_is_not_too_restrictive {
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@verifyTargetAttributes_is_not_too_restrictive> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@verifyTargetAttributes_is_not_too_restrictive>
+//CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@verifyTargetAttributes_is_not_too_restrictive>
 //CHECK-NEXT:      function.call @S::@global_fun() : () -> ()
 //CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@verifyTargetAttributes_is_not_too_restrictive>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@verifyTargetAttributes_is_not_too_restrictive>) attributes {function.allow_constraint} {
+//CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@verifyTargetAttributes_is_not_too_restrictive>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

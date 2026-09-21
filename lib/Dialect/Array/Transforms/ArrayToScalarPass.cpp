@@ -81,7 +81,7 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
@@ -371,7 +371,7 @@ public:
     }
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
-    auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
+    auto newArray = replaceOpWithNewOp<CreateArrayOp>(rewriter, op, at);
     rewriteImpl<LARGE_TO_SMALL>(
         llvm::cast<ArrayAccessOpInterface>(op.getOperation()), at, newArray, adaptor.getArrRef(),
         rewriter
@@ -593,7 +593,7 @@ public:
     assert(arrTy); // must have array type per ODS spec of ArrayLengthOp
     std::optional<llvm::APInt> len = getDimSizeIfKnown(adaptor.getDim(), arrTy);
     assert(len.has_value()); // follows from legal() check
-    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, llzk::fromAPInt(len.value()));
+    replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, llzk::fromAPInt(len.value()));
     return success();
   }
 };
@@ -723,7 +723,9 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
   ) const override {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
       auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
-      auto newArray = rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy);
+      auto newArray = preserveDiscardableAttrs(
+          nondetOp, rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy)
+      );
       if (wildcardTy == at) {
         rewriter.replaceOp(nondetOp, newArray);
       } else {

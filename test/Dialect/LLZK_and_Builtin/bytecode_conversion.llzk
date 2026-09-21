@@ -35,12 +35,12 @@ module attributes {
 // CHECK-SAME:  } {
 //
 // CHECK-LABEL:   struct.def @ComponentA {
-// CHECK-NEXT:       function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
-// CHECK-NEXT:         %[[VAL_1:.*]] = struct.new : <@ComponentA>
-// CHECK-NEXT:         %[[VAL_2:.*]] = felt.const 1
+// CHECK-NEXT:       function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
+// CHECK-NEXT:         %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA>
+// CHECK-NEXT:         %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const 1
 // CHECK-NEXT:         function.return %[[VAL_1]] : !struct.type<@ComponentA>
 // CHECK-NEXT:       }
-// CHECK-NEXT:       function.def @constrain(%[[VAL_3:.*]]: !struct.type<@ComponentA>, %[[VAL_4:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:       function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:         function.return
 // CHECK-NEXT:       }
 // CHECK-NEXT:     }

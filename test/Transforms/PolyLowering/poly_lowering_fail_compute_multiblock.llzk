@@ -1,8 +1,7 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+// RUN: llzk-opt -I %S -llzk-poly-lowering-pass="max-degree=2" %s | FileCheck %s
 
 module attributes {llzk.lang = "llzk"} {
   struct.def @ComputeMultiBlockAuxScope {
-    // expected-error@+1 {{poly lowering expects a straight-line compute body; run `llzk-flatten` or another control-flow lowering pass first}}
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComputeMultiBlockAuxScope> {
       %entry_self = struct.new : !struct.type<@ComputeMultiBlockAuxScope>
       function.return %entry_self : !struct.type<@ComputeMultiBlockAuxScope>
@@ -19,3 +18,15 @@ module attributes {llzk.lang = "llzk"} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @ComputeMultiBlockAuxScope
+// CHECK:         function.def @compute
+// CHECK:           %[[ENTRY_SELF:.+]] = struct.new
+// CHECK:           %[[ENTRY_MUL:.+]] = felt.mul
+// CHECK:           struct.writem %[[ENTRY_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[ENTRY_MUL]]
+// CHECK:           function.return %[[ENTRY_SELF]]
+// CHECK:         ^bb{{[0-9]+}}:
+// CHECK:           %[[LATE_SELF:.+]] = struct.new
+// CHECK:           %[[LATE_MUL:.+]] = felt.mul
+// CHECK:           struct.writem %[[LATE_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[LATE_MUL]]
+// CHECK:           function.return %[[LATE_SELF]]

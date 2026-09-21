@@ -98,7 +98,9 @@ std::unique_ptr<GlobalReadOpBuildFuncHelper> GlobalReadOpBuildFuncHelper::get() 
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto name = wrap(mlir::FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr("my_global")));
-      return llzkGlobal_GlobalReadOpBuild(builder, location, testClass.createIndexType(), name);
+      return llzkGlobal_GlobalReadOpBuild(
+          builder, location, testClass.createIndexType(), MlirAttribute {}, name
+      );
     }
   };
   return std::make_unique<Impl>();

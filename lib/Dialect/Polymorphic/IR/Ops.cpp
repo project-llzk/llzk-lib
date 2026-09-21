@@ -149,21 +149,36 @@ LogicalResult TemplateExprOp::verifyRegions() {
            << YieldOp::getOperationName() << '\'';
   }
   // Check or ops with side-effects that are not allowed within `poly.expr`.
-  Operation *illegalOp = nullptr;
-  auto walkRes = block.walk([&illegalOp](Operation *p) {
-    // Note: If side-effect traits are added to ops in the future, this check should
-    // be updated to check for those traits instead of specific op types.
-    if (llvm::isa<global::GlobalRefOpInterface, function::CallOp>(p)) {
-      illegalOp = p;
+  std::optional<InFlightDiagnostic> illegalOpDiagnostic;
+  auto walkRes = block.walk([&illegalOpDiagnostic](Operation *p) {
+    auto emitIllegalOpError = [&illegalOpDiagnostic, p](const Twine &description) {
+      illegalOpDiagnostic.emplace(
+          p->emitOpError() << description << " is not allowed within a `"
+                           << TemplateExprOp::getOperationName() << "` initializer"
+      );
+    };
+    // Note: If memory-effect traits are added to call ops in the future,
+    // this check should be updated to check for those traits as well.
+    if (llvm::isa<function::CallOp>(p)) {
+      emitIllegalOpError(Twine("'") + p->getName().getStringRef() + "' op");
+      return WalkResult::interrupt();
+    }
+    if (llvm::isa<global::GlobalRefOpInterface>(p) && !isMemoryEffectFree(p)) {
+      if (llvm::isa<global::GlobalReadOp>(p)) {
+        emitIllegalOpError(
+            Twine("'") + global::GlobalReadOp::getOperationName() + "' op without `const`"
+        );
+      } else {
+        emitIllegalOpError(Twine("'") + p->getName().getStringRef() + "' op");
+      }
       return WalkResult::interrupt();
     }
     return WalkResult::advance();
   });
   if (walkRes.wasInterrupted()) {
-    assert(illegalOp); // was set in the walk above
-    return illegalOp->emitOpError().append(
-        "is not allowed within a `", TemplateExprOp::getOperationName(), "` initializer"
-    );
+    assert(illegalOpDiagnostic); // set in the walk above
+    illegalOpDiagnostic->report();
+    return failure();
   }
   return success();
 }
