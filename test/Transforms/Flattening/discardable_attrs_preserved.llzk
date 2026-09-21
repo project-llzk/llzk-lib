@@ -1,0 +1,38 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+// Ensure type conversion during template instantiation preserves nondet metadata.
+module attributes {llzk.lang} {
+  poly.template @nondet_template {
+    poly.param @A
+
+    struct.def @NondetStruct {
+      function.def @compute() -> !struct.type<@nondet_template::@NondetStruct<[@A]>> {
+        %self = struct.new : !struct.type<@nondet_template::@NondetStruct<[@A]>>
+        %value = llzk.nondet : !struct.type<@nondet_template::@NondetStruct<[@A]>> {product_source = "compute"}
+        function.return %self : !struct.type<@nondet_template::@NondetStruct<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@nondet_template::@NondetStruct<[@A]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @child: !struct.type<@nondet_template::@NondetStruct<[5]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %value = function.call @nondet_template::@NondetStruct::@compute() : () -> !struct.type<@nondet_template::@NondetStruct<[5]>>
+      struct.writem %self[@child] = %value : !struct.type<@Main>, !struct.type<@nondet_template::@NondetStruct<[5]>>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %value = struct.readm %self[@child] : !struct.type<@Main>, !struct.type<@nondet_template::@NondetStruct<[5]>>
+      function.call @nondet_template::@NondetStruct::@constrain(%value) : (!struct.type<@nondet_template::@NondetStruct<[5]>>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @nondet_template_5_NondetStruct {
+// CHECK:  %{{.*}} = llzk.nondet : !struct.type<@nondet_template_5_NondetStruct> {product_source = "compute"}
