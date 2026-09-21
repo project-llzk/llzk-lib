@@ -313,9 +313,10 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+// COM: p = 2013265921
 // COM: 2013265920 ≡ -1 mod p
-// COM: 1592717042 ≡ 9223372036854775808 mod p
-// COM: 1592717054 ≡ 9223372036854775820 mod p
+// COM: 1592717042 ≡ 2^63 mod p
+// COM: 1592717054 ≡ (2^63 + 12) mod p
 //
 // CHECK-LABEL:   function.def @default() attributes {function.allow_non_native_field_ops} {
 // CHECK-DAG:       %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
@@ -376,3 +377,140 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.call @use_index(%[[VAL_19]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
+// -----
+
+// Note: There is no `index` constant too large for the grumpkin field so
+//       the cases with "int_too_large" from above are not applicable here.
+!F = !felt.type<"grumpkin">
+module attributes {llzk.lang} {
+  function.def private @use_felt(%value: !F) -> ()
+  function.def private @use_index(%value: index) -> ()
+
+  // Default is "assert"
+  function.def @default() attributes {function.allow_non_native_field_ops} {
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt %negative : index, !F
+    %toindex_too_large = cast.toindex %felt_too_large : !F
+    %toindex_negative = cast.toindex %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @assert() attributes {function.allow_non_native_field_ops} {
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt assert %negative : index, !F
+    %toindex_too_large = cast.toindex assert %felt_too_large : !F
+    %toindex_negative = cast.toindex assert %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @sat() attributes {function.allow_non_native_field_ops} {
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt sat %int_negative : index, !F
+    %toindex_too_large = cast.toindex sat %felt_too_large : !F
+    %toindex_negative = cast.toindex sat %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @wrap() attributes {function.allow_non_native_field_ops} {
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt wrap %int_negative : index, !F
+    %toindex_too_large = cast.toindex wrap %felt_too_large : !F
+    %toindex_negative = cast.toindex wrap %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @trunc() attributes {function.allow_non_native_field_ops} {
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    // The grumpkin prime requires 254 bits so truncation keeps low 254 bits.
+    %tofelt_negative = cast.tofelt trunc %int_negative : index, !F
+    %toindex_too_large = cast.toindex trunc %felt_too_large : !F
+    %toindex_negative = cast.toindex trunc %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+}
+// COM: p = 21888242871839275222246405745257275088696311157297823662689037894645226208583
+// COM: 9223372036854775807 ≡ 2^63 - 1
+// COM: 21888242871839275222246405745257275088696311157297823662689037894645226208582 ≡ p-1
+// COM: 4332616871279656262 ≡ p-1 mod 2^63
+// COM: 28948022309329048855892746252171976963317496166410141009864396001978282409983 ≡ 2^254 - 1
+//
+// CHECK-LABEL: function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-DAG:     %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  -1 : <"grumpkin">
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_1]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_3]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_4]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_5]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_6:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-DAG:     %[[VAL_7:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_8:[0-9a-zA-Z_\.-]+]] = felt.const  -1 : <"grumpkin">
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_7]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_11:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_8]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_9]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_10]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_11]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_12:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_13:[0-9a-zA-Z_\.-]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_12]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_13]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_13]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_14:[0-9a-zA-Z_\.-]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208582 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_15:[0-9a-zA-Z_\.-]+]] = arith.constant 12 : index
+// CHECK-DAG:     %[[VAL_16:[0-9a-zA-Z_\.-]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_14]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_15]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_16]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_17:[0-9a-zA-Z_\.-]+]] = felt.const  28948022309329048855892746252171976963317496166410141009864396001978282409983 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_18:[0-9a-zA-Z_\.-]+]] = arith.constant 12 : index
+// CHECK-DAG:     %[[VAL_19:[0-9a-zA-Z_\.-]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_17]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_18]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_19]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
