@@ -1,0 +1,57 @@
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/felt-to-index.llzk --inputs %t/felt-to-index.json
+// RUN: not --crash llzk-witgen %t/felt-to-index.llzk --inputs %t/felt-to-index.json --backend=execution-engine
+// RUN: not llzk-witgen %t/index-to-felt.llzk --inputs %t/empty.json
+// RUN: not --crash llzk-witgen %t/index-to-felt.llzk --inputs %t/empty.json --backend=execution-engine
+
+// ASSERT casts must fail consistently across witgen backends.
+
+//--- felt-to-index.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute(
+      %input: !felt.type<"bn254"> {function.arg_name = "input"}
+    ) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %index = cast.toindex assert %input : !felt.type<"bn254">
+      %out = cast.tofelt assert %index : index, !felt.type<"bn254">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>, %input: !felt.type<"bn254">
+    ) {
+      function.return
+    }
+  }
+}
+
+//--- felt-to-index.json
+
+{"input": "9223372036854775808"}
+
+//--- index-to-felt.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %negative = arith.subi %zero, %one : index
+      %out = cast.tofelt assert %negative : index, !felt.type<"bn254">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- empty.json
+
+{}
