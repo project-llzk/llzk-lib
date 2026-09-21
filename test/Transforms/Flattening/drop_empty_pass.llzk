@@ -1,5 +1,40 @@
 // RUN: llzk-opt -split-input-file -llzk-drop-empty-templates %s | FileCheck --enable-var-scope %s
 
+// Empty-template types nested in PODs must be converted across both the inner
+// scf.if and the enclosing scf.execute_region result/yield boundary.
+module attributes {llzk.lang} {
+  poly.template @TLeaf {
+    struct.def @Leaf {
+      function.def @compute() -> !struct.type<@TLeaf::@Leaf<[]>> {
+        %self = struct.new : !struct.type<@TLeaf::@Leaf<[]>>
+        function.return %self : !struct.type<@TLeaf::@Leaf<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TLeaf::@Leaf<[]>>) {
+        function.return
+      }
+    }
+  }
+  function.def @carry(%arg0: !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>, %cond: i1) -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]> {
+    %0 = scf.execute_region -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]> {
+      %1 = scf.if %cond -> (!pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>) {
+        scf.yield %arg0 : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>
+      } else {
+        scf.yield %arg0 : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>
+      }
+      scf.yield %1 : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>
+    }
+    function.return %0 : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>
+  }
+}
+// CHECK-LABEL: function.def @carry
+// CHECK-SAME: !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
+// CHECK: %[[EXEC:.+]] = scf.execute_region -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]> {
+// CHECK: %[[IF:.+]] = scf.if {{.+}} -> (!pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>) {
+// CHECK: scf.yield {{.+}} : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
+// CHECK: scf.yield %[[IF]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
+// CHECK: function.return %[[EXEC]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
+// -----
+
 module attributes {llzk.lang} {
   poly.template @TComponent {
     struct.def @Component {
