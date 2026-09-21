@@ -601,6 +601,30 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kDynamicNonAssertCastModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @DynamicNonAssertCasts {
+    function.def @compute(%index: index, %felt: !felt.type<"babybear">)
+        -> !struct.type<@DynamicNonAssertCasts>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@DynamicNonAssertCasts>
+      %sat_to_felt = cast.tofelt sat %index : index, !felt.type<"babybear">
+      %wrap_to_felt = cast.tofelt wrap %index : index, !felt.type<"babybear">
+      %trunc_to_felt = cast.tofelt trunc %index : index, !felt.type<"babybear">
+      %sat_to_index = cast.toindex sat %felt : !felt.type<"babybear">
+      %wrap_to_index = cast.toindex wrap %felt : !felt.type<"babybear">
+      %trunc_to_index = cast.toindex trunc %felt : !felt.type<"babybear">
+      function.return %self : !struct.type<@DynamicNonAssertCasts>
+    }
+
+    function.def @constrain(%self: !struct.type<@DynamicNonAssertCasts>, %index: index,
+        %felt: !felt.type<"babybear">) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
     EXPECT_TRUE(mod);
@@ -611,6 +635,40 @@ module attributes {llzk.lang} {
     return analysis.getSolver().lookupState<IntervalAnalysisLattice>(value);
   }
 };
+
+TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) {
+  auto mod = parseModule(kDynamicNonAssertCastModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  function::FuncDefOp computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  unsigned dynamicCastCount = 0;
+  computeFn.walk([&](Operation *op) {
+    bool isDynamicNonAssertCast =
+        (isa<cast::IntToFeltOp>(op) &&
+         llvm::cast<cast::IntToFeltOp>(op).getOverflow() != cast::OverflowSemantics::ASSERT) ||
+        (isa<cast::FeltToIndexOp>(op) &&
+         llvm::cast<cast::FeltToIndexOp>(op).getOverflow() != cast::OverflowSemantics::ASSERT);
+    if (!isDynamicNonAssertCast) {
+      return;
+    }
+
+    ++dynamicCastCount;
+    const IntervalAnalysisLattice *lattice = lookupLattice(analysis, op->getResult(0));
+    ASSERT_NE(lattice, nullptr);
+    const ExpressionValue &value = lattice->getValue().getScalarValue();
+    EXPECT_NE(value.getExpr(), nullptr);
+    EXPECT_EQ(value.getInterval(), Interval::Entire(field));
+  });
+  EXPECT_EQ(dynamicCastCount, 6U);
+}
 
 TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
   auto mod = parseModule(kArrayIntervalModule);
