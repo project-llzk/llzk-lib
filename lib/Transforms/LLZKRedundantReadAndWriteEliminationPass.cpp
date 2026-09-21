@@ -615,17 +615,8 @@ KnownState intersect(const KnownState &lhs, const KnownState &rhs) {
 /// tracking, so that the orig state is not polluted through pointer updates.
 ValueMap cloneValueMap(const ValueMap &orig) {
   ValueMap res;
-  DenseMap<const ReferenceNode *, std::shared_ptr<ReferenceNode>> clones;
   for (const auto &[id, tree] : orig) {
-    // Transparent aggregate aliases are represented by distinct ValueMap keys
-    // pointing to the same tree. Preserve that alias group in the cloned state:
-    // cloning each key independently would make a nested-region write through
-    // one alias invisible to reads through another alias at the region join.
-    auto [it, inserted] = clones.try_emplace(tree.get());
-    if (inserted) {
-      it->second = tree->clone();
-    }
-    res[id] = it->second;
+    res[id] = tree->clone();
   }
   return res;
 }
@@ -717,7 +708,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     KnownState initState;
     // Initialize the state to the function arguments.
     for (auto arg : fn.getArguments()) {
-      initState.values[arg] = ReferenceNode::create(arg, arg);
+      initState.values[getAggregateAliasRoot(arg)] = ReferenceNode::create(arg, arg);
     }
     // Functions only have a single region
     (void)runOnRegion(
@@ -944,12 +935,23 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       return v;
     };
 
+    // Transparent aggregate casts preserve identity. Store one tree under the
+    // root value for the whole cast chain, rather than one entry per SSA alias.
+    auto canonicalStateKey = [&](Value v) { return getAggregateAliasRoot(translate(v)); };
+
     // Lookup the value tree in the current state or return nullptr.
-    auto tryGetValTree = [&state](Value v) -> std::shared_ptr<ReferenceNode> {
-      if (auto it = state.values.find(v); it != state.values.end()) {
+    auto tryGetValTree = [&state, &canonicalStateKey](Value v) -> std::shared_ptr<ReferenceNode> {
+      if (auto it = state.values.find(canonicalStateKey(v)); it != state.values.end()) {
         return it->second;
       }
       return nullptr;
+    };
+
+    auto setValTree = [&state, &canonicalStateKey](Value v, std::shared_ptr<ReferenceNode> tree) {
+      state.values[canonicalStateKey(v)] = std::move(tree);
+    };
+    auto eraseValTree = [&state, &canonicalStateKey](Value v) {
+      state.values.erase(canonicalStateKey(v));
     };
 
     auto doStatefulRead =
@@ -960,7 +962,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         return true;
       } else {
         knownValues[key] = resVal;
-        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        setValTree(resVal, ReferenceNode::create(resVal, resVal));
         return false;
       }
     };
@@ -1260,7 +1262,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       Value resVal = readarr.getResult();
       std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(readarr.getArrRef()));
       if (currValTree == nullptr) {
-        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        setValTree(resVal, ReferenceNode::create(resVal, resVal));
         readVals.push_back(resVal);
         return;
       }
@@ -1280,9 +1282,11 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         if (hasDynamicIndex) {
           rootValTree->clearLastWritesObservedBy(indices);
         }
-        state.values[resVal] = processAggregateRead(
-            currValTree, resVal, readarr.getOperation(), tryStandardAggregateReuse,
-            rememberAggregateRead
+        setValTree(
+            resVal, processAggregateRead(
+                        currValTree, resVal, readarr.getOperation(), tryStandardAggregateReuse,
+                        rememberAggregateRead
+                    )
         );
         readVals.push_back(resVal);
         return;
@@ -1302,7 +1306,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         if (hasDynamicIndex) {
           rootValTree->clearLastWritesObservedBy(indices);
         }
-        state.values[resVal] = currValTree;
+        setValTree(resVal, currValTree);
         LLVM_DEBUG(
             llvm::dbgs() << readarr.getOperationName() << ": " << resVal << " => " << *currValTree
                          << '\n'
@@ -1376,32 +1380,25 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       }
     };
 
-    // Type-reinterpretation casts preserve aggregate identity. Keep both SSA
-    // values mapped to the same tree so later reads and writes through either
-    // value observe the same aggregate snapshot.
-    if (isTransparentAggregateAliasCast(op)) {
-      Value input = translate(op->getOperand(0));
-      Value result = op->getResult(0);
-      if (auto inputTree = tryGetValTree(input)) {
-        state.values[result] = std::move(inputTree);
-      } else {
-        state.values.erase(result);
-      }
-    }
-    // global ops
-    else if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
+    // Global ops.
+    if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
       const auto name = readGlobal.getNameRef();
       Value result = readGlobal.getVal();
       readVals.push_back(result);
       if (requiresAggregateSnapshot(result.getType())) {
         if (auto it = state.globals.find(name); it != state.globals.end() && it->second.aggregate) {
-          state.values[result] = processAggregateRead(
-              it->second.aggregate, result, op, tryStandardAggregateReuse, rememberAggregateRead
+          setValTree(
+              result,
+              processAggregateRead(
+                  it->second.aggregate, result, op, tryStandardAggregateReuse, rememberAggregateRead
+              )
           );
         } else {
           auto globalState = ReferenceNode::create(result, result);
-          state.values[result] = processAggregateRead(
-              globalState, result, op, tryStandardAggregateReuse, rememberAggregateRead
+          setValTree(
+              result, processAggregateRead(
+                          globalState, result, op, tryStandardAggregateReuse, rememberAggregateRead
+                      )
           );
           state.globals[name] = GlobalState {
               .scalar = std::nullopt,
@@ -1414,7 +1411,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         replacementMap[result] = *it->second.scalar;
       } else {
         state.globals[name] = GlobalState {.scalar = result, .aggregate = nullptr};
-        state.values[result] = ReferenceNode::create(result, result);
+        setValTree(result, ReferenceNode::create(result, result));
         writeCandidates.globals.erase(name);
       }
     } else if (auto writeGlobal = dyn_cast<global::GlobalWriteOp>(op)) {
@@ -1492,24 +1489,24 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     else if (auto newStruct = dyn_cast<CreateStructOp>(op)) {
       // For new values, the "stored value" of the reference is the creation site.
       auto structVal = ReferenceNode::create(newStruct, newStruct);
-      state.values[newStruct] = structVal;
-      LLVM_DEBUG(
-          llvm::dbgs() << newStruct.getOperationName() << ": " << *state.values[newStruct] << '\n'
-      );
+      setValTree(newStruct, structVal);
+      LLVM_DEBUG(llvm::dbgs() << newStruct.getOperationName() << ": " << *structVal << '\n');
       // adding this to readVals
       readVals.push_back(newStruct);
     } else if (auto readm = dyn_cast<MemberReadOp>(op)) {
       std::shared_ptr<ReferenceNode> access = getMemberAccessNode(readm);
       Value resVal = readm.getVal();
       if (access == nullptr) {
-        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        setValTree(resVal, ReferenceNode::create(resVal, resVal));
         readVals.push_back(resVal);
         return;
       }
       if (requiresAggregateSnapshot(resVal.getType())) {
-        state.values[resVal] = processAggregateRead(
-            access, resVal, readm.getOperation(), tryMemberAggregateReuse,
-            rememberMemberAggregateRead
+        setValTree(
+            resVal, processAggregateRead(
+                        access, resVal, readm.getOperation(), tryMemberAggregateReuse,
+                        rememberMemberAggregateRead
+                    )
         );
         readVals.push_back(resVal);
         return;
@@ -1524,7 +1521,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         );
         replacementMap[resVal] = access->getStoredValue();
       } else {
-        state.values[resVal] = access;
+        setValTree(resVal, access);
         LLVM_DEBUG(llvm::dbgs() << readm.getOperationName() << ": " << *access << '\n');
       }
       readVals.push_back(resVal);
@@ -1588,7 +1585,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // array ops
     else if (auto newArray = dyn_cast<CreateArrayOp>(op)) {
       auto arrayVal = ReferenceNode::create(newArray, newArray);
-      state.values[newArray] = arrayVal;
+      setValTree(newArray, arrayVal);
 
       // If we're given a constructor, we can instantiate elements using
       // constant indices.
@@ -1618,7 +1615,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     } else if (auto newPod = dyn_cast<pod::NewPodOp>(op)) {
       Value podValue = newPod.getResult();
       auto podTree = ReferenceNode::create(podValue, podValue);
-      state.values[podValue] = podTree;
+      setValTree(podValue, podTree);
       for (const auto &record : newPod.getInitializedRecordValues()) {
         Value value = translate(record.value);
         podTree->createChild(
@@ -1630,21 +1627,23 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       Value result = readPod.getResult();
       auto podTree = tryGetValTree(translate(readPod.getPodRef()));
       if (podTree == nullptr) {
-        state.values[result] = ReferenceNode::create(result, result);
+        setValTree(result, ReferenceNode::create(result, result));
       } else {
         auto record = podTree->getOrCreateChild(readPod.getRecordNameAttr());
         if (requiresAggregateSnapshot(result.getType())) {
-          state.values[result] = processAggregateRead(
-              record, result, readPod.getOperation(), tryStandardAggregateReuse,
-              rememberAggregateRead
+          setValTree(
+              result, processAggregateRead(
+                          record, result, readPod.getOperation(), tryStandardAggregateReuse,
+                          rememberAggregateRead
+                      )
           );
         } else if (!record->hasStoredValue()) {
           record->setCurrentValue(result);
-          state.values[result] = record;
+          setValTree(result, record);
         } else if (record->getStoredValue() != result) {
           replacementMap[result] = record->getStoredValue();
         } else {
-          state.values[result] = record;
+          setValTree(result, record);
         }
       }
       readVals.push_back(result);
@@ -1701,23 +1700,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       } else {
         for (Value operand : op->getOperands()) {
           if (requiresAggregateSnapshot(operand.getType())) {
-            // Transparent aggregate aliases have distinct SSA keys but share
-            // a ReferenceNode. An unmodeled effect through one alias can
-            // mutate the whole aggregate, so invalidate every such key.
-            if (auto operandTree = tryGetValTree(translate(operand))) {
-              for (auto it = state.values.begin(); it != state.values.end();) {
-                if (it->second == operandTree) {
-                  Value alias = it->first;
-                  ++it;
-                  state.values.erase(alias);
-                } else {
-                  ++it;
-                }
-              }
-            } else {
-              state.values.erase(operand);
-              state.values.erase(translate(operand));
-            }
+            // Every transparent aggregate-alias group has one canonical map
+            // key, so invalidating one alias invalidates the whole group.
+            eraseValTree(operand);
           }
         }
       }
