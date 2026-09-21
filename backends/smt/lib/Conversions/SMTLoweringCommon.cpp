@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
@@ -62,6 +63,35 @@ Value selectMultidimensionalArray(
     array = builder.create<smt::ArraySelectOp>(loc, array, index).getResult();
   }
   return array;
+}
+
+bool isFeltOrArrayOfFelt(mlir::Type type) {
+  if (isa<felt::FeltType>(type)) {
+    return true;
+  }
+  if (auto arrType = dyn_cast<array::ArrayType>(type)) {
+    return isa<felt::FeltType>(arrType.getElementType());
+  }
+  return false;
+}
+
+mlir::Value quantifyOverArray(
+    Location loc, Value array, ArrayRef<size_t> extents,
+    function_ref<mlir::Value(mlir::Value)> body, OpBuilder &builder
+) {
+  SmallVector<Type> forallTypes(extents.size(), smt::IntType::get(builder.getContext()));
+  return builder
+      .create<smt::ForallOp>(
+          loc, forallTypes,
+          [&extents](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
+    SmallVector<Value> antecedents;
+    antecedents.reserve(2 * extents.size());
+    // for (auto [index, extent] : llvm::zip(indices, extents)) {
+    // }
+    return indices.front();
+  }
+      )
+      .getResult();
 }
 
 LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
@@ -191,8 +221,8 @@ MemberReadConverter::MemberReadConverter(
 LogicalResult MemberReadConverter::matchAndRewrite(
     component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
-  if (!isa<felt::FeltType>(op.getResult().getType())) {
-    op.emitError("SMT lowering currently only supports felt-valued struct.readm");
+  if (!isFeltOrArrayOfFelt(op.getResult().getType())) {
+    op.emitError("SMT lowering currently only supports felt- or array-of-felt-valued struct.readm");
     return failure();
   }
 

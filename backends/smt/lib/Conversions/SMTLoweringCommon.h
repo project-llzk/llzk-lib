@@ -42,9 +42,21 @@
 
 namespace llzk::smt::detail {
 
+bool isFeltOrArrayOfFelt(mlir::Type type);
+
 mlir::Value selectMultidimensionalArray(
     mlir::Location loc, mlir::Value array, mlir::ValueRange indices, mlir::OpBuilder &builder
 );
+
+mlir::Value quantifyOverArray(
+    mlir::Location loc, mlir::Value array, mlir::ArrayRef<size_t> extents,
+    llvm::function_ref<mlir::Value(mlir::Value)> body, mlir::OpBuilder &builder
+);
+
+enum class ArrayWriteMode : std::uint8_t {
+  Overwrite, /* Multiple writes to the same index clobber the previous value */
+  WriteOnce  /* Assume each array index can only be written to once */
+};
 
 using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mlir::Value>>;
 
