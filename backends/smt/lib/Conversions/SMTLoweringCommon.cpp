@@ -30,6 +30,147 @@ using namespace mlir;
 
 namespace llzk::smt::detail {
 
+std::pair<mlir::Value, mlir::Value> SMTIntTheoryEmitter::getRangeBoundAssertions(
+    mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value, const UnreducedInterval &range
+) const {
+  auto lower = createIntConstant(builder, loc, range.getLHS());
+  auto upper = createIntConstant(builder, loc, range.getRHS());
+  auto lowerBound =
+      builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, value, lower.getResult());
+  auto upperBound =
+      builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::le, value, upper.getResult());
+
+  return {lowerBound.getResult(), upperBound.getResult()};
+}
+
+void SMTIntTheoryEmitter::emitRangeConstraint(
+    mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value, const UnreducedInterval &range
+) const {
+  auto [lowerBound, upperBound] = getRangeBoundAssertions(builder, loc, value, range);
+  // Assert the lower bound of the canonical/unreduced interval for this symbol.
+  builder.create<smt::AssertOp>(loc, lowerBound);
+  // Assert the upper bound of the canonical/unreduced interval for this symbol.
+  builder.create<smt::AssertOp>(loc, upperBound);
+}
+
+mlir::Value SMTIntTheoryEmitter::emitFreshSymbol(
+    mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name
+) const {
+  std::string freshName = getFreshName(name);
+  return builder
+      .create<smt::DeclareFunOp>(loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName))
+      .getResult();
+}
+
+mlir::Value SMTIntTheoryEmitter::emitConstant(
+    mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
+) const {
+  return createIntConstant(builder, loc, value).getResult();
+}
+
+mlir::Value SMTIntTheoryEmitter::emitSub(
+    mlir::OpBuilder &builder, mlir::Location loc, Value lhs, Value rhs
+) const {
+  return builder.create<smt::IntSubOp>(loc, lhs, rhs).getResult();
+}
+
+Value SMTIntTheoryEmitter::emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
+  return builder.create<smt::IntAddOp>(loc, ValueRange {lhs, rhs}).getResult();
+}
+
+Value SMTIntTheoryEmitter::emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
+  return builder.create<smt::IntMulOp>(loc, ValueRange {lhs, rhs}).getResult();
+}
+
+Value SMTIntTheoryEmitter::emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
+  return builder.create<smt::IntDivOp>(loc, lhs, rhs).getResult();
+}
+
+Value SMTIntTheoryEmitter::emitSignedDiv(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs
+) const {
+  return emitTruncatingSignedDivision(builder, loc, lhs, rhs);
+}
+
+Value SMTIntTheoryEmitter::emitSignedRem(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs
+) const {
+  Value quotient = emitTruncatingSignedDivision(builder, loc, lhs, rhs);
+  Value product = emitMul(builder, loc, quotient, rhs);
+  return emitSub(builder, loc, lhs, product);
+}
+
+Value SMTIntTheoryEmitter::emitModPrime(OpBuilder &builder, Location loc, Value value) const {
+  auto primeConst = createPrimeConstant(builder, loc);
+  return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()}).getResult();
+}
+
+Value SMTIntTheoryEmitter::emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const {
+  auto primeConst = createPrimeConstant(builder, loc);
+  return emitMul(builder, loc, factor, primeConst.getResult());
+}
+
+Value SMTIntTheoryEmitter::emitOrderedComparison(
+    OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs, Value rhs
+) const {
+  static DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
+      {boolean::FeltCmpPredicate::GE, smt::IntPredicate::ge},
+      {boolean::FeltCmpPredicate::GT, smt::IntPredicate::gt},
+      {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
+      {boolean::FeltCmpPredicate::LT, smt::IntPredicate::lt}
+  };
+  return builder.create<smt::IntCmpOp>(loc, predicateComparator[predicate], lhs, rhs).getResult();
+}
+
+/// |value| = if value < 0 then -value else value
+Value SMTIntTheoryEmitter::emitAbsValue(OpBuilder &builder, Location loc, Value value) const {
+  Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
+  Value isNegative =
+      emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
+  Value negated = emitSub(builder, loc, zero, value);
+  return builder.create<smt::IteOp>(loc, isNegative, negated, value).getResult();
+}
+
+/// absQuotient = |lhs| / |rhs|
+/// quotient = if sign(lhs) != sign(rhs) then -absQuotient else absQuotient
+Value SMTIntTheoryEmitter::emitTruncatingSignedDivision(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs
+) const {
+  Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
+  Value lhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, lhs, zero);
+  Value rhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, rhs, zero);
+  Value lhsAbs = emitAbsValue(builder, loc, lhs);
+  Value rhsAbs = emitAbsValue(builder, loc, rhs);
+  Value absQuotient = emitDiv(builder, loc, lhsAbs, rhsAbs);
+  // we can use xor here because we are checking if the signs are different
+  Value signsDiffer = builder.create<smt::XOrOp>(loc, ValueRange {lhsNeg, rhsNeg}).getResult();
+  Value negatedQuotient = emitSub(builder, loc, zero, absQuotient);
+  return builder.create<smt::IteOp>(loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+}
+
+std::string SMTIntTheoryEmitter::getFreshName(StringRef baseName) const {
+  unsigned count = freshSymbolCounts[baseName]++;
+  if (count == 0) {
+    return baseName.str();
+  }
+
+  std::string uniqueName(baseName);
+  uniqueName += "_";
+  uniqueName += std::to_string(count);
+  return uniqueName;
+}
+
+smt::IntConstantOp
+SMTIntTheoryEmitter::createPrimeConstant(OpBuilder &builder, Location loc) const {
+  return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, prime));
+}
+
+smt::IntConstantOp SMTIntTheoryEmitter::createIntConstant(
+    OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value
+) const {
+  return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, toAPSInt(value)));
+}
+
 FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   FieldSet fields;
   if (!fieldName.empty()) {
@@ -56,7 +197,7 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   return *(fields.begin());
 }
 
-Value selectMultidimensionalArray(
+Value SMTIntTheoryEmitter::emitArraySelect(
     Location loc, Value array, ValueRange indices, OpBuilder &builder
 ) {
   for (auto index : indices) {
@@ -75,7 +216,7 @@ bool isFeltOrArrayOfFelt(mlir::Type type) {
   return false;
 }
 
-mlir::Value quantifyOverArray(
+mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
     Location loc, Value array, ArrayRef<size_t> extents,
     function_ref<mlir::Value(mlir::Value)> body, OpBuilder &builder
 ) {
@@ -83,12 +224,22 @@ mlir::Value quantifyOverArray(
   return builder
       .create<smt::ForallOp>(
           loc, forallTypes,
-          [&extents](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
+          [this, &extents, &array,
+           &body](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
     SmallVector<Value> antecedents;
     antecedents.reserve(2 * extents.size());
-    // for (auto [index, extent] : llvm::zip(indices, extents)) {
-    // }
-    return indices.front();
+    for (auto [index, extent] : llvm::zip(indices, extents)) {
+      auto [lo, hi] = getRangeBoundAssertions(
+          builder, loc, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
+      );
+      antecedents.push_back(lo);
+      antecedents.push_back(hi);
+    }
+
+    Value antecedent = builder.create<smt::AndOp>(loc, antecedents).getResult();
+    Value currentElement = emitArraySelect(loc, array, indices, builder);
+    auto consequent = body(currentElement);
+    return builder.create<smt::ImpliesOp>(loc, antecedent, consequent);
   }
       )
       .getResult();
