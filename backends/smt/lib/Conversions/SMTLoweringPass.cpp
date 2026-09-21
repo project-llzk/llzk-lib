@@ -124,6 +124,12 @@ public:
   }
 
   bool isScalarFeltType(Type type) const { return isa<felt::FeltType>(type); }
+  bool isArrayFeltType(Type type) const {
+    if (auto arrType = dyn_cast<array::ArrayType>(type)) {
+      return isa<felt::FeltType>(arrType.getElementType());
+    }
+    return false;
+  }
 
   UnreducedInterval getDefaultFeltRange() const {
     return UnreducedInterval(field.get().zero(), field.get().maxVal());
@@ -647,9 +653,11 @@ public:
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    if (!strategy->isScalarFeltType(op.getVal().getType())) {
-      // op.emitError("SMT lowering currently only supports felt-valued struct.writem");
-      // return failure();
+    if (!isFeltOrArrayOfFelt(op.getVal().getType())) {
+      op.emitError(
+          "SMT lowering currently only supports felt- or array-of-felt-valued struct.writem"
+      );
+      return failure();
     }
 
     auto it = symbols.find(adaptor.getMemberName());
