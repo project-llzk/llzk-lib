@@ -99,12 +99,20 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
     }
 
     const Field &field = resultType.getField();
-    DynamicAPInt signedValue = toSignedDynamicAPInt(value);
+    // An i1 is a boolean, not a signed one-bit integer: its set bit denotes
+    // the unsigned value 1 rather than -1.
+    DynamicAPInt signedValue = [&constOp, &value] {
+      if (auto integerType = dyn_cast<IntegerType>(constOp.getType());
+          integerType && integerType.getWidth() == 1) {
+        return DynamicAPInt(value.isZero() ? 0 : 1);
+      } else {
+        return toSignedDynamicAPInt(value);
+      }
+    }();
     auto result = applyIntToFeltOverflow(signedValue, field, op.getOverflow());
     if (!result) {
       return failure();
     }
-
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
         op,
         felt::FeltConstAttr::get(op->getContext(), toAPInt(*result, field.bitWidth()), resultType)
