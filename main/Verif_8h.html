@@ -163,6 +163,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a331fac4a8172e8f4265ae18bb6141a3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <span class="tt">verif.contract</span> with arguments and attributes derived from the target.  <br /></td></tr>
 <tr class="memitem:a47819df4167f55322fcd189411b364d4" id="r_a47819df4167f55322fcd189411b364d4"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a47819df4167f55322fcd189411b364d4">LLZK_DECLARE_OP_BUILD_METHOD</a> (Verif, IncludeOp, MlirAttribute callee, <a class="el" href="structMlirValueRange.html">MlirValueRange</a> argOperands, MlirAttribute templateParams)</td></tr>
 <tr class="memdesc:a47819df4167f55322fcd189411b364d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <span class="tt">verif.include</span> with a flat list of call operands and no affine-map instantiations.  <br /></td></tr>
+<tr class="memitem:ab7c038d94aa6a1fe671bd69df251a5d6" id="r_ab7c038d94aa6a1fe671bd69df251a5d6"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight"><a class="el" href="#ab7c038d94aa6a1fe671bd69df251a5d6">llzkVerif_IncludeOpGetTypeSignature</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ab7c038d94aa6a1fe671bd69df251a5d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the FunctionType inferred from the arg operands of this CallOp.  <br /></td></tr>
+<tr class="memitem:ac88e32fae9c63669721b595655cb00f7" id="r_ac88e32fae9c63669721b595655cb00f7"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight"><a class="el" href="#ac88e32fae9c63669721b595655cb00f7">llzkVerif_IncludeOpResolveCallable</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ac88e32fae9c63669721b595655cb00f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by CallOpInterface.  <br /></td></tr>
 <tr class="memitem:a0ad24678f3ee0a40d911303b6bb4b1bc" id="r_a0ad24678f3ee0a40d911303b6bb4b1bc"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a0ad24678f3ee0a40d911303b6bb4b1bc">LLZK_DECLARE_OP_BUILD_METHOD</a> (Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types, MlirLocation const *locs)</td></tr>
 <tr class="memdesc:a0ad24678f3ee0a40d911303b6bb4b1bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <span class="tt">verif.invariant</span> with a list of argument types and locations.  <br /></td></tr>
 <tr class="memitem:a7e60b80e4821a9fa8902253df0605174" id="r_a7e60b80e4821a9fa8902253df0605174"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirBlock&#160;</td><td class="memItemRight"><a class="el" href="#a7e60b80e4821a9fa8902253df0605174">llzkVerif_InvariantOpGetBody</a> (MlirOperation op)</td></tr>
@@ -392,6 +396,49 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab7c038d94aa6a1fe671bd69df251a5d6" name="ab7c038d94aa6a1fe671bd69df251a5d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab7c038d94aa6a1fe671bd69df251a5d6">&#9670;&#160;</a></span>llzkVerif_IncludeOpGetTypeSignature()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirType llzkVerif_IncludeOpGetTypeSignature </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the FunctionType inferred from the arg operands of this CallOp. </p>
+<p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_8cpp_source.html#l00103">103</a> of file <a class="el" href="Verif_8cpp_source.html">Verif.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac88e32fae9c63669721b595655cb00f7" name="ac88e32fae9c63669721b595655cb00f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac88e32fae9c63669721b595655cb00f7">&#9670;&#160;</a></span>llzkVerif_IncludeOpResolveCallable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirOperation llzkVerif_IncludeOpResolveCallable </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by CallOpInterface. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_8cpp_source.html#l00107">107</a> of file <a class="el" href="Verif_8cpp_source.html">Verif.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a7e60b80e4821a9fa8902253df0605174" name="a7e60b80e4821a9fa8902253df0605174"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7e60b80e4821a9fa8902253df0605174">&#9670;&#160;</a></span>llzkVerif_InvariantOpGetBody()</h2>
 
@@ -409,7 +456,7 @@ Functions</h2></td></tr>
 
 <p>Returns the body of the invariant operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_8cpp_source.html#l00122">122</a> of file <a class="el" href="Verif_8cpp_source.html">Verif.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_8cpp_source.html#l00130">130</a> of file <a class="el" href="Verif_8cpp_source.html">Verif.cpp</a>.</p>
 
 </div>
 </div>

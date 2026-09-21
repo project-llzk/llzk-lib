@@ -10,6 +10,8 @@ var Function_8cpp =
     [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Function_8cpp.html#ad1b4e687ce4e69b4843813950c0cf4d0", null ],
     [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Function_8cpp.html#aee3c88695bb757c19507e347e05444bd", null ],
     [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Function_8cpp.html#ae319254782e712c55faa3ac3e709d30f", null ],
+    [ "llzkFunction_CallOpGetTypeSignature", "Function_8cpp.html#ad48963062e346f50240c6207c68ad7be", null ],
+    [ "llzkFunction_CallOpResolveCallable", "Function_8cpp.html#ae748bb9312862a7f9b11bd3601811ee8", null ],
     [ "llzkFunction_FuncDefOpGetArgNameAttr", "Function_8cpp.html#a7c3c1415ffcb5165558aabf8d49fcbb4", null ],
     [ "llzkFunction_FuncDefOpGetResNameAttr", "Function_8cpp.html#a007b1e855b65e00651ea8089297c53b2", null ],
     [ "llzkFunction_FuncDefOpSetArgName", "Function_8cpp.html#adfa368af42cef7fdc885bd9e277b5ea6", null ],

@@ -30,6 +30,7 @@ var classllzk_1_1function_1_1FuncDefOp =
     [ "getResultTypes", "classllzk_1_1function_1_1FuncDefOp.html#acbc2d9391e551564b6abcb009e964576", null ],
     [ "getSelfValueFromCompute", "classllzk_1_1function_1_1FuncDefOp.html#a256c41aa6b834730cdafb6bc2b342283", null ],
     [ "getSelfValueFromConstrain", "classllzk_1_1function_1_1FuncDefOp.html#a42e42484a422941fa7cd557b93978749", null ],
+    [ "getSelfValueFromProduct", "classllzk_1_1function_1_1FuncDefOp.html#a43e94ad1a92006f346527c21fa5912cb", null ],
     [ "getSingleResultTypeOfCompute", "classllzk_1_1function_1_1FuncDefOp.html#a5a79c45bc9c39dd1f0f35e05f9db2935", null ],
     [ "getSymName", "classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2", null ],
     [ "getSymNameAttr", "classllzk_1_1function_1_1FuncDefOp.html#aea1574d411da305c94093487d36679e7", null ],

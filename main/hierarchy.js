@@ -412,6 +412,13 @@ var hierarchy =
       [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
       [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Model.html", null ]
     ] ],
+    [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::Concept", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
     [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits::Concept", "structllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1Concept.html", [
       [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
         [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
@@ -949,6 +956,7 @@ var hierarchy =
       [ "llzk::string::LitStringOpGenericAdaptor< RangeT >", "classllzk_1_1string_1_1LitStringOpGenericAdaptor.html", null ]
     ] ],
     [ "LlzkAffineMapOperandsBuilder", "structLlzkAffineMapOperandsBuilder.html", null ],
+    [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html", null ],
     [ "LlzkRecordValue", "structLlzkRecordValue.html", null ],
     [ "LlzkSymbolLookupResult", "structLlzkSymbolLookupResult.html", null ],
     [ "llzk::LLZKTypeSwitch&lt; Derived, ResultType &gt;", "structllzk_1_1LLZKTypeSwitch.html", null ],
@@ -1238,6 +1246,7 @@ var hierarchy =
     [ "llzk::OpHash&lt; Op &gt;", "structllzk_1_1OpHash.html", null ],
     [ "mlir::OpInterface", null, [
       [ "llzk::DiscardableAllocationAccessorOpInterface", "classllzk_1_1DiscardableAllocationAccessorOpInterface.html", null ],
+      [ "llzk::LLZKCallLikeOpInterface", "classllzk_1_1LLZKCallLikeOpInterface.html", null ],
       [ "llzk::array::ArrayAccessOpInterface", "classllzk_1_1array_1_1ArrayAccessOpInterface.html", null ],
       [ "llzk::array::ArrayRefOpInterface", "classllzk_1_1array_1_1ArrayRefOpInterface.html", null ],
       [ "llzk::component::MemberRefOpInterface", "classllzk_1_1component_1_1MemberRefOpInterface.html", null ],
@@ -1636,6 +1645,9 @@ var hierarchy =
       ] ],
       [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceTrait< ConcreteOp >", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", [
         [ "llzk::DiscardableAllocationAccessorOpInterface::Trait< ConcreteOp >", "structllzk_1_1DiscardableAllocationAccessorOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::detail::LLZKCallLikeOpInterfaceTrait< ConcreteOp >", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html", [
+        [ "llzk::LLZKCallLikeOpInterface::Trait< ConcreteOp >", "structllzk_1_1LLZKCallLikeOpInterface_1_1Trait.html", null ]
       ] ],
       [ "llzk::felt::detail::FeltBinaryOpInterfaceTrait< ConcreteOp >", "structllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceTrait.html", [
         [ "llzk::felt::FeltBinaryOpInterface::Trait< ConcreteOp >", "structllzk_1_1felt_1_1FeltBinaryOpInterface_1_1Trait.html", null ]

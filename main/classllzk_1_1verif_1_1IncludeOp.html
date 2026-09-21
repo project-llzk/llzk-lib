@@ -138,12 +138,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1v
 <div class="dynheader">
 Inheritance diagram for llzk::verif::IncludeOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1verif_1_1IncludeOp__inherit__graph.svg" width="674" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1verif_1_1IncludeOp__inherit__graph.svg" width="623" height="243"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for llzk::verif::IncludeOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1verif_1_1IncludeOp__coll__graph.svg" width="674" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1verif_1_1IncludeOp__coll__graph.svg" width="623" height="243"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -192,30 +192,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:afd6176cfeb4b3df2518fc595a54fc138"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the callee of this operation.  <br /></td></tr>
 <tr class="memitem:a976d0cefc5ab4f4977ff2640f3359786" id="r_a976d0cefc5ab4f4977ff2640f3359786"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a976d0cefc5ab4f4977ff2640f3359786">setCalleeFromCallable</a> (::mlir::CallInterfaceCallable callee)</td></tr>
 <tr class="memdesc:a976d0cefc5ab4f4977ff2640f3359786"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the callee for this operation.  <br /></td></tr>
-<tr class="memitem:a395828f1ad848b6a52706a510c6a2284" id="r_a395828f1ad848b6a52706a510c6a2284"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a395828f1ad848b6a52706a510c6a2284">verifySymbolUses</a> (::mlir::SymbolTableCollection &amp;symbolTable)</td></tr>
-<tr class="memitem:aabdaae18637ee0f51ad1d4cf3a7c1b0d" id="r_aabdaae18637ee0f51ad1d4cf3a7c1b0d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aabdaae18637ee0f51ad1d4cf3a7c1b0d">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 <tr class="memitem:adccd0b3808bd052a87aa13c6476f0641" id="r_adccd0b3808bd052a87aa13c6476f0641"><td class="memItemLeft">::mlir::Operation *&#160;</td><td class="memItemRight"><a class="el" href="#adccd0b3808bd052a87aa13c6476f0641">resolveCallableInTable</a> (::mlir::SymbolTableCollection *symbolTable)</td></tr>
-<tr class="memdesc:adccd0b3808bd052a87aa13c6476f0641"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by CallOpInterface.  <br /></td></tr>
 <tr class="memitem:a7605fd8984f2b88e80acd2ecaa583894" id="r_a7605fd8984f2b88e80acd2ecaa583894"><td class="memItemLeft">::mlir::Operation *&#160;</td><td class="memItemRight"><a class="el" href="#a7605fd8984f2b88e80acd2ecaa583894">resolveCallable</a> ()</td></tr>
-<tr class="memdesc:a7605fd8984f2b88e80acd2ecaa583894"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by CallOpInterface.  <br /></td></tr>
-<tr class="memitem:ab6790a021aabed872a893bb0e215d271" id="r_ab6790a021aabed872a893bb0e215d271"><td class="memItemLeft">::mlir::FunctionType&#160;</td><td class="memItemRight"><a class="el" href="#ab6790a021aabed872a893bb0e215d271">getTypeSignature</a> ()</td></tr>
-<tr class="memdesc:ab6790a021aabed872a893bb0e215d271"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the FunctionType inferred from the arg operands of this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>.  <br /></td></tr>
-<tr class="memitem:ad471440f0fe15a427596f8ebd9d51526" id="r_ad471440f0fe15a427596f8ebd9d51526"><td class="memItemLeft">::mlir::FailureOr&lt; <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad471440f0fe15a427596f8ebd9d51526">unifyTypeSignature</a> (::mlir::FunctionType other)</td></tr>
-<tr class="memdesc:ad471440f0fe15a427596f8ebd9d51526"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt type unfication between the inferred FunctionType from this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> (as LHS) and the given FunctionType (as RHS).  <br /></td></tr>
+<tr class="memitem:a395828f1ad848b6a52706a510c6a2284" id="r_a395828f1ad848b6a52706a510c6a2284"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a395828f1ad848b6a52706a510c6a2284">verifySymbolUses</a> (::mlir::SymbolTableCollection &amp;symbolTable)</td></tr>
+<tr class="memitem:a852969fa63c6007a0517bde65275bbec" id="r_a852969fa63c6007a0517bde65275bbec"><td class="memItemLeft">::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#a852969fa63c6007a0517bde65275bbec">getSelfValue</a> ()</td></tr>
+<tr class="memitem:aabdaae18637ee0f51ad1d4cf3a7c1b0d" id="r_aabdaae18637ee0f51ad1d4cf3a7c1b0d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aabdaae18637ee0f51ad1d4cf3a7c1b0d">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 <tr class="memitem:a9ba28a0929f7269f62f44bb976442a04" id="r_a9ba28a0929f7269f62f44bb976442a04"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a9ba28a0929f7269f62f44bb976442a04">contractTargetsStruct</a> ()</td></tr>
 <tr class="memdesc:a9ba28a0929f7269f62f44bb976442a04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the contract targets a struct type.  <br /></td></tr>
-<tr class="memitem:a852969fa63c6007a0517bde65275bbec" id="r_a852969fa63c6007a0517bde65275bbec"><td class="memItemLeft">::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#a852969fa63c6007a0517bde65275bbec">getSelfValue</a> ()</td></tr>
-<tr class="memdesc:a852969fa63c6007a0517bde65275bbec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the "self" value (i.e.  <br /></td></tr>
 <tr class="memitem:a730881f3e8c402c6e32766b2bb742e2c" id="r_a730881f3e8c402c6e32766b2bb742e2c"><td class="memItemLeft">::mlir::FailureOr&lt;<a class="el" href="classllzk_1_1SymbolLookupResult.html">::llzk::SymbolLookupResult</a>&lt;<a class="el" href="classllzk_1_1verif_1_1ContractOp.html">::llzk::verif::ContractOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a730881f3e8c402c6e32766b2bb742e2c">getCalleeTarget</a> (::mlir::SymbolTableCollection &amp;tables)</td></tr>
 <tr class="memdesc:a730881f3e8c402c6e32766b2bb742e2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolve and return the target Contract for this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>.  <br /></td></tr>
-<tr class="memitem:aebe90db7b7710fd27c6c81fce665d271" id="r_aebe90db7b7710fd27c6c81fce665d271"><td class="memItemLeft">static ::llvm::SmallVector&lt;::mlir::ValueRange &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aebe90db7b7710fd27c6c81fce665d271">toVectorOfValueRange</a> (::mlir::OperandRangeRange)</td></tr>
-<tr class="memdesc:aebe90db7b7710fd27c6c81fce665d271"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocate consecutive storage of the ValueRange instances in the parameter so it can be passed to the builders as an <span class="tt">ArrayRef&lt;ValueRange&gt;</span>.  <br /></td></tr>
-<tr class="memitem:a3e68697fc520afb32c0fa8087157d390" id="r_a3e68697fc520afb32c0fa8087157d390"><td class="memItemLeft">inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a3e68697fc520afb32c0fa8087157d390">verifyTemplateParamCompatibility</a> (::mlir::Attribute paramFromIncludeOp, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> targetParam)</td></tr>
-<tr class="memdesc:a3e68697fc520afb32c0fa8087157d390"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check type compatibility of the given template parameter value from this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on the given <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any).  <br /></td></tr>
-<tr class="memitem:a0bde34ecb5af3f66a0a5e0ad733797c2" id="r_a0bde34ecb5af3f66a0a5e0ad733797c2"><td class="memItemLeft">inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a0bde34ecb5af3f66a0a5e0ad733797c2">verifyTemplateParamCompatibility</a> (::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs)</td></tr>
-<tr class="memdesc:a0bde34ecb5af3f66a0a5e0ad733797c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check type compatibility of each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on each <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any).  <br /></td></tr>
-<tr class="memitem:a1785263bda51b6cbb10c5b22de6040c5" id="r_a1785263bda51b6cbb10c5b22de6040c5"><td class="memItemLeft">inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a1785263bda51b6cbb10c5b22de6040c5">verifyTemplateParamsMatchInferred</a> (::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs, const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifications)</td></tr>
-<tr class="memdesc:a1785263bda51b6cbb10c5b22de6040c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify that each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -670,7 +655,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the contract targets a struct type. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00955">955</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00943">943</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -764,7 +749,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the callee of this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00973">973</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00961">961</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -885,7 +870,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Resolve and return the target Contract for this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00948">948</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00936">936</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1398,10 +1383,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Return the "self" value (i.e. </p>
-<p>the first parameter) from the callee contract, assuming the target of the contract is a struct target. </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00961">961</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00949">949</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1502,28 +1484,6 @@ template&lt;typename RangeT&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l01379">1379</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="ab6790a021aabed872a893bb0e215d271" name="ab6790a021aabed872a893bb0e215d271"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab6790a021aabed872a893bb0e215d271">&#9670;&#160;</a></span>getTypeSignature()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">FunctionType llzk::verif::IncludeOp::getTypeSignature </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the FunctionType inferred from the arg operands of this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>. </p>
-<p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00935">935</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1717,9 +1677,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Required by CallOpInterface. </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l01004">1004</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00985">985</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1738,9 +1696,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Required by CallOpInterface. </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00987">987</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00968">968</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1788,7 +1744,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the callee for this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00976">976</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00964">964</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2019,49 +1975,6 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
-<a id="aebe90db7b7710fd27c6c81fce665d271" name="aebe90db7b7710fd27c6c81fce665d271"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aebe90db7b7710fd27c6c81fce665d271">&#9670;&#160;</a></span>toVectorOfValueRange()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">SmallVector&lt; ValueRange &gt; llzk::verif::IncludeOp::toVectorOfValueRange </td>
-          <td>(</td>
-          <td class="paramtype">::mlir::OperandRangeRange</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Allocate consecutive storage of the ValueRange instances in the parameter so it can be passed to the builders as an <span class="tt">ArrayRef&lt;ValueRange&gt;</span>. </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00980">980</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
-
-</div>
-</div>
-<a id="ad471440f0fe15a427596f8ebd9d51526" name="ad471440f0fe15a427596f8ebd9d51526"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad471440f0fe15a427596f8ebd9d51526">&#9670;&#160;</a></span>unifyTypeSignature()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">FailureOr&lt; <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &gt; llzk::verif::IncludeOp::unifyTypeSignature </td>
-          <td>(</td>
-          <td class="paramtype">::mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>other</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Attempt type unfication between the inferred FunctionType from this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> (as LHS) and the given FunctionType (as RHS). </p>
-<p>If successful, return a <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a> containing the unifications that were made. Otherwise, return failure. </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00939">939</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
-
-</div>
-</div>
 <a id="a3b2086c273f2cb58866e423ef1694f32" name="a3b2086c273f2cb58866e423ef1694f32"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3b2086c273f2cb58866e423ef1694f32">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
 
@@ -2152,110 +2065,6 @@ template&lt;typename RangeT&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00896">896</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a0bde34ecb5af3f66a0a5e0ad733797c2" name="a0bde34ecb5af3f66a0a5e0ad733797c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0bde34ecb5af3f66a0a5e0ad733797c2">&#9670;&#160;</a></span>verifyTemplateParamCompatibility() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">inline ::mlir::LogicalResult llzk::verif::IncludeOp::verifyTemplateParamCompatibility </td>
-          <td>(</td>
-          <td class="paramtype">::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Check type compatibility of each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on each <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any). </p>
-<p>Pre-condition assertions:</p><ul>
-<li><span class="tt">!isNullOrEmpty(<a class="el" href="#a0dd6c7a00b08e1485597b3432d1cd94b">getTemplateParamsAttr()</a>)</span></li>
-<li><span class="tt"><a class="el" href="#a0dd6c7a00b08e1485597b3432d1cd94b">getTemplateParamsAttr()</a>.size() == llvm::range_size(targetParamDefs)</span> </li>
-</ul>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l01549">1549</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="a3e68697fc520afb32c0fa8087157d390" name="a3e68697fc520afb32c0fa8087157d390"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e68697fc520afb32c0fa8087157d390">&#9670;&#160;</a></span>verifyTemplateParamCompatibility() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">inline ::mlir::LogicalResult llzk::verif::IncludeOp::verifyTemplateParamCompatibility </td>
-          <td>(</td>
-          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>paramFromIncludeOp</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a></td>          <td class="paramname"><span class="paramname"><em>targetParam</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Check type compatibility of the given template parameter value from this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on the given <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any). </p>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l01537">1537</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="a1785263bda51b6cbb10c5b22de6040c5" name="a1785263bda51b6cbb10c5b22de6040c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1785263bda51b6cbb10c5b22de6040c5">&#9670;&#160;</a></span>verifyTemplateParamsMatchInferred()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">inline ::mlir::LogicalResult llzk::verif::IncludeOp::verifyTemplateParamsMatchInferred </td>
-          <td>(</td>
-          <td class="paramtype">::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Verify that each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>. </p>
-<p>The <span class="tt"><a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span> is expected to contain the unification results of this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the target function type signature.</p>
-<p>Pre-condition assertions:</p><ul>
-<li><span class="tt">!isNullOrEmpty(<a class="el" href="#a0dd6c7a00b08e1485597b3432d1cd94b">getTemplateParamsAttr()</a>)</span></li>
-<li><span class="tt"><a class="el" href="#a0dd6c7a00b08e1485597b3432d1cd94b">getTemplateParamsAttr()</a>.size() == llvm::range_size(targetParamDefs)</span> </li>
-</ul>
-
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l01563">1563</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

@@ -30,7 +30,6 @@ var classllzk_1_1verif_1_1IncludeOp =
     [ "getTemplateParams", "classllzk_1_1verif_1_1IncludeOp.html#a8b3cc197a01cba680e51e362d9ac9508", null ],
     [ "getTemplateParamsAttr", "classllzk_1_1verif_1_1IncludeOp.html#a0dd6c7a00b08e1485597b3432d1cd94b", null ],
     [ "getTemplateParamsAttrName", "classllzk_1_1verif_1_1IncludeOp.html#aff95e25484885928494196c3d7f24363", null ],
-    [ "getTypeSignature", "classllzk_1_1verif_1_1IncludeOp.html#ab6790a021aabed872a893bb0e215d271", null ],
     [ "print", "classllzk_1_1verif_1_1IncludeOp.html#aabdaae18637ee0f51ad1d4cf3a7c1b0d", null ],
     [ "removeTemplateParamsAttr", "classllzk_1_1verif_1_1IncludeOp.html#ab9d9c095d528eb26bb5e1943b02160ce", null ],
     [ "resolveCallable", "classllzk_1_1verif_1_1IncludeOp.html#a7605fd8984f2b88e80acd2ecaa583894", null ],
@@ -42,13 +41,8 @@ var classllzk_1_1verif_1_1IncludeOp =
     [ "setNumDimsPerMap", "classllzk_1_1verif_1_1IncludeOp.html#a01a343fb3794bbbc133bbaa75122efc0", null ],
     [ "setNumDimsPerMapAttr", "classllzk_1_1verif_1_1IncludeOp.html#a41d53ff91d088498a0694fb37653883c", null ],
     [ "setTemplateParamsAttr", "classllzk_1_1verif_1_1IncludeOp.html#a9c8cfd7b3fa2476bd2f6264093664073", null ],
-    [ "toVectorOfValueRange", "classllzk_1_1verif_1_1IncludeOp.html#aebe90db7b7710fd27c6c81fce665d271", null ],
-    [ "unifyTypeSignature", "classllzk_1_1verif_1_1IncludeOp.html#ad471440f0fe15a427596f8ebd9d51526", null ],
     [ "verifyInvariants", "classllzk_1_1verif_1_1IncludeOp.html#ad07ff19ad4629d7ebe63343b7a32594e", null ],
     [ "verifyInvariantsImpl", "classllzk_1_1verif_1_1IncludeOp.html#a151be5c37919aee2841f09d3576363fe", null ],
     [ "verifySymbolUses", "classllzk_1_1verif_1_1IncludeOp.html#a395828f1ad848b6a52706a510c6a2284", null ],
-    [ "verifyTemplateParamCompatibility", "classllzk_1_1verif_1_1IncludeOp.html#a0bde34ecb5af3f66a0a5e0ad733797c2", null ],
-    [ "verifyTemplateParamCompatibility", "classllzk_1_1verif_1_1IncludeOp.html#a3e68697fc520afb32c0fa8087157d390", null ],
-    [ "verifyTemplateParamsMatchInferred", "classllzk_1_1verif_1_1IncludeOp.html#a1785263bda51b6cbb10c5b22de6040c5", null ],
     [ "writeProperties", "classllzk_1_1verif_1_1IncludeOp.html#a525bfe915da6f2a7927e3dedf9cebd24", null ]
 ];

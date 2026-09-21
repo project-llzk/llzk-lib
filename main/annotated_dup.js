@@ -193,6 +193,8 @@ var annotated_dup =
       [ "detail", "namespacellzk_1_1detail.html", [
         [ "DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits" ],
         [ "DiscardableAllocationAccessorOpInterfaceTrait", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", null ],
+        [ "LLZKCallLikeOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits" ],
+        [ "LLZKCallLikeOpInterfaceTrait", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait" ],
         [ "NestedTextualOptions", "structllzk_1_1detail_1_1NestedTextualOptions.html", "structllzk_1_1detail_1_1NestedTextualOptions" ],
         [ "NonDetOpGenericAdaptorBase", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" ],
         [ "RemoveDeadValuesWorkaroundPass", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass" ]
@@ -853,6 +855,7 @@ var annotated_dup =
       [ "IntervalAnalysisPrinterPassOptions", "structllzk_1_1IntervalAnalysisPrinterPassOptions.html", "structllzk_1_1IntervalAnalysisPrinterPassOptions" ],
       [ "IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", "classllzk_1_1IntervalDataFlowAnalysis" ],
       [ "LightweightSignalEquivalenceAnalysis", "classllzk_1_1LightweightSignalEquivalenceAnalysis.html", "classllzk_1_1LightweightSignalEquivalenceAnalysis" ],
+      [ "LLZKCallLikeOpInterface", "classllzk_1_1LLZKCallLikeOpInterface.html", "classllzk_1_1LLZKCallLikeOpInterface" ],
       [ "LLZKDialect", "classllzk_1_1LLZKDialect.html", "classllzk_1_1LLZKDialect" ],
       [ "LLZKDialectBytecodeInterface", "structllzk_1_1LLZKDialectBytecodeInterface.html", "structllzk_1_1LLZKDialectBytecodeInterface" ],
       [ "LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", "structllzk_1_1LLZKDialectVersion" ],
