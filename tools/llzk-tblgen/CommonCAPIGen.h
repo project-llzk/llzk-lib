@@ -279,16 +279,14 @@ struct ExtraMethod {
   std::vector<MethodParameter> parameters;
 };
 
-/// Return public operation methods explicitly requested by
-/// `DeclareOpInterfaceMethods` traits and declared by `extraClassDeclaration`.
+/// Return public operation methods explicitly requested by `DeclareOpInterfaceMethods` traits and
+/// declared by `extraClassDeclaration`.
 ///
-/// Interface methods must be named in `alwaysOverriddenMethods` (the optional
-/// method list passed to `DeclareOpInterfaceMethods`). This makes C API
-/// exposure an explicit opt-in and avoids colliding with the standard op C API
-/// accessors. Static methods and methods implemented directly in an interface
-/// trait are excluded. An extra class method takes precedence over an
-/// interface method with the same name, because the C API does not support
-/// overloads.
+/// Interface methods must be named in `alwaysOverriddenMethods` (the optional method list passed to
+/// `DeclareOpInterfaceMethods`). This makes C API exposure an explicit opt-in and avoids colliding
+/// with the standard op C API accessors. Static methods and methods implemented directly in an
+/// interface trait are excluded. An extra class method takes precedence over an interface method
+/// with the same name, because the C API does not support overloads.
 llvm::SmallVector<ExtraMethod> getCAPIExposedOpMethods(const mlir::tblgen::Operator &op);
 
 /// @brief Parse method declarations from an `extraClassDeclaration` using Clang's Lexer

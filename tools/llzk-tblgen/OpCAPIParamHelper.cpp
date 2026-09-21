@@ -36,9 +36,8 @@ llvm::SmallVector<ExtraMethod> getCAPIExposedOpMethods(const mlir::tblgen::Opera
     }
     mlir::tblgen::Interface interface = trait->getInterface();
     for (const mlir::tblgen::InterfaceMethod &interfaceMethod : interface.getMethods()) {
-      // `alwaysOverriddenMethods` is the explicit C API opt-in. Keep the
-      // remaining declaration checks in sync with MLIR's
-      // OpEmitter::genOpInterfaceMethods().
+      // `alwaysOverriddenMethods` is the explicit C API opt-in. Keep the remaining declaration
+      // checks in sync with MLIR's OpEmitter::genOpInterfaceMethods().
       if (!requestedMethods.contains(interfaceMethod.getName()) || interfaceMethod.isStatic() ||
           interfaceMethod.getBody()) {
         continue;
@@ -52,8 +51,7 @@ llvm::SmallVector<ExtraMethod> getCAPIExposedOpMethods(const mlir::tblgen::Opera
       ExtraMethod method;
       method.returnType = interfaceMethod.getReturnType().str();
       method.methodName = interfaceMethod.getName().str();
-      for (const mlir::tblgen::InterfaceMethod::Argument &argument :
-           interfaceMethod.getArguments()) {
+      for (const auto &argument : interfaceMethod.getArguments()) {
         method.parameters.emplace_back(argument.type.str(), argument.name.str());
       }
       methods.push_back(std::move(method));
