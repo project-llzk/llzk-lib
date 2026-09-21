@@ -1200,6 +1200,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         recordRefWrite(translatedRef, translatedVal);
       }
     }
+  } else if (auto intToFelt = dyn_cast<IntToFeltOp>(op);
+             intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+    // Non-assert casts can change the value non-monotonically. Forget the operand
+    // relation, but initialize the result so sparse dataflow visits its users.
+    propagateIfChanged(results[0], results[0]->setValue(createUnknownValue(op->getResult(0))));
+  } else if (auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
+             feltToIndex && feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT) {
+    // See the IntToFeltOp case above.
+    propagateIfChanged(results[0], results[0]->setValue(createUnknownValue(op->getResult(0))));
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
     // Casts don't modify the intervals, but they do modify the SMT types.
     ExpressionValue expr = operandVals[0].getScalarValue();
@@ -1690,7 +1699,17 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   };
 
   // For casts, just pass the interval along to the cast's operand.
-  auto castCase = [&](Operation *op) { applyInterval(op, op->getOperand(0), newInterval); };
+  auto castCase = [&](Operation *op) {
+    if (auto intToFelt = dyn_cast<IntToFeltOp>(op);
+        intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+      return;
+    }
+    if (auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
+        feltToIndex && feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT) {
+      return;
+    }
+    applyInterval(op, op->getOperand(0), newInterval);
+  };
 
   // - Apply the rules given the op.
   // NOTE: disabling clang-format for this because it makes the last case statement

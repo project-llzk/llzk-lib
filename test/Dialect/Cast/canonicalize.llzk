@@ -1,36 +1,537 @@
-// RUN: llzk-opt %s --canonicalize | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file --canonicalize %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
-    function.def private @use_index(%i: index) -> ()
-    function.def private @use_felt(%f: !felt.type) -> ()
-    function.def private @use_felt_bb(%f: !felt.type<"babybear">) -> ()
+  function.def private @use_index(%i: index) -> ()
+  function.def private @use_felt(%f: !felt.type) -> ()
+  function.def private @use_felt_bb(%f: !felt.type<"babybear">) -> ()
 
-    function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
-        %f0 = felt.const 0
-        %f1 = felt.const 1 : !felt.type<"babybear">
-        
-        // These should both generate arith.constant's
-        %c0 = cast.toindex %f0
-        %c1 = cast.toindex %f1 : !felt.type<"babybear">
+  function.def @field_specified_casts(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
+    %f1 = felt.const 1 : !felt.type<"babybear">
+    %c1 = cast.toindex %f1 : !felt.type<"babybear">
+    function.call @use_index(%c1) : (index) -> ()
 
-        %c2 = arith.constant 2 : index
+    %c2 = arith.constant 2 : index
+    %f2 = cast.tofelt %c2 : index, !felt.type<"babybear">
+    function.call @use_felt_bb(%f2) : (!felt.type<"babybear">) -> ()
 
-        // These should both generate felt.const's with appropriate types
-        %f2 = cast.tofelt %c2 : index, !felt.type
-        %f2_bb = cast.tofelt %c2 : index, !felt.type<"babybear">
+    function.return
+  }
 
-        function.call @use_index(%c0) : (index) -> ()
-        function.call @use_index(%c1) : (index) -> ()
+  function.def @unspecified_0_casts(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
+    %f0 = felt.const 0
+    %f0_cast = cast.toindex %f0
+    function.call @use_index(%f0_cast) : (index) -> ()
 
-        function.call @use_felt(%f2) : (!felt.type) -> ()
-        function.call @use_felt_bb(%f2_bb) : (!felt.type<"babybear">) -> ()
-        
-        function.return
-    }
+    %c0 = arith.constant 0 : index
+    %c0_cast = cast.tofelt %c0 : index, !felt.type
+    function.call @use_felt(%c0_cast) : (!felt.type) -> ()
+
+    function.return
+  }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def private @use_felt(!felt.type)
+// CHECK-NEXT:    function.def private @use_felt_bb(!felt.type<"babybear">)
+// CHECK-NEXT:    function.def @field_specified_casts(%[[VAL_0:[0-9a-zA-Z_\.-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  2 : <"babybear">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_felt_bb(%[[VAL_1]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unspecified_0_casts(%[[VAL_3:[0-9a-zA-Z_\.-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_5]] : !felt.type
+// CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_7]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
 
-// CHECK-LABEL: function.def @func
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"babybear">
+// Canonicalization must preserve the cast with overflow flag if the felt field is not specified.
+!F = !felt.type
+module attributes {llzk.lang} {
+  function.def private @use_felt(%value: !F) -> ()
+  function.def private @use_index(%value: index) -> ()
+
+  // Default is "assert"
+  function.def @default() attributes {function.allow_non_native_field_ops} {
+    %too_large = arith.constant 2013265921 : index
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt %too_large : index, !F
+    %tofelt_negative = cast.tofelt %negative : index, !F
+    %toindex_too_large = cast.toindex %felt_too_large : !F
+    %toindex_negative = cast.toindex %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @assert() attributes {function.allow_non_native_field_ops} {
+    %too_large = arith.constant 2013265921 : index
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt assert %too_large : index, !F
+    %tofelt_negative = cast.tofelt assert %negative : index, !F
+    %toindex_too_large = cast.toindex assert %felt_too_large : !F
+    %toindex_negative = cast.toindex assert %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @sat() attributes {function.allow_non_native_field_ops} {
+    %int_too_large = arith.constant 2013265921 : index
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt sat %int_too_large : index, !F
+    %tofelt_negative = cast.tofelt sat %int_negative : index, !F
+    %toindex_too_large = cast.toindex sat %felt_too_large : !F
+    %toindex_negative = cast.toindex sat %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @wrap() attributes {function.allow_non_native_field_ops} {
+    %int_too_large = arith.constant 2013265921 : index
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt wrap %int_too_large : index, !F
+    %tofelt_negative = cast.tofelt wrap %int_negative : index, !F
+    %toindex_too_large = cast.toindex wrap %felt_too_large : !F
+    %toindex_negative = cast.toindex wrap %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @trunc() attributes {function.allow_non_native_field_ops} {
+    %int_too_large = arith.constant 2147483648 : index // 2^31
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt trunc %int_too_large : index, !F
+    %tofelt_negative = cast.tofelt trunc %int_negative : index, !F
+    %toindex_too_large = cast.toindex trunc %felt_too_large : !F
+    %toindex_negative = cast.toindex trunc %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL:   function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_3]] : !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_7]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_3]] : !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_7]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.-]+]] = cast.tofelt sat %[[VAL_8]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.-]+]] = cast.tofelt sat %[[VAL_9]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.-]+]] = cast.toindex sat %[[VAL_10]] : !felt.type
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.-]+]] = cast.toindex sat %[[VAL_11]] : !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_12]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_13]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_14]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_15]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775820
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.-]+]] = cast.tofelt wrap %[[VAL_16]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.-]+]] = cast.tofelt wrap %[[VAL_17]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.-]+]] = cast.toindex wrap %[[VAL_18]] : !felt.type
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.-]+]] = cast.toindex wrap %[[VAL_19]] : !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_20]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_21]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_22]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_23]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.-]+]] = arith.constant 2147483648 : index
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775820
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.-]+]] = cast.tofelt trunc %[[VAL_24]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.-]+]] = cast.tofelt trunc %[[VAL_25]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.-]+]] = cast.toindex trunc %[[VAL_26]] : !felt.type
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.-]+]] = cast.toindex trunc %[[VAL_27]] : !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_28]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_29]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_30]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_31]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// -----
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang} {
+  function.def private @use_felt(%value: !F) -> ()
+  function.def private @use_index(%value: index) -> ()
+
+  // Default is "assert"
+  function.def @default() attributes {function.allow_non_native_field_ops} {
+    %too_large = arith.constant 2013265921 : index // the field prime
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt %too_large : index, !F
+    %tofelt_negative = cast.tofelt %negative : index, !F
+    %toindex_too_large = cast.toindex %felt_too_large : !F
+    %toindex_negative = cast.toindex %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @assert() attributes {function.allow_non_native_field_ops} {
+    %too_large = arith.constant 2013265921 : index // the field prime
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt assert %too_large : index, !F
+    %tofelt_negative = cast.tofelt assert %negative : index, !F
+    %toindex_too_large = cast.toindex assert %felt_too_large : !F
+    %toindex_negative = cast.toindex assert %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @sat() attributes {function.allow_non_native_field_ops} {
+    %int_too_large = arith.constant 2013265921 : index // the field prime
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt sat %int_too_large : index, !F
+    %tofelt_negative = cast.tofelt sat %int_negative : index, !F
+    %toindex_too_large = cast.toindex sat %felt_too_large : !F
+    %toindex_negative = cast.toindex sat %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @wrap() attributes {function.allow_non_native_field_ops} {
+    %int_too_large = arith.constant 2013265921 : index // the field prime
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_too_large = cast.tofelt wrap %int_too_large : index, !F
+    %tofelt_negative = cast.tofelt wrap %int_negative : index, !F
+    %toindex_too_large = cast.toindex wrap %felt_too_large : !F
+    %toindex_negative = cast.toindex wrap %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @trunc() attributes {function.allow_non_native_field_ops} {
+    %int_too_large = arith.constant 2147483648 : index // 2^31
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    // The babybear prime requires 31 bits so truncation keeps low 31 bits.
+    %tofelt_too_large = cast.tofelt trunc %int_too_large : index, !F
+    %tofelt_negative = cast.tofelt trunc %int_negative : index, !F
+    %toindex_too_large = cast.toindex trunc %felt_too_large : !F
+    %toindex_negative = cast.toindex trunc %felt_negative : !F
+    function.call @use_felt(%tofelt_too_large) : (!F) -> ()
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+}
+// COM: p = 2013265921
+// COM: 2013265920 ≡ -1 mod p
+// COM: 1592717042 ≡ 2^63 mod p
+// COM: 1592717054 ≡ (2^63 + 12) mod p
+//
+// CHECK-LABEL:   function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:       %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
+// CHECK-DAG:       %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-DAG:       %[[VAL_2:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717042 : index
+// CHECK-DAG:       %[[VAL_3:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:       %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
+// CHECK-DAG:       %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-DAG:       %[[VAL_2:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717042 : index
+// CHECK-DAG:       %[[VAL_3:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:       %[[VAL_8:[0-9a-zA-Z_\.-]+]] = felt.const  2013265920 : <"babybear">
+// CHECK-DAG:       %[[VAL_9:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"babybear">
+// CHECK-DAG:       %[[VAL_10:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717042 : index
+// CHECK-DAG:       %[[VAL_11:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_8]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_9]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_10]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_11]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:       %[[VAL_12:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"babybear">
+// CHECK-DAG:       %[[VAL_13:[0-9a-zA-Z_\.-]+]] = felt.const  2013265920 : <"babybear">
+// CHECK-DAG:       %[[VAL_14:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717054 : index
+// CHECK-DAG:       %[[VAL_15:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_12]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_13]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_14]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_15]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:       %[[VAL_16:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"babybear">
+// CHECK-DAG:       %[[VAL_17:[0-9a-zA-Z_\.-]+]] = felt.const  2147483647 : <"babybear">
+// CHECK-DAG:       %[[VAL_18:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717054 : index
+// CHECK-DAG:       %[[VAL_19:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_16]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_17]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_18]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_19]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// -----
+
+// Note: There is no `index` constant too large for the grumpkin field so
+//       the cases with "int_too_large" from above are not applicable here.
+!F = !felt.type<"grumpkin">
+module attributes {llzk.lang} {
+  function.def private @use_felt(%value: !F) -> ()
+  function.def private @use_index(%value: index) -> ()
+
+  // Default is "assert"
+  function.def @default() attributes {function.allow_non_native_field_ops} {
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt %negative : index, !F
+    %toindex_too_large = cast.toindex %felt_too_large : !F
+    %toindex_negative = cast.toindex %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @assert() attributes {function.allow_non_native_field_ops} {
+    %negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt assert %negative : index, !F
+    %toindex_too_large = cast.toindex assert %felt_too_large : !F
+    %toindex_negative = cast.toindex assert %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @sat() attributes {function.allow_non_native_field_ops} {
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775808 : !F // 2^63
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt sat %int_negative : index, !F
+    %toindex_too_large = cast.toindex sat %felt_too_large : !F
+    %toindex_negative = cast.toindex sat %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @wrap() attributes {function.allow_non_native_field_ops} {
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    %tofelt_negative = cast.tofelt wrap %int_negative : index, !F
+    %toindex_too_large = cast.toindex wrap %felt_too_large : !F
+    %toindex_negative = cast.toindex wrap %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+
+  function.def @trunc() attributes {function.allow_non_native_field_ops} {
+    %int_negative = arith.constant -1 : index
+    %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
+    %felt_negative = felt.const -1 : !F
+
+    // The grumpkin prime requires 254 bits so truncation keeps low 254 bits.
+    %tofelt_negative = cast.tofelt trunc %int_negative : index, !F
+    %toindex_too_large = cast.toindex trunc %felt_too_large : !F
+    %toindex_negative = cast.toindex trunc %felt_negative : !F
+    function.call @use_felt(%tofelt_negative) : (!F) -> ()
+    function.call @use_index(%toindex_too_large) : (index) -> ()
+    function.call @use_index(%toindex_negative) : (index) -> ()
+    function.return
+  }
+}
+// COM: p = 21888242871839275222246405745257275088696311157297823662689037894645226208583
+// COM: 9223372036854775807 ≡ 2^63 - 1
+// COM: 21888242871839275222246405745257275088696311157297823662689037894645226208582 ≡ p-1
+// COM: 4332616871279656262 ≡ p-1 mod 2^63
+// COM: 28948022309329048855892746252171976963317496166410141009864396001978282409983 ≡ 2^254 - 1
+//
+// CHECK-LABEL: function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-DAG:     %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  -1 : <"grumpkin">
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_1]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_3]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_4]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_5]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_6:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
+// CHECK-DAG:     %[[VAL_7:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_8:[0-9a-zA-Z_\.-]+]] = felt.const  -1 : <"grumpkin">
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_7]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    %[[VAL_11:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_8]] : !felt.type<"grumpkin">
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_9]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_10]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_11]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_12:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_13:[0-9a-zA-Z_\.-]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_12]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_13]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_13]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_14:[0-9a-zA-Z_\.-]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208582 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_15:[0-9a-zA-Z_\.-]+]] = arith.constant 12 : index
+// CHECK-DAG:     %[[VAL_16:[0-9a-zA-Z_\.-]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_14]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_15]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_16]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-DAG:     %[[VAL_17:[0-9a-zA-Z_\.-]+]] = felt.const  28948022309329048855892746252171976963317496166410141009864396001978282409983 : <"grumpkin">
+// CHECK-DAG:     %[[VAL_18:[0-9a-zA-Z_\.-]+]] = arith.constant 12 : index
+// CHECK-DAG:     %[[VAL_19:[0-9a-zA-Z_\.-]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:    function.call @use_felt(%[[VAL_17]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_18]]) : (index) -> ()
+// CHECK-NEXT:    function.call @use_index(%[[VAL_19]]) : (index) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// -----
+
+// `i1` values represent booleans, so `true` must be converted as the
+// unsigned value 1 before applying the selected overflow semantics.
+module attributes {llzk.lang} {
+  function.def private @use_felt(%value: !felt.type<"babybear">) -> ()
+
+  function.def @fold_true() attributes {function.allow_non_native_field_ops} {
+    %true = arith.constant 1 : i1
+    %sat = cast.tofelt sat %true : i1, !felt.type<"babybear">
+    %wrap = cast.tofelt wrap %true : i1, !felt.type<"babybear">
+    %trunc = cast.tofelt trunc %true : i1, !felt.type<"babybear">
+    function.call @use_felt(%sat) : (!felt.type<"babybear">) -> ()
+    function.call @use_felt(%wrap) : (!felt.type<"babybear">) -> ()
+    function.call @use_felt(%trunc) : (!felt.type<"babybear">) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: function.def @fold_true()
+// CHECK-NEXT:    %[[ONE:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"babybear">
+// CHECK-COUNT-3: function.call @use_felt(%[[ONE]]) : (!felt.type<"babybear">) -> ()
