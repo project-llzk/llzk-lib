@@ -115,6 +115,46 @@ static struct OpClassesWithStructTypes {
 
 namespace {
 
+/// Convert the result types of `scf.execute_region` while keeping its region in
+/// the dialect conversion worklist. MLIR's SCF structural conversion patterns
+/// do not currently cover this operation.
+class ExecuteRegionTypeConversionPattern
+    : public mlir::OpConversionPattern<mlir::scf::ExecuteRegionOp> {
+public:
+  using OpConversionPattern::OpConversionPattern;
+
+  mlir::LogicalResult matchAndRewrite(
+      mlir::scf::ExecuteRegionOp op, OneToNOpAdaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override {
+    mlir::SmallVector<mlir::Type> newResultTypes;
+    mlir::SmallVector<unsigned> resultOffsets {0};
+    for (mlir::Type resultType : op.getResultTypes()) {
+      if (mlir::failed(getTypeConverter()->convertTypes(resultType, newResultTypes))) {
+        return rewriter.notifyMatchFailure(op, "could not convert result type");
+      }
+      resultOffsets.push_back(newResultTypes.size());
+    }
+
+    if (mlir::failed(rewriter.convertRegionTypes(&op.getRegion(), *getTypeConverter()))) {
+      return rewriter.notifyMatchFailure(op, "could not convert region types");
+    }
+
+    auto newOp = rewriter.create<mlir::scf::ExecuteRegionOp>(op.getLoc(), newResultTypes);
+    newOp->setAttrs(op->getAttrs());
+    rewriter.inlineRegionBefore(op.getRegion(), newOp.getRegion(), newOp.getRegion().end());
+
+    mlir::SmallVector<mlir::ValueRange> replacements;
+    replacements.reserve(op.getNumResults());
+    for (unsigned i = 0; i < op.getNumResults(); ++i) {
+      replacements.push_back(
+          newOp.getResults().slice(resultOffsets[i], resultOffsets[i + 1] - resultOffsets[i])
+      );
+    }
+    rewriter.replaceOpWithMultiple(op, replacements);
+    return mlir::success();
+  }
+};
+
 /// Pattern for ops that define the general builder:
 ///   `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
 /// Converts result types and TypeAttr attributes using the provided TypeConverter.
@@ -274,6 +314,20 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   // Add builtin FunctionType and SCF op converters
   mlir::populateFunctionOpInterfaceTypeConversionPattern<function::FuncDefOp>(patterns, tyConv);
   mlir::scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
+  patterns.add<ExecuteRegionTypeConversionPattern>(tyConv, ctx);
+  target.addDynamicallyLegalOp<mlir::scf::ExecuteRegionOp>([&](mlir::scf::ExecuteRegionOp op) {
+    return tyConv.isLegal(op.getResultTypes());
+  });
+  target.addDynamicallyLegalOp<mlir::scf::YieldOp>([&](mlir::scf::YieldOp op) {
+    mlir::Operation *parent = op->getParentOp();
+    if (!llvm::isa<
+            mlir::scf::ExecuteRegionOp, mlir::scf::ForOp, mlir::scf::IfOp, mlir::scf::WhileOp>(
+            parent
+        )) {
+      return true;
+    }
+    return tyConv.isLegal(op.getOperandTypes());
+  });
   return patterns;
 }
 
