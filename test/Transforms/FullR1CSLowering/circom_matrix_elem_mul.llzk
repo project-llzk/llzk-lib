@@ -1,0 +1,95 @@
+// RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
+
+// Reduced from circomlib-matrix's matElemMul_test. This exercises a two-dimensional
+// frontend-style loop nest through flattening, array-to-scalar, and R1CS lowering.
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@MatElemMul>} {
+  struct.def @MatElemMul {
+    struct.member @out : !array.type<2,3 x !felt.type<"bn128">> {llzk.pub, signal}
+
+    function.def @compute(
+      %a: !array.type<2,3 x !felt.type<"bn128">>,
+      %b: !array.type<2,3 x !felt.type<"bn128">>
+    ) -> !struct.type<@MatElemMul> attributes {
+      function.allow_non_native_field_ops,
+      function.allow_witness
+    } {
+      %self = struct.new : <@MatElemMul>
+      %out = llzk.nondet : !array.type<2,3 x !felt.type<"bn128">>
+      %zero = felt.const 0 : <"bn128">
+      %unused_i = scf.while (%i = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+        %two = felt.const 2 : <"bn128">
+        %cond = bool.cmp lt(%i, %two) : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.condition(%cond) %i : !felt.type<"bn128">
+      } do {
+      ^bb0(%i: !felt.type<"bn128">):
+        %unused_j = scf.while (%j = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+          %three = felt.const 3 : <"bn128">
+          %cond = bool.cmp lt(%j, %three) : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.condition(%cond) %j : !felt.type<"bn128">
+        } do {
+        ^bb0(%j: !felt.type<"bn128">):
+          %ii = cast.toindex %i : !felt.type<"bn128">
+          %jj = cast.toindex %j : !felt.type<"bn128">
+          %av = array.read %a[%ii, %jj] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %bv = array.read %b[%ii, %jj] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %product = felt.mul %av, %bv : !felt.type<"bn128">, !felt.type<"bn128">
+          array.write %out[%ii, %jj] = %product : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %one = felt.const 1 : <"bn128">
+          %next_j = felt.add %j, %one : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.yield %next_j : !felt.type<"bn128">
+        }
+        %one = felt.const 1 : <"bn128">
+        %next_i = felt.add %i, %one : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %next_i : !felt.type<"bn128">
+      }
+      struct.writem %self[@out] = %out : <@MatElemMul>, !array.type<2,3 x !felt.type<"bn128">>
+      function.return %self : !struct.type<@MatElemMul>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@MatElemMul>,
+      %a: !array.type<2,3 x !felt.type<"bn128">>,
+      %b: !array.type<2,3 x !felt.type<"bn128">>
+    ) attributes {
+      function.allow_constraint,
+      function.allow_non_native_field_ops
+    } {
+      %out = struct.readm %self[@out] : <@MatElemMul>, !array.type<2,3 x !felt.type<"bn128">>
+      %zero = felt.const 0 : <"bn128">
+      %unused_i = scf.while (%i = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+        %two = felt.const 2 : <"bn128">
+        %cond = bool.cmp lt(%i, %two) : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.condition(%cond) %i : !felt.type<"bn128">
+      } do {
+      ^bb0(%i: !felt.type<"bn128">):
+        %unused_j = scf.while (%j = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+          %three = felt.const 3 : <"bn128">
+          %cond = bool.cmp lt(%j, %three) : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.condition(%cond) %j : !felt.type<"bn128">
+        } do {
+        ^bb0(%j: !felt.type<"bn128">):
+          %ii = cast.toindex %i : !felt.type<"bn128">
+          %jj = cast.toindex %j : !felt.type<"bn128">
+          %av = array.read %a[%ii, %jj] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %bv = array.read %b[%ii, %jj] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %product = felt.mul %av, %bv : !felt.type<"bn128">, !felt.type<"bn128">
+          %actual = array.read %out[%ii, %jj] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+          constrain.eq %actual, %product : !felt.type<"bn128">, !felt.type<"bn128">
+          %one = felt.const 1 : <"bn128">
+          %next_j = felt.add %j, %one : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.yield %next_j : !felt.type<"bn128">
+        }
+        %one = felt.const 1 : <"bn128">
+        %next_i = felt.add %i, %one : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %next_i : !felt.type<"bn128">
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: r1cs.circuit @MatElemMul inputs (
+// CHECK-COUNT-6: r1cs.def {{.*}} {pub = #r1cs.pub}
+// CHECK-COUNT-6: r1cs.constrain
+// CHECK-NOT: scf.
+// CHECK-NOT: array.

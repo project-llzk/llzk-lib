@@ -1,0 +1,2 @@
+fixed:
+  - Convert specialized zero- and one-iteration `scf.while` loops when constant folding replaces the induction-variable update with a constant.

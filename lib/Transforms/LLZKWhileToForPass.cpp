@@ -13,7 +13,8 @@
 /// * The scf.condition directly forwards `before` block arguments to the `after` block
 /// * The `before` block has an argument %arg (the "induction variable") such that:
 ///   * The scf.condition condition has the form `bool.cmp lt(%arg, %upper_bound)`
-///   * The value yielded from the after block has the form `felt.add %arg, %step`
+///   * The value yielded from the after block has the form `felt.add %arg, %step`, or constant
+///     bounds and a constant next value prove that the loop executes at most once
 /// * `%upper_bound` and `%step` do not depend on any loop-carried variables
 /// * The final yielded value of the induction variable does not have uses outside the loop
 ///
@@ -156,6 +157,49 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       info.step = incOp.getLhs();
     } else if (incOp.getLhs() == ivarAfter) {
       info.step = incOp.getRhs();
+    }
+  }
+
+  // Concrete specialization can fold a one-iteration loop's `%iv + step` to the constant value
+  // yielded to the next condition check. Recover a for-loop step only when constants prove that
+  // the original loop executes zero or one times. In particular, do not treat an arbitrary
+  // constant yield as a step: `while i < 10 { yield 1 }` does not terminate after one iteration.
+  if (!info.step.has_value()) {
+    auto lbOp = info.lb->getDefiningOp<FeltConstantOp>();
+    auto ubOp = info.ub->getDefiningOp<FeltConstantOp>();
+    auto nextOp = nextIvar.getDefiningOp<FeltConstantOp>();
+    if (lbOp && ubOp && nextOp && lbOp.getType() == ubOp.getType() &&
+        lbOp.getType() == nextOp.getType()) {
+      const llvm::APInt &rawLb = lbOp.getValueAPInt();
+      const llvm::APInt &rawUb = ubOp.getValueAPInt();
+      const llvm::APInt &rawNext = nextOp.getValueAPInt();
+      // Felt constants do not have a fixed integer storage width. Normalize before comparing or
+      // subtracting: APInt requires operands to have identical widths even though the constants
+      // all have the same FeltType.
+      unsigned bitWidth =
+          std::max({rawLb.getBitWidth(), rawUb.getBitWidth(), rawNext.getBitWidth()});
+      llvm::APInt lb = rawLb.zext(bitWidth);
+      llvm::APInt ub = rawUb.zext(bitWidth);
+      llvm::APInt next = rawNext.zext(bitWidth);
+      std::optional<llvm::APInt> constantStep;
+
+      if (lb.uge(ub)) {
+        // The initial condition is false, so any positive step describes the same empty loop.
+        constantStep.emplace(lb.getBitWidth(), 1);
+      } else if (next.ugt(lb) && next.uge(ub)) {
+        // The initial condition is true and the yielded IV fails the next condition check.
+        constantStep = next - lb;
+      }
+
+      if (constantStep.has_value()) {
+        OpBuilder builder {op};
+        auto type = llvm::cast<FeltType>(lbOp.getType());
+        info.step = builder
+                        .create<FeltConstantOp>(
+                            op.getLoc(), FeltConstAttr::get(op.getContext(), *constantStep, type)
+                        )
+                        .getResult();
+      }
     }
   }
 

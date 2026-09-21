@@ -1,0 +1,92 @@
+// RUN: llzk-opt --llzk-while-to-for -split-input-file %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @one_iteration() -> !felt.type attributes {function.allow_non_native_field_ops} {
+    %f0 = felt.const 0
+    %f1 = felt.const 1
+    %f7 = felt.const 7
+    %unused_iv, %result = scf.while (%i = %f0, %value = %f7) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+      %cond = bool.cmp lt(%i, %f1)
+      scf.condition(%cond) %i, %value : !felt.type, !felt.type
+    } do {
+    ^bb0(%i: !felt.type, %value: !felt.type):
+      %next_value = felt.add %value, %f1
+      scf.yield %f1, %next_value : !felt.type, !felt.type
+    }
+    function.return %result : !felt.type
+  }
+}
+
+// CHECK-LABEL: function.def @one_iteration
+// CHECK-NOT: scf.while
+// CHECK: scf.for
+// CHECK: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @zero_iterations() -> !felt.type attributes {function.allow_non_native_field_ops} {
+    %f0 = felt.const 0
+    %f5 = felt.const 5
+    %f9 = felt.const 9
+    %unused_iv, %result = scf.while (%i = %f5, %value = %f9) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+      %cond = bool.cmp lt(%i, %f5)
+      scf.condition(%cond) %i, %value : !felt.type, !felt.type
+    } do {
+    ^bb0(%i: !felt.type, %value: !felt.type):
+      scf.yield %f0, %f0 : !felt.type, !felt.type
+    }
+    function.return %result : !felt.type
+  }
+}
+
+// CHECK-LABEL: function.def @zero_iterations
+// CHECK-NOT: scf.while
+// CHECK: scf.for
+// CHECK: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @constant_yield_may_continue() attributes {function.allow_non_native_field_ops} {
+    %f0 = felt.const 0
+    %f1 = felt.const 1
+    %f10 = felt.const 10
+    scf.while (%i = %f0) : (!felt.type) -> !felt.type {
+      %cond = bool.cmp lt(%i, %f10)
+      scf.condition(%cond) %i : !felt.type
+    } do {
+    ^bb0(%i: !felt.type):
+      scf.yield %f1 : !felt.type
+    }
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @constant_yield_may_continue
+// CHECK: scf.while
+// CHECK: scf.yield
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @use(%value: !felt.type)
+
+  function.def @used_final_iv() attributes {function.allow_non_native_field_ops} {
+    %f0 = felt.const 0
+    %f1 = felt.const 1
+    %final = scf.while (%i = %f0) : (!felt.type) -> !felt.type {
+      %cond = bool.cmp lt(%i, %f1)
+      scf.condition(%cond) %i : !felt.type
+    } do {
+    ^bb0(%i: !felt.type):
+      scf.yield %f1 : !felt.type
+    }
+    function.call @use(%final) : (!felt.type) -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @used_final_iv
+// CHECK: scf.while
+// CHECK: function.call @use
