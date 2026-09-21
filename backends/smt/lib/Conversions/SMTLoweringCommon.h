@@ -304,10 +304,12 @@ class WriteArrayConverter : public mlir::OpConversionPattern<array::WriteArrayOp
   using mlir::OpConversionPattern<array::WriteArrayOp>::OpConversionPattern;
 
   ArrayWritePolicy policy;
+  SMTIntTheoryEmitter *emitter;
 
 public:
   WriteArrayConverter(
-      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy policy
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy policy,
+      SMTIntTheoryEmitter *emitter
   );
 
   mlir::LogicalResult matchAndRewrite(
@@ -318,7 +320,12 @@ public:
 class ReadArrayConverter : public mlir::OpConversionPattern<array::ReadArrayOp> {
   using mlir::OpConversionPattern<array::ReadArrayOp>::OpConversionPattern;
 
+  SMTIntTheoryEmitter *emitter;
+
 public:
+  ReadArrayConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+  );
   mlir::LogicalResult matchAndRewrite(
       array::ReadArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;

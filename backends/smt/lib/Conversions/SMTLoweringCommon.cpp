@@ -483,19 +483,19 @@ LogicalResult IndexConstConverter::matchAndRewrite(
 }
 
 WriteArrayConverter::WriteArrayConverter(
-    mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy _policy
+    mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy writePolicy,
+    SMTIntTheoryEmitter *theoryEmitter
 )
     : OpConversionPattern<array::WriteArrayOp>(converter, context, /*benefit=*/2),
-      policy {std::move(_policy)} {}
+      policy {std::move(writePolicy)}, emitter {theoryEmitter} {}
 
 LogicalResult WriteArrayConverter::matchAndRewrite(
     array::WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
   // Turn `arr[i] = val` to `assert arr[i] == val`
   if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
-    Value selected = selectMultidimensionalArray(
-        op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter
-    );
+    Value selected =
+        emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
     rewriter.replaceOpWithNewOp<smt::AssertOp>(
         op, rewriter.create<smt::EqOp>(op->getLoc(), selected, adaptor.getRvalue()).getResult()
     );
@@ -510,12 +510,17 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
   }
 }
 
+ReadArrayConverter::ReadArrayConverter(
+    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<array::ReadArrayOp>(converter, context, /*benefit=*/2),
+      emitter {theoryEmitter} {}
+
 LogicalResult ReadArrayConverter::matchAndRewrite(
     array::ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
-  auto readResult = selectMultidimensionalArray(
-      op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter
-  );
+  auto readResult =
+      emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
   rewriter.replaceOp(op, readResult.getDefiningOp());
   return success();
 }

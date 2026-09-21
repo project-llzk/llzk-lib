@@ -898,9 +898,7 @@ void OptimizedNonNativeStrategy::populatePatterns(
       BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
       BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
       BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>, FeltConstConverter,
-      IndexConstConverter, ReturnConverter, SCFIfConverter, YieldConverter, ReadArrayConverter>(
-      converter, context
-  );
+      IndexConstConverter, ReturnConverter, SCFIfConverter, YieldConverter>(converter, context);
   patterns.add<FunctionDefConverter>(converter, context);
   patterns.add<BoolCmpConverter>(converter, context, this);
   patterns.add<FeltDivConverter>(converter, context, this);
@@ -910,9 +908,10 @@ void OptimizedNonNativeStrategy::populatePatterns(
   patterns.add<ConstrainConverter>(converter, context, this);
   patterns.add<MemberWriteConverter>(converter, context, signalSymbols, this);
   patterns.add<MemberReadConverter>(converter, context, signalSymbols);
+  patterns.add<ReadArrayConverter>(converter, context, emitter.get());
   patterns.add<WriteArrayConverter>(converter, context, [](Value) -> ArrayWriteMode {
     return ArrayWriteMode::WriteOnce;
-  });
+  }, emitter.get());
 }
 
 } // namespace llzk
