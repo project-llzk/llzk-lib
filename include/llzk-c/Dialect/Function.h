@@ -148,9 +148,6 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 /// or else IR verification will fail.
 MLIR_CAPI_EXPORTED MlirType llzkFunction_CallOpGetTypeSignature(MlirOperation inp);
 
-/// Required by CallOpInterface
-MLIR_CAPI_EXPORTED MlirOperation llzkFunction_CallOpResolveCallable(MlirOperation inp);
-
 #ifdef __cplusplus
 }
 #endif
