@@ -54,6 +54,7 @@
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/MathExtras.h>
 
+#include <algorithm>
 #include <limits>
 
 using namespace mlir;
@@ -1502,7 +1503,27 @@ private:
       auto dstType = IntegerType::get(builder.getContext(), field.bitWidth());
       Value lowered;
       if (isa<IndexType>((*operand).getType())) {
-        lowered = builder.create<arith::IndexCastUIOp>(loc, dstType, *operand);
+        Value zero = makeIndexConstant(builder, loc, 0);
+        Value isNonNegative =
+            builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::sge, *operand, zero);
+        builder.create<cf::AssertOp>(loc, isNonNegative, "cast.tofelt input must be non-negative");
+
+        // Widen before checking so that a small field does not truncate an
+        // otherwise out-of-range index before the comparison.
+        unsigned wideWidth = std::max(field.bitWidth(), IndexType::kInternalStorageBitWidth);
+        Value widened = builder.create<arith::IndexCastUIOp>(
+            loc, IntegerType::get(builder.getContext(), wideWidth), *operand
+        );
+        Value modulus = builder.create<arith::ConstantOp>(
+            loc, field.getPrimeAttr(builder.getContext(), wideWidth)
+        );
+        Value fitsField =
+            builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ult, widened, modulus);
+        builder.create<cf::AssertOp>(loc, fitsField, "cast.tofelt input does not fit in felt");
+
+        lowered = wideWidth == dstType.getWidth()
+                      ? widened
+                      : builder.create<arith::TruncIOp>(loc, dstType, widened).getResult();
       } else {
         auto intType = llvm::cast<IntegerType>((*operand).getType());
         if (intType.getWidth() < dstType.getWidth()) {
@@ -1525,6 +1546,18 @@ private:
       if (failed(operand)) {
         return failure();
       }
+      unsigned wideWidth = std::max(field.bitWidth(), IndexType::kInternalStorageBitWidth);
+      auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+      Value widened = *operand;
+      if (field.bitWidth() < wideWidth) {
+        widened = builder.create<arith::ExtUIOp>(loc, wideType, widened);
+      }
+      Value maxIndex = builder.create<arith::ConstantOp>(
+          loc, IntegerAttr::get(wideType, std::numeric_limits<int64_t>::max())
+      );
+      Value fitsIndex =
+          builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ule, widened, maxIndex);
+      builder.create<cf::AssertOp>(loc, fitsIndex, "cast.toindex input does not fit in index");
       return bind(
           feltToIndex.getResult(),
           LoweredValue {
