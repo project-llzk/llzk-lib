@@ -1014,8 +1014,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // Search all aliases of `value` for a relevant mutation. Transparent
     // casts do not establish a value-copy boundary, so a mutation through a
     // cast result is also a mutation of the aggregate passed to that cast.
+    // Start at the cast-chain root so this also finds a mutation through the
+    // source when `value` itself is a cast result.
     auto mayMutateThroughAlias = [&](Value value, auto &&isRelevantUse) {
-      SmallVector<Value> worklist = {value};
+      SmallVector<Value> worklist = {getAggregateAliasRoot(value)};
       DenseSet<Value> visited;
       while (!worklist.empty()) {
         Value alias = worklist.pop_back_val();
