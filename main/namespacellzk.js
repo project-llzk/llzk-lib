@@ -447,6 +447,8 @@ var namespacellzk =
     [ "parseTemplateParams", "namespacellzk.html#ac26809b0165de690450423f29240339b", null ],
     [ "podTypesUnify", "namespacellzk.html#a8ef40e513bbc28e319dc57cb51892ab5", null ],
     [ "podTypesUnify", "namespacellzk.html#a5ebb9644ae9afb3d88ae5a5ea4a15ef0", null ],
+    [ "preserveDiscardableAttrs", "namespacellzk.html#a77841fb10c7b3448d90a0b3098262a15", null ],
+    [ "preserveDiscardableAttrsExcept", "namespacellzk.html#af2caf67442865b8c47ff18899f622bc1", null ],
     [ "printAttrDictWithWarnings", "namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2", null ],
     [ "printAttrs", "namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff", null ],
     [ "printAttrs", "namespacellzk.html#ab3aea79f1ec3c694d5d0bcf1f949c5fe", null ],

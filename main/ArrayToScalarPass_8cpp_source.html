@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span><span class="preprocessor">#include &quot;<a class="code" href="RAM_2IR_2Dialect_8h.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</span></div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="preprocessor">#include &quot;<a class="code" href="String_2IR_2Dialect_8h.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</span></div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Ops_8h.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKConversionUtils_8h.html">llzk/Transforms/LLZKConversionUtils.h</a>&quot;</span></div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="preprocessor">#include &quot;<a class="code" href="ConversionUtils_8h.html">llzk/Transforms/ConversionUtils.h</a>&quot;</span></div>
 <div class="foldopen" id="foldopen00085" data-start="{" data-end="}">
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno"><a class="line" href="classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#af39921c9dccbdd6fbd256a8b3e0329e8">   85</a></span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</span></div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="preprocessor">#include &quot;<a class="code" href="SpecializedMemoryPasses_8h.html">llzk/Transforms/SpecializedMemoryPasses.h</a>&quot;</span></div>
@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>    }</div>
 <div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>    <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> at = splittableArray(op.<a class="code hl_function" href="classllzk_1_1array_1_1ExtractArrayOp.html#adec9714b357b21a2fd315fe57ad25aaa">getResult</a>().getType());</div>
 <div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>    <span class="comment">// Generate `CreateArrayOp` in place of the current op.</span></div>
-<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>    <span class="keyword">auto</span> newArray = rewriter.replaceOpWithNewOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">CreateArrayOp</a>&gt;(op, at);</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>    <span class="keyword">auto</span> newArray = <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;CreateArrayOp&gt;</a>(rewriter, op, at);</div>
 <div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>    rewriteImpl&lt;LARGE_TO_SMALL&gt;(</div>
 <div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>        llvm::cast&lt;ArrayAccessOpInterface&gt;(op.getOperation()), at, newArray, adaptor.getArrRef(),</div>
 <div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>        rewriter</div>
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>    assert(arrTy); <span class="comment">// must have array type per ODS spec of ArrayLengthOp</span></div>
 <div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>    std::optional&lt;llvm::APInt&gt; len = getDimSizeIfKnown(adaptor.getDim(), arrTy);</div>
 <div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>    assert(len.has_value()); <span class="comment">// follows from legal() check</span></div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>    rewriter.replaceOpWithNewOp&lt;arith::ConstantIndexOp&gt;(op, <a class="code hl_function" href="namespacellzk.html#ab58b991633496850e1ed92acd413908d">llzk::fromAPInt</a>(len.value()));</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;arith::ConstantIndexOp&gt;</a>(rewriter, op, <a class="code hl_function" href="namespacellzk.html#ab58b991633496850e1ed92acd413908d">llzk::fromAPInt</a>(len.value()));</div>
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>    <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  }</div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>};</div>
@@ -822,263 +822,265 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>  )<span class="keyword"> const override </span>{</div>
 <div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> at = dyn_cast&lt;ArrayType&gt;(nondetOp.getType())) {</div>
 <div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>      <span class="keyword">auto</span> wildcardTy = llvm::cast&lt;ArrayType&gt;(replaceAffineMapArrayDimsWithWildcards(at));</div>
-<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>      <span class="keyword">auto</span> newArray = rewriter.create&lt;<a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">CreateArrayOp</a>&gt;(nondetOp.getLoc(), wildcardTy);</div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>      <span class="keywordflow">if</span> (wildcardTy == at) {</div>
-<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>        rewriter.replaceOp(nondetOp, newArray);</div>
-<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>        <span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast</a> = rewriter.create&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&gt;(nondetOp.getLoc(), at, newArray);</div>
-<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>        rewriter.replaceOp(nondetOp, <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast</a>.getResult());</div>
-<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>      }</div>
-<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>      <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>    }</div>
-<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>  }</div>
-<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>};</div>
-<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span></div>
-<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span><span class="keyword">static</span> LogicalResult step0(ModuleOp modOp) {</div>
-<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>  MLIRContext *ctx = modOp.getContext();</div>
-<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>  RewritePatternSet patterns {ctx};</div>
-<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>  patterns.add&lt;NondetToNewArray&gt;(ctx);</div>
-<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>  ConversionTarget target {*ctx};</div>
-<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span> </div>
-<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  baseTargetSetup(target);</div>
-<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1NonDetOp.html">NonDetOp</a>&gt;([](<a class="code hl_class" href="classllzk_1_1NonDetOp.html">NonDetOp</a> op) { <span class="keywordflow">return</span> !isa&lt;ArrayType&gt;(op.getType()); });</div>
-<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span> </div>
-<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>  <span class="keywordflow">return</span> applyFullConversion(modOp, target, std::move(patterns));</div>
-<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>}</div>
-<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span></div>
-<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span><span class="keyword">static</span> LogicalResult</div>
-<div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span>step1(ModuleOp modOp, SymbolTableCollection &amp;symTables, MemberReplacementMap &amp;memberRepMap) {</div>
-<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>  MLIRContext *ctx = modOp.getContext();</div>
-<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span> </div>
-<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>  RewritePatternSet patterns(ctx);</div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>      <span class="keyword">auto</span> newArray = <a class="code hl_function" href="namespacellzk.html#a77841fb10c7b3448d90a0b3098262a15">preserveDiscardableAttrs</a>(</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>          nondetOp, rewriter.create&lt;<a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">CreateArrayOp</a>&gt;(nondetOp.getLoc(), wildcardTy)</div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>      );</div>
+<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>      <span class="keywordflow">if</span> (wildcardTy == at) {</div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>        rewriter.replaceOp(nondetOp, newArray);</div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>        <span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast</a> = rewriter.create&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&gt;(nondetOp.getLoc(), at, newArray);</div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>        rewriter.replaceOp(nondetOp, <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast</a>.getResult());</div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>      }</div>
+<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>      <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>    }</div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  }</div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>};</div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span></div>
+<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span><span class="keyword">static</span> LogicalResult step0(ModuleOp modOp) {</div>
+<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>  MLIRContext *ctx = modOp.getContext();</div>
+<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>  RewritePatternSet patterns {ctx};</div>
+<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span>  patterns.add&lt;NondetToNewArray&gt;(ctx);</div>
+<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  ConversionTarget target {*ctx};</div>
+<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span> </div>
+<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>  baseTargetSetup(target);</div>
+<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1NonDetOp.html">NonDetOp</a>&gt;([](<a class="code hl_class" href="classllzk_1_1NonDetOp.html">NonDetOp</a> op) { <span class="keywordflow">return</span> !isa&lt;ArrayType&gt;(op.getType()); });</div>
+<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span> </div>
+<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>  <span class="keywordflow">return</span> applyFullConversion(modOp, target, std::move(patterns));</div>
+<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>}</div>
+<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span></div>
+<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span><span class="keyword">static</span> LogicalResult</div>
+<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>step1(ModuleOp modOp, SymbolTableCollection &amp;symTables, MemberReplacementMap &amp;memberRepMap) {</div>
+<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>  MLIRContext *ctx = modOp.getContext();</div>
 <div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span> </div>
-<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>  patterns.add&lt;SplitArrayInMemberDefOp&gt;(ctx, symTables, memberRepMap);</div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>  RewritePatternSet patterns(ctx);</div>
 <div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span> </div>
-<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>  ConversionTarget target(*ctx);</div>
-<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>  baseTargetSetup(target);</div>
-<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&gt;(SplitArrayInMemberDefOp::legal);</div>
-<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span> </div>
-<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>  LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Begin step 1: split array-type members\n&quot;</span>;);</div>
-<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>  <span class="keywordflow">return</span> applyFullConversion(modOp, target, std::move(patterns));</div>
-<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>}</div>
-<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span></div>
-<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span><span class="keyword">static</span> LogicalResult</div>
-<div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span>step2(ModuleOp modOp, SymbolTableCollection &amp;symTables, <span class="keyword">const</span> MemberReplacementMap &amp;memberRepMap) {</div>
-<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>  MLIRContext *ctx = modOp.getContext();</div>
-<div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span> </div>
-<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>  RewritePatternSet patterns(ctx);</div>
-<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span>  patterns.add&lt;</div>
-<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>      <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>      SplitInitFromCreateArrayOp,</div>
-<div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>      SplitInsertArrayOp,</div>
-<div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>      SplitExtractArrayOp,</div>
-<div class="line"><a id="l00781" name="l00781"></a><span class="lineno">  781</span>      SplitArrayInFuncDefOp,</div>
-<div class="line"><a id="l00782" name="l00782"></a><span class="lineno">  782</span>      SplitArrayInReturnOp,</div>
-<div class="line"><a id="l00783" name="l00783"></a><span class="lineno">  783</span>      SplitArrayInCallOp,</div>
-<div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>      ReplaceKnownArrayLengthOp</div>
-<div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span>      <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00786" name="l00786"></a><span class="lineno">  786</span>      &gt;(ctx);</div>
-<div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span> </div>
-<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>  patterns.add&lt;</div>
-<div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span>      <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>      SplitArrayInMemberWriteOp,</div>
-<div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>      SplitArrayInMemberReadOp</div>
-<div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span>      <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00793" name="l00793"></a><span class="lineno">  793</span>      &gt;(ctx, symTables, memberRepMap);</div>
-<div class="line"><a id="l00794" name="l00794"></a><span class="lineno">  794</span> </div>
-<div class="line"><a id="l00795" name="l00795"></a><span class="lineno">  795</span>  ConversionTarget target(*ctx);</div>
-<div class="line"><a id="l00796" name="l00796"></a><span class="lineno">  796</span>  baseTargetSetup(target);</div>
-<div class="line"><a id="l00797" name="l00797"></a><span class="lineno">  797</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">CreateArrayOp</a>&gt;(SplitInitFromCreateArrayOp::legal);</div>
-<div class="line"><a id="l00798" name="l00798"></a><span class="lineno">  798</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1InsertArrayOp.html">InsertArrayOp</a>&gt;(SplitInsertArrayOp::legal);</div>
-<div class="line"><a id="l00799" name="l00799"></a><span class="lineno">  799</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1ExtractArrayOp.html">ExtractArrayOp</a>&gt;(SplitExtractArrayOp::legal);</div>
-<div class="line"><a id="l00800" name="l00800"></a><span class="lineno">  800</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(SplitArrayInFuncDefOp::legal);</div>
-<div class="line"><a id="l00801" name="l00801"></a><span class="lineno">  801</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1function_1_1ReturnOp.html">ReturnOp</a>&gt;(SplitArrayInReturnOp::legal);</div>
-<div class="line"><a id="l00802" name="l00802"></a><span class="lineno">  802</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(SplitArrayInCallOp::legal);</div>
-<div class="line"><a id="l00803" name="l00803"></a><span class="lineno">  803</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1ArrayLengthOp.html">ArrayLengthOp</a>&gt;(ReplaceKnownArrayLengthOp::legal);</div>
-<div class="line"><a id="l00804" name="l00804"></a><span class="lineno">  804</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&gt;(SplitArrayInMemberWriteOp::legal);</div>
-<div class="line"><a id="l00805" name="l00805"></a><span class="lineno">  805</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a>&gt;(SplitArrayInMemberReadOp::legal);</div>
-<div class="line"><a id="l00806" name="l00806"></a><span class="lineno">  806</span> </div>
-<div class="line"><a id="l00807" name="l00807"></a><span class="lineno">  807</span>  LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Begin step 2: update/split other array ops\n&quot;</span>;);</div>
-<div class="line"><a id="l00808" name="l00808"></a><span class="lineno">  808</span>  <span class="keywordflow">return</span> applyFullConversion(modOp, target, std::move(patterns));</div>
-<div class="line"><a id="l00809" name="l00809"></a><span class="lineno">  809</span>}</div>
-<div class="line"><a id="l00810" name="l00810"></a><span class="lineno">  810</span></div>
-<div class="line"><a id="l00812" name="l00812"></a><span class="lineno">  812</span><span class="keyword">inline</span> <span class="keyword">static</span> ArrayAttr getIndexAsAttr(<a class="code hl_class" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html">ArrayAccessOpInterface</a> op) {</div>
-<div class="line"><a id="l00813" name="l00813"></a><span class="lineno">  813</span>  <span class="keywordflow">return</span> op.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#a831aca5a0534efef367744de6bda2c96">indexOperandsToAttributeArray</a>();</div>
-<div class="line"><a id="l00814" name="l00814"></a><span class="lineno">  814</span>}</div>
-<div class="line"><a id="l00815" name="l00815"></a><span class="lineno">  815</span></div>
-<div class="line"><a id="l00817" name="l00817"></a><span class="lineno">  817</span><span class="keyword">static</span> <span class="keywordtype">bool</span> mayWriteToIndex(<a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> writeOp, ArrayAttr index) {</div>
-<div class="line"><a id="l00818" name="l00818"></a><span class="lineno">  818</span>  ArrayAttr writeIndex = getIndexAsAttr(writeOp);</div>
-<div class="line"><a id="l00819" name="l00819"></a><span class="lineno">  819</span>  <span class="keywordflow">return</span> !writeIndex || writeIndex == index;</div>
-<div class="line"><a id="l00820" name="l00820"></a><span class="lineno">  820</span>}</div>
-<div class="line"><a id="l00821" name="l00821"></a><span class="lineno">  821</span></div>
-<div class="line"><a id="l00823" name="l00823"></a><span class="lineno">  823</span><span class="keyword">static</span> <span class="keywordtype">bool</span> hasEarlierWriteInBlock(<a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">ReadArrayOp</a> readOp, ArrayAttr readIndex) {</div>
-<div class="line"><a id="l00824" name="l00824"></a><span class="lineno">  824</span>  Value arrRef = readOp.<a class="code hl_function" href="classllzk_1_1array_1_1ReadArrayOp.html#a4236ac2760d0041134b0c0e78385e0c0">getArrRef</a>();</div>
-<div class="line"><a id="l00825" name="l00825"></a><span class="lineno">  825</span>  <span class="keywordflow">for</span> (Operation &amp;op : *readOp-&gt;getBlock()) {</div>
-<div class="line"><a id="l00826" name="l00826"></a><span class="lineno">  826</span>    <span class="keywordflow">if</span> (&amp;op == readOp.getOperation()) {</div>
-<div class="line"><a id="l00827" name="l00827"></a><span class="lineno">  827</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00828" name="l00828"></a><span class="lineno">  828</span>    }</div>
-<div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span> </div>
-<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> writeOp = dyn_cast&lt;WriteArrayOp&gt;(&amp;op)) {</div>
-<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span>      <span class="keywordflow">if</span> (writeOp.<a class="code hl_function" href="classllzk_1_1array_1_1WriteArrayOp.html#ae22ed7f9c56c0ea845091ba8b8eead76">getArrRef</a>() == arrRef &amp;&amp; mayWriteToIndex(writeOp, readIndex)) {</div>
-<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>      }</div>
-<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span>    }</div>
-<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span> </div>
-<div class="line"><a id="l00837" name="l00837"></a><span class="lineno">  837</span>    <span class="comment">// Writes nested inside earlier operations may conditionally clobber the read&#39;s value.</span></div>
-<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>    <span class="keywordflow">if</span> (op.walk([arrRef, readIndex](<a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> writeOp) {</div>
-<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>      if (writeOp.getArrRef() == arrRef &amp;&amp; mayWriteToIndex(writeOp, readIndex)) {</div>
-<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>        return WalkResult::interrupt();</div>
-<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>      }</div>
-<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
-<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span>    }).wasInterrupted()) {</div>
-<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>    }</div>
-<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span>  }</div>
-<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span>}</div>
-<div class="line"><a id="l00849" name="l00849"></a><span class="lineno">  849</span></div>
-<div class="line"><a id="l00851" name="l00851"></a><span class="lineno">  851</span><span class="keyword">static</span> std::optional&lt;WriteArrayOp&gt; findPrecedingWriteForIfRead(<a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">ReadArrayOp</a> readOp) {</div>
-<div class="line"><a id="l00852" name="l00852"></a><span class="lineno">  852</span>  ArrayAttr readIndex = getIndexAsAttr(readOp);</div>
-<div class="line"><a id="l00853" name="l00853"></a><span class="lineno">  853</span>  <span class="keywordflow">if</span> (!readIndex) {</div>
-<div class="line"><a id="l00854" name="l00854"></a><span class="lineno">  854</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00855" name="l00855"></a><span class="lineno">  855</span>  }</div>
-<div class="line"><a id="l00856" name="l00856"></a><span class="lineno">  856</span> </div>
-<div class="line"><a id="l00857" name="l00857"></a><span class="lineno">  857</span>  <span class="comment">// Only handle reads that are direct children of an `scf.if` branch.</span></div>
-<div class="line"><a id="l00858" name="l00858"></a><span class="lineno">  858</span>  <span class="keyword">auto</span> ifOp = readOp-&gt;getParentOfType&lt;scf::IfOp&gt;();</div>
-<div class="line"><a id="l00859" name="l00859"></a><span class="lineno">  859</span>  <span class="keywordflow">if</span> (!ifOp || readOp-&gt;getBlock()-&gt;getParentOp() != ifOp.getOperation()) {</div>
-<div class="line"><a id="l00860" name="l00860"></a><span class="lineno">  860</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00861" name="l00861"></a><span class="lineno">  861</span>  }</div>
-<div class="line"><a id="l00862" name="l00862"></a><span class="lineno">  862</span>  <span class="keywordflow">if</span> (hasEarlierWriteInBlock(readOp, readIndex)) {</div>
-<div class="line"><a id="l00863" name="l00863"></a><span class="lineno">  863</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00864" name="l00864"></a><span class="lineno">  864</span>  }</div>
-<div class="line"><a id="l00865" name="l00865"></a><span class="lineno">  865</span> </div>
-<div class="line"><a id="l00866" name="l00866"></a><span class="lineno">  866</span>  Block *ifBlock = ifOp-&gt;getBlock();</div>
-<div class="line"><a id="l00867" name="l00867"></a><span class="lineno">  867</span>  <span class="keywordflow">if</span> (!ifBlock) {</div>
-<div class="line"><a id="l00868" name="l00868"></a><span class="lineno">  868</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00869" name="l00869"></a><span class="lineno">  869</span>  }</div>
-<div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span> </div>
-<div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span>  Value arrRef = readOp.<a class="code hl_function" href="classllzk_1_1array_1_1ReadArrayOp.html#a4236ac2760d0041134b0c0e78385e0c0">getArrRef</a>();</div>
-<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span>  <a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> replacement;</div>
-<div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span>  <span class="keywordflow">for</span> (Operation &amp;op : *ifBlock) {</div>
-<div class="line"><a id="l00874" name="l00874"></a><span class="lineno">  874</span>    <span class="keywordflow">if</span> (&amp;op == ifOp.getOperation()) {</div>
-<div class="line"><a id="l00875" name="l00875"></a><span class="lineno">  875</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00876" name="l00876"></a><span class="lineno">  876</span>    }</div>
-<div class="line"><a id="l00877" name="l00877"></a><span class="lineno">  877</span> </div>
-<div class="line"><a id="l00878" name="l00878"></a><span class="lineno">  878</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> writeOp = dyn_cast&lt;WriteArrayOp&gt;(&amp;op)) {</div>
-<div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span>      <span class="keywordflow">if</span> (writeOp.getArrRef() != arrRef) {</div>
-<div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>        <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>      }</div>
-<div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span> </div>
-<div class="line"><a id="l00883" name="l00883"></a><span class="lineno">  883</span>      <span class="keywordflow">if</span> (mayWriteToIndex(writeOp, readIndex)) {</div>
-<div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span>        ArrayAttr writeIndex = getIndexAsAttr(writeOp);</div>
-<div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span>        replacement = writeIndex == readIndex ? writeOp : <a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a>();</div>
-<div class="line"><a id="l00886" name="l00886"></a><span class="lineno">  886</span>      }</div>
-<div class="line"><a id="l00887" name="l00887"></a><span class="lineno">  887</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00888" name="l00888"></a><span class="lineno">  888</span>    }</div>
-<div class="line"><a id="l00889" name="l00889"></a><span class="lineno">  889</span> </div>
-<div class="line"><a id="l00890" name="l00890"></a><span class="lineno">  890</span>    <span class="comment">// A nested write before the `scf.if` may overwrite the current candidate.</span></div>
-<div class="line"><a id="l00891" name="l00891"></a><span class="lineno">  891</span>    <span class="keywordflow">if</span> (op.walk([arrRef, readIndex, &amp;replacement](<a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> writeOp) {</div>
-<div class="line"><a id="l00892" name="l00892"></a><span class="lineno">  892</span>      if (writeOp.getArrRef() == arrRef &amp;&amp; mayWriteToIndex(writeOp, readIndex)) {</div>
-<div class="line"><a id="l00893" name="l00893"></a><span class="lineno">  893</span>        replacement = WriteArrayOp();</div>
-<div class="line"><a id="l00894" name="l00894"></a><span class="lineno">  894</span>        return WalkResult::interrupt();</div>
-<div class="line"><a id="l00895" name="l00895"></a><span class="lineno">  895</span>      }</div>
-<div class="line"><a id="l00896" name="l00896"></a><span class="lineno">  896</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
-<div class="line"><a id="l00897" name="l00897"></a><span class="lineno">  897</span>    }).wasInterrupted()) {</div>
-<div class="line"><a id="l00898" name="l00898"></a><span class="lineno">  898</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00899" name="l00899"></a><span class="lineno">  899</span>    }</div>
-<div class="line"><a id="l00900" name="l00900"></a><span class="lineno">  900</span>  }</div>
-<div class="line"><a id="l00901" name="l00901"></a><span class="lineno">  901</span> </div>
-<div class="line"><a id="l00902" name="l00902"></a><span class="lineno">  902</span>  <span class="keywordflow">return</span> replacement ? std::make_optional(replacement) : std::nullopt;</div>
-<div class="line"><a id="l00903" name="l00903"></a><span class="lineno">  903</span>}</div>
-<div class="line"><a id="l00904" name="l00904"></a><span class="lineno">  904</span></div>
-<div class="line"><a id="l00907" name="l00907"></a><span class="lineno">  907</span><span class="keyword">static</span> <span class="keywordtype">void</span> step3(ModuleOp modOp) {</div>
-<div class="line"><a id="l00908" name="l00908"></a><span class="lineno">  908</span>  SmallVector&lt;std::pair&lt;ReadArrayOp, Value&gt;&gt; replacements;</div>
-<div class="line"><a id="l00909" name="l00909"></a><span class="lineno">  909</span>  modOp.walk([&amp;replacements](<a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">ReadArrayOp</a> readOp) {</div>
-<div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>    <span class="keywordflow">if</span> (std::optional&lt;WriteArrayOp&gt; writeOp = findPrecedingWriteForIfRead(readOp)) {</div>
-<div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span>      replacements.emplace_back(readOp, writeOp-&gt;getRvalue());</div>
-<div class="line"><a id="l00912" name="l00912"></a><span class="lineno">  912</span>    }</div>
-<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>  });</div>
-<div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span> </div>
-<div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [readOp, value] : replacements) {</div>
-<div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span>    readOp.<a class="code hl_function" href="classllzk_1_1array_1_1ReadArrayOp.html#a421a8303937f5b0f594b99dbcbf98d90">getResult</a>().replaceAllUsesWith(value);</div>
-<div class="line"><a id="l00917" name="l00917"></a><span class="lineno">  917</span>    readOp.erase();</div>
-<div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span>  }</div>
-<div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>}</div>
-<div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span></div>
-<div class="line"><a id="l00922" name="l00922"></a><span class="lineno">  922</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html">llzk::array::impl::ArrayToScalarPassBase</a>&lt;PassImpl&gt; {</div>
-<div class="line"><a id="l00923" name="l00923"></a><span class="lineno">  923</span>  <span class="keyword">using </span>Base = ArrayToScalarPassBase&lt;PassImpl&gt;;</div>
-<div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span>  <span class="keyword">using </span>Base::Base;</div>
-<div class="line"><a id="l00925" name="l00925"></a><span class="lineno">  925</span> </div>
-<div class="line"><a id="l00926" name="l00926"></a><span class="lineno">  926</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00927" name="l00927"></a><span class="lineno">  927</span>    ModuleOp module = getOperation();</div>
-<div class="line"><a id="l00928" name="l00928"></a><span class="lineno">  928</span> </div>
-<div class="line"><a id="l00929" name="l00929"></a><span class="lineno">  929</span>    <span class="keywordflow">if</span> (failed(step0(module))) {</div>
-<div class="line"><a id="l00930" name="l00930"></a><span class="lineno">  930</span>      <span class="keywordflow">return</span> signalPassFailure();</div>
-<div class="line"><a id="l00931" name="l00931"></a><span class="lineno">  931</span>    }</div>
-<div class="line"><a id="l00932" name="l00932"></a><span class="lineno">  932</span>    LLVM_DEBUG({</div>
-<div class="line"><a id="l00933" name="l00933"></a><span class="lineno">  933</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 0:\n&quot;</span>;</div>
-<div class="line"><a id="l00934" name="l00934"></a><span class="lineno">  934</span>      <span class="keyword">module</span>.dump();</div>
-<div class="line"><a id="l00935" name="l00935"></a><span class="lineno">  935</span>    });</div>
-<div class="line"><a id="l00936" name="l00936"></a><span class="lineno">  936</span> </div>
-<div class="line"><a id="l00937" name="l00937"></a><span class="lineno">  937</span>    {</div>
-<div class="line"><a id="l00938" name="l00938"></a><span class="lineno">  938</span>      <span class="comment">// This is divided into 2 steps to simplify the implementation for member-related ops. The</span></div>
-<div class="line"><a id="l00939" name="l00939"></a><span class="lineno">  939</span>      <span class="comment">// issue is that the conversions for member read/write expect the mapping of array index to</span></div>
-<div class="line"><a id="l00940" name="l00940"></a><span class="lineno">  940</span>      <span class="comment">// member name+type to already be populated for the referenced member (although this could be</span></div>
-<div class="line"><a id="l00941" name="l00941"></a><span class="lineno">  941</span>      <span class="comment">// computed on demand if desired but it complicates the implementation a bit).</span></div>
-<div class="line"><a id="l00942" name="l00942"></a><span class="lineno">  942</span>      SymbolTableCollection symTables;</div>
-<div class="line"><a id="l00943" name="l00943"></a><span class="lineno">  943</span>      MemberReplacementMap memberRepMap;</div>
-<div class="line"><a id="l00944" name="l00944"></a><span class="lineno">  944</span>      <span class="keywordflow">if</span> (failed(step1(module, symTables, memberRepMap))) {</div>
-<div class="line"><a id="l00945" name="l00945"></a><span class="lineno">  945</span>        <span class="keywordflow">return</span> signalPassFailure();</div>
-<div class="line"><a id="l00946" name="l00946"></a><span class="lineno">  946</span>      }</div>
-<div class="line"><a id="l00947" name="l00947"></a><span class="lineno">  947</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l00948" name="l00948"></a><span class="lineno">  948</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 1:\n&quot;</span>;</div>
-<div class="line"><a id="l00949" name="l00949"></a><span class="lineno">  949</span>        <span class="keyword">module</span>.dump();</div>
-<div class="line"><a id="l00950" name="l00950"></a><span class="lineno">  950</span>      });</div>
-<div class="line"><a id="l00951" name="l00951"></a><span class="lineno">  951</span> </div>
-<div class="line"><a id="l00952" name="l00952"></a><span class="lineno">  952</span>      <span class="keywordflow">if</span> (failed(step2(module, symTables, memberRepMap))) {</div>
-<div class="line"><a id="l00953" name="l00953"></a><span class="lineno">  953</span>        <span class="keywordflow">return</span> signalPassFailure();</div>
-<div class="line"><a id="l00954" name="l00954"></a><span class="lineno">  954</span>      }</div>
-<div class="line"><a id="l00955" name="l00955"></a><span class="lineno">  955</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l00956" name="l00956"></a><span class="lineno">  956</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 2:\n&quot;</span>;</div>
-<div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span>        <span class="keyword">module</span>.dump();</div>
-<div class="line"><a id="l00958" name="l00958"></a><span class="lineno">  958</span>      });</div>
-<div class="line"><a id="l00959" name="l00959"></a><span class="lineno">  959</span>    }</div>
-<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span> </div>
-<div class="line"><a id="l00961" name="l00961"></a><span class="lineno">  961</span>    step3(module);</div>
-<div class="line"><a id="l00962" name="l00962"></a><span class="lineno">  962</span>    LLVM_DEBUG({</div>
-<div class="line"><a id="l00963" name="l00963"></a><span class="lineno">  963</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 3:\n&quot;</span>;</div>
-<div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>      <span class="keyword">module</span>.dump();</div>
-<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>    });</div>
-<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span> </div>
-<div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span>    OpPassManager nestedPM(ModuleOp::getOperationName());</div>
-<div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span>    <span class="comment">// Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`</span></div>
-<div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>    <span class="comment">// arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing</span></div>
-<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>    <span class="comment">// and splitting up memory, i.e., it can only convert scalar memory access into SSA values.</span></div>
-<div class="line"><a id="l00971" name="l00971"></a><span class="lineno">  971</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">createSpecializedSROAPass&lt;CreateArrayOp&gt;</a>());</div>
-<div class="line"><a id="l00972" name="l00972"></a><span class="lineno">  972</span>    <span class="comment">// The mem2reg pass converts all of the size-1 array allocation and access into SSA values.</span></div>
-<div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">createSpecializedMem2RegPass&lt;CreateArrayOp&gt;</a>());</div>
-<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>    <span class="comment">// Cleanup allocations made dead by memory promotion.</span></div>
-<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">createRemoveUnusedDiscardableAllocationsPass</a>(</div>
-<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>        RemoveUnusedDiscardableAllocationsPassOptions {</div>
-<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>            .allocatorOpName = <a class="code hl_function" href="classllzk_1_1array_1_1CreateArrayOp.html#ac5d71ab4b9a38f80107c775af6a7c097">CreateArrayOp::getOperationName</a>().str()</div>
-<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>        }</div>
-<div class="line"><a id="l00979" name="l00979"></a><span class="lineno">  979</span>    ));</div>
-<div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>    <span class="comment">// Cleanup SSA values made dead by removing allocations and writes.</span></div>
-<div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#a3ab490f475f65197f682c34e68953b29">createRemoveDeadValuesWorkaroundPass</a>());</div>
-<div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>    <span class="keywordflow">if</span> (failed(runPipeline(nestedPM, module))) {</div>
-<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>      signalPassFailure();</div>
-<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>    }</div>
-<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>    LLVM_DEBUG({</div>
-<div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After SROA+Mem2Reg pipeline:\n&quot;</span>;</div>
-<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>      <span class="keyword">module</span>.dump();</div>
-<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>    });</div>
-<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span>  }</div>
-<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>};</div>
-<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span> </div>
-<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>  patterns.add&lt;SplitArrayInMemberDefOp&gt;(ctx, symTables, memberRepMap);</div>
+<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span> </div>
+<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>  ConversionTarget target(*ctx);</div>
+<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>  baseTargetSetup(target);</div>
+<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&gt;(SplitArrayInMemberDefOp::legal);</div>
+<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span> </div>
+<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>  LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Begin step 1: split array-type members\n&quot;</span>;);</div>
+<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>  <span class="keywordflow">return</span> applyFullConversion(modOp, target, std::move(patterns));</div>
+<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>}</div>
+<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span></div>
+<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span><span class="keyword">static</span> LogicalResult</div>
+<div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>step2(ModuleOp modOp, SymbolTableCollection &amp;symTables, <span class="keyword">const</span> MemberReplacementMap &amp;memberRepMap) {</div>
+<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>  MLIRContext *ctx = modOp.getContext();</div>
+<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span> </div>
+<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>  RewritePatternSet patterns(ctx);</div>
+<div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>  patterns.add&lt;</div>
+<div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>      <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>      SplitInitFromCreateArrayOp,</div>
+<div class="line"><a id="l00781" name="l00781"></a><span class="lineno">  781</span>      SplitInsertArrayOp,</div>
+<div class="line"><a id="l00782" name="l00782"></a><span class="lineno">  782</span>      SplitExtractArrayOp,</div>
+<div class="line"><a id="l00783" name="l00783"></a><span class="lineno">  783</span>      SplitArrayInFuncDefOp,</div>
+<div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>      SplitArrayInReturnOp,</div>
+<div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span>      SplitArrayInCallOp,</div>
+<div class="line"><a id="l00786" name="l00786"></a><span class="lineno">  786</span>      ReplaceKnownArrayLengthOp</div>
+<div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span>      <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>      &gt;(ctx);</div>
+<div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span> </div>
+<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>  patterns.add&lt;</div>
+<div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>      <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span>      SplitArrayInMemberWriteOp,</div>
+<div class="line"><a id="l00793" name="l00793"></a><span class="lineno">  793</span>      SplitArrayInMemberReadOp</div>
+<div class="line"><a id="l00794" name="l00794"></a><span class="lineno">  794</span>      <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00795" name="l00795"></a><span class="lineno">  795</span>      &gt;(ctx, symTables, memberRepMap);</div>
+<div class="line"><a id="l00796" name="l00796"></a><span class="lineno">  796</span> </div>
+<div class="line"><a id="l00797" name="l00797"></a><span class="lineno">  797</span>  ConversionTarget target(*ctx);</div>
+<div class="line"><a id="l00798" name="l00798"></a><span class="lineno">  798</span>  baseTargetSetup(target);</div>
+<div class="line"><a id="l00799" name="l00799"></a><span class="lineno">  799</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">CreateArrayOp</a>&gt;(SplitInitFromCreateArrayOp::legal);</div>
+<div class="line"><a id="l00800" name="l00800"></a><span class="lineno">  800</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1InsertArrayOp.html">InsertArrayOp</a>&gt;(SplitInsertArrayOp::legal);</div>
+<div class="line"><a id="l00801" name="l00801"></a><span class="lineno">  801</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1ExtractArrayOp.html">ExtractArrayOp</a>&gt;(SplitExtractArrayOp::legal);</div>
+<div class="line"><a id="l00802" name="l00802"></a><span class="lineno">  802</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(SplitArrayInFuncDefOp::legal);</div>
+<div class="line"><a id="l00803" name="l00803"></a><span class="lineno">  803</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1function_1_1ReturnOp.html">ReturnOp</a>&gt;(SplitArrayInReturnOp::legal);</div>
+<div class="line"><a id="l00804" name="l00804"></a><span class="lineno">  804</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(SplitArrayInCallOp::legal);</div>
+<div class="line"><a id="l00805" name="l00805"></a><span class="lineno">  805</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1array_1_1ArrayLengthOp.html">ArrayLengthOp</a>&gt;(ReplaceKnownArrayLengthOp::legal);</div>
+<div class="line"><a id="l00806" name="l00806"></a><span class="lineno">  806</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&gt;(SplitArrayInMemberWriteOp::legal);</div>
+<div class="line"><a id="l00807" name="l00807"></a><span class="lineno">  807</span>  target.addDynamicallyLegalOp&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a>&gt;(SplitArrayInMemberReadOp::legal);</div>
+<div class="line"><a id="l00808" name="l00808"></a><span class="lineno">  808</span> </div>
+<div class="line"><a id="l00809" name="l00809"></a><span class="lineno">  809</span>  LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Begin step 2: update/split other array ops\n&quot;</span>;);</div>
+<div class="line"><a id="l00810" name="l00810"></a><span class="lineno">  810</span>  <span class="keywordflow">return</span> applyFullConversion(modOp, target, std::move(patterns));</div>
+<div class="line"><a id="l00811" name="l00811"></a><span class="lineno">  811</span>}</div>
+<div class="line"><a id="l00812" name="l00812"></a><span class="lineno">  812</span></div>
+<div class="line"><a id="l00814" name="l00814"></a><span class="lineno">  814</span><span class="keyword">inline</span> <span class="keyword">static</span> ArrayAttr getIndexAsAttr(<a class="code hl_class" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html">ArrayAccessOpInterface</a> op) {</div>
+<div class="line"><a id="l00815" name="l00815"></a><span class="lineno">  815</span>  <span class="keywordflow">return</span> op.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#a831aca5a0534efef367744de6bda2c96">indexOperandsToAttributeArray</a>();</div>
+<div class="line"><a id="l00816" name="l00816"></a><span class="lineno">  816</span>}</div>
+<div class="line"><a id="l00817" name="l00817"></a><span class="lineno">  817</span></div>
+<div class="line"><a id="l00819" name="l00819"></a><span class="lineno">  819</span><span class="keyword">static</span> <span class="keywordtype">bool</span> mayWriteToIndex(<a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> writeOp, ArrayAttr index) {</div>
+<div class="line"><a id="l00820" name="l00820"></a><span class="lineno">  820</span>  ArrayAttr writeIndex = getIndexAsAttr(writeOp);</div>
+<div class="line"><a id="l00821" name="l00821"></a><span class="lineno">  821</span>  <span class="keywordflow">return</span> !writeIndex || writeIndex == index;</div>
+<div class="line"><a id="l00822" name="l00822"></a><span class="lineno">  822</span>}</div>
+<div class="line"><a id="l00823" name="l00823"></a><span class="lineno">  823</span></div>
+<div class="line"><a id="l00825" name="l00825"></a><span class="lineno">  825</span><span class="keyword">static</span> <span class="keywordtype">bool</span> hasEarlierWriteInBlock(<a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">ReadArrayOp</a> readOp, ArrayAttr readIndex) {</div>
+<div class="line"><a id="l00826" name="l00826"></a><span class="lineno">  826</span>  Value arrRef = readOp.<a class="code hl_function" href="classllzk_1_1array_1_1ReadArrayOp.html#a4236ac2760d0041134b0c0e78385e0c0">getArrRef</a>();</div>
+<div class="line"><a id="l00827" name="l00827"></a><span class="lineno">  827</span>  <span class="keywordflow">for</span> (Operation &amp;op : *readOp-&gt;getBlock()) {</div>
+<div class="line"><a id="l00828" name="l00828"></a><span class="lineno">  828</span>    <span class="keywordflow">if</span> (&amp;op == readOp.getOperation()) {</div>
+<div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span>    }</div>
+<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span> </div>
+<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> writeOp = dyn_cast&lt;WriteArrayOp&gt;(&amp;op)) {</div>
+<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>      <span class="keywordflow">if</span> (writeOp.<a class="code hl_function" href="classllzk_1_1array_1_1WriteArrayOp.html#ae22ed7f9c56c0ea845091ba8b8eead76">getArrRef</a>() == arrRef &amp;&amp; mayWriteToIndex(writeOp, readIndex)) {</div>
+<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span>      }</div>
+<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00837" name="l00837"></a><span class="lineno">  837</span>    }</div>
+<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span> </div>
+<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>    <span class="comment">// Writes nested inside earlier operations may conditionally clobber the read&#39;s value.</span></div>
+<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>    <span class="keywordflow">if</span> (op.walk([arrRef, readIndex](<a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> writeOp) {</div>
+<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>      if (writeOp.getArrRef() == arrRef &amp;&amp; mayWriteToIndex(writeOp, readIndex)) {</div>
+<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>        return WalkResult::interrupt();</div>
+<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span>      }</div>
+<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
+<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>    }).wasInterrupted()) {</div>
+<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span>    }</div>
+<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span>  }</div>
+<div class="line"><a id="l00849" name="l00849"></a><span class="lineno">  849</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00850" name="l00850"></a><span class="lineno">  850</span>}</div>
+<div class="line"><a id="l00851" name="l00851"></a><span class="lineno">  851</span></div>
+<div class="line"><a id="l00853" name="l00853"></a><span class="lineno">  853</span><span class="keyword">static</span> std::optional&lt;WriteArrayOp&gt; findPrecedingWriteForIfRead(<a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">ReadArrayOp</a> readOp) {</div>
+<div class="line"><a id="l00854" name="l00854"></a><span class="lineno">  854</span>  ArrayAttr readIndex = getIndexAsAttr(readOp);</div>
+<div class="line"><a id="l00855" name="l00855"></a><span class="lineno">  855</span>  <span class="keywordflow">if</span> (!readIndex) {</div>
+<div class="line"><a id="l00856" name="l00856"></a><span class="lineno">  856</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00857" name="l00857"></a><span class="lineno">  857</span>  }</div>
+<div class="line"><a id="l00858" name="l00858"></a><span class="lineno">  858</span> </div>
+<div class="line"><a id="l00859" name="l00859"></a><span class="lineno">  859</span>  <span class="comment">// Only handle reads that are direct children of an `scf.if` branch.</span></div>
+<div class="line"><a id="l00860" name="l00860"></a><span class="lineno">  860</span>  <span class="keyword">auto</span> ifOp = readOp-&gt;getParentOfType&lt;scf::IfOp&gt;();</div>
+<div class="line"><a id="l00861" name="l00861"></a><span class="lineno">  861</span>  <span class="keywordflow">if</span> (!ifOp || readOp-&gt;getBlock()-&gt;getParentOp() != ifOp.getOperation()) {</div>
+<div class="line"><a id="l00862" name="l00862"></a><span class="lineno">  862</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00863" name="l00863"></a><span class="lineno">  863</span>  }</div>
+<div class="line"><a id="l00864" name="l00864"></a><span class="lineno">  864</span>  <span class="keywordflow">if</span> (hasEarlierWriteInBlock(readOp, readIndex)) {</div>
+<div class="line"><a id="l00865" name="l00865"></a><span class="lineno">  865</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00866" name="l00866"></a><span class="lineno">  866</span>  }</div>
+<div class="line"><a id="l00867" name="l00867"></a><span class="lineno">  867</span> </div>
+<div class="line"><a id="l00868" name="l00868"></a><span class="lineno">  868</span>  Block *ifBlock = ifOp-&gt;getBlock();</div>
+<div class="line"><a id="l00869" name="l00869"></a><span class="lineno">  869</span>  <span class="keywordflow">if</span> (!ifBlock) {</div>
+<div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span>  }</div>
+<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span> </div>
+<div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span>  Value arrRef = readOp.<a class="code hl_function" href="classllzk_1_1array_1_1ReadArrayOp.html#a4236ac2760d0041134b0c0e78385e0c0">getArrRef</a>();</div>
+<div class="line"><a id="l00874" name="l00874"></a><span class="lineno">  874</span>  <a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> replacement;</div>
+<div class="line"><a id="l00875" name="l00875"></a><span class="lineno">  875</span>  <span class="keywordflow">for</span> (Operation &amp;op : *ifBlock) {</div>
+<div class="line"><a id="l00876" name="l00876"></a><span class="lineno">  876</span>    <span class="keywordflow">if</span> (&amp;op == ifOp.getOperation()) {</div>
+<div class="line"><a id="l00877" name="l00877"></a><span class="lineno">  877</span>      <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00878" name="l00878"></a><span class="lineno">  878</span>    }</div>
+<div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span> </div>
+<div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> writeOp = dyn_cast&lt;WriteArrayOp&gt;(&amp;op)) {</div>
+<div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>      <span class="keywordflow">if</span> (writeOp.getArrRef() != arrRef) {</div>
+<div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00883" name="l00883"></a><span class="lineno">  883</span>      }</div>
+<div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span> </div>
+<div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span>      <span class="keywordflow">if</span> (mayWriteToIndex(writeOp, readIndex)) {</div>
+<div class="line"><a id="l00886" name="l00886"></a><span class="lineno">  886</span>        ArrayAttr writeIndex = getIndexAsAttr(writeOp);</div>
+<div class="line"><a id="l00887" name="l00887"></a><span class="lineno">  887</span>        replacement = writeIndex == readIndex ? writeOp : <a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a>();</div>
+<div class="line"><a id="l00888" name="l00888"></a><span class="lineno">  888</span>      }</div>
+<div class="line"><a id="l00889" name="l00889"></a><span class="lineno">  889</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00890" name="l00890"></a><span class="lineno">  890</span>    }</div>
+<div class="line"><a id="l00891" name="l00891"></a><span class="lineno">  891</span> </div>
+<div class="line"><a id="l00892" name="l00892"></a><span class="lineno">  892</span>    <span class="comment">// A nested write before the `scf.if` may overwrite the current candidate.</span></div>
+<div class="line"><a id="l00893" name="l00893"></a><span class="lineno">  893</span>    <span class="keywordflow">if</span> (op.walk([arrRef, readIndex, &amp;replacement](<a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">WriteArrayOp</a> writeOp) {</div>
+<div class="line"><a id="l00894" name="l00894"></a><span class="lineno">  894</span>      if (writeOp.getArrRef() == arrRef &amp;&amp; mayWriteToIndex(writeOp, readIndex)) {</div>
+<div class="line"><a id="l00895" name="l00895"></a><span class="lineno">  895</span>        replacement = WriteArrayOp();</div>
+<div class="line"><a id="l00896" name="l00896"></a><span class="lineno">  896</span>        return WalkResult::interrupt();</div>
+<div class="line"><a id="l00897" name="l00897"></a><span class="lineno">  897</span>      }</div>
+<div class="line"><a id="l00898" name="l00898"></a><span class="lineno">  898</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
+<div class="line"><a id="l00899" name="l00899"></a><span class="lineno">  899</span>    }).wasInterrupted()) {</div>
+<div class="line"><a id="l00900" name="l00900"></a><span class="lineno">  900</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00901" name="l00901"></a><span class="lineno">  901</span>    }</div>
+<div class="line"><a id="l00902" name="l00902"></a><span class="lineno">  902</span>  }</div>
+<div class="line"><a id="l00903" name="l00903"></a><span class="lineno">  903</span> </div>
+<div class="line"><a id="l00904" name="l00904"></a><span class="lineno">  904</span>  <span class="keywordflow">return</span> replacement ? std::make_optional(replacement) : std::nullopt;</div>
+<div class="line"><a id="l00905" name="l00905"></a><span class="lineno">  905</span>}</div>
+<div class="line"><a id="l00906" name="l00906"></a><span class="lineno">  906</span></div>
+<div class="line"><a id="l00909" name="l00909"></a><span class="lineno">  909</span><span class="keyword">static</span> <span class="keywordtype">void</span> step3(ModuleOp modOp) {</div>
+<div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>  SmallVector&lt;std::pair&lt;ReadArrayOp, Value&gt;&gt; replacements;</div>
+<div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span>  modOp.walk([&amp;replacements](<a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">ReadArrayOp</a> readOp) {</div>
+<div class="line"><a id="l00912" name="l00912"></a><span class="lineno">  912</span>    <span class="keywordflow">if</span> (std::optional&lt;WriteArrayOp&gt; writeOp = findPrecedingWriteForIfRead(readOp)) {</div>
+<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>      replacements.emplace_back(readOp, writeOp-&gt;getRvalue());</div>
+<div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span>    }</div>
+<div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>  });</div>
+<div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span> </div>
+<div class="line"><a id="l00917" name="l00917"></a><span class="lineno">  917</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [readOp, value] : replacements) {</div>
+<div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span>    readOp.<a class="code hl_function" href="classllzk_1_1array_1_1ReadArrayOp.html#a421a8303937f5b0f594b99dbcbf98d90">getResult</a>().replaceAllUsesWith(value);</div>
+<div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>    readOp.erase();</div>
+<div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span>  }</div>
+<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span>}</div>
+<div class="line"><a id="l00922" name="l00922"></a><span class="lineno">  922</span></div>
+<div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html">llzk::array::impl::ArrayToScalarPassBase</a>&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00925" name="l00925"></a><span class="lineno">  925</span>  <span class="keyword">using </span>Base = ArrayToScalarPassBase&lt;PassImpl&gt;;</div>
+<div class="line"><a id="l00926" name="l00926"></a><span class="lineno">  926</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00927" name="l00927"></a><span class="lineno">  927</span> </div>
+<div class="line"><a id="l00928" name="l00928"></a><span class="lineno">  928</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00929" name="l00929"></a><span class="lineno">  929</span>    ModuleOp module = getOperation();</div>
+<div class="line"><a id="l00930" name="l00930"></a><span class="lineno">  930</span> </div>
+<div class="line"><a id="l00931" name="l00931"></a><span class="lineno">  931</span>    <span class="keywordflow">if</span> (failed(step0(module))) {</div>
+<div class="line"><a id="l00932" name="l00932"></a><span class="lineno">  932</span>      <span class="keywordflow">return</span> signalPassFailure();</div>
+<div class="line"><a id="l00933" name="l00933"></a><span class="lineno">  933</span>    }</div>
+<div class="line"><a id="l00934" name="l00934"></a><span class="lineno">  934</span>    LLVM_DEBUG({</div>
+<div class="line"><a id="l00935" name="l00935"></a><span class="lineno">  935</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 0:\n&quot;</span>;</div>
+<div class="line"><a id="l00936" name="l00936"></a><span class="lineno">  936</span>      <span class="keyword">module</span>.dump();</div>
+<div class="line"><a id="l00937" name="l00937"></a><span class="lineno">  937</span>    });</div>
+<div class="line"><a id="l00938" name="l00938"></a><span class="lineno">  938</span> </div>
+<div class="line"><a id="l00939" name="l00939"></a><span class="lineno">  939</span>    {</div>
+<div class="line"><a id="l00940" name="l00940"></a><span class="lineno">  940</span>      <span class="comment">// This is divided into 2 steps to simplify the implementation for member-related ops. The</span></div>
+<div class="line"><a id="l00941" name="l00941"></a><span class="lineno">  941</span>      <span class="comment">// issue is that the conversions for member read/write expect the mapping of array index to</span></div>
+<div class="line"><a id="l00942" name="l00942"></a><span class="lineno">  942</span>      <span class="comment">// member name+type to already be populated for the referenced member (although this could be</span></div>
+<div class="line"><a id="l00943" name="l00943"></a><span class="lineno">  943</span>      <span class="comment">// computed on demand if desired but it complicates the implementation a bit).</span></div>
+<div class="line"><a id="l00944" name="l00944"></a><span class="lineno">  944</span>      SymbolTableCollection symTables;</div>
+<div class="line"><a id="l00945" name="l00945"></a><span class="lineno">  945</span>      MemberReplacementMap memberRepMap;</div>
+<div class="line"><a id="l00946" name="l00946"></a><span class="lineno">  946</span>      <span class="keywordflow">if</span> (failed(step1(module, symTables, memberRepMap))) {</div>
+<div class="line"><a id="l00947" name="l00947"></a><span class="lineno">  947</span>        <span class="keywordflow">return</span> signalPassFailure();</div>
+<div class="line"><a id="l00948" name="l00948"></a><span class="lineno">  948</span>      }</div>
+<div class="line"><a id="l00949" name="l00949"></a><span class="lineno">  949</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l00950" name="l00950"></a><span class="lineno">  950</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 1:\n&quot;</span>;</div>
+<div class="line"><a id="l00951" name="l00951"></a><span class="lineno">  951</span>        <span class="keyword">module</span>.dump();</div>
+<div class="line"><a id="l00952" name="l00952"></a><span class="lineno">  952</span>      });</div>
+<div class="line"><a id="l00953" name="l00953"></a><span class="lineno">  953</span> </div>
+<div class="line"><a id="l00954" name="l00954"></a><span class="lineno">  954</span>      <span class="keywordflow">if</span> (failed(step2(module, symTables, memberRepMap))) {</div>
+<div class="line"><a id="l00955" name="l00955"></a><span class="lineno">  955</span>        <span class="keywordflow">return</span> signalPassFailure();</div>
+<div class="line"><a id="l00956" name="l00956"></a><span class="lineno">  956</span>      }</div>
+<div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l00958" name="l00958"></a><span class="lineno">  958</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 2:\n&quot;</span>;</div>
+<div class="line"><a id="l00959" name="l00959"></a><span class="lineno">  959</span>        <span class="keyword">module</span>.dump();</div>
+<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>      });</div>
+<div class="line"><a id="l00961" name="l00961"></a><span class="lineno">  961</span>    }</div>
+<div class="line"><a id="l00962" name="l00962"></a><span class="lineno">  962</span> </div>
+<div class="line"><a id="l00963" name="l00963"></a><span class="lineno">  963</span>    step3(module);</div>
+<div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>    LLVM_DEBUG({</div>
+<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After step 3:\n&quot;</span>;</div>
+<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>      <span class="keyword">module</span>.dump();</div>
+<div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span>    });</div>
+<div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span> </div>
+<div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>    OpPassManager nestedPM(ModuleOp::getOperationName());</div>
+<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>    <span class="comment">// Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`</span></div>
+<div class="line"><a id="l00971" name="l00971"></a><span class="lineno">  971</span>    <span class="comment">// arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing</span></div>
+<div class="line"><a id="l00972" name="l00972"></a><span class="lineno">  972</span>    <span class="comment">// and splitting up memory, i.e., it can only convert scalar memory access into SSA values.</span></div>
+<div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">createSpecializedSROAPass&lt;CreateArrayOp&gt;</a>());</div>
+<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>    <span class="comment">// The mem2reg pass converts all of the size-1 array allocation and access into SSA values.</span></div>
+<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">createSpecializedMem2RegPass&lt;CreateArrayOp&gt;</a>());</div>
+<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>    <span class="comment">// Cleanup allocations made dead by memory promotion.</span></div>
+<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">createRemoveUnusedDiscardableAllocationsPass</a>(</div>
+<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>        RemoveUnusedDiscardableAllocationsPassOptions {</div>
+<div class="line"><a id="l00979" name="l00979"></a><span class="lineno">  979</span>            .allocatorOpName = <a class="code hl_function" href="classllzk_1_1array_1_1CreateArrayOp.html#ac5d71ab4b9a38f80107c775af6a7c097">CreateArrayOp::getOperationName</a>().str()</div>
+<div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>        }</div>
+<div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>    ));</div>
+<div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>    <span class="comment">// Cleanup SSA values made dead by removing allocations and writes.</span></div>
+<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>    nestedPM.addPass(<a class="code hl_function" href="namespacellzk.html#a3ab490f475f65197f682c34e68953b29">createRemoveDeadValuesWorkaroundPass</a>());</div>
+<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>    <span class="keywordflow">if</span> (failed(runPipeline(nestedPM, module))) {</div>
+<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>      signalPassFailure();</div>
+<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span>    }</div>
+<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>    LLVM_DEBUG({</div>
+<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;After SROA+Mem2Reg pipeline:\n&quot;</span>;</div>
+<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span>      <span class="keyword">module</span>.dump();</div>
+<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>    });</div>
+<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span>  }</div>
+<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span>};</div>
+<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span> </div>
+<div class="line"><a id="l00995" name="l00995"></a><span class="lineno">  995</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aArrayTypeHelper_8h_html"><div class="ttname"><a href="ArrayTypeHelper_8h.html">ArrayTypeHelper.h</a></div></div>
 <div class="ttc" id="aArray_2IR_2Dialect_8h_html"><div class="ttname"><a href="Array_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -1090,11 +1092,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="ttc" id="aCompare_8h_html"><div class="ttname"><a href="Compare_8h.html">Compare.h</a></div></div>
 <div class="ttc" id="aConcepts_8h_html"><div class="ttname"><a href="Concepts_8h.html">Concepts.h</a></div></div>
 <div class="ttc" id="aConstrain_2IR_2Dialect_8h_html"><div class="ttname"><a href="Constrain_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
+<div class="ttc" id="aConversionUtils_8h_html"><div class="ttname"><a href="ConversionUtils_8h.html">ConversionUtils.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Dialect_8h_html"><div class="ttname"><a href="Felt_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Dialect_8h_html"><div class="ttname"><a href="Function_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aInclude_2IR_2Dialect_8h_html"><div class="ttname"><a href="Include_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
-<div class="ttc" id="aLLZKConversionUtils_8h_html"><div class="ttname"><a href="LLZKConversionUtils_8h.html">LLZKConversionUtils.h</a></div></div>
 <div class="ttc" id="aLLZKTransformationPasses_8h_html"><div class="ttname"><a href="LLZKTransformationPasses_8h.html">LLZKTransformationPasses.h</a></div></div>
 <div class="ttc" id="aLLZK_2IR_2Dialect_8h_html"><div class="ttname"><a href="LLZK_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aLLZK_2IR_2Ops_8h_html"><div class="ttname"><a href="LLZK_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -1105,10 +1107,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="ttc" id="aSpecializedMemoryPasses_8h_html"><div class="ttname"><a href="SpecializedMemoryPasses_8h.html">SpecializedMemoryPasses.h</a></div><div class="ttdoc">Provides SpecializedSROA&lt;AllocOpTy&gt; and SpecializedMem2Reg&lt;AllocOpTy&gt;: pass templates that replicate ...</div></div>
 <div class="ttc" id="aString_2IR_2Dialect_8h_html"><div class="ttname"><a href="String_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Ops_8h_html"><div class="ttname"><a href="Struct_2IR_2Ops_8h.html">Ops.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1FunctionTypeConverter_html"><div class="ttname"><a href="classllzk_1_1FunctionTypeConverter.html">llzk::FunctionTypeConverter</a></div><div class="ttdoc">General helper for converting a FuncDefOp by changing its input and/or result types and the associate...</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00215">LLZKConversionUtils.h:215</a></div></div>
+<div class="ttc" id="aclassllzk_1_1FunctionTypeConverter_html"><div class="ttname"><a href="classllzk_1_1FunctionTypeConverter.html">llzk::FunctionTypeConverter</a></div><div class="ttdoc">General helper for converting a FuncDefOp by changing its input and/or result types and the associate...</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00258">ConversionUtils.h:258</a></div></div>
 <div class="ttc" id="aclassllzk_1_1LLZKDialect_html"><div class="ttname"><a href="classllzk_1_1LLZKDialect.html">llzk::LLZKDialect</a></div><div class="ttdef"><b>Definition</b> <a href="LLZK_2IR_2Dialect_8h_8inc_source.html#l00012">Dialect.h.inc:12</a></div></div>
 <div class="ttc" id="aclassllzk_1_1NonDetOp_html"><div class="ttname"><a href="classllzk_1_1NonDetOp.html">llzk::NonDetOp</a></div><div class="ttdef"><b>Definition</b> <a href="LLZK_2IR_2Ops_8h_8inc_source.html#l00084">Ops.h.inc:84</a></div></div>
-<div class="ttc" id="aclassllzk_1_1SplitAggregateInMemberRefOp_html"><div class="ttname"><a href="classllzk_1_1SplitAggregateInMemberRefOp.html">llzk::SplitAggregateInMemberRefOp</a></div><div class="ttdoc">Common implementation for handling MemberWriteOp and MemberReadOp while destructuring an aggregate ty...</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00291">LLZKConversionUtils.h:291</a></div></div>
+<div class="ttc" id="aclassllzk_1_1SplitAggregateInMemberRefOp_html"><div class="ttname"><a href="classllzk_1_1SplitAggregateInMemberRefOp.html">llzk::SplitAggregateInMemberRefOp</a></div><div class="ttdoc">Common implementation for handling MemberWriteOp and MemberReadOp while destructuring an aggregate ty...</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00334">ConversionUtils.h:334</a></div></div>
 <div class="ttc" id="aclassllzk_1_1array_1_1ArrayAccessOpInterface_html"><div class="ttname"><a href="classllzk_1_1array_1_1ArrayAccessOpInterface.html">llzk::array::ArrayAccessOpInterface</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2OpInterfaces_8h_8inc_source.html#l00115">OpInterfaces.h.inc:115</a></div></div>
 <div class="ttc" id="aclassllzk_1_1array_1_1ArrayAccessOpInterface_html_a04c67519b4daf4198b0612f9ff613638"><div class="ttname"><a href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#a04c67519b4daf4198b0612f9ff613638">llzk::array::ArrayAccessOpInterface::genWrite</a></div><div class="ttdeci">static void genWrite(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::Value arrayRef, ::mlir::ValueRange indices, ::mlir::Value value)</div><div class="ttdoc">Create an array.write or array.insert for one concrete element or subarray.</div></div>
 <div class="ttc" id="aclassllzk_1_1array_1_1ArrayAccessOpInterface_html_a2b5e296a6aa41a16587af9b45fb9d564"><div class="ttname"><a href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#a2b5e296a6aa41a16587af9b45fb9d564">llzk::array::ArrayAccessOpInterface::genRead</a></div><div class="ttdeci">::mlir::Value genRead(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::Value arrayRef, ::mlir::ValueRange indices)</div><div class="ttdoc">Create an array.read or array.extract for one concrete element or subarray.</div></div>
@@ -1183,20 +1185,22 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <div class="ttc" id="anamespacellzk_1_1function_html_a89c16c5ad2ce9eaa543c98b5d56711ac"><div class="ttname"><a href="namespacellzk_1_1function.html#a89c16c5ad2ce9eaa543c98b5d56711ac">llzk::function::RES_NAME_ATTR_NAME</a></div><div class="ttdeci">constexpr char RES_NAME_ATTR_NAME[]</div><div class="ttdoc">Attribute name for source-level function result names.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_source.html#l00038">Ops.h:38</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00032">Ops.cpp:32</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a1427f2f608259bf0a8ccfac39383aa89"><div class="ttname"><a href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">llzk::replaceOpWithNewOp</a></div><div class="ttdeci">OpClass replaceOpWithNewOp(Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</div><div class="ttdoc">Wrapper for RewriterBase::replaceOpWithNewOp() that automatically copies discardable attributes (i....</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00072">ConversionUtils.h:72</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a24116a6e55835f2dd61b126be1842f3b"><div class="ttname"><a href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">llzk::createRemoveUnusedDiscardableAllocationsPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createRemoveUnusedDiscardableAllocationsPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKRemoveUnusedDiscardableAllocationsPass_8cpp_source.html#l00765">LLZKRemoveUnusedDiscardableAllocationsPass.cpp:765</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a3ab490f475f65197f682c34e68953b29"><div class="ttname"><a href="namespacellzk.html#a3ab490f475f65197f682c34e68953b29">llzk::createRemoveDeadValuesWorkaroundPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createRemoveDeadValuesWorkaroundPass()</div><div class="ttdef"><b>Definition</b> <a href="SpecializedMemoryPasses_8h_source.html#l00192">SpecializedMemoryPasses.h:192</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a5a47caace028b8ad4a195863b7be0b17"><div class="ttname"><a href="namespacellzk.html#a5a47caace028b8ad4a195863b7be0b17">llzk::replicateFunctionNameAttrsAsNeeded</a></div><div class="ttdeci">mlir::ArrayAttr replicateFunctionNameAttrsAsNeeded(mlir::ArrayAttr origAttrs, const llvm::SmallVector&lt; size_t &gt; &amp;originalIdxToSize, const llvm::SmallVector&lt; mlir::Type &gt; &amp;newTypes, llvm::StringRef functionNameAttrName, llvm::ArrayRef&lt; std::optional&lt; llvm::StringRef &gt; &gt; origNames={}, llvm::ArrayRef&lt; llvm::StringRef &gt; existingNames={}, llvm::ArrayRef&lt; llvm::SmallVector&lt; std::string &gt; &gt; splitNameSuffixes={})</div><div class="ttdoc">Expand function arg/result attribute arrays to match a split signature, rewriting name attrs with the...</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00117">LLZKConversionUtils.h:117</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a5a47caace028b8ad4a195863b7be0b17"><div class="ttname"><a href="namespacellzk.html#a5a47caace028b8ad4a195863b7be0b17">llzk::replicateFunctionNameAttrsAsNeeded</a></div><div class="ttdeci">mlir::ArrayAttr replicateFunctionNameAttrsAsNeeded(mlir::ArrayAttr origAttrs, const llvm::SmallVector&lt; size_t &gt; &amp;originalIdxToSize, const llvm::SmallVector&lt; mlir::Type &gt; &amp;newTypes, llvm::StringRef functionNameAttrName, llvm::ArrayRef&lt; std::optional&lt; llvm::StringRef &gt; &gt; origNames={}, llvm::ArrayRef&lt; llvm::StringRef &gt; existingNames={}, llvm::ArrayRef&lt; llvm::SmallVector&lt; std::string &gt; &gt; splitNameSuffixes={})</div><div class="ttdoc">Expand function arg/result attribute arrays to match a split signature, rewriting name attrs with the...</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00162">ConversionUtils.h:162</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a60ca7c6c3ae1d404296cec5b7fdf2237"><div class="ttname"><a href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast</a></div><div class="ttdeci">constexpr T checkedCast(U u) noexcept</div><div class="ttdef"><b>Definition</b> <a href="Compare_8h_source.html#l00094">Compare.h:94</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a77841fb10c7b3448d90a0b3098262a15"><div class="ttname"><a href="namespacellzk.html#a77841fb10c7b3448d90a0b3098262a15">llzk::preserveDiscardableAttrs</a></div><div class="ttdeci">OpTy preserveDiscardableAttrs(mlir::Operation *src, OpTy dst)</div><div class="ttdoc">Copy discardable attributes from src to dst.</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00049">ConversionUtils.h:49</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a7fd9658ca5a12ab4dc0ab714ec84a801"><div class="ttname"><a href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">llzk::createSpecializedMem2RegPass</a></div><div class="ttdeci">std::unique_ptr&lt; SpecializedMem2Reg&lt; AllocOpTy &gt; &gt; createSpecializedMem2RegPass()</div><div class="ttdef"><b>Definition</b> <a href="SpecializedMemoryPasses_8h_source.html#l00132">SpecializedMemoryPasses.h:132</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ab58b991633496850e1ed92acd413908d"><div class="ttname"><a href="namespacellzk.html#ab58b991633496850e1ed92acd413908d">llzk::fromAPInt</a></div><div class="ttdeci">int64_t fromAPInt(const llvm::APInt &amp;i)</div><div class="ttdef"><b>Definition</b> <a href="AttributeHelper_8h_source.html#l00067">AttributeHelper.h:67</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ace269cecbfb44bc5826cd9136d88ae7f"><div class="ttname"><a href="namespacellzk.html#ace269cecbfb44bc5826cd9136d88ae7f">llzk::createCallPreservingInstantiationOperands</a></div><div class="ttdeci">function::CallOp createCallPreservingInstantiationOperands(mlir::Location loc, mlir::TypeRange newResultTypes, function::CallOp oldCall, llvm::ArrayRef&lt; mlir::ValueRange &gt; mapOperands, mlir::ValueRange argOperands, mlir::ConversionPatternRewriter &amp;rewriter)</div><div class="ttdoc">Rebuild a function.call while preserving explicit instantiation state from oldCall.</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00166">LLZKConversionUtils.h:166</a></div></div>
-<div class="ttc" id="anamespacellzk_html_acf9d9148e9ad315cad36f0a144450de5"><div class="ttname"><a href="namespacellzk.html#acf9d9148e9ad315cad36f0a144450de5">llzk::collectSplitFunctionNameInfo</a></div><div class="ttdeci">SplitFunctionNameInfo collectSplitFunctionNameInfo(mlir::ArrayRef&lt; mlir::Type &gt; origTypes, GetNameAttrFn &amp;&amp;getNameAttr, GetSplitSuffixesFn &amp;&amp;getSplitSuffixes)</div><div class="ttdoc">Collect function arg/result names and split suffixes from a list of original types.</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00096">LLZKConversionUtils.h:96</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ace269cecbfb44bc5826cd9136d88ae7f"><div class="ttname"><a href="namespacellzk.html#ace269cecbfb44bc5826cd9136d88ae7f">llzk::createCallPreservingInstantiationOperands</a></div><div class="ttdeci">function::CallOp createCallPreservingInstantiationOperands(mlir::Location loc, mlir::TypeRange newResultTypes, function::CallOp oldCall, llvm::ArrayRef&lt; mlir::ValueRange &gt; mapOperands, mlir::ValueRange argOperands, mlir::ConversionPatternRewriter &amp;rewriter)</div><div class="ttdoc">Rebuild a function.call while preserving explicit instantiation state from oldCall.</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00211">ConversionUtils.h:211</a></div></div>
+<div class="ttc" id="anamespacellzk_html_acf9d9148e9ad315cad36f0a144450de5"><div class="ttname"><a href="namespacellzk.html#acf9d9148e9ad315cad36f0a144450de5">llzk::collectSplitFunctionNameInfo</a></div><div class="ttdeci">SplitFunctionNameInfo collectSplitFunctionNameInfo(mlir::ArrayRef&lt; mlir::Type &gt; origTypes, GetNameAttrFn &amp;&amp;getNameAttr, GetSplitSuffixesFn &amp;&amp;getSplitSuffixes)</div><div class="ttdoc">Collect function arg/result names and split suffixes from a list of original types.</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00141">ConversionUtils.h:141</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ae8b4d905283c2fdd116e0f4e34bc4f5e"><div class="ttname"><a href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">llzk::createSpecializedSROAPass</a></div><div class="ttdeci">std::unique_ptr&lt; SpecializedSROA&lt; AllocOpTy &gt; &gt; createSpecializedSROAPass()</div><div class="ttdef"><b>Definition</b> <a href="SpecializedMemoryPasses_8h_source.html#l00081">SpecializedMemoryPasses.h:81</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
-<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html">llzk::SplitFunctionNameInfo</a></div><div class="ttdoc">Cached function arg/result names and split suffixes used while rewriting a function signature.</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00088">LLZKConversionUtils.h:88</a></div></div>
-<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html_a06b5bdad236a8586ce3ccafc51565519"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html#a06b5bdad236a8586ce3ccafc51565519">llzk::SplitFunctionNameInfo::originalNames</a></div><div class="ttdeci">llvm::SmallVector&lt; std::optional&lt; llvm::StringRef &gt; &gt; originalNames</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00089">LLZKConversionUtils.h:89</a></div></div>
-<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html_a9bff0deed61bf549e99dd6f97e90ff1c"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html#a9bff0deed61bf549e99dd6f97e90ff1c">llzk::SplitFunctionNameInfo::existingNames</a></div><div class="ttdeci">llvm::SmallVector&lt; llvm::StringRef &gt; existingNames</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00090">LLZKConversionUtils.h:90</a></div></div>
-<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html_afd749618e7dff455f220778cbc14ad16"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html#afd749618e7dff455f220778cbc14ad16">llzk::SplitFunctionNameInfo::splitNameSuffixes</a></div><div class="ttdeci">llvm::SmallVector&lt; llvm::SmallVector&lt; std::string &gt; &gt; splitNameSuffixes</div><div class="ttdef"><b>Definition</b> <a href="LLZKConversionUtils_8h_source.html#l00091">LLZKConversionUtils.h:91</a></div></div>
+<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html">llzk::SplitFunctionNameInfo</a></div><div class="ttdoc">Cached function arg/result names and split suffixes used while rewriting a function signature.</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00133">ConversionUtils.h:133</a></div></div>
+<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html_a06b5bdad236a8586ce3ccafc51565519"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html#a06b5bdad236a8586ce3ccafc51565519">llzk::SplitFunctionNameInfo::originalNames</a></div><div class="ttdeci">llvm::SmallVector&lt; std::optional&lt; llvm::StringRef &gt; &gt; originalNames</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00134">ConversionUtils.h:134</a></div></div>
+<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html_a9bff0deed61bf549e99dd6f97e90ff1c"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html#a9bff0deed61bf549e99dd6f97e90ff1c">llzk::SplitFunctionNameInfo::existingNames</a></div><div class="ttdeci">llvm::SmallVector&lt; llvm::StringRef &gt; existingNames</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00135">ConversionUtils.h:135</a></div></div>
+<div class="ttc" id="astructllzk_1_1SplitFunctionNameInfo_html_afd749618e7dff455f220778cbc14ad16"><div class="ttname"><a href="structllzk_1_1SplitFunctionNameInfo.html#afd749618e7dff455f220778cbc14ad16">llzk::SplitFunctionNameInfo::splitNameSuffixes</a></div><div class="ttdeci">llvm::SmallVector&lt; llvm::SmallVector&lt; std::string &gt; &gt; splitNameSuffixes</div><div class="ttdef"><b>Definition</b> <a href="ConversionUtils_8h_source.html#l00136">ConversionUtils.h:136</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

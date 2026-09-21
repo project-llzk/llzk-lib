@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: include/llzk/Dialect/Shared/TypeConversionPatterns.h File Reference</title>
+<title>LLZK: include/llzk/Transforms/TypeConversionPatterns.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -138,13 +138,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeConversion
 <p>Reusable MLIR dialect conversion functions for LLZK StructType replacement.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Array_2IR_2Types_8h_source.html">llzk/Dialect/Array/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="AttributeHelper_8h_source.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="POD_2IR_2Ops_8h_source.html">llzk/Dialect/POD/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="POD_2IR_2Types_8h_source.html">llzk/Dialect/POD/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="ConversionUtils_8h_source.html">llzk/Transforms/ConversionUtils.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/SCF/Transforms/Patterns.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Attributes.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinAttributes.h&gt;</code><br />
@@ -153,12 +156,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeConversion
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
 <code>#include &lt;mlir/IR/PatternMatch.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/DialectConversion.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/ArrayRef.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
+<code>#include &lt;llvm/Support/Casting.h&gt;</code><br />
+<code>#include &lt;cassert&gt;</code><br />
 <code>#include &lt;tuple&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for TypeConversionPatterns.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TypeConversionPatterns_8h__incl.svg" width="5080" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TypeConversionPatterns_8h__incl.svg" width="5578" height="856"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -181,9 +188,6 @@ Namespaces</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:af3181672011649b0e7987f2ae2453386" id="r_af3181672011649b0e7987f2ae2453386"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">llzk::defaultLegalityCheck</a> (const mlir::TypeConverter &amp;tyConv, mlir::Operation *op)</td></tr>
 <tr class="memdesc:af3181672011649b0e7987f2ae2453386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether an op is legal with respect to the given type converter, including TypeAttr attributes (with special handling for FunctionType stored inside a TypeAttr).  <br /></td></tr>
-<tr class="memitem:a1427f2f608259bf0a8ccfac39383aa89" id="r_a1427f2f608259bf0a8ccfac39383aa89"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </td></tr>
-<tr class="memitem:a1427f2f608259bf0a8ccfac39383aa89 template"><td class="memItemLeft">OpClass&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">llzk::replaceOpWithNewOp</a> (Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</td></tr>
-<tr class="memdesc:a1427f2f608259bf0a8ccfac39383aa89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper for <span class="tt">PatternRewriter::replaceOpWithNewOp()</span> that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the op in ODS).  <br /></td></tr>
 <tr class="memitem:aaa4a11b9841dc711843a40d178fea482" id="r_aaa4a11b9841dc711843a40d178fea482"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses&gt; </td></tr>
 <tr class="memitem:aaa4a11b9841dc711843a40d178fea482 template"><td class="memItemLeft">mlir::RewritePatternSet&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">llzk::newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
 <tr class="memdesc:aaa4a11b9841dc711843a40d178fea482"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> covering all LLZK op types that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a>.  <br /></td></tr>
@@ -199,7 +203,7 @@ Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a href="dir_5804947f485dbfa35f1b2a5b6cdecd1f.html">llzk</a></li><li class="navelem"><a href="dir_961f7ef292a3987e3723514feaf3f181.html">Dialect</a></li><li class="navelem"><a href="dir_b9e6121c35254505209e91f4816784f6.html">Shared</a></li><li class="navelem"><a href="TypeConversionPatterns_8h.html">TypeConversionPatterns.h</a></li>
+    <li class="navelem"><a href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a href="dir_5804947f485dbfa35f1b2a5b6cdecd1f.html">llzk</a></li><li class="navelem"><a href="dir_8c19de2196b4b9037b2ef87455b6f2bd.html">Transforms</a></li><li class="navelem"><a href="TypeConversionPatterns_8h.html">TypeConversionPatterns.h</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

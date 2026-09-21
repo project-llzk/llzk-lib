@@ -1,5 +1,7 @@
 var NAVTREEINDEX94 =
 {
+"structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html":[11,0,3,3,0,4,0],
+"structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html":[13,0,1,1,0,4,0],
 "structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html#a66d865adbffda4dd1d638d7750de3d75":[11,0,3,3,0,4,0,3],
 "structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html#a66d865adbffda4dd1d638d7750de3d75":[13,0,1,1,0,4,0,3],
 "structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html#a7ed5d21c7a3cae559290c190a00599a8":[11,0,3,3,0,4,0,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX94 =
 "structllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase_1_1Properties.html#aa9f91078af43aa1bb7f717ec98316a43":[11,0,3,10,0,5,0,3],
 "structllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase_1_1Properties.html#aa9f91078af43aa1bb7f717ec98316a43":[13,0,1,7,0,5,0,3],
 "structllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase_1_1Properties.html#aab7948acd06dccb5a20b0d6f03a9f7ca":[11,0,3,10,0,5,0,5],
-"structllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase_1_1Properties.html#aab7948acd06dccb5a20b0d6f03a9f7ca":[13,0,1,7,0,5,0,5],
-"structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html":[11,0,3,10,0,6],
-"structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html":[13,0,1,7,0,6]
+"structllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase_1_1Properties.html#aab7948acd06dccb5a20b0d6f03a9f7ca":[13,0,1,7,0,5,0,5]
 };

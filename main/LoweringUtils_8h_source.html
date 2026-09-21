@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: include/llzk/Transforms/LLZKLoweringUtils.h Source File</title>
+<title>LLZK: include/llzk/Transforms/LoweringUtils.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKLoweringUtils_8h_source.html','',''); });
+document.addEventListener('DOMContentLoaded',() => { initNavTree('LoweringUtils_8h_source.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -127,10 +127,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKLoweringUt
 </div>
 
 <div class="header">
-  <div class="headertitle"><div class="title">LLZKLoweringUtils.h</div></div>
+  <div class="headertitle"><div class="title">LoweringUtils.h</div></div>
 </div><!--header-->
 <div class="contents">
-<a href="LLZKLoweringUtils_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">//===-- LLZKLoweringUtils.h -------------------------------------*- C++ -*-===//</span></div>
+<a href="LoweringUtils_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">//===-- LoweringUtils.h -----------------------------------------*- C++ -*-===//</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="comment">//</span></div>
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="comment">// Part of the LLZK Project, under the Apache License v2.0.</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="comment">// See LICENSE.txt for license information.</span></div>
@@ -188,15 +188,15 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKLoweringUt
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01148">Ops.h.inc:1148</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00639">Ops.h.inc:639</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a12a702f1e67b6a7dd0c787d2770dfb8c"><div class="ttname"><a href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">llzk::rebuildExprInCompute</a></div><div class="ttdeci">Value rebuildExprInCompute(Value val, FuncDefOp computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00065">LLZKLoweringUtils.cpp:65</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a1adebd123866cbb2b9e02bbd5b99c9ca"><div class="ttname"><a href="namespacellzk.html#a1adebd123866cbb2b9e02bbd5b99c9ca">llzk::replaceSubsequentUsesWith</a></div><div class="ttdeci">void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00268">LLZKLoweringUtils.cpp:268</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a5fe59d40fb1bc5ada1e38667de05c6f2"><div class="ttname"><a href="namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2">llzk::addAuxMember</a></div><div class="ttdeci">MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00287">LLZKLoweringUtils.cpp:287</a></div></div>
-<div class="ttc" id="anamespacellzk_html_aa916f2d231aaa798b6d3189254c5f11f"><div class="ttname"><a href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">llzk::checkFuncBodyIsStraightLine</a></div><div class="ttdeci">LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00239">LLZKLoweringUtils.cpp:239</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ad4ff96ece25453858228f3aff1f625c7"><div class="ttname"><a href="namespacellzk.html#ad4ff96ece25453858228f3aff1f625c7">llzk::getFeltDegree</a></div><div class="ttdeci">unsigned getFeltDegree(Value val, DenseMap&lt; Value, unsigned &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00295">LLZKLoweringUtils.cpp:295</a></div></div>
-<div class="ttc" id="anamespacellzk_html_affe604776b9bbde83b6a6d31f9bc4c86"><div class="ttname"><a href="namespacellzk.html#affe604776b9bbde83b6a6d31f9bc4c86">llzk::checkForAuxMemberConflicts</a></div><div class="ttdeci">LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00227">LLZKLoweringUtils.cpp:227</a></div></div>
-<div class="ttc" id="astructllzk_1_1AuxAssignment_html"><div class="ttname"><a href="structllzk_1_1AuxAssignment.html">llzk::AuxAssignment</a></div><div class="ttdef"><b>Definition</b> <a href="#l00031">LLZKLoweringUtils.h:31</a></div></div>
-<div class="ttc" id="astructllzk_1_1AuxAssignment_html_a8a6ce9d5fdfb8fb3cdbb6ede02a686a3"><div class="ttname"><a href="structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3">llzk::AuxAssignment::computedValue</a></div><div class="ttdeci">mlir::Value computedValue</div><div class="ttdef"><b>Definition</b> <a href="#l00033">LLZKLoweringUtils.h:33</a></div></div>
-<div class="ttc" id="astructllzk_1_1AuxAssignment_html_adae92182960900a1d91ded438aeedee0"><div class="ttname"><a href="structllzk_1_1AuxAssignment.html#adae92182960900a1d91ded438aeedee0">llzk::AuxAssignment::auxMemberName</a></div><div class="ttdeci">std::string auxMemberName</div><div class="ttdef"><b>Definition</b> <a href="#l00032">LLZKLoweringUtils.h:32</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a12a702f1e67b6a7dd0c787d2770dfb8c"><div class="ttname"><a href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">llzk::rebuildExprInCompute</a></div><div class="ttdeci">Value rebuildExprInCompute(Value val, FuncDefOp computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00064">LLZKLoweringUtils.cpp:64</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a1adebd123866cbb2b9e02bbd5b99c9ca"><div class="ttname"><a href="namespacellzk.html#a1adebd123866cbb2b9e02bbd5b99c9ca">llzk::replaceSubsequentUsesWith</a></div><div class="ttdeci">void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00267">LLZKLoweringUtils.cpp:267</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a5fe59d40fb1bc5ada1e38667de05c6f2"><div class="ttname"><a href="namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2">llzk::addAuxMember</a></div><div class="ttdeci">MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00286">LLZKLoweringUtils.cpp:286</a></div></div>
+<div class="ttc" id="anamespacellzk_html_aa916f2d231aaa798b6d3189254c5f11f"><div class="ttname"><a href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">llzk::checkFuncBodyIsStraightLine</a></div><div class="ttdeci">LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00238">LLZKLoweringUtils.cpp:238</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ad4ff96ece25453858228f3aff1f625c7"><div class="ttname"><a href="namespacellzk.html#ad4ff96ece25453858228f3aff1f625c7">llzk::getFeltDegree</a></div><div class="ttdeci">unsigned getFeltDegree(Value val, DenseMap&lt; Value, unsigned &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00294">LLZKLoweringUtils.cpp:294</a></div></div>
+<div class="ttc" id="anamespacellzk_html_affe604776b9bbde83b6a6d31f9bc4c86"><div class="ttname"><a href="namespacellzk.html#affe604776b9bbde83b6a6d31f9bc4c86">llzk::checkForAuxMemberConflicts</a></div><div class="ttdeci">LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00226">LLZKLoweringUtils.cpp:226</a></div></div>
+<div class="ttc" id="astructllzk_1_1AuxAssignment_html"><div class="ttname"><a href="structllzk_1_1AuxAssignment.html">llzk::AuxAssignment</a></div><div class="ttdef"><b>Definition</b> <a href="#l00031">LoweringUtils.h:31</a></div></div>
+<div class="ttc" id="astructllzk_1_1AuxAssignment_html_a8a6ce9d5fdfb8fb3cdbb6ede02a686a3"><div class="ttname"><a href="structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3">llzk::AuxAssignment::computedValue</a></div><div class="ttdeci">mlir::Value computedValue</div><div class="ttdef"><b>Definition</b> <a href="#l00033">LoweringUtils.h:33</a></div></div>
+<div class="ttc" id="astructllzk_1_1AuxAssignment_html_adae92182960900a1d91ded438aeedee0"><div class="ttname"><a href="structllzk_1_1AuxAssignment.html#adae92182960900a1d91ded438aeedee0">llzk::AuxAssignment::auxMemberName</a></div><div class="ttdeci">std::string auxMemberName</div><div class="ttdef"><b>Definition</b> <a href="#l00032">LoweringUtils.h:32</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKLoweringUt
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a href="dir_5804947f485dbfa35f1b2a5b6cdecd1f.html">llzk</a></li><li class="navelem"><a href="dir_8c19de2196b4b9037b2ef87455b6f2bd.html">Transforms</a></li><li class="navelem"><a href="LLZKLoweringUtils_8h.html">LLZKLoweringUtils.h</a></li>
+    <li class="navelem"><a href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a href="dir_5804947f485dbfa35f1b2a5b6cdecd1f.html">llzk</a></li><li class="navelem"><a href="dir_8c19de2196b4b9037b2ef87455b6f2bd.html">Transforms</a></li><li class="navelem"><a href="LoweringUtils_8h.html">LoweringUtils.h</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>
