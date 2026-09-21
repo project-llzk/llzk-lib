@@ -514,3 +514,24 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.call @use_index(%[[VAL_19]]) : (index) -> ()
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
+// -----
+
+// `i1` values represent booleans, so `true` must be converted as the
+// unsigned value 1 before applying the selected overflow semantics.
+module attributes {llzk.lang} {
+  function.def private @use_felt(%value: !felt.type<"babybear">) -> ()
+
+  function.def @fold_true() attributes {function.allow_non_native_field_ops} {
+    %true = arith.constant 1 : i1
+    %sat = cast.tofelt sat %true : i1, !felt.type<"babybear">
+    %wrap = cast.tofelt wrap %true : i1, !felt.type<"babybear">
+    %trunc = cast.tofelt trunc %true : i1, !felt.type<"babybear">
+    function.call @use_felt(%sat) : (!felt.type<"babybear">) -> ()
+    function.call @use_felt(%wrap) : (!felt.type<"babybear">) -> ()
+    function.call @use_felt(%trunc) : (!felt.type<"babybear">) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: function.def @fold_true()
+// CHECK-NEXT:    %[[ONE:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"babybear">
+// CHECK-COUNT-3: function.call @use_felt(%[[ONE]]) : (!felt.type<"babybear">) -> ()
