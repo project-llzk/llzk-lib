@@ -47,6 +47,10 @@ class Lexer;
 class SourceManager;
 } // namespace clang
 
+namespace mlir::tblgen {
+class Operator;
+} // namespace mlir::tblgen
+
 // Shared command-line options used by all CAPI generators
 extern llvm::cl::OptionCategory OpGenCat;
 extern llvm::cl::opt<std::string> DialectName;
@@ -274,6 +278,18 @@ struct ExtraMethod {
   /// The parameters of the method
   std::vector<MethodParameter> parameters;
 };
+
+/// Return public operation methods explicitly requested by
+/// `DeclareOpInterfaceMethods` traits and declared by `extraClassDeclaration`.
+///
+/// Interface methods must be named in `alwaysOverriddenMethods` (the optional
+/// method list passed to `DeclareOpInterfaceMethods`). This makes C API
+/// exposure an explicit opt-in and avoids colliding with the standard op C API
+/// accessors. Static methods and methods implemented directly in an interface
+/// trait are excluded. An extra class method takes precedence over an
+/// interface method with the same name, because the C API does not support
+/// overloads.
+llvm::SmallVector<ExtraMethod> getCAPIExposedOpMethods(const mlir::tblgen::Operator &op);
 
 /// @brief Parse method declarations from an `extraClassDeclaration` using Clang's Lexer
 /// @param extraDecl The C++ code from an `extraClassDeclaration`

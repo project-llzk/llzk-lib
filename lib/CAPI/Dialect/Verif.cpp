@@ -104,10 +104,6 @@ MlirType llzkVerif_IncludeOpGetTypeSignature(MlirOperation inp) {
   return wrap(llvm::cast<IncludeOp>(unwrap(inp)).getTypeSignature());
 }
 
-MlirOperation llzkVerif_IncludeOpResolveCallable(MlirOperation inp) {
-  return wrap(llvm::cast<IncludeOp>(unwrap(inp)).resolveCallable());
-}
-
 //===----------------------------------------------------------------------===//
 // InvariantOp
 //===----------------------------------------------------------------------===//

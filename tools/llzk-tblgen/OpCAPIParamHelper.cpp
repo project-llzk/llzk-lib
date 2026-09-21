@@ -11,9 +11,57 @@
 
 #include "CommonCAPIGen.h"
 
+#include <mlir/TableGen/Interfaces.h>
 #include <mlir/TableGen/Operator.h>
 
+#include <llvm/ADT/StringSet.h>
 #include <llvm/Support/FormatVariadic.h>
+
+llvm::SmallVector<ExtraMethod> getCAPIExposedOpMethods(const mlir::tblgen::Operator &op) {
+  llvm::SmallVector<ExtraMethod> methods = parseExtraMethods(op.getExtraClassDeclaration());
+  llvm::StringSet<> methodNames;
+  for (const ExtraMethod &method : methods) {
+    methodNames.insert(method.methodName);
+  }
+
+  for (const mlir::tblgen::Trait &traitDef : op.getTraits()) {
+    const auto *trait = llvm::dyn_cast<mlir::tblgen::InterfaceTrait>(&traitDef);
+    if (!trait || !trait->shouldDeclareMethods()) {
+      continue;
+    }
+
+    llvm::StringSet<> requestedMethods;
+    for (llvm::StringRef methodName : trait->getAlwaysDeclaredMethods()) {
+      requestedMethods.insert(methodName);
+    }
+    mlir::tblgen::Interface interface = trait->getInterface();
+    for (const mlir::tblgen::InterfaceMethod &interfaceMethod : interface.getMethods()) {
+      // `alwaysOverriddenMethods` is the explicit C API opt-in. Keep the
+      // remaining declaration checks in sync with MLIR's
+      // OpEmitter::genOpInterfaceMethods().
+      if (!requestedMethods.contains(interfaceMethod.getName()) || interfaceMethod.isStatic() ||
+          interfaceMethod.getBody()) {
+        continue;
+      }
+
+      if (!methodNames.insert(interfaceMethod.getName()).second) {
+        warnSkipped(interfaceMethod.getName(), "C API does not support method overloading");
+        continue;
+      }
+
+      ExtraMethod method;
+      method.returnType = interfaceMethod.getReturnType().str();
+      method.methodName = interfaceMethod.getName().str();
+      for (const mlir::tblgen::InterfaceMethod::Argument &argument :
+           interfaceMethod.getArguments()) {
+        method.parameters.emplace_back(argument.type.str(), argument.name.str());
+      }
+      methods.push_back(std::move(method));
+    }
+  }
+
+  return methods;
+}
 
 std::string GenStringFromOpPieces::gen(const mlir::tblgen::Operator &op) {
   std::string params;
