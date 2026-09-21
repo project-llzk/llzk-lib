@@ -28,6 +28,7 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <llvm/Support/Debug.h>
@@ -245,7 +246,9 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   }
 
   // Build the skeleton of the for loop
-  auto forOp = rewriter.create<scf::ForOp>(op->getLoc(), lb, ub, step, inits);
+  auto forOp = llzk::preserveDiscardableAttrs(
+      op, rewriter.create<scf::ForOp>(op->getLoc(), lb, ub, step, inits)
+  );
   rewriter.setInsertionPointToStart(forOp.getBody());
 
   auto inductionVar = forOp.getInductionVar();
