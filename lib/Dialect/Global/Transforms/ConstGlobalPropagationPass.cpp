@@ -25,6 +25,9 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/SmallVector.h>
+
 #include <optional>
 
 // Include the generated base pass class definitions.
@@ -77,16 +80,28 @@ public:
     // use-after-free errors. These MUST NOT be dereferenced because the ops have been erased.
     llvm::DenseSet<void *> erased;
     SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
+    llvm::DenseMap<Operation *, SmallVector<const SymbolUseGraphNode *>> useNodesByDefinition;
+    SymbolTableCollection tables;
+    for (const SymbolUseGraphNode *candidate : useGraph.nodesIter()) {
+      auto target = candidate->lookupSymbol(tables, /*reportMissing=*/false);
+      if (succeeded(target)) {
+        useNodesByDefinition[target->get()].push_back(candidate);
+      }
+    }
+
     for (GlobalDefOp globalDef : constGlobals) {
-      if (const SymbolUseGraphNode *node = useGraph.lookupNode(globalDef)) {
-        Attribute constValue = globalDef.getInitialValueAttr();
+      Attribute constValue = globalDef.getInitialValueAttr();
 
-        // Array constants cannot yet be materialized as operations. Leave both
-        // the global and all of its uses unchanged until they are supported.
-        if (llvm::isa<ArrayAttr>(constValue)) {
-          continue;
-        }
+      // Array constants cannot yet be materialized as operations. Leave both
+      // the global and all of its uses unchanged until they are supported.
+      if (llvm::isa<ArrayAttr>(constValue)) {
+        continue;
+      }
 
+      // A global definition and its uses can have different closest LLZK root
+      // modules after include inlining. Find every use-graph node that resolves
+      // to this definition instead of looking it up by a single symbol path.
+      for (const SymbolUseGraphNode *node : useNodesByDefinition[globalDef.getOperation()]) {
         SymbolRefAttr symbolAttr = node->getSymbolPath();
         for (Operation *userOp : node->getUserOps()) {
           // Skip erased ops to avoid use-after-free errors
