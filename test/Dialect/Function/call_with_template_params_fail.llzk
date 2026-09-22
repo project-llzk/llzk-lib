@@ -241,6 +241,29 @@ module attributes {llzk.lang} {
 
 // -----
 module attributes {llzk.lang} {
+  poly.template @T2 {
+    poly.param @T : !poly.tvar<@T>
+    function.def @f(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+  }
+
+  struct.def @ConflictingInferredTypeVar {
+    function.def @compute() -> !struct.type<@ConflictingInferredTypeVar> {
+      %self = struct.new : !struct.type<@ConflictingInferredTypeVar>
+      %x = felt.const 0 : !felt.type
+      %y = arith.constant 0 : index
+      // expected-error@+1 {{'function.call' op operand/result types imply conflicting values for template parameter "@T"}}
+      function.call @T2::@f<[!felt.type]>(%x, %y) : (!felt.type, index) -> ()
+      function.return %self : !struct.type<@ConflictingInferredTypeVar>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConflictingInferredTypeVar>) {
+      function.return
+    }
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
   poly.template @GlobalFunc {
     poly.param @N : index
 

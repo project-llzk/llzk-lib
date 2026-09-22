@@ -561,11 +561,19 @@ LogicalResult verifyTemplateParamsMatchInferred(
       }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
-      return origin->emitOpError().append(
-          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
-      );
+    if (it != unifications.end()) {
+      if (!it->second) {
+        return origin->emitOpError().append(
+            "operand/result types imply conflicting values for template parameter \"@",
+            paramOp.getName(), '"'
+        );
+      }
+      if (!typeParamsUnify({attr}, {it->second})) {
+        return origin->emitOpError().append(
+            "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
+            "\" conflicts with value '", it->second, "' inferred from function type signature"
+        );
+      }
     }
   }
   return success();
