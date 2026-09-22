@@ -6276,7 +6276,9 @@ hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarriedPod &pod, 
         }
         return reject("POD write does not resolve to a carried scalar leaf");
       }
-      if (podValue == arg) {
+      // Only the carried argument's own region terminator can forward it unchanged.
+      // Nested terminators would require scalarizing their enclosing operation's results.
+      if (podValue == arg && user->getBlock() == arg.getOwner()) {
         if (auto conditionOp = dyn_cast<scf::ConditionOp>(user)) {
           if (arg.getArgNumber() < conditionOp.getArgs().size() &&
               conditionOp.getArgs()[arg.getArgNumber()] == arg) {
