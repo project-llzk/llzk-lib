@@ -68,8 +68,6 @@ def LLZK_FeltConstAttr
           [{ return get(context, numBits, parts, FeltType::get(context, fieldName)); }]>];
 
   let extraClassDeclaration = [{
-    operator ::llvm::APInt() const { return getValue(); }
-
     /// Returns the field name from the stored FeltType, or a null StringAttr
     /// if no type is stored.
     ::mlir::StringAttr getFieldName() const;
