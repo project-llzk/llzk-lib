@@ -6232,7 +6232,7 @@ static BlockArgument findWhileCarriedPodRoot(Value podRef, SmallVectorImpl<Strin
 /// translate while cloning the region.
 static bool
 hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarriedPod &pod, StringRef &reason) {
-  auto reject = [&](StringRef message) {
+  auto reject = [&reason](StringRef message) {
     reason = message;
     return true;
   };
@@ -6302,7 +6302,7 @@ hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarriedPod &pod, 
 /// out of this rewrite until their copy and identity behavior is explicitly supported.
 static bool
 hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init, StringRef &reason) {
-  auto reject = [&](StringRef message) {
+  auto reject = [&reason](StringRef message) {
     reason = message;
     return false;
   };
@@ -6429,7 +6429,7 @@ static void cloneWhileBodyWithCarriedPods(
 static LogicalResult checkWhileCarriedPods(
     scf::WhileOp whileOp, SmallVectorImpl<WhileCarriedPod> &carriedPods, StringRef &reason
 ) {
-  auto reject = [&](StringRef message) {
+  auto reject = [&reason](StringRef message) {
     reason = message;
     return failure();
   };
