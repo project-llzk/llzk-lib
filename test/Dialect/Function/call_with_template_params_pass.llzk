@@ -330,3 +330,37 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// The constraint that @A and @B must agree is deferred until @Caller is instantiated.
+module attributes {llzk.lang} {
+  poly.template @Lib {
+    poly.param @T : !poly.tvar<@T>
+    function.def @both(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+  }
+
+  poly.template @Caller {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+    function.def @go(%x: !poly.tvar<@A>, %y: !poly.tvar<@B>) {
+      function.call @Lib::@both<[@A]>(%x, %y) : (!poly.tvar<@A>, !poly.tvar<@B>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Lib {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @both(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @A : !poly.tvar<@A>
+// CHECK-NEXT:      poly.param @B : !poly.tvar<@B>
+// CHECK-NEXT:      function.def @go(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@A>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@B>) {
+// CHECK-NEXT:        function.call @Lib::@both<[@A]>(%[[VAL_2]], %[[VAL_3]]) : (!poly.tvar<@A>, !poly.tvar<@B>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
