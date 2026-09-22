@@ -109,8 +109,6 @@ def LLZK_FeltConstantOp
   let hasFolder = 1;
   let extraClassDeclaration = [{
     auto getValueAPInt() -> ::llvm::APInt { return getValue().getValue(); }
-
-    auto tryGetZExtValue() -> std::optional<uint64_t> { return getValueAPInt().tryZExtValue(); }
   }];
 }
 
