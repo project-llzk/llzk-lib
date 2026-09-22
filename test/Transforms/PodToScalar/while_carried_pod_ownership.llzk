@@ -18,6 +18,7 @@ module attributes {llzk.lang} {
       pod.write %state[@value] = %c0 : !State, index
       scf.yield %state : !State
     }
+    // expected-note@+1 {{cannot scalarize carried POD: initializer must use distinct fresh local pod.new operations without initial values}}
     %result:2 = scf.while (%i = %count, %pod = %alias)
         : (index, !State) -> (index, !State) {
       %cond = arith.cmpi sgt, %i, %c0 : index
@@ -49,6 +50,7 @@ module attributes {llzk.lang} {
     %parent = pod.new : !Parent
     pod.write %parent[@left] = %child : !Parent, !Child
     pod.write %parent[@right] = %child : !Parent, !Child
+    // expected-note@+1 {{cannot scalarize carried POD: writes to nested POD copies are unsupported}}
     %result:3 = scf.while (%i = %count, %observed = %seed, %pod = %parent)
         : (index, index, !Parent) -> (index, index, !Parent) {
       %cond = arith.cmpi sgt, %i, %c0 : index

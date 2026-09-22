@@ -1,4 +1,5 @@
 // RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck %s
+// RUN: llzk-opt -llzk-pod-to-scalar -verify-diagnostics %s > /dev/null
 
 // Duplicate forwarding lowers successfully when the unused alias is eliminated.
 !State = !pod.type<[@value: index]>

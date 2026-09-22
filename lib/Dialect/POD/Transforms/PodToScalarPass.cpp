@@ -6230,14 +6230,19 @@ static BlockArgument findWhileCarriedPodRoot(Value podRef, SmallVectorImpl<Strin
 
 /// Check that a carried POD block argument is only observed through operations this rewrite can
 /// translate while cloning the region.
-static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarriedPod &pod) {
+static bool
+hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarriedPod &pod, StringRef &reason) {
+  auto reject = [&](StringRef message) {
+    reason = message;
+    return true;
+  };
   SmallVector<Value> podValues {arg};
   for (size_t valueIdx = 0; valueIdx < podValues.size(); ++valueIdx) {
     Value podValue = podValues[valueIdx];
     for (Operation *user : podValue.getUsers()) {
       if (auto readOp = dyn_cast<ReadPodOp>(user)) {
         if (readOp.getPodRef() != podValue || readOp->getBlock() != arg.getOwner()) {
-          return true;
+          return reject("POD reads in nested regions are unsupported");
         }
         if (isa<PodType>(readOp.getType())) {
           podValues.push_back(readOp.getResult());
@@ -6249,14 +6254,19 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
         if (root == arg && findWhileCarriedLeafIndex(pod, RecordChain(path))) {
           continue;
         }
-        return true;
+        return reject("POD read does not resolve to a carried scalar leaf");
       }
       if (auto writeOp = dyn_cast<WritePodOp>(user)) {
         // A POD-valued read is a copy. Updating it must not update the carried parent's leaves.
         // Separate mutable snapshots and explicit aggregate write-back are not supported here.
-        if (writeOp.getPodRef() != arg || writeOp->getBlock() != arg.getOwner() ||
-            isa<PodType>(writeOp.getValue().getType())) {
-          return true;
+        if (writeOp.getPodRef() != arg) {
+          return reject("writes to nested POD copies are unsupported");
+        }
+        if (writeOp->getBlock() != arg.getOwner()) {
+          return reject("POD writes in nested regions are unsupported");
+        }
+        if (isa<PodType>(writeOp.getValue().getType())) {
+          return reject("aggregate POD write-back is unsupported");
         }
         SmallVector<StringAttr> path;
         BlockArgument root = findWhileCarriedPodRoot(writeOp.getPodRef(), path);
@@ -6264,7 +6274,7 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
         if (root == arg && findWhileCarriedLeafIndex(pod, RecordChain(path))) {
           continue;
         }
-        return true;
+        return reject("POD write does not resolve to a carried scalar leaf");
       }
       if (podValue == arg) {
         if (auto conditionOp = dyn_cast<scf::ConditionOp>(user)) {
@@ -6280,7 +6290,7 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
           }
         }
       }
-      return true;
+      return reject("carried POD has an unsupported use or is forwarded in a different position");
     }
   }
   return false;
@@ -6290,7 +6300,12 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
 /// POD reads and writes copy aggregates; these restrictions are conservative supported-shape
 /// checks, not a claim that storing a POD creates an alias. Keep unknown producers and other uses
 /// out of this rewrite until their copy and identity behavior is explicitly supported.
-static bool hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init) {
+static bool
+hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init, StringRef &reason) {
+  auto reject = [&](StringRef message) {
+    reason = message;
+    return false;
+  };
   SmallVector<std::pair<Value, Operation *>> pending {{init, nullptr}};
   llvm::DenseSet<Value> allocations;
   for (size_t idx = 0; idx < pending.size(); ++idx) {
@@ -6299,7 +6314,9 @@ static bool hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init)
     if (!allocation || !allocation.getInitialValues().empty() ||
         allocation->getBlock() != whileOp->getBlock() || !allocation->isBeforeInBlock(whileOp) ||
         !allocations.insert(value).second) {
-      return false;
+      return reject(
+          "initializer must use distinct fresh local pod.new operations without initial values"
+      );
     }
 
     llvm::DenseSet<StringAttr> initializedChildren;
@@ -6308,40 +6325,43 @@ static bool hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init)
         continue;
       }
       if (user->getBlock() != whileOp->getBlock() || !user->isBeforeInBlock(whileOp)) {
-        return false;
+        return reject("initializer or nested source has uses outside pre-loop initialization");
       }
       if (auto read = dyn_cast<ReadPodOp>(user)) {
         // A POD-valued read creates a separate snapshot outside the supported initialization shape.
         if (read.getPodRef() != value || isa<PodType>(read.getType())) {
-          return false;
+          return reject("POD-valued reads of an initialization source are unsupported");
         }
         continue;
       }
       if (auto write = dyn_cast<WritePodOp>(user)) {
         // The parent stores a snapshot. Do not initialize its leaves from a source modified
         // after that snapshot was taken, including writes to deeper nested sources.
-        if (write.getPodRef() != value || (ownerWrite && !user->isBeforeInBlock(ownerWrite))) {
-          return false;
+        if (write.getPodRef() != value) {
+          return reject("initialization source is stored into another POD");
+        }
+        if (ownerWrite && !user->isBeforeInBlock(ownerWrite)) {
+          return reject("initialization source is modified after being copied into its parent");
         }
         if (isa<PodType>(write.getValue().getType())) {
           if (!initializedChildren.insert(write.getRecordNameAttr()).second) {
-            return false;
+            return reject("nested POD record is initialized more than once");
           }
           pending.emplace_back(write.getValue(), user);
         }
         continue;
       }
       // Includes calls, casts, array/struct storage, and control-flow forwarding.
-      return false;
+      return reject("initialization source has an unsupported user");
     }
     auto podType = mlir::cast<PodType>(value.getType());
     for (RecordAttr record : podType.getRecords()) {
       if (isa<PodType>(record.getType()) && !initializedChildren.contains(record.getName())) {
-        return false;
+        return reject("nested POD record is not initialized");
       }
       if (auto arrayTy = dyn_cast<ArrayType>(record.getType());
           arrayTy && isa<PodType>(arrayTy.getElementType())) {
-        return false;
+        return reject("arrays of PODs in initialization are unsupported");
       }
     }
   }
@@ -6404,6 +6424,92 @@ static void cloneWhileBodyWithCarriedPods(
   }
 }
 
+/// Check scalarization eligibility without changing IR. Reuse this check at the final fixpoint
+/// to explain residual loops, without emitting diagnostics for ordinary pattern-match failures.
+static LogicalResult checkWhileCarriedPods(
+    scf::WhileOp whileOp, SmallVectorImpl<WhileCarriedPod> &carriedPods, StringRef &reason
+) {
+  auto reject = [&](StringRef message) {
+    reason = message;
+    return failure();
+  };
+  for (auto [idx, init] : llvm::enumerate(whileOp.getInits())) {
+    auto podTy = dyn_cast<PodType>(init.getType());
+    if (!podTy) {
+      continue;
+    }
+    WhileCarriedPod pod {llzk::checkedCast<unsigned>(idx), podTy, {}, {}};
+    collectWhileCarriedPodLeaves(pod);
+    // Forwarding mutable aggregate leaves as SSA values would erase the copy boundary of their
+    // reads and writes. This rewrite only carries scalar leaves until snapshots are supported.
+    if (llvm::any_of(pod.leafTypes, [](Type type) {
+      return isa<PodType, ArrayType, StructType>(type);
+    })) {
+      return reject("mutable aggregate leaves require unsupported copy snapshots");
+    }
+    carriedPods.push_back(std::move(pod));
+  }
+  if (carriedPods.empty()) {
+    return failure();
+  }
+  // This rewrite uses one index space for the before and after regions. General scf.while permits
+  // its init and result types to differ, so leave asymmetric loops to later lowering.
+  if (whileOp.getInits().size() != whileOp.getNumResults() ||
+      !llvm::equal(whileOp.getInits().getTypes(), whileOp.getResultTypes())) {
+    return reject("while initializer and result types must match");
+  }
+
+  Block &beforeBody = *whileOp.getBeforeBody();
+  Block &afterBody = *whileOp.getAfterBody();
+  llvm::DenseSet<Value> uniquePodInits;
+  for (const WhileCarriedPod &pod : carriedPods) {
+    if (hasUnsupportedWhileCarriedPodUse(
+            whileOp.getBeforeArguments()[pod.originalIndex], pod, reason
+        ) ||
+        hasUnsupportedWhileCarriedPodUse(
+            whileOp.getAfterArguments()[pod.originalIndex], pod, reason
+        )) {
+      return failure();
+    }
+
+    Value init = whileOp.getInits()[pod.originalIndex];
+    // Splitting two aliases (loop-carried SSA values initialized from the same value)
+    // independently would lose writes observed through the other alias.
+    if (!uniquePodInits.insert(init).second) {
+      return reject("multiple carried POD arguments have the same initializer");
+    }
+    if (!hasSupportedWhilePodInitialization(whileOp, init, reason)) {
+      return failure();
+    }
+    for (Operation *user : init.getUsers()) {
+      if (user != whileOp.getOperation() &&
+          !(user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp))) {
+        return reject("POD initializer remains observable at or after the loop");
+      }
+    }
+  }
+
+  auto terminatorForwardsCarriedPods = [&](ValueRange values, Block &body) {
+    for (const WhileCarriedPod &pod : carriedPods) {
+      if (pod.originalIndex >= values.size() ||
+          values[pod.originalIndex] != body.getArgument(pod.originalIndex)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  auto conditionTerminator = mlir::cast<scf::ConditionOp>(beforeBody.getTerminator());
+  auto yieldTerminator = mlir::cast<scf::YieldOp>(afterBody.getTerminator());
+  if (!terminatorForwardsCarriedPods(conditionTerminator.getArgs(), beforeBody) ||
+      !terminatorForwardsCarriedPods(yieldTerminator.getOperands(), afterBody)) {
+    return reject(
+        "while terminators must forward each carried POD unchanged in its original position"
+    );
+  }
+
+  return success();
+}
+
 /// Expand POD-typed `scf.while` iteration values into one SSA value per direct scalar record.
 class SplitPodCarriedWhileValuesPattern final : public OpRewritePattern<scf::WhileOp> {
 public:
@@ -6411,70 +6517,12 @@ public:
 
   LogicalResult matchAndRewrite(scf::WhileOp whileOp, PatternRewriter &rewriter) const override {
     SmallVector<WhileCarriedPod> carriedPods;
-    for (auto [idx, init] : llvm::enumerate(whileOp.getInits())) {
-      auto podTy = dyn_cast<PodType>(init.getType());
-      if (!podTy) {
-        continue;
-      }
-      WhileCarriedPod pod {llzk::checkedCast<unsigned>(idx), podTy, {}, {}};
-      collectWhileCarriedPodLeaves(pod);
-      // Forwarding mutable aggregate leaves as SSA values would erase the copy boundary of their
-      // reads and writes. This rewrite only carries scalar leaves until snapshots are supported.
-      if (llvm::any_of(pod.leafTypes, [](Type type) {
-        return isa<PodType, ArrayType, StructType>(type);
-      })) {
-        return failure();
-      }
-      carriedPods.push_back(std::move(pod));
+    StringRef reason;
+    if (failed(checkWhileCarriedPods(whileOp, carriedPods, reason))) {
+      return rewriter.notifyMatchFailure(whileOp, reason);
     }
-    if (carriedPods.empty()) {
-      return failure();
-    }
-    // This rewrite uses one index space for the before and after regions. General scf.while permits
-    // its init and result types to differ, so leave asymmetric loops to later lowering.
-    if (whileOp.getInits().size() != whileOp.getNumResults() ||
-        !llvm::equal(whileOp.getInits().getTypes(), whileOp.getResultTypes())) {
-      return failure();
-    }
-
     Block &beforeBody = *whileOp.getBeforeBody();
     Block &afterBody = *whileOp.getAfterBody();
-    llvm::DenseSet<Value> uniquePodInits;
-    for (const WhileCarriedPod &pod : carriedPods) {
-      if (hasUnsupportedWhileCarriedPodUse(whileOp.getBeforeArguments()[pod.originalIndex], pod) ||
-          hasUnsupportedWhileCarriedPodUse(whileOp.getAfterArguments()[pod.originalIndex], pod)) {
-        return failure();
-      }
-
-      Value init = whileOp.getInits()[pod.originalIndex];
-      // Splitting two aliases independently would lose writes observed through the other alias.
-      if (!uniquePodInits.insert(init).second ||
-          !hasSupportedWhilePodInitialization(whileOp, init)) {
-        return failure();
-      }
-      for (Operation *user : init.getUsers()) {
-        if (user != whileOp.getOperation() &&
-            !(user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp))) {
-          return failure();
-        }
-      }
-    }
-
-    auto terminatorForwardsCarriedPods = [&](ValueRange values, Block &body) {
-      for (const WhileCarriedPod &pod : carriedPods) {
-        if (pod.originalIndex >= values.size() ||
-            values[pod.originalIndex] != body.getArgument(pod.originalIndex)) {
-          return false;
-        }
-      }
-      return true;
-    };
-    auto conditionTerminator = mlir::cast<scf::ConditionOp>(beforeBody.getTerminator());
-    auto yieldTerminator = mlir::cast<scf::YieldOp>(afterBody.getTerminator());
-    if (!terminatorForwardsCarriedPods(conditionTerminator.getArgs(), beforeBody) ||
-        !terminatorForwardsCarriedPods(yieldTerminator.getOperands(), afterBody)) {
-      return failure();
-    }
 
     auto lookupPod = [&](unsigned originalIndex) -> const WhileCarriedPod * {
       auto *it = llvm::find_if(carriedPods, [originalIndex](const WhileCarriedPod &pod) {
@@ -7046,9 +7094,17 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         std::string residualIR;
         llvm::raw_string_ostream os(residualIR);
         module.print(os);
-        module.emitError() << "llzk-pod-to-scalar left residual pod IR after reaching a fixpoint ("
-                           << residualCount << " residual pod-like items remain)\n"
-                           << residualIR;
+        auto diagnostic = module.emitError();
+        diagnostic << "llzk-pod-to-scalar left residual pod IR after reaching a fixpoint ("
+                   << residualCount << " residual pod-like items remain)\n"
+                   << residualIR;
+        module.walk([&](scf::WhileOp whileOp) {
+          SmallVector<WhileCarriedPod> carriedPods;
+          StringRef reason;
+          if (failed(checkWhileCarriedPods(whileOp, carriedPods, reason)) && !reason.empty()) {
+            diagnostic.attachNote(whileOp.getLoc()) << "cannot scalarize carried POD: " << reason;
+          }
+        });
         signalPassFailure();
         return;
       }

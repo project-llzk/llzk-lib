@@ -9,6 +9,7 @@ module attributes {llzk.lang} {
     %c1 = arith.constant 1 : index
     %state = pod.new : !State
     pod.write %state[@value] = %c0 : !State, index
+    // expected-note@+1 {{cannot scalarize carried POD: while terminators must forward each carried POD unchanged in its original position}}
     %result:2 = scf.while (%i = %count, %pod = %state)
         : (index, !State) -> (index, !State) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -33,6 +34,7 @@ module attributes {llzk.lang} {
   function.def @reject_mismatched_arity(%count: index, %seed: index) -> index {
     %state = pod.new : !State
     pod.write %state[@value] = %seed : !State, index
+    // expected-note@+1 {{cannot scalarize carried POD: while initializer and result types must match}}
     %result = scf.while (%i = %count, %pod = %state) : (index, !State) -> index {
       %value = pod.read %pod[@value] : !State, index
       %condition = arith.cmpi sgt, %i, %value : index
@@ -57,6 +59,7 @@ module attributes {llzk.lang} {
     %c1 = arith.constant 1 : index
     %state = pod.new : !State
     pod.write %state[@value] = %c0 : !State, index
+    // expected-note@+1 {{cannot scalarize carried POD: initializer or nested source has uses outside pre-loop initialization}}
     %result:2 = scf.while (%i = %count, %pod = %state)
         : (index, !State) -> (index, !State) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -85,6 +88,7 @@ module attributes {llzk.lang} {
     %c1 = arith.constant 1 : index
     %state = pod.new : !State
     pod.write %state[@value] = %seed : !State, index
+    // expected-note@+1 {{cannot scalarize carried POD: multiple carried POD arguments have the same initializer}}
     %result:4 = scf.while (%i = %count, %observed = %seed, %lhs = %state, %rhs = %state)
         : (index, index, !State, !State) -> (index, index, !State, !State) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -116,6 +120,7 @@ module attributes {llzk.lang} {
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Outer
     pod.write %outer[@inner] = %inner : !Outer, !Inner
+    // expected-note@+1 {{cannot scalarize carried POD: writes to nested POD copies are unsupported}}
     %result:4 = scf.while (%i = %count, %observed = %seed, %outerArg = %outer, %innerArg = %inner)
         : (index, index, !Outer, !Inner) -> (index, index, !Outer, !Inner) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -148,6 +153,7 @@ module attributes {llzk.lang} {
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Outer
     pod.write %outer[@inner] = %inner : !Outer, !Inner
+    // expected-note@+1 {{cannot scalarize carried POD: writes to nested POD copies are unsupported}}
     %result:2 = scf.while (%i = %count, %outerArg = %outer)
         : (index, !Outer) -> (index, !Outer) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -180,6 +186,7 @@ module attributes {llzk.lang} {
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Outer
     pod.write %outer[@inner] = %inner : !Outer, !Inner
+    // expected-note@+1 {{cannot scalarize carried POD: initializer or nested source has uses outside pre-loop initialization}}
     %result:2 = scf.while (%i = %count, %innerArg = %inner)
         : (index, !Inner) -> (index, !Inner) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -211,6 +218,7 @@ module attributes {llzk.lang} {
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Parent
     pod.write %outer[@inner] = %inner : !Parent, !Inner
+    // expected-note@+1 {{cannot scalarize carried POD: initializer or nested source has uses outside pre-loop initialization}}
     %result:2 = scf.while (%i = %count, %innerArg = %inner)
         : (index, !Inner) -> (index, !Inner) {
       %condition = arith.cmpi sgt, %i, %c0 : index

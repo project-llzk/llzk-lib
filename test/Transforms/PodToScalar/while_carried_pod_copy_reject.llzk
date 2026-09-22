@@ -15,6 +15,7 @@ module attributes {llzk.lang} {
     %parent = pod.new : !Parent
     pod.write %parent[@child] = %child : !Parent, !Child
     pod.write %child[@value] = %count : !Child, index
+    // expected-note@+1 {{cannot scalarize carried POD: initialization source is modified after being copied into its parent}}
     %result:3 = scf.while (%i = %count, %seen = %seed, %pod = %parent)
         : (index, index, !Parent) -> (index, index, !Parent) {
       %cond = arith.cmpi sgt, %i, %c0 : index
@@ -44,6 +45,7 @@ module attributes {llzk.lang} {
     array.write %values[%c0] = %seed : !array.type<1 x index>, index
     %state = pod.new : !State
     pod.write %state[@values] = %values : !State, !array.type<1 x index>
+    // expected-note@+1 {{cannot scalarize carried POD: mutable aggregate leaves require unsupported copy snapshots}}
     %result:2 = scf.while (%i = %count, %pod = %state)
         : (index, !State) -> (index, !State) {
       %cond = arith.cmpi sgt, %i, %c0 : index
@@ -76,6 +78,7 @@ module attributes {llzk.lang} {
     pod.write %child[@value] = %seed : !Child, index
     %parent = pod.new : !Parent
     pod.write %parent[@child] = %child : !Parent, !Child
+    // expected-note@+1 {{cannot scalarize carried POD: while initializer and result types must match}}
     %result:3 = scf.while (%i = %count, %seen = %seed, %pod = %parent)
         : (index, index, !Parent) -> (index, index, !Parent) {
       %copy = pod.read %pod[@child] : !Parent, !Child
@@ -108,6 +111,7 @@ module attributes {llzk.lang} {
     pod.write %middle[@inner] = %inner : !pod.type<[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
     %outer = pod.new : !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>
     pod.write %outer[@middle] = %middle : !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>, !pod.type<[@inner: !pod.type<[@value: index]>]>
+    // expected-note@+1 {{cannot scalarize carried POD: writes to nested POD copies are unsupported}}
     %result:2 = scf.while (%i = %count, %pod = %outer)
         : (index, !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>)
         -> (index, !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>) {
