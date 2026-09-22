@@ -24,6 +24,19 @@ module attributes {llzk.lang} {
     %second = array.extract %source[%index] : !array.type<1,1 x index>
     function.return %cast, %second : !array.type<1 x index>, !array.type<1 x index>
   }
+
+  // A cast's operand may be a redundant aggregate read that is pending
+  // replacement. The cast must use the replacement's state tree.
+  function.def @cast_replacement_alias(%source: !array.type<1,1 x index>) -> index
+      attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %prior = array.extract %source[%index] : !array.type<1,1 x index>
+    %known = array.read %prior[%index] : !array.type<1 x index>, index
+    %redundant = array.extract %source[%index] : !array.type<1,1 x index>
+    %cast = poly.unifiable_cast %redundant : (!array.type<1 x index>) -> !array.type<1 x index>
+    %reused = array.read %cast[%index] : !array.type<1 x index>, index
+    function.return %reused : index
+  }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @unifiable_cast_alias(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<1 x index>, !array.type<1 x index>) attributes {function.allow_witness} {
@@ -43,5 +56,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_8]]] = %[[VAL_6]] : <1 x index>, index
 // CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <1,1 x index>
 // CHECK-NEXT:      function.return %[[VAL_10]], %[[VAL_11]] : !array.type<1 x index>, !array.type<1 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @cast_replacement_alias(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<1,1 x index>) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_12]]{{\[}}%[[VAL_13]]] : <1,1 x index>
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_14]]{{\[}}%[[VAL_13]]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_14]] : (!array.type<1 x index>) -> !array.type<1 x index>
+// CHECK-NEXT:      function.return %[[VAL_15]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

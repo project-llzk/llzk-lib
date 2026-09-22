@@ -937,7 +937,17 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
     // Transparent aggregate casts preserve identity. Store one tree under the
     // root value for the whole cast chain, rather than one entry per SSA alias.
-    auto canonicalStateKey = [&](Value v) { return getAggregateAliasRoot(translate(v)); };
+    // A cast operand may itself be replacement-pending, so repeat both
+    // normalizations until reaching the canonical state key.
+    auto canonicalStateKey = [&](Value v) {
+      while (true) {
+        Value normalized = getAggregateAliasRoot(translate(v));
+        if (normalized == v) {
+          return v;
+        }
+        v = normalized;
+      }
+    };
 
     // Lookup the value tree in the current state or return nullptr.
     auto tryGetValTree = [&state, &canonicalStateKey](Value v) -> std::shared_ptr<ReferenceNode> {
