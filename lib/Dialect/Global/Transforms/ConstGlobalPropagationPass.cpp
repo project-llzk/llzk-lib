@@ -73,8 +73,10 @@ public:
       return;
     }
 
+    // Keep track of erased operations to skip them during the inner loop iteration and avoid
+    // use-after-free errors. These MUST NOT be dereferenced because the ops have been erased.
+    llvm::DenseSet<void *> erased;
     SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
-    llvm::DenseSet<Operation *> erased;
     for (GlobalDefOp globalDef : constGlobals) {
       if (const SymbolUseGraphNode *node = useGraph.lookupNode(globalDef)) {
         Attribute constValue = globalDef.getInitialValueAttr();
@@ -92,7 +94,7 @@ public:
             continue;
           }
           LLVM_DEBUG(
-              llvm::outs() << "Replacing '" << symbolAttr << "' with '" << constValue << "' in "
+              llvm::dbgs() << "Replacing '" << symbolAttr << "' with '" << constValue << "' in "
                            << *userOp << '\n'
           );
 
