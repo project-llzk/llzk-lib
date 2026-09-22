@@ -726,154 +726,156 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 <div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>      }</div>
 <div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>    }</div>
 <div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>    <span class="keyword">auto</span> it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), <a class="code hl_enumvalue" href="namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b">Side::RHS</a>});</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>    <span class="keywordflow">if</span> (it != unifications.end() &amp;&amp; !<a class="code hl_function" href="namespacellzk.html#ac0200f46aeb61d24a1630b2eebf0abe7">typeParamsUnify</a>({attr}, {it-&gt;second})) {</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>      <span class="keywordflow">return</span> origin-&gt;emitOpError().append(</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>          <span class="stringliteral">&quot;template instantiation value &#39;&quot;</span>, attr, <span class="stringliteral">&quot;&#39; for parameter \&quot;@&quot;</span>, paramOp.getName(),</div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>          <span class="stringliteral">&quot;\&quot; conflicts with value &#39;&quot;</span>, it-&gt;second, <span class="stringliteral">&quot;&#39; inferred from function type signature&quot;</span></div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>      );</div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>    }</div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>  }</div>
-<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>}</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>    <span class="comment">// A null entry represents conflicting inferred bindings. It may include symbolic values</span></div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    <span class="comment">// that become equal after instantiating an enclosing template, so defer validation.</span></div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>    <span class="keywordflow">if</span> (it != unifications.end() &amp;&amp; it-&gt;second &amp;&amp; !<a class="code hl_function" href="namespacellzk.html#ac0200f46aeb61d24a1630b2eebf0abe7">typeParamsUnify</a>({attr}, {it-&gt;second})) {</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>      <span class="keywordflow">return</span> origin-&gt;emitOpError().append(</div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>          <span class="stringliteral">&quot;template instantiation value &#39;&quot;</span>, attr, <span class="stringliteral">&quot;&#39; for parameter \&quot;@&quot;</span>, paramOp.getName(),</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>          <span class="stringliteral">&quot;\&quot; conflicts with value &#39;&quot;</span>, it-&gt;second, <span class="stringliteral">&quot;&#39; inferred from function type signature&quot;</span></div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>      );</div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>    }</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>  }</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>}</div>
 </div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span> </div>
-<div class="foldopen" id="foldopen00574" data-start="{" data-end="}">
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno"><a class="line" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">  574</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">verifyParamOfType</a>(</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>    SymbolTableCollection &amp;tables, SymbolRefAttr param, Type parameterizedType, Operation *origin,</div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>    std::optional&lt;Type&gt; requiredParamType</div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>) {</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>  <span class="comment">// Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of</span></div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>  <span class="comment">// the template that the current Operation is nested within. These are always flat references</span></div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  <span class="comment">// (i.e., contain no nested references).</span></div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  <span class="keywordflow">if</span> (param.getNestedReferences().empty()) {</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>    FailureOr&lt;TemplateOp&gt; parent = <a class="code hl_function" href="namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53">getConstResolutionTemplate</a>(tables, origin);</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>    <span class="keywordflow">if</span> (failed(parent)) {</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>      <span class="keywordflow">return</span> failure(); <span class="comment">// getConstResolutionTemplate() failure cases emit a sufficient error</span></div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>                        <span class="comment">// message</span></div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    }</div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    <span class="keywordflow">if</span> (*parent) {</div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> b =</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>              parent-&gt;getConstNamed&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html">TemplateSymbolBindingOpInterface</a>&gt;(param.getRootReference())) {</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>        <span class="keywordflow">return</span> verifyTemplateSymbolType(b, param, parameterizedType, origin, requiredParamType);</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>      }</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>    }</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>  }</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>  <span class="comment">// Otherwise, see if the symbol can be found via lookup from the `origin` Operation.</span></div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>  <span class="keyword">auto</span> lookupRes = <a class="code hl_function" href="namespacellzk.html#a3073035b30825ce363ac236f14fe289a">lookupTopLevelSymbol</a>(tables, param, origin);</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  <span class="keywordflow">if</span> (failed(lookupRes)) {</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>    <span class="keywordflow">return</span> failure(); <span class="comment">// lookupTopLevelSymbol() already emits a sufficient error message</span></div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  }</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  <span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a> = llvm::dyn_cast&lt;GlobalDefOp&gt;(lookupRes-&gt;get());</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  <span class="keywordflow">if</span> (!<a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>) {</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>    <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;ref \&quot;&quot;</span> &lt;&lt; param &lt;&lt; <span class="stringliteral">&quot;\&quot; in type &quot;</span> &lt;&lt; parameterizedType</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>                               &lt;&lt; <span class="stringliteral">&quot; refers to a &#39;&quot;</span> &lt;&lt; lookupRes-&gt;get()-&gt;getName()</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>                               &lt;&lt; <span class="stringliteral">&quot;&#39; which is not allowed&quot;</span>;</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>  }</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  <span class="keywordflow">if</span> (!<a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>.isConstant()) {</div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>    <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;ref \&quot;&quot;</span> &lt;&lt; param &lt;&lt; <span class="stringliteral">&quot;\&quot; in type &quot;</span> &lt;&lt; parameterizedType</div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>                               &lt;&lt; <span class="stringliteral">&quot; refers to a global that is not marked as &#39;const&#39;&quot;</span>;</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>  }</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>}</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span> </div>
+<div class="foldopen" id="foldopen00576" data-start="{" data-end="}">
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno"><a class="line" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">  576</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">verifyParamOfType</a>(</div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>    SymbolTableCollection &amp;tables, SymbolRefAttr param, Type parameterizedType, Operation *origin,</div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>    std::optional&lt;Type&gt; requiredParamType</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>) {</div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  <span class="comment">// Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of</span></div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  <span class="comment">// the template that the current Operation is nested within. These are always flat references</span></div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>  <span class="comment">// (i.e., contain no nested references).</span></div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  <span class="keywordflow">if</span> (param.getNestedReferences().empty()) {</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>    FailureOr&lt;TemplateOp&gt; parent = <a class="code hl_function" href="namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53">getConstResolutionTemplate</a>(tables, origin);</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    <span class="keywordflow">if</span> (failed(parent)) {</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>      <span class="keywordflow">return</span> failure(); <span class="comment">// getConstResolutionTemplate() failure cases emit a sufficient error</span></div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>                        <span class="comment">// message</span></div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    }</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>    <span class="keywordflow">if</span> (*parent) {</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> b =</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>              parent-&gt;getConstNamed&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html">TemplateSymbolBindingOpInterface</a>&gt;(param.getRootReference())) {</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>        <span class="keywordflow">return</span> verifyTemplateSymbolType(b, param, parameterizedType, origin, requiredParamType);</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>      }</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>    }</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>  }</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  <span class="comment">// Otherwise, see if the symbol can be found via lookup from the `origin` Operation.</span></div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  <span class="keyword">auto</span> lookupRes = <a class="code hl_function" href="namespacellzk.html#a3073035b30825ce363ac236f14fe289a">lookupTopLevelSymbol</a>(tables, param, origin);</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  <span class="keywordflow">if</span> (failed(lookupRes)) {</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    <span class="keywordflow">return</span> failure(); <span class="comment">// lookupTopLevelSymbol() already emits a sufficient error message</span></div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  }</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  <span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a> = llvm::dyn_cast&lt;GlobalDefOp&gt;(lookupRes-&gt;get());</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>  <span class="keywordflow">if</span> (!<a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>) {</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>    <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;ref \&quot;&quot;</span> &lt;&lt; param &lt;&lt; <span class="stringliteral">&quot;\&quot; in type &quot;</span> &lt;&lt; parameterizedType</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>                               &lt;&lt; <span class="stringliteral">&quot; refers to a &#39;&quot;</span> &lt;&lt; lookupRes-&gt;get()-&gt;getName()</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>                               &lt;&lt; <span class="stringliteral">&quot;&#39; which is not allowed&quot;</span>;</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  }</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>  <span class="keywordflow">if</span> (!<a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>.isConstant()) {</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>    <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;ref \&quot;&quot;</span> &lt;&lt; param &lt;&lt; <span class="stringliteral">&quot;\&quot; in type &quot;</span> &lt;&lt; parameterizedType</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>                               &lt;&lt; <span class="stringliteral">&quot; refers to a global that is not marked as &#39;const&#39;&quot;</span>;</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  }</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>}</div>
 </div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span> </div>
-<div class="foldopen" id="foldopen00612" data-start="{" data-end="}">
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno"><a class="line" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">  612</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a>(</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>    SymbolTableCollection &amp;tables, ArrayRef&lt;Attribute&gt; tyParams, Type parameterizedType,</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>    Operation *origin, std::optional&lt;Type&gt; requiredParamType</div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>) {</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  <span class="comment">// Rather than immediately returning on failure, we check all params and aggregate to provide as</span></div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>  <span class="comment">// many errors are possible in a single verifier run.</span></div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  LogicalResult paramCheckResult = success();</div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  LLVM_DEBUG({</div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>    llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType] parameterizedType = &quot;</span> &lt;&lt; parameterizedType &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>  });</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  <span class="keywordflow">for</span> (Attribute attr : tyParams) {</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>    LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]   checking attribute &quot;</span> &lt;&lt; attr &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>; });</div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>    <a class="code hl_function" href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec">assertValidAttrForParamOfType</a>(attr);</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>    <span class="keywordflow">if</span> (SymbolRefAttr symRefParam = llvm::dyn_cast&lt;SymbolRefAttr&gt;(attr)) {</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>      <span class="keyword">auto</span> r = <a class="code hl_function" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">verifyParamOfType</a>(tables, symRefParam, parameterizedType, origin, requiredParamType);</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>      <span class="keywordflow">if</span> (failed(r)) {</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>        LLVM_DEBUG({</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]     failed to verify symbol attribute\n&quot;</span>;</div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>        });</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>        paramCheckResult = failure();</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>      }</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (TypeAttr typeParam = llvm::dyn_cast&lt;TypeAttr&gt;(attr)) {</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>      <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">verifyTypeResolution</a>(tables, origin, typeParam.getValue()))) {</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>        LLVM_DEBUG({</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]     failed to verify type attribute\n&quot;</span>;</div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>        });</div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>        paramCheckResult = failure();</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>      }</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>    }</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>    LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]     verified attribute\n&quot;</span>; });</div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>    <span class="comment">// IntegerAttr and AffineMapAttr cannot contain symbol references</span></div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  }</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  <span class="keywordflow">return</span> paramCheckResult;</div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>}</div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span> </div>
+<div class="foldopen" id="foldopen00614" data-start="{" data-end="}">
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno"><a class="line" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">  614</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a>(</div>
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>    SymbolTableCollection &amp;tables, ArrayRef&lt;Attribute&gt; tyParams, Type parameterizedType,</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>    Operation *origin, std::optional&lt;Type&gt; requiredParamType</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>) {</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  <span class="comment">// Rather than immediately returning on failure, we check all params and aggregate to provide as</span></div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  <span class="comment">// many errors are possible in a single verifier run.</span></div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>  LogicalResult paramCheckResult = success();</div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>  LLVM_DEBUG({</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>    llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType] parameterizedType = &quot;</span> &lt;&lt; parameterizedType &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  });</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <span class="keywordflow">for</span> (Attribute attr : tyParams) {</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>    LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]   checking attribute &quot;</span> &lt;&lt; attr &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>; });</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>    <a class="code hl_function" href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec">assertValidAttrForParamOfType</a>(attr);</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>    <span class="keywordflow">if</span> (SymbolRefAttr symRefParam = llvm::dyn_cast&lt;SymbolRefAttr&gt;(attr)) {</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>      <span class="keyword">auto</span> r = <a class="code hl_function" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">verifyParamOfType</a>(tables, symRefParam, parameterizedType, origin, requiredParamType);</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>      <span class="keywordflow">if</span> (failed(r)) {</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>        LLVM_DEBUG({</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]     failed to verify symbol attribute\n&quot;</span>;</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>        });</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>        paramCheckResult = failure();</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>      }</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (TypeAttr typeParam = llvm::dyn_cast&lt;TypeAttr&gt;(attr)) {</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>      <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">verifyTypeResolution</a>(tables, origin, typeParam.getValue()))) {</div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>        LLVM_DEBUG({</div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]     failed to verify type attribute\n&quot;</span>;</div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>        });</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>        paramCheckResult = failure();</div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>      }</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>    }</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>    LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[verifyParamOfType]     verified attribute\n&quot;</span>; });</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>    <span class="comment">// IntegerAttr and AffineMapAttr cannot contain symbol references</span></div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  }</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>  <span class="keywordflow">return</span> paramCheckResult;</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>}</div>
 </div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span> </div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>FailureOr&lt;StructDefOp&gt;</div>
-<div class="foldopen" id="foldopen00648" data-start="{" data-end="}">
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno"><a class="line" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">  648</a></span><a class="code hl_function" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">verifyStructTypeResolution</a>(SymbolTableCollection &amp;tables, <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> ty, Operation *origin) {</div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  <span class="keyword">auto</span> res = ty.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a4a15a4c241c98465a33145a821191760">getDefinition</a>(tables, origin);</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  <span class="keywordflow">if</span> (failed(res)) {</div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>  }</div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> defForType = res.value().get();</div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#a449db750fee6d61e2ec3aa36a969d483">structTypesUnify</a>(ty, defForType.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>({}), res-&gt;getNamespace())) {</div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>    <span class="keywordflow">return</span> origin-&gt;emitError()</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>        .append(</div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>            <span class="stringliteral">&quot;Cannot unify parameters of type &quot;</span>, ty, <span class="stringliteral">&quot; with parameters of &#39;&quot;</span>,</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>            <a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a4b8e286abe8df3553b201ec695bd7177">StructDefOp::getOperationName</a>(), <span class="stringliteral">&quot;&#39; \&quot;&quot;</span>, defForType.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#afb01a31f952e6b52bd7243ecbf238739">getHeaderString</a>(), <span class="charliteral">&#39;&quot;&#39;</span></div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>        )</div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>        .attachNote(defForType.getLoc())</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>        .append(<span class="stringliteral">&quot;type parameters must unify with parameters defined here&quot;</span>);</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  }</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  <span class="comment">// If there are any SymbolRefAttr parameters on the StructType, ensure those refs are valid.</span></div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>  <span class="keywordflow">if</span> (ArrayAttr tyParams = ty.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>    <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a>(tables, tyParams.getValue(), ty, origin))) {</div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>      <span class="keywordflow">return</span> failure(); <span class="comment">// verifyParamsOfType() already emits a sufficient error message</span></div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>    }</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>  }</div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>  <span class="keywordflow">return</span> defForType;</div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>}</div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span> </div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>FailureOr&lt;StructDefOp&gt;</div>
+<div class="foldopen" id="foldopen00650" data-start="{" data-end="}">
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno"><a class="line" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">  650</a></span><a class="code hl_function" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">verifyStructTypeResolution</a>(SymbolTableCollection &amp;tables, <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> ty, Operation *origin) {</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>  <span class="keyword">auto</span> res = ty.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a4a15a4c241c98465a33145a821191760">getDefinition</a>(tables, origin);</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>  <span class="keywordflow">if</span> (failed(res)) {</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  }</div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> defForType = res.value().get();</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#a449db750fee6d61e2ec3aa36a969d483">structTypesUnify</a>(ty, defForType.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>({}), res-&gt;getNamespace())) {</div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>    <span class="keywordflow">return</span> origin-&gt;emitError()</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>        .append(</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>            <span class="stringliteral">&quot;Cannot unify parameters of type &quot;</span>, ty, <span class="stringliteral">&quot; with parameters of &#39;&quot;</span>,</div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>            <a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a4b8e286abe8df3553b201ec695bd7177">StructDefOp::getOperationName</a>(), <span class="stringliteral">&quot;&#39; \&quot;&quot;</span>, defForType.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#afb01a31f952e6b52bd7243ecbf238739">getHeaderString</a>(), <span class="charliteral">&#39;&quot;&#39;</span></div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>        )</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>        .attachNote(defForType.getLoc())</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>        .append(<span class="stringliteral">&quot;type parameters must unify with parameters defined here&quot;</span>);</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>  }</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>  <span class="comment">// If there are any SymbolRefAttr parameters on the StructType, ensure those refs are valid.</span></div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>  <span class="keywordflow">if</span> (ArrayAttr tyParams = ty.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>    <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a>(tables, tyParams.getValue(), ty, origin))) {</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      <span class="keywordflow">return</span> failure(); <span class="comment">// verifyParamsOfType() already emits a sufficient error message</span></div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>    }</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>  }</div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>  <span class="keywordflow">return</span> defForType;</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>}</div>
 </div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span> </div>
-<div class="foldopen" id="foldopen00672" data-start="{" data-end="}">
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno"><a class="line" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">  672</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">verifyTypeResolution</a>(SymbolTableCollection &amp;tables, Operation *origin, Type ty) {</div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> sTy = llvm::dyn_cast&lt;StructType&gt;(ty)) {</div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">verifyStructTypeResolution</a>(tables, sTy, origin);</div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> aTy = llvm::dyn_cast&lt;ArrayType&gt;(ty)) {</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>    <span class="keyword">auto</span> r = <a class="code hl_function" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a>(</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>        tables, aTy.getDimensionSizes(), aTy, origin, IndexType::get(aTy.getContext())</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>    );</div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>    <span class="keywordflow">if</span> (failed(r)) {</div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>    }</div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">verifyTypeResolution</a>(tables, origin, aTy.getElementType());</div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TypeVarType.html">TypeVarType</a> vTy = llvm::dyn_cast&lt;TypeVarType&gt;(ty)) {</div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>    <span class="comment">// Unlike other type parameters, a type variable may only name a parameter</span></div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>    <span class="comment">// of the enclosing template; it cannot resolve to a global.</span></div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>    FailureOr&lt;TemplateOp&gt; parent = <a class="code hl_function" href="namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53">getConstResolutionTemplate</a>(tables, origin);</div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>    <span class="keywordflow">if</span> (failed(parent)) {</div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>    }</div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>    <a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp = *parent;</div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>    <span class="keywordflow">if</span> (templateOp &amp;&amp; templateOp.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#a29d475b1207d28ea836ac9e5da0e6452">getConstNamed</a>&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a>&gt;(vTy.getNameRef())) {</div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>      <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>    }</div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>    <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;type variable &quot;</span> &lt;&lt; vTy</div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>                               &lt;&lt; <span class="stringliteral">&quot; must reference a parameter of its enclosing &quot;</span> &lt;&lt; <span class="charliteral">&#39;\&#39;&#39;</span></div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>                               &lt;&lt; <a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#aa6ed6e98e5977223f80008b6baf0bd83">TemplateOp::getOperationName</a>() &lt;&lt; <span class="charliteral">&#39;\&#39;&#39;</span>;</div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>    <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>  }</div>
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>}</div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span> </div>
+<div class="foldopen" id="foldopen00674" data-start="{" data-end="}">
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno"><a class="line" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">  674</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">verifyTypeResolution</a>(SymbolTableCollection &amp;tables, Operation *origin, Type ty) {</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> sTy = llvm::dyn_cast&lt;StructType&gt;(ty)) {</div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">verifyStructTypeResolution</a>(tables, sTy, origin);</div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> aTy = llvm::dyn_cast&lt;ArrayType&gt;(ty)) {</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>    <span class="keyword">auto</span> r = <a class="code hl_function" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a>(</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>        tables, aTy.getDimensionSizes(), aTy, origin, IndexType::get(aTy.getContext())</div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>    );</div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>    <span class="keywordflow">if</span> (failed(r)) {</div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>    }</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">verifyTypeResolution</a>(tables, origin, aTy.getElementType());</div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TypeVarType.html">TypeVarType</a> vTy = llvm::dyn_cast&lt;TypeVarType&gt;(ty)) {</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>    <span class="comment">// Unlike other type parameters, a type variable may only name a parameter</span></div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>    <span class="comment">// of the enclosing template; it cannot resolve to a global.</span></div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>    FailureOr&lt;TemplateOp&gt; parent = <a class="code hl_function" href="namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53">getConstResolutionTemplate</a>(tables, origin);</div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>    <span class="keywordflow">if</span> (failed(parent)) {</div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>    }</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>    <a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp = *parent;</div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>    <span class="keywordflow">if</span> (templateOp &amp;&amp; templateOp.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#a29d475b1207d28ea836ac9e5da0e6452">getConstNamed</a>&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a>&gt;(vTy.getNameRef())) {</div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>      <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>    }</div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>    <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;type variable &quot;</span> &lt;&lt; vTy</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>                               &lt;&lt; <span class="stringliteral">&quot; must reference a parameter of its enclosing &quot;</span> &lt;&lt; <span class="charliteral">&#39;\&#39;&#39;</span></div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>                               &lt;&lt; <a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#aa6ed6e98e5977223f80008b6baf0bd83">TemplateOp::getOperationName</a>() &lt;&lt; <span class="charliteral">&#39;\&#39;&#39;</span>;</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>    <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  }</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>}</div>
 </div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span> </div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span> </div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Attrs_8h_html"><div class="ttname"><a href="Felt_2IR_2Attrs_8h.html">Attrs.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Types_8h_html"><div class="ttname"><a href="Felt_2IR_2Types_8h.html">Types.h</a></div></div>
@@ -927,10 +929,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 <div class="ttc" id="anamespacellzk_html_a5a8f8e48ae6b42bbfbccc3b9a58e642d"><div class="ttname"><a href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">llzk::appendLeaf</a></div><div class="ttdeci">SymbolRefAttr appendLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf)</div><div class="ttdef"><b>Definition</b> <a href="#l00302">SymbolHelper.cpp:302</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5b768daf3c60f0a261a34d171f706304"><div class="ttname"><a href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">llzk::getParentOfType</a></div><div class="ttdeci">OpClass getParentOfType(mlir::Operation *op)</div><div class="ttdoc">Return the closest surrounding parent/ancestor operation that is of type &#39;OpClass&#39;.</div><div class="ttdef"><b>Definition</b> <a href="OpHelpers_8h_source.html#l00053">OpHelpers.h:53</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a6233c90d2afb42113aa36eddeebd8f76"><div class="ttname"><a href="namespacellzk.html#a6233c90d2afb42113aa36eddeebd8f76">llzk::replaceLeaf</a></div><div class="ttdeci">SymbolRefAttr replaceLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf)</div><div class="ttdef"><b>Definition</b> <a href="#l00292">SymbolHelper.cpp:292</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a75f8539d20e1d1066b30e5b8d15b0546"><div class="ttname"><a href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">llzk::verifyStructTypeResolution</a></div><div class="ttdeci">FailureOr&lt; StructDefOp &gt; verifyStructTypeResolution(SymbolTableCollection &amp;tables, StructType ty, Operation *origin)</div><div class="ttdef"><b>Definition</b> <a href="#l00648">SymbolHelper.cpp:648</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a75f8539d20e1d1066b30e5b8d15b0546"><div class="ttname"><a href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">llzk::verifyStructTypeResolution</a></div><div class="ttdeci">FailureOr&lt; StructDefOp &gt; verifyStructTypeResolution(SymbolTableCollection &amp;tables, StructType ty, Operation *origin)</div><div class="ttdef"><b>Definition</b> <a href="#l00650">SymbolHelper.cpp:650</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a858ad75166540367bf85ae38bc875707"><div class="ttname"><a href="namespacellzk.html#a858ad75166540367bf85ae38bc875707">llzk::getTopRootModule</a></div><div class="ttdeci">FailureOr&lt; ModuleOp &gt; getTopRootModule(Operation *from)</div><div class="ttdef"><b>Definition</b> <a href="#l00346">SymbolHelper.cpp:346</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a889208db1cfb1783bdbf616178900a5c"><div class="ttname"><a href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">llzk::verifyParamsOfType</a></div><div class="ttdeci">LogicalResult verifyParamsOfType(SymbolTableCollection &amp;tables, ArrayRef&lt; Attribute &gt; tyParams, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</div><div class="ttdef"><b>Definition</b> <a href="#l00612">SymbolHelper.cpp:612</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a8a20668e5af9ce080f868692b9d199a6"><div class="ttname"><a href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">llzk::verifyTypeResolution</a></div><div class="ttdeci">LogicalResult verifyTypeResolution(SymbolTableCollection &amp;tables, Operation *origin, Type ty)</div><div class="ttdef"><b>Definition</b> <a href="#l00672">SymbolHelper.cpp:672</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a889208db1cfb1783bdbf616178900a5c"><div class="ttname"><a href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">llzk::verifyParamsOfType</a></div><div class="ttdeci">LogicalResult verifyParamsOfType(SymbolTableCollection &amp;tables, ArrayRef&lt; Attribute &gt; tyParams, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</div><div class="ttdef"><b>Definition</b> <a href="#l00614">SymbolHelper.cpp:614</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a8a20668e5af9ce080f868692b9d199a6"><div class="ttname"><a href="namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6">llzk::verifyTypeResolution</a></div><div class="ttdeci">LogicalResult verifyTypeResolution(SymbolTableCollection &amp;tables, Operation *origin, Type ty)</div><div class="ttdef"><b>Definition</b> <a href="#l00674">SymbolHelper.cpp:674</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a924cecf12006f00994ef07f6324df0fa"><div class="ttname"><a href="namespacellzk.html#a924cecf12006f00994ef07f6324df0fa">llzk::verifyTemplateParamValueCompatibility</a></div><div class="ttdeci">LogicalResult verifyTemplateParamValueCompatibility(Operation *origin, Attribute value, TemplateParamOp targetParam)</div><div class="ttdef"><b>Definition</b> <a href="#l00442">SymbolHelper.cpp:442</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a983891da904dd7220be51d5e67b8170e"><div class="ttname"><a href="namespacellzk.html#a983891da904dd7220be51d5e67b8170e">llzk::verifyTemplateParamValuesCompatibility</a></div><div class="ttdeci">LogicalResult verifyTemplateParamValuesCompatibility(Operation *origin, ArrayAttr explicitParams, llvm::iterator_range&lt; Region::op_iterator&lt; TemplateParamOp &gt; &gt; targetParamDefs)</div><div class="ttdef"><b>Definition</b> <a href="#l00534">SymbolHelper.cpp:534</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aac04ef36bb784819019624d62b493ce6"><div class="ttname"><a href="namespacellzk.html#aac04ef36bb784819019624d62b493ce6">llzk::isDynamic</a></div><div class="ttdeci">bool isDynamic(IntegerAttr intAttr)</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8cpp_source.html#l00557">TypeHelper.cpp:557</a></div></div>
@@ -945,7 +947,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 <div class="ttc" id="anamespacellzk_html_aefd24a67a7806996a53b63a5014c82a2"><div class="ttname"><a href="namespacellzk.html#aefd24a67a7806996a53b63a5014c82a2">llzk::getPieces</a></div><div class="ttdeci">llvm::SmallVector&lt; FlatSymbolRefAttr &gt; getPieces(SymbolRefAttr ref)</div><div class="ttdef"><b>Definition</b> <a href="#l00269">SymbolHelper.cpp:269</a></div></div>
 <div class="ttc" id="anamespacellzk_html_af1d48798fe72bc519795c232aba3a40f"><div class="ttname"><a href="namespacellzk.html#af1d48798fe72bc519795c232aba3a40f">llzk::getPathFromRoot</a></div><div class="ttdeci">FailureOr&lt; SymbolRefAttr &gt; getPathFromRoot(SymbolOpInterface to, ModuleOp *foundRoot)</div><div class="ttdef"><b>Definition</b> <a href="#l00326">SymbolHelper.cpp:326</a></div></div>
 <div class="ttc" id="anamespacellzk_html_af2be4b94300457930c6aac7b73294456"><div class="ttname"><a href="namespacellzk.html#af2be4b94300457930c6aac7b73294456">llzk::MAIN_ATTR_NAME</a></div><div class="ttdeci">constexpr char MAIN_ATTR_NAME[]</div><div class="ttdoc">Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00037">Constants.h:37</a></div></div>
-<div class="ttc" id="anamespacellzk_html_af40b899e1eab6e10a664b0bebada2da3"><div class="ttname"><a href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">llzk::verifyParamOfType</a></div><div class="ttdeci">LogicalResult verifyParamOfType(SymbolTableCollection &amp;tables, SymbolRefAttr param, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</div><div class="ttdef"><b>Definition</b> <a href="#l00574">SymbolHelper.cpp:574</a></div></div>
+<div class="ttc" id="anamespacellzk_html_af40b899e1eab6e10a664b0bebada2da3"><div class="ttname"><a href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">llzk::verifyParamOfType</a></div><div class="ttdeci">LogicalResult verifyParamOfType(SymbolTableCollection &amp;tables, SymbolRefAttr param, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</div><div class="ttdef"><b>Definition</b> <a href="#l00576">SymbolHelper.cpp:576</a></div></div>
 <div class="ttc" id="anamespacellzk_html_afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b"><div class="ttname"><a href="namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b">llzk::Side::RHS</a></div><div class="ttdeci">@ RHS</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00148">TypeHelper.h:148</a></div></div>
 <div class="ttc" id="anamespacellzk_html_afdc6a963256e586da485479d34e385dc"><div class="ttname"><a href="namespacellzk.html#afdc6a963256e586da485479d34e385dc">llzk::isValidConstReadType</a></div><div class="ttdeci">bool isValidConstReadType(Type type)</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8cpp_source.html#l00529">TypeHelper.cpp:529</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
