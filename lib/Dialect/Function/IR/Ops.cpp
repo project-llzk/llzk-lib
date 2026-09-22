@@ -802,7 +802,9 @@ struct KnownTargetVerifier : public CallOpVerifier {
       // of the target function types against the call's operand and result types would determine.
       FailureOr<UnificationMap> unifyResult =
           callOp->unifyTypeSignatureWithNamespace(tgtType, includeSymNames);
-      assert(succeeded(unifyResult) && "already checked by `verifyInputs()` and `verifyOutputs()`");
+      if (failed(unifyResult)) {
+        return failure();
+      }
       return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
     } else {
       // Non-template functions cannot contain template parameter instantiations.
