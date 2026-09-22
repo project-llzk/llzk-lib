@@ -23,6 +23,15 @@ module attributes {llzk.lang} {
     }
     function.return %0 : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>]>
   }
+  function.def @select_or_nondet(%arg0: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>, %cond: i1) -> !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]> {
+    %0 = scf.if %cond -> (!pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>) {
+      scf.yield %arg0 : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+    } else {
+      %nondet = llzk.nondet : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+      scf.yield %nondet : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+    }
+    function.return %0 : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+  }
 }
 // CHECK-LABEL: function.def @carry(
 // CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>, %[[COND:[0-9a-zA-Z_\.]+]]: i1) -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]> {
@@ -35,6 +44,15 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      scf.yield %[[IF]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.return %[[EXEC]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
+// CHECK-LABEL: function.def @select_or_nondet(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>, %[[COND:[0-9a-zA-Z_\.]+]]: i1) -> !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]> {
+// CHECK:         %[[IF:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>) {
+// CHECK:           scf.yield %[[ARG]] : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK:         } else {
+// CHECK:           %[[NONDET:[0-9a-zA-Z_\.]+]] = llzk.nondet : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK:           scf.yield %[[NONDET]] : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK:         }
+// CHECK:         function.return %[[IF]] : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // -----
 
 module attributes {llzk.lang} {
