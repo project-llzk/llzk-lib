@@ -108,8 +108,13 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     auto value = constOp.getValue().getValue();
-    if (value.getBitWidth() <= 64) {
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
+    // Require a nonnegative APInt representation that fits in the signed 64-bit index builder.
+    // The sign check also protects programmatically constructed attributes whose APInt width was
+    // not normalized by the textual IR parser.
+    if (!value.isNegative() && value.getActiveBits() <= 63) {
+      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(
+          op, static_cast<int64_t>(value.getZExtValue())
+      );
       return success();
     }
   }

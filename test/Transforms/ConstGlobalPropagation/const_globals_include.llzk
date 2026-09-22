@@ -1,0 +1,29 @@
+// RUN: llzk-opt -I %input_dir -llzk-const-global-propagation %s | FileCheck %s
+// RUN: llzk-opt -I %input_dir -llzk-inline-includes -llzk-const-global-propagation %s | FileCheck --check-prefix=INLINE %s
+
+// The pass is deliberately run without -llzk-inline-includes. The constant
+// definition remains in the included file while its read is in this file.
+module attributes {llzk.lang} {
+  include.from "Transforms/ConstGlobalPropagation/Inputs/included_constant.llzk" as @constants
+
+  function.def @read_constant() -> index {
+    %n = global.read const @constants::@N : index
+    function.return %n : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    include.from "Transforms/ConstGlobalPropagation/Inputs/included_constant.llzk" as @constants
+// CHECK-NEXT:    function.def @read_constant() -> index {
+// CHECK-NEXT:      %[[N:[0-9a-zA-Z_\.]+]] = global.read const @constants::@N : index
+// CHECK-NEXT:      function.return %[[N]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// INLINE-LABEL: module attributes {llzk.lang} {
+// INLINE-NEXT:    module @constants attributes {llzk.lang} {
+// INLINE-NEXT:    }
+// INLINE-NEXT:    function.def @read_constant() -> index {
+// INLINE-NEXT:      %[[N:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// INLINE-NEXT:      function.return %[[N]] : index
+// INLINE-NEXT:    }
+// INLINE-NEXT:  }

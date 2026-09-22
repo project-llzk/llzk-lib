@@ -68,7 +68,7 @@ module attributes {llzk.lang} {
       scf.if %cond {
         array.insert %mat[%idx1] = %inputArr : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type>
       } else {
-        %arr1 = array.extract %mat[%idx1] : !array.type<7,3 x !felt.type> // unnecessary load
+        %arr1 = array.extract %mat[%idx1] : !array.type<7,3 x !felt.type>
         array.insert %mat[%idx4] = %arr1 : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type>
         array.insert %mat[%idx1] = %arr1 : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type> // redundant store, as %arr1 = %mat[%idx1] by definition
       }
