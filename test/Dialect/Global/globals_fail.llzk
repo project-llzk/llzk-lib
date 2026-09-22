@@ -404,12 +404,17 @@ module attributes {llzk.lang} {
 
 // -----
 
-// TEST: Struct parameter conflicts with a global name
+// TEST: A template parameter cannot shadow a global read target
 module attributes {llzk.lang} {
   global.def const @N : index = 3 // expected-note {{symbol already defined here}}
   poly.template @TComponent08 {
     // expected-error@+1 {{'poly.param' op name conflicts with an existing symbol}}
-    poly.param @N
+    poly.param @N : index
+
+    function.def @foo() -> index {
+      %value = global.read @N : index
+      function.return %value : index
+    }
 
     struct.def @Component08 {
       function.def @compute() -> !struct.type<@TComponent08::@Component08<[@N]>> {
