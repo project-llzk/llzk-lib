@@ -250,32 +250,37 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Cast_2IR_2Ops_
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="comment">// Instead of casting a felt.const to index, just generate an arith.constant</span></div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> constOp = op.<a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#a5c7503657ca84bb733b7f082ec9d8e4d">getValue</a>().getDefiningOp&lt;<a class="code hl_class" href="classllzk_1_1felt_1_1FeltConstantOp.html">felt::FeltConstantOp</a>&gt;()) {</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    <span class="keyword">auto</span> value = constOp.getValue().getValue();</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordflow">if</span> (value.getBitWidth() &lt;= 64) {</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      rewriter.replaceOpWithNewOp&lt;arith::ConstantIndexOp&gt;(op, value.getSExtValue());</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    }</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>}</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="comment">// Require a nonnegative APInt representation that fits in the signed 64-bit index builder.</span></div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="comment">// The sign check also protects programmatically constructed attributes whose APInt width was</span></div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="comment">// not normalized by the textual IR parser.</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keywordflow">if</span> (!value.isNegative() &amp;&amp; value.getActiveBits() &lt;= 63) {</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      rewriter.replaceOpWithNewOp&lt;arith::ConstantIndexOp&gt;(</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>          op, <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(value.getZExtValue())</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>      );</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    }</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  }</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>}</div>
 </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="foldopen" id="foldopen00119" data-start="{" data-end="}">
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1FeltToIndexOp.html#af3b0c1373c73397833fbd0d519e0150a">  119</a></span>ParseResult <a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#af3b0c1373c73397833fbd0d519e0150a">FeltToIndexOp::parseOptionalOverflowSemantics</a>(</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    OpAsmParser &amp;parser, OverflowSemanticsAttr &amp;overflow</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>) {</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  return ::parseOptionalOverflowSemantics(parser, overflow);</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>}</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
+<div class="foldopen" id="foldopen00124" data-start="{" data-end="}">
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1FeltToIndexOp.html#af3b0c1373c73397833fbd0d519e0150a">  124</a></span>ParseResult <a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#af3b0c1373c73397833fbd0d519e0150a">FeltToIndexOp::parseOptionalOverflowSemantics</a>(</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    OpAsmParser &amp;parser, OverflowSemanticsAttr &amp;overflow</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>) {</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  return ::parseOptionalOverflowSemantics(parser, overflow);</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>}</div>
 </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
-<div class="foldopen" id="foldopen00125" data-start="{" data-end="}">
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">  125</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">FeltToIndexOp::printOptionalOverflowSemantics</a>(</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    OpAsmPrinter &amp;printer, <a class="code hl_class" href="classllzk_1_1cast_1_1FeltToIndexOp.html">FeltToIndexOp</a> <span class="comment">/*op*/</span>, OverflowSemanticsAttr overflow</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>) {</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">::printOptionalOverflowSemantics</a>(printer, overflow);</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>}</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
+<div class="foldopen" id="foldopen00130" data-start="{" data-end="}">
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">  130</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">FeltToIndexOp::printOptionalOverflowSemantics</a>(</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    OpAsmPrinter &amp;printer, <a class="code hl_class" href="classllzk_1_1cast_1_1FeltToIndexOp.html">FeltToIndexOp</a> <span class="comment">/*op*/</span>, OverflowSemanticsAttr overflow</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>) {</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <a class="code hl_function" href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">::printOptionalOverflowSemantics</a>(printer, overflow);</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>}</div>
 </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>} <span class="comment">// namespace llzk::cast</span></div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>} <span class="comment">// namespace llzk::cast</span></div>
 </div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aBuilderHelper_8h_html"><div class="ttname"><a href="BuilderHelper_8h.html">BuilderHelper.h</a></div></div>
@@ -288,8 +293,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Cast_2IR_2Ops_
 <div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html">llzk::cast::FeltToIndexOp</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8h_8inc_source.html#l00125">Ops.h.inc:125</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html_a5c7503657ca84bb733b7f082ec9d8e4d"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html#a5c7503657ca84bb733b7f082ec9d8e4d">llzk::cast::FeltToIndexOp::getValue</a></div><div class="ttdeci">::mlir::TypedValue&lt;::llzk::felt::FeltType &gt; getValue()</div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8h_8inc_source.html#l00161">Ops.h.inc:161</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html_aaf5d38449a1d7c84eb00375d49567fae"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html#aaf5d38449a1d7c84eb00375d49567fae">llzk::cast::FeltToIndexOp::canonicalize</a></div><div class="ttdeci">::llvm::LogicalResult canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &amp;rewriter)</div><div class="ttdef"><b>Definition</b> <a href="#l00107">Ops.cpp:107</a></div></div>
-<div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html_ac4631be9a2acac3e8284db1a7988894c"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">llzk::cast::FeltToIndexOp::printOptionalOverflowSemantics</a></div><div class="ttdeci">static void printOptionalOverflowSemantics(::mlir::OpAsmPrinter &amp;printer, FeltToIndexOp op, ::llzk::cast::OverflowSemanticsAttr overflow)</div><div class="ttdef"><b>Definition</b> <a href="#l00125">Ops.cpp:125</a></div></div>
-<div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html_af3b0c1373c73397833fbd0d519e0150a"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html#af3b0c1373c73397833fbd0d519e0150a">llzk::cast::FeltToIndexOp::parseOptionalOverflowSemantics</a></div><div class="ttdeci">::mlir::ParseResult parseOptionalOverflowSemantics(::mlir::OpAsmParser &amp;parser, ::llzk::cast::OverflowSemanticsAttr &amp;overflow)</div><div class="ttdef"><b>Definition</b> <a href="#l00119">Ops.cpp:119</a></div></div>
+<div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html_ac4631be9a2acac3e8284db1a7988894c"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html#ac4631be9a2acac3e8284db1a7988894c">llzk::cast::FeltToIndexOp::printOptionalOverflowSemantics</a></div><div class="ttdeci">static void printOptionalOverflowSemantics(::mlir::OpAsmPrinter &amp;printer, FeltToIndexOp op, ::llzk::cast::OverflowSemanticsAttr overflow)</div><div class="ttdef"><b>Definition</b> <a href="#l00130">Ops.cpp:130</a></div></div>
+<div class="ttc" id="aclassllzk_1_1cast_1_1FeltToIndexOp_html_af3b0c1373c73397833fbd0d519e0150a"><div class="ttname"><a href="classllzk_1_1cast_1_1FeltToIndexOp.html#af3b0c1373c73397833fbd0d519e0150a">llzk::cast::FeltToIndexOp::parseOptionalOverflowSemantics</a></div><div class="ttdeci">::mlir::ParseResult parseOptionalOverflowSemantics(::mlir::OpAsmParser &amp;parser, ::llzk::cast::OverflowSemanticsAttr &amp;overflow)</div><div class="ttdef"><b>Definition</b> <a href="#l00124">Ops.cpp:124</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1IntToFeltOp_html"><div class="ttname"><a href="classllzk_1_1cast_1_1IntToFeltOp.html">llzk::cast::IntToFeltOp</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8h_8inc_source.html#l00375">Ops.h.inc:375</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1IntToFeltOp_html_a94c8d739edcff1fc79f3dab32d082d11"><div class="ttname"><a href="classllzk_1_1cast_1_1IntToFeltOp.html#a94c8d739edcff1fc79f3dab32d082d11">llzk::cast::IntToFeltOp::printOptionalOverflowSemantics</a></div><div class="ttdeci">static void printOptionalOverflowSemantics(::mlir::OpAsmPrinter &amp;printer, IntToFeltOp op, ::llzk::cast::OverflowSemanticsAttr overflow)</div><div class="ttdef"><b>Definition</b> <a href="#l00101">Ops.cpp:101</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1IntToFeltOp_html_a98caf6a4b5fe818acdc27d6c71914fc2"><div class="ttname"><a href="classllzk_1_1cast_1_1IntToFeltOp.html#a98caf6a4b5fe818acdc27d6c71914fc2">llzk::cast::IntToFeltOp::parseOptionalOverflowSemantics</a></div><div class="ttdeci">::mlir::ParseResult parseOptionalOverflowSemantics(::mlir::OpAsmParser &amp;parser, ::llzk::cast::OverflowSemanticsAttr &amp;overflow)</div><div class="ttdef"><b>Definition</b> <a href="#l00097">Ops.cpp:97</a></div></div>
