@@ -160,6 +160,7 @@ Public Member Functions</h2></td></tr>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aff7d75f3557d2cf3bb147428a22b8d6d" id="r_aff7d75f3557d2cf3bb147428a22b8d6d"><td class="memItemLeft">static inline ::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#aff7d75f3557d2cf3bb147428a22b8d6d">getSelfValue</a> (const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val)</td></tr>
 <tr class="memitem:adcd558b47a0a53d1949021041fa66cc0" id="r_adcd558b47a0a53d1949021041fa66cc0"><td class="memItemLeft">static inline ::mlir::FunctionType&#160;</td><td class="memItemRight"><a class="el" href="#adcd558b47a0a53d1949021041fa66cc0">getTypeSignature</a> (const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val)</td></tr>
+<tr class="memitem:a5f1caad3faeb0076c16b1e071c8ddd11" id="r_a5f1caad3faeb0076c16b1e071c8ddd11"><td class="memItemLeft">static inline ::mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5f1caad3faeb0076c16b1e071c8ddd11">unifyTypeSignatureWithNamespace</a> (const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val, ::mlir::FunctionType other, ::mlir::ArrayRef&lt;::llvm::StringRef &gt; rhsReversePrefix)</td></tr>
 <tr class="memitem:a2c680f421d5128a2f39e040fe2883297" id="r_a2c680f421d5128a2f39e040fe2883297"><td class="memItemLeft">static inline ::mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a2c680f421d5128a2f39e040fe2883297">unifyTypeSignature</a> (const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val, ::mlir::FunctionType other)</td></tr>
 <tr class="memitem:a1e673498c9dbeaf54fd2cb9549eca37a" id="r_a1e673498c9dbeaf54fd2cb9549eca37a"><td class="memItemLeft">static inline ::llvm::SmallVector&lt;::mlir::ValueRange &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1e673498c9dbeaf54fd2cb9549eca37a">toVectorOfValueRange</a> (::mlir::OperandRangeRange input)</td></tr>
 <tr class="memitem:a43e8cb54c484eb6e46e30b35874ef037" id="r_a43e8cb54c484eb6e46e30b35874ef037"><td class="memItemLeft">static inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a43e8cb54c484eb6e46e30b35874ef037">verifyTemplateParamValueCompatibility</a> (const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val, ::mlir::Attribute paramFromCallOp, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> targetParam)</td></tr>
@@ -172,6 +173,7 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a80e5330fa8937caf2fa4ab6682fc2f83 pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept" id="r_a80e5330fa8937caf2fa4ab6682fc2f83"><td class="memItemLeft">::mlir::Value(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#a80e5330fa8937caf2fa4ab6682fc2f83">getSelfValue</a> )(const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memdesc:a80e5330fa8937caf2fa4ab6682fc2f83 pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept"><td class="mdescLeft">&#160;</td><td class="mdescRight">The methods defined by the interface.  <br /></td></tr>
 <tr class="memitem:a443a2460bf95b0cdb0af5509be32506d pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept" id="r_a443a2460bf95b0cdb0af5509be32506d"><td class="memItemLeft">::mlir::FunctionType(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#a443a2460bf95b0cdb0af5509be32506d">getTypeSignature</a> )(const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
+<tr class="memitem:aba204cba9be5f37d835a56d98debc35c pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept" id="r_aba204cba9be5f37d835a56d98debc35c"><td class="memItemLeft">::mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt;(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#aba204cba9be5f37d835a56d98debc35c">unifyTypeSignatureWithNamespace</a> )(const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1impl.html">impl</a>, ::mlir::Operation *, ::mlir::FunctionType, ::mlir::ArrayRef&lt;::llvm::StringRef &gt;)</td></tr>
 <tr class="memitem:ade1c07a3f7e5818ad7930e70cea589d8 pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept" id="r_ade1c07a3f7e5818ad7930e70cea589d8"><td class="memItemLeft">::mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt;(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#ade1c07a3f7e5818ad7930e70cea589d8">unifyTypeSignature</a> )(const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1impl.html">impl</a>, ::mlir::Operation *, ::mlir::FunctionType)</td></tr>
 <tr class="memitem:ab1c8880b9aa2c568e9a2678f01c51e8d pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept" id="r_ab1c8880b9aa2c568e9a2678f01c51e8d"><td class="memItemLeft">::llvm::SmallVector&lt;::mlir::ValueRange &gt;(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#ab1c8880b9aa2c568e9a2678f01c51e8d">toVectorOfValueRange</a> )(::mlir::OperandRangeRange)</td></tr>
 <tr class="memitem:abb4bf2e0456e06a5b3312412e611063f pub_attribs_structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept" id="r_abb4bf2e0456e06a5b3312412e611063f"><td class="memItemLeft">::mlir::LogicalResult(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#abb4bf2e0456e06a5b3312412e611063f">verifyTemplateParamValueCompatibility</a> )(const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1impl.html">impl</a>, ::mlir::Operation *, ::mlir::Attribute, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a>)</td></tr>
@@ -184,7 +186,7 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename ConcreteOp&gt;<br />
 class llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::FallbackModel&lt; ConcreteOp &gt;</div>
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00048">48</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00050">50</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="aa27ad8c119d52f790964bd7e8f3afa51" name="aa27ad8c119d52f790964bd7e8f3afa51"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa27ad8c119d52f790964bd7e8f3afa51">&#9670;&#160;</a></span>Interface</h2>
@@ -200,7 +202,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00050">50</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00052">52</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -230,7 +232,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00051">51</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00053">53</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -264,7 +266,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00234">234</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00250">250</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -297,7 +299,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00238">238</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00254">254</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -326,7 +328,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00246">246</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00266">266</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -364,7 +366,50 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00242">242</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00262">262</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a5f1caad3faeb0076c16b1e071c8ddd11" name="a5f1caad3faeb0076c16b1e071c8ddd11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f1caad3faeb0076c16b1e071c8ddd11">&#9670;&#160;</a></span>unifyTypeSignatureWithNamespace()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename ConcreteOp&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt; <a class="el" href="classllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1FallbackModel.html">llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits::FallbackModel</a>&lt; ConcreteOp &gt;::unifyTypeSignatureWithNamespace </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *</td>          <td class="paramname"><span class="paramname"><em>impl</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>tablegen_opaque_val</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>other</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ArrayRef&lt;::llvm::StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00258">258</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -407,7 +452,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00258">258</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00278">278</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -450,7 +495,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00250">250</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00270">270</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -488,7 +533,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00254">254</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00274">274</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>

@@ -13,6 +13,7 @@ var classllzk_1_1LLZKCallLikeOpInterface =
     [ "setCalleeFromCallable", "classllzk_1_1LLZKCallLikeOpInterface.html#a68ebf72fc2e4cc19558f1c6461963d20", null ],
     [ "toVectorOfValueRange", "classllzk_1_1LLZKCallLikeOpInterface.html#a1ba26be9b6de43b5d044dcd15f1840a4", null ],
     [ "unifyTypeSignature", "classllzk_1_1LLZKCallLikeOpInterface.html#ac0fa61ade13dafac348229eee52b6f0d", null ],
+    [ "unifyTypeSignatureWithNamespace", "classllzk_1_1LLZKCallLikeOpInterface.html#aa93841f352d7b4af576a9d9e71409e98", null ],
     [ "verifySymbolUses", "classllzk_1_1LLZKCallLikeOpInterface.html#ad4764a44e92fae2f922c0c0996e3aec6", null ],
     [ "verifyTemplateParamsMatchInferred", "classllzk_1_1LLZKCallLikeOpInterface.html#aa6763d39d3c3b6c6ac11c8ec2465dd87", null ],
     [ "verifyTemplateParamValueCompatibility", "classllzk_1_1LLZKCallLikeOpInterface.html#acbe51188c33d01cb81e9a8c80ea265c7", null ],

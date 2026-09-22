@@ -1,5 +1,9 @@
 var NAVTREEINDEX93 =
 {
+"structllzk_1_1CallGraphPrinterPassOptions.html":[11,0,3,30],
+"structllzk_1_1CallGraphPrinterPassOptions.html":[13,0,1,27],
+"structllzk_1_1CallGraphPrinterPassOptions.html#a9e096cae5d7f77174a6f2a2446f483d8":[11,0,3,30,0],
+"structllzk_1_1CallGraphPrinterPassOptions.html#a9e096cae5d7f77174a6f2a2446f483d8":[13,0,1,27,0],
 "structllzk_1_1CallGraphSCCsPrinterPassOptions.html":[11,0,3,32],
 "structllzk_1_1CallGraphSCCsPrinterPassOptions.html":[13,0,1,29],
 "structllzk_1_1CallGraphSCCsPrinterPassOptions.html#a1de58efd7a4cc79a018f96bc5819c981":[11,0,3,32,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX93 =
 "structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f":[11,0,3,99,0],
 "structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f":[13,0,1,96,0],
 "structllzk_1_1SplitFunctionNameInfo.html":[11,0,3,101],
-"structllzk_1_1SplitFunctionNameInfo.html":[13,0,1,98],
-"structllzk_1_1SplitFunctionNameInfo.html#a06b5bdad236a8586ce3ccafc51565519":[11,0,3,101,1],
-"structllzk_1_1SplitFunctionNameInfo.html#a06b5bdad236a8586ce3ccafc51565519":[13,0,1,98,1],
-"structllzk_1_1SplitFunctionNameInfo.html#a9bff0deed61bf549e99dd6f97e90ff1c":[11,0,3,101,0],
-"structllzk_1_1SplitFunctionNameInfo.html#a9bff0deed61bf549e99dd6f97e90ff1c":[13,0,1,98,0]
+"structllzk_1_1SplitFunctionNameInfo.html":[13,0,1,98]
 };

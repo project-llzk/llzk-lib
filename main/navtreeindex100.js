@@ -1,5 +1,13 @@
 var NAVTREEINDEX100 =
 {
+"todo.html":[10],
+"tools.html":[3],
+"tools.html#analysis-passes":[3,0,0,0],
+"tools.html#autotoc_md-llzk-array-to-scalar":[3,0,0,1,10],
+"tools.html#autotoc_md-llzk-compute-constrain-to-product":[3,0,0,1,0],
+"tools.html#autotoc_md-llzk-drop-empty-templates":[3,0,0,1,15],
+"tools.html#autotoc_md-llzk-duplicate-op-elim":[3,0,0,1,1],
+"tools.html#autotoc_md-llzk-duplicate-read-write-elim":[3,0,0,1,2],
 "tools.html#autotoc_md-llzk-enforce-no-overwrite":[3,0,0,1,3],
 "tools.html#autotoc_md-llzk-flatten":[3,0,0,1,16],
 "tools.html#autotoc_md-llzk-full-inlining":[3,0,0,3,4],

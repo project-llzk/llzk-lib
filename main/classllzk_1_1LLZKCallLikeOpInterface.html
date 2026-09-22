@@ -155,6 +155,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a318af7a0b927fef556ab89f20ae51231"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the "self" value from the callee (or nullptr if it's not a struct target).  <br /></td></tr>
 <tr class="memitem:ac2d57ee1ba42704244a971ce03710ca8" id="r_ac2d57ee1ba42704244a971ce03710ca8"><td class="memItemLeft">::mlir::FunctionType&#160;</td><td class="memItemRight"><a class="el" href="#ac2d57ee1ba42704244a971ce03710ca8">getTypeSignature</a> ()</td></tr>
 <tr class="memdesc:ac2d57ee1ba42704244a971ce03710ca8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the function signature inferred from this call site.  <br /></td></tr>
+<tr class="memitem:aa93841f352d7b4af576a9d9e71409e98" id="r_aa93841f352d7b4af576a9d9e71409e98"><td class="memItemLeft">::mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa93841f352d7b4af576a9d9e71409e98">unifyTypeSignatureWithNamespace</a> (::mlir::FunctionType other, ::mlir::ArrayRef&lt;::llvm::StringRef &gt; rhsReversePrefix)</td></tr>
+<tr class="memdesc:aa93841f352d7b4af576a9d9e71409e98"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unifies this call site's inferred signature with <span class="tt">other</span>, resolving paths in <span class="tt">other</span> relative to <span class="tt">rhsReversePrefix</span>.  <br /></td></tr>
 <tr class="memitem:ac0fa61ade13dafac348229eee52b6f0d" id="r_ac0fa61ade13dafac348229eee52b6f0d"><td class="memItemLeft">::mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ac0fa61ade13dafac348229eee52b6f0d">unifyTypeSignature</a> (::mlir::FunctionType other)</td></tr>
 <tr class="memdesc:ac0fa61ade13dafac348229eee52b6f0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unifies this call site's inferred signature with <span class="tt">other</span>.  <br /></td></tr>
 <tr class="memitem:a1ba26be9b6de43b5d044dcd15f1840a4" id="r_a1ba26be9b6de43b5d044dcd15f1840a4"><td class="memItemLeft">::llvm::SmallVector&lt;::mlir::ValueRange &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1ba26be9b6de43b5d044dcd15f1840a4">toVectorOfValueRange</a> (::mlir::OperandRangeRange input)</td></tr>
@@ -184,7 +186,7 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00077">77</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00081">81</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="adb8a803d629f4ec1188709569256c301" name="adb8a803d629f4ec1188709569256c301"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adb8a803d629f4ec1188709569256c301">&#9670;&#160;</a></span>getArgOperands()</h2>
@@ -203,7 +205,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Returns the operands within this call that are used as arguments to the callee. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00063">63</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00068">68</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -224,7 +226,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Returns the operands within this call that are used as arguments to the callee as a mutable range. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00068">68</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00073">73</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -246,7 +248,7 @@ Public Member Functions</h2></td></tr>
 <p>Returns the callee of this call-like operation. </p>
 <p>A <span class="tt">callee</span> is either a reference to a symbol, via SymbolRefAttr, or a reference to a defined SSA value. If the reference is an SSA value, the SSA value corresponds to a region of a lambda-like operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00050">50</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00055">55</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -315,7 +317,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00109">109</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00116">116</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -342,7 +344,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00143">143</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html#l00150">150</a> of file <a class="el" href="CallLikeOpInterfaces_8h_8inc_source.html">CallLikeOpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -363,7 +365,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Resolve the callable operation for given callee to a CallableOpInterface, or nullptr if a valid callable was not resolved. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00080">80</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00085">85</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -385,7 +387,7 @@ Public Member Functions</h2></td></tr>
 <p>Resolve the callable operation for given callee to a CallableOpInterface, or nullptr if a valid callable was not resolved. </p>
 <p><span class="tt">symbolTable</span> parameter allow for using a cached symbol table for symbol lookups instead of performing an O(N) scan. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00075">75</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00080">80</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -407,7 +409,7 @@ Public Member Functions</h2></td></tr>
 <p>Sets the callee of this call-like operation. </p>
 <p>A <span class="tt">callee</span> is either a reference to a symbol, via SymbolRefAttr, or a reference to a defined SSA value. The type of the <span class="tt">callee</span> is expected to be the same as the return type of <span class="tt"><a class="el" href="#a348474366f8e69ba199e5bb9bfe8b20e" title="Returns the callee of this call-like operation.">getCallableForCallee</a></span>, e.g., <span class="tt">callee</span> should be SymbolRefAttr for <span class="tt">func.call</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00058">58</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00063">63</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -428,7 +430,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Allocates consecutive storage for operand groups so they can be passed to builders as an <span class="tt">ArrayRef&lt;ValueRange&gt;</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00023">23</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00028">28</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -449,7 +451,32 @@ Public Member Functions</h2></td></tr>
 
 <p>Unifies this call site's inferred signature with <span class="tt">other</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00018">18</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00023">23</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa93841f352d7b4af576a9d9e71409e98" name="aa93841f352d7b4af576a9d9e71409e98"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa93841f352d7b4af576a9d9e71409e98">&#9670;&#160;</a></span>unifyTypeSignatureWithNamespace()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt;<a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">::llzk::UnificationMap</a> &gt; llzk::LLZKCallLikeOpInterface::unifyTypeSignatureWithNamespace </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>other</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ArrayRef&lt;::llvm::StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unifies this call site's inferred signature with <span class="tt">other</span>, resolving paths in <span class="tt">other</span> relative to <span class="tt">rhsReversePrefix</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00019">19</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -470,7 +497,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Verify the symbol uses held by this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00084">84</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00089">89</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -498,7 +525,7 @@ Public Member Functions</h2></td></tr>
            - `!isNullOrEmpty(getTemplateParamsAttr())`
            - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)` 
 </pre> 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00043">43</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00048">48</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -523,7 +550,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Checks a template parameter value against the declared type of its target parameter. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00027">27</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -547,7 +574,7 @@ Public Member Functions</h2></td></tr>
            - `!isNullOrEmpty(getTemplateParamsAttr())`
            - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)` 
 </pre> 
-<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00035">35</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html#l00040">40</a> of file <a class="el" href="CallLikeOpInterfaces_8cpp_8inc_source.html">CallLikeOpInterfaces.cpp.inc</a>.</p>
 
 </div>
 </div>

@@ -1,5 +1,9 @@
 var NAVTREEINDEX90 =
 {
+"pcl-backend.html#pclnot-pclnotop":[8,2,0,0,17],
+"pcl-backend.html#pclor-pclorop":[8,2,0,0,18],
+"pcl-backend.html#pclpost_cond-pclpostop":[8,2,0,0,19],
+"pcl-backend.html#pclsub-pclsubop":[8,2,0,0,20],
 "pcl-backend.html#pcltrue-pcltrueop":[8,2,0,0,21],
 "pcl-backend.html#pclvar-pclvarop":[8,2,0,0,22],
 "pcl-backend.html#primeattr":[8,2,0,1,2],
@@ -245,9 +249,5 @@ var NAVTREEINDEX90 =
 "smt-backend.html#smtset_info-llzksmtsetinfoop":[8,1,0,0,51],
 "smt-backend.html#smtset_logic-llzksmtsetlogicop":[8,1,0,0,52],
 "smt-backend.html#smtsolver-llzksmtsolverop":[8,1,0,0,53],
-"smt-backend.html#smtxor-llzksmtxorop":[8,1,0,0,54],
-"smt-backend.html#smtyield-llzksmtyieldop":[8,1,0,0,55],
-"smt-backend.html#sorttype":[8,1,0,2,5],
-"smt-backend.html#symbolattr":[8,1,0,1,2],
-"smt-backend.html#types-8":[8,1,0,2]
+"smt-backend.html#smtxor-llzksmtxorop":[8,1,0,0,54]
 };

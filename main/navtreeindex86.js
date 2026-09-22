@@ -1,5 +1,9 @@
 var NAVTREEINDEX86 =
 {
+"maintanence.html#create-the-release":[6,1,2],
+"maintanence.html#creating-the-release-candidate":[6,1,1],
+"maintanence.html#patches":[6,0,1],
+"maintanence.html#preparing-a-new-release":[6,1,0],
 "maintanence.html#release-version":[6,0,0],
 "maintanence.html#releasing-a-new-version":[6,1],
 "maintanence.html#tracking-a-new-version":[6,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX86 =
 "namespacellzk.html#a78d1137f9044c06529a0c3f43d7649a5":[11,0,3,209],
 "namespacellzk.html#a790b5cb00e4d4979e0fdf000167dfb84":[11,0,3,241],
 "namespacellzk.html#a7994d85e179a47d200ef7e0e80c79df2":[11,0,3,246],
-"namespacellzk.html#a79c7df33a29f599757f22c2920d8addf":[11,0,3,372],
-"namespacellzk.html#a79f7a98b4670512b82df5098ca84e99e":[11,0,3,464],
-"namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27":[11,0,3,518],
-"namespacellzk.html#a7b7dec082476c4425916af55773bddc2":[11,0,3,214],
-"namespacellzk.html#a7c0cb033d657913808724b49659466d8":[11,0,3,354]
+"namespacellzk.html#a79c7df33a29f599757f22c2920d8addf":[11,0,3,372]
 };
