@@ -171,6 +171,12 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
       return record.value;
     }
   }
+  // Keep an uninitialized nested POD in explicit storage form so a later SROA and mem2reg round
+  // can recursively scalarize it. A POD-typed `llzk.nondet` would no longer be visible to the
+  // allocation-based scalarization fixpoint.
+  if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
+    return builder.create<NewPodOp>(getLoc(), podType);
+  }
   return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
 }
 
