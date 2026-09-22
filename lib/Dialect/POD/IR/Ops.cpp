@@ -149,6 +149,28 @@ std::optional<DestructurableAllocationOpInterface> NewPodOp::handleDestructuring
   return std::nullopt;
 }
 
+/// Return whether `podValue` and every POD-valued copy read from it are only observed by further
+/// POD reads.
+///
+/// Replacing a POD-valued read with mem2reg's reaching definition erases the read's value-copy
+/// boundary. Sharing that definition is only safe when neither the read result nor a POD-valued
+/// value transitively read from it can be mutated, forwarded, or otherwise escape. Keep this
+/// deliberately restrictive: an unrecognized use prevents promotion.
+static bool hasOnlyTransitiveReadUses(Value podValue) {
+  for (OpOperand &use : podValue.getUses()) {
+    auto readOp = llvm::dyn_cast<ReadPodOp>(use.getOwner());
+    if (!readOp || readOp.getPodRef() != podValue) {
+      return false;
+    }
+
+    if (llvm::isa<PodType>(readOp.getResult().getType()) &&
+        !hasOnlyTransitiveReadUses(readOp.getResult())) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   ArrayRef<RecordAttr> records = getType().getRecords();
@@ -156,21 +178,13 @@ SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
     return {};
   }
 
-  // A POD-valued read is a value copy. Mem2reg replaces all reads with the same reaching SSA
-  // value, so promoting a slot whose copied result is later mutated would turn independent copies
-  // into aliases. Leave that slot in storage form instead.
+  // A POD-valued read is a value copy, but mem2reg replaces every read with its reaching SSA
+  // definition. Until aggregate copy snapshots are modeled explicitly, only promote an
+  // uninitialized nested POD whose complete use tree is proven read-only. In particular, reject
+  // writes to the outer slot, mutations of nested read results, forwarding uses, and escapes.
   if (llvm::isa<PodType>(records.front().getType())) {
-    for (Operation *user : getResult().getUsers()) {
-      auto readOp = llvm::dyn_cast<ReadPodOp>(user);
-      if (!readOp || readOp.getPodRef() != getResult()) {
-        continue;
-      }
-      for (Operation *readUser : readOp.getResult().getUsers()) {
-        auto writeOp = llvm::dyn_cast<WritePodOp>(readUser);
-        if (writeOp && writeOp.getPodRef() == readOp.getResult()) {
-          return {};
-        }
-      }
+    if (!getInitializedRecordValues().empty() || !hasOnlyTransitiveReadUses(getResult())) {
+      return {};
     }
   }
   return {MemorySlot {getResult(), records.front().getType()}};
