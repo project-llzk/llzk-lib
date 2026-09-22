@@ -1,5 +1,6 @@
 var NAVTREEINDEX90 =
 {
+"pcl-backend.html#pclneg-pclnegop":[8,2,0,0,16],
 "pcl-backend.html#pclnot-pclnotop":[8,2,0,0,17],
 "pcl-backend.html#pclor-pclorop":[8,2,0,0,18],
 "pcl-backend.html#pclpost_cond-pclpostop":[8,2,0,0,19],
@@ -248,6 +249,5 @@ var NAVTREEINDEX90 =
 "smt-backend.html#smtreset-llzksmtresetop":[8,1,0,0,50],
 "smt-backend.html#smtset_info-llzksmtsetinfoop":[8,1,0,0,51],
 "smt-backend.html#smtset_logic-llzksmtsetlogicop":[8,1,0,0,52],
-"smt-backend.html#smtsolver-llzksmtsolverop":[8,1,0,0,53],
-"smt-backend.html#smtxor-llzksmtxorop":[8,1,0,0,54]
+"smt-backend.html#smtsolver-llzksmtsolverop":[8,1,0,0,53]
 };

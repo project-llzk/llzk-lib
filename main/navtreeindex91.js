@@ -1,5 +1,6 @@
 var NAVTREEINDEX91 =
 {
+"smt-backend.html#smtxor-llzksmtxorop":[8,1,0,0,54],
 "smt-backend.html#smtyield-llzksmtyieldop":[8,1,0,0,55],
 "smt-backend.html#sorttype":[8,1,0,2,5],
 "smt-backend.html#symbolattr":[8,1,0,1,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX91 =
 "structOpHeaderGenerator.html#ac596732934f3bae0725eae106ad51356":[13,0,87,7],
 "structOpHeaderGenerator.html#ac7c2e927d88c0a1237fc1d6b5f3f7404":[13,0,87,3],
 "structOpHeaderGenerator.html#afb5544c45e5f5886f0ac650755cebcfc":[13,0,87,4],
-"structOpImplementationGenerator.html":[13,0,88],
-"structOpImplementationGenerator.html#a05b91b048bd35648b67a15a945ad02cd":[13,0,88,4]
+"structOpImplementationGenerator.html":[13,0,88]
 };

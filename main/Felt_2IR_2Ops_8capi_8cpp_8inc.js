@@ -21,6 +21,7 @@ var Felt_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkFelt_FeltConstantOpBuild", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#aeb5ba9c0df2da73667a5eb8af8af514e", null ],
     [ "llzkFelt_FeltConstantOpGetResult", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#a1fb9aaa021c23032c15ac51c52968d96", null ],
     [ "llzkFelt_FeltConstantOpGetValue", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#acab904e0a5a56f683fb34385fc6e703d", null ],
+    [ "llzkFelt_FeltConstantOpGetValueAPInt", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#a9c81a46bae675dbc5ecfe47c55c3bf67", null ],
     [ "llzkFelt_FeltConstantOpSetValue", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#a9f9051afa37f99210e715868f3f7c45f", null ],
     [ "llzkFelt_InvFeltOpBuild", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#a766e26b3d3dcd0ef480161b7643540ba", null ],
     [ "llzkFelt_InvFeltOpGetOperand", "Felt_2IR_2Ops_8capi_8cpp_8inc.html#a2b6d5c9c180d6fcae7c0d89baace5eb5", null ],
