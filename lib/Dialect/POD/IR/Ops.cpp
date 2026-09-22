@@ -155,6 +155,24 @@ SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   if (records.size() != 1) {
     return {};
   }
+
+  // A POD-valued read is a value copy. Mem2reg replaces all reads with the same reaching SSA
+  // value, so promoting a slot whose copied result is later mutated would turn independent copies
+  // into aliases. Leave that slot in storage form instead.
+  if (llvm::isa<PodType>(records.front().getType())) {
+    for (Operation *user : getResult().getUsers()) {
+      auto readOp = llvm::dyn_cast<ReadPodOp>(user);
+      if (!readOp || readOp.getPodRef() != getResult()) {
+        continue;
+      }
+      for (Operation *readUser : readOp.getResult().getUsers()) {
+        auto writeOp = llvm::dyn_cast<WritePodOp>(readUser);
+        if (writeOp && writeOp.getPodRef() == readOp.getResult()) {
+          return {};
+        }
+      }
+    }
+  }
   return {MemorySlot {getResult(), records.front().getType()}};
 }
 
@@ -175,7 +193,14 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
   // can recursively scalarize it. A POD-typed `llzk.nondet` would no longer be visible to the
   // allocation-based scalarization fixpoint.
   if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
-    return builder.create<NewPodOp>(getLoc(), podType);
+    SmallVector<ValueRange> mapOperands;
+    mapOperands.reserve(getMapOperands().size());
+    for (OperandRange group : getMapOperands()) {
+      mapOperands.push_back(group);
+    }
+    return builder.create<NewPodOp>(
+        getLoc(), podType, mapOperands, getNumDimsPerMapAttr(), InitializedRecords {}
+    );
   }
   return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
 }
@@ -190,7 +215,7 @@ std::optional<PromotableAllocationOpInterface> NewPodOp::handlePromotionComplete
   assert(slot.ptr == getResult());
   if (defaultValue && defaultValue.use_empty()) {
     if (Operation *defOp = defaultValue.getDefiningOp()) {
-      if (llvm::isa<llzk::NonDetOp>(defOp)) {
+      if (llvm::isa<llzk::NonDetOp, NewPodOp>(defOp)) {
         defOp->erase();
       }
     }

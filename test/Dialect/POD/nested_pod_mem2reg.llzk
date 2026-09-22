@@ -1,0 +1,43 @@
+// RUN: llzk-opt --mem2reg -split-input-file %s | FileCheck %s
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @preserve_mutated_read_copy(%replacement: index) -> index {
+    %outer = pod.new : !Outer
+    %first = pod.read %outer[@inner] : !Outer, !Inner
+    %second = pod.read %outer[@inner] : !Outer, !Inner
+    pod.write %first[@value] = %replacement : !Inner, index
+    %observed = pod.read %second[@value] : !Inner, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserve_mutated_read_copy(%arg0: index) -> index {
+// CHECK-NEXT:      %pod = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %0 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %1 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %0[@value] = %arg0 : <[@value: index]>, index
+// CHECK-NEXT:      %2 = pod.read %1[@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %2 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @erase_unused_nested_default() {
+    %outer = pod.new : !Outer
+    %unused = pod.read %outer[@inner] : !Outer, !Inner
+    function.return
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @erase_unused_nested_default() {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

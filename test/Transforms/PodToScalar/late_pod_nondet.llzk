@@ -2,11 +2,22 @@
 
 // Mem2reg materializes a default value when an uninitialized nested POD record is read. The nested
 // POD must remain explicit storage until a later SROA and mem2reg round scalarizes its leaf.
+#len = affine_map<()[size] -> (size)>
+!Inner = !pod.type<[@values: !array.type<#len x index>]>
+!Outer = !pod.type<[@inner: !Inner]>
 module attributes {llzk.lang} {
   function.def @read_uninitialized_nested_pod() -> index {
     %outer = pod.new : !pod.type<[@inner: !pod.type<[@value: index]>]>
     %inner = pod.read %outer[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
     %value = pod.read %inner[@value] : <[@value: index]>, index
+    function.return %value : index
+  }
+
+  function.def @read_affine_uninitialized_nested_pod(%size: index, %index: index) -> index {
+    %outer = pod.new()[%size] : !Outer
+    %inner = pod.read %outer[@inner] : !Outer, !Inner
+    %values = pod.read %inner[@values] : !Inner, !array.type<#len x index>
+    %value = array.read %values[%index] : !array.type<#len x index>, index
     function.return %value : index
   }
 }
@@ -15,5 +26,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @read_uninitialized_nested_pod() -> index {
 // CHECK-NEXT:      %nondet = llzk.nondet : index
 // CHECK-NEXT:      function.return %nondet : index
+// CHECK-NEXT:    }
+// CHECK:         function.def @read_affine_uninitialized_nested_pod(%arg0: index, %arg1: index) -> index {
+// CHECK:           %nondet = llzk.nondet : !array.type<#map x index>
+// CHECK:           %0 = array.read %nondet[%arg1] : <#map x index>, index
+// CHECK:           function.return %0 : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
