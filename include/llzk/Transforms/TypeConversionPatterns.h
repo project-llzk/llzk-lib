@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
@@ -96,6 +97,7 @@ static struct OpClassesWithStructTypes {
       global::GlobalDefOp,
       global::GlobalReadOp,
       global::GlobalWriteOp,
+      llzk::NonDetOp,
       pod::ReadPodOp,
       pod::WritePodOp,
       polymorphic::UnifiableCastOp,
