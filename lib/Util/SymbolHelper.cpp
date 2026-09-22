@@ -561,7 +561,9 @@ LogicalResult verifyTemplateParamsMatchInferred(
       }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
+    // A null entry represents conflicting inferred bindings. It may include symbolic values
+    // that become equal after instantiating an enclosing template, so defer validation.
+    if (it != unifications.end() && it->second && !typeParamsUnify({attr}, {it->second})) {
       return origin->emitOpError().append(
           "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
           "\" conflicts with value '", it->second, "' inferred from function type signature"
