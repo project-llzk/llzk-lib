@@ -1,0 +1,2 @@
+fixed:
+  - Scalarize reads from uninitialized nested POD records instead of leaving residual POD-typed nondeterministic values.
