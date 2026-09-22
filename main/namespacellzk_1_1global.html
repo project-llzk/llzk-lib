@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('namespacellzk_
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:detail" id="r_detail"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1global_1_1detail.html">detail</a></td></tr>
+<tr class="memitem:impl" id="r_impl"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1global_1_1impl.html">impl</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -162,8 +163,32 @@ Functions</h2></td></tr>
 <tr class="memitem:af99f62ed0fbc693c9aa9a7203f39445f" id="r_af99f62ed0fbc693c9aa9a7203f39445f"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="structllzk_1_1global_1_1NormalizedGlobalInitializer.html">NormalizedGlobalInitializer</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#af99f62ed0fbc693c9aa9a7203f39445f">normalizeGlobalInitializer</a> (mlir::Type type, mlir::Attribute value, <a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
 <tr class="memdesc:af99f62ed0fbc693c9aa9a7203f39445f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Normalize unambiguous initializer representations and their declared type.  <br /></td></tr>
 <tr class="memitem:a378121b4b469d0d951ad0f2e51c20586" id="r_a378121b4b469d0d951ad0f2e51c20586"><td class="memItemLeft">FailureOr&lt; <a class="el" href="structllzk_1_1global_1_1NormalizedGlobalInitializer.html">NormalizedGlobalInitializer</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a378121b4b469d0d951ad0f2e51c20586">normalizeGlobalInitializer</a> (Type expectedType, Attribute value, <a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
+<tr class="memitem:a00e6b2fef82ed6414e4afd643b313883" id="r_a00e6b2fef82ed6414e4afd643b313883"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a00e6b2fef82ed6414e4afd643b313883">createConstGlobalPropagationPass</a> ()</td></tr>
+<tr class="memitem:a3d4a3a939bfa275c79b92835fbad07e0" id="r_a3d4a3a939bfa275c79b92835fbad07e0"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a3d4a3a939bfa275c79b92835fbad07e0">registerConstGlobalPropagationPass</a> ()</td></tr>
+<tr class="memitem:a6a739bf136c3bc1db18f1bd944b6b5c5" id="r_a6a739bf136c3bc1db18f1bd944b6b5c5"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a6a739bf136c3bc1db18f1bd944b6b5c5">registerConstGlobalPropagationPassPass</a> ()</td></tr>
+<tr class="memitem:ac11ad6840fb3b8655b9b245d3c3219f2" id="r_ac11ad6840fb3b8655b9b245d3c3219f2"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac11ad6840fb3b8655b9b245d3c3219f2">registerTransformationPasses</a> ()</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a00e6b2fef82ed6414e4afd643b313883" name="a00e6b2fef82ed6414e4afd643b313883"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00e6b2fef82ed6414e4afd643b313883">&#9670;&#160;</a></span>createConstGlobalPropagationPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::global::createConstGlobalPropagationPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
+
+<p class="definition">Definition at line <a class="el" href="ConstGlobalPropagationPass_8cpp_source.html#l00091">91</a> of file <a class="el" href="ConstGlobalPropagationPass_8cpp_source.html">ConstGlobalPropagationPass.cpp</a>.</p>
+
+</div>
+</div>
 <a id="af99f62ed0fbc693c9aa9a7203f39445f" name="af99f62ed0fbc693c9aa9a7203f39445f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af99f62ed0fbc693c9aa9a7203f39445f">&#9670;&#160;</a></span>normalizeGlobalInitializer() <span class="overload">[1/2]</span></h2>
 
@@ -218,6 +243,87 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_source.html#l00133">133</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3d4a3a939bfa275c79b92835fbad07e0" name="a3d4a3a939bfa275c79b92835fbad07e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d4a3a939bfa275c79b92835fbad07e0">&#9670;&#160;</a></span>registerConstGlobalPropagationPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::global::registerConstGlobalPropagationPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2Transforms_2TransformationPasses_8h_source.html#l00102">102</a> of file <a class="el" href="Global_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a6a739bf136c3bc1db18f1bd944b6b5c5" name="a6a739bf136c3bc1db18f1bd944b6b5c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a739bf136c3bc1db18f1bd944b6b5c5">&#9670;&#160;</a></span>registerConstGlobalPropagationPassPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::global::registerConstGlobalPropagationPassPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2Transforms_2TransformationPasses_8h_source.html#l00109">109</a> of file <a class="el" href="Global_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="ac11ad6840fb3b8655b9b245d3c3219f2" name="ac11ad6840fb3b8655b9b245d3c3219f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac11ad6840fb3b8655b9b245d3c3219f2">&#9670;&#160;</a></span>registerTransformationPasses()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::global::registerTransformationPasses </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2Transforms_2TransformationPasses_8h_source.html#l00119">119</a> of file <a class="el" href="Global_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
