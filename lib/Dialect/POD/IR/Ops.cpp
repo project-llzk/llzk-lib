@@ -9,7 +9,7 @@
 
 #include "llzk/Dialect/POD/IR/Ops.h"
 
-#include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/POD/IR/Types.h"
@@ -149,22 +149,35 @@ std::optional<DestructurableAllocationOpInterface> NewPodOp::handleDestructuring
   return std::nullopt;
 }
 
-/// Return whether `podValue` and every POD-valued copy read from it are only observed by further
-/// POD reads.
+/// Return whether `aggregateValue` and every aggregate copy read from it are only observed by
+/// further reads.
 ///
-/// Replacing a POD-valued read with mem2reg's reaching definition erases the read's value-copy
-/// boundary. Sharing that definition is only safe when neither the read result nor a POD-valued
-/// value transitively read from it can be mutated, forwarded, or otherwise escape. Keep this
-/// deliberately restrictive: an unrecognized use prevents promotion.
-static bool hasOnlyTransitiveReadUses(Value podValue) {
-  for (OpOperand &use : podValue.getUses()) {
-    auto readOp = llvm::dyn_cast<ReadPodOp>(use.getOwner());
-    if (!readOp || readOp.getPodRef() != podValue) {
+/// Replacing an aggregate-valued read with mem2reg's reaching definition erases the read's
+/// value-copy boundary. Sharing that definition is only safe when neither the read result nor an
+/// aggregate value transitively read from it can be mutated, forwarded, or otherwise escape. Keep
+/// this deliberately restrictive: an unrecognized aggregate or use prevents promotion.
+static bool hasOnlyTransitiveReadUses(Value aggregateValue) {
+  for (OpOperand &use : aggregateValue.getUses()) {
+    Value readResult;
+    if (llvm::isa<PodType>(aggregateValue.getType())) {
+      auto readOp = llvm::dyn_cast<ReadPodOp>(use.getOwner());
+      if (!readOp || readOp.getPodRef() != aggregateValue) {
+        return false;
+      }
+      readResult = readOp.getResult();
+    } else if (llvm::isa<array::ArrayType>(aggregateValue.getType())) {
+      auto readOp = llvm::dyn_cast<array::ArrayAccessOpInterface>(use.getOwner());
+      if (!readOp || !readOp.isRead() || readOp.getArrRef() != aggregateValue ||
+          readOp->getNumResults() != 1) {
+        return false;
+      }
+      readResult = readOp->getResult(0);
+    } else {
       return false;
     }
 
-    if (llvm::isa<PodType>(readOp.getResult().getType()) &&
-        !hasOnlyTransitiveReadUses(readOp.getResult())) {
+    if (llvm::isa<PodType, array::ArrayType, component::StructType>(readResult.getType()) &&
+        !hasOnlyTransitiveReadUses(readResult)) {
       return false;
     }
   }
@@ -207,6 +220,14 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
   // can recursively scalarize it. A POD-typed `llzk.nondet` would no longer be visible to the
   // allocation-based scalarization fixpoint.
   if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
+    OpBuilder::InsertionGuard guard(builder);
+    // Mem2reg requests defaults at the block start, which may precede definitions of the affine
+    // map operands. The original allocation dominates every slot access, so inserting the nested
+    // allocation immediately before it preserves dominance for both its operands and its uses.
+    builder.setInsertionPoint(getOperation());
+
+    // A promotable POD has exactly one record, so the affine maps collected recursively from the
+    // outer type are precisely the nested POD's maps in the same order.
     SmallVector<ValueRange> mapOperands;
     mapOperands.reserve(getMapOperands().size());
     for (OperandRange group : getMapOperands()) {

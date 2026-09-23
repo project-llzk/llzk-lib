@@ -57,6 +57,44 @@ module attributes {llzk.lang} {
 
 // -----
 
+!Values = !array.type<2,2 x index>
+!Row = !array.type<2 x index>
+!Inner = !pod.type<[@values: !Values]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @preserve_mutated_array_read_copy(%replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %outer = pod.new : !Outer
+    %first = pod.read %outer[@inner] : !Outer, !Inner
+    %firstValues = pod.read %first[@values] : !Inner, !Values
+    %firstRow = array.extract %firstValues[%c0] : !Values
+    array.write %firstRow[%c0] = %replacement : !Row, index
+    %second = pod.read %outer[@inner] : !Outer, !Inner
+    %secondValues = pod.read %second[@values] : !Inner, !Values
+    %secondRow = array.extract %secondValues[%c0] : !Values
+    %observed = array.read %secondRow[%c0] : !Row, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserve_mutated_array_read_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@values: !array.type<2,2 x index>]>]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@inner] : <[@inner: !pod.type<[@values: !array.type<2,2 x index>]>]>, !pod.type<[@values: !array.type<2,2 x index>]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@values] : <[@values: !array.type<2,2 x index>]>, !array.type<2,2 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_1]]] : <2,2 x index>
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@inner] : <[@inner: !pod.type<[@values: !array.type<2,2 x index>]>]>, !pod.type<[@values: !array.type<2,2 x index>]>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_6]][@values] : <[@values: !array.type<2,2 x index>]>, !array.type<2,2 x index>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_1]]] : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_1]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_9]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
 !Inner = !pod.type<[@value: index]>
 !Outer = !pod.type<[@inner: !Inner]>
 module attributes {llzk.lang} {

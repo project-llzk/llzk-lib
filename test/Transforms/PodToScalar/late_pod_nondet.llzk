@@ -20,6 +20,15 @@ module attributes {llzk.lang} {
     %value = array.read %values[%index] : !array.type<#len x index>, index
     function.return %value : index
   }
+
+  function.def @read_affine_nested_pod_with_local_size(%index: index) -> index {
+    %size = arith.constant 4 : index
+    %outer = pod.new()[%size] : !Outer
+    %inner = pod.read %outer[@inner] : !Outer, !Inner
+    %values = pod.read %inner[@values] : !Inner, !array.type<#len x index>
+    %value = array.read %values[%index] : !array.type<#len x index>, index
+    function.return %value : index
+  }
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
@@ -31,5 +40,10 @@ module attributes {llzk.lang} {
 // CHECK:           %nondet = llzk.nondet : !array.type<#map x index>
 // CHECK:           %0 = array.read %nondet[%arg1] : <#map x index>, index
 // CHECK:           function.return %0 : index
+// CHECK-NEXT:    }
+// CHECK:         function.def @read_affine_nested_pod_with_local_size(%[[INDEX:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK:           %[[NONDET:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<#map x index>
+// CHECK:           %[[VALUE:[0-9a-zA-Z_\.]+]] = array.read %[[NONDET]][%[[INDEX]]] : <#map x index>, index
+// CHECK:           function.return %[[VALUE]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
