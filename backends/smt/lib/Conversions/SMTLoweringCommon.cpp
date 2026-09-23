@@ -235,20 +235,20 @@ mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
   return builder
       .create<smt::ForallOp>(
           loc, forallTypes,
-          [this, &extents, &body](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
+          [this, &extents, &body](OpBuilder &b, Location l, ValueRange indices) -> Value {
     SmallVector<Value> antecedents;
     antecedents.reserve(2 * extents.size());
     for (auto [index, extent] : llvm::zip(indices, extents)) {
       auto [lo, hi] = getRangeBoundAssertions(
-          builder, loc, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
+          b, l, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
       );
       antecedents.push_back(lo);
       antecedents.push_back(hi);
     }
 
-    Value antecedent = builder.create<smt::AndOp>(loc, antecedents).getResult();
+    Value antecedent = b.create<smt::AndOp>(l, antecedents).getResult();
     auto consequent = body(indices);
-    return builder.create<smt::ImpliesOp>(loc, antecedent, consequent);
+    return b.create<smt::ImpliesOp>(l, antecedent, consequent);
   }
       )
       .getResult();
