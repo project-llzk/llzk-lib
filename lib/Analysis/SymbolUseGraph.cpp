@@ -117,9 +117,8 @@ void SymbolUseGraph::buildGraph(Operation *symbolTableOp) {
         bool isTemplateSymbol = false;
         Operation *user = u.getUser();
         SymbolRefAttr symRef = u.getSymbolRef();
-        // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
-        // where the user is a MemberRefOpInterface or the user is located within a TemplateOp and
-        // append the TemplateOp path with the FlatSymbolRefAttr.
+        // Normalize flat references to their defining scope when they name a struct
+        // member or a template symbol binding.
         if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
           if (auto fref = llvm::dyn_cast<component::MemberRefOpInterface>(user);
               fref && fref.getMemberNameAttr() == flatSymRef) {
@@ -130,7 +129,7 @@ void SymbolUseGraph::buildGraph(Operation *symbolTableOp) {
                 userTemplate.hasConstNamed<polymorphic::TemplateSymbolBindingOpInterface>(
                     localName
                 );
-            if (isTemplateSymbol || tables.getSymbolTable(userTemplate).lookup(localName)) {
+            if (isTemplateSymbol) {
               // If 'flatSymRef' is defined in the SymbolTable for 'userTemplate' then it's
               // a local symbol so prepend the full path of the template itself.
               auto parentPath = llzk::getPathFromRoot(userTemplate);

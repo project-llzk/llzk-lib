@@ -266,7 +266,8 @@ def LLZK_ReadArrayOp
           "read", true, [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "read scalar from an array";
   let description = [{
-    This operation reads the value from an array at the specified position.
+    This operation copies the value from an array at the specified position. The
+    result is a value copy, not a pointer or alias to the array element's storage.
 
     Example of 1-dimensional array:
     ```llzk
@@ -302,7 +303,9 @@ def LLZK_WriteArrayOp
           "write", false, [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "write scalar to an array";
   let description = [{
-    This operation writes a value into an array at the specified position.
+    This operation copies a value into an array at the specified position. It does
+    not create a pointer or alias between the source value and the array element's
+    storage.
 
     Example of 1-dimensional array:
     ```llzk

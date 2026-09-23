@@ -1,28 +1,27 @@
 // RUN: llzk-opt --llzk-while-to-for --canonicalize %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
-    struct.def @A {
-        struct.member @sum : !felt.type
-        function.def @product(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
-            %self = struct.new : <@A>
-            %array = array.new : !array.type<10 x !felt.type>
-            %f0 = felt.const 0
-            %end, %total = scf.while (%i = %lo, %sum = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
-                %cond = bool.cmp lt(%i, %hi)
-                scf.condition(%cond) %i, %sum : !felt.type, !felt.type
-            } do {
-            ^bb0(%i: !felt.type, %sum: !felt.type):
-                %i_index = cast.toindex %i
-                %cur = array.read %array[%i_index] : !array.type<10 x !felt.type>, !felt.type
-                %next = felt.add %i, %step
-                %next_sum = felt.add %cur, %sum
-                scf.yield %next, %next_sum : !felt.type, !felt.type
-            }
-            function.return %self : !struct.type<@A>
-        }
+  struct.def @A {
+    struct.member @sum : !felt.type
+    function.def @product(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@A>
+      %array = array.new : !array.type<10 x !felt.type>
+      %f0 = felt.const 0
+      %end, %total = scf.while (%i = %lo, %sum = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+        %cond = bool.cmp lt(%i, %hi)
+        scf.condition(%cond) %i, %sum : !felt.type, !felt.type
+      } do {
+      ^bb0(%i: !felt.type, %sum: !felt.type):
+        %i_index = cast.toindex %i
+        %cur = array.read %array[%i_index] : !array.type<10 x !felt.type>, !felt.type
+        %next = felt.add %i, %step
+        %next_sum = felt.add %cur, %sum
+        scf.yield %next, %next_sum : !felt.type, !felt.type
+      }
+      function.return %self : !struct.type<@A>
     }
+  }
 }
-
 // CHECK-LABEL: function.def @product
 // CHECK-SAME:  (%[[LO:[0-9a-zA-Z_\.]+]]: !felt.type, %[[HI:[0-9a-zA-Z_\.]+]]: !felt.type, %[[STEP:[0-9a-zA-Z_\.]+]]: !felt.type)
 // CHECK:         %[[ZERO:[0-9a-zA-Z_\.]+]] = felt.const{{ +}}0

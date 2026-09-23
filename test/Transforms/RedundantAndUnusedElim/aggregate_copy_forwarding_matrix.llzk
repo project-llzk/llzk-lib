@@ -1,0 +1,533 @@
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// Verify that immutable aggregate snapshots are forwarded through each valid
+// ranged-array, POD, struct-member, and global read/write pairing.
+module attributes {llzk.lang} {
+  global.def @array : !array.type<1 x index>
+  global.def @pod : !pod.type<[@field: index]>
+  global.def @struct : !struct.type<@Payload>
+
+  struct.def @Payload {
+    struct.member @field : index {llzk.pub}
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : !struct.type<@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) { function.return }
+  }
+
+  function.def @array_scalar_read_write(%source: index) -> index
+      attributes {function.allow_witness} {
+    %target = array.new : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    array.write %target[%index] = %source : !array.type<1 x index>, index
+    %loaded = array.read %target[%index] : !array.type<1 x index>, index
+    function.return %loaded : index
+  }
+  // CHECK-LABEL: function.def @array_scalar_read_write(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: index) -> index
+  // CHECK: array.write {{.*}} = %[[SOURCE]] : <1 x index>, index
+  // CHECK-NOT: array.read
+  // CHECK: function.return %[[SOURCE]] : index
+
+  function.def @array_from_array(%source: !array.type<1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %target = array.new : !array.type<1,1 x index>
+    %index = arith.constant 0 : index
+    array.insert %target[%index] = %source : !array.type<1,1 x index>, !array.type<1 x index>
+    %loaded = array.extract %target[%index] : !array.type<1,1 x index>
+    function.return %loaded : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @array_from_array(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: array.insert {{.*}} = %[[SOURCE]] : <1,1 x index>, <1 x index>
+  // CHECK-NOT: array.extract
+  // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
+
+  function.def @pod_from_array(%source: !array.type<1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %target = pod.new : !pod.type<[@value: !array.type<1 x index>]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    %loaded = pod.read %target[@value] : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    function.return %loaded : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @pod_from_array(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
+
+
+  function.def @pod_from_pod(%source: !pod.type<[@field: index]>) -> !pod.type<[@field: index]>
+      attributes {function.allow_witness} {
+    %target = pod.new : !pod.type<[@value: !pod.type<[@field: index]>]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+    %loaded = pod.read %target[@value] : !pod.type<[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+    function.return %loaded : !pod.type<[@field: index]>
+  }
+  // CHECK-LABEL: function.def @pod_from_pod(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[SOURCE]] : !pod.type<[@field: index]>
+
+  function.def @pod_from_struct(%source: !struct.type<@Payload>) -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    %target = pod.new : !pod.type<[@value: !struct.type<@Payload>]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    %loaded = pod.read %target[@value] : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    function.return %loaded : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @pod_from_struct(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[SOURCE]] : !struct.type<@Payload>
+
+  function.def @global_from_array(%source: !array.type<1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    global.write @array = %source : !array.type<1 x index>
+    %loaded = global.read @array : !array.type<1 x index>
+    function.return %loaded : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @global_from_array(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: global.write @array = %[[SOURCE]] : !array.type<1 x index>
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
+
+  function.def @global_from_pod(%source: !pod.type<[@field: index]>) -> !pod.type<[@field: index]>
+      attributes {function.allow_witness} {
+    global.write @pod = %source : !pod.type<[@field: index]>
+    %loaded = global.read @pod : !pod.type<[@field: index]>
+    function.return %loaded : !pod.type<[@field: index]>
+  }
+  // CHECK-LABEL: function.def @global_from_pod(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: global.write @pod = %[[SOURCE]] : !pod.type<[@field: index]>
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[SOURCE]] : !pod.type<[@field: index]>
+
+  function.def @global_from_struct(%source: !struct.type<@Payload>) -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    global.write @struct = %source : !struct.type<@Payload>
+    %loaded = global.read @struct : !struct.type<@Payload>
+    function.return %loaded : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @global_from_struct(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: global.write @struct = %[[SOURCE]] : !struct.type<@Payload>
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[SOURCE]] : !struct.type<@Payload>
+
+  function.def @array_read_cse(%source: !array.type<1 x !struct.type<@Payload>>) -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = array.read %source[%index] : !array.type<1 x !struct.type<@Payload>>, !struct.type<@Payload>
+    %second = array.read %source[%index] : !array.type<1 x !struct.type<@Payload>>, !struct.type<@Payload>
+    function.return %second : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @array_read_cse(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !struct.type<@Payload>>, !struct.type<@Payload>
+  // CHECK-NOT: array.read
+  // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
+
+  function.def @array_extract_cse(%source: !array.type<1,1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = array.extract %source[%index] : !array.type<1,1 x index>
+    %second = array.extract %source[%index] : !array.type<1,1 x index>
+    function.return %second : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @array_extract_cse(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK-NOT: array.extract
+  // CHECK: function.return %[[FIRST]] : !array.type<1 x index>
+
+  function.def @pod_read_cse(%source: !pod.type<[@value: !struct.type<@Payload>]>) -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    %first = pod.read %source[@value] : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    %second = pod.read %source[@value] : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    function.return %second : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @pod_read_cse(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
+
+  function.def @global_read_cse() -> !struct.type<@Payload> attributes {function.allow_witness} {
+    %first = global.read @struct : !struct.type<@Payload>
+    %second = global.read @struct : !struct.type<@Payload>
+    function.return %second : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @global_read_cse() -> !struct.type<@Payload>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @struct : !struct.type<@Payload>
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
+
+  // A read copied from an unchanged array element need not be written back to
+  // that same element.  This covers ranged array.read/array.write.
+  function.def @array_read_writeback(%source: !array.type<1 x !pod.type<[@field: index]>>)
+      -> !pod.type<[@field: index]> attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = array.read %source[%index] : !array.type<1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+    array.write %source[%index] = %first : !array.type<1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+    function.return %first : !pod.type<[@field: index]>
+  }
+  // CHECK-LABEL: function.def @array_read_writeback(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+  // CHECK-NOT: array.write
+  // CHECK: function.return %[[FIRST]] : !pod.type<[@field: index]>
+
+  // array.extract/array.insert are the aggregate ranged variants and obey the
+  // same read-back rule.
+  function.def @array_extract_insert_readback(%source: !array.type<1,1 x index>)
+      -> !array.type<1 x index> attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = array.extract %source[%index] : !array.type<1,1 x index>
+    array.insert %source[%index] = %first : !array.type<1,1 x index>, !array.type<1 x index>
+    function.return %first : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @array_extract_insert_readback(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK-NOT: array.insert
+  // CHECK: function.return %[[FIRST]] : !array.type<1 x index>
+
+  // POD reads are copies too, so restoring the unchanged record is a no-op.
+  function.def @pod_read_writeback(%source: !pod.type<[@value: !array.type<1 x index>]>)
+      -> !array.type<1 x index> attributes {function.allow_witness} {
+    %first = pod.read %source[@value] : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    pod.write %source[@value] = %first : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    function.return %first : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @pod_read_writeback(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK-NOT: pod.write
+  // CHECK: function.return %[[FIRST]] : !array.type<1 x index>
+
+  // A global read's snapshot can also be restored without changing the
+  // global, provided the global has not been written in between.
+  function.def @global_read_writeback() -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    %first = global.read @struct : !struct.type<@Payload>
+    global.write @struct = %first : !struct.type<@Payload>
+    function.return %first : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @global_read_writeback() -> !struct.type<@Payload>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @struct : !struct.type<@Payload>
+  // CHECK-NOT: global.write
+  // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
+
+  function.def @array_read_cse_mutation(%source: !array.type<1 x !pod.type<[@field: index]>>, %value: index)
+      -> !pod.type<[@field: index]> attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = array.read %source[%index] : !array.type<1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+    pod.write %first[@field] = %value : !pod.type<[@field: index]>, index
+    %second = array.read %source[%index] : !array.type<1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+    function.return %second : !pod.type<[@field: index]>
+  }
+  // CHECK-LABEL: function.def @array_read_cse_mutation(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+  // CHECK: pod.write %[[FIRST]][@field]
+  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+  // CHECK: function.return %[[SECOND]] : !pod.type<[@field: index]>
+
+  function.def @array_extract_cse_mutation(%source: !array.type<1,1 x index>, %value: index)
+      -> !array.type<1 x index> attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = array.extract %source[%index] : !array.type<1,1 x index>
+    array.write %first[%index] = %value : !array.type<1 x index>, index
+    %second = array.extract %source[%index] : !array.type<1,1 x index>
+    function.return %second : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @array_extract_cse_mutation(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: array.write %[[FIRST]]
+  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
+
+  // A scalar write below a previously extracted row changes the source row,
+  // so the later extraction must not reuse the pre-write snapshot.
+  function.def @array_extract_cse_descendant_mutation(
+      %matrix: !array.type<1,1 x index>, %value: index)
+      -> (!array.type<1 x index>, !array.type<1 x index>)
+      attributes {function.allow_witness} {
+    %row = arith.constant 0 : index
+    %column = arith.constant 0 : index
+    %first = array.extract %matrix[%row] : !array.type<1,1 x index>
+    array.write %matrix[%row, %column] = %value : !array.type<1,1 x index>, index
+    %second = array.extract %matrix[%row] : !array.type<1,1 x index>
+    function.return %first, %second : !array.type<1 x index>, !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @array_extract_cse_descendant_mutation(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: array.write {{.*}} : <1,1 x index>, index
+  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: function.return %[[FIRST]], %[[SECOND]] : !array.type<1 x index>, !array.type<1 x index>
+
+  function.def @pod_read_cse_mutation(%source: !pod.type<[@value: !array.type<1 x index>]>, %value: index)
+      -> !array.type<1 x index> attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = pod.read %source[@value] : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    array.write %first[%index] = %value : !array.type<1 x index>, index
+    %second = pod.read %source[@value] : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    function.return %second : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @pod_read_cse_mutation(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK: array.write %[[FIRST]]
+  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
+
+  function.def @global_read_cse_mutation(%value: index) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %index = arith.constant 0 : index
+    %first = global.read @array : !array.type<1 x index>
+    array.write %first[%index] = %value : !array.type<1 x index>, index
+    %second = global.read @array : !array.type<1 x index>
+    function.return %second : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @global_read_cse_mutation(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @array : !array.type<1 x index>
+  // CHECK: array.write %[[FIRST]]
+  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = global.read @array : !array.type<1 x index>
+  // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
+
+  function.def @duplicate_array_insert(%source: !array.type<1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %target = array.new : !array.type<1,1 x index>
+    %index = arith.constant 0 : index
+    array.insert %target[%index] = %source : !array.type<1,1 x index>, !array.type<1 x index>
+    array.insert %target[%index] = %source : !array.type<1,1 x index>, !array.type<1 x index>
+    %loaded = array.extract %target[%index] : !array.type<1,1 x index>
+    function.return %loaded : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @duplicate_array_insert(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: array.insert {{.*}} = %[[SOURCE]] : <1,1 x index>, <1 x index>
+  // CHECK-NOT: array.insert
+  // CHECK-NOT: array.extract
+  // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
+
+  function.def @duplicate_pod_write(%source: !pod.type<[@field: index]>) -> !pod.type<[@field: index]>
+      attributes {function.allow_witness} {
+    %target = pod.new : !pod.type<[@value: !pod.type<[@field: index]>]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+    %loaded = pod.read %target[@value] : !pod.type<[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+    function.return %loaded : !pod.type<[@field: index]>
+  }
+  // CHECK-LABEL: function.def @duplicate_pod_write(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
+  // CHECK-NOT: pod.write
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[SOURCE]] : !pod.type<[@field: index]>
+
+  function.def @duplicate_pod_write_array(%source: !array.type<1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %target = pod.new : !pod.type<[@value: !array.type<1 x index>]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    pod.write %target[@value] = %source : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    %loaded = pod.read %target[@value] : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    function.return %loaded : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @duplicate_pod_write_array(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK-NOT: pod.write
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
+
+  function.def @duplicate_pod_write_struct(%source: !struct.type<@Payload>) -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    %target = pod.new : !pod.type<[@value: !struct.type<@Payload>]>
+    pod.write %target[@value] = %source : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    pod.write %target[@value] = %source : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    %loaded = pod.read %target[@value] : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+    function.return %loaded : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @duplicate_pod_write_struct(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+  // CHECK-NOT: pod.write
+  // CHECK-NOT: pod.read
+  // CHECK: function.return %[[SOURCE]] : !struct.type<@Payload>
+
+  function.def @duplicate_global_write(%source: !struct.type<@Payload>) -> !struct.type<@Payload>
+      attributes {function.allow_witness} {
+    global.write @struct = %source : !struct.type<@Payload>
+    global.write @struct = %source : !struct.type<@Payload>
+    %loaded = global.read @struct : !struct.type<@Payload>
+    function.return %loaded : !struct.type<@Payload>
+  }
+  // CHECK-LABEL: function.def @duplicate_global_write(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: global.write @struct = %[[SOURCE]] : !struct.type<@Payload>
+  // CHECK-NOT: global.write
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[SOURCE]] : !struct.type<@Payload>
+
+  function.def @duplicate_global_write_array(%source: !array.type<1 x index>) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    global.write @array = %source : !array.type<1 x index>
+    global.write @array = %source : !array.type<1 x index>
+    %loaded = global.read @array : !array.type<1 x index>
+    function.return %loaded : !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @duplicate_global_write_array(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: global.write @array = %[[SOURCE]] : !array.type<1 x index>
+  // CHECK-NOT: global.write
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
+
+  function.def @duplicate_global_write_pod(%source: !pod.type<[@field: index]>) -> !pod.type<[@field: index]>
+      attributes {function.allow_witness} {
+    global.write @pod = %source : !pod.type<[@field: index]>
+    global.write @pod = %source : !pod.type<[@field: index]>
+    %loaded = global.read @pod : !pod.type<[@field: index]>
+    function.return %loaded : !pod.type<[@field: index]>
+  }
+  // CHECK-LABEL: function.def @duplicate_global_write_pod(
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: global.write @pod = %[[SOURCE]] : !pod.type<[@field: index]>
+  // CHECK-NOT: global.write
+  // CHECK-NOT: global.read
+  // CHECK: function.return %[[SOURCE]] : !pod.type<[@field: index]>
+
+  struct.def @StructFromArray {
+    struct.member @value : !array.type<1 x index>
+    struct.member @result : !array.type<1 x index>
+    function.def @compute(%source: !array.type<1 x index>) -> !struct.type<@StructFromArray> {
+      %self = struct.new : !struct.type<@StructFromArray>
+      struct.writem %self[@value] = %source : !struct.type<@StructFromArray>, !array.type<1 x index>
+      %loaded = struct.readm %self[@value] : !struct.type<@StructFromArray>, !array.type<1 x index>
+      struct.writem %self[@result] = %loaded : !struct.type<@StructFromArray>, !array.type<1 x index>
+      function.return %self : !struct.type<@StructFromArray>
+    }
+    function.def @constrain(%self: !struct.type<@StructFromArray>, %source: !array.type<1 x index>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @StructFromArray {
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@StructFromArray>, !array.type<1 x index>
+  // CHECK-NOT: struct.readm
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@StructFromArray>, !array.type<1 x index>
+
+
+  struct.def @StructFromPod {
+    struct.member @value : !pod.type<[@field: index]>
+    struct.member @result : !pod.type<[@field: index]>
+    function.def @compute(%source: !pod.type<[@field: index]>) -> !struct.type<@StructFromPod> {
+      %self = struct.new : !struct.type<@StructFromPod>
+      struct.writem %self[@value] = %source : !struct.type<@StructFromPod>, !pod.type<[@field: index]>
+      %loaded = struct.readm %self[@value] : !struct.type<@StructFromPod>, !pod.type<[@field: index]>
+      struct.writem %self[@result] = %loaded : !struct.type<@StructFromPod>, !pod.type<[@field: index]>
+      function.return %self : !struct.type<@StructFromPod>
+    }
+    function.def @constrain(%self: !struct.type<@StructFromPod>, %source: !pod.type<[@field: index]>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @StructFromPod {
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@StructFromPod>, !pod.type<[@field: index]>
+  // CHECK-NOT: struct.readm
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@StructFromPod>, !pod.type<[@field: index]>
+
+  struct.def @StructFromStruct {
+    struct.member @value : !struct.type<@Payload>
+    struct.member @result : !struct.type<@Payload>
+    function.def @compute(%source: !struct.type<@Payload>) -> !struct.type<@StructFromStruct> {
+      %self = struct.new : !struct.type<@StructFromStruct>
+      struct.writem %self[@value] = %source : !struct.type<@StructFromStruct>, !struct.type<@Payload>
+      %loaded = struct.readm %self[@value] : !struct.type<@StructFromStruct>, !struct.type<@Payload>
+      struct.writem %self[@result] = %loaded : !struct.type<@StructFromStruct>, !struct.type<@Payload>
+      function.return %self : !struct.type<@StructFromStruct>
+    }
+    function.def @constrain(%self: !struct.type<@StructFromStruct>, %source: !struct.type<@Payload>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @StructFromStruct {
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@StructFromStruct>, !struct.type<@Payload>
+  // CHECK-NOT: struct.readm
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@StructFromStruct>, !struct.type<@Payload>
+
+  struct.def @DuplicateStructWriteArray {
+    struct.member @value : !array.type<1 x index>
+    struct.member @result : !array.type<1 x index>
+    function.def @compute(%source: !array.type<1 x index>) -> !struct.type<@DuplicateStructWriteArray> {
+      %self = struct.new : !struct.type<@DuplicateStructWriteArray>
+      struct.writem %self[@value] = %source : !struct.type<@DuplicateStructWriteArray>, !array.type<1 x index>
+      struct.writem %self[@value] = %source : !struct.type<@DuplicateStructWriteArray>, !array.type<1 x index>
+      %loaded = struct.readm %self[@value] : !struct.type<@DuplicateStructWriteArray>, !array.type<1 x index>
+      struct.writem %self[@result] = %loaded : !struct.type<@DuplicateStructWriteArray>, !array.type<1 x index>
+      function.return %self : !struct.type<@DuplicateStructWriteArray>
+    }
+    function.def @constrain(%self: !struct.type<@DuplicateStructWriteArray>, %source: !array.type<1 x index>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @DuplicateStructWriteArray {
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@DuplicateStructWriteArray>, !array.type<1 x index>
+  // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
+  // CHECK-NOT: struct.readm
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@DuplicateStructWriteArray>, !array.type<1 x index>
+
+  struct.def @DuplicateStructWritePod {
+    struct.member @value : !pod.type<[@field: index]>
+    struct.member @result : !pod.type<[@field: index]>
+    function.def @compute(%source: !pod.type<[@field: index]>) -> !struct.type<@DuplicateStructWritePod> {
+      %self = struct.new : !struct.type<@DuplicateStructWritePod>
+      struct.writem %self[@value] = %source : !struct.type<@DuplicateStructWritePod>, !pod.type<[@field: index]>
+      struct.writem %self[@value] = %source : !struct.type<@DuplicateStructWritePod>, !pod.type<[@field: index]>
+      %loaded = struct.readm %self[@value] : !struct.type<@DuplicateStructWritePod>, !pod.type<[@field: index]>
+      struct.writem %self[@result] = %loaded : !struct.type<@DuplicateStructWritePod>, !pod.type<[@field: index]>
+      function.return %self : !struct.type<@DuplicateStructWritePod>
+    }
+    function.def @constrain(%self: !struct.type<@DuplicateStructWritePod>, %source: !pod.type<[@field: index]>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @DuplicateStructWritePod {
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@DuplicateStructWritePod>, !pod.type<[@field: index]>
+  // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
+  // CHECK-NOT: struct.readm
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@DuplicateStructWritePod>, !pod.type<[@field: index]>
+
+  struct.def @DuplicateStructWrite {
+    struct.member @value : !struct.type<@Payload>
+    struct.member @result : !struct.type<@Payload>
+    function.def @compute(%source: !struct.type<@Payload>) -> !struct.type<@DuplicateStructWrite> {
+      %self = struct.new : !struct.type<@DuplicateStructWrite>
+      struct.writem %self[@value] = %source : !struct.type<@DuplicateStructWrite>, !struct.type<@Payload>
+      struct.writem %self[@value] = %source : !struct.type<@DuplicateStructWrite>, !struct.type<@Payload>
+      %loaded = struct.readm %self[@value] : !struct.type<@DuplicateStructWrite>, !struct.type<@Payload>
+      struct.writem %self[@result] = %loaded : !struct.type<@DuplicateStructWrite>, !struct.type<@Payload>
+      function.return %self : !struct.type<@DuplicateStructWrite>
+    }
+    function.def @constrain(%self: !struct.type<@DuplicateStructWrite>, %source: !struct.type<@Payload>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @DuplicateStructWrite {
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@DuplicateStructWrite>, !struct.type<@Payload>
+  // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
+  // CHECK-NOT: struct.readm
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@DuplicateStructWrite>, !struct.type<@Payload>
+
+  // struct.readm/struct.writem operate on a copied member value. Restoring an
+  // unchanged member snapshot must not introduce an observable write.
+  struct.def @StructReadBackWrite {
+    struct.member @value : !array.type<1 x index>
+    struct.member @result : !array.type<1 x index>
+    function.def @compute() -> !struct.type<@StructReadBackWrite> {
+      %self = struct.new : !struct.type<@StructReadBackWrite>
+      %loaded = struct.readm %self[@value] : !struct.type<@StructReadBackWrite>, !array.type<1 x index>
+      struct.writem %self[@value] = %loaded : !struct.type<@StructReadBackWrite>, !array.type<1 x index>
+      struct.writem %self[@result] = %loaded : !struct.type<@StructReadBackWrite>, !array.type<1 x index>
+      function.return %self : !struct.type<@StructReadBackWrite>
+    }
+    function.def @constrain(%self: !struct.type<@StructReadBackWrite>) { function.return }
+  }
+  // CHECK-LABEL: struct.def @StructReadBackWrite {
+  // CHECK: function.def @compute() -> !struct.type<@StructReadBackWrite>
+  // CHECK: %[[LOADED:[0-9a-zA-Z_\.]+]] = struct.readm {{.*}}{{\[}}@value] : <@StructReadBackWrite>, !array.type<1 x index>
+  // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
+  // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[LOADED]] : <@StructReadBackWrite>, !array.type<1 x index>
+}

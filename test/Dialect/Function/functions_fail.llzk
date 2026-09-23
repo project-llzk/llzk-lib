@@ -273,3 +273,42 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+
+// -----
+
+// Unknown, wrong-kind, and mutable-global symbols cannot instantiate template parameters.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N
+    function.def @id() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+  function.def @use() -> index {
+    // expected-error@+1 {{'function.call' op references unknown symbol "@Missing"}}
+    %missing = function.call @Target::@id<[@Missing]>() : () -> index
+    function.return %missing : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N
+    function.def @id() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+  function.def @NotAnArgument() -> index {
+    %zero = arith.constant 0 : index
+    function.return %zero : index
+  }
+  function.def @use() -> index {
+    // expected-error@+1 {{'function.call' op template argument '@NotAnArgument' refers to a 'function.def' which is not allowed}}
+    %value = function.call @Target::@id<[@NotAnArgument]>() : () -> index
+    function.return %value : index
+  }
+}

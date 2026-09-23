@@ -12,7 +12,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
-#include "llzk/Transforms/LLZKLoweringUtils.h"
+#include "llzk/Transforms/LoweringUtils.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>

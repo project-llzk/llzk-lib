@@ -201,7 +201,7 @@ uint64_t computeEmitEqCardinality(mlir::Type type);
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
 /// found (i.e., multiple Occurrences of a specific `SymbolRefAttr` on the same side map to
-/// different Attributes from the other side). The mapped value will be `nullptr`.
+/// different Attributes from the other side), the mapped value will be `nullptr`.
 ///
 /// This map is used by the `llzk-flatten` pass to replace struct parameter `SymbolRefAttr` with
 /// static concrete values to produce the flattened versions of structs.

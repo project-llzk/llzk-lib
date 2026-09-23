@@ -1,0 +1,3 @@
+fixed:
+  - Explain unsupported carried-POD while loops in the final scalar-lowering failure diagnostic.
+  - Lower scalar leaves of POD values carried by `scf.while`, including read-only nested copies, with conservative initialization checks. Reject mutations of nested copies, mutable aggregate leaves, unknown provenance, and asymmetric or unsupported loop shapes rather than erasing aggregate copy boundaries.

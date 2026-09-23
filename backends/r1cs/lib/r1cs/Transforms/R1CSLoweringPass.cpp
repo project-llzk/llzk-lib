@@ -21,7 +21,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Transforms/LLZKLoweringUtils.h"
+#include "llzk/Transforms/LoweringUtils.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"

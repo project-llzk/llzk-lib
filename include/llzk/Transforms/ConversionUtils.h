@@ -1,4 +1,4 @@
-//===-- LLZKConversionUtils.h -----------------------------------*- C++ -*-===//
+//===-- ConversionUtils.h ---------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -18,18 +18,63 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Concepts.h"
 
+#include <mlir/IR/Block.h>
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/Operation.h>
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
+#include <llvm/Support/Casting.h>
+#include <llvm/Support/ErrorHandling.h>
 
+#include <cassert>
 #include <optional>
 #include <string>
+#include <tuple>
+#include <utility>
 
 namespace llzk {
+
+/// Copy discardable attributes from `src` to `dst`.
+template <typename OpTy> inline OpTy preserveDiscardableAttrs(mlir::Operation *src, OpTy dst) {
+  dst->setDiscardableAttrs(src->getDiscardableAttrDictionary());
+  return dst;
+}
+
+/// Copy discardable attributes from `src` to `dst` while omitting one internal attr.
+template <typename OpTy>
+inline OpTy
+preserveDiscardableAttrsExcept(mlir::Operation *src, OpTy dst, mlir::StringRef excludedAttr) {
+  auto original = src->getDiscardableAttrDictionary();
+  mlir::SmallVector<mlir::NamedAttribute> attrs;
+  for (mlir::NamedAttribute attr : original.getValue()) {
+    if (attr.getName().getValue() != excludedAttr) {
+      attrs.push_back(attr);
+    }
+  }
+  dst->setDiscardableAttrs(mlir::DictionaryAttr::get(src->getContext(), attrs));
+  return dst;
+}
+
+/// Wrapper for `RewriterBase::replaceOpWithNewOp()` that automatically copies discardable
+/// attributes (i.e., attributes other than those specifically defined as part of the op in ODS).
+template <typename OpClass, typename Rewriter, typename... Args>
+inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
+  mlir::DictionaryAttr attrs = op->getDiscardableAttrDictionary();
+  OpClass newOp = rewriter.template replaceOpWithNewOp<OpClass>(op, std::forward<Args>(args)...);
+  newOp->setDiscardableAttrs(attrs);
+  return newOp;
+}
 
 /// Return a copy of the given function argument/result attribute dictionary with `attrName` set
 /// to `name`.
@@ -184,9 +229,7 @@ inline function::CallOp createCallPreservingInstantiationOperands(
         oldCall.getNumDimsPerMapAttr(), argOperands, templateParams
     );
   }
-
-  newCall->setDiscardableAttrs(oldCall->getDiscardableAttrDictionary());
-  return newCall;
+  return preserveDiscardableAttrs(oldCall, newCall);
 }
 
 /// Replace any AffineMap-backed array dimensions within `type` with wildcard `?` dims.

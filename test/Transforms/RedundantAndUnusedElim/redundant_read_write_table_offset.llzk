@@ -19,9 +19,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @DifferentOffsets {
-// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@DifferentOffsets>)
-// CHECK-NEXT: %[[PREV:.*]] = struct.readm %[[SELF]][@cell] : <@DifferentOffsets>, !felt.type {tableOffset = -1 : index}
-// CHECK-NEXT: %[[CURR:.*]] = struct.readm %[[SELF]][@cell] : <@DifferentOffsets>, !felt.type {tableOffset = 0 : index}
+// CHECK: function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@DifferentOffsets>)
+// CHECK-NEXT: %[[PREV:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@DifferentOffsets>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT: %[[CURR:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@DifferentOffsets>, !felt.type {tableOffset = 0 : index}
 // CHECK-NEXT: constrain.eq %[[PREV]], %[[CURR]] : !felt.type, !felt.type
 // CHECK-NEXT: function.return
 // CHECK-NEXT: }
@@ -47,8 +47,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @SameOffset {
-// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@SameOffset>)
-// CHECK-NEXT: %[[READ:.*]] = struct.readm %[[SELF]][@cell] : <@SameOffset>, !felt.type {tableOffset = -1 : index}
+// CHECK: function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@SameOffset>)
+// CHECK-NEXT: %[[READ:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@SameOffset>, !felt.type {tableOffset = -1 : index}
 // CHECK-NEXT: constrain.eq %[[READ]], %[[READ]] : !felt.type, !felt.type
 // CHECK-NEXT: function.return
 // CHECK-NEXT: }
@@ -74,8 +74,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @DefaultOffset {
-// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@DefaultOffset>)
-// CHECK-NEXT: %[[READ:.*]] = struct.readm %[[SELF]][@cell] : <@DefaultOffset>, !felt.type
+// CHECK: function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@DefaultOffset>)
+// CHECK-NEXT: %[[READ:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@DefaultOffset>, !felt.type
 // CHECK-NEXT: constrain.eq %[[READ]], %[[READ]] : !felt.type, !felt.type
 // CHECK-NEXT: function.return
 // CHECK-NEXT: }
@@ -108,9 +108,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @WriteOffsets {
-// CHECK: function.def @compute(%[[VALUE:.*]]: !felt.type) -> !struct.type<@WriteOffsets>
-// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@WriteOffsets>
-// CHECK-NEXT: %[[PREV:.*]] = struct.readm %[[SELF]][@cell] : <@WriteOffsets>, !felt.type {tableOffset = -1 : index}
+// CHECK: function.def @compute(%[[VALUE:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@WriteOffsets>
+// CHECK-NEXT: %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@WriteOffsets>
+// CHECK-NEXT: %[[PREV:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@WriteOffsets>, !felt.type {tableOffset = -1 : index}
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[VALUE]] : <@WriteOffsets>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@first] = %[[PREV]] : <@WriteOffsets>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@second] = %[[PREV]] : <@WriteOffsets>, !felt.type
@@ -154,12 +154,12 @@ module attributes {llzk.lang} {
 
 // CHECK: #map = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: struct.def @AffineWriteAlias {
-// CHECK: function.def @compute(%[[I:.*]]: index, %[[J:.*]]: index, %[[VALUE:.*]]: !felt.type) -> !struct.type<@AffineWriteAlias>
-// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@AffineWriteAlias>
-// CHECK-NEXT: %[[FIRST:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
-// CHECK-NEXT: %[[OTHER:.*]] = struct.readm %[[SELF]][@cell] {()[%[[J]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
+// CHECK: function.def @compute(%[[I:[0-9a-zA-Z_\.]+]]: index, %[[J:[0-9a-zA-Z_\.]+]]: index, %[[VALUE:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@AffineWriteAlias>
+// CHECK-NEXT: %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AffineWriteAlias>
+// CHECK-NEXT: %[[FIRST:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[OTHER:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[J]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[VALUE]] : <@AffineWriteAlias>, !felt.type
-// CHECK-NEXT: %[[SECOND:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[SECOND:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
 // CHECK-NEXT: struct.writem %[[SELF]][@before] = %[[FIRST]] : <@AffineWriteAlias>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@other] = %[[OTHER]] : <@AffineWriteAlias>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@reuse] = %[[FIRST]] : <@AffineWriteAlias>, !felt.type
@@ -192,9 +192,9 @@ module attributes {llzk.lang} {
 // CHECK: #map = affine_map<()[s0] -> (s0)>
 // CHECK: #map1 = affine_map<()[s0] -> (s0 + 1)>
 // CHECK-LABEL: struct.def @DifferentAffineMaps {
-// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@DifferentAffineMaps>, %[[I:.*]]: index)
-// CHECK-NEXT: %[[SAME:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@DifferentAffineMaps>, !felt.type {tableOffset = #map}
-// CHECK-NEXT: %[[NEXT:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@DifferentAffineMaps>, !felt.type {tableOffset = #map1}
+// CHECK: function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@DifferentAffineMaps>, %[[I:[0-9a-zA-Z_\.]+]]: index)
+// CHECK-NEXT: %[[SAME:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@DifferentAffineMaps>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[NEXT:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@DifferentAffineMaps>, !felt.type {tableOffset = #map1}
 // CHECK-NEXT: constrain.eq %[[SAME]], %[[NEXT]] : !felt.type
 // CHECK-NEXT: function.return
 // CHECK-NEXT: }
@@ -224,9 +224,9 @@ module attributes {llzk.lang} {
 // CHECK: #map = affine_map<(d0)[s0] -> (d0 + s0)>
 // CHECK: #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 // CHECK-LABEL: struct.def @AffineDimMetadata {
-// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@AffineDimMetadata>, %[[I:.*]]: index, %[[J:.*]]: index)
-// CHECK-NEXT: %[[DIM_SYMBOL:.*]] = struct.readm %[[SELF]][@cell] {(%[[I]])[%[[J]]]} : <@AffineDimMetadata>, !felt.type {tableOffset = #map}
-// CHECK-NEXT: %[[SYMBOLS:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]], %[[J]]]} : <@AffineDimMetadata>, !felt.type {tableOffset = #map1}
+// CHECK: function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@AffineDimMetadata>, %[[I:[0-9a-zA-Z_\.]+]]: index, %[[J:[0-9a-zA-Z_\.]+]]: index)
+// CHECK-NEXT: %[[DIM_SYMBOL:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {(%[[I]])[%[[J]]]} : <@AffineDimMetadata>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[SYMBOLS:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]], %[[J]]]} : <@AffineDimMetadata>, !felt.type {tableOffset = #map1}
 // CHECK-NEXT: constrain.eq %[[DIM_SYMBOL]], %[[SYMBOLS]] : !felt.type
 // CHECK-NEXT: function.return
 // CHECK-NEXT: }
@@ -269,10 +269,10 @@ module attributes {llzk.lang} {
 
 // CHECK: #map = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: struct.def @AffineReadBetweenWrites {
-// CHECK: function.def @compute(%[[I:.*]]: index, %[[FIRST:.*]]: !felt.type, %[[SECOND:.*]]: !felt.type)
-// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@AffineReadBetweenWrites>
+// CHECK: function.def @compute(%[[I:[0-9a-zA-Z_\.]+]]: index, %[[FIRST:[0-9a-zA-Z_\.]+]]: !felt.type, %[[SECOND:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AffineReadBetweenWrites>
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[FIRST]] : <@AffineReadBetweenWrites>, !felt.type
-// CHECK-NEXT: %[[MAYBE:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineReadBetweenWrites>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[MAYBE:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineReadBetweenWrites>, !felt.type {tableOffset = #map}
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[SECOND]] : <@AffineReadBetweenWrites>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@seen] = %[[MAYBE]] : <@AffineReadBetweenWrites>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@final] = %[[SECOND]] : <@AffineReadBetweenWrites>, !felt.type
@@ -319,10 +319,10 @@ module attributes {llzk.lang} {
 
 // CHECK: #map = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: struct.def @AffineReadBetweenSameValueRewriteAndOverwrite {
-// CHECK: function.def @compute(%[[I:.*]]: index, %[[FIRST:.*]]: !felt.type, %[[SECOND:.*]]: !felt.type)
-// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@AffineReadBetweenSameValueRewriteAndOverwrite>
+// CHECK: function.def @compute(%[[I:[0-9a-zA-Z_\.]+]]: index, %[[FIRST:[0-9a-zA-Z_\.]+]]: !felt.type, %[[SECOND:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AffineReadBetweenSameValueRewriteAndOverwrite>
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[FIRST]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
-// CHECK-NEXT: %[[MAYBE:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[MAYBE:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type {tableOffset = #map}
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[SECOND]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@seen] = %[[MAYBE]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@final] = %[[SECOND]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
@@ -365,11 +365,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @SymbolicWriteAlias {
-// CHECK: function.def @compute(%[[VALUE:.*]]: !felt.type) -> !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>
-// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@T::@SymbolicWriteAlias<[@Offset]>>
-// CHECK-NEXT: %[[BEFORE:.*]] = struct.readm %[[SELF]][@cell] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
+// CHECK: function.def @compute(%[[VALUE:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>
+// CHECK-NEXT: %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@SymbolicWriteAlias<[@Offset]>>
+// CHECK-NEXT: %[[BEFORE:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
 // CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[VALUE]] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
-// CHECK-NEXT: %[[AFTER:.*]] = struct.readm %[[SELF]][@cell] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
+// CHECK-NEXT: %[[AFTER:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@cell] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
 // CHECK-NEXT: struct.writem %[[SELF]][@before] = %[[BEFORE]] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
 // CHECK-NEXT: struct.writem %[[SELF]][@after] = %[[AFTER]] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
 // CHECK-NEXT: function.return %[[SELF]] : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>

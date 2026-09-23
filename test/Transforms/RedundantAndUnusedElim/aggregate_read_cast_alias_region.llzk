@@ -1,0 +1,67 @@
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// Both aliases remain live across the conditional. The branch write through
+// the cast must invalidate a later read through the original aggregate value.
+module attributes {llzk.lang} {
+  function.def @cast_alias_region(
+      %input: !array.type<1 x index>, %updated: index, %cond: i1
+  ) -> (index, index) attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %cast = poly.unifiable_cast %input : (!array.type<1 x index>) -> !array.type<1 x index>
+    %before = array.read %input[%zero] : !array.type<1 x index>, index
+    scf.if %cond {
+      array.write %cast[%zero] = %updated : !array.type<1 x index>, index
+    }
+    %after = array.read %input[%zero] : !array.type<1 x index>, index
+    function.return %before, %after : index, index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @cast_alias_region(
+// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>,
+// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1
+// CHECK-SAME:    ) -> (index, index) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<1 x index>) -> !array.type<1 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_3]]] : <1 x index>, index
+// CHECK-NEXT:      scf.if %[[VAL_2]] {
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_3]]] : <1 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_5]], %[[VAL_6]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// A region join must retain the alias group for %input and %cast.  The write
+// through %cast therefore makes the second read through %input equal %updated,
+// rather than leaving it incorrectly equal to the first read.
+module attributes {llzk.lang} {
+  function.def @cast_alias_region_join(
+      %input: !array.type<1 x index>, %updated: index, %cond: i1
+  ) -> (index, index) attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %cast = poly.unifiable_cast %input : (!array.type<1 x index>) -> !array.type<1 x index>
+    scf.if %cond {
+    }
+    %before = array.read %input[%zero] : !array.type<1 x index>, index
+    array.write %cast[%zero] = %updated : !array.type<1 x index>, index
+    %after = array.read %input[%zero] : !array.type<1 x index>, index
+    function.return %before, %after : index, index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @cast_alias_region_join(
+// CHECK-SAME:    %[[INPUT:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>,
+// CHECK-SAME:    %[[UPDATED:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[COND:[0-9a-zA-Z_\.]+]]: i1
+// CHECK-SAME:    ) -> (index, index) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[ZERO:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[INPUT]] : (!array.type<1 x index>) -> !array.type<1 x index>
+// CHECK-NEXT:      scf.if %[[COND]] {
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[BEFORE:[0-9a-zA-Z_\.]+]] = array.read %[[INPUT]]{{\[}}%[[ZERO]]] : <1 x index>, index
+// CHECK-NEXT:      array.write %[[CAST]]{{\[}}%[[ZERO]]] = %[[UPDATED]] : <1 x index>, index
+// CHECK-NEXT:      function.return %[[BEFORE]], %[[UPDATED]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

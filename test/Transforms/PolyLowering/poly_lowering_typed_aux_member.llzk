@@ -30,10 +30,10 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: struct.def @TypedAux
 // CHECK-LABEL: function.def @compute
-// CHECK:       %[[AB:.*]] = felt.mul %{{.*}}, %{{.*}} : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK:       %[[AB:[0-9a-zA-Z_\.]+]] = felt.mul %{{.*}}, %{{.*}} : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK:       struct.writem %{{.*}}[@__llzk_poly_lowering_pass_aux_member_0] = %[[AB]] : <@TypedAux>, !felt.type<"babybear">
 // CHECK-LABEL: function.def @constrain
-// CHECK:       %[[AB_CONSTRAIN:.*]] = felt.mul %{{.*}}, %{{.*}} : !felt.type<"babybear">, !felt.type<"babybear">
-// CHECK:       %[[AUX:.*]] = struct.readm %{{.*}}[@__llzk_poly_lowering_pass_aux_member_0] : <@TypedAux>, !felt.type<"babybear">
+// CHECK:       %[[AB_CONSTRAIN:[0-9a-zA-Z_\.]+]] = felt.mul %{{.*}}, %{{.*}} : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK:       %[[AUX:[0-9a-zA-Z_\.]+]] = struct.readm %{{.*}}[@__llzk_poly_lowering_pass_aux_member_0] : <@TypedAux>, !felt.type<"babybear">
 // CHECK:       constrain.eq %[[AUX]], %[[AB_CONSTRAIN]] : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK:       struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type<"babybear">

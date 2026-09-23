@@ -19,11 +19,11 @@ module attributes {llzk.lang} {
 // STRICT-NEXT: }
 
 // RELAX-LABEL: struct.def @Component {
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.type>) -> !struct.type<@Component> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_1:.*]] = struct.new : <@Component>
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type>) -> !struct.type<@Component> attributes {function.allow_witness} {
+// RELAX-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component>
 // RELAX-NEXT:      function.return %[[VAL_1]] : !struct.type<@Component>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@Component>, %[[VAL_3:.*]]: !array.type<3 x !felt.type>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -83,50 +83,50 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 
 // STRICT-LABEL: struct.def @Main {
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// STRICT-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// STRICT-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
 // RELAX-LABEL: struct.def @A {
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@A>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@A>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@A>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @B {
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@B>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@B>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@B>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @C {
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@C> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@C>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@C>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@C>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@C>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@C>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @Main {
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -170,20 +170,20 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // STRICT-LABEL: struct.def @Main {
 // STRICT-NEXT:    struct.member @c : !array.type<2 x !felt.type> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// STRICT-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// STRICT-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
 // RELAX-LABEL: struct.def @VarArray {
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_1:.*]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// RELAX-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
 // RELAX-NEXT:      function.return %[[VAL_1]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -191,10 +191,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: struct.def @Main {
 // RELAX-NEXT:    struct.member @c : !array.type<2 x !felt.type> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -268,10 +268,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // STRICT-LABEL: struct.def @Main {
 // STRICT-NEXT:    struct.member @c : !array.type<2 x !felt.type> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// STRICT-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// STRICT-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
@@ -279,13 +279,13 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: module @std {
 // RELAX-LABEL:   struct.def @Wrapper {
 // RELAX-NEXT:      struct.member @val : !poly.tvar<@T>
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@TWrapper::@Wrapper<[@T]>> attributes {function.allow_witness} {
-// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@TWrapper::@Wrapper<[@T]>>
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@std::@TWrapper::@Wrapper<[@T]>> attributes {function.allow_witness} {
+// RELAX-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@std::@TWrapper::@Wrapper<[@T]>>
 // RELAX-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// RELAX-NEXT:        %[[VAL_4:.*]] = struct.readm %[[VAL_2]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+// RELAX-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// RELAX-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // RELAX-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !poly.tvar<@T>, !poly.tvar<@T>
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
@@ -294,16 +294,16 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 
 // RELAX-LABEL: struct.def @VarArray {
 // RELAX-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_2:.*]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// RELAX-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
 // RELAX-NEXT:      struct.writem %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
 // RELAX-NEXT:      function.return %[[VAL_2]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// RELAX-NEXT:      %[[VAL_6:.*]] = struct.readm %[[VAL_3]][@valUsed] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
-// RELAX-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
-// RELAX-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
-// RELAX-NEXT:      %[[VAL_9:.*]] = struct.readm %[[VAL_8]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+// RELAX-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// RELAX-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@valUsed] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+// RELAX-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// RELAX-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
+// RELAX-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // RELAX-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_9]] : !poly.tvar<@T>, !poly.tvar<@T>
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
@@ -312,10 +312,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: struct.def @Main {
 // RELAX-NEXT:    struct.member @c : !array.type<2 x !felt.type> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -386,12 +386,12 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: module @nested {
 // RELAX-NEXT:    struct.def @Wrapper {
 // RELAX-NEXT:      struct.member @val : !felt.type {llzk.pub}
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@nested::@Wrapper> attributes {function.allow_witness} {
-// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@nested::@Wrapper>
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@nested::@Wrapper> attributes {function.allow_witness} {
+// RELAX-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@nested::@Wrapper>
 // RELAX-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !felt.type
 // RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@nested::@Wrapper>, %[[VAL_3:.*]]: !felt.type) attributes {function.allow_constraint} {
+// RELAX-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@nested::@Wrapper>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -400,15 +400,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: module @user {
 // RELAX-NEXT:    struct.def @Unwrapper {
 // RELAX-NEXT:      struct.member @comp : !struct.type<@nested::@Wrapper>
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@user::@Unwrapper> attributes {function.allow_witness} {
-// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@user::@Unwrapper>
-// RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.type) -> !struct.type<@nested::@Wrapper>
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@user::@Unwrapper> attributes {function.allow_witness} {
+// RELAX-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@user::@Unwrapper>
+// RELAX-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.type) -> !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:        struct.writem %[[VAL_1]][@comp] = %[[VAL_2]] : <@user::@Unwrapper>, !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@user::@Unwrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !struct.type<@user::@Unwrapper>, %[[VAL_4:.*]]: !felt.type) attributes {function.allow_constraint} {
-// RELAX-NEXT:        %[[VAL_5:.*]] = struct.readm %[[VAL_3]][@comp] : <@user::@Unwrapper>, !struct.type<@nested::@Wrapper>
-// RELAX-NEXT:        %[[VAL_6:.*]] = struct.readm %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.type
+// RELAX-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@user::@Unwrapper>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// RELAX-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@comp] : <@user::@Unwrapper>, !struct.type<@nested::@Wrapper>
+// RELAX-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.type
 // RELAX-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_4]] : !felt.type, !felt.type
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
@@ -417,10 +417,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 
 // RELAX-LABEL: struct.def @Main {
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -490,12 +490,12 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: module @nested {
 // RELAX-NEXT:    struct.def @Wrapper {
 // RELAX-NEXT:      struct.member @val : !felt.type {llzk.pub}
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@nested::@Wrapper> attributes {function.allow_witness} {
-// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@nested::@Wrapper>
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@nested::@Wrapper> attributes {function.allow_witness} {
+// RELAX-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@nested::@Wrapper>
 // RELAX-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !felt.type
 // RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@nested::@Wrapper>, %[[VAL_3:.*]]: !felt.type) attributes {function.allow_constraint} {
+// RELAX-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@nested::@Wrapper>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -504,15 +504,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // RELAX-LABEL: module @user {
 // RELAX-NEXT:    struct.def @Unwrapper {
 // RELAX-NEXT:      struct.member @val : !struct.type<@nested::@Wrapper>
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@user::@Unwrapper> attributes {function.allow_witness} {
-// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@user::@Unwrapper>
-// RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.type) -> !struct.type<@nested::@Wrapper>
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@user::@Unwrapper> attributes {function.allow_witness} {
+// RELAX-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@user::@Unwrapper>
+// RELAX-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.type) -> !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_2]] : <@user::@Unwrapper>, !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@user::@Unwrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !struct.type<@user::@Unwrapper>, %[[VAL_4:.*]]: !felt.type) attributes {function.allow_constraint} {
-// RELAX-NEXT:        %[[VAL_5:.*]] = struct.readm %[[VAL_3]][@val] : <@user::@Unwrapper>, !struct.type<@nested::@Wrapper>
-// RELAX-NEXT:        %[[VAL_6:.*]] = struct.readm %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.type
+// RELAX-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@user::@Unwrapper>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// RELAX-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@val] : <@user::@Unwrapper>, !struct.type<@nested::@Wrapper>
+// RELAX-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.type
 // RELAX-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_4]] : !felt.type, !felt.type
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
@@ -521,10 +521,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 
 // RELAX-LABEL: struct.def @Main {
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
+// RELAX-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }

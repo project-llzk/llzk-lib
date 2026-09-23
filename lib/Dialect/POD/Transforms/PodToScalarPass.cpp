@@ -96,7 +96,7 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
@@ -111,6 +111,7 @@
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/DenseMapInfo.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
@@ -137,26 +138,6 @@ using namespace llzk::polymorphic;
 #define DEBUG_TYPE "llzk-pod-to-scalar"
 
 namespace {
-
-/// Copy discardable attributes from `src` to `dst`.
-template <typename OpTy> static OpTy preserveDiscardableAttrs(Operation *src, OpTy dst) {
-  dst->setDiscardableAttrs(src->getDiscardableAttrDictionary());
-  return dst;
-}
-
-/// Copy discardable attributes from `src` to `dst` while omitting one internal attr.
-template <typename OpTy>
-static OpTy preserveDiscardableAttrsExcept(Operation *src, OpTy dst, StringRef excludedAttr) {
-  auto original = src->getDiscardableAttrDictionary();
-  SmallVector<NamedAttribute> attrs;
-  for (NamedAttribute attr : original.getValue()) {
-    if (attr.getName().getValue() != excludedAttr) {
-      attrs.push_back(attr);
-    }
-  }
-  dst->setDiscardableAttrs(DictionaryAttr::get(src->getContext(), attrs));
-  return dst;
-}
 
 /// Path of nested POD record names from the original member to a scalar leaf record.
 struct RecordChain {
@@ -289,6 +270,11 @@ static WritePodOp
 findNearestForwardableWriteBefore(Operation *cursor, Value podRef, StringAttr recordName) {
   for (Operation *op = cursor; op; op = op->getPrevNode()) {
     if (!hasValueUse(*op, podRef)) {
+      continue;
+    }
+    // Reads do not mutate the POD, so they cannot invalidate a value forwarded from an earlier
+    // write. Skipping them also avoids requiring one greedy-rewrite iteration per consecutive read.
+    if (isa<ReadPodOp>(op)) {
       continue;
     }
     auto writeOp = dyn_cast<WritePodOp>(op);
@@ -2084,7 +2070,7 @@ class NondetToNewPod : public OpConversionPattern<NonDetOp> {
       NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (auto pt = dyn_cast<PodType>(nondetOp.getType())) {
-      preserveDiscardableAttrs(nondetOp, rewriter.replaceOpWithNewOp<NewPodOp>(nondetOp, pt));
+      replaceOpWithNewOp<NewPodOp>(rewriter, nondetOp, pt);
       return success();
     }
     return failure();
@@ -2312,10 +2298,8 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(op.getType(), splitTypes);
     if (splitTypes.empty()) {
-      preserveDiscardableAttrs(
-          op, rewriter.replaceOpWithNewOp<NonDetOp>(
-                  op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
-              )
+      replaceOpWithNewOp<NonDetOp>(
+          rewriter, op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
       );
       return success();
     }
@@ -2366,15 +2350,13 @@ public:
     if (splitTypes.empty()) {
       ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
       if (adaptor.getMapOperands().empty()) {
-        preserveDiscardableAttrs(op, rewriter.replaceOpWithNewOp<CreateArrayOp>(op, carrierTy));
+        replaceOpWithNewOp<CreateArrayOp>(rewriter, op, carrierTy);
         return success();
       }
 
       FlattenedConvertedValueRangeStorage mapOperands(adaptor.getMapOperands());
-      preserveDiscardableAttrs(
-          op, rewriter.replaceOpWithNewOp<CreateArrayOp>(
-                  op, carrierTy, mapOperands.ranges, op.getNumDimsPerMapAttr()
-              )
+      replaceOpWithNewOp<CreateArrayOp>(
+          rewriter, op, carrierTy, mapOperands.ranges, op.getNumDimsPerMapAttr()
       );
       return success();
     }
@@ -2510,7 +2492,7 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
     if (splitTypes.empty()) {
-      preserveDiscardableAttrs(op, rewriter.replaceOpWithNewOp<NewPodOp>(op, podTy));
+      replaceOpWithNewOp<NewPodOp>(rewriter, op, podTy);
       return success();
     }
 
@@ -2877,9 +2859,7 @@ public:
           op.getLoc(), operand, convertedValues, newOperands, rewriter
       );
     }
-    preserveDiscardableAttrs(
-        op, rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands))
-    );
+    replaceOpWithNewOp<ReturnOp>(rewriter, op, ValueRange(newOperands));
     return success();
   }
 };
@@ -3470,10 +3450,8 @@ public:
       return success();
     }
     Value arrRef = selectArrayLengthShapeSource(op, adaptor.getArrRef(), rewriter);
-    preserveDiscardableAttrs(
-        op, rewriter.replaceOpWithNewOp<ArrayLengthOp>(
-                op, arrRef, getSingleConvertedValue(adaptor.getDim())
-            )
+    replaceOpWithNewOp<ArrayLengthOp>(
+        rewriter, op, arrRef, getSingleConvertedValue(adaptor.getDim())
     );
     return success();
   }
@@ -3629,12 +3607,9 @@ public:
     splitPodArrayTypeTo(op.getResult().getType(), splitResultTypes);
     if (splitResultTypes.empty()) {
       ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
-      preserveDiscardableAttrs(
-          op, rewriter.replaceOpWithNewOp<ExtractArrayOp>(
-                  op, getPodArrayShapeCarrierType(resultTy),
-                  getSingleConvertedValue(adaptor.getArrRef()),
-                  flattenConvertedValues(adaptor.getIndices())
-              )
+      replaceOpWithNewOp<ExtractArrayOp>(
+          rewriter, op, getPodArrayShapeCarrierType(resultTy),
+          getSingleConvertedValue(adaptor.getArrRef()), flattenConvertedValues(adaptor.getIndices())
       );
       return success();
     }
@@ -5473,44 +5448,6 @@ static bool isValueDefinedInside(Operation *ancestor, Value value) {
   return parentOp && ancestor->isAncestor(parentOp);
 }
 
-/// Find a write before the parent `scf.if` that can be forwarded to `readOp`.
-static WritePodOp findPrecedingWriteForIfRead(ReadPodOp readOp) {
-  auto ifOp = readOp->getParentOfType<scf::IfOp>();
-  if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
-    return nullptr;
-  }
-  if (hasEarlierWriteInBlock(readOp)) {
-    return nullptr;
-  }
-
-  Block *ifBlock = ifOp->getBlock();
-  if (!ifBlock) {
-    return nullptr;
-  }
-
-  Value podRef = readOp.getPodRef();
-  StringAttr recordName = readOp.getRecordNameAttr();
-  WritePodOp replacement = nullptr;
-  for (Operation &op : *ifBlock) {
-    if (&op == ifOp.getOperation()) {
-      break;
-    }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-      if (isSamePodRecord(writeOp, podRef, recordName)) {
-        replacement = writeOp;
-      }
-      continue;
-    }
-
-    if (hasNestedWriteToRecord(op, podRef, recordName)) {
-      replacement = nullptr;
-    }
-  }
-
-  return replacement;
-}
-
 /// Replace a read with the value from the nearest preceding same-record write in the block.
 class FoldReadAfterWriteInBlockPattern final : public OpRewritePattern<ReadPodOp> {
 public:
@@ -5518,7 +5455,18 @@ public:
 
   LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
     if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
-      rewriter.replaceOp(readOp, writeOp.getValue());
+      Value replacement = writeOp.getValue();
+      // Frontend-generated code can contain long chains where a POD record is read and then
+      // immediately written to another POD. Follow that acyclic SSA chain here so one rewrite
+      // collapses it instead of consuming one greedy-rewriter iteration per link.
+      while (auto sourceRead = replacement.getDefiningOp<ReadPodOp>()) {
+        WritePodOp sourceWrite = findNearestForwardableWriteInBlock(sourceRead);
+        if (!sourceWrite) {
+          break;
+        }
+        replacement = sourceWrite.getValue();
+      }
+      rewriter.replaceOp(readOp, replacement);
       return success();
     }
     return failure();
@@ -5539,12 +5487,29 @@ public:
       return failure();
     }
 
-    if (WritePodOp writeOp = findPrecedingWriteForIfRead(readOp)) {
-      rewriter.replaceOp(readOp, writeOp.getValue());
-      return success();
+    // Hoist across the entire safe chain at once. Hoisting only to the immediate parent requires
+    // one greedy-rewrite iteration per nested `scf.if`, which is prohibitively expensive for
+    // frontend-expanded circuits with hundreds of nested static conditionals.
+    Operation *anchor = ifOp.getOperation();
+    while (true) {
+      if (WritePodOp writeOp = findNearestForwardableWriteBefore(
+              anchor->getPrevNode(), readOp.getPodRef(), readOp.getRecordNameAttr()
+          )) {
+        rewriter.replaceOp(readOp, writeOp.getValue());
+        return success();
+      }
+      if (hasEarlierWriteToRecordInBlock(anchor, readOp.getPodRef(), readOp.getRecordNameAttr())) {
+        break;
+      }
+
+      auto parentIf = dyn_cast_or_null<scf::IfOp>(anchor->getBlock()->getParentOp());
+      if (!parentIf || isValueDefinedInside(parentIf, readOp.getPodRef())) {
+        break;
+      }
+      anchor = parentIf.getOperation();
     }
 
-    rewriter.setInsertionPoint(ifOp);
+    rewriter.setInsertionPoint(anchor);
     rewriter.replaceOp(
         readOp, genRead(rewriter, readOp.getLoc(), readOp.getPodRef(), readOp.getRecordNameAttr())
                     .getResult()
@@ -6217,6 +6182,475 @@ public:
   }
 };
 
+/// Description of one POD value carried directly by an `scf.while`.
+struct WhileCarriedPod {
+  unsigned originalIndex;
+  PodType type;
+  SmallVector<RecordChain> leafPaths;
+  SmallVector<Type> leafTypes;
+};
+
+/// Collect every flattened leaf carried for `podTy`.
+static void collectWhileCarriedPodLeaves(WhileCarriedPod &pod) {
+  SmallVector<StringAttr> recordChain;
+  forEachPodLeaf(pod.type, recordChain, [&pod](const RecordChain &path, Type type) {
+    pod.leafPaths.push_back(path);
+    pod.leafTypes.push_back(type);
+  });
+}
+
+static std::optional<unsigned>
+findWhileCarriedLeafIndex(const WhileCarriedPod &pod, const RecordChain &path) {
+  for (auto [idx, leafPath] : llvm::enumerate(pod.leafPaths)) {
+    if (leafPath == path) {
+      return llzk::checkedCast<unsigned>(idx);
+    }
+  }
+  return std::nullopt;
+}
+
+/// Find the POD block argument supplying a read-only nested copy and collect its record path.
+/// The use check below rejects writes through these copies, so resolving their reads against the
+/// carried value cannot accidentally propagate a copied child's mutation back into its parent.
+static BlockArgument findWhileCarriedPodRoot(Value podRef, SmallVectorImpl<StringAttr> &path) {
+  while (auto readOp = podRef.getDefiningOp<ReadPodOp>()) {
+    path.push_back(readOp.getRecordNameAttr());
+    podRef = readOp.getPodRef();
+  }
+  std::reverse(path.begin(), path.end());
+  return dyn_cast<BlockArgument>(podRef);
+}
+
+/// Check that a carried POD block argument is only observed through operations this rewrite can
+/// translate while cloning the region.
+static bool
+hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarriedPod &pod, StringRef &reason) {
+  auto reject = [&reason](StringRef message) {
+    reason = message;
+    return true;
+  };
+  SmallVector<Value> podValues {arg};
+  for (size_t valueIdx = 0; valueIdx < podValues.size(); ++valueIdx) {
+    Value podValue = podValues[valueIdx];
+    for (Operation *user : podValue.getUsers()) {
+      if (auto readOp = dyn_cast<ReadPodOp>(user)) {
+        if (readOp.getPodRef() != podValue || readOp->getBlock() != arg.getOwner()) {
+          return reject("POD reads in nested regions are unsupported");
+        }
+        if (isa<PodType>(readOp.getType())) {
+          podValues.push_back(readOp.getResult());
+          continue;
+        }
+        SmallVector<StringAttr> path;
+        BlockArgument root = findWhileCarriedPodRoot(readOp.getPodRef(), path);
+        path.push_back(readOp.getRecordNameAttr());
+        if (root == arg && findWhileCarriedLeafIndex(pod, RecordChain(path))) {
+          continue;
+        }
+        return reject("POD read does not resolve to a carried scalar leaf");
+      }
+      if (auto writeOp = dyn_cast<WritePodOp>(user)) {
+        // A POD-valued read is a copy. Updating it must not update the carried parent's leaves.
+        // Separate mutable snapshots and explicit aggregate write-back are not supported here.
+        if (writeOp.getPodRef() != arg) {
+          return reject("writes to nested POD copies are unsupported");
+        }
+        if (writeOp->getBlock() != arg.getOwner()) {
+          return reject("POD writes in nested regions are unsupported");
+        }
+        if (isa<PodType>(writeOp.getValue().getType())) {
+          return reject("aggregate POD write-back is unsupported");
+        }
+        SmallVector<StringAttr> path;
+        BlockArgument root = findWhileCarriedPodRoot(writeOp.getPodRef(), path);
+        path.push_back(writeOp.getRecordNameAttr());
+        if (root == arg && findWhileCarriedLeafIndex(pod, RecordChain(path))) {
+          continue;
+        }
+        return reject("POD write does not resolve to a carried scalar leaf");
+      }
+      // Only the carried argument's own region terminator can forward it unchanged.
+      // Nested terminators would require scalarizing their enclosing operation's results.
+      if (podValue == arg && user->getBlock() == arg.getOwner()) {
+        if (auto conditionOp = dyn_cast<scf::ConditionOp>(user)) {
+          if (arg.getArgNumber() < conditionOp.getArgs().size() &&
+              conditionOp.getArgs()[arg.getArgNumber()] == arg) {
+            continue;
+          }
+        }
+        if (auto yieldOp = dyn_cast<scf::YieldOp>(user)) {
+          if (arg.getArgNumber() < yieldOp.getOperands().size() &&
+              yieldOp.getOperand(arg.getArgNumber()) == arg) {
+            continue;
+          }
+        }
+      }
+      return reject("carried POD has an unsupported use or is forwarded in a different position");
+    }
+  }
+  return false;
+}
+
+/// Restrict initialization to fresh local PODs and single writes of distinct nested sources.
+/// POD reads and writes copy aggregates; these restrictions are conservative supported-shape
+/// checks, not a claim that storing a POD creates an alias. Keep unknown producers and other uses
+/// out of this rewrite until their copy and identity behavior is explicitly supported.
+static bool
+hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init, StringRef &reason) {
+  auto reject = [&reason](StringRef message) {
+    reason = message;
+    return false;
+  };
+  SmallVector<std::pair<Value, Operation *>> pending {{init, nullptr}};
+  llvm::DenseSet<Value> allocations;
+  for (size_t idx = 0; idx < pending.size(); ++idx) {
+    auto [value, ownerWrite] = pending[idx];
+    auto allocation = value.getDefiningOp<NewPodOp>();
+    if (!allocation || !allocation.getInitialValues().empty() ||
+        allocation->getBlock() != whileOp->getBlock() || !allocation->isBeforeInBlock(whileOp) ||
+        !allocations.insert(value).second) {
+      return reject(
+          "initializer must use distinct fresh local pod.new operations without initial values"
+      );
+    }
+
+    llvm::DenseSet<StringAttr> initializedChildren;
+    for (Operation *user : value.getUsers()) {
+      if (user == ownerWrite || (value == init && user == whileOp.getOperation())) {
+        continue;
+      }
+      if (user->getBlock() != whileOp->getBlock() || !user->isBeforeInBlock(whileOp)) {
+        return reject("initializer or nested source has uses outside pre-loop initialization");
+      }
+      if (auto read = dyn_cast<ReadPodOp>(user)) {
+        // A POD-valued read creates a separate snapshot outside the supported initialization shape.
+        if (read.getPodRef() != value || isa<PodType>(read.getType())) {
+          return reject("POD-valued reads of an initialization source are unsupported");
+        }
+        continue;
+      }
+      if (auto write = dyn_cast<WritePodOp>(user)) {
+        // The parent stores a snapshot. Do not initialize its leaves from a source modified
+        // after that snapshot was taken, including writes to deeper nested sources.
+        if (write.getPodRef() != value) {
+          return reject("initialization source is stored into another POD");
+        }
+        if (ownerWrite && !user->isBeforeInBlock(ownerWrite)) {
+          return reject("initialization source is modified after being copied into its parent");
+        }
+        if (isa<PodType>(write.getValue().getType())) {
+          if (!initializedChildren.insert(write.getRecordNameAttr()).second) {
+            return reject("nested POD record is initialized more than once");
+          }
+          pending.emplace_back(write.getValue(), user);
+        }
+        continue;
+      }
+      // Includes calls, casts, array/struct storage, and control-flow forwarding.
+      return reject("initialization source has an unsupported user");
+    }
+    auto podType = mlir::cast<PodType>(value.getType());
+    for (RecordAttr record : podType.getRecords()) {
+      if (isa<PodType>(record.getType()) && !initializedChildren.contains(record.getName())) {
+        return reject("nested POD record is not initialized");
+      }
+      if (auto arrayTy = dyn_cast<ArrayType>(record.getType());
+          arrayTy && isa<PodType>(arrayTy.getElementType())) {
+        return reject("arrays of PODs in initialization are unsupported");
+      }
+    }
+  }
+  return true;
+}
+
+/// Clone a while region, replacing direct reads and writes of carried POD block arguments with
+/// scalar SSA values. The terminator callback appends the current scalar record values.
+template <typename RewriteTerminatorFn>
+static void cloneWhileBodyWithCarriedPods(
+    Block &source, PatternRewriter &rewriter, IRMapping &mapping,
+    ArrayRef<WhileCarriedPod> carriedPods, SmallVector<SmallVector<Value>> &podValues,
+    RewriteTerminatorFn &&rewriteTerminator
+) {
+  for (Operation &op : source) {
+    if (rewriteTerminator(op)) {
+      continue;
+    }
+
+    auto findPod = [&](Value podRef, SmallVectorImpl<StringAttr> &path) -> std::optional<unsigned> {
+      BlockArgument blockArg = findWhileCarriedPodRoot(podRef, path);
+      if (!blockArg || blockArg.getOwner() != &source) {
+        return std::nullopt;
+      }
+      for (auto [idx, pod] : llvm::enumerate(carriedPods)) {
+        if (pod.originalIndex == blockArg.getArgNumber()) {
+          return llzk::checkedCast<unsigned>(idx);
+        }
+      }
+      return std::nullopt;
+    };
+
+    if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
+      SmallVector<StringAttr> path;
+      if (std::optional<unsigned> podIdx = findPod(readOp.getPodRef(), path)) {
+        path.push_back(readOp.getRecordNameAttr());
+        if (!isa<PodType>(readOp.getType())) {
+          std::optional<unsigned> leafIdx =
+              findWhileCarriedLeafIndex(carriedPods[*podIdx], RecordChain(path));
+          assert(leafIdx && "unsupported carried-POD read should have been rejected");
+          mapping.map(readOp.getResult(), podValues[*podIdx][*leafIdx]);
+        }
+        continue;
+      }
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      SmallVector<StringAttr> path;
+      if (std::optional<unsigned> podIdx = findPod(writeOp.getPodRef(), path)) {
+        path.push_back(writeOp.getRecordNameAttr());
+        std::optional<unsigned> leafIdx =
+            findWhileCarriedLeafIndex(carriedPods[*podIdx], RecordChain(path));
+        assert(leafIdx && "unsupported carried-POD write should have been rejected");
+        podValues[*podIdx][*leafIdx] = mapping.lookupOrDefault(writeOp.getValue());
+        continue;
+      }
+    }
+
+    rewriter.clone(op, mapping);
+  }
+}
+
+/// Check scalarization eligibility without changing IR. Reuse this check at the final fixpoint
+/// to explain residual loops, without emitting diagnostics for ordinary pattern-match failures.
+static LogicalResult checkWhileCarriedPods(
+    scf::WhileOp whileOp, SmallVectorImpl<WhileCarriedPod> &carriedPods, StringRef &reason
+) {
+  auto reject = [&reason](StringRef message) {
+    reason = message;
+    return failure();
+  };
+  for (auto [idx, init] : llvm::enumerate(whileOp.getInits())) {
+    auto podTy = dyn_cast<PodType>(init.getType());
+    if (!podTy) {
+      continue;
+    }
+    WhileCarriedPod pod {llzk::checkedCast<unsigned>(idx), podTy, {}, {}};
+    collectWhileCarriedPodLeaves(pod);
+    // Forwarding mutable aggregate leaves as SSA values would erase the copy boundary of their
+    // reads and writes. This rewrite only carries scalar leaves until snapshots are supported.
+    if (llvm::any_of(pod.leafTypes, [](Type type) {
+      return isa<PodType, ArrayType, StructType>(type);
+    })) {
+      return reject("mutable aggregate leaves require unsupported copy snapshots");
+    }
+    carriedPods.push_back(std::move(pod));
+  }
+  if (carriedPods.empty()) {
+    return failure();
+  }
+  // This rewrite uses one index space for the before and after regions. General scf.while permits
+  // its init and result types to differ, so leave asymmetric loops to later lowering.
+  if (whileOp.getInits().size() != whileOp.getNumResults() ||
+      !llvm::equal(whileOp.getInits().getTypes(), whileOp.getResultTypes())) {
+    return reject("while initializer and result types must match");
+  }
+
+  Block &beforeBody = *whileOp.getBeforeBody();
+  Block &afterBody = *whileOp.getAfterBody();
+  llvm::DenseSet<Value> uniquePodInits;
+  for (const WhileCarriedPod &pod : carriedPods) {
+    if (hasUnsupportedWhileCarriedPodUse(
+            whileOp.getBeforeArguments()[pod.originalIndex], pod, reason
+        ) ||
+        hasUnsupportedWhileCarriedPodUse(
+            whileOp.getAfterArguments()[pod.originalIndex], pod, reason
+        )) {
+      return failure();
+    }
+
+    Value init = whileOp.getInits()[pod.originalIndex];
+    // Splitting two aliases (loop-carried SSA values initialized from the same value)
+    // independently would lose writes observed through the other alias.
+    if (!uniquePodInits.insert(init).second) {
+      return reject("multiple carried POD arguments have the same initializer");
+    }
+    if (!hasSupportedWhilePodInitialization(whileOp, init, reason)) {
+      return failure();
+    }
+    for (Operation *user : init.getUsers()) {
+      if (user != whileOp.getOperation() &&
+          !(user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp))) {
+        return reject("POD initializer remains observable at or after the loop");
+      }
+    }
+  }
+
+  auto terminatorForwardsCarriedPods = [&](ValueRange values, Block &body) {
+    for (const WhileCarriedPod &pod : carriedPods) {
+      if (pod.originalIndex >= values.size() ||
+          values[pod.originalIndex] != body.getArgument(pod.originalIndex)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  auto conditionTerminator = mlir::cast<scf::ConditionOp>(beforeBody.getTerminator());
+  auto yieldTerminator = mlir::cast<scf::YieldOp>(afterBody.getTerminator());
+  if (!terminatorForwardsCarriedPods(conditionTerminator.getArgs(), beforeBody) ||
+      !terminatorForwardsCarriedPods(yieldTerminator.getOperands(), afterBody)) {
+    return reject(
+        "while terminators must forward each carried POD unchanged in its original position"
+    );
+  }
+
+  return success();
+}
+
+/// Expand POD-typed `scf.while` iteration values into one SSA value per direct scalar record.
+class SplitPodCarriedWhileValuesPattern final : public OpRewritePattern<scf::WhileOp> {
+public:
+  using OpRewritePattern<scf::WhileOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(scf::WhileOp whileOp, PatternRewriter &rewriter) const override {
+    SmallVector<WhileCarriedPod> carriedPods;
+    StringRef reason;
+    if (failed(checkWhileCarriedPods(whileOp, carriedPods, reason))) {
+      return rewriter.notifyMatchFailure(whileOp, reason);
+    }
+    Block &beforeBody = *whileOp.getBeforeBody();
+    Block &afterBody = *whileOp.getAfterBody();
+
+    auto lookupPod = [&](unsigned originalIndex) -> const WhileCarriedPod * {
+      auto *it = llvm::find_if(carriedPods, [originalIndex](const WhileCarriedPod &pod) {
+        return pod.originalIndex == originalIndex;
+      });
+      return it == carriedPods.end() ? nullptr : &*it;
+    };
+
+    Location loc = whileOp.getLoc();
+    SmallVector<Value> newInits;
+    SmallVector<Type> newResultTypes;
+    rewriter.setInsertionPoint(whileOp);
+    for (auto [idx, init] : llvm::enumerate(whileOp.getInits())) {
+      const WhileCarriedPod *pod = lookupPod(llzk::checkedCast<unsigned>(idx));
+      if (!pod) {
+        newInits.push_back(init);
+        newResultTypes.push_back(init.getType());
+        continue;
+      }
+      for (auto [path, type] : llvm::zip_equal(pod->leafPaths, pod->leafTypes)) {
+        newInits.push_back(genReadAlongPath(rewriter, loc, init, path));
+        newResultTypes.push_back(type);
+      }
+    }
+
+    auto newWhile = rewriter.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
+    newWhile->setAttrs(whileOp->getAttrs());
+    Block &newBeforeBody = *newWhile.getBeforeBody();
+    Block &newAfterBody = *newWhile.getAfterBody();
+    dropTerminatorIfPresent(newBeforeBody);
+    dropTerminatorIfPresent(newAfterBody);
+
+    auto initializeMappingAndPodValues = [&](Block &oldBlock, Block &newBlock, IRMapping &mapping,
+                                             SmallVector<SmallVector<Value>> &podValues) {
+      unsigned newIdx = 0;
+      for (unsigned oldIdx = 0; oldIdx < oldBlock.getNumArguments(); ++oldIdx) {
+        const WhileCarriedPod *pod = lookupPod(oldIdx);
+        if (!pod) {
+          mapping.map(oldBlock.getArgument(oldIdx), newBlock.getArgument(newIdx++));
+          continue;
+        }
+        SmallVector<Value> values;
+        for (size_t leafIdx = 0; leafIdx < pod->leafPaths.size(); ++leafIdx) {
+          values.push_back(newBlock.getArgument(newIdx++));
+        }
+        podValues.push_back(std::move(values));
+      }
+    };
+
+    auto expandTerminatorValues = [&](ValueRange oldValues, IRMapping &mapping,
+                                      ArrayRef<SmallVector<Value>> podValues) {
+      SmallVector<Value> values;
+      unsigned podIdx = 0;
+      for (auto [idx, oldValue] : llvm::enumerate(oldValues)) {
+        if (lookupPod(llzk::checkedCast<unsigned>(idx))) {
+          llvm::append_range(values, podValues[podIdx++]);
+        } else {
+          values.push_back(mapping.lookupOrDefault(oldValue));
+        }
+      }
+      return values;
+    };
+
+    IRMapping beforeMapping;
+    SmallVector<SmallVector<Value>> beforePodValues;
+    initializeMappingAndPodValues(beforeBody, newBeforeBody, beforeMapping, beforePodValues);
+    rewriter.setInsertionPointToEnd(&newBeforeBody);
+    cloneWhileBodyWithCarriedPods(
+        beforeBody, rewriter, beforeMapping, carriedPods, beforePodValues, [&](Operation &op) {
+      auto conditionOp = dyn_cast<scf::ConditionOp>(&op);
+      if (!conditionOp) {
+        return false;
+      }
+      SmallVector<Value> args =
+          expandTerminatorValues(conditionOp.getArgs(), beforeMapping, beforePodValues);
+      preserveDiscardableAttrs(
+          conditionOp,
+          rewriter.create<scf::ConditionOp>(
+              conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()), args
+          )
+      );
+      return true;
+    }
+    );
+
+    IRMapping afterMapping;
+    SmallVector<SmallVector<Value>> afterPodValues;
+    initializeMappingAndPodValues(afterBody, newAfterBody, afterMapping, afterPodValues);
+    rewriter.setInsertionPointToEnd(&newAfterBody);
+    cloneWhileBodyWithCarriedPods(
+        afterBody, rewriter, afterMapping, carriedPods, afterPodValues, [&](Operation &op) {
+      auto yieldOp = dyn_cast<scf::YieldOp>(&op);
+      if (!yieldOp) {
+        return false;
+      }
+      SmallVector<Value> args =
+          expandTerminatorValues(yieldOp.getOperands(), afterMapping, afterPodValues);
+      preserveDiscardableAttrs(yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), args));
+      return true;
+    }
+    );
+
+    rewriter.setInsertionPointAfter(newWhile);
+    SmallVector<Value> replacements;
+    unsigned newResultIdx = 0;
+    for (unsigned oldIdx = 0; oldIdx < whileOp.getNumResults(); ++oldIdx) {
+      const WhileCarriedPod *pod = lookupPod(oldIdx);
+      if (!pod) {
+        replacements.push_back(newWhile.getResult(newResultIdx++));
+        continue;
+      }
+
+      NewPodOp rebuilt = rewriter.create<NewPodOp>(loc, pod->type);
+      VirtualPodLeafMap leafValues;
+      for (const RecordChain &path : pod->leafPaths) {
+        leafValues[path] = newWhile.getResult(newResultIdx++);
+      }
+      SmallVector<StringAttr> recordChain;
+      for (RecordAttr record : pod->type.getRecords()) {
+        recordChain.push_back(record.getName());
+        Value recordValue =
+            rebuildFlattenedPodRecord(rewriter, loc, record.getType(), recordChain, leafValues);
+        genWrite(rewriter, loc, rebuilt, record.getName(), recordValue);
+        recordChain.pop_back();
+      }
+      replacements.push_back(rebuilt);
+    }
+
+    rewriter.replaceOp(whileOp, replacements);
+    return success();
+  }
+};
+
 /// Rewrite `constrain.eq` over POD values into one equality per flattened leaf.
 ///
 /// This runs after step 3 has finished resolving or materializing virtual POD state, so the
@@ -6258,8 +6692,10 @@ static LogicalResult step4(ModuleOp modOp) {
   RewritePatternSet patterns(modOp.getContext());
   patterns.add<
       FoldReadAfterWriteInBlockPattern, ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern,
-      LiftPodAccessesFromForLoopPattern, LiftPodAccessesFromWhileLoopPattern,
-      FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
+      LiftPodAccessesFromForLoopPattern, SplitPodCarriedWhileValuesPattern,
+      LiftPodAccessesFromWhileLoopPattern, FoldIfCarriedPodReadAfterWritePattern>(
+      patterns.getContext()
+  );
   patterns.add<SplitPodInEmitEqualityPattern>(patterns.getContext(), materializedLeaves);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 4: refactor pod ops within SCF regions\n";);
@@ -6672,9 +7108,17 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         std::string residualIR;
         llvm::raw_string_ostream os(residualIR);
         module.print(os);
-        module.emitError() << "llzk-pod-to-scalar left residual pod IR after reaching a fixpoint ("
-                           << residualCount << " residual pod-like items remain)\n"
-                           << residualIR;
+        auto diagnostic = module.emitError();
+        diagnostic << "llzk-pod-to-scalar left residual pod IR after reaching a fixpoint ("
+                   << residualCount << " residual pod-like items remain)\n"
+                   << residualIR;
+        module.walk([&](scf::WhileOp whileOp) {
+          SmallVector<WhileCarriedPod> carriedPods;
+          StringRef reason;
+          if (failed(checkWhileCarriedPods(whileOp, carriedPods, reason)) && !reason.empty()) {
+            diagnostic.attachNote(whileOp.getLoc()) << "cannot scalarize carried POD: " << reason;
+          }
+        });
         signalPassFailure();
         return;
       }

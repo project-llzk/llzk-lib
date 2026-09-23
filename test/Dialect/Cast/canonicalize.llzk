@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --canonicalize | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file --canonicalize %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
     function.def private @use_index(%i: index) -> ()
@@ -8,7 +8,7 @@ module attributes {llzk.lang} {
     function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
         %f0 = felt.const 0
         %f1 = felt.const 1 : !felt.type<"babybear">
-        
+
         // These should both generate arith.constant's
         %c0 = cast.toindex %f0
         %c1 = cast.toindex %f1 : !felt.type<"babybear">
@@ -24,13 +24,48 @@ module attributes {llzk.lang} {
 
         function.call @use_felt(%f2) : (!felt.type) -> ()
         function.call @use_felt_bb(%f2_bb) : (!felt.type<"babybear">) -> ()
-        
+
         function.return
     }
 }
-
 // CHECK-LABEL: function.def @func
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"babybear">
+
+// -----
+
+module attributes {llzk.lang} {
+    function.def private @use_index(%i: index) -> ()
+
+    function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
+        %fmax = felt.const 9223372036854775807
+        %ftoo_large = felt.const 9223372036854775808
+        %fnegative = felt.const -1
+
+        %cmax = cast.toindex %fmax
+        %ctoo_large = cast.toindex %ftoo_large
+        %cnegative = cast.toindex %fnegative
+
+        function.call @use_index(%cmax) : (index) -> ()
+        function.call @use_index(%ctoo_large) : (index) -> ()
+        function.call @use_index(%cnegative) : (index) -> ()
+
+        function.return
+    }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def @func(%[[VAL_0:[0-9a-zA-Z_\.-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_1]] : !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_4]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_5]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

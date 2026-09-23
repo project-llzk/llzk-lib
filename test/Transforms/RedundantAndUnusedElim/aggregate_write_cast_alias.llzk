@@ -1,0 +1,29 @@
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// A transparent cast does not copy an aggregate. Mutating the source between
+// two writes through the cast means the second write observes a new snapshot
+// and cannot be removed as redundant.
+module attributes {llzk.lang} {
+  function.def @cast_source_mutation(%updated: index) -> !pod.type<[@value: !array.type<1 x index>]>
+      attributes {function.allow_witness} {
+    %pod = pod.new : !pod.type<[@value: !array.type<1 x index>]>
+    %array = array.new : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    %cast = poly.unifiable_cast %array : (!array.type<1 x index>) -> !array.type<1 x index>
+    pod.write %pod[@value] = %cast : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    array.write %array[%index] = %updated : !array.type<1 x index>, index
+    pod.write %pod[@value] = %cast : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    function.return %pod : !pod.type<[@value: !array.type<1 x index>]>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @cast_source_mutation(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !pod.type<[@value: !array.type<1 x index>]> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pod.new : <[@value: !array.type<1 x index>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<1 x index>) -> !array.type<1 x index>
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <1 x index>, index
+// CHECK-NEXT:      pod.write %[[VAL_1]][@value] = %[[VAL_4]] : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !pod.type<[@value: !array.type<1 x index>]>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

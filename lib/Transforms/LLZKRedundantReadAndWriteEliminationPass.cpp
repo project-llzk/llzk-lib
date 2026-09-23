@@ -13,10 +13,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/EffectHelper.h"
@@ -28,11 +32,13 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
 #include <deque>
 #include <memory>
+#include <optional>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -157,6 +163,18 @@ namespace {
 /// constant index.
 class ReferenceNode {
 public:
+  struct AggregateSnapshotSource {
+    Value value;
+    Operation *write;
+  };
+
+  /// The storage path from which an aggregate read copied its result.
+  struct AggregateReadOrigin {
+    std::shared_ptr<ReferenceNode> storage;
+    uint64_t mutationEpoch;
+    Operation *read;
+  };
+
   template <typename IdType> static std::shared_ptr<ReferenceNode> create(IdType id, Value v) {
     ReferenceNode n(id, v);
     // Need the move constructor version since constructor is private
@@ -168,6 +186,7 @@ public:
   std::shared_ptr<ReferenceNode> clone(bool withChildren = true) const {
     ReferenceNode copy(identifier, storedValue);
     copy.updateLastWrite(lastWrite);
+    copy.aggregateMutationEpoch = aggregateMutationEpoch;
     if (withChildren) {
       copy.dynamicChildCount = dynamicChildCount;
       for (const auto &[id, child] : children) {
@@ -175,6 +194,19 @@ public:
       }
     }
     return std::make_shared<ReferenceNode>(std::move(copy));
+  }
+
+  /// @brief Make an independent snapshot of this aggregate for a value-copy boundary.
+  ///
+  /// The copied tree deliberately does not retain write-removal candidates from the
+  /// source allocation: writes through the copy cannot overwrite writes through the
+  /// source allocation, or vice versa.
+  std::shared_ptr<ReferenceNode> cloneForValueCopy(Value copiedValue) const {
+    auto copy = clone();
+    copy->identifier = ReferenceID(copiedValue);
+    copy->storedValue = copiedValue;
+    copy->clearLastWritesInSubtree();
+    return copy;
   }
 
   template <typename IdType>
@@ -269,11 +301,18 @@ public:
 
   void setCurrentValue(Value v, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     storedValue = v;
+    reusableAggregateRead.reset();
+    aggregateSnapshotSource.reset();
+    aggregateReadOrigin.reset();
     if (valTree != nullptr) {
-      // Overwrite our current set of children with new children, since we overwrote
-      // the stored value.
+      // Copy the source's known children along with its value.
       children = valTree->children;
       dynamicChildCount = valTree->dynamicChildCount;
+    } else {
+      // An untracked aggregate source supplies no facts about its contents.
+      // Its write replaces the destination as a whole, so retaining the
+      // destination's old children could forward values from the old snapshot.
+      invalidateChildren();
     }
   }
 
@@ -325,6 +364,51 @@ public:
   Value getStoredValue() const { return storedValue; }
 
   bool hasStoredValue() const { return storedValue != nullptr; }
+
+  /// @brief Return an immutable aggregate read that may be reused for this access.
+  const std::optional<Value> &getReusableAggregateRead() const { return reusableAggregateRead; }
+
+  /// @brief Remember an immutable aggregate read from this access.
+  void setReusableAggregateRead(Value value) { reusableAggregateRead = value; }
+
+  /// @brief Return the value and write operation that created this aggregate snapshot.
+  const std::optional<AggregateSnapshotSource> &getAggregateSnapshotSource() const {
+    return aggregateSnapshotSource;
+  }
+
+  /// @brief Record the source value of the aggregate snapshot stored at this access.
+  void setAggregateSnapshotSource(Value value, Operation *write) {
+    aggregateSnapshotSource = AggregateSnapshotSource {.value = value, .write = write};
+  }
+
+  /// @brief Discard the source provenance after a write into this aggregate.
+  void clearAggregateSnapshotSource() { aggregateSnapshotSource.reset(); }
+
+  /// Record that this value is a snapshot read from \p storage.
+  void setAggregateReadOrigin(const std::shared_ptr<ReferenceNode> &storage, Operation *read) {
+    aggregateReadOrigin = AggregateReadOrigin {
+        .storage = storage,
+        .mutationEpoch = storage->aggregateMutationEpoch,
+        .read = read,
+    };
+  }
+
+  /// Return the storage path from which this aggregate value was read.
+  const std::optional<AggregateReadOrigin> &getAggregateReadOrigin() const {
+    return aggregateReadOrigin;
+  }
+
+  /// Mark this storage path as changed by a write at or below it.
+  ///
+  /// A reusable aggregate read is a snapshot of this storage path. Once a
+  /// write changes the path or any descendant, that snapshot cannot satisfy a
+  /// later read from this node.
+  void markAggregateMutation() {
+    ++aggregateMutationEpoch;
+    reusableAggregateRead.reset();
+  }
+
+  uint64_t getAggregateMutationEpoch() const { return aggregateMutationEpoch; }
 
   void print(raw_ostream &os, int indent = 0) const {
     os.indent(indent) << '[' << identifier;
@@ -381,10 +465,17 @@ private:
   ReferenceID identifier;
   mlir::Value storedValue;
   Operation *lastWrite;
+  // Candidates are deliberately not copied into cloned states or value
+  // snapshots. This keeps aggregate-read forwarding local to one allocation
+  // path and avoids forwarding across a value-copy boundary.
+  std::optional<Value> reusableAggregateRead;
+  std::optional<AggregateSnapshotSource> aggregateSnapshotSource;
+  std::optional<AggregateReadOrigin> aggregateReadOrigin;
   DenseMap<ReferenceID, std::shared_ptr<ReferenceNode>> children;
   // Number of direct dynamic children. Keep it synchronized with every children
   // mutation so constant-only invalidation remains independent of child fanout.
   size_t dynamicChildCount;
+  uint64_t aggregateMutationEpoch = 0;
 
   template <typename IdType>
   ReferenceNode(IdType id, Value initialVal)
@@ -394,11 +485,53 @@ private:
 
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
 
+/// Returns whether `type` denotes an aggregate that has value-copy rather than
+/// SSA-alias semantics. `ReferenceNode::cloneForValueCopy` recursively copies
+/// all nested aggregate state below such a root.
+bool requiresAggregateSnapshot(Type type) {
+  return isa<array::ArrayType, pod::PodType, component::StructType>(type);
+}
+
+/// Return whether `op` preserves the identity of an aggregate value while only
+/// changing its type representation.
+///
+/// `poly.unifiable_cast` is LLZK's explicit type reinterpretation. An
+/// unrealized conversion cast has no such restriction in general, so only its
+/// one-input, one-result aggregate form is safe for this analysis to model as
+/// an alias.
+bool isTransparentAggregateAliasCast(Operation *op) {
+  if (op == nullptr || op->getNumOperands() != 1 || op->getNumResults() != 1 ||
+      !requiresAggregateSnapshot(op->getOperand(0).getType()) ||
+      !requiresAggregateSnapshot(op->getResult(0).getType())) {
+    return false;
+  }
+  return isa<polymorphic::UnifiableCastOp, UnrealizedConversionCastOp>(op);
+}
+
+/// Return the value denoting the same aggregate before transparent casts.
+Value getAggregateAliasRoot(Value value) {
+  Operation *def = value.getDefiningOp();
+  while (isTransparentAggregateAliasCast(def)) {
+    value = def->getOperand(0);
+    def = value.getDefiningOp();
+  }
+  return value;
+}
+
+/// The known contents of a global. Scalars can be forwarded by SSA identity,
+/// while aggregates must retain an independent tree snapshot.
+struct GlobalState {
+  std::optional<Value> scalar;
+  std::shared_ptr<ReferenceNode> aggregate;
+};
+
+using GlobalStateMap = DenseMap<SymbolRefAttr, GlobalState>;
+
 /// Known values at a program point, split between tree-shaped value state and
 /// flat stateful global/RAM facts.
 struct KnownState {
   ValueMap values;
-  DenseMap<SymbolRefAttr, Value> globals;
+  GlobalStateMap globals;
   DenseMap<ReferenceID, Value> ram;
   // Unlike `ram`, only exact translated address values justify store removal.
   DenseMap<Value, Value> ramExact;
@@ -433,6 +566,22 @@ ValueMap intersectValueMap(const ValueMap &lhs, const ValueMap &rhs) {
   return res;
 }
 
+/// Intersect global facts conservatively. Scalar values retain the existing
+/// forwarding behavior. Aggregate snapshots are dropped at joins rather than
+/// being compared by allocation identity.
+GlobalStateMap intersectGlobals(const GlobalStateMap &lhs, const GlobalStateMap &rhs) {
+  GlobalStateMap res;
+  for (const auto &[id, lhsState] : lhs) {
+    if (!lhsState.scalar) {
+      continue;
+    }
+    if (auto it = rhs.find(id); it != rhs.end() && it->second.scalar == lhsState.scalar) {
+      res[id].scalar = lhsState.scalar;
+    }
+  }
+  return res;
+}
+
 /// Intersects flat lookup facts by retaining keys mapped to the same value.
 template <typename KeyT>
 DenseMap<KeyT, Value>
@@ -449,7 +598,7 @@ intersectValueLookup(const DenseMap<KeyT, Value> &lhs, const DenseMap<KeyT, Valu
 /// Intersects known state across predecessor blocks.
 KnownState intersect(const KnownState &lhs, const KnownState &rhs) {
   return {
-      intersectValueMap(lhs.values, rhs.values), intersectValueLookup(lhs.globals, rhs.globals),
+      intersectValueMap(lhs.values, rhs.values), intersectGlobals(lhs.globals, rhs.globals),
       intersectValueLookup(lhs.ram, rhs.ram), intersectValueLookup(lhs.ramExact, rhs.ramExact)
   };
 }
@@ -464,15 +613,31 @@ ValueMap cloneValueMap(const ValueMap &orig) {
   return res;
 }
 
+GlobalStateMap cloneGlobalStateMap(const GlobalStateMap &orig) {
+  GlobalStateMap res;
+  for (const auto &[name, global] : orig) {
+    res[name].scalar = global.scalar;
+    if (global.aggregate) {
+      res[name].aggregate = global.aggregate->clone();
+    }
+  }
+  return res;
+}
+
 /// Deep copy the KnownState for exclusive branches/regions so tree updates do
 /// not mutate the incoming state.
 KnownState cloneKnownState(const KnownState &orig) {
-  return {cloneValueMap(orig.values), orig.globals, orig.ram, orig.ramExact};
+  return {cloneValueMap(orig.values), cloneGlobalStateMap(orig.globals), orig.ram, orig.ramExact};
 }
 
 class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<PassImpl> {
   using Base = RedundantReadAndWriteEliminationPassBase<PassImpl>;
   using Base::Base;
+
+  /// Canonical aggregate aliases targeted by a mutating operation anywhere in
+  /// the current function. Such values cannot be safely merged with a
+  /// distinct aggregate copy, even when their source access is unchanged.
+  DenseSet<Value> aggregateWriteTargets;
 
   /// @brief Run the pass over the LLZK module. Currently the pass is intraprocedural,
   /// so this defers the optimization to `runOnFunc` for each function in the module.
@@ -493,6 +658,37 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
     LLVM_DEBUG(llvm::dbgs() << "Running on " << fn.getName() << '\n');
 
+    aggregateWriteTargets.clear();
+    auto recordAggregateWriteTarget = [this](Value target) {
+      if (requiresAggregateSnapshot(target.getType())) {
+        aggregateWriteTargets.insert(getAggregateAliasRoot(target));
+      }
+    };
+    fn.walk([&](Operation *op) {
+      bool knownAggregateWrite = false;
+      if (auto memberWrite = dyn_cast<MemberWriteOp>(op)) {
+        recordAggregateWriteTarget(memberWrite.getComponent());
+        knownAggregateWrite = true;
+      } else if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
+                 arrayAccess && !arrayAccess.isRead()) {
+        recordAggregateWriteTarget(arrayAccess.getArrRef());
+        knownAggregateWrite = true;
+      } else if (auto podWrite = dyn_cast<pod::WritePodOp>(op)) {
+        recordAggregateWriteTarget(podWrite.getPodRef());
+        knownAggregateWrite = true;
+      } else if (isa<global::GlobalWriteOp, ram::StoreOp, CallOp>(op)) {
+        // These operations copy their source operand but do not mutate it.
+        knownAggregateWrite = true;
+      }
+      if (!knownAggregateWrite && hasUnknownOrNonReadEffect(op)) {
+        // An unmodeled effect may mutate any aggregate operand. Treating it
+        // as a write target prevents a later RAUW from merging two copies.
+        for (Value operand : op->getOperands()) {
+          recordAggregateWriteTarget(operand);
+        }
+      }
+    });
+
     // Maps redundant value -> necessary value.
     DenseMap<Value, Value> replacementMap;
     // All values created by a new_* operation or from a read*/extract* operation.
@@ -504,7 +700,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     KnownState initState;
     // Initialize the state to the function arguments.
     for (auto arg : fn.getArguments()) {
-      initState.values[arg] = ReferenceNode::create(arg, arg);
+      initState.values[getAggregateAliasRoot(arg)] = ReferenceNode::create(arg, arg);
     }
     // Functions only have a single region
     (void)runOnRegion(
@@ -651,10 +847,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // state of this operation.
       if (!op.getRegions().empty()) {
         KnownState parentState = cloneKnownState(state);
-        // Repeating regions (scf.for, scf.while) execute their body
-        // more than once.  Pre-loop global/RAM facts must not be used
-        // to declare a read inside the body redundant — the body may
-        // observe writes from a previous iteration.
+        // Repeating regions (scf.for, scf.while) execute their body more than
+        // once. Pre-loop facts must not be used to declare a read inside the
+        // body redundant — the body may observe writes from a previous
+        // iteration.
         KnownState regionEntryState = cloneKnownState(state);
         // Tree-shaped reference last-write pointers are block-local deletion
         // candidates. Do not let an exclusive region inherit a candidate from
@@ -662,6 +858,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         // erasure.
         clearTreeWriteCandidates(regionEntryState);
         if (isa<scf::ForOp, scf::WhileOp>(op)) {
+          regionEntryState.values.clear();
           regionEntryState.globals.clear();
           regionEntryState.ram.clear();
           regionEntryState.ramExact.clear();
@@ -688,10 +885,11 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
           finalState = intersect(finalState, *it);
         }
         // A nested region may be conditional, zero-iteration, or otherwise not
-        // execute exactly once. Keep prior struct/array behavior, but only
-        // propagate global/RAM facts that remain true both before and after the
-        // region traversal.
-        finalState.globals = intersectValueLookup(parentState.globals, finalState.globals);
+        // execute exactly once. Only propagate facts that remain true both
+        // before and after the region traversal. In particular, a one-armed
+        // scf.if must not make a write in its then-region appear unconditional.
+        finalState.values = intersectValueMap(parentState.values, finalState.values);
+        finalState.globals = intersectGlobals(parentState.globals, finalState.globals);
         finalState.ram = intersectValueLookup(parentState.ram, finalState.ram);
         finalState.ramExact = intersectValueLookup(parentState.ramExact, finalState.ramExact);
         // Likewise, do not export a tree-shaped reference candidate from one
@@ -729,12 +927,33 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       return v;
     };
 
+    // Transparent aggregate casts preserve identity. Store one tree under the
+    // root value for the whole cast chain, rather than one entry per SSA alias.
+    // A cast operand may itself be replacement-pending, so repeat both
+    // normalizations until reaching the canonical state key.
+    auto canonicalStateKey = [&](Value v) {
+      while (true) {
+        Value normalized = getAggregateAliasRoot(translate(v));
+        if (normalized == v) {
+          return v;
+        }
+        v = normalized;
+      }
+    };
+
     // Lookup the value tree in the current state or return nullptr.
-    auto tryGetValTree = [&state](Value v) -> std::shared_ptr<ReferenceNode> {
-      if (auto it = state.values.find(v); it != state.values.end()) {
+    auto tryGetValTree = [&state, &canonicalStateKey](Value v) -> std::shared_ptr<ReferenceNode> {
+      if (auto it = state.values.find(canonicalStateKey(v)); it != state.values.end()) {
         return it->second;
       }
       return nullptr;
+    };
+
+    auto setValTree = [&state, &canonicalStateKey](Value v, std::shared_ptr<ReferenceNode> tree) {
+      state.values[canonicalStateKey(v)] = std::move(tree);
+    };
+    auto eraseValTree = [&state, &canonicalStateKey](Value v) {
+      state.values.erase(canonicalStateKey(v));
     };
 
     auto doStatefulRead =
@@ -745,9 +964,271 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         return true;
       } else {
         knownValues[key] = resVal;
-        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        setValTree(resVal, ReferenceNode::create(resVal, resVal));
         return false;
       }
+    };
+
+    auto copiedValueTree = [&](Value value) {
+      if (auto tree = tryGetValTree(value); tree && requiresAggregateSnapshot(value.getType())) {
+        auto copy = tree->cloneForValueCopy(value);
+        // Copying observes all known source contents, so a later mutation of
+        // the source cannot erase a write that initialized the copy.
+        tree->clearLastWritesInSubtree();
+        return copy;
+      }
+      return tryGetValTree(value);
+    };
+
+    auto readAggregateSnapshot = [](const std::shared_ptr<ReferenceNode> &tree, Value result,
+                                    Operation *read) {
+      auto copy = tree->cloneForValueCopy(result);
+      copy->setAggregateReadOrigin(tree, read);
+      // The read observes all contents of this allocation, so preserve writes
+      // that initialized the independent value copy.
+      tree->clearLastWritesInSubtree();
+      return copy;
+    };
+
+    auto useMutatesAggregate = [](OpOperand &use) {
+      Value value = use.get();
+      Operation *user = use.getOwner();
+      if (auto memberWrite = dyn_cast<MemberWriteOp>(user)) {
+        return memberWrite.getComponent() == value;
+      }
+      if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(user)) {
+        return !arrayAccess.isRead() && arrayAccess.getArrRef() == value;
+      }
+      if (auto podWrite = dyn_cast<pod::WritePodOp>(user)) {
+        return podWrite.getPodRef() == value;
+      }
+      if (isa<global::GlobalWriteOp, ram::StoreOp, CallOp>(user)) {
+        // These operations consume a copied source value rather than mutate it.
+        return false;
+      }
+      if (isa<constrain::ConstraintOpInterface>(user)) {
+        // Constraints consume aggregate values but cannot mutate their storage.
+        return false;
+      }
+      return hasUnknownOrNonReadEffect(user);
+    };
+
+    // Search all aliases of `value` for a relevant mutation. Transparent
+    // casts do not establish a value-copy boundary, so a mutation through a
+    // cast result is also a mutation of the aggregate passed to that cast.
+    // Start at the cast-chain root so this also finds a mutation through the
+    // source when `value` itself is a cast result.
+    auto mayMutateThroughAlias = [&](Value value, auto &&isRelevantUse) {
+      SmallVector<Value> worklist = {getAggregateAliasRoot(value)};
+      DenseSet<Value> visited;
+      while (!worklist.empty()) {
+        Value alias = worklist.pop_back_val();
+        if (!visited.insert(alias).second) {
+          continue;
+        }
+        for (OpOperand &use : alias.getUses()) {
+          Operation *user = use.getOwner();
+          if (isTransparentAggregateAliasCast(user)) {
+            worklist.push_back(user->getResult(0));
+            continue;
+          }
+          if (useMutatesAggregate(use) && isRelevantUse(user)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    auto mayMutateAfter = [&](Value value, Operation *point) {
+      return mayMutateThroughAlias(value, [point](Operation *user) {
+        // Candidates are not propagated across control-flow state clones, so
+        // a write outside this block is conservatively treated as later.
+        return user->getBlock() != point->getBlock() || point->isBeforeInBlock(user);
+      });
+    };
+
+    auto mayMutateBetween = [&](Value value, Operation *before, Operation *after) {
+      return mayMutateThroughAlias(value, [before, after](Operation *user) {
+        return user->getBlock() != before->getBlock() || user->getBlock() != after->getBlock() ||
+               (before->isBeforeInBlock(user) && user->isBeforeInBlock(after));
+      });
+    };
+
+    // A write records the aggregate source that was copied into an access. A
+    // later aggregate read may reuse that source when it has not changed since
+    // the copy and neither copy is mutated afterwards. The caller still
+    // creates a snapshot first, so the read observes pending writes even when
+    // its SSA result is subsequently replaced.
+    auto tryForwardAggregateSnapshot = [&](const std::shared_ptr<ReferenceNode> &tree, Value result,
+                                           Operation *read) -> std::shared_ptr<ReferenceNode> {
+      const auto &snapshotSource = tree->getAggregateSnapshotSource();
+      if (!snapshotSource || mayMutateBetween(snapshotSource->value, snapshotSource->write, read) ||
+          mayMutateAfter(snapshotSource->value, read) || mayMutateAfter(result, read)) {
+        return nullptr;
+      }
+      if (auto sourceTree = tryGetValTree(snapshotSource->value)) {
+        replacementMap[result] = snapshotSource->value;
+        return sourceTree;
+      }
+      return nullptr;
+    };
+
+    // Reuse a prior aggregate read only when replacing the later copy with the
+    // earlier copy preserves value-copy semantics. In particular, neither
+    // copy may be mutated, and the candidate must not have been mutated before
+    // this read was reached.
+    auto tryReuseAggregateRead = [&](const std::shared_ptr<ReferenceNode> &tree, Value result,
+                                     Operation *read) -> std::shared_ptr<ReferenceNode> {
+      const auto &candidate = tree->getReusableAggregateRead();
+      if (!candidate) {
+        return nullptr;
+      }
+      Operation *candidateRead = candidate->getDefiningOp();
+      if (candidateRead == nullptr || mayMutateBetween(*candidate, candidateRead, read) ||
+          mayMutateAfter(*candidate, read) || mayMutateAfter(result, read)) {
+        return nullptr;
+      }
+      if (auto candidateTree = tryGetValTree(*candidate)) {
+        replacementMap[result] = *candidate;
+        return candidateTree;
+      }
+      return nullptr;
+    };
+
+    /// Apply the common snapshot/forward/reuse sequence for an aggregate read.
+    ///
+    /// `tryReuse` and `rememberRead` retain the few operation-specific reuse
+    /// policies (member reads are deliberately more conservative), while all
+    /// aggregate access kinds share the same snapshot and forwarding behavior.
+    auto processAggregateRead = [&](const std::shared_ptr<ReferenceNode> &storage, Value result,
+                                    Operation *read, auto &&tryReuse, auto &&rememberRead) {
+      auto snapshot = readAggregateSnapshot(storage, result, read);
+      if (auto sourceTree = tryForwardAggregateSnapshot(storage, result, read)) {
+        return sourceTree;
+      }
+      if (auto reusableTree = tryReuse(storage, result, read)) {
+        return reusableTree;
+      }
+      auto resultTree = std::move(snapshot);
+      rememberRead(storage, result);
+      return resultTree;
+    };
+
+    auto tryStandardAggregateReuse = [&](const std::shared_ptr<ReferenceNode> &storage,
+                                         Value result, Operation *read) {
+      return tryReuseAggregateRead(storage, result, read);
+    };
+    auto rememberAggregateRead = [](const std::shared_ptr<ReferenceNode> &storage, Value result) {
+      storage->setReusableAggregateRead(result);
+    };
+
+    // Struct member reads use a function-wide mutation pre-scan as their
+    // reuse policy. Keep that policy separate from the generic sequence above.
+    auto isAggregateWriteTarget = [this](Value value) {
+      return aggregateWriteTargets.contains(getAggregateAliasRoot(value));
+    };
+    auto tryMemberAggregateReuse = [&](const std::shared_ptr<ReferenceNode> &storage, Value result,
+                                       Operation *) -> std::shared_ptr<ReferenceNode> {
+      const auto &candidate = storage->getReusableAggregateRead();
+      if (!candidate || isAggregateWriteTarget(*candidate) || isAggregateWriteTarget(result)) {
+        return nullptr;
+      }
+      if (auto candidateTree = tryGetValTree(*candidate)) {
+        replacementMap[result] = *candidate;
+        return candidateTree;
+      }
+      return nullptr;
+    };
+    auto rememberMemberAggregateRead = [&](const std::shared_ptr<ReferenceNode> &storage,
+                                           Value result) {
+      if (!isAggregateWriteTarget(result)) {
+        storage->setReusableAggregateRead(result);
+      }
+    };
+
+    // An aggregate write is redundant when it copies the same source snapshot
+    // that is already stored at the destination and that source has not been
+    // mutated since the earlier copy. The destination's state records writes
+    // by exact access path, so any intervening potentially-aliasing write has
+    // already invalidated or replaced this candidate.
+    auto isRedundantAggregateWrite =
+        [&](const std::optional<ReferenceNode::AggregateSnapshotSource> &previous, Value value,
+            Operation *write) {
+      return previous && previous->value == value &&
+             !mayMutateBetween(value, previous->write, write);
+    };
+
+    auto isRedundantTreeWrite =
+        [&](const std::shared_ptr<ReferenceNode> &destination,
+            const std::optional<ReferenceNode::AggregateSnapshotSource> &previous, Value value,
+            Operation *write) {
+      if (!requiresAggregateSnapshot(value.getType())) {
+        return destination->getStoredValue() == value;
+      }
+      return isRedundantAggregateWrite(previous, value, write);
+    };
+
+    /// Commit the shared tree bookkeeping for a non-redundant array, POD, or
+    /// struct access write. Each caller supplies the ancestors whose aggregate
+    /// snapshots were mutated by its particular access path.
+    auto commitTreeWrite = [&](const std::shared_ptr<ReferenceNode> &destination, Value value,
+                               Operation *write, const std::shared_ptr<ReferenceNode> &valueTree,
+                               ArrayRef<std::shared_ptr<ReferenceNode>> mutatedNodes) {
+      for (const auto &node : mutatedNodes) {
+        node->markAggregateMutation();
+      }
+      destination->clearAggregateSnapshotSource();
+      if (Operation *lastWrite = destination->updateLastWrite(write)) {
+        LLVM_DEBUG(
+            llvm::dbgs() << write->getName().getStringRef() << ": replacing " << lastWrite
+                         << " with prior write " << *lastWrite << '\n'
+        );
+        redundantWrites.push_back(lastWrite);
+      }
+      destination->setCurrentValue(value, valueTree);
+      if (requiresAggregateSnapshot(value.getType())) {
+        destination->setAggregateSnapshotSource(value, write);
+      }
+    };
+
+    // Returns whether an operation between two aggregate accesses has an
+    // unmodeled effect. Known writes are checked through per-access mutation
+    // epochs instead, which lets a write to an unrelated array element or
+    // record remain transparent to a read-back write.
+    auto hasUnknownEffectBetween = [](Operation *before, Operation *after) {
+      if (before == nullptr || after == nullptr || before->getBlock() != after->getBlock() ||
+          !before->isBeforeInBlock(after)) {
+        return true;
+      }
+      for (Operation *n = before->getNextNode(); n != after; n = n->getNextNode()) {
+        if (isa<MemberWriteOp, pod::WritePodOp, global::GlobalWriteOp, ram::StoreOp, CallOp,
+                constrain::ConstraintOpInterface>(n) ||
+            llvm::dyn_cast<ArrayAccessOpInterface>(n)) {
+          continue;
+        }
+        if (hasUnknownOrNonReadEffect(n)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // A write that restores an unchanged snapshot to the same storage path is
+    // redundant. The source snapshot remembers both its read location and the
+    // location's mutation epoch. Writes on the same path, nested below it, or
+    // through an alias advance that epoch; unrelated sibling writes do not.
+    auto isRedundantAggregateReadBackWrite = [&](const std::shared_ptr<ReferenceNode> &destination,
+                                                 Value source, Operation *write) {
+      auto sourceTree = tryGetValTree(source);
+      if (sourceTree == nullptr) {
+        return false;
+      }
+      const auto &origin = sourceTree->getAggregateReadOrigin();
+      return origin && origin->storage == destination &&
+             origin->mutationEpoch == destination->getAggregateMutationEpoch() &&
+             !mayMutateBetween(source, origin->read, write) &&
+             !hasUnknownEffectBetween(origin->read, write);
     };
 
     // An omitted table offset denotes the current row.
@@ -785,7 +1266,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       Value resVal = readarr.getResult();
       std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(readarr.getArrRef()));
       if (currValTree == nullptr) {
-        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        setValTree(resVal, ReferenceNode::create(resVal, resVal));
         readVals.push_back(resVal);
         return;
       }
@@ -799,6 +1280,20 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         hasDynamicIndex |= !indexId.isConst();
         indices.push_back(indexId);
         currValTree = currValTree->getOrCreateChild(idxVal);
+      }
+
+      if (requiresAggregateSnapshot(resVal.getType())) {
+        if (hasDynamicIndex) {
+          rootValTree->clearLastWritesObservedBy(indices);
+        }
+        setValTree(
+            resVal, processAggregateRead(
+                        currValTree, resVal, readarr.getOperation(), tryStandardAggregateReuse,
+                        rememberAggregateRead
+                    )
+        );
+        readVals.push_back(resVal);
+        return;
       }
 
       if (!currValTree->hasStoredValue()) {
@@ -815,7 +1310,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         if (hasDynamicIndex) {
           rootValTree->clearLastWritesObservedBy(indices);
         }
-        state.values[resVal] = currValTree;
+        setValTree(resVal, currValTree);
         LLVM_DEBUG(
             llvm::dbgs() << readarr.getOperationName() << ": " << resVal << " => " << *currValTree
                          << '\n'
@@ -834,9 +1329,30 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         return;
       }
       Value newVal = translate(writearr.getRvalue());
-      std::shared_ptr<ReferenceNode> valTree = tryGetValTree(newVal);
+
+      // Look up the destination without changing the access tree. This gives a
+      // read-back write a chance to prove itself redundant before normal write
+      // processing invalidates dynamic aliases or snapshot provenance.
+      if (requiresAggregateSnapshot(newVal.getType())) {
+        auto destination = currValTree;
+        for (Value origIdx : writearr.getIndices()) {
+          destination = destination->getChild(translate(origIdx));
+          if (destination == nullptr) {
+            break;
+          }
+        }
+        if (destination != nullptr &&
+            isRedundantAggregateReadBackWrite(destination, newVal, writearr.getOperation())) {
+          redundantWrites.push_back(writearr.getOperation());
+          return;
+        }
+      }
+
+      std::shared_ptr<ReferenceNode> valTree = copiedValueTree(newVal);
+      SmallVector<std::shared_ptr<ReferenceNode>> mutatedNodes = {currValTree};
 
       for (Value origIdx : writearr.getIndices()) {
+        currValTree->clearAggregateSnapshotSource();
         Value idxVal = translate(origIdx);
         // A dynamic index may alias any sibling. A constant index only aliases
         // a dynamic sibling, so preserve unrelated constant-index facts.
@@ -847,44 +1363,104 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
           currValTree->invalidateChildren();
         }
         currValTree = currValTree->getOrCreateChild(idxVal);
+        mutatedNodes.push_back(currValTree);
       }
+      std::optional<ReferenceNode::AggregateSnapshotSource> previousSnapshot =
+          currValTree->getAggregateSnapshotSource();
 
-      if (currValTree->getStoredValue() == newVal) {
+      // A subarray write copies its rvalue. The same aggregate SSA value can
+      // therefore denote a different snapshot after the source is mutated.
+      // SSA identity is only sufficient to prove a scalar write redundant.
+      if (isRedundantTreeWrite(currValTree, previousSnapshot, newVal, writearr.getOperation())) {
         LLVM_DEBUG(
             llvm::dbgs() << writearr.getOperationName() << ": subsequent " << writearr
                          << " is redundant\n"
         );
         redundantWrites.push_back(writearr);
       } else {
-        if (Operation *lastWrite = currValTree->updateLastWrite(writearr)) {
-          LLVM_DEBUG(
-              llvm::dbgs() << writearr.getOperationName() << "writearr: replacing " << lastWrite
-                           << " with prior write " << *lastWrite << '\n'
-          );
-          redundantWrites.push_back(lastWrite);
-        }
-        currValTree->setCurrentValue(newVal, valTree);
+        // A write below an aggregate path invalidates read-back candidates for
+        // that path and all of its ancestors, but not constant-index siblings.
+        commitTreeWrite(currValTree, newVal, writearr.getOperation(), valTree, mutatedNodes);
       }
     };
 
-    // global ops
+    // Global ops.
     if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
       const auto name = readGlobal.getNameRef();
-      if (!doStatefulRead(readGlobal.getVal(), state.globals, name)) {
+      Value result = readGlobal.getVal();
+      readVals.push_back(result);
+      if (requiresAggregateSnapshot(result.getType())) {
+        if (auto it = state.globals.find(name); it != state.globals.end() && it->second.aggregate) {
+          setValTree(
+              result,
+              processAggregateRead(
+                  it->second.aggregate, result, op, tryStandardAggregateReuse, rememberAggregateRead
+              )
+          );
+        } else {
+          auto globalState = ReferenceNode::create(result, result);
+          setValTree(
+              result, processAggregateRead(
+                          globalState, result, op, tryStandardAggregateReuse, rememberAggregateRead
+                      )
+          );
+          state.globals[name] = GlobalState {
+              .scalar = std::nullopt,
+              .aggregate = std::move(globalState),
+          };
+        }
+        writeCandidates.globals.erase(name);
+      } else if (auto it = state.globals.find(name);
+                 it != state.globals.end() && it->second.scalar) {
+        replacementMap[result] = *it->second.scalar;
+      } else {
+        state.globals[name] = GlobalState {.scalar = result, .aggregate = nullptr};
+        setValTree(result, ReferenceNode::create(result, result));
         writeCandidates.globals.erase(name);
       }
     } else if (auto writeGlobal = dyn_cast<global::GlobalWriteOp>(op)) {
       const auto name = writeGlobal.getNameRef();
       Value value = translate(writeGlobal.getVal());
-      if (auto known = state.globals.find(name);
-          known != state.globals.end() && known->second == value) {
+      if (requiresAggregateSnapshot(value.getType()) && [&] {
+        auto known = state.globals.find(name);
+        return known != state.globals.end() && known->second.aggregate &&
+               isRedundantAggregateReadBackWrite(
+                   known->second.aggregate, value, writeGlobal.getOperation()
+               );
+      }()) {
+        redundantWrites.push_back(writeGlobal.getOperation());
+      } else if (!requiresAggregateSnapshot(value.getType()) && [&] {
+        auto known = state.globals.find(name);
+        return known != state.globals.end() && known->second.scalar == value;
+      }()) {
+        redundantWrites.push_back(writeGlobal.getOperation());
+      } else if (requiresAggregateSnapshot(value.getType()) && [&] {
+        auto known = state.globals.find(name);
+        return known != state.globals.end() && known->second.aggregate &&
+               isRedundantTreeWrite(
+                   known->second.aggregate, known->second.aggregate->getAggregateSnapshotSource(),
+                   value, writeGlobal.getOperation()
+               );
+      }()) {
         redundantWrites.push_back(writeGlobal.getOperation());
       } else {
         if (auto previous = writeCandidates.globals.find(name);
             previous != writeCandidates.globals.end()) {
           redundantWrites.push_back(previous->second);
         }
-        state.globals[name] = value;
+        if (requiresAggregateSnapshot(value.getType())) {
+          if (auto valueTree = copiedValueTree(value)) {
+            valueTree->setAggregateSnapshotSource(value, writeGlobal.getOperation());
+            state.globals[name] = GlobalState {
+                .scalar = std::nullopt,
+                .aggregate = std::move(valueTree),
+            };
+          } else {
+            state.globals.erase(name);
+          }
+        } else {
+          state.globals[name] = GlobalState {.scalar = value, .aggregate = nullptr};
+        }
         writeCandidates.globals[name] = writeGlobal.getOperation();
       }
     }
@@ -917,17 +1493,25 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     else if (auto newStruct = dyn_cast<CreateStructOp>(op)) {
       // For new values, the "stored value" of the reference is the creation site.
       auto structVal = ReferenceNode::create(newStruct, newStruct);
-      state.values[newStruct] = structVal;
-      LLVM_DEBUG(
-          llvm::dbgs() << newStruct.getOperationName() << ": " << *state.values[newStruct] << '\n'
-      );
+      setValTree(newStruct, structVal);
+      LLVM_DEBUG(llvm::dbgs() << newStruct.getOperationName() << ": " << *structVal << '\n');
       // adding this to readVals
       readVals.push_back(newStruct);
     } else if (auto readm = dyn_cast<MemberReadOp>(op)) {
       std::shared_ptr<ReferenceNode> access = getMemberAccessNode(readm);
       Value resVal = readm.getVal();
       if (access == nullptr) {
-        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        setValTree(resVal, ReferenceNode::create(resVal, resVal));
+        readVals.push_back(resVal);
+        return;
+      }
+      if (requiresAggregateSnapshot(resVal.getType())) {
+        setValTree(
+            resVal, processAggregateRead(
+                        access, resVal, readm.getOperation(), tryMemberAggregateReuse,
+                        rememberMemberAggregateRead
+                    )
+        );
         readVals.push_back(resVal);
         return;
       }
@@ -941,41 +1525,61 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         );
         replacementMap[resVal] = access->getStoredValue();
       } else {
-        state.values[resVal] = access;
+        setValTree(resVal, access);
         LLVM_DEBUG(llvm::dbgs() << readm.getOperationName() << ": " << *access << '\n');
       }
       readVals.push_back(resVal);
     } else if (auto writem = dyn_cast<MemberWriteOp>(op)) {
+      auto componentTree = tryGetValTree(translate(writem.getComponent()));
       std::shared_ptr<ReferenceNode> member =
           getMemberNode(writem.getComponent(), writem.getMemberNameAttr());
       if (member == nullptr) {
         return;
       }
+      Value writeVal = translate(writem.getVal());
+      auto access = member->getOrCreateChild(zeroTableOffset);
+      std::optional<ReferenceNode::AggregateSnapshotSource> previousSnapshot =
+          access->getAggregateSnapshotSource();
+      if (requiresAggregateSnapshot(writeVal.getType()) &&
+          isRedundantAggregateReadBackWrite(access, writeVal, writem.getOperation())) {
+        redundantWrites.push_back(writem);
+        return;
+      }
+      if (requiresAggregateSnapshot(writeVal.getType()) &&
+          isRedundantTreeWrite(access, previousSnapshot, writeVal, writem.getOperation())) {
+        redundantWrites.push_back(writem);
+        return;
+      }
+      if (componentTree) {
+        componentTree->clearAggregateSnapshotSource();
+      }
       // Symbolic and affine offsets may resolve to the current row. Constant
       // nonzero offsets stay distinct from a current-row member write.
       bool invalidatedMayAliasRead = member->invalidateNonIntegerOffsetChildren();
-      Value writeVal = translate(writem.getVal());
-      auto valTree = tryGetValTree(writeVal);
+      auto valTree = copiedValueTree(writeVal);
 
-      auto access = member->getOrCreateChild(zeroTableOffset);
       if (invalidatedMayAliasRead) {
         access->clearLastWrite();
       }
-      if (access->getStoredValue() == writeVal) {
+      // Member writes copy aggregate values, so do not treat repeated source
+      // SSA identity as repeated stored state.
+      if (!requiresAggregateSnapshot(writeVal.getType()) &&
+          isRedundantTreeWrite(access, previousSnapshot, writeVal, writem.getOperation())) {
         LLVM_DEBUG(
             llvm::dbgs() << writem.getOperationName() << ": recording redundant write " << writem
                          << '\n'
         );
         redundantWrites.push_back(writem);
       } else {
-        if (auto *lastWrite = access->updateLastWrite(writem)) {
-          LLVM_DEBUG(
-              llvm::dbgs() << writem.getOperationName() << ": recording overwritten write "
-                           << *lastWrite << '\n'
-          );
-          redundantWrites.push_back(lastWrite);
+        // A member write changes the current-row access and the enclosing
+        // member/component snapshots, but leaves other members independent.
+        SmallVector<std::shared_ptr<ReferenceNode>> mutatedNodes;
+        if (componentTree) {
+          mutatedNodes.push_back(componentTree);
         }
-        access->setCurrentValue(writeVal, valTree);
+        mutatedNodes.push_back(member);
+        mutatedNodes.push_back(access);
+        commitTreeWrite(access, writeVal, writem.getOperation(), valTree, mutatedNodes);
         LLVM_DEBUG(
             llvm::dbgs() << writem.getOperationName() << ": " << *access << " set to " << writeVal
                          << '\n'
@@ -985,14 +1589,14 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // array ops
     else if (auto newArray = dyn_cast<CreateArrayOp>(op)) {
       auto arrayVal = ReferenceNode::create(newArray, newArray);
-      state.values[newArray] = arrayVal;
+      setValTree(newArray, arrayVal);
 
       // If we're given a constructor, we can instantiate elements using
       // constant indices.
       unsigned idx = 0;
       for (auto elem : newArray.getElements()) {
         Value elemVal = translate(elem);
-        auto valTree = tryGetValTree(elemVal);
+        auto valTree = copiedValueTree(elemVal);
         auto elemChild = arrayVal->createChild(idx, elemVal, valTree);
         LLVM_DEBUG(
             llvm::dbgs() << newArray.getOperationName() << ": element " << idx << " initialized to "
@@ -1012,7 +1616,100 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     } else if (auto insertarr = dyn_cast<InsertArrayOp>(op)) {
       // Logic is essentially the same as writearr
       doArrayWriteLike(insertarr);
+    } else if (auto newPod = dyn_cast<pod::NewPodOp>(op)) {
+      Value podValue = newPod.getResult();
+      auto podTree = ReferenceNode::create(podValue, podValue);
+      setValTree(podValue, podTree);
+      for (const auto &record : newPod.getInitializedRecordValues()) {
+        Value value = translate(record.value);
+        podTree->createChild(
+            StringAttr::get(op->getContext(), record.name), value, copiedValueTree(value)
+        );
+      }
+      readVals.push_back(podValue);
+    } else if (auto readPod = dyn_cast<pod::ReadPodOp>(op)) {
+      Value result = readPod.getResult();
+      auto podTree = tryGetValTree(translate(readPod.getPodRef()));
+      if (podTree == nullptr) {
+        setValTree(result, ReferenceNode::create(result, result));
+      } else {
+        auto record = podTree->getOrCreateChild(readPod.getRecordNameAttr());
+        if (requiresAggregateSnapshot(result.getType())) {
+          setValTree(
+              result, processAggregateRead(
+                          record, result, readPod.getOperation(), tryStandardAggregateReuse,
+                          rememberAggregateRead
+                      )
+          );
+        } else if (!record->hasStoredValue()) {
+          record->setCurrentValue(result);
+          setValTree(result, record);
+        } else if (record->getStoredValue() != result) {
+          replacementMap[result] = record->getStoredValue();
+        } else {
+          setValTree(result, record);
+        }
+      }
+      readVals.push_back(result);
+    } else if (auto writePod = dyn_cast<pod::WritePodOp>(op)) {
+      auto podTree = tryGetValTree(translate(writePod.getPodRef()));
+      if (podTree == nullptr) {
+        return;
+      }
+      Value value = translate(writePod.getValue());
+      auto record = podTree->getOrCreateChild(writePod.getRecordNameAttr());
+      std::optional<ReferenceNode::AggregateSnapshotSource> previousSnapshot =
+          record->getAggregateSnapshotSource();
+      if (requiresAggregateSnapshot(value.getType()) &&
+          isRedundantAggregateReadBackWrite(record, value, writePod.getOperation())) {
+        redundantWrites.push_back(writePod.getOperation());
+        return;
+      }
+      if (requiresAggregateSnapshot(value.getType()) &&
+          isRedundantTreeWrite(record, previousSnapshot, value, writePod.getOperation())) {
+        redundantWrites.push_back(writePod.getOperation());
+        return;
+      }
+      podTree->clearAggregateSnapshotSource();
+      // POD records also store aggregate snapshots rather than aliases.
+      if (!requiresAggregateSnapshot(value.getType()) &&
+          isRedundantTreeWrite(record, previousSnapshot, value, writePod.getOperation())) {
+        redundantWrites.push_back(writePod.getOperation());
+      } else {
+        // Record writes affect this record and the enclosing POD, but not
+        // unrelated records' copied aggregate snapshots.
+        SmallVector<std::shared_ptr<ReferenceNode>> mutatedNodes = {podTree, record};
+        commitTreeWrite(
+            record, value, writePod.getOperation(), copiedValueTree(value), mutatedNodes
+        );
+      }
     } else if (hasUnknownOrNonReadEffect(op)) {
+      // Calls and constraints consume aggregate operands by value. Other
+      // unmodeled effects may mutate aggregate operands, so discard their
+      // reference-tree state before a later read or write can reuse stale
+      // contents. Other aggregate values remain valid because aggregate
+      // copies have value-copy semantics.
+      if (isa<CallOp, constrain::ConstraintOpInterface>(op)) {
+        // Calls and constraints do not mutate their aggregate operands, but
+        // they observe the complete value-copy snapshot. Retain the facts in
+        // the tree for later read reuse while preventing a later write from
+        // removing a write that this operation already observed.
+        for (Value operand : op->getOperands()) {
+          if (requiresAggregateSnapshot(operand.getType())) {
+            if (auto valueTree = tryGetValTree(translate(operand))) {
+              valueTree->clearLastWritesInSubtree();
+            }
+          }
+        }
+      } else {
+        for (Value operand : op->getOperands()) {
+          if (requiresAggregateSnapshot(operand.getType())) {
+            // Every transparent aggregate-alias group has one canonical map
+            // key, so invalidating one alias invalidates the whole group.
+            eraseValTree(operand);
+          }
+        }
+      }
       state.globals.clear();
       state.ram.clear();
       state.ramExact.clear();
