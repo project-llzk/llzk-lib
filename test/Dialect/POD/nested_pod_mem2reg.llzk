@@ -14,13 +14,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @preserve_mutated_read_copy(%arg0: index) -> index {
-// CHECK-NEXT:      %pod = pod.new : <[@inner: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      %0 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %1 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      pod.write %0[@value] = %arg0 : <[@value: index]>, index
-// CHECK-NEXT:      %2 = pod.read %1[@value] : <[@value: index]>, index
-// CHECK-NEXT:      function.return %2 : index
+// CHECK-NEXT:    function.def @preserve_mutated_read_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_2]][@value] = %[[VAL_0]] : <[@value: index]>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -43,15 +43,15 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @preserve_transitively_mutated_read_copy(%arg0: index) -> index {
-// CHECK-NEXT:      %pod = pod.new : <[@inner: !pod.type<[@leaf: !pod.type<[@value: index]>]>]>
-// CHECK-NEXT:      %0 = pod.read %pod[@inner] : <[@inner: !pod.type<[@leaf: !pod.type<[@value: index]>]>]>, !pod.type<[@leaf: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      %1 = pod.read %0[@leaf] : <[@leaf: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      pod.write %1[@value] = %arg0 : <[@value: index]>, index
-// CHECK-NEXT:      %2 = pod.read %pod[@inner] : <[@inner: !pod.type<[@leaf: !pod.type<[@value: index]>]>]>, !pod.type<[@leaf: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      %3 = pod.read %2[@leaf] : <[@leaf: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %4 = pod.read %3[@value] : <[@value: index]>, index
-// CHECK-NEXT:      function.return %4 : index
+// CHECK-NEXT:    function.def @preserve_transitively_mutated_read_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@leaf: !pod.type<[@value: index]>]>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@leaf: !pod.type<[@value: index]>]>]>, !pod.type<[@leaf: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@leaf] : <[@leaf: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_3]][@value] = %[[VAL_0]] : <[@value: index]>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@leaf: !pod.type<[@value: index]>]>]>, !pod.type<[@leaf: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_4]][@leaf] : <[@leaf: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_5]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -72,14 +72,14 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @preserve_written_nested_value(%arg0: index, %arg1: index) -> index {
-// CHECK-NEXT:      %pod = pod.new { @value = %arg0 }  : <[@value: index]>
-// CHECK-NEXT:      %pod_0 = pod.new : <[@inner: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      pod.write %pod_0[@inner] = %pod : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      pod.write %pod[@value] = %arg1 : <[@value: index]>, index
-// CHECK-NEXT:      %0 = pod.read %pod_0[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %1 = pod.read %0[@value] : <[@value: index]>, index
-// CHECK-NEXT:      function.return %1 : index
+// CHECK-NEXT:    function.def @preserve_written_nested_value(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new { @value = %[[VAL_0]] }  : <[@value: index]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      pod.write %[[VAL_3]][@inner] = %[[VAL_2]] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_2]][@value] = %[[VAL_1]] : <[@value: index]>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_4]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -106,18 +106,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @preserve_forwarded_read_copy(%arg0: i1, %arg1: index) -> index {
-// CHECK-NEXT:      %pod = pod.new : <[@inner: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      %0 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %1 = scf.if %arg0 -> (!pod.type<[@value: index]>) {
-// CHECK-NEXT:        scf.yield %0 : !pod.type<[@value: index]>
+// CHECK-NEXT:    function.def @preserve_forwarded_read_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!pod.type<[@value: index]>) {
+// CHECK-NEXT:        scf.yield %[[VAL_3]] : !pod.type<[@value: index]>
 // CHECK-NEXT:      } else {
-// CHECK-NEXT:        scf.yield %0 : !pod.type<[@value: index]>
+// CHECK-NEXT:        scf.yield %[[VAL_3]] : !pod.type<[@value: index]>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      pod.write %1[@value] = %arg1 : <[@value: index]>, index
-// CHECK-NEXT:      %2 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %3 = pod.read %2[@value] : <[@value: index]>, index
-// CHECK-NEXT:      function.return %3 : index
+// CHECK-NEXT:      pod.write %[[VAL_4]][@value] = %[[VAL_1]] : <[@value: index]>, index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_5]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -142,17 +142,17 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @mutate(%arg0: !pod.type<[@value: index]>, %arg1: index) {
-// CHECK-NEXT:      pod.write %arg0[@value] = %arg1 : <[@value: index]>, index
+// CHECK-NEXT:    function.def @mutate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pod.type<[@value: index]>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      pod.write %[[VAL_0]][@value] = %[[VAL_1]] : <[@value: index]>, index
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @preserve_escaping_read_copy(%arg0: index) -> index {
-// CHECK-NEXT:      %pod = pod.new : <[@inner: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      %0 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      function.call @mutate(%0, %arg0) : (!pod.type<[@value: index]>, index) -> ()
-// CHECK-NEXT:      %1 = pod.read %pod[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %2 = pod.read %1[@value] : <[@value: index]>, index
-// CHECK-NEXT:      function.return %2 : index
+// CHECK-NEXT:    function.def @preserve_escaping_read_copy(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      function.call @mutate(%[[VAL_4]], %[[VAL_2]]) : (!pod.type<[@value: index]>, index) -> ()
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_5]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -172,13 +172,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @preserve_initialized_nested_value(%arg0: index, %arg1: index) -> index {
-// CHECK-NEXT:      %pod = pod.new { @value = %arg0 }  : <[@value: index]>
-// CHECK-NEXT:      %pod_0 = pod.new { @inner = %pod }  : <[@inner: !pod.type<[@value: index]>]>
-// CHECK-NEXT:      pod.write %pod[@value] = %arg1 : <[@value: index]>, index
-// CHECK-NEXT:      %0 = pod.read %pod_0[@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
-// CHECK-NEXT:      %1 = pod.read %0[@value] : <[@value: index]>, index
-// CHECK-NEXT:      function.return %1 : index
+// CHECK-NEXT:    function.def @preserve_initialized_nested_value(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new { @value = %[[VAL_0]] }  : <[@value: index]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.new { @inner = %[[VAL_2]] }  : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      pod.write %[[VAL_2]][@value] = %[[VAL_1]] : <[@value: index]>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_4]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
