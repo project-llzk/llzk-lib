@@ -216,16 +216,26 @@ bool isFeltOrArrayOfFelt(mlir::Type type) {
   return false;
 }
 
+llvm::FailureOr<llvm::SmallVector<size_t>> getExtents(array::ArrayType type) {
+  SmallVector<size_t> extents;
+  for (auto dim : type.getShape()) {
+    if (dim < 0) {
+      return failure();
+    }
+    extents.push_back(dim);
+  }
+  return extents;
+}
+
 mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
-    Location loc, Value array, ArrayRef<size_t> extents,
-    function_ref<mlir::Value(mlir::Value)> body, OpBuilder &builder
+    Location loc, ArrayRef<size_t> extents, function_ref<mlir::Value(mlir::ValueRange)> body,
+    OpBuilder &builder
 ) {
   SmallVector<Type> forallTypes(extents.size(), smt::IntType::get(builder.getContext()));
   return builder
       .create<smt::ForallOp>(
           loc, forallTypes,
-          [this, &extents, &array,
-           &body](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
+          [this, &extents, &body](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
     SmallVector<Value> antecedents;
     antecedents.reserve(2 * extents.size());
     for (auto [index, extent] : llvm::zip(indices, extents)) {
@@ -237,8 +247,7 @@ mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
     }
 
     Value antecedent = builder.create<smt::AndOp>(loc, antecedents).getResult();
-    Value currentElement = emitArraySelect(loc, array, indices, builder);
-    auto consequent = body(currentElement);
+    auto consequent = body(indices);
     return builder.create<smt::ImpliesOp>(loc, antecedent, consequent);
   }
       )
