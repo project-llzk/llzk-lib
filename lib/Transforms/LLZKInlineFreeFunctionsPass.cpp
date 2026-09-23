@@ -16,6 +16,7 @@
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -69,9 +70,19 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
         hasNonRootSymbolRef = true;
       }
     };
-    op->getAttrDictionary().walk(detectNonRootSymbolRef);
+    op->getDiscardableAttrDictionary().walk(detectNonRootSymbolRef);
     if (Attribute properties = op->getPropertiesAsAttribute()) {
-      properties.walk(detectNonRootSymbolRef);
+      if (llvm::isa<component::MemberRefOpInterface>(op)) {
+        for (NamedAttribute property : llvm::cast<DictionaryAttr>(properties)) {
+          // Member names resolve through the component's StructType, not the
+          // surrounding symbol table. The StructType itself is scanned below.
+          if (property.getName().getValue() != "member_name") {
+            property.getValue().walk(detectNonRootSymbolRef);
+          }
+        }
+      } else {
+        properties.walk(detectNonRootSymbolRef);
+      }
     }
     for (Type type : llvm::concat<Type>(op->getOperandTypes(), op->getResultTypes())) {
       type.walk(detectNonRootSymbolRef);
