@@ -1,0 +1,20 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type
+!A = !array.type<2, 3 x !F>
+!S = !struct.type<@A>
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @arr : !A
+
+        function.def @product() -> !S {
+            %self = struct.new : !S
+            function.return %self : !S
+        }
+    }
+}
+
+// CHECK-LABEL:    func.func @smt_A() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_c" : !smt.array<[!smt.int -> !smt.array<[!smt.int -> !smt.int]>]>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_w" : !smt.array<[!smt.int -> !smt.array<[!smt.int -> !smt.int]>]>
