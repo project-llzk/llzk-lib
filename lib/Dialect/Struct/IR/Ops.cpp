@@ -365,8 +365,10 @@ LogicalResult StructDefOp::verifyRegions() {
           }
         }
         // Also check if the member complies with output signal restrictions
-        else if (isMainComponent() && member.hasPublicAttr() &&
-                 failed(checkMainFuncOutputSignalType(member.getType(), *this))) {
+        else if (
+            isMainComponent() && member.hasPublicAttr() &&
+            failed(checkMainFuncOutputSignalType(member.getType(), *this))
+        ) {
           // checkMainFuncOutputSignalType already emits a sufficient error message
           return failure();
         }

@@ -669,8 +669,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       if (auto memberWrite = dyn_cast<MemberWriteOp>(op)) {
         recordAggregateWriteTarget(memberWrite.getComponent());
         knownAggregateWrite = true;
-      } else if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
-                 arrayAccess && !arrayAccess.isRead()) {
+      } else if (
+          auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
+          arrayAccess && !arrayAccess.isRead()
+      ) {
         recordAggregateWriteTarget(arrayAccess.getArrRef());
         knownAggregateWrite = true;
       } else if (auto podWrite = dyn_cast<pod::WritePodOp>(op)) {
@@ -1410,8 +1412,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
           };
         }
         writeCandidates.globals.erase(name);
-      } else if (auto it = state.globals.find(name);
-                 it != state.globals.end() && it->second.scalar) {
+      } else if (
+          auto it = state.globals.find(name); it != state.globals.end() && it->second.scalar
+      ) {
         replacementMap[result] = *it->second.scalar;
       } else {
         state.globals[name] = GlobalState {.scalar = result, .aggregate = nullptr};

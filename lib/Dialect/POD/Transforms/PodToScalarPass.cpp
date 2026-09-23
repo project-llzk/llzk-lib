@@ -3569,8 +3569,10 @@ public:
                 /*requireShapeCarrier=*/true
             )
                 .shapeCarrier;
-      } else if (auto it = resolver.deferredPodArrays.find(readOp.getResult());
-                 it != resolver.deferredPodArrays.end() && it->second.shapeCarrier) {
+      } else if (
+          auto it = resolver.deferredPodArrays.find(readOp.getResult());
+          it != resolver.deferredPodArrays.end() && it->second.shapeCarrier
+      ) {
         shapeSource = castValueToTypeIfNeeded(
             rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
         );
@@ -6543,7 +6545,7 @@ public:
       }
     }
 
-    auto newWhile = rewriter.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
+    auto newWhile = scf::WhileOp::create(rewriter, loc, newResultTypes, newInits, nullptr, nullptr);
     newWhile->setAttrs(whileOp->getAttrs());
     Block &newBeforeBody = *newWhile.getBeforeBody();
     Block &newAfterBody = *newWhile.getAfterBody();
@@ -6594,10 +6596,10 @@ public:
       SmallVector<Value> args =
           expandTerminatorValues(conditionOp.getArgs(), beforeMapping, beforePodValues);
       preserveDiscardableAttrs(
-          conditionOp,
-          rewriter.create<scf::ConditionOp>(
-              conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()), args
-          )
+          conditionOp, scf::ConditionOp::create(
+                           rewriter, conditionOp.getLoc(),
+                           beforeMapping.lookupOrDefault(conditionOp.getCondition()), args
+                       )
       );
       return true;
     }
@@ -6615,7 +6617,7 @@ public:
       }
       SmallVector<Value> args =
           expandTerminatorValues(yieldOp.getOperands(), afterMapping, afterPodValues);
-      preserveDiscardableAttrs(yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), args));
+      preserveDiscardableAttrs(yieldOp, scf::YieldOp::create(rewriter, yieldOp.getLoc(), args));
       return true;
     }
     );
@@ -6630,7 +6632,7 @@ public:
         continue;
       }
 
-      NewPodOp rebuilt = rewriter.create<NewPodOp>(loc, pod->type);
+      NewPodOp rebuilt = NewPodOp::create(rewriter, loc, pod->type);
       VirtualPodLeafMap leafValues;
       for (const RecordChain &path : pod->leafPaths) {
         leafValues[path] = newWhile.getResult(newResultIdx++);
@@ -6770,8 +6772,10 @@ static size_t countResidualPodIR(ModuleOp modOp) {
   modOp.walk([&count](Operation *op) {
     if (isa<NewPodOp, ReadPodOp, WritePodOp>(op)) {
       ++count;
-    } else if (auto castOp = dyn_cast<UnrealizedConversionCastOp>(op);
-               castOp && isResidualPodPlaceholderCast(castOp)) {
+    } else if (
+        auto castOp = dyn_cast<UnrealizedConversionCastOp>(op);
+        castOp && isResidualPodPlaceholderCast(castOp)
+    ) {
       ++count;
     }
 

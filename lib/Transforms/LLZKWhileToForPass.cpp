@@ -133,9 +133,9 @@ static inline ForOpInfo parseInfo(WhileOp op) {
 
     // Make these constant felts for now; the actual for op builder will later clean it up
     auto createBound = [&builder, &op, &ivarType](const auto &value) -> Value {
-      return FeltConstantOp::create(builder,
-              op->getLoc(), FeltConstAttr::get(op->getContext(), value, ivarType)
-          )
+      return FeltConstantOp::create(
+                 builder, op->getLoc(), FeltConstAttr::get(op->getContext(), value, ivarType)
+      )
           .getResult();
     };
     info.lb = createBound(bounds.getLower());

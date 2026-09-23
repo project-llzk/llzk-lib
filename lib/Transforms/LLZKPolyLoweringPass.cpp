@@ -1017,9 +1017,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
           return failure();
         }
         MemberWriteOp::create(
-          builder,
-            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
-            rebuiltExpr
+            builder, assign.computedValue.getLoc(), selfVal,
+            builder.getStringAttr(assign.auxMemberName), rebuiltExpr
         );
         if (assign.auxValue) {
           // Reuse the expression just written so later aux producers do not need an
