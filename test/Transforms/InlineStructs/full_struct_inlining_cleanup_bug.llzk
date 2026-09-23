@@ -1,7 +1,7 @@
 // These pipelines default their flattening stage to `cleanup=main-as-root`, which
 // avoids leaving unreachable partially instantiated templates behind.
 
-// RUN: llzk-opt -llzk-full-struct-inlining %s | FileCheck %s
+// RUN: llzk-opt -llzk-full-struct-inlining %s | FileCheck %s -check-prefixes=CHECK,EXTRA
 // RUN: llzk-opt -llzk-full-poly-lowering %s | FileCheck %s
 
 // Explicitly overriding that cleanup back to `preimage` in the underlying flatten+inline
@@ -76,12 +76,36 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @TComponentY_5_43_ComponentY {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponentY_5_43_ComponentY> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentY_5_43_ComponentY>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TComponentY_5_43_ComponentY>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentY_5_43_ComponentY>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @TComponentX_43_ComponentX {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponentX_43_ComponentX> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentX_43_ComponentX>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponentY_5_43_ComponentY::@compute() : () -> !struct.type<@TComponentY_5_43_ComponentY>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TComponentX_43_ComponentX>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentX_43_ComponentX>) attributes {function.allow_constraint} {
+// EXTRA-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = ub.poison : !struct.type<@TComponentY_5_43_ComponentY>
+// EXTRA-NEXT:        function.call @TComponentY_5_43_ComponentY::@constrain(%[[VAL_5]]) : (!struct.type<@TComponentY_5_43_ComponentY>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TComponentX_43_ComponentX::@compute() : () -> !struct.type<@TComponentX_43_ComponentX>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// EXTRA-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = ub.poison : !struct.type<@TComponentX_43_ComponentX>
+// EXTRA-NEXT:        function.call @TComponentX_43_ComponentX::@constrain(%[[VAL_9]]) : (!struct.type<@TComponentX_43_ComponentX>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
