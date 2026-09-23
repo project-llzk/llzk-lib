@@ -208,6 +208,8 @@ static bool isAggregateReadFrom(Value value, Value root) {
 static bool hasOnlySnapshotUses(
     Value aggregateValue, ReadPodOp ownedRead, Value ownedValue, WritePodOp firstWriteback
 ) {
+  bool mutated = false;
+  bool transferred = false;
   for (OpOperand &use : aggregateValue.getUses()) {
     Operation *user = use.getOwner();
     if (user->getBlock() != ownedRead->getBlock()) {
@@ -220,6 +222,7 @@ static bool hasOnlySnapshotUses(
           !isAggregateReadFrom(writeOp.getPodRef(), ownedValue)) {
         return false;
       }
+      transferred = true;
       continue;
     }
 
@@ -236,6 +239,7 @@ static bool hasOnlySnapshotUses(
           if (!user->isBeforeInBlock(ownedRead)) {
             return false;
           }
+          mutated = true;
         } else {
           return false;
         }
@@ -253,6 +257,8 @@ static bool hasOnlySnapshotUses(
           return false;
         }
         readResult = accessOp->getResult(0);
+      } else {
+        mutated = true;
       }
     } else {
       return false;
@@ -264,7 +270,9 @@ static bool hasOnlySnapshotUses(
       return false;
     }
   }
-  return true;
+  // Promotion aliases every snapshot to one allocation. A mutation is therefore safe only when
+  // that changed aggregate is explicitly installed in the owned copy before it is written back.
+  return !mutated || transferred;
 }
 
 /// Return whether `podValue` has one owned aggregate-valued read and every write to the POD writes

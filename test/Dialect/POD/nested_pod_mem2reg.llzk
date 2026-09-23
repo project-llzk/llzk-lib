@@ -26,6 +26,36 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Mutating an earlier snapshot is not safe merely because its uses precede the owned read. Without
+// an explicit transfer into the owner, promotion would incorrectly make the mutation observable.
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @preserve_untransferred_snapshot_mutation(%replacement: index) -> index {
+    %outer = pod.new : !Outer
+    %snapshot = pod.read %outer[@inner] : !Outer, !Inner
+    pod.write %snapshot[@value] = %replacement : !Inner, index
+    %owner = pod.read %outer[@inner] : !Outer, !Inner
+    pod.write %outer[@inner] = %owner : !Outer, !Inner
+    %observed = pod.read %owner[@value] : !Inner, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserve_untransferred_snapshot_mutation(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_2]][@value] = %[[VAL_0]] : <[@value: index]>, index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_1]][@inner] = %[[VAL_3]] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
 !Leaf = !pod.type<[@value: index]>
 !Inner = !pod.type<[@leaf: !Leaf]>
 !Outer = !pod.type<[@inner: !Inner]>
