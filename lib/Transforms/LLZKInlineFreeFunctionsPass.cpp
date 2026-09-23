@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
+#include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/InliningUtils.h>
@@ -43,12 +44,49 @@ using namespace llzk::function;
 
 namespace {
 
+/// Walk symbol references in `type`, treating StructType names as root-resolved
+/// and every other reference as unsupported for cross-symbol-table inlining.
+static void walkTypeSymbolRefs(
+    Type type, function_ref<void(SymbolRefAttr)> rootRef,
+    function_ref<void(SymbolRefAttr)> unsupportedRef
+);
+
+/// Walk symbol references in `attr`, applying the type-specific rules above to
+/// TypeAttr values.
+static void walkAttrSymbolRefs(
+    Attribute attr, function_ref<void(SymbolRefAttr)> rootRef,
+    function_ref<void(SymbolRefAttr)> unsupportedRef
+) {
+  attr.walk<WalkOrder::PreOrder>([rootRef, unsupportedRef](TypeAttr typeAttr) {
+    walkTypeSymbolRefs(typeAttr.getValue(), rootRef, unsupportedRef);
+    return WalkResult::skip();
+  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });
+}
+
+static void walkTypeSymbolRefs(
+    Type type, function_ref<void(SymbolRefAttr)> rootRef,
+    function_ref<void(SymbolRefAttr)> unsupportedRef
+) {
+  type.walk<WalkOrder::PreOrder>([rootRef, unsupportedRef](component::StructType structType) {
+    rootRef(structType.getNameRef());
+    if (ArrayAttr params = structType.getParams()) {
+      walkAttrSymbolRefs(params, rootRef, unsupportedRef);
+    }
+    return WalkResult::skip();
+  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });
+}
+
 /// Return whether `func` can be inlined into the root module without changing
 /// the meaning of references in its body.
 static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCollection &tables) {
   Operation *parent = func->getParentOp();
   if (parent == root) {
-    return true;
+    // A normal MLIR call uses nearest-symbol lookup after cloning, so a struct
+    // method can capture a callee that originally resolved at the root. Keep
+    // such helpers in place until general symbol rebasing is implemented.
+    bool hasFuncCall = false;
+    func.walk([&hasFuncCall](func::CallOp) { hasFuncCall = true; });
+    return !hasFuncCall;
   }
 
   // Struct methods are handled by the struct inliner, not this pass. Also
@@ -64,21 +102,19 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
   // references can all be resolved from the root module. General
   // cross-symbol-table inlining must rebase symbol references in the cloned
   // body so that they continue to resolve to the same definitions.
-  bool hasNonRootSymbolRef = false;
-  func.walk([&tables, &hasNonRootSymbolRef, root](Operation *op) {
-    auto detectNonRootSymbolRef = [&tables, &hasNonRootSymbolRef, op, root](SymbolRefAttr ref) {
-      Operation *originalTarget = tables.lookupNearestSymbolFrom(op, ref);
-      Operation *rootTarget = tables.lookupSymbolIn(root, ref);
-      if (!rootTarget || (originalTarget && originalTarget != rootTarget)) {
-        hasNonRootSymbolRef = true;
-      }
+  bool hasUnsupportedSymbolRef = false;
+  func.walk([&tables, &hasUnsupportedSymbolRef, root](Operation *op) {
+    auto detectUnsupportedSymbolRef = [&hasUnsupportedSymbolRef](SymbolRefAttr) {
+      hasUnsupportedSymbolRef = true;
     };
-    auto detectMissingRootSymbolRef = [&tables, &hasNonRootSymbolRef, root](SymbolRefAttr ref) {
+    auto detectMissingRootSymbolRef = [&tables, &hasUnsupportedSymbolRef, root](SymbolRefAttr ref) {
       if (!tables.lookupSymbolIn(root, ref)) {
-        hasNonRootSymbolRef = true;
+        hasUnsupportedSymbolRef = true;
       }
     };
-    op->getDiscardableAttrDictionary().walk(detectNonRootSymbolRef);
+    walkAttrSymbolRefs(
+        op->getDiscardableAttrDictionary(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef
+    );
     if (Attribute properties = op->getPropertiesAsAttribute()) {
       for (NamedAttribute property : llvm::cast<DictionaryAttr>(properties)) {
         StringRef name = property.getName().getValue();
@@ -95,22 +131,24 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
         if (usesRootLookup) {
           property.getValue().walk(detectMissingRootSymbolRef);
         } else {
-          property.getValue().walk(detectNonRootSymbolRef);
+          walkAttrSymbolRefs(
+              property.getValue(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef
+          );
         }
       }
     }
     for (Type type : llvm::concat<Type>(op->getOperandTypes(), op->getResultTypes())) {
-      type.walk(detectNonRootSymbolRef);
+      walkTypeSymbolRefs(type, detectMissingRootSymbolRef, detectUnsupportedSymbolRef);
     }
     for (Region &region : op->getRegions()) {
       for (Block &block : region) {
         for (BlockArgument arg : block.getArguments()) {
-          arg.getType().walk(detectNonRootSymbolRef);
+          walkTypeSymbolRefs(arg.getType(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef);
         }
       }
     }
   });
-  return !hasNonRootSymbolRef;
+  return !hasUnsupportedSymbolRef;
 }
 
 /// Only inline calls inside `function.def` bodies in the root module's symbol
