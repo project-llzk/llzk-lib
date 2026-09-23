@@ -65,8 +65,12 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
   // body so that they continue to resolve to the same definitions.
   bool hasNonRootSymbolRef = false;
   func.walk([&tables, &hasNonRootSymbolRef, root](Operation *op) {
-    auto detectNonRootSymbolRef = [&tables, &hasNonRootSymbolRef, root](SymbolRefAttr ref) {
-      if (!tables.lookupSymbolIn(root, ref)) {
+    auto detectNonRootSymbolRef = [&tables, &hasNonRootSymbolRef, op, root](SymbolRefAttr ref) {
+      Operation *originalTarget = tables.lookupNearestSymbolFrom(op, ref);
+      Operation *rootTarget = tables.lookupSymbolIn(root, ref);
+      // Some LLZK references intentionally fall back to top-level lookup when
+      // MLIR's nearest-symbol lookup stops at an isolated nested module.
+      if (!rootTarget || (originalTarget && originalTarget != rootTarget)) {
         hasNonRootSymbolRef = true;
       }
     };
