@@ -20,9 +20,7 @@
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Analysis/DataLayoutAnalysis.h>
-#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/UB/IR/UBOps.h>
-#include <mlir/IR/Builders.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
 #include <mlir/Pass/Pass.h>
@@ -31,7 +29,9 @@
 #include <mlir/Transforms/Passes.h>
 #include <mlir/Transforms/SROA.h>
 
-#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
+
+#include <memory>
 
 namespace llzk {
 
@@ -141,6 +141,13 @@ namespace detail {
 /// regions afterwards, and removes unused `ub.poison` values left by an earlier invocation.
 class RemoveDeadValuesWorkaroundPass
     : public mlir::PassWrapper<RemoveDeadValuesWorkaroundPass, mlir::OperationPass<>> {
+
+  static inline std::unique_ptr<mlir::Pass> createRemoveDeadValuesPass() {
+    return mlir::createRemoveDeadValuesPass(
+        mlir::RemoveDeadValuesPassOptions {.canonicalize = true}
+    );
+  }
+
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(RemoveDeadValuesWorkaroundPass)
 
@@ -148,24 +155,14 @@ public:
   llvm::StringRef getDescription() const override { return "Remove dead values"; }
 
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
-    mlir::createRemoveDeadValuesPass()->getDependentDialects(registry);
+    createRemoveDeadValuesPass()->getDependentDialects(registry);
   }
 
   void runOnOperation() final {
     mlir::Operation *scopeOp = this->getOperation();
 
-    // Pre-pass: add a trivial block to empty `else` regions so upstream pass code can handle them.
-    scopeOp->walk([](mlir::scf::IfOp ifOp) {
-      if (ifOp.getElseRegion().empty()) {
-        mlir::Block &elseBlock = ifOp.getElseRegion().emplaceBlock();
-        mlir::OpBuilder builder(ifOp.getContext());
-        builder.setInsertionPointToEnd(&elseBlock);
-        mlir::scf::YieldOp::create(builder, ifOp.getLoc());
-      }
-    });
-
     mlir::OpPassManager pm(scopeOp->getName().getStringRef());
-    pm.addPass(mlir::createRemoveDeadValuesPass());
+    pm.addPass(createRemoveDeadValuesPass());
     if (mlir::failed(runPipeline(pm, scopeOp))) {
       signalPassFailure();
     }
@@ -178,7 +175,8 @@ public:
       poisonOp.erase();
     }
 
-    // Post-pass: remove trivial `else` blocks that are left behind.
+    // Finally, those `ub.poison` removals can leave behind trivial `else` blocks that would have
+    // otherwise been removed by RDV so go ahead and remove them now.
     scopeOp->walk([](mlir::scf::IfOp ifOp) {
       if (ifOp.getResults().empty()) {
         mlir::Region &elseRegion = ifOp.getElseRegion();

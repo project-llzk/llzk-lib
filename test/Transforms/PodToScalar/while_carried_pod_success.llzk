@@ -21,16 +21,15 @@ module attributes {llzk.lang} {
     function.return %value : index
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @lower_duplicate_forward(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_3:[0-9a-zA-Z_\.]+]] = %[[VAL_0]], %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) : (index, index) -> (index, index) {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_3]], %[[VAL_4]] : index
-// CHECK-NEXT:        scf.condition(%[[VAL_5]]) %[[VAL_3]], %[[VAL_4]] : index, index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_3:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) : (index) -> index {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_3]] : index
+// CHECK-NEXT:        scf.condition(%[[VAL_4]]) %[[VAL_3]] : index
 // CHECK-NEXT:      } do {
-// CHECK-NEXT:      ^bb0(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index):
-// CHECK-NEXT:        scf.yield %[[VAL_6]], %[[VAL_6]] : index, index
+// CHECK-NEXT:      ^bb0(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:        scf.yield %[[VAL_0]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.return %[[VAL_2]]#1 : index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

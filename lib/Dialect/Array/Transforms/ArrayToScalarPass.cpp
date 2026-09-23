@@ -88,6 +88,7 @@
 #include "llzk/Util/Concepts.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -721,7 +722,7 @@ static void baseTargetSetup(ConversionTarget &target) {
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
       polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      scf::SCFDialect, ub::UBDialect>();
   target.addLegalOp<ModuleOp>();
 }
 

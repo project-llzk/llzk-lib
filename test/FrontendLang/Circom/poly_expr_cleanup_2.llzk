@@ -5,7 +5,7 @@
 module attributes {llzk.lang = "circom"} {
   poly.template @T {
     poly.param @N
-    poly.expr @UnusedIfResult_HitsDeadValueRemovalBug {
+    poly.expr @UnusedIfResult_LLVM20DeadValueRemovalBug {
       %felt_const_1 = felt.const  1 : <"bn128">
       %felt_const_6 = felt.const  6 : <"bn128">
       %felt_const_675 = felt.const  675 : <"bn128">
@@ -36,7 +36,7 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-LABEL: module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N
-// CHECK-NEXT:      poly.expr @UnusedIfResult_HitsDeadValueRemovalBug {
+// CHECK-NEXT:      poly.expr @UnusedIfResult_LLVM20DeadValueRemovalBug {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  6 : <"bn128">
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  675 : <"bn128">
