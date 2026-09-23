@@ -757,13 +757,15 @@ void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
     if (succeeded(extents)) {
       Value predicate = emitter->emitQuantifiedAssertion(
           loc, *extents,
-          [this, &loc, &lhs, &builder, &lhsRange, &rhsRange, &prefix](ValueRange indices) -> Value {
+          [this, &loc, &lhs, &rhs, &builder, &lhsRange, &rhsRange,
+           &prefix](ValueRange indices) -> Value {
         auto lhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
-        auto rhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
+        auto rhsElement = emitter->emitArraySelect(loc, rhs, indices, builder);
         return buildCongruenceEqualityPredicate(
             builder, loc, lhsElement, lhsRange, rhsElement, rhsRange, prefix
         );
-      }, builder
+      },
+          builder
       );
       builder.create<smt::AssertOp>(loc, predicate);
       return;
@@ -1027,9 +1029,9 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
       SignalSymbols signalSymbols;
       LLZKToSMTTypeConverter typeConverter {&getContext()};
       for (auto memberDef : structDef.getMemberDefs()) {
-        // if (!isa<felt::FeltType>(memberDef.getType())) {
-        //   continue;
-        // }
+        if (!isFeltOrArrayOfFelt(memberDef.getType())) {
+          continue;
+        }
 
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";

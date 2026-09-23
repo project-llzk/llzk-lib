@@ -74,7 +74,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_34]], %[[VAL_36]]
 // CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_37]], %[[VAL_38]]
 // CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_4]]{{\[}}%[[VAL_34]]] : !smt.array<[!smt.int -> !smt.int]>
-// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_4]]{{\[}}%[[VAL_34]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_0]]{{\[}}%[[VAL_34]]] : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_40]], %[[VAL_41]] : !smt.int
 // CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = smt.implies %[[VAL_39]], %[[VAL_42]]
 // CHECK-NEXT:        smt.yield %[[VAL_43]] : !smt.bool

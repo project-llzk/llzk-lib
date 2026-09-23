@@ -254,10 +254,20 @@ mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
       .getResult();
 }
 
+static inline Type smtArrayOfRank(MLIRContext *ctx, int64_t rank, Type elementType) {
+  if (rank == 0) {
+    return elementType;
+  }
+  return smt::ArrayType::get(
+      ctx, smt::IntType::get(ctx), smtArrayOfRank(ctx, rank - 1, elementType)
+  );
+}
+
 LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
+
   addConversion([](Type type) { return type; });
   addConversion([this, ctx](array::ArrayType arrType) {
-    return smt::ArrayType::get(ctx, smt::IntType::get(ctx), convertType(arrType.getElementType()));
+    return smtArrayOfRank(ctx, arrType.getRank(), convertType(arrType.getElementType()));
   });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
