@@ -78,6 +78,7 @@ module attributes {llzk.lang} {
     pod.write %child[@value] = %seed : !Child, index
     %parent = pod.new : !Parent
     pod.write %parent[@child] = %child : !Parent, !Child
+    // expected-note@+2 {{cannot scalarize carried POD: writes to nested POD copies are unsupported}}
     // expected-note@+1 {{cannot scalarize carried POD: while initializer and result types must match}}
     %result:3 = scf.while (%i = %count, %seen = %seed, %pod = %parent)
         : (index, index, !Parent) -> (index, index, !Parent) {

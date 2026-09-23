@@ -6512,15 +6512,49 @@ static LogicalResult checkWhileCarriedPods(
   return success();
 }
 
+/// A reason why a POD-carrying while loop could not be scalarized.
+struct WhileCarriedPodRejection {
+  Location loc;
+  std::string reason;
+};
+
+/// Preserve carried-POD scalarization rejections across later rewrites of the loop.
+///
+/// Step 4 can partially rewrite a loop after the carried-POD rewrite rejects it. In particular,
+/// lifting direct POD accesses can remove the POD from the loop signature, making the rejection
+/// impossible to recover from the residual IR alone.
+class WhileCarriedPodRejectionTracker {
+public:
+  /// Record `reason` at `loc` unless the same rejection was already recorded.
+  void record(Location loc, StringRef reason) {
+    if (!reason.empty() && llvm::none_of(rejections, [&](const auto &r) {
+      return r.loc == loc && r.reason == reason;
+    })) {
+      rejections.push_back({loc, reason.str()});
+    }
+  }
+
+  /// Return the rejections accumulated during this pass invocation.
+  ArrayRef<WhileCarriedPodRejection> getRejections() const { return rejections; }
+
+  /// Discard rejections from a previous pass invocation.
+  void clear() { rejections.clear(); }
+
+private:
+  SmallVector<WhileCarriedPodRejection> rejections;
+};
+
 /// Expand POD-typed `scf.while` iteration values into one SSA value per direct scalar record.
 class SplitPodCarriedWhileValuesPattern final : public OpRewritePattern<scf::WhileOp> {
 public:
-  using OpRewritePattern<scf::WhileOp>::OpRewritePattern;
+  SplitPodCarriedWhileValuesPattern(MLIRContext *ctx, WhileCarriedPodRejectionTracker &tracker)
+      : OpRewritePattern<scf::WhileOp>(ctx), rejectionTracker(tracker) {}
 
   LogicalResult matchAndRewrite(scf::WhileOp whileOp, PatternRewriter &rewriter) const override {
     SmallVector<WhileCarriedPod> carriedPods;
     StringRef reason;
     if (failed(checkWhileCarriedPods(whileOp, carriedPods, reason))) {
+      rejectionTracker.record(whileOp.getLoc(), reason);
       return rewriter.notifyMatchFailure(whileOp, reason);
     }
     Block &beforeBody = *whileOp.getBeforeBody();
@@ -6656,6 +6690,9 @@ public:
     rewriter.replaceOp(whileOp, replacements);
     return success();
   }
+
+private:
+  WhileCarriedPodRejectionTracker &rejectionTracker;
 };
 
 /// Rewrite `constrain.eq` over POD values into one equality per flattened leaf.
@@ -6694,15 +6731,14 @@ applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = null
 
 /// Repeatedly lift pod accesses out of supported SCF regions so SROA + mem2reg can eliminate the
 /// remaining POD storage.
-static LogicalResult step4(ModuleOp modOp) {
+static LogicalResult step4(ModuleOp modOp, WhileCarriedPodRejectionTracker &rejectionTracker) {
   CompatiblePodLeafMaterializationMap materializedLeaves;
   RewritePatternSet patterns(modOp.getContext());
   patterns.add<
       FoldReadAfterWriteInBlockPattern, ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern,
-      LiftPodAccessesFromForLoopPattern, SplitPodCarriedWhileValuesPattern,
-      LiftPodAccessesFromWhileLoopPattern, FoldIfCarriedPodReadAfterWritePattern>(
-      patterns.getContext()
-  );
+      LiftPodAccessesFromForLoopPattern, LiftPodAccessesFromWhileLoopPattern,
+      FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
+  patterns.add<SplitPodCarriedWhileValuesPattern>(patterns.getContext(), rejectionTracker);
   patterns.add<SplitPodInEmitEqualityPattern>(patterns.getContext(), materializedLeaves);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 4: refactor pod ops within SCF regions\n";);
@@ -6968,6 +7004,8 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
   using Base::Base;
 
+  WhileCarriedPodRejectionTracker whileCarriedPodRejections;
+
   LogicalResult runScalarizeAndCleanupPipeline(ModuleOp module) {
     // 1. Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
     // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
@@ -7020,6 +7058,8 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   }
 
   void runOnOperation() override {
+    whileCarriedPodRejections.clear();
+
     ModuleOp module = getOperation();
     if (failed(step0(module))) {
       return signalPassFailure();
@@ -7066,7 +7106,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         return;
       }
 
-      if (failed(step4(module))) {
+      if (failed(step4(module, whileCarriedPodRejections))) {
         return signalPassFailure();
       }
       LLVM_DEBUG({
@@ -7100,13 +7140,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         diagnostic << "llzk-pod-to-scalar left residual pod IR after reaching a fixpoint ("
                    << residualCount << " residual pod-like items remain)\n"
                    << residualIR;
-        module.walk([&](scf::WhileOp whileOp) {
-          SmallVector<WhileCarriedPod> carriedPods;
-          StringRef reason;
-          if (failed(checkWhileCarriedPods(whileOp, carriedPods, reason)) && !reason.empty()) {
-            diagnostic.attachNote(whileOp.getLoc()) << "cannot scalarize carried POD: " << reason;
-          }
-        });
+        for (const WhileCarriedPodRejection &r : whileCarriedPodRejections.getRejections()) {
+          diagnostic.attachNote(r.loc) << "cannot scalarize carried POD: " << r.reason;
+        }
+        diagnostic.report();
         signalPassFailure();
         return;
       }
