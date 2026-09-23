@@ -310,7 +310,7 @@ static bool hasOwnedReadWithOnlyWritebacks(Value podValue) {
   Value ownedValue = writebacks.front().getValue();
   auto ownedRead = ownedValue.getDefiningOp<ReadPodOp>();
   if (!ownedRead || ownedRead.getPodRef() != podValue ||
-      !llvm::all_of(writebacks, [&](WritePodOp writeOp) {
+      !llvm::all_of(writebacks, [ownedValue, ownedRead](WritePodOp writeOp) {
     return writeOp.getValue() == ownedValue && writeOp->getBlock() == ownedRead->getBlock() &&
            ownedRead->isBeforeInBlock(writeOp);
   })) {
@@ -321,7 +321,7 @@ static bool hasOwnedReadWithOnlyWritebacks(Value podValue) {
     return lhs->isBeforeInBlock(rhs);
   });
 
-  return llvm::all_of(reads, [&](ReadPodOp readOp) {
+  return llvm::all_of(reads, [ownedRead, ownedValue, firstWriteback](ReadPodOp readOp) {
     return readOp == ownedRead ||
            hasOnlySnapshotUses(readOp.getResult(), ownedRead, ownedValue, firstWriteback);
   });
