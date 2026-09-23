@@ -14,6 +14,8 @@ module attributes {llzk.lang} {
   }
 
   module @lib {
+    function.def private @blackbox(%x: !felt.type) -> !felt.type
+
     function.def @helper(%x: !felt.type) -> !felt.type {
       %offset = global.read const @offset : !felt.type
       %adjusted = felt.add %x, %offset : !felt.type, !felt.type
@@ -82,6 +84,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def private @sink()
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @lib {
+// CHECK-NEXT:      function.def private @blackbox(!felt.type) -> !felt.type
 // CHECK-NEXT:      function.def @helper(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = global.read const @offset : !felt.type
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type

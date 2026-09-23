@@ -68,24 +68,32 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
     auto detectNonRootSymbolRef = [&tables, &hasNonRootSymbolRef, op, root](SymbolRefAttr ref) {
       Operation *originalTarget = tables.lookupNearestSymbolFrom(op, ref);
       Operation *rootTarget = tables.lookupSymbolIn(root, ref);
-      // Some LLZK references intentionally fall back to top-level lookup when
-      // MLIR's nearest-symbol lookup stops at an isolated nested module.
       if (!rootTarget || (originalTarget && originalTarget != rootTarget)) {
+        hasNonRootSymbolRef = true;
+      }
+    };
+    auto detectMissingRootSymbolRef = [&tables, &hasNonRootSymbolRef, root](SymbolRefAttr ref) {
+      if (!tables.lookupSymbolIn(root, ref)) {
         hasNonRootSymbolRef = true;
       }
     };
     op->getDiscardableAttrDictionary().walk(detectNonRootSymbolRef);
     if (Attribute properties = op->getPropertiesAsAttribute()) {
-      if (llvm::isa<component::MemberRefOpInterface>(op)) {
-        for (NamedAttribute property : llvm::cast<DictionaryAttr>(properties)) {
-          // Member names resolve through the component's StructType, not the
-          // surrounding symbol table. The StructType itself is scanned below.
-          if (property.getName().getValue() != "member_name") {
-            property.getValue().walk(detectNonRootSymbolRef);
-          }
+      for (NamedAttribute property : llvm::cast<DictionaryAttr>(properties)) {
+        StringRef name = property.getName().getValue();
+        // Member names resolve through the component's StructType, not the
+        // surrounding symbol table. The StructType itself is scanned below.
+        if (llvm::isa<component::MemberRefOpInterface>(op) && name == "member_name") {
+          continue;
         }
-      } else {
-        properties.walk(detectNonRootSymbolRef);
+        // LLZK calls intentionally resolve their callee from the root module.
+        // Other properties, including template parameters, retain their
+        // ordinary scope-sensitive checks.
+        if (llvm::isa<CallOp>(op) && name == "callee") {
+          property.getValue().walk(detectMissingRootSymbolRef);
+        } else {
+          property.getValue().walk(detectNonRootSymbolRef);
+        }
       }
     }
     for (Type type : llvm::concat<Type>(op->getOperandTypes(), op->getResultTypes())) {
