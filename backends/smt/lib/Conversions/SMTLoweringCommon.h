@@ -155,8 +155,8 @@ public:
 
   // forall x, inbounds(x, arr) => phi(x)
   mlir::Value emitQuantifiedAssertion(
-      mlir::Location loc, mlir::Value array, mlir::ArrayRef<size_t> extents,
-      llvm::function_ref<mlir::Value(mlir::Value)> body, mlir::OpBuilder &builder
+      mlir::Location loc, mlir::ArrayRef<size_t> extents,
+      llvm::function_ref<mlir::Value(mlir::ValueRange)> body, mlir::OpBuilder &builder
   );
 
 private:
@@ -184,6 +184,7 @@ private:
 };
 
 bool isFeltOrArrayOfFelt(mlir::Type type);
+llvm::FailureOr<llvm::SmallVector<size_t>> getExtents(array::ArrayType type);
 
 enum class ArrayWriteMode : std::uint8_t {
   Overwrite, /* Multiple writes to the same index clobber the previous value */

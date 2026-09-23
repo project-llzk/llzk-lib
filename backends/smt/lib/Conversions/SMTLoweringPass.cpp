@@ -347,8 +347,8 @@ public:
       StringRef prefix
   ) const;
   void emitCongruenceEqualityAssertion(
-      OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
-      const UnreducedInterval &rhsRange, StringRef prefix
+      OpBuilder &builder, Type type, Location loc, Value lhs, const UnreducedInterval &lhsRange,
+      Value rhs, const UnreducedInterval &rhsRange, StringRef prefix
   ) const;
   Value emitDivisionValue(
       OpBuilder &builder, Location loc, Value numerator, const UnreducedInterval &numeratorRange,
@@ -497,7 +497,8 @@ public:
     auto valueRange = strategy->getScalarValueRange(op.getVal());
     // TODO: If this is an array, emit the assertion quantified over array bounds
     strategy->emitCongruenceEqualityAssertion(
-        rewriter, op.getLoc(), witness, witnessRange, adaptor.getVal(), valueRange, "member_write"
+        rewriter, op.getVal().getType(), op.getLoc(), witness, witnessRange, adaptor.getVal(),
+        valueRange, "member_write"
     );
     rewriter.eraseOp(op);
 
@@ -524,8 +525,8 @@ public:
     auto lhsRange = strategy->getScalarValueRange(op.getLhs());
     auto rhsRange = strategy->getScalarValueRange(op.getRhs());
     strategy->emitCongruenceEqualityAssertion(
-        rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange,
-        "constrain_eq"
+        rewriter, op.getLhs().getType(), op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(),
+        rhsRange, "constrain_eq"
     );
     rewriter.eraseOp(op);
     return success();
@@ -623,13 +624,14 @@ void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
     const UnreducedInterval &range
 ) const {
 
-  auto arrayElementInRange = [this, &range, &builder, &loc](Value element) -> Value {
+  auto arrayElementInRange = [this, &range, &builder, &loc, &array](ValueRange indices) -> Value {
+    auto element = emitter->emitArraySelect(loc, array, indices, builder);
     auto [rangeLo, rangeHi] = emitter->getRangeBoundAssertions(builder, loc, element, range);
     return builder.create<smt::AndOp>(loc, rangeLo, rangeHi).getResult();
   };
 
   auto rangeAssertion =
-      emitter->emitQuantifiedAssertion(loc, array, extents, arrayElementInRange, builder);
+      emitter->emitQuantifiedAssertion(loc, extents, arrayElementInRange, builder);
   builder.create<smt::AssertOp>(loc, rangeAssertion);
 }
 
@@ -747,9 +749,30 @@ Value OptimizedNonNativeStrategy::emitOrderedComparisonPredicate(
 }
 
 void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
-    OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
-    const UnreducedInterval &rhsRange, StringRef prefix
+    OpBuilder &builder, Type type, Location loc, Value lhs, const UnreducedInterval &lhsRange,
+    Value rhs, const UnreducedInterval &rhsRange, StringRef prefix
 ) const {
+  if (auto arrType = dyn_cast<array::ArrayType>(type)) {
+    auto extents = getExtents(arrType);
+    if (succeeded(extents)) {
+      Value predicate = emitter->emitQuantifiedAssertion(
+          loc, *extents,
+          [this, &loc, &lhs, &builder, &lhsRange, &rhsRange, &prefix](ValueRange indices) -> Value {
+        auto lhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
+        auto rhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
+        return buildCongruenceEqualityPredicate(
+            builder, loc, lhsElement, lhsRange, rhsElement, rhsRange, prefix
+        );
+      }, builder
+      );
+      builder.create<smt::AssertOp>(loc, predicate);
+      return;
+    }
+    // If the arrays are dynamically sized, just emit a warning and fall back to asserting the whole
+    // thing equal (outside the if-statement)
+    mlir::emitWarning(loc) << "dynamically sized arrays not fully supported in SMT lowering";
+  }
+
   Value predicate =
       buildCongruenceEqualityPredicate(builder, loc, lhs, lhsRange, rhs, rhsRange, prefix);
   // Assert lhs ≡ rhs (mod p) using the selected congruence encoding plan.
