@@ -15,6 +15,7 @@
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -23,6 +24,7 @@
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SCCIterator.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
@@ -39,11 +41,49 @@ using namespace llzk::function;
 
 namespace {
 
-/// An inlinable free function is a direct child of the module on which the
-/// pass runs. Nested and included modules define separate symbol scopes, so
-/// their functions are left for a pass running on those modules.
-static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root) {
-  return func->getParentOp() == root;
+/// Return whether `func` can be inlined into the root module without changing
+/// the meaning of references in its body.
+static bool isInlinableFreeFunction(
+    FuncDefOp func, ModuleOp root, SymbolTableCollection &tables
+) {
+  Operation *parent = func->getParentOp();
+  if (parent == root) {
+    return true;
+  }
+
+  // Struct methods are handled by the struct inliner, not this pass. Also
+  // reject functions that are not owned by this module, such as definitions
+  // resolved through include.from.
+  if (!llvm::isa<ModuleOp, polymorphic::TemplateOp>(parent) ||
+      !root->isAncestor(func.getOperation())) {
+    return false;
+  }
+
+  // TODO: This is a temporary allowance for a common frontend pattern: a
+  // helper nested in a namespace-like template or module whose symbol
+  // references can all be resolved from the root module. General
+  // cross-symbol-table inlining must rebase symbol references in the cloned
+  // body so that they continue to resolve to the same definitions.
+  bool hasNonRootSymbolRef = false;
+  func.walk([&tables, &hasNonRootSymbolRef, root](Operation *op) {
+    auto detectNonRootSymbolRef = [&tables, &hasNonRootSymbolRef, root](SymbolRefAttr ref) {
+      if (!tables.lookupSymbolIn(root, ref)) {
+        hasNonRootSymbolRef = true;
+      }
+    };
+    op->getAttrDictionary().walk(detectNonRootSymbolRef);
+    for (Type type : llvm::concat<Type>(op->getOperandTypes(), op->getResultTypes())) {
+      type.walk(detectNonRootSymbolRef);
+    }
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region) {
+        for (BlockArgument arg : block.getArguments()) {
+          arg.getType().walk(detectNonRootSymbolRef);
+        }
+      }
+    }
+  });
+  return !hasNonRootSymbolRef;
 }
 
 /// Only inline calls inside `function.def` bodies in the root module's symbol
@@ -83,7 +123,7 @@ static FuncDefOp resolveFreeCallee(
     return nullptr;
   }
   FuncDefOp callee = tgtRes->get();
-  if (!isInlinableFreeFunction(callee, root) || callee.isExternal() ||
+  if (!isInlinableFreeFunction(callee, root, tables) || callee.isExternal() ||
       skippedCallees.contains(callee)) {
     return nullptr;
   }
