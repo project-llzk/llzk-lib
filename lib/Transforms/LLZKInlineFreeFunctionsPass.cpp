@@ -70,6 +70,9 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
       }
     };
     op->getAttrDictionary().walk(detectNonRootSymbolRef);
+    if (Attribute properties = op->getPropertiesAsAttribute()) {
+      properties.walk(detectNonRootSymbolRef);
+    }
     for (Type type : llvm::concat<Type>(op->getOperandTypes(), op->getResultTypes())) {
       type.walk(detectNonRootSymbolRef);
     }
