@@ -43,9 +43,7 @@ namespace {
 
 /// Return whether `func` can be inlined into the root module without changing
 /// the meaning of references in its body.
-static bool isInlinableFreeFunction(
-    FuncDefOp func, ModuleOp root, SymbolTableCollection &tables
-) {
+static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCollection &tables) {
   Operation *parent = func->getParentOp();
   if (parent == root) {
     return true;
