@@ -1,0 +1,34 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+#len = affine_map<()[s0] -> (s0)>
+!Values = !array.type<#len x index>
+!Box = !pod.type<[@values: !Values]>
+
+// A symbolic array cannot be enumerated to materialize an independent value copy.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @unsupported_symbolic_copy(%n: index) -> !Values {
+    // expected-note@+1 {{cannot promote POD record 'values' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
+    %box = pod.new()[%n] : !Box
+    %values = pod.read %box[@values] : !Box, !Values
+    function.return %values : !Values
+  }
+}
+
+// -----
+
+#len = affine_map<()[s0] -> (s0)>
+!Values = !array.type<#len x index>
+!Box = !pod.type<[@values: !Values]>
+
+// A preceding write must not make an unsupported symbolic array silently alias its source.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @unsupported_symbolic_forwarding(%n: index, %source: !Values) -> !Values {
+    // expected-note@+1 {{cannot promote POD record 'values' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
+    %box = pod.new()[%n] : !Box
+    pod.write %box[@values] = %source : !Box, !Values
+    %values = pod.read %box[@values] : !Box, !Values
+    function.return %values : !Values
+  }
+}

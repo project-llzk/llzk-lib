@@ -31,31 +31,23 @@ module attributes {llzk.lang} {
 !Leaf = !array.type<#inner x index>
 !Elem = !pod.type<[@vals: !Leaf]>
 !ElemArray = !array.type<2 x !Elem>
+// Symbolic leaf arrays cannot yet be copied at POD access boundaries. Reject this case instead of
+// silently forwarding the mutable arrays with aliasing semantics.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @materialized(%n: index) -> !ElemArray {
     %vals0 = array.new{()[%n]} : !Leaf
     %vals1 = array.new{()[%n]} : !Leaf
+    // expected-note@+1 {{cannot promote POD record 'vals' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
     %lhs = pod.new()[%n] : !Elem
     pod.write %lhs[@vals] = %vals0 : !Elem, !Leaf
+    // expected-note@+1 {{cannot promote POD record 'vals' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
     %rhs = pod.new()[%n] : !Elem
     pod.write %rhs[@vals] = %vals1 : !Elem, !Leaf
     %arr = array.new %lhs, %rhs : !ElemArray
     function.return %arr : !ElemArray
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @materialized(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2,#[[$M]] x index> {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M]] x index>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M]] x index>
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <2,#[[$M]] x index>
-// CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <2,#[[$M]] x index>, <#[[$M]] x index>
-// CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2,#[[$M]] x index>, <#[[$M]] x index>
-// CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<2,#[[$M]] x index>
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 // -----
 
 #inner = affine_map<()[s0] -> (s0 + 1)>

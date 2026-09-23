@@ -94,6 +94,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
+#include "llzk/Dialect/Shared/ValueCopy.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/ConversionUtils.h"
@@ -2029,27 +2030,47 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
 }
 
 /// Update the tracked leaf values for one top-level POD record after a virtual `pod.write`.
-static void updateVirtualPodRecordLeafValues(
+static LogicalResult updateVirtualPodRecordLeafValues(
     Location loc, StringAttr recordName, Type recordType, Value recordValue,
     const VirtualPodValueMap &virtualPods, RewriterBase &rewriter, VirtualPodLeafMap &leafValues
 ) {
   SmallVector<StringAttr> prefix {recordName};
 
+  auto snapshot = [&](Value value) -> FailureOr<Value> {
+    if (!llvm::isa<PodType, ArrayType>(value.getType()) ||
+        !llzk::canMaterializeValueCopy(value.getType())) {
+      return value;
+    }
+    return llzk::materializeValueCopy(rewriter, loc, value);
+  };
+
   if (PodType nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {
     if (const VirtualPodLeafMap *nestedLeafValues =
             lookupVirtualPodLeafMap(recordValue, virtualPods)) {
       SmallVector<StringAttr> nestedRecordChain;
+      bool failedToCopy = false;
       forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
-        leafValues[id.withPrefix(prefix)] = nestedLeafValues->at(id);
+        FailureOr<Value> copied = snapshot(nestedLeafValues->at(id));
+        if (failed(copied)) {
+          failedToCopy = true;
+          return;
+        }
+        leafValues[id.withPrefix(prefix)] = *copied;
       });
-      return;
+      return failure(failedToCopy);
     }
 
+    bool failedToCopy = false;
     SmallVector<StringAttr> nestedRecordChain;
     forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
-      leafValues[id.withPrefix(prefix)] = genReadAlongPath(rewriter, loc, recordValue, id);
+      FailureOr<Value> copied = snapshot(genReadAlongPath(rewriter, loc, recordValue, id));
+      if (failed(copied)) {
+        failedToCopy = true;
+        return;
+      }
+      leafValues[id.withPrefix(prefix)] = *copied;
     });
-    return;
+    return failure(failedToCopy);
   }
 
   if (ArrayType arrTy = splittablePodArray(recordType)) {
@@ -2057,14 +2078,25 @@ static void updateVirtualPodRecordLeafValues(
     SmallVector<Type> splitTypes;
     collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-      leafValues[id.withPrefix(prefix)] = castValueToTypeIfNeeded(
+      Value leaf = castValueToTypeIfNeeded(
           rewriter, loc, genReadAlongPath(rewriter, loc, recordValue, id), splitType
       );
+      FailureOr<Value> copied = snapshot(leaf);
+      if (failed(copied)) {
+        return failure();
+      }
+      leafValues[id.withPrefix(prefix)] = *copied;
     }
-    return;
+    return success();
   }
 
-  leafValues[RecordChain(prefix)] = castValueToTypeIfNeeded(rewriter, loc, recordValue, recordType);
+  FailureOr<Value> copied =
+      snapshot(castValueToTypeIfNeeded(rewriter, loc, recordValue, recordType));
+  if (failed(copied)) {
+    return failure();
+  }
+  leafValues[RecordChain(prefix)] = *copied;
+  return success();
 }
 
 /// Register the dialects and operations that remain legal across the conversion-based stages.
@@ -4461,9 +4493,35 @@ static bool resolveReadPodSplitPodArrayLeafValues(
     const VirtualPodValueMap &virtualPods, DeferredPodArrayBackingMap &deferredPodArrays,
     Location loc, OpBuilder &bldr, SmallVectorImpl<Value> &leafArrays
 ) {
+  auto cached = deferredPodArrays.find(readOp.getResult());
+  if (cached != deferredPodArrays.end() && !cached->second.leafArrays.empty()) {
+    llvm::append_range(leafArrays, cached->second.leafArrays);
+    return true;
+  }
+
+  SmallVector<Value> sourceLeafArrays;
   if (tryCollectReadPodSplitPodArrayLeafValues(
-          readOp, arrTy, splitIds, splitTypes, virtualPods, leafArrays
+          readOp, arrTy, splitIds, splitTypes, virtualPods, sourceLeafArrays
       )) {
+    if (llvm::any_of(sourceLeafArrays, [](Value value) {
+      return !llzk::canMaterializeValueCopy(value.getType());
+    })) {
+      llvm::append_range(leafArrays, sourceLeafArrays);
+      return true;
+    }
+
+    OpBuilder::InsertionGuard guard(bldr);
+    // Unlike synthetic unwritten storage, a resolved backing is a semantic copy of existing POD
+    // state and must stay at the original read point, including when the read is inside a loop.
+    bldr.setInsertionPointAfter(readOp);
+    DeferredPodArrayBacking &backing = deferredPodArrays[readOp.getResult()];
+    backing.leafArrays.reserve(sourceLeafArrays.size());
+    for (Value source : sourceLeafArrays) {
+      FailureOr<Value> copied = llzk::materializeValueCopy(bldr, loc, source);
+      assert(succeeded(copied) && "copy support was checked before materialization");
+      backing.leafArrays.push_back(*copied);
+    }
+    llvm::append_range(leafArrays, backing.leafArrays);
     return true;
   }
 
@@ -4848,10 +4906,12 @@ public:
     Type recordType =
         llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
     assert(recordType && "record must exist in POD type");
-    updateVirtualPodRecordLeafValues(
-        op.getLoc(), op.getRecordNameAttr(), recordType, adaptor.getValue(), resolver.virtualPods,
-        rewriter, it->second
-    );
+    if (failed(updateVirtualPodRecordLeafValues(
+            op.getLoc(), op.getRecordNameAttr(), recordType, adaptor.getValue(),
+            resolver.virtualPods, rewriter, it->second
+        ))) {
+      return failure();
+    }
     rewriter.eraseOp(op);
     return success();
   }
@@ -4888,9 +4948,23 @@ public:
     if (PodType nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {
       VirtualPodLeafMap nestedLeafValues;
       SmallVector<StringAttr> nestedRecordChain;
+      bool failedToCopy = false;
+      rewriter.setInsertionPoint(op);
       forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
-        nestedLeafValues[id] = leafValues->at(id.withPrefix(prefix));
+        Value leaf = leafValues->at(id.withPrefix(prefix));
+        FailureOr<Value> copied = llvm::isa<PodType, ArrayType>(leaf.getType()) &&
+                                          llzk::canMaterializeValueCopy(leaf.getType())
+                                      ? llzk::materializeValueCopy(rewriter, op.getLoc(), leaf)
+                                      : FailureOr<Value>(leaf);
+        if (failed(copied)) {
+          failedToCopy = true;
+          return;
+        }
+        nestedLeafValues[id] = *copied;
       });
+      if (failedToCopy) {
+        return failure();
+      }
       Value virtualPod =
           createVirtualPodPlaceholder(rewriter, op.getLoc(), nestedPodTy, nestedLeafValues);
       resolver.virtualPods[virtualPod] = std::move(nestedLeafValues);
@@ -4902,11 +4976,18 @@ public:
       return failure();
     }
 
-    rewriter.replaceOp(
-        op, castValueToTypeIfNeeded(
-                rewriter, op.getLoc(), leafValues->at(RecordChain(prefix)), recordType
-            )
+    rewriter.setInsertionPoint(op);
+    Value stored = castValueToTypeIfNeeded(
+        rewriter, op.getLoc(), leafValues->at(RecordChain(prefix)), recordType
     );
+    FailureOr<Value> copied =
+        llvm::isa<PodType, ArrayType>(recordType) && llzk::canMaterializeValueCopy(recordType)
+            ? llzk::materializeValueCopy(rewriter, op.getLoc(), stored)
+            : FailureOr<Value>(stored);
+    if (failed(copied)) {
+      return failure();
+    }
+    rewriter.replaceOp(op, *copied);
     return success();
   }
 };
@@ -5455,6 +5536,18 @@ static bool isValueDefinedInside(Operation *ancestor, Value value) {
   return parentOp && ancestor->isAncestor(parentOp);
 }
 
+/// Return whether `type` is a mutable aggregate whose POD read/write semantics require a snapshot.
+static bool requiresValueCopy(Type type) { return llvm::isa<PodType, ArrayType>(type); }
+
+/// Materialize the POD-access snapshot of `source` at the builder's current insertion point.
+static FailureOr<Value>
+materializePodAccessSnapshot(OpBuilder &builder, Location loc, Value source) {
+  if (!requiresValueCopy(source.getType())) {
+    return source;
+  }
+  return llzk::materializeValueCopy(builder, loc, source);
+}
+
 /// Replace a read with the value from the nearest preceding same-record write in the block.
 class FoldReadAfterWriteInBlockPattern final : public OpRewritePattern<ReadPodOp> {
 public:
@@ -5473,6 +5566,21 @@ public:
         }
         replacement = sourceWrite.getValue();
       }
+      if (requiresValueCopy(readOp.getType()) && llzk::canMaterializeValueCopy(readOp.getType())) {
+        // Keep supported aggregates visible to POD mem2reg, which owns both their write-point and
+        // read-point snapshots. Eagerly copying here can introduce a late use of a POD source and
+        // unnecessarily prevent scalarization of an otherwise independent loop-carried POD.
+        return failure();
+      }
+      if (requiresValueCopy(readOp.getType())) {
+        // Ragged leaf values are internal array-of-POD decomposition state. Preserve their tag so
+        // the dedicated shape-witness diagnostics can report the unsupported operation later.
+        if (getTaggedRaggedNestedLeafKind(replacement).empty()) {
+          return failure();
+        }
+        rewriter.replaceOp(readOp, replacement);
+        return success();
+      }
       rewriter.replaceOp(readOp, replacement);
       return success();
     }
@@ -5486,6 +5594,9 @@ public:
   using OpRewritePattern<ReadPodOp>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
+    if (requiresValueCopy(readOp.getType()) && !llzk::canMaterializeValueCopy(readOp.getType())) {
+      return failure();
+    }
     auto ifOp = readOp->getParentOfType<scf::IfOp>();
     if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
       return failure();
@@ -5502,7 +5613,13 @@ public:
       if (WritePodOp writeOp = findNearestForwardableWriteBefore(
               anchor->getPrevNode(), readOp.getPodRef(), readOp.getRecordNameAttr()
           )) {
-        rewriter.replaceOp(readOp, writeOp.getValue());
+        rewriter.setInsertionPoint(readOp);
+        FailureOr<Value> copied =
+            materializePodAccessSnapshot(rewriter, readOp.getLoc(), writeOp.getValue());
+        if (failed(copied)) {
+          return failure();
+        }
+        rewriter.replaceOp(readOp, *copied);
         return success();
       }
       if (hasEarlierWriteToRecordInBlock(anchor, readOp.getPodRef(), readOp.getRecordNameAttr())) {
@@ -5517,10 +5634,15 @@ public:
     }
 
     rewriter.setInsertionPoint(anchor);
-    rewriter.replaceOp(
-        readOp, genRead(rewriter, readOp.getLoc(), readOp.getPodRef(), readOp.getRecordNameAttr())
-                    .getResult()
-    );
+    Value source =
+        genRead(rewriter, readOp.getLoc(), readOp.getPodRef(), readOp.getRecordNameAttr())
+            .getResult();
+    rewriter.setInsertionPoint(readOp);
+    FailureOr<Value> copied = materializePodAccessSnapshot(rewriter, readOp.getLoc(), source);
+    if (failed(copied)) {
+      return failure();
+    }
+    rewriter.replaceOp(readOp, *copied);
     return success();
   }
 };
@@ -5579,7 +5701,15 @@ public:
       }
     }
 
-    rewriter.replaceOp(readOp, valueRes);
+    if (requiresValueCopy(readOp.getType()) && !llzk::canMaterializeValueCopy(readOp.getType())) {
+      return failure();
+    }
+    rewriter.setInsertionPoint(readOp);
+    FailureOr<Value> copied = materializePodAccessSnapshot(rewriter, readOp.getLoc(), valueRes);
+    if (failed(copied)) {
+      return failure();
+    }
+    rewriter.replaceOp(readOp, *copied);
     return success();
   }
 };
@@ -5594,7 +5724,9 @@ struct IfWriteSlot {
   Type type;
   WritePodOp thenWrite;
   WritePodOp elseWrite;
-  Value incomingValue;
+  SmallVector<Value> incomingValues;
+  SmallVector<Value> thenValues;
+  SmallVector<Value> elseValues;
 };
 
 /// Find the tracked branch-write slot for `podRef.recordName`.
@@ -5615,7 +5747,7 @@ static IfWriteSlot &getOrCreateSlot(
   if (IfWriteSlot *slot = lookupSlot(slots, podRef, recordName)) {
     return *slot;
   }
-  slots.push_back(IfWriteSlot {podRef, recordName, type, nullptr, nullptr, Value()});
+  slots.push_back(IfWriteSlot {podRef, recordName, type, nullptr, nullptr, {}, {}, {}});
   return slots.back();
 }
 
@@ -5706,6 +5838,51 @@ static void dropTerminatorIfPresent(Block &block) {
   }
 }
 
+/// Append the flattened values representing one lifted `scf.if` POD-write slot.
+static LogicalResult appendIfWriteSlotValues(
+    OpBuilder &builder, Location loc, Type type, Value value, SmallVectorImpl<Value> &values
+) {
+  auto podType = dyn_cast<PodType>(type);
+  if (!podType) {
+    FailureOr<Value> copied = materializePodAccessSnapshot(builder, loc, value);
+    if (failed(copied)) {
+      return failure();
+    }
+    values.push_back(*copied);
+    return success();
+  }
+
+  bool failedToCopy = false;
+  SmallVector<StringAttr> recordChain;
+  forEachPodLeaf(
+      podType, recordChain,
+      [&builder, loc, value, &values, &failedToCopy](const RecordChain &id, Type) {
+    Value leaf = genReadAlongPath(builder, loc, value, id);
+    FailureOr<Value> copied = materializePodAccessSnapshot(builder, loc, leaf);
+    if (failed(copied)) {
+      failedToCopy = true;
+      return;
+    }
+    values.push_back(*copied);
+  }
+  );
+  return failure(failedToCopy);
+}
+
+/// Append the flattened result types representing one lifted `scf.if` POD-write slot.
+static void appendIfWriteSlotTypes(Type type, SmallVectorImpl<Type> &types) {
+  auto podType = dyn_cast<PodType>(type);
+  if (!podType) {
+    types.push_back(type);
+    return;
+  }
+
+  SmallVector<StringAttr> recordChain;
+  forEachPodLeaf(podType, recordChain, [&types](const RecordChain &, Type leafType) {
+    types.push_back(leafType);
+  });
+}
+
 /// Move non-lifted branch operations into the replacement branch block.
 static void
 moveBranchWithoutLiftedWrites(Block *srcBlock, Block &destBlock, ArrayRef<IfWriteSlot> slots) {
@@ -5727,12 +5904,12 @@ static void appendYield(
     ArrayRef<IfWriteSlot> slots, bool isThenBlock, scf::YieldOp originalYield = nullptr
 ) {
   SmallVector<Value> yieldValues = llvm::to_vector(priorYieldValues);
-  llvm::append_range(yieldValues, llvm::map_range(slots, [isThenBlock](const IfWriteSlot &slot) {
-    WritePodOp writeOp = isThenBlock ? slot.thenWrite : slot.elseWrite;
-    return writeOp ? writeOp.getValue() : slot.incomingValue;
-  }));
-
   bldr.setInsertionPointToEnd(&block);
+  for (const IfWriteSlot &slot : slots) {
+    ArrayRef<Value> branchValues = isThenBlock ? slot.thenValues : slot.elseValues;
+    llvm::append_range(yieldValues, branchValues.empty() ? slot.incomingValues : branchValues);
+  }
+
   auto newYield = bldr.create<scf::YieldOp>(loc, yieldValues);
   if (originalYield) {
     preserveDiscardableAttrs(originalYield, newYield);
@@ -5879,7 +6056,10 @@ static void cloneLoopBodyWithLiftedPodSlots(
     if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
       if (std::optional<size_t> slotIdx =
               findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
-        mapping.map(readOp.getResult(), slotValues[*slotIdx]);
+        FailureOr<Value> copied =
+            materializePodAccessSnapshot(rewriter, readOp.getLoc(), slotValues[*slotIdx]);
+        assert(succeeded(copied) && "copy support was checked before loop lifting");
+        mapping.map(readOp.getResult(), *copied);
         continue;
       }
     }
@@ -5887,7 +6067,11 @@ static void cloneLoopBodyWithLiftedPodSlots(
     if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
       if (std::optional<size_t> slotIdx =
               findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
-        slotValues[*slotIdx] = mapping.lookupOrDefault(writeOp.getValue());
+        FailureOr<Value> copied = materializePodAccessSnapshot(
+            rewriter, writeOp.getLoc(), mapping.lookupOrDefault(writeOp.getValue())
+        );
+        assert(succeeded(copied) && "copy support was checked before loop lifting");
+        slotValues[*slotIdx] = *copied;
         continue;
       }
     }
@@ -5964,6 +6148,7 @@ public:
 
     llvm::erase_if(slots, [&](const IfWriteSlot &slot) {
       return isValueDefinedInside(ifOp, slot.podRef) ||
+             (requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type)) ||
              !branchSlotCanBeLifted(&thenBlock, slot.podRef, slot.recordName) ||
              !branchSlotCanBeLifted(elseBlock, slot.podRef, slot.recordName);
     });
@@ -5972,16 +6157,39 @@ public:
     }
 
     for (IfWriteSlot &slot : slots) {
+      if (slot.thenWrite) {
+        rewriter.setInsertionPoint(slot.thenWrite);
+        LogicalResult result = appendIfWriteSlotValues(
+            rewriter, slot.thenWrite.getLoc(), slot.type, slot.thenWrite.getValue(), slot.thenValues
+        );
+        assert(succeeded(result) && "copy support was checked before if lifting");
+        (void)result;
+      }
+      if (slot.elseWrite) {
+        rewriter.setInsertionPoint(slot.elseWrite);
+        LogicalResult result = appendIfWriteSlotValues(
+            rewriter, slot.elseWrite.getLoc(), slot.type, slot.elseWrite.getValue(), slot.elseValues
+        );
+        assert(succeeded(result) && "copy support was checked before if lifting");
+        (void)result;
+      }
       if (slot.thenWrite && slot.elseWrite) {
         continue;
       }
       rewriter.setInsertionPoint(ifOp);
-      slot.incomingValue =
+      Value incomingValue =
           genRead(rewriter, ifOp.getLoc(), slot.podRef, slot.recordName).getResult();
+      LogicalResult result = appendIfWriteSlotValues(
+          rewriter, ifOp.getLoc(), slot.type, incomingValue, slot.incomingValues
+      );
+      assert(succeeded(result) && "copy support was checked before if lifting");
+      (void)result;
     }
 
     SmallVector<Type> resultTypes = llvm::to_vector(ifOp.getResultTypes());
-    llvm::append_range(resultTypes, llvm::map_range(slots, [](auto slot) { return slot.type; }));
+    for (const IfWriteSlot &slot : slots) {
+      appendIfWriteSlotTypes(slot.type, resultTypes);
+    }
 
     scf::YieldOp thenYieldOp = getYieldOp(thenBlock);
     SmallVector<Value> originalThenYields;
@@ -6012,15 +6220,28 @@ public:
     );
 
     rewriter.setInsertionPointAfter(newIf);
-    unsigned originalResultCount = ifOp.getNumResults();
-    for (auto [idx, slot] : llvm::enumerate(slots)) {
-      genWrite(
-          rewriter, ifOp.getLoc(), slot.podRef, slot.recordName,
-          newIf.getResult(originalResultCount + idx)
-      );
+    unsigned resultIndex = ifOp.getNumResults();
+    for (const IfWriteSlot &slot : slots) {
+      Value resultValue;
+      if (auto podType = dyn_cast<PodType>(slot.type)) {
+        VirtualPodLeafMap leafValues;
+        SmallVector<StringAttr> recordChain;
+        forEachPodLeaf(
+            podType, recordChain, [&leafValues, &newIf, &resultIndex](const RecordChain &id, Type) {
+          leafValues[id] = newIf.getResult(resultIndex++);
+        }
+        );
+        SmallVector<StringAttr> rootRecordChain;
+        resultValue = rebuildFlattenedPodRecord(
+            rewriter, ifOp.getLoc(), podType, rootRecordChain, leafValues
+        );
+      } else {
+        resultValue = newIf.getResult(resultIndex++);
+      }
+      genWrite(rewriter, ifOp.getLoc(), slot.podRef, slot.recordName, resultValue);
     }
 
-    rewriter.replaceOp(ifOp, newIf.getResults().take_front(originalResultCount));
+    rewriter.replaceOp(ifOp, newIf.getResults().take_front(ifOp.getNumResults()));
     return success();
   }
 };
@@ -6035,7 +6256,14 @@ public:
     Block &body = *forOp.getBody();
     SmallVector<LoopPodSlot> slots;
     collectDirectLoopPodSlots(body, forOp.getOperation(), slots);
-    if (slots.empty() || hasUnliftableLoopPodUses(body, slots)) {
+    if (slots.empty() ||
+        llvm::any_of(
+            slots,
+            [](const LoopPodSlot &slot) {
+      return requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
+    }
+        ) ||
+        hasUnliftableLoopPodUses(body, slots)) {
       return failure();
     }
 
@@ -6100,8 +6328,14 @@ public:
     SmallVector<LoopPodSlot> slots;
     collectDirectLoopPodSlots(beforeBody, whileOp.getOperation(), slots);
     collectDirectLoopPodSlots(afterBody, whileOp.getOperation(), slots);
-    if (slots.empty() || hasUnliftableLoopPodUses(beforeBody, slots) ||
-        hasUnliftableLoopPodUses(afterBody, slots)) {
+    if (slots.empty() ||
+        llvm::any_of(
+            slots,
+            [](const LoopPodSlot &slot) {
+      return requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
+    }
+        ) ||
+        hasUnliftableLoopPodUses(beforeBody, slots) || hasUnliftableLoopPodUses(afterBody, slots)) {
       return failure();
     }
 
@@ -6442,11 +6676,10 @@ static LogicalResult checkWhileCarriedPods(
     }
     WhileCarriedPod pod {llzk::checkedCast<unsigned>(idx), podTy, {}, {}};
     collectWhileCarriedPodLeaves(pod);
-    // Forwarding mutable aggregate leaves as SSA values would erase the copy boundary of their
-    // reads and writes. This rewrite only carries scalar leaves until snapshots are supported.
-    if (llvm::any_of(pod.leafTypes, [](Type type) {
-      return isa<PodType, ArrayType, StructType>(type);
-    })) {
+    // Forwarding mutable value aggregates as SSA values would erase the copy boundary of their
+    // reads and writes. Struct values are identity-bearing handles, so forwarding one intentionally
+    // preserves aliasing with the same component.
+    if (llvm::any_of(pod.leafTypes, [](Type type) { return isa<PodType, ArrayType>(type); })) {
       return reject("mutable aggregate leaves require unsupported copy snapshots");
     }
     carriedPods.push_back(std::move(pod));
@@ -7143,6 +7376,17 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         for (const WhileCarriedPodRejection &r : whileCarriedPodRejections.getRejections()) {
           diagnostic.attachNote(r.loc) << "cannot scalarize carried POD: " << r.reason;
         }
+        module.walk([&diagnostic](NewPodOp newPod) {
+          ArrayRef<RecordAttr> records = newPod.getType().getRecords();
+          Type recordType = records.size() == 1 ? records.front().getType() : Type {};
+          if (recordType && llvm::isa<PodType, ArrayType>(recordType) &&
+              !llzk::canMaterializeValueCopy(recordType)) {
+            diagnostic.attachNote(newPod.getLoc())
+                << "cannot promote POD record '" << records.front().getName().getValue()
+                << "' because value-copy materialization supports only PODs, immutable scalars, "
+                   "struct handles, and statically shaped arrays; flatten symbolic arrays first";
+          }
+        });
         diagnostic.report();
         signalPassFailure();
         return;

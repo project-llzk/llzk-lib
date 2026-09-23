@@ -175,18 +175,16 @@ module attributes {llzk.lang} {
 !Inner = !pod.type<[@value: index]>
 !Outer = !pod.type<[@inner: !Inner]>
 
-// The parent holds an independent copy. This initialization shape remains conservatively
-// unsupported; writes to the carried source must not affect the parent's snapshot.
-// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+// The parent holds an independent copy, so writes to the carried source cannot affect the
+// parent's snapshot and the carried source can now be scalarized.
 module attributes {llzk.lang} {
-  function.def @reject_live_parent_snapshot(%count: index, %seed: index) -> index {
+  function.def @scalarize_live_parent_snapshot(%count: index, %seed: index) -> index {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %inner = pod.new : !Inner
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Outer
     pod.write %outer[@inner] = %inner : !Outer, !Inner
-    // expected-note@+1 {{cannot scalarize carried POD: initializer or nested source has uses outside pre-loop initialization}}
     %result:2 = scf.while (%i = %count, %innerArg = %inner)
         : (index, !Inner) -> (index, !Inner) {
       %condition = arith.cmpi sgt, %i, %c0 : index
@@ -208,18 +206,15 @@ module attributes {llzk.lang} {
 !Inner = !pod.type<[@value: index]>
 !Parent = !pod.type<[@inner: !Inner, @marker: index]>
 
-// A separate parent write prevents forwarding its child read across the loop.
-// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+// A separate scalar parent write does not invalidate the independent child snapshot.
 module attributes {llzk.lang} {
-  function.def @reject_mutated_live_parent(%count: index, %seed: index) -> index {
+  function.def @scalarize_mutated_live_parent(%count: index, %seed: index) -> index {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %inner = pod.new : !Inner
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Parent
     pod.write %outer[@inner] = %inner : !Parent, !Inner
-    // expected-note@+2 {{cannot scalarize carried POD: initialization source is stored into another POD}}
-    // expected-note@+1 {{cannot scalarize carried POD: initializer or nested source has uses outside pre-loop initialization}}
     %result:2 = scf.while (%i = %count, %innerArg = %inner)
         : (index, !Inner) -> (index, !Inner) {
       %condition = arith.cmpi sgt, %i, %c0 : index
