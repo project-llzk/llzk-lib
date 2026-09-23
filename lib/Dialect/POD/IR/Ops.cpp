@@ -184,6 +184,141 @@ static bool hasOnlyTransitiveReadUses(Value aggregateValue) {
   return true;
 }
 
+/// Return whether `value` is `root` or was obtained through aggregate reads rooted at `root`.
+static bool isAggregateReadFrom(Value value, Value root) {
+  if (value == root) {
+    return true;
+  }
+  if (auto readOp = value.getDefiningOp<ReadPodOp>()) {
+    return isAggregateReadFrom(readOp.getPodRef(), root);
+  }
+  if (auto accessOp = value.getDefiningOp<array::ArrayAccessOpInterface>();
+      accessOp && accessOp.isRead() && accessOp->getNumResults() == 1) {
+    return isAggregateReadFrom(accessOp.getArrRef(), root);
+  }
+  return false;
+}
+
+/// Return whether all transitive uses rooted at `aggregateValue` are accesses before `ownedRead`,
+/// except for an explicit transfer into `ownedValue` before its first writeback.
+///
+/// The transfer exception models the Circom read-modify-write idiom: mutate a snapshot, read the
+/// source again, install the changed aggregate leaf in that owned copy, then write the owned copy
+/// back. Unknown uses and nested control flow remain conservatively rejected.
+static bool hasOnlySnapshotUses(
+    Value aggregateValue, ReadPodOp ownedRead, Value ownedValue, WritePodOp firstWriteback
+) {
+  for (OpOperand &use : aggregateValue.getUses()) {
+    Operation *user = use.getOwner();
+    if (user->getBlock() != ownedRead->getBlock()) {
+      return false;
+    }
+
+    if (auto writeOp = llvm::dyn_cast<WritePodOp>(user);
+        writeOp && writeOp.getValue() == aggregateValue && writeOp.getPodRef() != aggregateValue) {
+      if (!ownedRead->isBeforeInBlock(user) || !user->isBeforeInBlock(firstWriteback) ||
+          !isAggregateReadFrom(writeOp.getPodRef(), ownedValue)) {
+        return false;
+      }
+      continue;
+    }
+
+    Value readResult;
+    if (llvm::isa<PodType>(aggregateValue.getType())) {
+      if (auto readOp = llvm::dyn_cast<ReadPodOp>(user);
+          readOp && readOp.getPodRef() == aggregateValue) {
+        if (!user->isBeforeInBlock(ownedRead)) {
+          return false;
+        }
+        readResult = readOp.getResult();
+      } else if (auto writeOp = llvm::dyn_cast<WritePodOp>(user)) {
+        if (writeOp.getPodRef() == aggregateValue) {
+          if (!user->isBeforeInBlock(ownedRead)) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    } else if (llvm::isa<array::ArrayType>(aggregateValue.getType())) {
+      auto accessOp = llvm::dyn_cast<array::ArrayAccessOpInterface>(user);
+      if (!accessOp || accessOp.getArrRef() != aggregateValue ||
+          !user->isBeforeInBlock(ownedRead)) {
+        return false;
+      }
+      if (accessOp.isRead()) {
+        if (accessOp->getNumResults() != 1) {
+          return false;
+        }
+        readResult = accessOp->getResult(0);
+      }
+    } else {
+      return false;
+    }
+
+    if (readResult &&
+        llvm::isa<PodType, array::ArrayType, component::StructType>(readResult.getType()) &&
+        !hasOnlySnapshotUses(readResult, ownedRead, ownedValue, firstWriteback)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Return whether `podValue` has one owned aggregate-valued read and every write to the POD writes
+/// that same result back.
+///
+/// Earlier read snapshots are permitted only when their aggregate accesses finish before the owned
+/// read, apart from explicit transfers into that owned copy before its first writeback. Replacing
+/// the reads with the reaching definition therefore cannot make a later mutation observable
+/// through an earlier copy. Writes of the owned result back to its source become redundant after
+/// promotion. This is the read-modify-write form emitted for nested Circom component inputs.
+static bool hasOwnedReadWithOnlyWritebacks(Value podValue) {
+  SmallVector<ReadPodOp> reads;
+  SmallVector<WritePodOp> writebacks;
+
+  for (OpOperand &use : podValue.getUses()) {
+    if (auto readOp = llvm::dyn_cast<ReadPodOp>(use.getOwner());
+        readOp && readOp.getPodRef() == podValue) {
+      reads.push_back(readOp);
+      continue;
+    }
+
+    if (auto writeOp = llvm::dyn_cast<WritePodOp>(use.getOwner());
+        writeOp && writeOp.getPodRef() == podValue) {
+      writebacks.push_back(writeOp);
+      continue;
+    }
+
+    return false;
+  }
+
+  if (writebacks.empty()) {
+    return reads.size() == 1;
+  }
+
+  Value ownedValue = writebacks.front().getValue();
+  auto ownedRead = ownedValue.getDefiningOp<ReadPodOp>();
+  if (!ownedRead || ownedRead.getPodRef() != podValue ||
+      !llvm::all_of(writebacks, [&](WritePodOp writeOp) {
+    return writeOp.getValue() == ownedValue && writeOp->getBlock() == ownedRead->getBlock() &&
+           ownedRead->isBeforeInBlock(writeOp);
+  })) {
+    return false;
+  }
+
+  WritePodOp firstWriteback = *llvm::min_element(writebacks, [](WritePodOp lhs, WritePodOp rhs) {
+    return lhs->isBeforeInBlock(rhs);
+  });
+
+  return llvm::all_of(reads, [&](ReadPodOp readOp) {
+    return readOp == ownedRead ||
+           hasOnlySnapshotUses(readOp.getResult(), ownedRead, ownedValue, firstWriteback);
+  });
+}
+
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   ArrayRef<RecordAttr> records = getType().getRecords();
@@ -194,9 +329,12 @@ SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   // A POD-valued read is a value copy, but mem2reg replaces every read with its reaching SSA
   // definition. Until aggregate copy snapshots are modeled explicitly, only promote an
   // uninitialized nested POD whose complete use tree is proven read-only. In particular, reject
-  // writes to the outer slot, mutations of nested read results, forwarding uses, and escapes.
+  // mutations shared by multiple read results, forwarding uses, and escapes. Also permit the
+  // ordered read-modify-write pattern in which earlier snapshots are consumed before an owned read
+  // or explicitly transferred into it before that same value is written back.
   if (llvm::isa<PodType>(records.front().getType())) {
-    if (!getInitializedRecordValues().empty() || !hasOnlyTransitiveReadUses(getResult())) {
+    if (!getInitializedRecordValues().empty() ||
+        (!hasOnlyTransitiveReadUses(getResult()) && !hasOwnedReadWithOnlyWritebacks(getResult()))) {
       return {};
     }
   }

@@ -237,3 +237,33 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// A snapshot observed after the owner is mutated and written back must remain independent. The
+// ordered writeback exception must not promote the outer POD in this case.
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @preserve_late_snapshot(%replacement: index) -> index {
+    %outer = pod.new : !Outer
+    %snapshot = pod.read %outer[@inner] : !Outer, !Inner
+    %owner = pod.read %outer[@inner] : !Outer, !Inner
+    pod.write %owner[@value] = %replacement : !Inner, index
+    pod.write %outer[@inner] = %owner : !Outer, !Inner
+    %observed = pod.read %snapshot[@value] : !Inner, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserve_late_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pod.new : <[@inner: !pod.type<[@value: index]>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_1]][@inner] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_3]][@value] = %[[VAL_0]] : <[@value: index]>, index
+// CHECK-NEXT:      pod.write %[[VAL_1]][@inner] = %[[VAL_3]] : <[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@value] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
