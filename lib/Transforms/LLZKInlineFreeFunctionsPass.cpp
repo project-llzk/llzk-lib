@@ -15,6 +15,7 @@
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
@@ -86,10 +87,12 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
         if (llvm::isa<component::MemberRefOpInterface>(op) && name == "member_name") {
           continue;
         }
-        // LLZK calls intentionally resolve their callee from the root module.
-        // Other properties, including template parameters, retain their
-        // ordinary scope-sensitive checks.
-        if (llvm::isa<CallOp>(op) && name == "callee") {
+        // LLZK calls and global references intentionally resolve these
+        // properties from the root module. Other properties, including
+        // template parameters, retain their ordinary scope-sensitive checks.
+        bool usesRootLookup = (llvm::isa<CallOp>(op) && name == "callee") ||
+                              (llvm::isa<global::GlobalRefOpInterface>(op) && name == "name_ref");
+        if (usesRootLookup) {
           property.getValue().walk(detectMissingRootSymbolRef);
         } else {
           property.getValue().walk(detectNonRootSymbolRef);
