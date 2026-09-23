@@ -73,6 +73,7 @@ static llvm::cl::opt<bool>
 namespace mlir_hotfix {
 
 inline static void registerTransformsPasses() {
+  mlir::registerBubbleDownMemorySpaceCastsPass();
   mlir::registerCSEPass();
   mlir::registerCanonicalizerPass();
   mlir::registerCompositeFixedPointPass();
@@ -87,11 +88,12 @@ inline static void registerTransformsPasses() {
   mlir::registerPrintOpStatsPass();
   mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
   mlir::registerSCCPPass();
-  mlir::registerSROA();
+  mlir::registerSROAPass();
   mlir::registerStripDebugInfoPass();
   mlir::registerSymbolDCEPass();
   mlir::registerSymbolPrivatizePass();
   mlir::registerTopologicalSortPass();
+  mlir::registerTrivialDeadCodeEliminationPass();
   mlir::registerViewOpGraphPass();
 }
 
