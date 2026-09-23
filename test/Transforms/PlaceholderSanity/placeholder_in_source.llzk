@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
-// XFAIL:*
 
 #id = affine_map<(i)->(i)>
 module attributes {llzk.lang, llzk.main = !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[!felt.type, !felt.type, 4]>>} {
@@ -27,3 +26,17 @@ module attributes {llzk.lang, llzk.main = !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip">} {
+// CHECK-NEXT:    struct.def @"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip" {
+// CHECK-NEXT:      struct.member @"$array" : !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@"$array"] = %[[VAL_1]] : <@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip">, !array.type<4 x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F_f_f_4_Zip">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

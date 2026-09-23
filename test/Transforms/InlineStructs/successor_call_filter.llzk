@@ -1,0 +1,45 @@
+// RUN: llzk-opt -llzk-inline-structs -verify-diagnostics %s | FileCheck %s
+
+// An unrelated free-function call must not be treated as the call to the
+// successor struct's constrain function when deciding whether to inline it.
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  function.def @helper() {
+    function.return
+  }
+
+  struct.def @Child {
+    function.def @compute() -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %child = function.call @Child::@compute() : () -> !struct.type<@Child>
+      struct.writem %self[@child] = %child : !struct.type<@Main>, !struct.type<@Child>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.call @helper() : () -> ()
+      %child = struct.readm %self[@child] : !struct.type<@Main>, !struct.type<@Child>
+      function.call @Child::@constrain(%child) : (!struct.type<@Child>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NOT:     struct.member @child
+// CHECK:         function.def @constrain
+// CHECK:           function.call @helper() : () -> ()
+// CHECK-NOT:       function.call @Child::@constrain
+// CHECK:           function.return

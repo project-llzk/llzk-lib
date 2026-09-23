@@ -1000,7 +1000,8 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
 
   /// Check for additional conditions that make inlining impossible (at least in the current
   /// implementation).
-  static inline bool canInline(FuncDefOp currentFunc, FuncDefOp successorFunc) {
+  static inline bool
+  canInline(FuncDefOp currentFunc, FuncDefOp successorFunc, SymbolTableCollection &tables) {
     // Find CallOp for `successorFunc` within `currentFunc` and check the condition used by
     // `ConstrainImpl::getSelfRefMember()`.
     //
@@ -1012,7 +1013,11 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
     // `getSelfRefMember()` and new members will still need to be added. They can be prefixed with
     // parameter index since there is no current member name to use as the unique prefix. Handling
     // that would require refactoring the inlining process a bit.
-    WalkResult res = currentFunc.walk([](CallOp c) {
+    WalkResult res = currentFunc.walk([successorFunc, &tables](CallOp c) {
+      auto calleeTarget = c.getCalleeTarget(tables);
+      if (failed(calleeTarget) || calleeTarget->get() != successorFunc) {
+        return WalkResult::advance();
+      }
       return getMemberReadThatDefinesSelfValuePassedToConstrain(c)
                  ? WalkResult::interrupt() // use interrupt to indicate success
                  : WalkResult::advance();
@@ -1215,7 +1220,7 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
           if (!successorFunc) {
             continue;
           }
-          if (canInline(currentFunc, successorFunc)) {
+          if (canInline(currentFunc, successorFunc, tables)) {
             successorsToMerge.push_back(getParentStruct(successorFunc));
           }
         }

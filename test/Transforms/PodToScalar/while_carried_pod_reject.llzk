@@ -218,6 +218,7 @@ module attributes {llzk.lang} {
     pod.write %inner[@value] = %seed : !Inner, index
     %outer = pod.new : !Parent
     pod.write %outer[@inner] = %inner : !Parent, !Inner
+    // expected-note@+2 {{cannot scalarize carried POD: initialization source is stored into another POD}}
     // expected-note@+1 {{cannot scalarize carried POD: initializer or nested source has uses outside pre-loop initialization}}
     %result:2 = scf.while (%i = %count, %innerArg = %inner)
         : (index, !Inner) -> (index, !Inner) {
