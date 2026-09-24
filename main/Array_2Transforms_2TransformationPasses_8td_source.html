@@ -151,7 +151,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Array_2Transfo
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  }];</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>}</div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>#endif // LLZK_ARRAY_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>def StraightLineStaticArrayPromotionPass</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    : LLZKPass&lt;&quot;llzk-straight-line-static-array-promotion&quot;&gt; {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  let summary = &quot;Promote straight-line static array accesses to SSA values&quot;;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  let description = [{</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    Promote statically indexed array elements whose accesses have a single linear order within one</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    block or nested single-execution regions. Arrays involving control-flow joins, dynamic indices,</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    or escaping values are left unchanged.</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  }];</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>}</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>#endif // LLZK_ARRAY_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

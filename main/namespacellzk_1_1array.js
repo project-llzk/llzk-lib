@@ -30,6 +30,7 @@ var namespacellzk_1_1array =
     [ "computeShapeFromDims", "namespacellzk_1_1array.html#a2305a2dbd092e1bb3bfd90a2a6f7142a", null ],
     [ "computeShapeFromDims", "namespacellzk_1_1array.html#a95e10b42c040ac7fd20dd9f43baaf067", null ],
     [ "createArrayToScalarPass", "namespacellzk_1_1array.html#a525e7ad6c9e222da9a66726555b1175e", null ],
+    [ "createStraightLineStaticArrayPromotionPass", "namespacellzk_1_1array.html#a1705e029e0a4ead95c92e6cb09cef0cd", null ],
     [ "parseAttrVec", "namespacellzk_1_1array.html#a608683adb2db2b27afd796d5539d407c", null ],
     [ "parseAttrVec", "namespacellzk_1_1array.html#ae1b904309bd4eeb87f1d866e709a221e", null ],
     [ "parseDerivedShape", "namespacellzk_1_1array.html#ad0d0fcab70d74bead77d8247011538a4", null ],
@@ -40,5 +41,7 @@ var namespacellzk_1_1array =
     [ "printDerivedShape", "namespacellzk_1_1array.html#aed4b94c25c0c9d648cf503bd90decfa1", null ],
     [ "registerArrayToScalarPass", "namespacellzk_1_1array.html#a014b61095a29e4b1e00eca1a4614ff1f", null ],
     [ "registerArrayToScalarPassPass", "namespacellzk_1_1array.html#ac61940447eff7532c4b507d670772d7b", null ],
+    [ "registerStraightLineStaticArrayPromotionPass", "namespacellzk_1_1array.html#aac8543d3d07a45c9e46c5635939459ce", null ],
+    [ "registerStraightLineStaticArrayPromotionPassPass", "namespacellzk_1_1array.html#ac975cd454dc8d8c915bf07e3f485730a", null ],
     [ "registerTransformationPasses", "namespacellzk_1_1array.html#aee303a81a7d8f2895e40166e5754fced", null ]
 ];

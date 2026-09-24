@@ -49,7 +49,8 @@ var annotated_dup =
           [ "WriteArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1WriteArrayOpGenericAdaptorBase.html", "classllzk_1_1array_1_1detail_1_1WriteArrayOpGenericAdaptorBase" ]
         ] ],
         [ "impl", "namespacellzk_1_1array_1_1impl.html", [
-          [ "ArrayToScalarPassBase", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase" ]
+          [ "ArrayToScalarPassBase", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase" ],
+          [ "StraightLineStaticArrayPromotionPassBase", "classllzk_1_1array_1_1impl_1_1StraightLineStaticArrayPromotionPassBase.html", "classllzk_1_1array_1_1impl_1_1StraightLineStaticArrayPromotionPassBase" ]
         ] ],
         [ "ArrayAccessOpInterface", "classllzk_1_1array_1_1ArrayAccessOpInterface.html", "classllzk_1_1array_1_1ArrayAccessOpInterface" ],
         [ "ArrayDialect", "classllzk_1_1array_1_1ArrayDialect.html", "classllzk_1_1array_1_1ArrayDialect" ],

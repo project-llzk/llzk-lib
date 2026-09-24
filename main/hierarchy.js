@@ -1212,6 +1212,7 @@ var hierarchy =
     ] ],
     [ "mlir::OperationPass", null, [
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
+      [ "llzk::array::impl::StraightLineStaticArrayPromotionPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1StraightLineStaticArrayPromotionPassBase.html", null ],
       [ "llzk::boolean::impl::LowerBoolQuantifiersPassBase< DerivedT >", "classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html", null ],
       [ "llzk::component::impl::InlineStructsPassBase< DerivedT >", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", null ],
       [ "llzk::global::impl::ConstGlobalPropagationPassBase< DerivedT >", "classllzk_1_1global_1_1impl_1_1ConstGlobalPropagationPassBase.html", null ],

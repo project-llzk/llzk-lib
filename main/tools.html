@@ -267,6 +267,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-array-to-scalar"><span class="tt">-llzk-array-to-scalar</span> </a>
               </li>
               <li class="level4">
+                <a href="#autotoc_md-llzk-straight-line-static-array-promotion"><span class="tt">-llzk-straight-line-static-array-promotion</span> </a>
+              </li>
+              <li class="level4">
                 <a href="#autotoc_md-llzk-lower-bool-quantifiers"><span class="tt">-llzk-lower-bool-quantifiers</span> </a>
               </li>
               <li class="level4">
@@ -580,7 +583,11 @@ Options</h5>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-array-to-scalar"></a>
 <span class="tt">-llzk-array-to-scalar</span></h4>
 <p><em>Replace arrays with scalar values</em></p>
-<p>Replace known-shape arrays with the proper number of scalar values  </p>
+<p>Replace known-shape arrays with the proper number of scalar values </p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-straight-line-static-array-promotion"></a>
+<span class="tt">-llzk-straight-line-static-array-promotion</span></h4>
+<p><em>Promote straight-line static array accesses to SSA values</em></p>
+<p>Promote statically indexed array elements whose accesses have a single linear order within one block or nested single-execution regions. Arrays involving control-flow joins, dynamic indices, or escaping values are left unchanged.  </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-lower-bool-quantifiers"></a>
 <span class="tt">-llzk-lower-bool-quantifiers</span></h4>
 <p><em>Lower bool quantifiers to SCF loops</em></p>

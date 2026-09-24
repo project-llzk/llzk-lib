@@ -176,6 +176,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a608683adb2db2b27afd796d5539d407c" id="r_a608683adb2db2b27afd796d5539d407c"><td class="memItemLeft">ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a608683adb2db2b27afd796d5539d407c">parseAttrVec</a> (AsmParser &amp;parser, SmallVector&lt; Attribute &gt; &amp;value)</td></tr>
 <tr class="memitem:aa4d4fb83bc35b52f7f65c590aed79b19" id="r_aa4d4fb83bc35b52f7f65c590aed79b19"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aa4d4fb83bc35b52f7f65c590aed79b19">printAttrVec</a> (AsmPrinter &amp;printer, ArrayRef&lt; Attribute &gt; value)</td></tr>
 <tr class="memitem:a525e7ad6c9e222da9a66726555b1175e" id="r_a525e7ad6c9e222da9a66726555b1175e"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a525e7ad6c9e222da9a66726555b1175e">createArrayToScalarPass</a> ()</td></tr>
+<tr class="memitem:a1705e029e0a4ead95c92e6cb09cef0cd" id="r_a1705e029e0a4ead95c92e6cb09cef0cd"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1705e029e0a4ead95c92e6cb09cef0cd">createStraightLineStaticArrayPromotionPass</a> ()</td></tr>
 <tr class="memitem:a227d8c4c267ff4b81cbe6d169f29102b" id="r_a227d8c4c267ff4b81cbe6d169f29102b"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a227d8c4c267ff4b81cbe6d169f29102b">computeDimsFromShape</a> (mlir::MLIRContext *ctx, llvm::ArrayRef&lt; int64_t &gt; shape, llvm::SmallVector&lt; mlir::Attribute &gt; &amp;dimensionSizes)</td></tr>
 <tr class="memitem:a95e10b42c040ac7fd20dd9f43baaf067" id="r_a95e10b42c040ac7fd20dd9f43baaf067"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a95e10b42c040ac7fd20dd9f43baaf067">computeShapeFromDims</a> (<a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, llvm::ArrayRef&lt; mlir::Attribute &gt; dimensionSizes, llvm::SmallVector&lt; int64_t &gt; &amp;shape)</td></tr>
 <tr class="memitem:a673f4ef0e370a86c1b65087d7254c8c4" id="r_a673f4ef0e370a86c1b65087d7254c8c4"><td class="memItemLeft">mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a673f4ef0e370a86c1b65087d7254c8c4">parseDerivedShape</a> (mlir::AsmParser &amp;parser, llvm::SmallVector&lt; int64_t &gt; &amp;shape, llvm::SmallVector&lt; mlir::Attribute &gt; dimensionSizes)</td></tr>
@@ -184,6 +185,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a3222a09989a2ca2508c962d139488744" id="r_a3222a09989a2ca2508c962d139488744"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a3222a09989a2ca2508c962d139488744">printAttrVec</a> (mlir::AsmPrinter &amp;printer, llvm::ArrayRef&lt; mlir::Attribute &gt; value)</td></tr>
 <tr class="memitem:a014b61095a29e4b1e00eca1a4614ff1f" id="r_a014b61095a29e4b1e00eca1a4614ff1f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a014b61095a29e4b1e00eca1a4614ff1f">registerArrayToScalarPass</a> ()</td></tr>
 <tr class="memitem:ac61940447eff7532c4b507d670772d7b" id="r_ac61940447eff7532c4b507d670772d7b"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac61940447eff7532c4b507d670772d7b">registerArrayToScalarPassPass</a> ()</td></tr>
+<tr class="memitem:aac8543d3d07a45c9e46c5635939459ce" id="r_aac8543d3d07a45c9e46c5635939459ce"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aac8543d3d07a45c9e46c5635939459ce">registerStraightLineStaticArrayPromotionPass</a> ()</td></tr>
+<tr class="memitem:ac975cd454dc8d8c915bf07e3f485730a" id="r_ac975cd454dc8d8c915bf07e3f485730a"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac975cd454dc8d8c915bf07e3f485730a">registerStraightLineStaticArrayPromotionPassPass</a> ()</td></tr>
 <tr class="memitem:aee303a81a7d8f2895e40166e5754fced" id="r_aee303a81a7d8f2895e40166e5754fced"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aee303a81a7d8f2895e40166e5754fced">registerTransformationPasses</a> ()</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
@@ -311,7 +314,27 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00091">91</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00092">92</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a1705e029e0a4ead95c92e6cb09cef0cd" name="a1705e029e0a4ead95c92e6cb09cef0cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1705e029e0a4ead95c92e6cb09cef0cd">&#9670;&#160;</a></span>createStraightLineStaticArrayPromotionPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::array::createStraightLineStaticArrayPromotionPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
+
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00179">179</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -534,7 +557,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00102">102</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00190">190</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -561,7 +584,61 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00109">109</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00197">197</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="aac8543d3d07a45c9e46c5635939459ce" name="aac8543d3d07a45c9e46c5635939459ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac8543d3d07a45c9e46c5635939459ce">&#9670;&#160;</a></span>registerStraightLineStaticArrayPromotionPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::array::registerStraightLineStaticArrayPromotionPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00207">207</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="ac975cd454dc8d8c915bf07e3f485730a" name="ac975cd454dc8d8c915bf07e3f485730a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac975cd454dc8d8c915bf07e3f485730a">&#9670;&#160;</a></span>registerStraightLineStaticArrayPromotionPassPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::array::registerStraightLineStaticArrayPromotionPassPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00214">214</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -588,7 +665,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00119">119</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00224">224</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>

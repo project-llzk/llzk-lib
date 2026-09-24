@@ -159,12 +159,16 @@ Macros</h2></td></tr>
 <tr class="memitem:ab89199f50939908fa0581f7323f23e14" id="r_ab89199f50939908fa0581f7323f23e14"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#ab89199f50939908fa0581f7323f23e14">GEN_PASS_DECL</a></td></tr>
 <tr class="memitem:a50fd6f4ec277edd1b62f2efe4a35eede" id="r_a50fd6f4ec277edd1b62f2efe4a35eede"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a50fd6f4ec277edd1b62f2efe4a35eede">GEN_PASS_REGISTRATION</a></td></tr>
 <tr class="memitem:a20bfdc276d959b640935cee3d9541b8a" id="r_a20bfdc276d959b640935cee3d9541b8a"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a20bfdc276d959b640935cee3d9541b8a">GEN_PASS_DECL_ARRAYTOSCALARPASS</a></td></tr>
+<tr class="memitem:abe3a768a32964a856c4f01decfca03db" id="r_abe3a768a32964a856c4f01decfca03db"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#abe3a768a32964a856c4f01decfca03db">GEN_PASS_DECL_STRAIGHTLINESTATICARRAYPROMOTIONPASS</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a525e7ad6c9e222da9a66726555b1175e" id="r_a525e7ad6c9e222da9a66726555b1175e"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#a525e7ad6c9e222da9a66726555b1175e">llzk::array::createArrayToScalarPass</a> ()</td></tr>
+<tr class="memitem:a1705e029e0a4ead95c92e6cb09cef0cd" id="r_a1705e029e0a4ead95c92e6cb09cef0cd"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#a1705e029e0a4ead95c92e6cb09cef0cd">llzk::array::createStraightLineStaticArrayPromotionPass</a> ()</td></tr>
 <tr class="memitem:a014b61095a29e4b1e00eca1a4614ff1f" id="r_a014b61095a29e4b1e00eca1a4614ff1f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#a014b61095a29e4b1e00eca1a4614ff1f">llzk::array::registerArrayToScalarPass</a> ()</td></tr>
 <tr class="memitem:ac61940447eff7532c4b507d670772d7b" id="r_ac61940447eff7532c4b507d670772d7b"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#ac61940447eff7532c4b507d670772d7b">llzk::array::registerArrayToScalarPassPass</a> ()</td></tr>
+<tr class="memitem:aac8543d3d07a45c9e46c5635939459ce" id="r_aac8543d3d07a45c9e46c5635939459ce"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#aac8543d3d07a45c9e46c5635939459ce">llzk::array::registerStraightLineStaticArrayPromotionPass</a> ()</td></tr>
+<tr class="memitem:ac975cd454dc8d8c915bf07e3f485730a" id="r_ac975cd454dc8d8c915bf07e3f485730a"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#ac975cd454dc8d8c915bf07e3f485730a">llzk::array::registerStraightLineStaticArrayPromotionPassPass</a> ()</td></tr>
 <tr class="memitem:aee303a81a7d8f2895e40166e5754fced" id="r_aee303a81a7d8f2895e40166e5754fced"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1array.html#aee303a81a7d8f2895e40166e5754fced">llzk::array::registerTransformationPasses</a> ()</td></tr>
 </table>
 <a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
@@ -197,6 +201,22 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00006">6</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="abe3a768a32964a856c4f01decfca03db" name="abe3a768a32964a856c4f01decfca03db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe3a768a32964a856c4f01decfca03db">&#9670;&#160;</a></span>GEN_PASS_DECL_STRAIGHTLINESTATICARRAYPROMOTIONPASS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GEN_PASS_DECL_STRAIGHTLINESTATICARRAYPROMOTIONPASS</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00007">7</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>

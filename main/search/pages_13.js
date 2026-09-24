@@ -75,9 +75,10 @@ var searchData=
   ['product_20program_72',['&lt;span class=&quot;tt&quot;&gt;-llzk-product-program&lt;/span&gt;',['../tools.html#autotoc_md-llzk-product-program',1,'']]],
   ['program_73',['&lt;span class=&quot;tt&quot;&gt;-llzk-product-program&lt;/span&gt;',['../tools.html#autotoc_md-llzk-product-program',1,'']]],
   ['project_20overview_74',['Project Overview',['../overview.html#project-overview',1,'']]],
-  ['pseudo_20homogeneous_20arrays_75',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
-  ['publicattr_76',['PublicAttr',['../dialects.html#publicattr',1,'PublicAttr'],['../r1cs-backend.html#publicattr-1',1,'PublicAttr']]],
-  ['pull_20request_77',['Pull Request',['../contribution-guide.html#pull-request',1,'']]],
-  ['pull_20request_20review_78',['Pull Request Review',['../contribution-guide.html#pull-request-review',1,'']]],
-  ['push_20_3a_3allzk_3a_3asmt_3a_3apushop_79',['&lt;span class=&quot;tt&quot;&gt;smt.push&lt;/span&gt; (llzk::smt::PushOp)',['../smt-backend.html#smtpush-llzksmtpushop',1,'']]]
+  ['promotion_75',['&lt;span class=&quot;tt&quot;&gt;-llzk-straight-line-static-array-promotion&lt;/span&gt;',['../tools.html#autotoc_md-llzk-straight-line-static-array-promotion',1,'']]],
+  ['pseudo_20homogeneous_20arrays_76',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
+  ['publicattr_77',['PublicAttr',['../dialects.html#publicattr',1,'PublicAttr'],['../r1cs-backend.html#publicattr-1',1,'PublicAttr']]],
+  ['pull_20request_78',['Pull Request',['../contribution-guide.html#pull-request',1,'']]],
+  ['pull_20request_20review_79',['Pull Request Review',['../contribution-guide.html#pull-request-review',1,'']]],
+  ['push_20_3a_3allzk_3a_3asmt_3a_3apushop_80',['&lt;span class=&quot;tt&quot;&gt;smt.push&lt;/span&gt; (llzk::smt::PushOp)',['../smt-backend.html#smtpush-llzksmtpushop',1,'']]]
 ];
