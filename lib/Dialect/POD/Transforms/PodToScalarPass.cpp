@@ -1979,11 +1979,16 @@ inline static bool isInsideSupportedScfRegion(Operation *op) {
 
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
 static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
-  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWrite(op) ||
-      findNearestForwardableWrite(op)) {
+  const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
+  if (!leafValues || hasEarlierWrite(op) || findNearestForwardableWrite(op)) {
     return false;
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+  if (llvm::isa<ArrayType>(recType) && !llzk::canMaterializeValueCopy(recType)) {
+    SmallVector<StringAttr> prefix {op.getRecordNameAttr()};
+    auto stored = leafValues->find(RecordChain(prefix));
+    return stored != leafValues->end() && !getTaggedRaggedNestedLeafKind(stored->second).empty();
+  }
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
 }
 
@@ -4952,10 +4957,17 @@ public:
       rewriter.setInsertionPoint(op);
       forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
         Value leaf = leafValues->at(id.withPrefix(prefix));
-        FailureOr<Value> copied = llvm::isa<PodType, ArrayType>(leaf.getType()) &&
-                                          llzk::canMaterializeValueCopy(leaf.getType())
-                                      ? llzk::materializeValueCopy(rewriter, op.getLoc(), leaf)
-                                      : FailureOr<Value>(leaf);
+        FailureOr<Value> copied = leaf;
+        if (llvm::isa<PodType, ArrayType>(leaf.getType())) {
+          if (!llzk::canMaterializeValueCopy(leaf.getType())) {
+            if (getTaggedRaggedNestedLeafKind(leaf).empty()) {
+              failedToCopy = true;
+              return;
+            }
+          } else {
+            copied = llzk::materializeValueCopy(rewriter, op.getLoc(), leaf);
+          }
+        }
         if (failed(copied)) {
           failedToCopy = true;
           return;
@@ -4980,10 +4992,17 @@ public:
     Value stored = castValueToTypeIfNeeded(
         rewriter, op.getLoc(), leafValues->at(RecordChain(prefix)), recordType
     );
-    FailureOr<Value> copied =
-        llvm::isa<PodType, ArrayType>(recordType) && llzk::canMaterializeValueCopy(recordType)
-            ? llzk::materializeValueCopy(rewriter, op.getLoc(), stored)
-            : FailureOr<Value>(stored);
+    FailureOr<Value> copied = stored;
+    if (llvm::isa<PodType, ArrayType>(recordType)) {
+      if (!llzk::canMaterializeValueCopy(recordType)) {
+        if (getTaggedRaggedNestedLeafKind(stored).empty()) {
+          return failure();
+        }
+        rewriter.replaceOp(op, stored);
+        return success();
+      }
+      copied = llzk::materializeValueCopy(rewriter, op.getLoc(), stored);
+    }
     if (failed(copied)) {
       return failure();
     }

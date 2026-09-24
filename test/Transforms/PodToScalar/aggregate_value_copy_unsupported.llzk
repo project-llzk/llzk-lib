@@ -32,3 +32,23 @@ module attributes {llzk.lang} {
     function.return %values : !Values
   }
 }
+
+// -----
+
+#len = affine_map<()[s0] -> (s0)>
+!Values = !array.type<#len x index>
+!Box = !pod.type<[@values: !Values]>
+
+// A virtual POD argument must not turn an unsupported aggregate read into an alias of its leaf.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @unsupported_virtual_pod_read(
+      %box: !Box, %index: index, %replacement: index
+  ) -> index {
+    %first = pod.read %box[@values] : !Box, !Values
+    array.write %first[%index] = %replacement : !Values, index
+    %second = pod.read %box[@values] : !Box, !Values
+    %observed = array.read %second[%index] : !Values, index
+    function.return %observed : index
+  }
+}
