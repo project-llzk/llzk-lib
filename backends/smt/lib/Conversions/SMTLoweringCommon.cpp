@@ -30,8 +30,8 @@ using namespace mlir;
 
 namespace llzk::smt::detail {
 
-std::pair<mlir::Value, mlir::Value> SMTIntTheoryEmitter::getRangeBoundAssertions(
-    mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value, const UnreducedInterval &range
+std::pair<Value, Value> SMTIntTheoryEmitter::getRangeBoundAssertions(
+    OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
 ) const {
   auto lower = createIntConstant(builder, loc, range.getLHS());
   auto upper = createIntConstant(builder, loc, range.getRHS());
@@ -44,7 +44,7 @@ std::pair<mlir::Value, mlir::Value> SMTIntTheoryEmitter::getRangeBoundAssertions
 }
 
 void SMTIntTheoryEmitter::emitRangeConstraint(
-    mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value, const UnreducedInterval &range
+    OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
 ) const {
   auto [lowerBound, upperBound] = getRangeBoundAssertions(builder, loc, value, range);
   // Assert the lower bound of the canonical/unreduced interval for this symbol.
@@ -53,24 +53,20 @@ void SMTIntTheoryEmitter::emitRangeConstraint(
   builder.create<smt::AssertOp>(loc, upperBound);
 }
 
-mlir::Value SMTIntTheoryEmitter::emitFreshSymbol(
-    mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name
-) const {
+Value SMTIntTheoryEmitter::emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const {
   std::string freshName = getFreshName(name);
   return builder
       .create<smt::DeclareFunOp>(loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName))
       .getResult();
 }
 
-mlir::Value SMTIntTheoryEmitter::emitConstant(
-    mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
+Value SMTIntTheoryEmitter::emitConstant(
+    OpBuilder &builder, Location loc, const DynamicAPInt &value
 ) const {
   return createIntConstant(builder, loc, value).getResult();
 }
 
-mlir::Value SMTIntTheoryEmitter::emitSub(
-    mlir::OpBuilder &builder, mlir::Location loc, Value lhs, Value rhs
-) const {
+Value SMTIntTheoryEmitter::emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
   return builder.create<smt::IntSubOp>(loc, lhs, rhs).getResult();
 }
 
@@ -124,7 +120,7 @@ Value SMTIntTheoryEmitter::emitOrderedComparison(
 
 /// |value| = if value < 0 then -value else value
 Value SMTIntTheoryEmitter::emitAbsValue(OpBuilder &builder, Location loc, Value value) const {
-  Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
+  Value zero = emitConstant(builder, loc, DynamicAPInt(0));
   Value isNegative =
       emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
   Value negated = emitSub(builder, loc, zero, value);
@@ -136,7 +132,7 @@ Value SMTIntTheoryEmitter::emitAbsValue(OpBuilder &builder, Location loc, Value 
 Value SMTIntTheoryEmitter::emitTruncatingSignedDivision(
     OpBuilder &builder, Location loc, Value lhs, Value rhs
 ) const {
-  Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
+  Value zero = emitConstant(builder, loc, DynamicAPInt(0));
   Value lhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, lhs, zero);
   Value rhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, rhs, zero);
   Value lhsAbs = emitAbsValue(builder, loc, lhs);
@@ -166,7 +162,7 @@ SMTIntTheoryEmitter::createPrimeConstant(OpBuilder &builder, Location loc) const
 }
 
 smt::IntConstantOp SMTIntTheoryEmitter::createIntConstant(
-    OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value
+    OpBuilder &builder, Location loc, const DynamicAPInt &value
 ) const {
   return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, toAPSInt(value)));
 }
@@ -206,7 +202,7 @@ Value SMTIntTheoryEmitter::emitArraySelect(
   return array;
 }
 
-bool isFeltOrArrayOfFelt(mlir::Type type) {
+bool isFeltOrArrayOfFelt(Type type) {
   if (isa<felt::FeltType>(type)) {
     return true;
   }
@@ -216,7 +212,7 @@ bool isFeltOrArrayOfFelt(mlir::Type type) {
   return false;
 }
 
-llvm::FailureOr<llvm::SmallVector<size_t>> getExtents(array::ArrayType type) {
+FailureOr<SmallVector<size_t>> getExtents(array::ArrayType type) {
   SmallVector<size_t> extents;
   for (auto dim : type.getShape()) {
     if (dim < 0) {
@@ -227,9 +223,8 @@ llvm::FailureOr<llvm::SmallVector<size_t>> getExtents(array::ArrayType type) {
   return extents;
 }
 
-mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
-    Location loc, ArrayRef<size_t> extents, function_ref<mlir::Value(mlir::ValueRange)> body,
-    OpBuilder &builder
+Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
+    Location loc, ArrayRef<size_t> extents, function_ref<Value(ValueRange)> body, OpBuilder &builder
 ) {
   SmallVector<Type> forallTypes(extents.size(), smt::IntType::get(builder.getContext()));
   return builder
@@ -238,7 +233,7 @@ mlir::Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
           [this, &extents, &body](OpBuilder &b, Location l, ValueRange indices) -> Value {
     SmallVector<Value> antecedents;
     antecedents.reserve(2 * extents.size());
-    for (auto [index, extent] : llvm::zip(indices, extents)) {
+    for (auto [index, extent] : zip(indices, extents)) {
       auto [lo, hi] = getRangeBoundAssertions(
           b, l, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
       );
@@ -317,21 +312,21 @@ void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
   target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
   target.addLegalOp<component::CreateStructOp>();
   target.addDynamicallyLegalOp<function::ReturnOp>([](function::ReturnOp returnOp) {
-    return llvm::none_of(returnOp.getOperandTypes(), [](Type type) {
+    return none_of(returnOp.getOperandTypes(), [](Type type) {
       return isa<component::StructType>(type);
     });
   });
 
   target.addDynamicallyLegalOp<function::FuncDefOp>([](function::FuncDefOp funcOp) {
-    bool signatureLegal = llvm::none_of(funcOp.getArgumentTypes(), containsFeltOrStruct) &&
-                          llvm::none_of(funcOp.getResultTypes(), containsFeltOrStruct);
+    bool signatureLegal = none_of(funcOp.getArgumentTypes(), containsFeltOrStruct) &&
+                          none_of(funcOp.getResultTypes(), containsFeltOrStruct);
     return signatureLegal;
   });
   target.addDynamicallyLegalOp<scf::YieldOp>([](scf::YieldOp yieldOp) {
-    return llvm::none_of(yieldOp.getOperandTypes(), containsFeltOrStruct);
+    return none_of(yieldOp.getOperandTypes(), containsFeltOrStruct);
   });
   target.addDynamicallyLegalOp<scf::IfOp>([](scf::IfOp ifOp) {
-    return llvm::none_of(ifOp.getResultTypes(), containsFeltOrStruct);
+    return none_of(ifOp.getResultTypes(), containsFeltOrStruct);
   });
 }
 
@@ -360,13 +355,11 @@ applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatte
 LogicalResult FunctionDefConverter::matchAndRewrite(
     function::FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
-  SmallVector<Type> convertedArgTypes = llvm::map_to_vector(op.getArgumentTypes(), [this](Type t) {
+  SmallVector<Type> convertedArgTypes = map_to_vector(op.getArgumentTypes(), [this](Type t) {
     return getTypeConverter()->convertType(t);
   });
-  SmallVector<Type> convertedResultTypes = llvm::map_to_vector(
-      llvm::filter_to_vector(
-          op.getResultTypes(), [](Type t) { return !isa<component::StructType>(t); }
-      ),
+  SmallVector<Type> convertedResultTypes = map_to_vector(
+      filter_to_vector(op.getResultTypes(), [](Type t) { return !isa<component::StructType>(t); }),
       [this](Type t) { return getTypeConverter()->convertType(t); }
   );
 
@@ -429,7 +422,7 @@ LogicalResult ReturnConverter::matchAndRewrite(
     function::ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
   SmallVector<Value> returnedValues;
-  for (auto [val, type] : llvm::zip(adaptor.getOperands(), op.getOperandTypes())) {
+  for (auto [val, type] : zip(adaptor.getOperands(), op.getOperandTypes())) {
     if (!isa<component::StructType>(type)) {
       returnedValues.push_back(val);
     }
@@ -444,7 +437,7 @@ LogicalResult ReturnConverter::matchAndRewrite(
 LogicalResult SCFIfConverter::matchAndRewrite(
     scf::IfOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
-  SmallVector<Type> convertedResultTypes = llvm::map_to_vector(op.getResultTypes(), [this](Type t) {
+  SmallVector<Type> convertedResultTypes = map_to_vector(op.getResultTypes(), [this](Type t) {
     return getTypeConverter()->convertType(t);
   });
 
