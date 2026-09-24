@@ -227,10 +227,8 @@ Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
     Location loc, ArrayRef<size_t> extents, function_ref<Value(ValueRange)> body, OpBuilder &builder
 ) {
   SmallVector<Type> forallTypes(extents.size(), smt::IntType::get(builder.getContext()));
-  return builder
-      .create<smt::ForallOp>(
-          loc, forallTypes,
-          [this, &extents, &body](OpBuilder &b, Location l, ValueRange indices) -> Value {
+  auto elementInRange = [this, &extents,
+                         &body](OpBuilder &b, Location l, ValueRange indices) -> Value {
     SmallVector<Value> antecedents;
     antecedents.reserve(2 * extents.size());
     for (auto [index, extent] : zip(indices, extents)) {
@@ -244,9 +242,8 @@ Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
     Value antecedent = b.create<smt::AndOp>(l, antecedents).getResult();
     auto consequent = body(indices);
     return b.create<smt::ImpliesOp>(l, antecedent, consequent);
-  }
-      )
-      .getResult();
+  };
+  return builder.create<smt::ForallOp>(loc, forallTypes, elementInRange).getResult();
 }
 
 static inline Type smtArrayOfRank(MLIRContext *ctx, int64_t rank, Type elementType) {
