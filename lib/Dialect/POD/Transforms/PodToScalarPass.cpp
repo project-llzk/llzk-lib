@@ -2042,8 +2042,7 @@ static LogicalResult updateVirtualPodRecordLeafValues(
   SmallVector<StringAttr> prefix {recordName};
 
   auto snapshot = [&](Value value) -> FailureOr<Value> {
-    if (!llvm::isa<PodType, ArrayType>(value.getType()) ||
-        !llzk::canMaterializeValueCopy(value.getType())) {
+    if (!llvm::isa<PodType, ArrayType>(value.getType())) {
       return value;
     }
     return llzk::materializeValueCopy(rewriter, loc, value);

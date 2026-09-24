@@ -33,8 +33,9 @@ public:
 
   bool canMaterializeValueCopy(mlir::Type type) const final {
     auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type);
-    return arrayType && arrayType.hasStaticShape() &&
-           llzk::canMaterializeValueCopy(arrayType.getElementType());
+    return arrayType && (llvm::isa<mlir::NoneType>(arrayType.getElementType()) ||
+                         (arrayType.hasStaticShape() &&
+                          llzk::canMaterializeValueCopy(arrayType.getElementType())));
   }
 
   mlir::FailureOr<mlir::Value> materializeValueCopy(
@@ -43,6 +44,13 @@ public:
     auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(source.getType());
     if (!arrayType || !canMaterializeValueCopy(arrayType)) {
       return mlir::failure();
+    }
+
+    // Shape-only arrays have no element payload that can be independently mutated. Their shape is
+    // fixed by the value, so reusing the SSA value preserves copy semantics even for dynamic or
+    // symbolic shapes.
+    if (llvm::isa<mlir::NoneType>(arrayType.getElementType())) {
+      return source;
     }
 
     auto destination = builder.create<llzk::array::CreateArrayOp>(loc, arrayType);

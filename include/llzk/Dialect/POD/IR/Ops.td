@@ -197,7 +197,10 @@ def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
     value copy, not a pointer or alias to the record's storage. Returns one value of
     the type of the record. For an identity-bearing `struct.type` record, the copied
     value is a handle to the same component instance; it does not duplicate the
-    component's members, signals, or tables.
+    component's members, signals, or tables. Immutable scalars and shape-only arrays
+    may likewise reuse their SSA representation because they have no independently
+    mutable payload. Lowering must reject a mutable aggregate when it cannot
+    materialize independent storage for the copy.
 
     The name of the record must be a valid record name for the pod type and the result
     type must match the type of the record.
@@ -225,7 +228,10 @@ def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
     or alias between the source value and the record's storage. For an identity-bearing
     `struct.type` source, the stored value is a handle to the same component instance;
     it does not duplicate the component's members, signals, or tables. This operation
-    has no result values.
+    has no result values. Immutable scalars and shape-only arrays may reuse their SSA
+    representation because they have no independently mutable payload. Lowering must
+    reject a mutable aggregate when it cannot materialize independent storage for the
+    copy.
 
     The name of the record must be a valid record name for the pod type and the source
     value type must match the type of the record.

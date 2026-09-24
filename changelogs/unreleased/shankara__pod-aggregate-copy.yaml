@@ -1,2 +1,2 @@
 fixed:
-  - Preserve value-copy semantics when scalarizing POD records containing nested PODs or statically shaped arrays, including across SCF lifting and virtual POD storage, while treating struct values as identity-bearing handles that continue to reference the same component.
+  - Preserve value-copy semantics when scalarizing POD records containing nested PODs or statically shaped arrays, including across SCF lifting and virtual POD storage; reject unsupported mutable copies, reuse payload-free shape arrays, and treat struct values as identity-bearing handles that continue to reference the same component.
