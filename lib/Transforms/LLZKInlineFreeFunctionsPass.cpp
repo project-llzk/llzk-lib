@@ -15,14 +15,19 @@
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
+#include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SCCIterator.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
@@ -39,11 +44,117 @@ using namespace llzk::function;
 
 namespace {
 
-/// An inlinable free function is a direct child of the module on which the
-/// pass runs. Nested and included modules define separate symbol scopes, so
-/// their functions are left for a pass running on those modules.
-static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root) {
-  return func->getParentOp() == root;
+/// Walk symbol references in `type`, treating StructType names as root-resolved
+/// and every other reference as unsupported for cross-symbol-table inlining.
+static void walkTypeSymbolRefs(
+    Type type, function_ref<void(SymbolRefAttr)> rootRef,
+    function_ref<void(SymbolRefAttr)> unsupportedRef
+);
+
+/// Walk symbol references in `attr`, applying the type-specific rules above to
+/// TypeAttr values.
+static void walkAttrSymbolRefs(
+    Attribute attr, function_ref<void(SymbolRefAttr)> rootRef,
+    function_ref<void(SymbolRefAttr)> unsupportedRef
+) {
+  attr.walk<WalkOrder::PreOrder>([rootRef, unsupportedRef](TypeAttr typeAttr) {
+    walkTypeSymbolRefs(typeAttr.getValue(), rootRef, unsupportedRef);
+    return WalkResult::skip();
+  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });
+}
+
+static void walkTypeSymbolRefs(
+    Type type, function_ref<void(SymbolRefAttr)> rootRef,
+    function_ref<void(SymbolRefAttr)> unsupportedRef
+) {
+  type.walk<WalkOrder::PreOrder>([rootRef, unsupportedRef](component::StructType structType) {
+    rootRef(structType.getNameRef());
+    if (ArrayAttr params = structType.getParams()) {
+      walkAttrSymbolRefs(params, rootRef, unsupportedRef);
+    }
+    return WalkResult::skip();
+  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });
+}
+
+/// Return whether `func` can be inlined into the root module without changing
+/// the meaning of references in its body.
+static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCollection &tables) {
+  Operation *parent = func->getParentOp();
+  if (parent == root) {
+    // A normal MLIR call uses nearest-symbol lookup after cloning, so a struct
+    // method can capture a callee that originally resolved at the root. Keep
+    // such helpers in place until general symbol rebasing is implemented.
+    bool hasFuncCall = false;
+    func.walk([&hasFuncCall](func::CallOp) { hasFuncCall = true; });
+    return !hasFuncCall;
+  }
+
+  // Struct methods are handled by the struct inliner, not this pass. Also
+  // reject functions that are not owned by this module, such as definitions
+  // resolved through include.from.
+  if (!llvm::isa<ModuleOp, polymorphic::TemplateOp>(parent) ||
+      !root->isAncestor(func.getOperation())) {
+    return false;
+  }
+
+  // TODO: This is a temporary allowance for a common frontend pattern: a
+  // helper nested in a namespace-like template or module whose symbol
+  // references can all be resolved from the root module. General
+  // cross-symbol-table inlining must rebase symbol references in the cloned
+  // body so that they continue to resolve to the same definitions.
+  bool hasUnsupportedSymbolRef = false;
+  func.walk([&tables, &hasUnsupportedSymbolRef, root](Operation *op) {
+    auto detectUnsupportedSymbolRef = [&hasUnsupportedSymbolRef](SymbolRefAttr) {
+      hasUnsupportedSymbolRef = true;
+    };
+    auto detectMissingRootSymbolRef = [&tables, &hasUnsupportedSymbolRef, root](SymbolRefAttr ref) {
+      if (!tables.lookupSymbolIn(root, ref)) {
+        hasUnsupportedSymbolRef = true;
+      }
+    };
+    walkAttrSymbolRefs(
+        op->getDiscardableAttrDictionary(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef
+    );
+    if (Attribute properties = op->getPropertiesAsAttribute()) {
+      for (NamedAttribute property : llvm::cast<DictionaryAttr>(properties)) {
+        StringAttr name = property.getName();
+        // Member names resolve through the component's StructType, not the
+        // surrounding symbol table. The StructType itself is scanned below.
+        if (auto memberRef = llvm::dyn_cast<component::MemberRefOpInterface>(op)) {
+          if (name == memberRef.getMemberNameAttrName()) {
+            continue;
+          }
+        }
+        // LLZK calls and global references intentionally resolve these
+        // properties from the root module. Other properties, including
+        // template parameters, retain their ordinary scope-sensitive checks.
+        bool usesRootLookup = false;
+        if (auto call = llvm::dyn_cast<CallOp>(op)) {
+          usesRootLookup = name == call.getCalleeAttrName();
+        } else if (auto globalRef = llvm::dyn_cast<global::GlobalRefOpInterface>(op)) {
+          usesRootLookup = name == globalRef.getNameRefAttrName();
+        }
+        if (usesRootLookup) {
+          property.getValue().walk(detectMissingRootSymbolRef);
+        } else {
+          walkAttrSymbolRefs(
+              property.getValue(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef
+          );
+        }
+      }
+    }
+    for (Type type : llvm::concat<Type>(op->getOperandTypes(), op->getResultTypes())) {
+      walkTypeSymbolRefs(type, detectMissingRootSymbolRef, detectUnsupportedSymbolRef);
+    }
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region) {
+        for (BlockArgument arg : block.getArguments()) {
+          walkTypeSymbolRefs(arg.getType(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef);
+        }
+      }
+    }
+  });
+  return !hasUnsupportedSymbolRef;
 }
 
 /// Only inline calls inside `function.def` bodies in the root module's symbol
@@ -83,7 +194,7 @@ static FuncDefOp resolveFreeCallee(
     return nullptr;
   }
   FuncDefOp callee = tgtRes->get();
-  if (!isInlinableFreeFunction(callee, root) || callee.isExternal() ||
+  if (!isInlinableFreeFunction(callee, root, tables) || callee.isExternal() ||
       skippedCallees.contains(callee)) {
     return nullptr;
   }
