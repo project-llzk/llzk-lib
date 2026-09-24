@@ -103,6 +103,12 @@ public:
 /// arithmetic fragments. Higher-level non-native encoding structure lives above
 /// this emitter.
 class SMTIntTheoryEmitter : public NonNativeTheoryEmitter {
+private:
+  mlir::MLIRContext *ctx;
+  llvm::APSInt prime;
+  // `freshSymbolCounts` is a map to improve readability. We could just have a counter.
+  mutable llvm::StringMap<unsigned> freshSymbolCounts;
+
 public:
   SMTIntTheoryEmitter(mlir::MLIRContext *context, const llvm::APSInt &smtPrime)
       : ctx(context), prime(smtPrime) {}
@@ -180,11 +186,6 @@ private:
   mlir::Value emitTruncatingSignedDivision(
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
   ) const;
-
-  mlir::MLIRContext *ctx;
-  llvm::APSInt prime;
-  // `freshSymbolCounts` is a map to improve readability. We could just have a counter.
-  mutable llvm::StringMap<unsigned> freshSymbolCounts;
 
   std::string getFreshName(mlir::StringRef baseName) const;
 
