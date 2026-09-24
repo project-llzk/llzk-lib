@@ -272,9 +272,6 @@ LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
     return smt::IntType::get(ctx);
   });
   addConversion([ctx](felt::FeltType) { return smt::IntType::get(ctx); });
-  addConversion([this, ctx](array::ArrayType arrType) {
-    return smt::ArrayType::get(ctx, smt::IntType::get(ctx), convertType(arrType.getElementType()));
-  });
 }
 
 bool containsFeltOrStruct(Type type) {
@@ -505,8 +502,12 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
   if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
     Value selected =
         emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+    // I don't think interval analysis does much interesting with arrays so I don't think we can do
+    // better than this?
+    auto reducedSelected = emitter->emitModPrime(rewriter, op->getLoc(), selected);
+    auto reducedRval = emitter->emitModPrime(rewriter, op->getLoc(), adaptor.getRvalue());
     rewriter.replaceOpWithNewOp<smt::AssertOp>(
-        op, rewriter.create<smt::EqOp>(op->getLoc(), selected, adaptor.getRvalue()).getResult()
+        op, rewriter.create<smt::EqOp>(op->getLoc(), reducedSelected, reducedRval).getResult()
     );
     return success();
 

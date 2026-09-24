@@ -28,10 +28,8 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    func.func @smt_Sum(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.array<[!smt.int -> !smt.int]>) {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[VAL_0]] : !smt.array<[!smt.int -> !smt.int]> to !array.type<8 x !felt.type>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_c" : !smt.array<[!smt.int -> !smt.int]>
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[VAL_2]] : !smt.array<[!smt.int -> !smt.int]> to !array.type<8 x !felt.type>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_w" : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_c" : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_w" : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.forall {
 // CHECK-NEXT:      ^bb0(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !smt.int):
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
@@ -39,7 +37,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_6]], %[[VAL_7]]
 // CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_6]], %[[VAL_8]]
 // CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_9]], %[[VAL_10]]
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_2]]{{\[}}%[[VAL_6]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_1]]{{\[}}%[[VAL_6]]] : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
 // CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
 // CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_12]], %[[VAL_13]]
@@ -56,7 +54,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_20]], %[[VAL_21]]
 // CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_20]], %[[VAL_22]]
 // CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_23]], %[[VAL_24]]
-// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_4]]{{\[}}%[[VAL_20]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_2]]{{\[}}%[[VAL_20]]] : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
 // CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
 // CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_26]], %[[VAL_27]]
@@ -73,22 +71,24 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_34]], %[[VAL_35]]
 // CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_34]], %[[VAL_36]]
 // CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_37]], %[[VAL_38]]
-// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_4]]{{\[}}%[[VAL_34]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_2]]{{\[}}%[[VAL_34]]] : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_0]]{{\[}}%[[VAL_34]]] : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_40]], %[[VAL_41]] : !smt.int
 // CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = smt.implies %[[VAL_39]], %[[VAL_42]]
 // CHECK-NEXT:        smt.yield %[[VAL_43]] : !smt.bool
 // CHECK-NEXT:      }
 // CHECK-NEXT:      smt.assert %[[VAL_33]]
-// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[I0:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[I0]] : !smt.int to index
+// CHECK-NEXT:      %[[I1:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
+// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[I1]] : !smt.int to index
+// CHECK-NEXT:      %[[I8:[0-9a-zA-Z_\.]+]] = smt.int.constant 8
+// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[I8]] : !smt.int to index
 // CHECK-NEXT:      scf.for %[[VAL_47:[0-9a-zA-Z_\.]+]] = %[[VAL_44]] to %[[VAL_46]] step %[[VAL_45]] {
-// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_47]]] : <8 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[VAL_48]] : !felt.type to !smt.int
-// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_47]]] : <8 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[VAL_50]] : !felt.type to !smt.int
-// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_49]], %[[VAL_51]] : !smt.int
+// CHECK-NEXT:        %[[IDX:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[VAL_47]] : index to !smt.int
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_0]]{{\[}}%[[IDX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_1]]{{\[}}%[[IDX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_48]], %[[VAL_50]] : !smt.int
 // CHECK-NEXT:        smt.assert %[[VAL_52]]
 // CHECK-NEXT:      }
 // CHECK-NEXT:      return
