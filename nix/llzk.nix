@@ -39,10 +39,8 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ cmake ninja ];
   buildInputs = [
     clang.dev mlir_pkg z3.lib 
-  ] ++ lib.optionals mlir_pkg.hasPythonBindings [
-    mlir_pkg.python
-    mlir_pkg.pythonDeps
-  ];
+  ] ++ lib.optionals mlir_pkg.hasPythonBindings [ mlir_pkg.python ]
+    ++ lib.optionals mlir_pkg.hasPythonBindings mlir_pkg.pythonDeps;
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"
