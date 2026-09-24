@@ -117,17 +117,23 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
     );
     if (Attribute properties = op->getPropertiesAsAttribute()) {
       for (NamedAttribute property : llvm::cast<DictionaryAttr>(properties)) {
-        StringRef name = property.getName().getValue();
+        StringAttr name = property.getName();
         // Member names resolve through the component's StructType, not the
         // surrounding symbol table. The StructType itself is scanned below.
-        if (llvm::isa<component::MemberRefOpInterface>(op) && name == "member_name") {
-          continue;
+        if (auto memberRef = llvm::dyn_cast<component::MemberRefOpInterface>(op)) {
+          if (name == memberRef.getMemberNameAttrName()) {
+            continue;
+          }
         }
         // LLZK calls and global references intentionally resolve these
         // properties from the root module. Other properties, including
         // template parameters, retain their ordinary scope-sensitive checks.
-        bool usesRootLookup = (llvm::isa<CallOp>(op) && name == "callee") ||
-                              (llvm::isa<global::GlobalRefOpInterface>(op) && name == "name_ref");
+        bool usesRootLookup = false;
+        if (auto call = llvm::dyn_cast<CallOp>(op)) {
+          usesRootLookup = name == call.getCalleeAttrName();
+        } else if (auto globalRef = llvm::dyn_cast<global::GlobalRefOpInterface>(op)) {
+          usesRootLookup = name == globalRef.getNameRefAttrName();
+        }
         if (usesRootLookup) {
           property.getValue().walk(detectMissingRootSymbolRef);
         } else {

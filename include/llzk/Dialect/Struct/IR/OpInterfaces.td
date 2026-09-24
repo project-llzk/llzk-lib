@@ -33,6 +33,10 @@ def MemberRefOpInterface : OpInterface<"MemberRefOpInterface"> {
           "::mlir::OpOperand &", "getComponentMutable", (ins)>,
       // Requires implementors to have a '$member_name' argument.
       InterfaceMethod<
+          [{Gets the name of the member name attribute on the MemberRefOp.}],
+          "::mlir::StringAttr", "getMemberNameAttrName", (ins),
+          /*methodBody=*/[{ return $_op.getMemberNameAttrName(); }]>,
+      InterfaceMethod<
           [{Gets the member name attribute value from the MemberRefOp.}],
           "::llvm::StringRef", "getMemberName", (ins)>,
       InterfaceMethod<[{Gets the member name attribute from the MemberRefOp.}],
