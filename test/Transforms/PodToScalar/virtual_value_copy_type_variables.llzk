@@ -1,0 +1,50 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+// An unresolved type variable may later become mutable storage. Virtual POD accesses must
+// enforce the same checked copy policy as local allocations.
+!Record = !pod.type<[@value: !poly.tvar<@T>]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    // expected-note@+1 {{cannot promote POD record 'value': unsupported value-copy type '!poly.tvar<@T>'}}
+    function.def @direct_reads(%pod: !Record) -> (!poly.tvar<@T>, !poly.tvar<@T>) {
+      %first = pod.read %pod[@value] : !Record, !poly.tvar<@T>
+      %second = pod.read %pod[@value] : !Record, !poly.tvar<@T>
+      function.return %first, %second : !poly.tvar<@T>, !poly.tvar<@T>
+    }
+  }
+}
+
+// -----
+
+!Record = !pod.type<[@value: !poly.tvar<@T>]>
+!Outer = !pod.type<[@inner: !Record]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    // expected-note@+2 {{cannot promote POD record 'inner': POD record 'value': unsupported value-copy type '!poly.tvar<@T>'}}
+    // expected-note@+1 {{cannot promote POD record 'value': unsupported value-copy type '!poly.tvar<@T>'}}
+    function.def @nested_read(%pod: !Outer) -> !Record {
+      %inner = pod.read %pod[@inner] : !Outer, !Record
+      function.return %inner : !Record
+    }
+  }
+}
+
+// -----
+
+!Record = !pod.type<[@value: !poly.tvar<@T>]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    // expected-note@+1 {{cannot promote POD record 'value': unsupported value-copy type '!poly.tvar<@T>'}}
+    function.def @virtual_write(%pod: !Record, %value: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      pod.write %pod[@value] = %value : !Record, !poly.tvar<@T>
+      %result = pod.read %pod[@value] : !Record, !poly.tvar<@T>
+      function.return %result : !poly.tvar<@T>
+    }
+  }
+}

@@ -1984,12 +1984,53 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
     return false;
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
-  if (llvm::isa<ArrayType>(recType) && !llzk::canMaterializeValueCopy(recType)) {
+  if (auto nestedPodTy = llvm::dyn_cast<PodType>(recType)) {
+    SmallVector<StringAttr> recordChain {op.getRecordNameAttr()};
+    bool supported = true;
+    forEachPodLeaf(nestedPodTy, recordChain, [leafValues, &supported](const RecordChain &id, Type) {
+      Value leaf = leafValues->at(id);
+      supported &= llzk::canMaterializeValueCopy(leaf.getType()) ||
+                   !getTaggedRaggedNestedLeafKind(leaf).empty();
+    });
+    return supported;
+  }
+  if (llzk::requiresValueCopy(recType) && !llzk::canMaterializeValueCopy(recType)) {
     SmallVector<StringAttr> prefix {op.getRecordNameAttr()};
     auto stored = leafValues->find(RecordChain(prefix));
     return stored != leafValues->end() && !getTaggedRaggedNestedLeafKind(stored->second).empty();
   }
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
+}
+
+/// Return whether a virtual write can snapshot every leaf before updating its tracked storage.
+/// Keep unsupported accesses materialized instead of making conversion attempt an uncopyable
+/// rewrite and roll back the surrounding function-signature conversion.
+static bool canResolveVirtualPodWrite(WritePodOp op, const VirtualPodValueMap &virtualPods) {
+  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
+      isInsideSupportedScfRegion(op.getOperation())) {
+    return false;
+  }
+  Type recordType =
+      llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+  if (auto nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {
+    const VirtualPodLeafMap *sourceLeaves = lookupVirtualPodLeafMap(op.getValue(), virtualPods);
+    SmallVector<StringAttr> recordChain;
+    bool supported = true;
+    forEachPodLeaf(
+        nestedPodTy, recordChain, [sourceLeaves, &supported](const RecordChain &id, Type leafType) {
+      Type copyType = sourceLeaves ? sourceLeaves->at(id).getType() : leafType;
+      supported &= llzk::canMaterializeValueCopy(copyType);
+    }
+    );
+    return supported;
+  }
+  if (ArrayType arrTy = splittablePodArray(recordType)) {
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
+    return llvm::all_of(splitTypes, [](Type type) { return llzk::canMaterializeValueCopy(type); });
+  }
+  return llzk::canMaterializeValueCopy(recordType);
 }
 
 /// Return `true` iff step 2 should defer splitting this array read until POD-aware rewriting.
@@ -2069,7 +2110,7 @@ static LogicalResult updateVirtualPodRecordLeafValues(
   SmallVector<StringAttr> prefix {recordName};
 
   auto snapshot = [&rewriter, loc](Value value) -> FailureOr<Value> {
-    if (!llvm::isa<PodType, ArrayType>(value.getType())) {
+    if (!llzk::requiresValueCopy(value.getType())) {
       return value;
     }
     return llzk::materializeValueCopy(rewriter, loc, value);
@@ -5006,17 +5047,20 @@ public:
       SmallVector<StringAttr> nestedRecordChain;
       bool failedToCopy = false;
       rewriter.setInsertionPoint(op);
-      forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
+      forEachPodLeaf(
+          nestedPodTy, nestedRecordChain,
+          [leafValues, &prefix, &failedToCopy, &rewriter, loc = op.getLoc(),
+           &nestedLeafValues](const RecordChain &id, Type) {
         Value leaf = leafValues->at(id.withPrefix(prefix));
         FailureOr<Value> copied = leaf;
-        if (llvm::isa<PodType, ArrayType>(leaf.getType())) {
+        if (llzk::requiresValueCopy(leaf.getType())) {
           if (!llzk::canMaterializeValueCopy(leaf.getType())) {
             if (getTaggedRaggedNestedLeafKind(leaf).empty()) {
               failedToCopy = true;
               return;
             }
           } else {
-            copied = llzk::materializeValueCopy(rewriter, op.getLoc(), leaf);
+            copied = llzk::materializeValueCopy(rewriter, loc, leaf);
           }
         }
         if (failed(copied)) {
@@ -5024,7 +5068,8 @@ public:
           return;
         }
         nestedLeafValues[id] = *copied;
-      });
+      }
+      );
       if (failedToCopy) {
         return failure();
       }
@@ -5044,7 +5089,7 @@ public:
         rewriter, op.getLoc(), leafValues->at(RecordChain(prefix)), recordType
     );
     FailureOr<Value> copied = stored;
-    if (llvm::isa<PodType, ArrayType>(recordType)) {
+    if (llzk::requiresValueCopy(recordType)) {
       if (!llzk::canMaterializeValueCopy(recordType)) {
         if (getTaggedRaggedNestedLeafKind(stored).empty()) {
           return failure();
@@ -5420,8 +5465,7 @@ void Step3Resolver::addPostConversionPatterns(RewritePatternSet &patterns) {
 
 void Step3Resolver::configureLateVirtualPodLegality(ConversionTarget &target) const {
   target.addDynamicallyLegalOp<WritePodOp>([this](WritePodOp op) {
-    return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
-           isInsideSupportedScfRegion(op.getOperation());
+    return !canResolveVirtualPodWrite(op, virtualPods);
   });
   target.addDynamicallyLegalOp<ArrayLengthOp>([](ArrayLengthOp op) {
     return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
@@ -5442,8 +5486,7 @@ bool Step3Resolver::hasResolvableLateVirtualPodOps(ModuleOp modOp) const {
   return walkContains<Operation *>(*modOp, [this](Operation *op) {
     return TypeSwitch<Operation *, bool>(op)
         .Case<WritePodOp>([this](auto writeOp) {
-      return lookupVirtualPodLeafMap(writeOp.getPodRef(), virtualPods) &&
-             !isInsideSupportedScfRegion(writeOp.getOperation());
+      return canResolveVirtualPodWrite(writeOp, virtualPods);
     })
         .Case<ReadPodOp>([this](auto readOp) {
       return canResolveVirtualPodRead(readOp, virtualPods);
