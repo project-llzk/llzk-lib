@@ -52,33 +52,45 @@ public:
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value,
       const UnreducedInterval &range
   ) const = 0;
+
   virtual void emitRangeConstraint(
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value,
       const UnreducedInterval &range
   ) const = 0;
+
   virtual mlir::Value
   emitFreshSymbol(mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name) const = 0;
+
   virtual mlir::Value emitConstant(
       mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
   ) const = 0;
+
   virtual mlir::Value
   emitSub(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
   virtual mlir::Value
   emitAdd(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
   virtual mlir::Value
   emitMul(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
   virtual mlir::Value
   emitDiv(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
   virtual mlir::Value emitSignedDiv(
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
   ) const = 0;
+
   virtual mlir::Value emitSignedRem(
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
   ) const = 0;
+
   virtual mlir::Value
   emitModPrime(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value) const = 0;
+
   virtual mlir::Value
   emitPrimeMultiple(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value factor) const = 0;
+
   virtual mlir::Value emitOrderedComparison(
       mlir::OpBuilder &builder, mlir::Location loc, boolean::FeltCmpPredicate predicate,
       mlir::Value lhs, mlir::Value rhs
