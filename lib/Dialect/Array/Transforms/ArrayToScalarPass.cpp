@@ -1123,7 +1123,7 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
     // straight-line functions, and the targeted allocation cleanup above has already removed the
     // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
     // dead function arguments/results or loop iteration values that canonicalization cannot remove.
-    nestedPM.addPass(mlir::createCanonicalizerPass());
+    nestedPM.addPass(createCanonicalizerPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;

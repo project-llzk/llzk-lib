@@ -40,11 +40,26 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @many_straight_line_slots
-// CHECK-NOT: array.
-// CHECK: arith.addi
-// CHECK-NOT: array.
-// CHECK: function.return
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @many_straight_line_slots(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]], %[[VAL_5]] : index
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_7]] : index
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_16]], %[[VAL_17]] : index
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_18]], %[[VAL_19]] : index
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_20]], %[[VAL_21]] : index
+// CHECK-NEXT:      function.return %[[VAL_22]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -61,9 +76,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @nested_execute_region
-// CHECK-NOT: array.
-// CHECK: scf.yield
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_execute_region(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.execute_region -> index {
+// CHECK-NEXT:        scf.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -80,9 +101,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @inside_loop_body
-// CHECK-NOT: array.
-// CHECK: scf.for
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @inside_loop_body(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_0]] step %[[VAL_3]] {
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -98,11 +125,17 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @reject_access_through_if
-// CHECK: array.new
-// CHECK: scf.if
-// CHECK: array.write
-// CHECK: array.read
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @reject_access_through_if(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
+// CHECK-NEXT:      scf.if %[[VAL_0]] {
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_2]]] : <1 x index>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -128,10 +161,26 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @reject_execute_region_backedge
-// CHECK: array.new
-// CHECK: array.read
-// CHECK: array.write
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def @reject_execute_region_backedge(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
+// CHECK-NEXT:      scf.execute_region {
+// CHECK-NEXT:        cf.br ^bb1
+// CHECK-NEXT:      ^bb1:
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_1]]] : <1 x index>, index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]], %[[VAL_2]] : index
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_1]]] = %[[VAL_5]] : <1 x index>, index
+// CHECK-NEXT:        function.call @use_index(%[[VAL_4]]) : (index) -> ()
+// CHECK-NEXT:        cf.cond_br %[[VAL_0]], ^bb1, ^bb2
+// CHECK-NEXT:      ^bb2:
+// CHECK-NEXT:        scf.yield
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -148,11 +197,18 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @reject_access_through_loop
-// CHECK: array.new
-// CHECK: scf.for
-// CHECK: array.write
-// CHECK: array.read
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @reject_access_through_loop(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
+// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_0]] step %[[VAL_3]] {
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_2]]] : <1 x index>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -172,9 +228,18 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @reject_different_access_blocks
-// CHECK: array.new
-// CHECK: scf.execute_region
-// CHECK: array.write
-// CHECK: scf.execute_region
-// CHECK: array.read
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @reject_different_access_blocks(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
+// CHECK-NEXT:      scf.execute_region {
+// CHECK-NEXT:        array.write %[[VAL_2]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <1 x index>, index
+// CHECK-NEXT:        scf.yield
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.execute_region -> index {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_1]]] : <1 x index>, index
+// CHECK-NEXT:        scf.yield %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
