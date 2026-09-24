@@ -6216,7 +6216,7 @@ public:
       return failure();
     }
 
-    llvm::erase_if(slots, [&](const IfWriteSlot &slot) {
+    llvm::erase_if(slots, [ifOp, &thenBlock, elseBlock](const IfWriteSlot &slot) {
       return isValueDefinedInside(ifOp, slot.podRef) ||
              (llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type)) ||
              !branchSlotCanBeLifted(&thenBlock, slot.podRef, slot.recordName) ||

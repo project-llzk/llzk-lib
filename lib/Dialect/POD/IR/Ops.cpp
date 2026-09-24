@@ -245,6 +245,17 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
       return materializeValueCopyBefore(*this, record.value, builder);
     }
   }
+  // Keep nested defaults visible to the allocation-based scalarization fixpoint. Each promoted
+  // read snapshots this storage independently, so mutating one read cannot affect another.
+  if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
+    OpBuilder::InsertionGuard guard(builder);
+    builder.setInsertionPoint(*this);
+    SmallVector<ValueRange> mapOperands;
+    for (OperandRange group : getMapOperands()) {
+      mapOperands.push_back(group);
+    }
+    return builder.create<NewPodOp>(getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
+  }
   return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
 }
 
