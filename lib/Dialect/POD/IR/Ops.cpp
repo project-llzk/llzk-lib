@@ -272,14 +272,12 @@ std::optional<PromotableAllocationOpInterface> NewPodOp::handlePromotionComplete
   return std::nullopt;
 }
 
-namespace {
-
-static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
+void collectPodMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
   // clang-format off
   llvm::TypeSwitch<Type, void>(type)
     .Case([&mapAttrs](PodType t) {
       for (auto record : t.getRecords()) {
-        collectMapAttrs(record.getType(), mapAttrs);
+        collectPodMapAttrs(record.getType(), mapAttrs);
       }
     })
     .Case([&mapAttrs](array::ArrayType t) {
@@ -300,6 +298,8 @@ static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
     }).Default([](Type) {});
   // clang-format on
 }
+
+namespace {
 
 /// Verifies the initialization values.
 ///
@@ -354,7 +354,7 @@ static LogicalResult verifyInitialValues(
 
 static LogicalResult verifyAffineMapOperands(NewPodOp *op, Type retTy) {
   SmallVector<AffineMapAttr> mapAttrs;
-  collectMapAttrs(retTy, mapAttrs);
+  collectPodMapAttrs(retTy, mapAttrs);
   return affineMapHelpers::verifyAffineMapInstantiations(
       op->getMapOperands(), op->getNumDimsPerMap(), mapAttrs, *op
   );

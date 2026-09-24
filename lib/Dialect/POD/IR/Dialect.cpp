@@ -38,7 +38,17 @@ public:
 
   bool canMaterializeValueCopy(mlir::Type type) const final {
     auto podType = llvm::dyn_cast<llzk::pod::PodType>(type);
-    return podType && llvm::all_of(podType.getRecords(), [](llzk::pod::RecordAttr record) {
+    if (!podType) {
+      return false;
+    }
+    // Copy eligibility is type-based and must also hold for block arguments and read results.
+    // Until copies can recover their instantiation groups, do not synthesize invalid pod.new ops.
+    mlir::SmallVector<mlir::AffineMapAttr> maps;
+    llzk::pod::collectPodMapAttrs(podType, maps);
+    if (!maps.empty()) {
+      return false;
+    }
+    return llvm::all_of(podType.getRecords(), [](llzk::pod::RecordAttr record) {
       return llzk::canMaterializeValueCopy(record.getType());
     });
   }
