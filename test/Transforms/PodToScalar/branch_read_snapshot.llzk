@@ -1,0 +1,36 @@
+// RUN: llzk-opt -llzk-pod-to-scalar -llzk-array-to-scalar %s | FileCheck %s
+
+!Values = !array.type<1 x index>
+!Box = !pod.type<[@values: !Values]>
+module attributes {llzk.lang} {
+  // The branch must observe the write-time snapshot, before the source mutation.
+  function.def @branch_read_snapshot(%condition: i1) -> index {
+    %zero = arith.constant 0 : index
+    %initial = arith.constant 7 : index
+    %changed = arith.constant 9 : index
+    %values = array.new %initial : !Values
+    %box = pod.new : !Box
+    pod.write %box[@values] = %values : !Box, !Values
+    array.write %values[%zero] = %changed : !Values, index
+    %result = scf.if %condition -> (index) {
+      %snapshot = pod.read %box[@values] : !Box, !Values
+      %value = array.read %snapshot[%zero] : !Values, index
+      scf.yield %value : index
+    } else {
+      scf.yield %initial : index
+    }
+    function.return %result : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @branch_read_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (index) {
+// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

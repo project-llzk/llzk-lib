@@ -54,6 +54,13 @@
 ///
 /// Steps 5-7 are rerun while nested POD types are still being exposed, until a fixpoint.
 ///
+/// Copy boundaries: POD writes snapshot mutable inputs at the write, and POD reads snapshot stored
+/// mutable values at the read. The shared ValueCopy interface owns type classification, including
+/// immutable values and aliased struct handles. Promotion owns copies for materialized POD storage;
+/// virtual storage and control-flow lifting invoke the same interface at the original access point.
+/// Forwarding is restricted to values that do not require copies. Unsupported payload copies must
+/// be rejected rather than bypassed by projections or internal decomposition tags.
+///
 /// Note: This transformation imposes a "last write wins" semantics on pod records. If
 /// different/configurable semantics are added in the future, some additional transformation would
 /// be necessary before/during this pass so that multiple writes to the same record can be handled
@@ -1405,14 +1412,6 @@ static bool tryCollectDirectConvertedPodArrayValues(
     );
   }
 
-  if (ReadPodOp readOp = arrayValue.getDefiningOp<ReadPodOp>()) {
-    if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
-      return tryCollectDirectConvertedPodArrayValues(
-          writeOp.getValue(), arrTy, convertedTypes, convertedValues
-      );
-    }
-  }
-
   return false;
 }
 
@@ -1989,15 +1988,12 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
     bool supported = true;
     forEachPodLeaf(nestedPodTy, recordChain, [leafValues, &supported](const RecordChain &id, Type) {
       Value leaf = leafValues->at(id);
-      supported &= llzk::canMaterializeValueCopy(leaf.getType()) ||
-                   !getTaggedRaggedNestedLeafKind(leaf).empty();
+      supported &= llzk::canMaterializeValueCopy(leaf.getType());
     });
     return supported;
   }
   if (llzk::requiresValueCopy(recType) && !llzk::canMaterializeValueCopy(recType)) {
-    SmallVector<StringAttr> prefix {op.getRecordNameAttr()};
-    auto stored = leafValues->find(RecordChain(prefix));
-    return stored != leafValues->end() && !getTaggedRaggedNestedLeafKind(stored->second).empty();
+    return false;
   }
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
 }
@@ -2053,12 +2049,51 @@ static ReadPodOp getReadPodBacking(Value value) {
   return peelUnifiableCasts(cast.getOperand(0)).getDefiningOp<ReadPodOp>();
 }
 
+/// Give mutated fresh reads independent concrete storage before array dialect conversion.
+/// Replacing all uses of a read preserves one snapshot per read, including readback after mutation.
+static void materializeFreshPodArrayMutationSnapshots(ModuleOp module) {
+  SmallVector<ReadPodOp> reads;
+  module.walk([&reads](ReadPodOp read) {
+    if (!splittablePodArray(read.getType()) || !isFreshUnwrittenPodRead(read)) {
+      return;
+    }
+    if (llvm::any_of(read->getUsers(), [](Operation *user) {
+      return isa<WriteArrayOp, InsertArrayOp>(user);
+    })) {
+      reads.push_back(read);
+    }
+  });
+  for (ReadPodOp read : reads) {
+    OpBuilder builder(read);
+    std::optional<Value> snapshot =
+        tryMaterializeFreshUnwrittenDirectRecordRead(builder, read.getLoc(), read);
+    assert(snapshot && "fresh array reads have independent default storage");
+    read.replaceAllUsesWith(*snapshot);
+    read.erase();
+  }
+}
+
+/// Reject ragged payload snapshots before virtual POD materialization can lose shape operands.
+static LogicalResult rejectUnsupportedRaggedSnapshots(ModuleOp module) {
+  WalkResult result = module.walk([](UnrealizedConversionCastOp cast) -> WalkResult {
+    if (cast->getNumResults() != 1 || getTaggedRaggedNestedLeafKind(cast.getResult(0)).empty() ||
+        llzk::canMaterializeValueCopy(cast.getResult(0).getType())) {
+      return WalkResult::advance();
+    }
+    cast.emitError() << "cannot copy nested array leaf: "
+                     << llzk::getValueCopyFailureReason(cast.getResult(0).getType());
+    return WalkResult::interrupt();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Reject mutations of a POD-read array when preserving the read's value semantics would require
 /// an unsupported independent copy.
 static LogicalResult rejectUnsupportedPodReadArrayMutations(ModuleOp modOp) {
   auto rejectMutation = [](Operation *op, Value array, ArrayType arrayType) -> LogicalResult {
     ReadPodOp readOp = getReadPodBacking(array);
-    if (!readOp || !splittablePodArray(arrayType) || llzk::canMaterializeValueCopy(arrayType)) {
+    if (!readOp || !splittablePodArray(arrayType) || llzk::canMaterializeValueCopy(arrayType) ||
+        isFreshUnwrittenPodRead(readOp)) {
       return success();
     }
 
@@ -4481,82 +4516,31 @@ public:
   }
 };
 
-/// Collect precise split leaf arrays from a value re-materialized as an aggregate array-of-POD.
-///
-/// This recognizes the temporary aggregate form produced by dialect conversion casts and unwraps
-/// it back into the parallel split arrays expected by the late pod-array read resolvers.
-static bool tryCollectMaterializedSplitPodArrayLeafValues(
-    Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
-) {
-  auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>();
-  size_t expectedOperands = splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0);
-  if (!cast || cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
-      cast->getNumOperands() != expectedOperands) {
-    return false;
-  }
-  if (needsPodArrayShapeCarrier(arrTy) &&
-      cast.getOperand(splitTypes.size()).getType() != getPodArrayShapeCarrierType(arrTy)) {
-    return false;
-  }
-
-  return llzk::pod::detail::appendValuesWithExactTypes(
-      cast.getOperands().take_front(splitTypes.size()), splitTypes, leafArrays
-  );
-}
-
-/// Collect precise split leaf arrays for an array-of-POD value backed by a direct `pod.read`.
-///
-/// This first consults virtual POD leaf storage and, if unavailable, falls back to forwarding
-/// through a dominating same-record `pod.write` whose value was previously materialized as split
-/// arrays.
+/// Collect stored virtual leaf arrays without bypassing a POD write boundary.
+/// Materialized POD storage must be promoted with explicit write-time copies first.
 static bool tryCollectReadPodSplitPodArrayLeafValues(
     ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
     const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
 ) {
-  auto tryCollectFromVirtualRead = [&](ReadPodOp sourceRead) {
-    if (hasEarlierWrite(sourceRead)) {
+  if (hasEarlierWrite(readOp) || findNearestForwardableWrite(readOp)) {
+    return false;
+  }
+  const VirtualPodLeafMap *podLeafValues = lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods);
+  if (!podLeafValues) {
+    return false;
+  }
+  SmallVector<Value> stagedLeafArrays;
+  for (const RecordChain &id : splitIds) {
+    auto it = podLeafValues->find(id.withPrefix({readOp.getRecordNameAttr()}));
+    if (it == podLeafValues->end() ||
+        !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id)) ||
+        !llzk::canMaterializeValueCopy(it->second.getType())) {
       return false;
     }
-
-    const VirtualPodLeafMap *podLeafValues =
-        lookupVirtualPodLeafMap(sourceRead.getPodRef(), virtualPods);
-    if (!podLeafValues) {
-      return false;
-    }
-
-    SmallVector<Value> stagedLeafArrays;
-    stagedLeafArrays.reserve(splitIds.size());
-    for (const RecordChain &id : splitIds) {
-      auto it = podLeafValues->find(id.withPrefix({sourceRead.getRecordNameAttr()}));
-      if (it == podLeafValues->end() ||
-          !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id))) {
-        return false;
-      }
-      stagedLeafArrays.push_back(it->second);
-    }
-    llvm::append_range(leafArrays, stagedLeafArrays);
-    return true;
-  };
-
-  if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
-    if (tryCollectMaterializedSplitPodArrayLeafValues(
-            writeOp.getValue(), arrTy, splitTypes, leafArrays
-        )) {
-      return true;
-    }
-
-    if (ReadPodOp writtenRead = peelUnifiableCasts(writeOp.getValue()).getDefiningOp<ReadPodOp>()) {
-      if (tryCollectFromVirtualRead(writtenRead)) {
-        return true;
-      }
-    }
+    stagedLeafArrays.push_back(it->second);
   }
-
-  if (tryCollectFromVirtualRead(readOp)) {
-    return true;
-  }
-
-  return false;
+  llvm::append_range(leafArrays, stagedLeafArrays);
+  return true;
 }
 
 /// Materialize or recover split leaf arrays for a dynamic array-of-POD produced by `pod.read`.
@@ -4575,12 +4559,6 @@ static bool resolveReadPodSplitPodArrayLeafValues(
   if (tryCollectReadPodSplitPodArrayLeafValues(
           readOp, arrTy, splitIds, splitTypes, virtualPods, sourceLeafArrays
       )) {
-    if (llvm::any_of(sourceLeafArrays, [](Value value) {
-      return !llzk::canMaterializeValueCopy(value.getType());
-    })) {
-      return false;
-    }
-
     OpBuilder::InsertionGuard guard(bldr);
     // Unlike synthetic unwritten storage, a resolved backing is a semantic copy of existing POD
     // state and must stay at the original read point, including when the read is inside a loop.
@@ -4609,28 +4587,6 @@ static bool resolveReadPodSplitPodArrayLeafValues(
   leafArrays.assign(backing.leafArrays.begin(), backing.leafArrays.end());
 
   return true;
-}
-
-/// Recover split leaf arrays solely as read sources for an immediate element projection.
-///
-/// A projection does not expose the aggregate array or mutate its backing storage, so reading the
-/// selected leaf values directly is observationally equivalent to copying the aggregate first.
-/// All other consumers must use `resolveReadPodSplitPodArrayLeafValues`, which rejects leaf arrays
-/// whose independent copies cannot be materialized.
-static bool resolveReadPodSplitPodArrayLeafValuesForProjection(
-    ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
-    const VirtualPodValueMap &virtualPods, DeferredPodArrayBackingMap &deferredPodArrays,
-    Location loc, OpBuilder &bldr, SmallVectorImpl<Value> &leafArrays
-) {
-  if (resolveReadPodSplitPodArrayLeafValues(
-          readOp, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, loc, bldr, leafArrays
-      )) {
-    return true;
-  }
-
-  return tryCollectReadPodSplitPodArrayLeafValues(
-      readOp, arrTy, splitIds, splitTypes, virtualPods, leafArrays
-  );
 }
 
 /// Try to recover the shared visible-rank shape source for one array-of-POD `pod.read`.
@@ -4840,7 +4796,7 @@ public:
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
 
     SmallVector<Value> splitLeafArrays;
-    if (!resolveReadPodSplitPodArrayLeafValuesForProjection(
+    if (!resolveReadPodSplitPodArrayLeafValues(
             fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods,
             resolver.deferredPodArrays, op.getLoc(), rewriter, splitLeafArrays
         )) {
@@ -4896,9 +4852,7 @@ public:
     if (tryCollectReadPodSplitPodArrayLeafValues(
             fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
         )) {
-      return llvm::all_of(ignoredLeafArrays, [](Value value) {
-        return llzk::canMaterializeValueCopy(value.getType());
-      });
+      return true;
     }
     return isFreshUnwrittenPodRead(fieldRead);
   }
@@ -5054,14 +5008,7 @@ public:
         Value leaf = leafValues->at(id.withPrefix(prefix));
         FailureOr<Value> copied = leaf;
         if (llzk::requiresValueCopy(leaf.getType())) {
-          if (!llzk::canMaterializeValueCopy(leaf.getType())) {
-            if (getTaggedRaggedNestedLeafKind(leaf).empty()) {
-              failedToCopy = true;
-              return;
-            }
-          } else {
-            copied = llzk::materializeValueCopy(rewriter, loc, leaf);
-          }
+          copied = llzk::materializeValueCopy(rewriter, loc, leaf);
         }
         if (failed(copied)) {
           failedToCopy = true;
@@ -5090,13 +5037,6 @@ public:
     );
     FailureOr<Value> copied = stored;
     if (llzk::requiresValueCopy(recordType)) {
-      if (!llzk::canMaterializeValueCopy(recordType)) {
-        if (getTaggedRaggedNestedLeafKind(stored).empty()) {
-          return failure();
-        }
-        rewriter.replaceOp(op, stored);
-        return success();
-      }
       copied = llzk::materializeValueCopy(rewriter, op.getLoc(), stored);
     }
     if (failed(copied)) {
@@ -5652,9 +5592,6 @@ static bool isValueDefinedInside(Operation *ancestor, Value value) {
 /// Materialize the POD-access snapshot of `source` at the builder's current insertion point.
 static FailureOr<Value>
 materializePodAccessSnapshot(OpBuilder &builder, Location loc, Value source) {
-  if (!llzk::requiresValueCopy(source.getType())) {
-    return source;
-  }
   return llzk::materializeValueCopy(builder, loc, source);
 }
 
@@ -5676,21 +5613,9 @@ public:
         }
         replacement = sourceWrite.getValue();
       }
-      if (llzk::requiresValueCopy(readOp.getType()) &&
-          llzk::canMaterializeValueCopy(readOp.getType())) {
-        // Keep supported aggregates visible to POD mem2reg, which owns both their write-point and
-        // read-point snapshots. Eagerly copying here can introduce a late use of a POD source and
-        // unnecessarily prevent scalarization of an otherwise independent loop-carried POD.
-        return failure();
-      }
+      // Only immutable values and identity-bearing struct handles may be forwarded.
       if (llzk::requiresValueCopy(readOp.getType())) {
-        // Ragged leaf values are internal array-of-POD decomposition state. Preserve their tag so
-        // the dedicated shape-witness diagnostics can report the unsupported operation later.
-        if (getTaggedRaggedNestedLeafKind(replacement).empty()) {
-          return failure();
-        }
-        rewriter.replaceOp(readOp, replacement);
-        return success();
+        return failure();
       }
       rewriter.replaceOp(readOp, replacement);
       return success();
@@ -5725,13 +5650,12 @@ public:
       if (WritePodOp writeOp = findNearestForwardableWriteBefore(
               anchor->getPrevNode(), readOp.getPodRef(), readOp.getRecordNameAttr()
           )) {
-        rewriter.setInsertionPoint(readOp);
-        FailureOr<Value> copied =
-            materializePodAccessSnapshot(rewriter, readOp.getLoc(), writeOp.getValue());
-        if (failed(copied)) {
-          return failure();
+        // Leave mutable writes in POD storage so promotion owns their write-time copy.
+        // Hoist a real read below instead of forwarding the original source value.
+        if (llzk::requiresValueCopy(readOp.getType())) {
+          break;
         }
-        rewriter.replaceOp(readOp, *copied);
+        rewriter.replaceOp(readOp, writeOp.getValue());
         return success();
       }
       if (hasEarlierWriteToRecordInBlock(anchor, readOp.getPodRef(), readOp.getRecordNameAttr())) {
@@ -7431,6 +7355,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.dump();
       });
 
+      materializeFreshPodArrayMutationSnapshots(module);
       if (failed(rejectUnsupportedPodReadArrayMutations(module))) {
         return signalPassFailure();
       }
@@ -7443,7 +7368,8 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.dump();
       });
 
-      if (failed(step3(module, symTables, memberRepMap))) {
+      if (failed(rejectUnsupportedRaggedSnapshots(module)) ||
+          failed(step3(module, symTables, memberRepMap))) {
         return signalPassFailure();
       }
       LLVM_DEBUG({

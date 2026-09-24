@@ -1,62 +1,6 @@
 // RUN: llzk-opt -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 !F = !felt.type<"bn128">
-// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
-// CHECK-NEXT:    struct.def @LessThan_1 {
-// CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
-// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1>
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@LessThan_1>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1> attributes {function.allow_witness, product_source = "compute"} {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1>
-// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@LessThan_1>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@LessThan_1>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) attributes {function.allow_constraint, product_source = "constrain"} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @GreaterThan_2 {
-// CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
-// CHECK-NEXT:      function.def @product(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@GreaterThan_2> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@LessThan_1>
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@GreaterThan_2>
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_7]]] = %[[VAL_14]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_8]]] = %[[VAL_15]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_7]]] = %[[VAL_12]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_16]]{{\[}}%[[VAL_7]]] = %[[VAL_17]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_16]]{{\[}}%[[VAL_8]]] = %[[VAL_18]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_20]]{{\[}}%[[VAL_7]]] = %[[VAL_21]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_20]]{{\[}}%[[VAL_8]]] = %[[VAL_22]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_20]]{{\[}}%[[VAL_8]]] = %[[VAL_19]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_20]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_20]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_20]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_25]]{{\[}}%[[VAL_7]]] = %[[VAL_26]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_20]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_25]]{{\[}}%[[VAL_8]]] = %[[VAL_27]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_25]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
-// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_28]][@out] : <@LessThan_1>, !felt.type<"bn128">
-// CHECK-NEXT:        struct.writem %[[VAL_11]][@out] = %[[VAL_29]] : <@GreaterThan_2>, !felt.type<"bn128">
-// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@GreaterThan_2>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
   struct.def @LessThan_1 {
     struct.member @out : !F {llzk.pub}
@@ -114,3 +58,73 @@ module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
     }
   }
 }
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
+// CHECK-NEXT:    struct.def @LessThan_1 {
+// CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@LessThan_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1> attributes {function.allow_witness, product_source = "compute"} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@LessThan_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@LessThan_1>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) attributes {function.allow_constraint, product_source = "constrain"} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @GreaterThan_2 {
+// CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+// CHECK-NEXT:      function.def @product(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@GreaterThan_2> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@LessThan_1>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@GreaterThan_2>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_8]]] = %[[VAL_14]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_7]]] = %[[VAL_15]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_8]]] = %[[VAL_12]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_16]]{{\[}}%[[VAL_8]]] = %[[VAL_17]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_16]]{{\[}}%[[VAL_7]]] = %[[VAL_18]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_19]]{{\[}}%[[VAL_8]]] = %[[VAL_20]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_19]]{{\[}}%[[VAL_7]]] = %[[VAL_21]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_23]]{{\[}}%[[VAL_8]]] = %[[VAL_24]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_23]]{{\[}}%[[VAL_7]]] = %[[VAL_25]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_23]]{{\[}}%[[VAL_7]]] = %[[VAL_22]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_23]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_26]]{{\[}}%[[VAL_8]]] = %[[VAL_27]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_23]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_26]]{{\[}}%[[VAL_7]]] = %[[VAL_28]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_29]]{{\[}}%[[VAL_8]]] = %[[VAL_30]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_29]]{{\[}}%[[VAL_7]]] = %[[VAL_31]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_29]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_32]]{{\[}}%[[VAL_8]]] = %[[VAL_33]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_29]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_32]]{{\[}}%[[VAL_7]]] = %[[VAL_34]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_35:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_32]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_35]][@out] : <@LessThan_1>, !felt.type<"bn128">
+// CHECK-NEXT:        struct.writem %[[VAL_11]][@out] = %[[VAL_36]] : <@GreaterThan_2>, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@GreaterThan_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
