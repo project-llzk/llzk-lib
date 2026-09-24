@@ -52,3 +52,25 @@ module attributes {llzk.lang} {
     function.return %observed : index
   }
 }
+
+// -----
+
+#len = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index]>
+!Items = !array.type<#len x !Item>
+!Box = !pod.type<[@items: !Items]>
+
+// Split leaf arrays for a symbolic array-of-POD must not be forwarded as mutable backing storage.
+module attributes {llzk.lang} {
+  function.def @unsupported_deferred_array_copy(
+      %box: !Box, %replacement: !Item, %index: index
+  ) -> index {
+    %first = pod.read %box[@items] : !Box, !Items
+    // expected-error@+1 {{'array.write' op cannot mutate array-of-POD value read from POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
+    array.write %first[%index] = %replacement : !Items, !Item
+    %second = pod.read %box[@items] : !Box, !Items
+    %item = array.read %second[%index] : !Items, !Item
+    %observed = pod.read %item[@x] : !Item, index
+    function.return %observed : index
+  }
+}

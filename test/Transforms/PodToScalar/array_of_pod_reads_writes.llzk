@@ -171,7 +171,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
   function.def @read_unwritten_dynamic(%n: index, %i: index) -> index {
     %p = pod.new()[%n] : !Outer
@@ -187,15 +186,11 @@ module attributes {llzk.lang} {
 !Item = !pod.type<[@x: index]>
 !Outer = !pod.type<[@items: !array.type<#inner x !Item>, @tag: index]>
 !OuterArray = !array.type<2 x !Outer>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @write_elem(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$ATTR_1]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_1]] x index>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<2,#[[$ATTR_1]] x index>, !array.type<2 x index>) {
-// CHECK-NEXT:      array.insert %[[VAL_0]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <2,#[[$ATTR_1]] x index>, <#[[$ATTR_1]] x index>
-// CHECK-NEXT:      array.write %[[VAL_1]]{{\[}}%[[VAL_4]]] = %[[VAL_3]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2,#[[$ATTR_1]] x index>, !array.type<2 x index>
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// Writing a POD element must snapshot its symbolic array record instead of aliasing it.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @write_elem(%arr: !OuterArray, %elem: !Outer, %i: index) -> !OuterArray {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
     array.write %arr[%i] = %elem : !OuterArray, !Outer
     function.return %arr : !OuterArray
   }
@@ -212,7 +207,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK: #[[$ATTR_2:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
   function.def @forwarded_write_readback(%src: !Outer, %i: index) -> index {
     %items = pod.read %src[@items] : !Outer, !array.type<? x !Item>
@@ -231,22 +226,22 @@ module attributes {llzk.lang} {
 !Item = !pod.type<[@x: index]>
 !Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @nested_if_parent_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_2]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @nested_if_parent_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_1]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_3]], %[[VAL_4]] : index
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_5]] -> (index) {
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_2]]] : <#[[$ATTR_2]] x index>, index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_2]]] : <#[[$ATTR_1]] x index>, index
 // CHECK-NEXT:        scf.yield %[[VAL_7]] : index
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[VAL_4]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_6]] : index
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @nested_if_parent_init(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_2]] x index>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @nested_if_parent_init(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_1]] x index>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_11]], %[[VAL_12]] : index
 // CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_13]] -> (index) {
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_10]]] : <#[[$ATTR_2]] x index>, index
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_10]]] : <#[[$ATTR_1]] x index>, index
 // CHECK-NEXT:        scf.yield %[[VAL_15]] : index
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[VAL_12]] : index

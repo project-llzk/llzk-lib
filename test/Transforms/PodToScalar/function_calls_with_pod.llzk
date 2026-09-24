@@ -188,6 +188,9 @@ module attributes {llzk.lang} {
 #outer = affine_map<()[s0] -> (s0)>
 !Pair = !pod.type<[@x: index, @y: !felt.type]>
 !Holder = !pod.type<[@pairs: !array.type<#outer x !Pair>]>
+// A symbolic array-of-POD read cannot cross a call boundary until its split payload arrays can be
+// copied independently.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @sink(%arr: !array.type<#outer x !Pair>) -> index {
     %c0 = arith.constant 0 : index
@@ -196,23 +199,12 @@ module attributes {llzk.lang} {
   }
 
   function.def @main(%holder: !Holder) -> index {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'pairs' because its dynamic or symbolic payload arrays cannot be copied independently}}
     %pairs = pod.read %holder[@pairs] : !Holder, !array.type<#outer x !Pair>
     %len = function.call @sink(%pairs) : (!array.type<#outer x !Pair>) -> index
     function.return %len : index
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_3]] : <#[[$M]] x none>
-// CHECK-NEXT:      function.return %[[VAL_4]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @main(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[VAL_5]], %[[VAL_6]], %[[VAL_7]]) : (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) -> index
-// CHECK-NEXT:      function.return %[[VAL_8]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 // -----
 
 #outer_nested = affine_map<()[s0] -> (s0)>
@@ -323,19 +315,12 @@ module attributes {llzk.lang} {
 #outer = affine_map<()[s0] -> (s0)>
 !Item = !pod.type<[@x: index, @y: !felt.type]>
 !Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
+// Returning a symbolic array-of-POD read would likewise expose an uncopyable aggregate value.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @get_items(%p: !Outer) -> !array.type<#outer x !Item> {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
     %items = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
     function.return %items : !array.type<#outer x !Item>
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @get_items(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>,
-// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>
-// CHECK-SAME:    ) -> (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) {
-// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }

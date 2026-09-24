@@ -2012,6 +2012,33 @@ static ReadPodOp getReadPodBacking(Value value) {
   return peelUnifiableCasts(cast.getOperand(0)).getDefiningOp<ReadPodOp>();
 }
 
+/// Reject mutations of a POD-read array when preserving the read's value semantics would require
+/// an unsupported independent copy.
+static LogicalResult rejectUnsupportedPodReadArrayMutations(ModuleOp modOp) {
+  auto rejectMutation = [](Operation *op, Value array, ArrayType arrayType) -> LogicalResult {
+    ReadPodOp readOp = getReadPodBacking(array);
+    if (!readOp || !splittablePodArray(arrayType) || llzk::canMaterializeValueCopy(arrayType)) {
+      return success();
+    }
+
+    return op->emitOpError()
+           << "cannot mutate array-of-POD value read from POD record '" << readOp.getRecordName()
+           << "' because its dynamic or symbolic payload arrays cannot be copied independently";
+  };
+
+  auto result = modOp.walk([rejectMutation](Operation *op) -> WalkResult {
+    LogicalResult status = TypeSwitch<Operation *, LogicalResult>(op)
+                               .Case<WriteArrayOp>([rejectMutation](WriteArrayOp writeOp) {
+      return rejectMutation(writeOp, writeOp.getArrRef(), writeOp.getArrRefType());
+    })
+                               .Case<InsertArrayOp>([rejectMutation](InsertArrayOp insertOp) {
+      return rejectMutation(insertOp, insertOp.getArrRef(), insertOp.getArrRefType());
+    }).Default([](Operation *) { return success(); });
+    return failed(status) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Return `true` iff step 2 should defer `array.len` on a POD-backed array field to step 3.
 inline static bool shouldDeferPodArrayLengthToStep3(ArrayLengthOp op) {
   return splittablePodArray(op.getArrRefType()) && getReadPodBacking(op.getArrRef());
@@ -2041,7 +2068,7 @@ static LogicalResult updateVirtualPodRecordLeafValues(
 ) {
   SmallVector<StringAttr> prefix {recordName};
 
-  auto snapshot = [&](Value value) -> FailureOr<Value> {
+  auto snapshot = [&rewriter, loc](Value value) -> FailureOr<Value> {
     if (!llvm::isa<PodType, ArrayType>(value.getType())) {
       return value;
     }
@@ -4510,8 +4537,7 @@ static bool resolveReadPodSplitPodArrayLeafValues(
     if (llvm::any_of(sourceLeafArrays, [](Value value) {
       return !llzk::canMaterializeValueCopy(value.getType());
     })) {
-      llvm::append_range(leafArrays, sourceLeafArrays);
-      return true;
+      return false;
     }
 
     OpBuilder::InsertionGuard guard(bldr);
@@ -4542,6 +4568,28 @@ static bool resolveReadPodSplitPodArrayLeafValues(
   leafArrays.assign(backing.leafArrays.begin(), backing.leafArrays.end());
 
   return true;
+}
+
+/// Recover split leaf arrays solely as read sources for an immediate element projection.
+///
+/// A projection does not expose the aggregate array or mutate its backing storage, so reading the
+/// selected leaf values directly is observationally equivalent to copying the aggregate first.
+/// All other consumers must use `resolveReadPodSplitPodArrayLeafValues`, which rejects leaf arrays
+/// whose independent copies cannot be materialized.
+static bool resolveReadPodSplitPodArrayLeafValuesForProjection(
+    ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
+    const VirtualPodValueMap &virtualPods, DeferredPodArrayBackingMap &deferredPodArrays,
+    Location loc, OpBuilder &bldr, SmallVectorImpl<Value> &leafArrays
+) {
+  if (resolveReadPodSplitPodArrayLeafValues(
+          readOp, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, loc, bldr, leafArrays
+      )) {
+    return true;
+  }
+
+  return tryCollectReadPodSplitPodArrayLeafValues(
+      readOp, arrTy, splitIds, splitTypes, virtualPods, leafArrays
+  );
 }
 
 /// Try to recover the shared visible-rank shape source for one array-of-POD `pod.read`.
@@ -4751,7 +4799,7 @@ public:
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
 
     SmallVector<Value> splitLeafArrays;
-    if (!resolveReadPodSplitPodArrayLeafValues(
+    if (!resolveReadPodSplitPodArrayLeafValuesForProjection(
             fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods,
             resolver.deferredPodArrays, op.getLoc(), rewriter, splitLeafArrays
         )) {
@@ -4804,10 +4852,14 @@ public:
     }
 
     SmallVector<Value> ignoredLeafArrays;
-    return tryCollectReadPodSplitPodArrayLeafValues(
-               fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
-           ) ||
-           isFreshUnwrittenPodRead(fieldRead);
+    if (tryCollectReadPodSplitPodArrayLeafValues(
+            fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
+        )) {
+      return llvm::all_of(ignoredLeafArrays, [](Value value) {
+        return llzk::canMaterializeValueCopy(value.getType());
+      });
+    }
+    return isFreshUnwrittenPodRead(fieldRead);
   }
 
   LogicalResult matchAndRewrite(
@@ -7336,6 +7388,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.dump();
       });
 
+      if (failed(rejectUnsupportedPodReadArrayMutations(module))) {
+        return signalPassFailure();
+      }
+
       if (failed(step2(module, symTables, memberRepMap))) {
         return signalPassFailure();
       }
@@ -7404,6 +7460,25 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
                 << "' because value-copy materialization supports only PODs, immutable scalars, "
                    "struct handles, and statically shaped arrays; flatten symbolic arrays first";
           }
+        });
+        llvm::DenseSet<Operation *> diagnosedReads;
+        module.walk([&diagnostic, &diagnosedReads](UnrealizedConversionCastOp castOp) {
+          ArrayType arrTy;
+          SmallVector<RecordChain> splitIds;
+          SmallVector<Type> splitTypes;
+          if (!getDeferredSplitPodArrayCastInfo(castOp, arrTy, splitIds, splitTypes)) {
+            return;
+          }
+
+          ReadPodOp readOp = peelUnifiableCasts(castOp.getOperand(0)).getDefiningOp<ReadPodOp>();
+          if (!readOp || llzk::canMaterializeValueCopy(arrTy) ||
+              !diagnosedReads.insert(readOp.getOperation()).second) {
+            return;
+          }
+
+          diagnostic.attachNote(readOp.getLoc())
+              << "cannot lower value-copy read of POD record '" << readOp.getRecordName()
+              << "' because its dynamic or symbolic payload arrays cannot be copied independently";
         });
         diagnostic.report();
         signalPassFailure();

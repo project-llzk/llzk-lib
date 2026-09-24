@@ -55,27 +55,21 @@ module attributes {llzk.lang} {
 !Elem = !pod.type<[@vals: !Leaf]>
 !ElemArray = !array.type<2 x !Elem>
 !Outer = !pod.type<[@items: !ElemArray]>
+// Passing the result of a POD read across a call would expose the aggregate copy. Its symbolic
+// payload leaf cannot yet be copied independently, so this must be rejected rather than aliased.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @sink(%arr: !ElemArray) {
     function.return
   }
 
   function.def @source(%p: !Outer) {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
     %items = pod.read %p[@items] : !Outer, !ElemArray
     function.call @sink(%items) : (!ElemArray) -> ()
     function.return
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$M]] x index>) {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @source(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$M]] x index>) {
-// CHECK-NEXT:      function.call @sink(%[[VAL_1]]) : (!array.type<2,#[[$M]] x index>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 // -----
 
 #inner = affine_map<()[s0] -> (s0 + 1)>
