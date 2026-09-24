@@ -13,6 +13,8 @@
 #include <mlir/IR/DialectInterface.h>
 #include <mlir/Support/LLVM.h>
 
+#include <string>
+
 namespace llzk {
 
 /// Dialect hook for materializing independent storage for mutable value types.
@@ -31,6 +33,9 @@ public:
   /// cannot currently construct the required independent copy.
   virtual bool canMaterializeValueCopy(mlir::Type type) const = 0;
 
+  /// Explain why this dialect cannot copy `type`. Called only after support is rejected.
+  virtual std::string getValueCopyFailureReason(mlir::Type type) const;
+
   /// Preserve the value-copy semantics of `source` at the builder's insertion point.
   ///
   /// Implementations may return `source` only when its type has no independently mutable payload.
@@ -48,6 +53,10 @@ bool requiresValueCopy(mlir::Type type);
 /// SSA value only for immutable values, identity-bearing handles, or aggregates without mutable
 /// payload.
 bool canMaterializeValueCopy(mlir::Type type);
+
+/// Explain the unsupported type or recursive copy requirement. Return an empty string for a
+/// supported type, and reserve shape-resolution advice for unsupported non-static array payloads.
+std::string getValueCopyFailureReason(mlir::Type type);
 
 /// Return `source` for immutable scalar values, identity-bearing handles, and aggregates without
 /// mutable payload, or materialize recursively independent storage for a supported mutable

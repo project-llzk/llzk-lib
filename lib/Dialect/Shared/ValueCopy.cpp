@@ -47,6 +47,24 @@ bool canMaterializeValueCopy(Type type) {
   return false;
 }
 
+std::string ValueCopyDialectInterface::getValueCopyFailureReason(Type type) const {
+  std::string reason;
+  llvm::raw_string_ostream(reason) << "unsupported value-copy type '" << type << "'";
+  return reason;
+}
+
+std::string getValueCopyFailureReason(Type type) {
+  if (canMaterializeValueCopy(type)) {
+    return {};
+  }
+  if (const auto *interface = getValueCopyInterface(type)) {
+    return interface->getValueCopyFailureReason(type);
+  }
+  std::string reason;
+  llvm::raw_string_ostream(reason) << "unsupported value-copy type '" << type << "'";
+  return reason;
+}
+
 FailureOr<Value> materializeValueCopy(OpBuilder &builder, Location loc, Value source) {
   Type type = source.getType();
   if (isIdentityPreservingCopy(type)) {

@@ -1,0 +1,19 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck %s
+
+// A none-element array is a shape value, not an array with unsupported mutable payload.
+!Shape = !array.type<3 x none>
+!Box = !pod.type<[@shape: !Shape]>
+module attributes {llzk.lang} {
+  function.def @shape_copy(%shape: !Shape) -> !Shape {
+    %box = pod.new { @shape = %shape } : !Box
+    %result = pod.read %box[@shape] : !Box, !Shape
+    function.return %result : !Shape
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @shape_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x none>) -> !array.type<3 x none> {
+// CHECK-NEXT:      function.return %arg0 : !array.type<3 x none>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+

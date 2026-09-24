@@ -2021,9 +2021,9 @@ static LogicalResult rejectUnsupportedPodReadArrayMutations(ModuleOp modOp) {
       return success();
     }
 
-    return op->emitOpError()
-           << "cannot mutate array-of-POD value read from POD record '" << readOp.getRecordName()
-           << "' because its dynamic or symbolic payload arrays cannot be copied independently";
+    return op->emitOpError() << "cannot mutate array-of-POD value read from POD record '"
+                             << readOp.getRecordName()
+                             << "': " << llzk::getValueCopyFailureReason(arrayType);
   };
 
   auto result = modOp.walk([rejectMutation](Operation *op) -> WalkResult {
@@ -7457,8 +7457,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
               !llzk::canMaterializeValueCopy(recordType)) {
             diagnostic.attachNote(newPod.getLoc())
                 << "cannot promote POD record '" << records.front().getName().getValue()
-                << "' because value-copy materialization supports only PODs, immutable scalars, "
-                   "struct handles, and statically shaped arrays; flatten symbolic arrays first";
+                << "': " << llzk::getValueCopyFailureReason(recordType);
           }
         });
         llvm::DenseSet<Operation *> diagnosedReads;
@@ -7478,7 +7477,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
 
           diagnostic.attachNote(readOp.getLoc())
               << "cannot lower value-copy read of POD record '" << readOp.getRecordName()
-              << "' because its dynamic or symbolic payload arrays cannot be copied independently";
+              << "': " << llzk::getValueCopyFailureReason(arrTy);
         });
         diagnostic.report();
         signalPassFailure();

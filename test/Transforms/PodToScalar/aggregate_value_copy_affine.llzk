@@ -22,7 +22,7 @@ module attributes {llzk.lang} {
   function.def @snapshot(%n: index, %handle: !Handle) -> !Handle {
     %inner = pod.new()[%n] : !Inner
     pod.write %inner[@handle] = %handle : !Inner, !Handle
-    // expected-note@+1 {{cannot promote POD record 'inner'}}
+    // expected-note@+1 {{cannot promote POD record 'inner': POD copy requires affine-map instantiation operands that cannot be recovered}}
     %outer = pod.new()[%n] : !Outer
     pod.write %outer[@inner] = %inner : !Outer, !Inner
     %copy = pod.read %outer[@inner] : !Outer, !Inner

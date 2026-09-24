@@ -190,7 +190,7 @@ module attributes {llzk.lang} {
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @write_elem(%arr: !OuterArray, %elem: !Outer, %i: index) -> !OuterArray {
-    // expected-note@+1 {{cannot lower value-copy read of POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     array.write %arr[%i] = %elem : !OuterArray, !Outer
     function.return %arr : !OuterArray
   }

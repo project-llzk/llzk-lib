@@ -8,7 +8,7 @@
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @unsupported_symbolic_copy(%n: index) -> !Values {
-    // expected-note@+1 {{cannot promote POD record 'values' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
+    // expected-note@+1 {{cannot promote POD record 'values': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %box = pod.new()[%n] : !Box
     %values = pod.read %box[@values] : !Box, !Values
     function.return %values : !Values
@@ -25,7 +25,7 @@ module attributes {llzk.lang} {
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @unsupported_symbolic_forwarding(%n: index, %source: !Values) -> !Values {
-    // expected-note@+1 {{cannot promote POD record 'values' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
+    // expected-note@+1 {{cannot promote POD record 'values': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %box = pod.new()[%n] : !Box
     pod.write %box[@values] = %source : !Box, !Values
     %values = pod.read %box[@values] : !Box, !Values
@@ -66,7 +66,7 @@ module attributes {llzk.lang} {
       %box: !Box, %replacement: !Item, %index: index
   ) -> index {
     %first = pod.read %box[@items] : !Box, !Items
-    // expected-error@+1 {{'array.write' op cannot mutate array-of-POD value read from POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
+    // expected-error@+1 {{'array.write' op cannot mutate array-of-POD value read from POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     array.write %first[%index] = %replacement : !Items, !Item
     %second = pod.read %box[@items] : !Box, !Items
     %item = array.read %second[%index] : !Items, !Item

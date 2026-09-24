@@ -53,6 +53,20 @@ public:
     });
   }
 
+  std::string getValueCopyFailureReason(mlir::Type type) const final {
+    auto podType = llvm::dyn_cast<llzk::pod::PodType>(type);
+    if (!podType) {
+      return ValueCopyDialectInterface::getValueCopyFailureReason(type);
+    }
+    for (llzk::pod::RecordAttr record : podType.getRecords()) {
+      if (!llzk::canMaterializeValueCopy(record.getType())) {
+        return "POD record '" + record.getName().getValue().str() +
+               "': " + llzk::getValueCopyFailureReason(record.getType());
+      }
+    }
+    return "POD copy requires affine-map instantiation operands that cannot be recovered";
+  }
+
   mlir::FailureOr<mlir::Value> materializeValueCopy(
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value source
   ) const final {

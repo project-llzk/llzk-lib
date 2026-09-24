@@ -199,7 +199,7 @@ module attributes {llzk.lang} {
   }
 
   function.def @main(%holder: !Holder) -> index {
-    // expected-note@+1 {{cannot lower value-copy read of POD record 'pairs' because its dynamic or symbolic payload arrays cannot be copied independently}}
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'pairs': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %pairs = pod.read %holder[@pairs] : !Holder, !array.type<#outer x !Pair>
     %len = function.call @sink(%pairs) : (!array.type<#outer x !Pair>) -> index
     function.return %len : index
@@ -319,7 +319,7 @@ module attributes {llzk.lang} {
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @get_items(%p: !Outer) -> !array.type<#outer x !Item> {
-    // expected-note@+1 {{cannot lower value-copy read of POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %items = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
     function.return %items : !array.type<#outer x !Item>
   }

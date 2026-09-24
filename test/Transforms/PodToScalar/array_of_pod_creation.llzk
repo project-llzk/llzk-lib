@@ -38,10 +38,10 @@ module attributes {llzk.lang} {
   function.def @materialized(%n: index) -> !ElemArray {
     %vals0 = array.new{()[%n]} : !Leaf
     %vals1 = array.new{()[%n]} : !Leaf
-    // expected-note@+1 {{cannot promote POD record 'vals' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
+    // expected-note@+1 {{cannot promote POD record 'vals': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %lhs = pod.new()[%n] : !Elem
     pod.write %lhs[@vals] = %vals0 : !Elem, !Leaf
-    // expected-note@+1 {{cannot promote POD record 'vals' because value-copy materialization supports only PODs, immutable scalars, struct handles, and statically shaped arrays; flatten symbolic arrays first}}
+    // expected-note@+1 {{cannot promote POD record 'vals': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %rhs = pod.new()[%n] : !Elem
     pod.write %rhs[@vals] = %vals1 : !Elem, !Leaf
     %arr = array.new %lhs, %rhs : !ElemArray
@@ -64,7 +64,7 @@ module attributes {llzk.lang} {
   }
 
   function.def @source(%p: !Outer) {
-    // expected-note@+1 {{cannot lower value-copy read of POD record 'items' because its dynamic or symbolic payload arrays cannot be copied independently}}
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': array element copy is unsupported: POD record 'vals': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %items = pod.read %p[@items] : !Outer, !ElemArray
     function.call @sink(%items) : (!ElemArray) -> ()
     function.return

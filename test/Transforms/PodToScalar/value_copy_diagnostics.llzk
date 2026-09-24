@@ -1,0 +1,32 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+!Values = !array.type<3 x !poly.tvar<@T>>
+!Box = !pod.type<[@values: !Values]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    function.def @static_unsupported_element(%values: !Values) -> !Values {
+      // expected-note@+1 {{cannot promote POD record 'values': array element copy is unsupported: unsupported value-copy type '!poly.tvar<@T>'}}
+      %box = pod.new { @values = %values } : !Box
+      %result = pod.read %box[@values] : !Box, !Values
+      function.return %result : !Values
+    }
+  }
+}
+
+// -----
+
+!Box = !pod.type<[@value: !poly.tvar<@T>]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    function.def @unsupported_leaf(%value: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      // expected-note@+1 {{cannot promote POD record 'value': unsupported value-copy type '!poly.tvar<@T>'}}
+      %box = pod.new { @value = %value } : !Box
+      %result = pod.read %box[@value] : !Box, !poly.tvar<@T>
+      function.return %result : !poly.tvar<@T>
+    }
+  }
+}

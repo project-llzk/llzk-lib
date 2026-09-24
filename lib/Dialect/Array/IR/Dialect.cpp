@@ -38,6 +38,19 @@ public:
                           llzk::canMaterializeValueCopy(arrayType.getElementType())));
   }
 
+  std::string getValueCopyFailureReason(mlir::Type type) const final {
+    auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type);
+    if (!arrayType) {
+      return ValueCopyDialectInterface::getValueCopyFailureReason(type);
+    }
+    if (!arrayType.hasStaticShape()) {
+      return "dynamic or symbolic payload arrays cannot be copied independently; "
+             "flatten or resolve array shapes first";
+    }
+    return "array element copy is unsupported: " +
+           llzk::getValueCopyFailureReason(arrayType.getElementType());
+  }
+
   mlir::FailureOr<mlir::Value> materializeValueCopy(
       mlir::OpBuilder &builder, mlir::Location loc, mlir::Value source
   ) const final {
