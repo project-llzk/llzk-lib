@@ -153,6 +153,8 @@ Classes</h2></td></tr>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a4177a57a18ae72b6db8b1a2b19853997" id="r_a4177a57a18ae72b6db8b1a2b19853997"><td class="memItemLeft">::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#a4177a57a18ae72b6db8b1a2b19853997">getVal</a> ()</td></tr>
 <tr class="memdesc:a4177a57a18ae72b6db8b1a2b19853997"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the SSA Value that holds the read/write data for the GlobalRefOp.  <br /></td></tr>
+<tr class="memitem:a8f6c94ff7e16f5d2734f7a317a4f23b4" id="r_a8f6c94ff7e16f5d2734f7a317a4f23b4"><td class="memItemLeft">::mlir::StringAttr&#160;</td><td class="memItemRight"><a class="el" href="#a8f6c94ff7e16f5d2734f7a317a4f23b4">getNameRefAttrName</a> ()</td></tr>
+<tr class="memdesc:a8f6c94ff7e16f5d2734f7a317a4f23b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the name of the global reference attribute on the GlobalRefOp.  <br /></td></tr>
 <tr class="memitem:acdf07e365a57d935469f78c573001745" id="r_acdf07e365a57d935469f78c573001745"><td class="memItemLeft">::mlir::SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="#acdf07e365a57d935469f78c573001745">getNameRef</a> ()</td></tr>
 <tr class="memdesc:acdf07e365a57d935469f78c573001745"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the global name attribute from the GlobalRefOp.  <br /></td></tr>
 <tr class="memitem:aa60b669f3817e9a07d6c518f3dd755c8" id="r_aa60b669f3817e9a07d6c518f3dd755c8"><td class="memItemLeft">::mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1global_1_1GlobalDefOp.html">GlobalDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa60b669f3817e9a07d6c518f3dd755c8">getGlobalDefOp</a> (::mlir::SymbolTableCollection &amp;tables)</td></tr>
@@ -160,7 +162,7 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00047">47</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00050">50</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aa60b669f3817e9a07d6c518f3dd755c8" name="aa60b669f3817e9a07d6c518f3dd755c8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa60b669f3817e9a07d6c518f3dd755c8">&#9670;&#160;</a></span>getGlobalDefOp()</h2>
@@ -199,6 +201,27 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Gets the global name attribute from the GlobalRefOp. </p>
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8cpp_8inc_source.html#l00018">18</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8cpp_8inc_source.html">OpInterfaces.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8f6c94ff7e16f5d2734f7a317a4f23b4" name="a8f6c94ff7e16f5d2734f7a317a4f23b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f6c94ff7e16f5d2734f7a317a4f23b4">&#9670;&#160;</a></span>getNameRefAttrName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::StringAttr llzk::global::GlobalRefOpInterface::getNameRefAttrName </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the name of the global reference attribute on the GlobalRefOp. </p>
 
 <p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8cpp_8inc_source.html#l00014">14</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8cpp_8inc_source.html">OpInterfaces.cpp.inc</a>.</p>
 

@@ -1,5 +1,9 @@
 var NAVTREEINDEX91 =
 {
+"smt-backend.html#smtreset-llzksmtresetop":[8,1,0,0,50],
+"smt-backend.html#smtset_info-llzksmtsetinfoop":[8,1,0,0,51],
+"smt-backend.html#smtset_logic-llzksmtsetlogicop":[8,1,0,0,52],
+"smt-backend.html#smtsolver-llzksmtsolverop":[8,1,0,0,53],
 "smt-backend.html#smtxor-llzksmtxorop":[8,1,0,0,54],
 "smt-backend.html#smtyield-llzksmtyieldop":[8,1,0,0,55],
 "smt-backend.html#sorttype":[8,1,0,2,5],
@@ -245,9 +249,5 @@ var NAVTREEINDEX91 =
 "structOpHeaderGenerator.html#a81039659c15319f0ecb1af9c3eb8e12b":[13,0,87,1],
 "structOpHeaderGenerator.html#a94d944fe3c44c7c7409a0f396d88ae15":[13,0,87,6],
 "structOpHeaderGenerator.html#aa76176e53e0a3775919a02d875fc57d6":[13,0,87,2],
-"structOpHeaderGenerator.html#ab00ceb5e88c9a16a2e3f36faa189363b":[13,0,87,9],
-"structOpHeaderGenerator.html#ac596732934f3bae0725eae106ad51356":[13,0,87,7],
-"structOpHeaderGenerator.html#ac7c2e927d88c0a1237fc1d6b5f3f7404":[13,0,87,3],
-"structOpHeaderGenerator.html#afb5544c45e5f5886f0ac650755cebcfc":[13,0,87,4],
-"structOpImplementationGenerator.html":[13,0,88]
+"structOpHeaderGenerator.html#ab00ceb5e88c9a16a2e3f36faa189363b":[13,0,87,9]
 };

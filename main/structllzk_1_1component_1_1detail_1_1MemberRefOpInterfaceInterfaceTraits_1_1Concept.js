@@ -4,6 +4,7 @@ var structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1
     [ "getComponentMutable", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#a9d3ce330ca10447b4aafb8e35caf7a20", null ],
     [ "getMemberName", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#a10fe7e719857ab9bb207baa27a985cb4", null ],
     [ "getMemberNameAttr", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#a5261e064d14863762508a03d7d66872f", null ],
+    [ "getMemberNameAttrName", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#a0937ffba966b9d92adf6f99f4e902987", null ],
     [ "getStructType", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#a17ba01cb77ee3ab40d677eb253c49751", null ],
     [ "getVal", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#a59219a191b5b55515e0f2d09b990ce36", null ],
     [ "isRead", "structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html#ab7b963841d2713ee3c48e0e0cf0cfc8f", null ],

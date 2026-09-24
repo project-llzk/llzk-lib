@@ -165,33 +165,37 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Struct_2IR_2Op
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>          &quot;::mlir::OpOperand &amp;&quot;, &quot;getComponentMutable&quot;, (ins)&gt;,</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>      // Requires implementors to have a &#39;$member_name&#39; argument.</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      InterfaceMethod&lt;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>          [{Gets the member name attribute value from the MemberRefOp.}],</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>          &quot;::llvm::StringRef&quot;, &quot;getMemberName&quot;, (ins)&gt;,</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>      InterfaceMethod&lt;[{Gets the member name attribute from the MemberRefOp.}],</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                      &quot;::mlir::FlatSymbolRefAttr&quot;, &quot;getMemberNameAttr&quot;, (ins)&gt;,</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>      InterfaceMethod&lt;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>          [{Sets the member name attribute value in the MemberRefOp.}], &quot;void&quot;,</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>          &quot;setMemberName&quot;, (ins &quot;::llvm::StringRef&quot;:$attrValue)&gt;,</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>      InterfaceMethod&lt;[{Sets the member name attribute in the MemberRefOp.}],</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                      &quot;void&quot;, &quot;setMemberNameAttr&quot;,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                      (ins &quot;::mlir::FlatSymbolRefAttr&quot;:$attr)&gt;,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>      // Requires the &#39;$component&#39; argument type to be LLZK_StructType.</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      InterfaceMethod&lt;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>          [{Gets the struct type of the target component.}],</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>          &quot;::llzk::component::StructType&quot;, &quot;getStructType&quot;, (ins),</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>          /*methodBody=*/[{ return $_op.getComponent().getType(); }]&gt;,</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>          [{Gets the name of the member name attribute on the MemberRefOp.}],</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>          &quot;::mlir::StringAttr&quot;, &quot;getMemberNameAttrName&quot;, (ins),</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>          /*methodBody=*/[{ return $_op.getMemberNameAttrName(); }]&gt;,</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>      InterfaceMethod&lt;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>          [{Gets the member name attribute value from the MemberRefOp.}],</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>          &quot;::llvm::StringRef&quot;, &quot;getMemberName&quot;, (ins)&gt;,</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>      InterfaceMethod&lt;[{Gets the member name attribute from the MemberRefOp.}],</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>                      &quot;::mlir::FlatSymbolRefAttr&quot;, &quot;getMemberNameAttr&quot;, (ins)&gt;,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>      InterfaceMethod&lt;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>          [{Sets the member name attribute value in the MemberRefOp.}], &quot;void&quot;,</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>          &quot;setMemberName&quot;, (ins &quot;::llvm::StringRef&quot;:$attrValue)&gt;,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      InterfaceMethod&lt;[{Sets the member name attribute in the MemberRefOp.}],</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>                      &quot;void&quot;, &quot;setMemberNameAttr&quot;,</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>                      (ins &quot;::mlir::FlatSymbolRefAttr&quot;:$attr)&gt;,</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      // Requires the &#39;$component&#39; argument type to be LLZK_StructType.</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>      InterfaceMethod&lt;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>          [{Return `true` if the op is a read, `false` if it&#39;s a write.}],</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>          &quot;bool&quot;, &quot;isRead&quot;, (ins)&gt;,</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  ];</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    /// Gets the definition for the `member` referenced in this op.</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    ::mlir::FailureOr&lt;SymbolLookupResult&lt;MemberDefOp&gt;&gt; getMemberDefOp(::mlir::SymbolTableCollection &amp;tables);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }];</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>}</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>#endif // LLZK_STRUCT_OP_INTERFACES</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>          [{Gets the struct type of the target component.}],</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>          &quot;::llzk::component::StructType&quot;, &quot;getStructType&quot;, (ins),</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>          /*methodBody=*/[{ return $_op.getComponent().getType(); }]&gt;,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      InterfaceMethod&lt;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>          [{Return `true` if the op is a read, `false` if it&#39;s a write.}],</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>          &quot;bool&quot;, &quot;isRead&quot;, (ins)&gt;,</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  ];</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  let extraClassDeclaration = [{</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    /// Gets the definition for the `member` referenced in this op.</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    ::mlir::FailureOr&lt;SymbolLookupResult&lt;MemberDefOp&gt;&gt; getMemberDefOp(::mlir::SymbolTableCollection &amp;tables);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  }];</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>#endif // LLZK_STRUCT_OP_INTERFACES</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

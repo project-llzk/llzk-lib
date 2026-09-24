@@ -145,12 +145,19 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Global_2IR_2Op
 </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span></div>
 <div class="foldopen" id="foldopen00014" data-start="{" data-end="}">
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="classllzk_1_1global_1_1GlobalRefOpInterface.html#acdf07e365a57d935469f78c573001745">   14</a></span>::mlir::SymbolRefAttr <a class="code hl_function" href="classllzk_1_1global_1_1GlobalRefOpInterface.html#acdf07e365a57d935469f78c573001745">llzk::global::GlobalRefOpInterface::getNameRef</a>() {</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>      <span class="keywordflow">return</span> getImpl()-&gt;getNameRef(getImpl(), getOperation());</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="classllzk_1_1global_1_1GlobalRefOpInterface.html#a8f6c94ff7e16f5d2734f7a317a4f23b4">   14</a></span>::mlir::StringAttr <a class="code hl_function" href="classllzk_1_1global_1_1GlobalRefOpInterface.html#a8f6c94ff7e16f5d2734f7a317a4f23b4">llzk::global::GlobalRefOpInterface::getNameRefAttrName</a>() {</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>      <span class="keywordflow">return</span> getImpl()-&gt;getNameRefAttrName(getImpl(), getOperation());</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>  }</div>
 </div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span></div>
+<div class="foldopen" id="foldopen00018" data-start="{" data-end="}">
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="classllzk_1_1global_1_1GlobalRefOpInterface.html#acdf07e365a57d935469f78c573001745">   18</a></span>::mlir::SymbolRefAttr <a class="code hl_function" href="classllzk_1_1global_1_1GlobalRefOpInterface.html#acdf07e365a57d935469f78c573001745">llzk::global::GlobalRefOpInterface::getNameRef</a>() {</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>      <span class="keywordflow">return</span> getImpl()-&gt;getNameRef(getImpl(), getOperation());</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  }</div>
+</div>
 <div class="ttc" id="aclassllzk_1_1global_1_1GlobalRefOpInterface_html_a4177a57a18ae72b6db8b1a2b19853997"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalRefOpInterface.html#a4177a57a18ae72b6db8b1a2b19853997">llzk::global::GlobalRefOpInterface::getVal</a></div><div class="ttdeci">::mlir::Value getVal()</div><div class="ttdoc">Gets the SSA Value that holds the read/write data for the GlobalRefOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00010">OpInterfaces.cpp.inc:10</a></div></div>
-<div class="ttc" id="aclassllzk_1_1global_1_1GlobalRefOpInterface_html_acdf07e365a57d935469f78c573001745"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalRefOpInterface.html#acdf07e365a57d935469f78c573001745">llzk::global::GlobalRefOpInterface::getNameRef</a></div><div class="ttdeci">::mlir::SymbolRefAttr getNameRef()</div><div class="ttdoc">Gets the global name attribute from the GlobalRefOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00014">OpInterfaces.cpp.inc:14</a></div></div>
+<div class="ttc" id="aclassllzk_1_1global_1_1GlobalRefOpInterface_html_a8f6c94ff7e16f5d2734f7a317a4f23b4"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalRefOpInterface.html#a8f6c94ff7e16f5d2734f7a317a4f23b4">llzk::global::GlobalRefOpInterface::getNameRefAttrName</a></div><div class="ttdeci">::mlir::StringAttr getNameRefAttrName()</div><div class="ttdoc">Gets the name of the global reference attribute on the GlobalRefOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00014">OpInterfaces.cpp.inc:14</a></div></div>
+<div class="ttc" id="aclassllzk_1_1global_1_1GlobalRefOpInterface_html_acdf07e365a57d935469f78c573001745"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalRefOpInterface.html#acdf07e365a57d935469f78c573001745">llzk::global::GlobalRefOpInterface::getNameRef</a></div><div class="ttdeci">::mlir::SymbolRefAttr getNameRef()</div><div class="ttdoc">Gets the global name attribute from the GlobalRefOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00018">OpInterfaces.cpp.inc:18</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

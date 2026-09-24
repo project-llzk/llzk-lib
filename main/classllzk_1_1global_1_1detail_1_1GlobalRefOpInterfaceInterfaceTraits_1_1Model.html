@@ -157,6 +157,7 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a6c9340ab21c0351a89a0dfc5d24b2d83" id="r_a6c9340ab21c0351a89a0dfc5d24b2d83"><td class="memItemLeft">static inline ::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#a6c9340ab21c0351a89a0dfc5d24b2d83">getVal</a> (const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val)</td></tr>
+<tr class="memitem:a6dabcacacdb1ae3caf977012c04bc665" id="r_a6dabcacacdb1ae3caf977012c04bc665"><td class="memItemLeft">static inline ::mlir::StringAttr&#160;</td><td class="memItemRight"><a class="el" href="#a6dabcacacdb1ae3caf977012c04bc665">getNameRefAttrName</a> (const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val)</td></tr>
 <tr class="memitem:a4d4fbfad6c223f76cbd7c56883b8e990" id="r_a4d4fbfad6c223f76cbd7c56883b8e990"><td class="memItemLeft">static inline ::mlir::SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="#a4d4fbfad6c223f76cbd7c56883b8e990">getNameRef</a> (const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *impl, ::mlir::Operation *tablegen_opaque_val)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
@@ -164,12 +165,13 @@ Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_attribs_structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept"><td colspan="2">Public Attributes inherited from <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::Concept</a></td></tr>
 <tr class="memitem:ab0fef470c316c846f32e0c2c8580b2f8 pub_attribs_structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept" id="r_ab0fef470c316c846f32e0c2c8580b2f8"><td class="memItemLeft">::mlir::Value(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#ab0fef470c316c846f32e0c2c8580b2f8">getVal</a> )(const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1global_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memdesc:ab0fef470c316c846f32e0c2c8580b2f8 pub_attribs_structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept"><td class="mdescLeft">&#160;</td><td class="mdescRight">The methods defined by the interface.  <br /></td></tr>
+<tr class="memitem:a98a61814574265d9a0d1fb5d82df3c75 pub_attribs_structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept" id="r_a98a61814574265d9a0d1fb5d82df3c75"><td class="memItemLeft">::mlir::StringAttr(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a98a61814574265d9a0d1fb5d82df3c75">getNameRefAttrName</a> )(const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1global_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memitem:a47076015c45fd011dcfa81b435964ba4 pub_attribs_structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept" id="r_a47076015c45fd011dcfa81b435964ba4"><td class="memItemLeft">::mlir::SymbolRefAttr(*&#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a47076015c45fd011dcfa81b435964ba4">getNameRef</a> )(const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1global_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename ConcreteOp&gt;<br />
 class llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::Model&lt; ConcreteOp &gt;</div>
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00020">20</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00021">21</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a9267272f78542aff5f1b23975132d1af" name="a9267272f78542aff5f1b23975132d1af"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9267272f78542aff5f1b23975132d1af">&#9670;&#160;</a></span>Interface</h2>
@@ -185,7 +187,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00022">22</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00023">23</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -215,7 +217,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00023">23</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00024">24</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -249,7 +251,40 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00074">74</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00083">83</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a6dabcacacdb1ae3caf977012c04bc665" name="a6dabcacacdb1ae3caf977012c04bc665"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6dabcacacdb1ae3caf977012c04bc665">&#9670;&#160;</a></span>getNameRefAttrName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename ConcreteOp&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::StringAttr <a class="el" href="classllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Model.html">llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::Model</a>&lt; ConcreteOp &gt;::getNameRefAttrName </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *</td>          <td class="paramname"><span class="paramname"><em>impl</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>tablegen_opaque_val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00079">79</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -282,7 +317,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00070">70</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html#l00075">75</a> of file <a class="el" href="Global_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>

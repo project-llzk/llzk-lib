@@ -150,6 +150,7 @@ Public Attributes</h2></td></tr>
 <tr class="memdesc:a59219a191b5b55515e0f2d09b990ce36"><td class="mdescLeft">&#160;</td><td class="mdescRight">The methods defined by the interface.  <br /></td></tr>
 <tr class="memitem:a8ca7e4553c404fda8c55d63a9790fae6" id="r_a8ca7e4553c404fda8c55d63a9790fae6"><td class="memItemLeft">::mlir::TypedValue&lt;<a class="el" href="classllzk_1_1component_1_1StructType.html">::llzk::component::StructType</a> &gt;(*&#160;</td><td class="memItemRight"><a class="el" href="#a8ca7e4553c404fda8c55d63a9790fae6">getComponent</a> )(const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memitem:a9d3ce330ca10447b4aafb8e35caf7a20" id="r_a9d3ce330ca10447b4aafb8e35caf7a20"><td class="memItemLeft">::mlir::OpOperand &amp;(*&#160;</td><td class="memItemRight"><a class="el" href="#a9d3ce330ca10447b4aafb8e35caf7a20">getComponentMutable</a> )(const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
+<tr class="memitem:a0937ffba966b9d92adf6f99f4e902987" id="r_a0937ffba966b9d92adf6f99f4e902987"><td class="memItemLeft">::mlir::StringAttr(*&#160;</td><td class="memItemRight"><a class="el" href="#a0937ffba966b9d92adf6f99f4e902987">getMemberNameAttrName</a> )(const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memitem:a10fe7e719857ab9bb207baa27a985cb4" id="r_a10fe7e719857ab9bb207baa27a985cb4"><td class="memItemLeft">::llvm::StringRef(*&#160;</td><td class="memItemRight"><a class="el" href="#a10fe7e719857ab9bb207baa27a985cb4">getMemberName</a> )(const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memitem:a5261e064d14863762508a03d7d66872f" id="r_a5261e064d14863762508a03d7d66872f"><td class="memItemLeft">::mlir::FlatSymbolRefAttr(*&#160;</td><td class="memItemRight"><a class="el" href="#a5261e064d14863762508a03d7d66872f">getMemberNameAttr</a> )(const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *)</td></tr>
 <tr class="memitem:abb942fc3f139b3061289d5cb2ca5d36b" id="r_abb942fc3f139b3061289d5cb2ca5d36b"><td class="memItemLeft">void(*&#160;</td><td class="memItemRight"><a class="el" href="#abb942fc3f139b3061289d5cb2ca5d36b">setMemberName</a> )(const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *, ::llvm::StringRef)</td></tr>
@@ -205,7 +206,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00018">18</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00019">19</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -221,7 +222,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00019">19</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00020">20</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a0937ffba966b9d92adf6f99f4e902987" name="a0937ffba966b9d92adf6f99f4e902987"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0937ffba966b9d92adf6f99f4e902987">&#9670;&#160;</a></span>getMemberNameAttrName</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">::mlir::StringAttr(* llzk::component::detail::MemberRefOpInterfaceInterfaceTraits::Concept::getMemberNameAttrName) (const <a class="el" href="structllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1Concept.html">Concept</a> *<a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a>, ::mlir::Operation *)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00018">18</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -237,7 +254,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00022">22</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00023">23</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -271,7 +288,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00024">24</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00025">25</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -287,7 +304,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00021">21</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00022">22</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -303,7 +320,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00022">22</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html#l00023">23</a> of file <a class="el" href="Struct_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>

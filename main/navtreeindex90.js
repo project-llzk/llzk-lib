@@ -1,5 +1,9 @@
 var NAVTREEINDEX90 =
 {
+"pcl-backend.html#pclimplies-pclimpliesop":[8,2,0,0,12],
+"pcl-backend.html#pclle-pclcmpleop":[8,2,0,0,13],
+"pcl-backend.html#pcllt-pclcmpltop":[8,2,0,0,14],
+"pcl-backend.html#pclmul-pclmulop":[8,2,0,0,15],
 "pcl-backend.html#pclneg-pclnegop":[8,2,0,0,16],
 "pcl-backend.html#pclnot-pclnotop":[8,2,0,0,17],
 "pcl-backend.html#pclor-pclorop":[8,2,0,0,18],
@@ -245,9 +249,5 @@ var NAVTREEINDEX90 =
 "smt-backend.html#smtnot-llzksmtnotop":[8,1,0,0,46],
 "smt-backend.html#smtor-llzksmtorop":[8,1,0,0,47],
 "smt-backend.html#smtpop-llzksmtpopop":[8,1,0,0,48],
-"smt-backend.html#smtpush-llzksmtpushop":[8,1,0,0,49],
-"smt-backend.html#smtreset-llzksmtresetop":[8,1,0,0,50],
-"smt-backend.html#smtset_info-llzksmtsetinfoop":[8,1,0,0,51],
-"smt-backend.html#smtset_logic-llzksmtsetlogicop":[8,1,0,0,52],
-"smt-backend.html#smtsolver-llzksmtsolverop":[8,1,0,0,53]
+"smt-backend.html#smtpush-llzksmtpushop":[8,1,0,0,49]
 };

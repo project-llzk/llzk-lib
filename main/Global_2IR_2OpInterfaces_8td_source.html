@@ -159,17 +159,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Global_2IR_2Op
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>          [{Gets the SSA Value that holds the read/write data for the GlobalRefOp.}],</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>          &quot;::mlir::Value&quot;, &quot;getVal&quot;, (ins)&gt;,</div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>      // Requires implementors to have a &#39;$name_ref&#39; argument.</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>      InterfaceMethod&lt;[{Gets the global name attribute from the GlobalRefOp.}],</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                      &quot;::mlir::SymbolRefAttr&quot;, &quot;getNameRef&quot;, (ins)&gt;,</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  ];</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    /// Gets the definition for the `global` referenced in this op.</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    ::mlir::FailureOr&lt;SymbolLookupResult&lt;GlobalDefOp&gt;&gt; getGlobalDefOp(::mlir::SymbolTableCollection &amp;tables);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  }];</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>#endif // LLZK_GLOBAL_OP_INTERFACES</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>      InterfaceMethod&lt;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>          [{Gets the name of the global reference attribute on the GlobalRefOp.}],</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>          &quot;::mlir::StringAttr&quot;, &quot;getNameRefAttrName&quot;, (ins),</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>          /*methodBody=*/[{ return $_op.getNameRefAttrName(); }]&gt;,</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>      InterfaceMethod&lt;[{Gets the global name attribute from the GlobalRefOp.}],</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>                      &quot;::mlir::SymbolRefAttr&quot;, &quot;getNameRef&quot;, (ins)&gt;,</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  ];</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  let extraClassDeclaration = [{</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    /// Gets the definition for the `global` referenced in this op.</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    ::mlir::FailureOr&lt;SymbolLookupResult&lt;GlobalDefOp&gt;&gt; getGlobalDefOp(::mlir::SymbolTableCollection &amp;tables);</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }];</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>}</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>#endif // LLZK_GLOBAL_OP_INTERFACES</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
