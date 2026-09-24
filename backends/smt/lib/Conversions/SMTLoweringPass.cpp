@@ -495,7 +495,6 @@ public:
     auto [_, witness] = it->second;
     auto witnessRange = strategy->getWitnessMemberRange(adaptor.getMemberName());
     auto valueRange = strategy->getScalarValueRange(op.getVal());
-    // TODO: If this is an array, emit the assertion quantified over array bounds
     strategy->emitCongruenceEqualityAssertion(
         rewriter, op.getVal().getType(), op.getLoc(), witness, witnessRange, adaptor.getVal(),
         valueRange, "member_write"
@@ -754,19 +753,16 @@ void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
 ) const {
   if (auto arrType = dyn_cast<array::ArrayType>(type)) {
     auto extents = getExtents(arrType);
-    if (succeeded(extents)) {
-      Value predicate = emitter->emitQuantifiedAssertion(
-          loc, *extents,
-          [this, &loc, &lhs, &rhs, &builder, &lhsRange, &rhsRange,
-           &prefix](ValueRange indices) -> Value {
-        auto lhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
-        auto rhsElement = emitter->emitArraySelect(loc, rhs, indices, builder);
-        return buildCongruenceEqualityPredicate(
-            builder, loc, lhsElement, lhsRange, rhsElement, rhsRange, prefix
-        );
-      },
-          builder
+    auto equalAtPosition = [this, &loc, &lhs, &rhs, &builder, &lhsRange, &rhsRange,
+                            &prefix](ValueRange indices) -> Value {
+      auto lhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
+      auto rhsElement = emitter->emitArraySelect(loc, rhs, indices, builder);
+      return buildCongruenceEqualityPredicate(
+          builder, loc, lhsElement, lhsRange, rhsElement, rhsRange, prefix
       );
+    };
+    if (succeeded(extents)) {
+      Value predicate = emitter->emitQuantifiedAssertion(loc, *extents, equalAtPosition, builder);
       builder.create<smt::AssertOp>(loc, predicate);
       return;
     }
@@ -1055,7 +1051,7 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
           SmallVector<size_t> extents;
           for (auto extent : arrType.getShape()) {
             if (extent < 0) {
-              mod.emitError() << "SMT lowering does not support dynamically-shaped arrays\n";
+              mod.emitError("SMT lowering does not support dynamically-shaped arrays\n");
               return signalPassFailure();
             }
             extents.push_back(extent);
