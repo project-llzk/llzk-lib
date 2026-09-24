@@ -5606,13 +5606,10 @@ static bool isValueDefinedInside(Operation *ancestor, Value value) {
   return parentOp && ancestor->isAncestor(parentOp);
 }
 
-/// Return whether `type` is a mutable aggregate whose POD read/write semantics require a snapshot.
-static bool requiresValueCopy(Type type) { return llvm::isa<PodType, ArrayType>(type); }
-
 /// Materialize the POD-access snapshot of `source` at the builder's current insertion point.
 static FailureOr<Value>
 materializePodAccessSnapshot(OpBuilder &builder, Location loc, Value source) {
-  if (!requiresValueCopy(source.getType())) {
+  if (!llzk::requiresValueCopy(source.getType())) {
     return source;
   }
   return llzk::materializeValueCopy(builder, loc, source);
@@ -5636,13 +5633,14 @@ public:
         }
         replacement = sourceWrite.getValue();
       }
-      if (requiresValueCopy(readOp.getType()) && llzk::canMaterializeValueCopy(readOp.getType())) {
+      if (llzk::requiresValueCopy(readOp.getType()) &&
+          llzk::canMaterializeValueCopy(readOp.getType())) {
         // Keep supported aggregates visible to POD mem2reg, which owns both their write-point and
         // read-point snapshots. Eagerly copying here can introduce a late use of a POD source and
         // unnecessarily prevent scalarization of an otherwise independent loop-carried POD.
         return failure();
       }
-      if (requiresValueCopy(readOp.getType())) {
+      if (llzk::requiresValueCopy(readOp.getType())) {
         // Ragged leaf values are internal array-of-POD decomposition state. Preserve their tag so
         // the dedicated shape-witness diagnostics can report the unsupported operation later.
         if (getTaggedRaggedNestedLeafKind(replacement).empty()) {
@@ -5664,7 +5662,8 @@ public:
   using OpRewritePattern<ReadPodOp>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
-    if (requiresValueCopy(readOp.getType()) && !llzk::canMaterializeValueCopy(readOp.getType())) {
+    if (llzk::requiresValueCopy(readOp.getType()) &&
+        !llzk::canMaterializeValueCopy(readOp.getType())) {
       return failure();
     }
     auto ifOp = readOp->getParentOfType<scf::IfOp>();
@@ -5771,7 +5770,8 @@ public:
       }
     }
 
-    if (requiresValueCopy(readOp.getType()) && !llzk::canMaterializeValueCopy(readOp.getType())) {
+    if (llzk::requiresValueCopy(readOp.getType()) &&
+        !llzk::canMaterializeValueCopy(readOp.getType())) {
       return failure();
     }
     rewriter.setInsertionPoint(readOp);
@@ -6218,7 +6218,7 @@ public:
 
     llvm::erase_if(slots, [&](const IfWriteSlot &slot) {
       return isValueDefinedInside(ifOp, slot.podRef) ||
-             (requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type)) ||
+             (llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type)) ||
              !branchSlotCanBeLifted(&thenBlock, slot.podRef, slot.recordName) ||
              !branchSlotCanBeLifted(elseBlock, slot.podRef, slot.recordName);
     });
@@ -6330,7 +6330,7 @@ public:
         llvm::any_of(
             slots,
             [](const LoopPodSlot &slot) {
-      return requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
+      return llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
     }
         ) ||
         hasUnliftableLoopPodUses(body, slots)) {
@@ -6402,7 +6402,7 @@ public:
         llvm::any_of(
             slots,
             [](const LoopPodSlot &slot) {
-      return requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
+      return llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
     }
         ) ||
         hasUnliftableLoopPodUses(beforeBody, slots) || hasUnliftableLoopPodUses(afterBody, slots)) {
@@ -7453,7 +7453,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.walk([&diagnostic](NewPodOp newPod) {
           ArrayRef<RecordAttr> records = newPod.getType().getRecords();
           Type recordType = records.size() == 1 ? records.front().getType() : Type {};
-          if (recordType && llvm::isa<PodType, ArrayType>(recordType) &&
+          if (recordType && llzk::requiresValueCopy(recordType) &&
               !llzk::canMaterializeValueCopy(recordType)) {
             diagnostic.attachNote(newPod.getLoc())
                 << "cannot promote POD record '" << records.front().getName().getValue()

@@ -39,6 +39,8 @@ static const ValueCopyDialectInterface *getValueCopyInterface(Type type) {
 
 } // namespace
 
+bool requiresValueCopy(Type type) { return !isIdentityPreservingCopy(type); }
+
 bool canMaterializeValueCopy(Type type) {
   if (isIdentityPreservingCopy(type)) {
     return true;

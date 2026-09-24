@@ -152,14 +152,9 @@ std::optional<DestructurableAllocationOpInterface> NewPodOp::handleDestructuring
 
 namespace {
 
-/// Return whether `type` has mutable aggregate semantics relevant to POD storage.
-static bool requiresValueCopy(Type type) {
-  return llvm::isa<PodType, llzk::array::ArrayType>(type);
-}
-
 /// Materialize the semantic snapshot of `source` immediately before `anchor`.
 static Value materializeValueCopyBefore(Operation *anchor, Value source, OpBuilder &builder) {
-  if (!requiresValueCopy(source.getType())) {
+  if (!llzk::requiresValueCopy(source.getType())) {
     return source;
   }
   OpBuilder::InsertionGuard guard(builder);
@@ -179,7 +174,7 @@ static bool canRemovePodAccess(
   }
   Value blockingUse = (*blockingUses.begin())->get();
   return blockingUse == slot.ptr && podRef == slot.ptr && accessedType == slot.elemType &&
-         (!requiresValueCopy(accessedType) || llzk::canMaterializeValueCopy(accessedType));
+         (!llzk::requiresValueCopy(accessedType) || llzk::canMaterializeValueCopy(accessedType));
 }
 
 } // namespace
@@ -230,7 +225,7 @@ DeletionKind WritePodOp::removeBlockingUses(
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   ArrayRef<RecordAttr> records = getType().getRecords();
-  if (records.size() != 1 || (requiresValueCopy(records.front().getType()) &&
+  if (records.size() != 1 || (llzk::requiresValueCopy(records.front().getType()) &&
                               !llzk::canMaterializeValueCopy(records.front().getType()))) {
     return {};
   }

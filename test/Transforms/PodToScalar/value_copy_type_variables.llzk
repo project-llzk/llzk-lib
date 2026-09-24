@@ -1,0 +1,33 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+!Record = !pod.type<[@value: !poly.tvar<@T>]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    function.def @direct(%value: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      // expected-note@+1 {{cannot promote POD record 'value'}}
+      %record = pod.new { @value = %value } : !Record
+      %result = pod.read %record[@value] : !Record, !poly.tvar<@T>
+      function.return %result : !poly.tvar<@T>
+    }
+  }
+}
+
+// -----
+
+!Record = !pod.type<[@value: !poly.tvar<@T>]>
+!Outer = !pod.type<[@inner: !Record]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T : !poly.tvar<@T>
+    // expected-note@+1 {{cannot promote POD record 'value'}}
+    function.def @nested(%value: !Record) -> !Record {
+      // expected-note@+1 {{cannot promote POD record 'inner'}}
+      %outer = pod.new { @inner = %value } : !Outer
+      %result = pod.read %outer[@inner] : !Outer, !Record
+      function.return %result : !Record
+    }
+  }
+}

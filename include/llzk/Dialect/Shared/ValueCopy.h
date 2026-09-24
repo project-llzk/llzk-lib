@@ -39,6 +39,11 @@ public:
   materializeValueCopy(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value source) const = 0;
 };
 
+/// Return whether copying `type` requires the checked materialization path. Only explicitly
+/// supported immutable scalars and identity-bearing handles may bypass it; unknown types must not
+/// silently acquire identity semantics.
+bool requiresValueCopy(mlir::Type type);
+
 /// Return whether `type` has supported value-copy semantics. A successful copy may reuse the same
 /// SSA value only for immutable values, identity-bearing handles, or aggregates without mutable
 /// payload.
