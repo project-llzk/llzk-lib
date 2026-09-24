@@ -17,6 +17,11 @@ in
 stdenv.mkDerivation {
   pname = "llzk-${lib.toLower cmakeBuildType}";
   inherit version;
+
+  # LLVM's CMake configuration selects libc++'s extensive hardening mode.
+  # Do not let the Nix Clang wrapper also define the fast mode.
+  hardeningDisable = [ "libcxxhardeningfast" ];
+
   src =
     let
       src0 = lib.cleanSource (builtins.path {
