@@ -510,9 +510,13 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
   if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
     Value selected =
         emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+    // I don't think interval analysis does much interesting with arrays so I don't think we can do
+    // better than this?
+    auto reducedSelected = emitter->emitModPrime(rewriter, op->getLoc(), selected);
+    auto reducedRval = emitter->emitModPrime(rewriter, op->getLoc(), adaptor.getRvalue());
     rewriter.replaceOpWithNewOp<mlir::smt::AssertOp>(
         op,
-        mlir::smt::EqOp::create(rewriter, op->getLoc(), selected, adaptor.getRvalue()).getResult()
+        mlir::smt::EqOp::create(rewriter, op->getLoc(), reducedSelected, reducedRval).getResult()
     );
     return success();
 
