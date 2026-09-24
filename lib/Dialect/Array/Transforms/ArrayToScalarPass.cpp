@@ -42,13 +42,15 @@
 /// 3. Replace branch-local reads (in `scf.if`) with the value written by a same-index write op that
 ///    dominates the parent `scf.if` (because the passes below cannot handle that case).
 ///
-/// 4. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1
+/// 4. Fold read-only, constant-index accesses to constant global arrays without expanding them.
+///
+/// 5. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1
 ///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
 ///
-/// 5. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
+/// 6. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
 ///    values. This pass also runs several standard optimizations so the final result is condensed.
 ///
-/// 6. Remove array allocations that become unread after memory promotion, then remove SSA values
+/// 7. Remove array allocations that become unread after memory promotion, then remove SSA values
 ///    made dead by that cleanup.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
@@ -70,8 +72,10 @@
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -80,6 +84,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
@@ -87,6 +92,7 @@
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
@@ -920,6 +926,77 @@ static void step3(ModuleOp modOp) {
   }
 }
 
+/// Fold constant-index scalar reads from independent copies of constant global arrays.
+/// Validate every use before rewriting: writes, escapes, and dynamic indices leave the entire
+/// copy unchanged. Only accessed elements are materialized, never the full initializer.
+static void foldConstantGlobalArrayReads(ModuleOp module) {
+  SymbolTableCollection tables;
+  SmallVector<global::GlobalReadOp> globalReads;
+  module.walk([&globalReads](global::GlobalReadOp read) { globalReads.push_back(read); });
+  // Rewriting erases later array-read operations, so finish walking before mutating the IR.
+  auto foldRead = [&tables](global::GlobalReadOp globalRead) {
+    auto arrayType = llvm::dyn_cast<ArrayType>(globalRead.getType());
+    if (!arrayType || !arrayType.hasStaticShape()) {
+      return;
+    }
+    auto definition =
+        llvm::cast<global::GlobalRefOpInterface>(globalRead.getOperation()).getGlobalDefOp(tables);
+    if (failed(definition) || !definition->get().isConstant()) {
+      return;
+    }
+    auto initializer =
+        llvm::dyn_cast_if_present<ArrayAttr>(definition->get().getInitialValueAttr());
+    if (!initializer) {
+      return;
+    }
+
+    SmallVector<std::pair<ReadArrayOp, Attribute>> reads;
+    auto indexGen = ArrayIndexGen::from(arrayType);
+    for (Operation *user : globalRead.getResult().getUsers()) {
+      auto read = llvm::dyn_cast<ReadArrayOp>(user);
+      if (!read || read.getArrRef() != globalRead.getResult()) {
+        return;
+      }
+      ArrayAttr indices = getIndexAsAttr(read);
+      if (!indices) {
+        return;
+      }
+      std::optional<int64_t> index = indexGen.linearize(indices.getValue());
+      if (!index || *index < 0 || static_cast<uint64_t>(*index) >= initializer.size()) {
+        return;
+      }
+      Attribute element = initializer[*index];
+      auto typed = llvm::dyn_cast<TypedAttr>(element);
+      if (!typed || typed.getType() != read.getType() ||
+          !llvm::isa<IntegerAttr, felt::FeltConstAttr, StringAttr>(element)) {
+        return;
+      }
+      reads.emplace_back(read, element);
+    }
+
+    for (auto [read, element] : reads) {
+      OpBuilder builder(read);
+      Value constant;
+      if (auto integer = llvm::dyn_cast<IntegerAttr>(element)) {
+        constant = builder.create<arith::ConstantOp>(read.getLoc(), integer);
+      } else if (auto felt = llvm::dyn_cast<felt::FeltConstAttr>(element)) {
+        constant = builder.create<felt::FeltConstantOp>(read.getLoc(), felt);
+      } else {
+        constant = builder.create<string::LitStringOp>(
+            read.getLoc(), read.getType(), llvm::cast<StringAttr>(element)
+        );
+      }
+      read.getResult().replaceAllUsesWith(constant);
+      read.erase();
+    }
+    // The declaration proves immutability even if this read omits its optional `const` marker.
+    globalRead.erase();
+  };
+  for (global::GlobalReadOp read : globalReads) {
+    foldRead(read);
+  }
+}
+
 /// Pass driver for the full array-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
   using Base = ArrayToScalarPassBase<PassImpl>;
@@ -965,6 +1042,8 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
       llvm::dbgs() << "After step 3:\n";
       module.dump();
     });
+
+    foldConstantGlobalArrayReads(module);
 
     OpPassManager nestedPM(ModuleOp::getOperationName());
     // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
