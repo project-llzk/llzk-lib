@@ -44,14 +44,16 @@
 ///
 /// 4. Fold read-only, constant-index accesses to constant global arrays without expanding them.
 ///
-/// 5. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1
-///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
+/// 5. Promote straight-line static arrays in one walk per block.
 ///
-/// 6. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
-///    values. This pass also runs several standard optimizations so the final result is condensed.
+/// 6. Run MLIR "sroa" pass to split each remaining array with linear size `N` into `N` arrays of
+///    size 1 (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
 ///
-/// 7. Remove array allocations that become unread after memory promotion, then remove SSA values
-///    made dead by that cleanup.
+/// 7. Run MLIR "mem2reg" as a fallback for allocations with control flow or unsupported
+///    uses. This pass also runs several standard optimizations so the final result is condensed.
+///
+/// 8. Remove array allocations that become unread after memory promotion, then canonicalize local
+///    SSA values made dead by that cleanup.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -106,6 +108,7 @@
 // Include the generated base pass class definitions.
 namespace llzk::array {
 #define GEN_PASS_DEF_ARRAYTOSCALARPASS
+#define GEN_PASS_DEF_STRAIGHTLINESTATICARRAYPROMOTIONPASS
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::array
 
@@ -997,6 +1000,138 @@ static void foldConstantGlobalArrayReads(ModuleOp module) {
   }
 }
 
+/// Return whether \p accessBlock is reached from \p allocationBlock only through nested,
+/// single-block `scf.execute_region` operations.
+static bool hasStraightLineRegionPath(Block *allocationBlock, Block *accessBlock) {
+  for (Block *block = accessBlock; block != allocationBlock;) {
+    Operation *parent = block->getParentOp();
+    if (!parent || !isa<scf::ExecuteRegionOp>(parent) ||
+        !llvm::hasSingleElement(*block->getParent())) {
+      return false;
+    }
+    block = parent->getBlock();
+  }
+  return true;
+}
+
+/// Collect statically indexed elements of \p alloc whose accesses all have a single linear order
+/// within one block (possibly a loop body) or nested single-block regions. Return false if the
+/// allocation has any escaping or unsupported use, since that could alias an otherwise eligible
+/// element.
+static bool collectStraightLineStaticElements(
+    CreateArrayOp alloc, DenseMap<Attribute, Block *> &elementBlocks
+) {
+  ArrayType type = alloc.getType();
+  if (!type.hasStaticShape() || !alloc.getElements().empty()) {
+    return false;
+  }
+
+  DenseSet<Attribute> ineligibleElements;
+  for (OpOperand &use : alloc.getResult().getUses()) {
+    Operation *owner = use.getOwner();
+    if (use.getOperandNumber() != 0) {
+      return false;
+    }
+
+    ArrayAttr index;
+    if (auto read = dyn_cast<ReadArrayOp>(owner)) {
+      index = mlir::cast<ArrayAccessOpInterface>(owner).indexOperandsToAttributeArray();
+      if (!index || read.getResult().getType() != type.getElementType()) {
+        return false;
+      }
+    } else if (auto write = dyn_cast<WriteArrayOp>(owner)) {
+      index = mlir::cast<ArrayAccessOpInterface>(owner).indexOperandsToAttributeArray();
+      if (!index || write.getRvalue().getType() != type.getElementType()) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+
+    Block *accessBlock = owner->getBlock();
+    auto [it, inserted] = elementBlocks.try_emplace(index, accessBlock);
+    if ((!inserted && it->second != accessBlock) ||
+        !hasStraightLineRegionPath(alloc->getBlock(), accessBlock)) {
+      ineligibleElements.insert(index);
+    }
+  }
+  for (Attribute index : ineligibleElements) {
+    elementBlocks.erase(index);
+  }
+  return true;
+}
+
+/// Promote all eligible straight-line array elements in O(operations + allocation uses). SROA and
+/// generic mem2reg remain responsible for arrays involving branches, loops, dynamic indices,
+/// nested regions, or escaping values.
+static void promoteStraightLineStaticArrays(ModuleOp module) {
+  DenseMap<Block *, DenseMap<Value, DenseSet<Attribute>>> elementsByBlock;
+  SmallVector<CreateArrayOp> allocations;
+  size_t eligibleElementCount = 0;
+  module.walk([&](CreateArrayOp alloc) {
+    DenseMap<Attribute, Block *> elementBlocks;
+    if (!collectStraightLineStaticElements(alloc, elementBlocks)) {
+      return;
+    }
+    allocations.push_back(alloc);
+    eligibleElementCount += elementBlocks.size();
+    for (auto [index, block] : elementBlocks) {
+      elementsByBlock[block][alloc.getResult()].insert(index);
+    }
+  });
+  LLVM_DEBUG(
+      llvm::dbgs() << "Straight-line static array promotion: " << eligibleElementCount
+                   << " elements eligible\n";
+  );
+
+  for (auto &[block, eligibleElements] : elementsByBlock) {
+    DenseMap<Value, DenseMap<Attribute, Value>> latestValues;
+
+    for (Operation &op : llvm::make_early_inc_range(*block)) {
+      if (auto read = dyn_cast<ReadArrayOp>(&op)) {
+        Value array = read.getArrRef();
+        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
+        auto arrayIt = eligibleElements.find(array);
+        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
+          continue;
+        }
+        Value &latest = latestValues[array][index];
+        if (!latest) {
+          OpBuilder builder(read);
+          latest = builder.create<llzk::NonDetOp>(read.getLoc(), read.getType());
+        }
+        read.getResult().replaceAllUsesWith(latest);
+        read.erase();
+        continue;
+      }
+
+      if (auto write = dyn_cast<WriteArrayOp>(&op)) {
+        Value array = write.getArrRef();
+        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
+        auto arrayIt = eligibleElements.find(array);
+        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
+          continue;
+        }
+        latestValues[array][index] = write.getRvalue();
+        write.erase();
+      }
+    }
+  }
+
+  for (CreateArrayOp alloc : allocations) {
+    if (alloc.getResult().use_empty()) {
+      alloc.erase();
+    }
+  }
+}
+
+class StraightLineStaticArrayPromotionPassImpl
+    : public llzk::array::impl::StraightLineStaticArrayPromotionPassBase<
+          StraightLineStaticArrayPromotionPassImpl> {
+public:
+  void runOnOperation() override { promoteStraightLineStaticArrays(getOperation()); }
+};
+
 /// Pass driver for the full array-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
   using Base = ArrayToScalarPassBase<PassImpl>;
@@ -1046,6 +1181,9 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
     foldConstantGlobalArrayReads(module);
 
     OpPassManager nestedPM(ModuleOp::getOperationName());
+    // Promote simple arrays directly, avoiding both SROA's temporary allocations and mem2reg's
+    // per-slot block scans.
+    nestedPM.addPass(createStraightLineStaticArrayPromotionPass());
     // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
     // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
     // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
@@ -1058,8 +1196,12 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
             .allocatorOpName = CreateArrayOp::getOperationName().str()
         }
     ));
-    // Cleanup SSA values made dead by removing allocations and writes.
-    nestedPM.addPass(createRemoveDeadValuesWorkaroundPass());
+    // Fold and remove local SSA values made dead by array promotion. Avoid the global
+    // remove-dead-values dataflow analysis here: static array lowering can produce very large,
+    // straight-line functions, and the targeted allocation cleanup above has already removed the
+    // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
+    // dead function arguments/results or loop iteration values that canonicalization cannot remove.
+    nestedPM.addPass(createCanonicalizerPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;

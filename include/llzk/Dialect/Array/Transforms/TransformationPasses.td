@@ -19,4 +19,14 @@ def ArrayToScalarPass : LLZKPass<"llzk-array-to-scalar"> {
   }];
 }
 
+def StraightLineStaticArrayPromotionPass
+    : LLZKPass<"llzk-straight-line-static-array-promotion"> {
+  let summary = "Promote straight-line static array accesses to SSA values";
+  let description = [{
+    Promote statically indexed array elements whose accesses have a single linear order within one
+    block or nested single-execution regions. Arrays involving control-flow joins, dynamic indices,
+    or escaping values are left unchanged.
+  }];
+}
+
 #endif // LLZK_ARRAY_TRANSFORMATION_PASSES_TD
