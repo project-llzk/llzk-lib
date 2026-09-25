@@ -442,19 +442,6 @@ static size_t splitPodArrayTypeTo(
   return 1;
 }
 
-/// For each Type in the given input collection, call `splitPodArrayTypeTo(Type,...)`.
-template <typename TypeCollection>
-void splitPodArrayTypeTo(
-    TypeCollection types, SmallVectorImpl<Type> &collect, SmallVector<size_t> *originalIdxToSize
-) {
-  for (Type t : types) {
-    size_t count = splitPodArrayTypeTo(t, collect);
-    if (originalIdxToSize) {
-      originalIdxToSize->push_back(count);
-    }
-  }
-}
-
 /// Return `true` iff splitting `arrTy` produces no concrete POD leaf arrays.
 static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
   SmallVector<Type> splitTypes;

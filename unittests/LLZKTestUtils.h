@@ -18,7 +18,9 @@
 /// if `cond` is false. Use this wrapper for checks on type `T` where `T` cannot
 /// be written directly to std C++ ostreams.
 template <typename T>
-static testing::AssertionResult checkCond(const T &expected, const T &actual, bool cond) {
+[[maybe_unused]] static testing::AssertionResult checkCond(
+    const T &expected, const T &actual, bool cond
+) {
   if (cond) {
     return testing::AssertionSuccess();
   }
