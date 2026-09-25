@@ -161,7 +161,6 @@ class SymbolUseGraph {
       mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path, SymbolUseGraphNode *predecessorNode
   );
 
-  SymbolUseGraphNode *getSymbolUserNode(const mlir::SymbolTable::SymbolUse &u);
   void buildGraph(mlir::Operation *symbolTableOp);
 
   // Friend declarations for the specializations of GraphTraits
