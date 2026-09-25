@@ -1976,16 +1976,6 @@ inline static bool isInsideSupportedScfRegion(Operation *op) {
   return hasParentThatIsa<scf::IfOp, scf::ForOp, scf::WhileOp>(op);
 }
 
-/// Return `true` iff a read from a virtual POD can be resolved without materializing it.
-static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
-  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWrite(op) ||
-      findNearestForwardableWrite(op)) {
-    return false;
-  }
-  Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
-  return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
-}
-
 /// Return `true` iff step 2 should defer splitting this array read until POD-aware rewriting.
 inline static bool shouldDeferPodArrayReadToStep3(ReadArrayOp op) {
   return splittablePodArray(op.getArrRefType()) &&
@@ -3483,6 +3473,126 @@ struct DeferredPodArrayBacking {
 
 using DeferredPodArrayBackingMap = DenseMap<Value, DeferredPodArrayBacking>;
 
+/// Cached access facts used by step 3's dynamic legality checks.
+///
+/// Dialect conversion may ask whether the same `pod.read` is legal many times. Computing these
+/// facts by walking backward and forward through the block on every query is quadratic for the
+/// long straight-line access chains emitted by the Circom frontend. This analysis instead visits
+/// every block once and records the answer at each read.
+class PodAccessAnalysis {
+  using RecordKey = std::pair<Value, StringAttr>;
+
+  struct ReadFacts {
+    bool hasEarlierWrite = false;
+    bool hasForwardableWrite = false;
+  };
+
+  struct BlockState {
+    DenseSet<RecordKey> earlierWrites;
+    DenseMap<Value, WritePodOp> forwardableWrites;
+  };
+
+  struct OpSummary {
+    DenseSet<Value> usedPodValues;
+    DenseSet<RecordKey> writtenRecords;
+  };
+
+  DenseMap<Operation *, ReadFacts> readFacts;
+  DenseMap<Operation *, DenseSet<RecordKey>> loopWrittenRecords;
+
+  static void mergeInto(OpSummary &dst, const OpSummary &src) {
+    dst.usedPodValues.insert(src.usedPodValues.begin(), src.usedPodValues.end());
+    dst.writtenRecords.insert(src.writtenRecords.begin(), src.writtenRecords.end());
+  }
+
+  OpSummary analyzeBlock(Block &block, BlockState state) {
+    OpSummary blockSummary;
+    for (Operation &op : block) {
+      if (auto read = dyn_cast<ReadPodOp>(op)) {
+        RecordKey key {read.getPodRef(), read.getRecordNameAttr()};
+        auto writeIt = state.forwardableWrites.find(read.getPodRef());
+        readFacts[read.getOperation()] = {
+            state.earlierWrites.contains(key),
+            writeIt != state.forwardableWrites.end() &&
+                isSamePodRecord(writeIt->second, key.first, key.second)
+        };
+      }
+
+      OpSummary opSummary;
+      for (Value operand : op.getOperands()) {
+        if (llvm::isa<PodType>(operand.getType())) {
+          opSummary.usedPodValues.insert(operand);
+        }
+      }
+
+      for (Region &region : op.getRegions()) {
+        BlockState nestedState = state;
+        if (isa<scf::ForOp, scf::WhileOp>(op)) {
+          for (const RecordKey &key : loopWrittenRecords[&op]) {
+            auto writeIt = nestedState.forwardableWrites.find(key.first);
+            if (writeIt != nestedState.forwardableWrites.end() &&
+                isSamePodRecord(writeIt->second, key.first, key.second)) {
+              nestedState.forwardableWrites.erase(writeIt);
+            }
+          }
+        }
+        for (Block &nestedBlock : region) {
+          mergeInto(opSummary, analyzeBlock(nestedBlock, nestedState));
+        }
+      }
+
+      if (auto write = dyn_cast<WritePodOp>(op)) {
+        opSummary.writtenRecords.insert({write.getPodRef(), write.getRecordNameAttr()});
+      }
+
+      state.earlierWrites.insert(opSummary.writtenRecords.begin(), opSummary.writtenRecords.end());
+
+      // A top-level read is transparent to forwarding. Any other operation that uses a POD,
+      // including through a nested region, is a barrier unless it is itself the matching write.
+      if (!isa<ReadPodOp>(op)) {
+        for (Value podRef : opSummary.usedPodValues) {
+          state.forwardableWrites.erase(podRef);
+        }
+        if (auto write = dyn_cast<WritePodOp>(op)) {
+          state.forwardableWrites[write.getPodRef()] = write;
+        }
+      }
+
+      mergeInto(blockSummary, opSummary);
+    }
+    return blockSummary;
+  }
+
+public:
+  explicit PodAccessAnalysis(ModuleOp module) {
+    module.walk([this](WritePodOp write) {
+      RecordKey key {write.getPodRef(), write.getRecordNameAttr()};
+      for (Operation *parent = write->getParentOp(); parent; parent = parent->getParentOp()) {
+        if (isa<scf::ForOp, scf::WhileOp>(parent)) {
+          loopWrittenRecords[parent].insert(key);
+        }
+      }
+    });
+    for (Region &region : module->getRegions()) {
+      for (Block &block : region) {
+        analyzeBlock(block, BlockState());
+      }
+    }
+  }
+
+  bool hasEarlierWrite(ReadPodOp read) const {
+    auto it = readFacts.find(read.getOperation());
+    return it != readFacts.end() && it->second.hasEarlierWrite;
+  }
+
+  bool hasFacts(ReadPodOp read) const { return readFacts.contains(read.getOperation()); }
+
+  bool hasForwardableWrite(ReadPodOp read) const {
+    auto it = readFacts.find(read.getOperation());
+    return it != readFacts.end() && it->second.hasForwardableWrite;
+  }
+};
+
 /// Insert synthetic deferred POD-array backing close to the field read that owns it.
 static void setDeferredPodArrayBackingInsertionPoint(ReadPodOp readOp, OpBuilder &bldr) {
   if (Operation *loopOp = llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp)) {
@@ -3536,6 +3646,7 @@ struct Step3Resolver {
   VirtualPodValueMap virtualPods;
   CompatiblePodLeafMaterializationMap materializedLeaves;
   DeferredPodArrayBackingMap deferredPodArrays;
+  std::optional<PodAccessAnalysis> podAccesses;
 
   void rehydrateVirtualPodPlaceholders(ModuleOp modOp);
   void addPreConversionPatterns(RewritePatternSet &patterns);
@@ -3546,7 +3657,9 @@ struct Step3Resolver {
   void addLateResolutionPatterns(RewritePatternSet &patterns);
   void addPostConversionPatterns(RewritePatternSet &patterns);
   void configureLateVirtualPodLegality(ConversionTarget &target) const;
-  bool hasResolvableLateVirtualPodOps(ModuleOp modOp) const;
+  void refreshPodAccessAnalysis(ModuleOp modOp) { podAccesses.emplace(modOp); }
+  bool canResolveVirtualPodReadFromAnalysis(ReadPodOp op) const;
+  bool hasResolvableLateVirtualPodOps(ModuleOp modOp);
   void materializeRemainingVirtualPods(ModuleOp modOp);
 };
 
@@ -4870,7 +4983,7 @@ public:
 
   LogicalResult
   matchAndRewrite(ReadPodOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    if (hasEarlierWrite(op) || findNearestForwardableWrite(op)) {
+    if (!resolver.canResolveVirtualPodReadFromAnalysis(op)) {
       return failure();
     }
 
@@ -5267,6 +5380,16 @@ void Step3Resolver::addPostConversionPatterns(RewritePatternSet &patterns) {
   patterns.add<SplitVirtualPodInEmitEqualityPattern>(patterns.getContext(), *this);
 }
 
+bool Step3Resolver::canResolveVirtualPodReadFromAnalysis(ReadPodOp op) const {
+  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || !podAccesses ||
+      !podAccesses->hasFacts(op) || podAccesses->hasEarlierWrite(op) ||
+      podAccesses->hasForwardableWrite(op)) {
+    return false;
+  }
+  Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+  return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
+}
+
 void Step3Resolver::configureLateVirtualPodLegality(ConversionTarget &target) const {
   target.addDynamicallyLegalOp<WritePodOp>([this](WritePodOp op) {
     return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
@@ -5283,11 +5406,12 @@ void Step3Resolver::configureLateVirtualPodLegality(ConversionTarget &target) co
     return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, *this);
   });
   target.addDynamicallyLegalOp<ReadPodOp>([this](ReadPodOp op) {
-    return !canResolveVirtualPodRead(op, virtualPods);
+    return !canResolveVirtualPodReadFromAnalysis(op);
   });
 }
 
-bool Step3Resolver::hasResolvableLateVirtualPodOps(ModuleOp modOp) const {
+bool Step3Resolver::hasResolvableLateVirtualPodOps(ModuleOp modOp) {
+  refreshPodAccessAnalysis(modOp);
   return walkContains<Operation *>(*modOp, [this](Operation *op) {
     return TypeSwitch<Operation *, bool>(op)
         .Case<WritePodOp>([this](auto writeOp) {
@@ -5295,7 +5419,7 @@ bool Step3Resolver::hasResolvableLateVirtualPodOps(ModuleOp modOp) const {
              !isInsideSupportedScfRegion(writeOp.getOperation());
     })
         .Case<ReadPodOp>([this](auto readOp) {
-      return canResolveVirtualPodRead(readOp, virtualPods);
+      return canResolveVirtualPodReadFromAnalysis(readOp);
     })
         .Case<ReadArrayOp>([this](auto readOp) {
       return ResolvePodReadBackedArrayReadOp::canResolve(readOp, *this);
@@ -5340,6 +5464,8 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
 
   RewritePatternSet patterns(ctx);
   resolver.addConversionPatterns(patterns, symTables, memberRepMap);
+
+  resolver.refreshPodAccessAnalysis(modOp);
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
