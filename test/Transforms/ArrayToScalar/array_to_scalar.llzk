@@ -557,11 +557,29 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ComponentA1>
+// CHECK-NEXT:    struct.def @ComponentA1 {
+// CHECK-NEXT:      struct.member @f1_0 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_1 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_2 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_3 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_4 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_5 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_6 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_7 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_8 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_9 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_10 : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @f1_11 : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ComponentA1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@ComponentA1>
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -749,21 +767,21 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: poly.template @TComponentB1 {
-// CHECK-NEXT:    poly.param @N : index
-// CHECK-NEXT:    struct.def @ComponentB1 {
-// CHECK-NEXT:      struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
-// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponentB1::@ComponentB1<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB1::@ComponentB1<[@N]>>
-// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@TComponentB1::@ComponentB1<[@N]>>
+// CHECK-NEXT:    poly.template @TComponentB1 {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @ComponentB1 {
+// CHECK-NEXT:        struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponentB1::@ComponentB1<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB1::@ComponentB1<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@TComponentB1::@ComponentB1<[@N]>>
+// CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // Func and CallOp w/ non-static shape (i.e., cannot be flattened to scalars)
@@ -877,6 +895,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {

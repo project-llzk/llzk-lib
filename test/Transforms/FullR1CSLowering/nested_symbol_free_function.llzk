@@ -1,0 +1,47 @@
+// RUN: llzk-opt -llzk-inline-free-functions -llzk-full-r1cs-lowering %s | FileCheck %s
+
+!F = !felt.type<"bn128">
+
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Main>} {
+  poly.template @HelperTemplate {
+    function.def @helper(%x: !F) -> !F attributes {
+      function.allow_non_native_field_ops
+    } {
+      %squared = felt.mul %x, %x : !F, !F
+      function.return %squared : !F
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !F {llzk.pub, signal}
+
+    function.def @compute(%x: !F) -> !struct.type<@Main> attributes {
+      function.allow_non_native_field_ops,
+      function.allow_witness
+    } {
+      %self = struct.new : <@Main>
+      %result = function.call @HelperTemplate::@helper(%x) : (!F) -> !F
+      struct.writem %self[@out] = %result : <@Main>, !F
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>, %x: !F) attributes {
+      function.allow_constraint,
+      function.allow_non_native_field_ops
+    } {
+      %out = struct.readm %self[@out] : <@Main>, !F
+      %expected = function.call @HelperTemplate::@helper(%x) : (!F) -> !F
+      constrain.eq %out, %expected : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_2]], %[[VAL_2]], %[[VAL_3]] : !r1cs.linear
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -90,27 +90,60 @@ SymbolUseGraph::SymbolUseGraph(Operation *rootSymbolTableOp) {
   buildGraph(rootSymbolTableOp);
 }
 
-/// Get (add if not present) the graph node for the "user" symbol def op.
-SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolUse &u) {
-  SymbolOpInterface userSymbol = getSelfOrParentOfType<SymbolOpInterface>(u.getUser());
-  return getPathAndCall<SymbolUseGraphNode *>(
-      userSymbol, [this, &userSymbol](ModuleOp r, SymbolRefAttr p) {
-    auto *n = this->getOrAddNode(r, p, nullptr);
-    n->opsThatUseTheSymbol.insert(userSymbol);
-    return n;
-  }
-  );
-}
-
 void SymbolUseGraph::buildGraph(Operation *symbolTableOp) {
-  auto walkFn = [this](Operation *op, bool) {
+  // Construction does not mutate IR. Share enclosing-symbol context across uses in the
+  // same regions, and resolve each owner's graph node only once. Both maps expire here.
+  DenseMap<Region *, SymbolOpInterface> regionOwners;
+  DenseMap<Operation *, SymbolUseGraphNode *> ownerNodes;
+  auto getOwner = [&regionOwners](Operation *user) {
+    if (auto symbol = llvm::dyn_cast<SymbolOpInterface>(user)) {
+      return symbol;
+    }
+    SmallVector<Region *> pending;
+    Region *region = user->getParentRegion();
+    SymbolOpInterface owner;
+    while (region) {
+      auto found = regionOwners.find(region);
+      if (found != regionOwners.end()) {
+        owner = found->second;
+        break;
+      }
+      pending.push_back(region);
+      Operation *parent = region->getParentOp();
+      owner = llvm::dyn_cast<SymbolOpInterface>(parent);
+      if (owner) {
+        break;
+      }
+      region = parent->getParentRegion();
+    }
+    for (Region *visited : pending) {
+      regionOwners.try_emplace(visited, owner);
+    }
+    return owner;
+  };
+  auto getUserNode = [this, &getOwner, &ownerNodes](Operation *user) {
+    SymbolOpInterface owner = getOwner(user);
+    auto found = ownerNodes.find(owner.getOperation());
+    if (found != ownerNodes.end()) {
+      return found->second;
+    }
+    auto *node = getPathAndCall<SymbolUseGraphNode *>(
+        owner, [this, owner](ModuleOp pathRoot, SymbolRefAttr path) {
+      auto *n = getOrAddNode(pathRoot, path, nullptr);
+      n->opsThatUseTheSymbol.insert(owner);
+      return n;
+    }
+    );
+    ownerNodes.try_emplace(owner.getOperation(), node);
+    return node;
+  };
+  auto walkFn = [this, &getUserNode](Operation *op, bool) {
     assert(op->hasTrait<OpTrait::SymbolTable>());
     FailureOr<ModuleOp> opRootModule = llzk::getRootModule(op);
     if (failed(opRootModule)) {
       return;
     }
 
-    SymbolTableCollection tables;
     if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
       // Create child node for each Symbol use, as successor of the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
@@ -138,7 +171,7 @@ void SymbolUseGraph::buildGraph(Operation *symbolTableOp) {
             }
           }
         }
-        auto *node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
+        auto *node = this->getOrAddNode(opRootModule.value(), symRef, getUserNode(user));
         node->isTemplateSymBinding = isTemplateSymbol;
         node->opsThatUseTheSymbol.insert(user);
       }
