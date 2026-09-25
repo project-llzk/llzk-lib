@@ -1033,7 +1033,7 @@ static void promoteStraightLineStaticArrays(ModuleOp module) {
         Value &latest = latestValues[array][index];
         if (!latest) {
           OpBuilder builder(read);
-          latest = builder.create<llzk::NonDetOp>(read.getLoc(), read.getType());
+          latest = llzk::NonDetOp::create(builder, read.getLoc(), read.getType());
         }
         read.getResult().replaceAllUsesWith(latest);
         read.erase();
@@ -1077,15 +1077,15 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
     OpPassManager pm(ModuleOp::getOperationName());
     // Promote simple arrays directly, avoiding both SROA's temporary allocations and mem2reg's
     // per-slot block scans.
-    nestedPM.addPass(createStraightLineStaticArrayPromotionPass());
+    pm.addPass(createStraightLineStaticArrayPromotionPass());
     // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
     // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
     // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
+    pm.addPass(createSpecializedSROAPass<CreateArrayOp>());
     // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
-    nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
+    pm.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
     // Cleanup allocations made dead by memory promotion.
-    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
         RemoveUnusedDiscardableAllocationsPassOptions {
             .allocatorOpName = CreateArrayOp::getOperationName().str()
         }
@@ -1095,7 +1095,7 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
     // straight-line functions, and the targeted allocation cleanup above has already removed the
     // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
     // dead function arguments/results or loop iteration values that canonicalization cannot remove.
-    nestedPM.addPass(createCanonicalizerPass());
+    pm.addPass(createCanonicalizerPass());
     return pm;
   }
 
