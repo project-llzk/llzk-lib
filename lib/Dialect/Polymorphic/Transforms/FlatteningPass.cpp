@@ -2203,6 +2203,23 @@ public:
   }
 };
 
+/// Return whether a member type cannot be refined by writes. Concrete struct arguments still
+/// need specialization, and wildcard array dimensions can become static even though
+/// isConcreteType accepts their integer representation.
+static bool isFullySpecializedMemberType(Type type) {
+  if (!isConcreteType(type, /*allowStructParams=*/false)) {
+    return false;
+  }
+  return !type.walk([](ArrayType array) {
+    for (Attribute dim : array.getDimensionSizes()) {
+      if (auto integer = dyn_cast<IntegerAttr>(dim); integer && isDynamic(integer)) {
+        return WalkResult::interrupt();
+      }
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
 /// Update the type of MemberDefOp instances by checking the updated types from MemberWriteOp.
 class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
   ConversionTracker &tracker_;
@@ -2212,6 +2229,11 @@ public:
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
+    // Avoid a whole-struct symbol-use search when writes cannot refine the declaration.
+    if (isFullySpecializedMemberType(op.getType())) {
+      return failure();
+    }
+
     // Find all uses of the member symbol name within its parent struct.
     StructDefOp parentRes = getParentOfType<StructDefOp>(op);
     assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def
