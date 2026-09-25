@@ -27,7 +27,12 @@ class StructDialectType<string name, string typeMnemonic,
 def LLZK_StructType : StructDialectType<"Struct", "type"> {
   let summary = "circuit component";
   let description = [{
-    Type of a `struct` op instance. For structs that contain template parameters,
+    Type of a `struct` op instance. Struct values are identity-bearing, pointer-like
+    handles to mutable component instances rather than bags of member values. Copying
+    a struct value copies the handle and preserves the identity of the referenced
+    component; it does not duplicate the component's members, signals, or tables.
+
+    For structs that contain template parameters,
     the type must contain a list of attributes that instantiate the template
     parameters, one per parameter. Each attribute must be one of the following:
       - IntegerAttr (with IndexType), specifying a fixed parameter value; the

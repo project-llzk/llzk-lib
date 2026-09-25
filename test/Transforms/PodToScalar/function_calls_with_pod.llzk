@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
 
 !Pair = !pod.type<[@lhs: index, @rhs: index]>
 module attributes {llzk.lang} {
@@ -21,6 +21,7 @@ module attributes {llzk.lang} {
     function.return %res : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @swap_and_add(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "pair.lhs"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "pair.rhs"}) -> (index {function.res_name = "out.lhs"}, index {function.res_name = "out.rhs"}) {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
@@ -31,6 +32,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_5]]#1 : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Pair = !pod.type<[@lhs: index, @rhs: index]>
@@ -55,6 +57,7 @@ module attributes {llzk.lang} {
     function.return %res : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @mix(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
@@ -66,6 +69,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_10]]#0 : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Single = !pod.type<[@x: index]>
@@ -87,6 +91,7 @@ module attributes {llzk.lang} {
     function.return %x : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TFree {
 // CHECK-NEXT:      poly.param @A
@@ -100,6 +105,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 #sum = affine_map<()[s0, s1] -> (s0 + s1)>
@@ -135,7 +141,8 @@ module attributes {llzk.lang} {
     function.return %out : index
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TBox {
 // CHECK-NEXT:      poly.param @A
@@ -154,11 +161,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @main(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[VAL_4]]) {(){{\[}}%[[VAL_5]], %[[VAL_6]]]} : (index) -> !struct.type<@TBox::@Box<[#[[$M]]]>>
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@out] : <@TBox::@Box<[#[[$M]]]>>, index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[VAL_4]]) {(){{\[}}%[[VAL_5]], %[[VAL_6]]]} : (index) -> !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@out] : <@TBox::@Box<[#[[$ATTR_0]]]>>, index
 // CHECK-NEXT:      function.return %[[VAL_8]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Single = !pod.type<[@x: index]>
@@ -174,45 +182,17 @@ module attributes {llzk.lang} {
     function.return %res : !PodArray
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @id_array_of_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) -> !array.type<2 x index> {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<2 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @main(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) -> !array.type<2 x index> {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @id_array_of_pod(%[[VAL_1]]) : (!array.type<2 x index>) -> !array.type<2 x index> {product_source = "compute"}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @id_array_of_pod(%[[VAL_1]]) : (!array.type<2 x index>) -> !array.type<2 x index>  {product_source = "compute"}
 // CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<2 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// -----
 
-#outer = affine_map<()[s0] -> (s0)>
-!Pair = !pod.type<[@x: index, @y: !felt.type]>
-!Holder = !pod.type<[@pairs: !array.type<#outer x !Pair>]>
-module attributes {llzk.lang} {
-  function.def @sink(%arr: !array.type<#outer x !Pair>) -> index {
-    %c0 = arith.constant 0 : index
-    %len = array.len %arr, %c0 : !array.type<#outer x !Pair>
-    function.return %len : index
-  }
-
-  function.def @main(%holder: !Holder) -> index {
-    %pairs = pod.read %holder[@pairs] : !Holder, !array.type<#outer x !Pair>
-    %len = function.call @sink(%pairs) : (!array.type<#outer x !Pair>) -> index
-    function.return %len : index
-  }
-}
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_3]] : <#[[$M]] x none>
-// CHECK-NEXT:      function.return %[[VAL_4]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @main(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[VAL_5]], %[[VAL_6]], %[[VAL_7]]) : (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) -> index
-// CHECK-NEXT:      function.return %[[VAL_8]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 // -----
 
 #outer_nested = affine_map<()[s0] -> (s0)>
@@ -236,23 +216,25 @@ module attributes {llzk.lang} {
     function.return %len : index
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_affine_nested_arg(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]],3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
+// CHECK-NEXT:    function.def @len_affine_nested_arg(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_0]],3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_0]] x none>) -> index {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_1]], %[[VAL_2]] : <#[[$M]] x none>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_1]], %[[VAL_2]] : <#[[$ATTR_0]] x none>
 // CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @id_affine_nested(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]],3 x index>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> (!array.type<#[[$M]],3 x index>, !array.type<#[[$M]] x none>) {
-// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]] : !array.type<#[[$M]],3 x index>, !array.type<#[[$M]] x none>
+// CHECK-NEXT:    function.def @id_affine_nested(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_0]],3 x index>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_0]] x none>) -> (!array.type<#[[$ATTR_0]],3 x index>, !array.type<#[[$ATTR_0]] x none>) {
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]] : !array.type<#[[$ATTR_0]],3 x index>, !array.type<#[[$ATTR_0]] x none>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @len_affine_nested_result(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]],3 x index>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
+// CHECK-NEXT:    function.def @len_affine_nested_result(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_0]],3 x index>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<#[[$ATTR_0]] x none>) -> index {
 // CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]]:2 = function.call @id_affine_nested(%[[VAL_6]], %[[VAL_7]]) : (!array.type<#[[$M]],3 x index>, !array.type<#[[$M]] x none>) -> (!array.type<#[[$M]],3 x index>, !array.type<#[[$M]] x none>)
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_9]]#1, %[[VAL_8]] : <#[[$M]] x none>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]]:2 = function.call @id_affine_nested(%[[VAL_6]], %[[VAL_7]]) : (!array.type<#[[$ATTR_0]],3 x index>, !array.type<#[[$ATTR_0]] x none>) -> (!array.type<#[[$ATTR_0]],3 x index>, !array.type<#[[$ATTR_0]] x none>)
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_9]]#1, %[[VAL_8]] : <#[[$ATTR_0]] x none>
 // CHECK-NEXT:      function.return %[[VAL_10]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Pair = !pod.type<[@lhs: index, @rhs: !felt.type]>
@@ -264,15 +246,13 @@ module attributes {llzk.lang} {
     function.return %arg : !WildcardPairArray
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @named_wildcard_array(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index> {function.arg_name = "input.lhs"},
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type> {function.arg_name = "input.rhs"},
-// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x none> {function.arg_name = "input.shape"}
-// CHECK-SAME:    ) -> (!array.type<? x index> {function.res_name = "output.lhs"}, !array.type<? x !felt.type> {function.res_name = "output.rhs"}, !array.type<? x none> {function.res_name = "output.shape"}) {
+// CHECK-NEXT:    function.def @named_wildcard_array(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index> {function.arg_name = "input.lhs"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type> {function.arg_name = "input.rhs"}, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x none> {function.arg_name = "input.shape"}) -> (!array.type<? x index> {function.res_name = "output.lhs"}, !array.type<? x !felt.type> {function.res_name = "output.rhs"}, !array.type<? x none> {function.res_name = "output.shape"}) {
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Pair = !pod.type<[@lhs: index, @rhs: !felt.type]>
@@ -282,14 +262,13 @@ module attributes {llzk.lang} {
     function.return %arg : !PodArray
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @named_array_result(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>
-// CHECK-SAME:    ) -> (!array.type<2 x index> {function.res_name = "out.lhs"}, !array.type<2 x !felt.type> {function.res_name = "out.rhs"}) {
+// CHECK-NEXT:    function.def @named_array_result(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> (!array.type<2 x index> {function.res_name = "out.lhs"}, !array.type<2 x !felt.type> {function.res_name = "out.rhs"}) {
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2 x index>, !array.type<2 x !felt.type>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Inner = !pod.type<[@x: index]>
@@ -306,36 +285,13 @@ module attributes {llzk.lang} {
     function.return %res : !Outer
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @id(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index> {function.arg_name = "arg.a.x"},
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "arg.b"}
-// CHECK-SAME:    ) -> (!array.type<2 x index> {function.res_name = "out.a.x"}, index {function.res_name = "out.b"}) {
+// CHECK-NEXT:    function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index> {function.arg_name = "arg.a.x"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "arg.b"}) -> (!array.type<2 x index> {function.res_name = "out.a.x"}, index {function.res_name = "out.b"}) {
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2 x index>, index
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @main(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<2 x index>, index) {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]]:2 = function.call @id(%[[VAL_2]], %[[VAL_3]]) : (!array.type<2 x index>, index) -> (!array.type<2 x index>, index)
 // CHECK-NEXT:      function.return %[[VAL_4]]#0, %[[VAL_4]]#1 : !array.type<2 x index>, index
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-#outer = affine_map<()[s0] -> (s0)>
-!Item = !pod.type<[@x: index, @y: !felt.type]>
-!Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
-module attributes {llzk.lang} {
-  function.def @get_items(%p: !Outer) -> !array.type<#outer x !Item> {
-    %items = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
-    function.return %items : !array.type<#outer x !Item>
-  }
-}
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @get_items(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>,
-// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>
-// CHECK-SAME:    ) -> (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) {
-// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

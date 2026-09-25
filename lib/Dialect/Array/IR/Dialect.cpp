@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Dialect/Shared/ValueCopy.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
@@ -22,6 +23,67 @@
 
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/Array/IR/Types.cpp.inc"
+
+namespace {
+
+class ArrayValueCopyDialectInterface final : public llzk::ValueCopyDialectInterface {
+public:
+  explicit ArrayValueCopyDialectInterface(mlir::Dialect *owner)
+      : ValueCopyDialectInterface(owner) {}
+
+  bool canMaterializeValueCopy(mlir::Type type) const final {
+    auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type);
+    return arrayType && (llvm::isa<mlir::NoneType>(arrayType.getElementType()) ||
+                         (arrayType.hasStaticShape() &&
+                          llzk::canMaterializeValueCopy(arrayType.getElementType())));
+  }
+
+  std::string getValueCopyFailureReason(mlir::Type type) const final {
+    auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type);
+    if (!arrayType) {
+      return ValueCopyDialectInterface::getValueCopyFailureReason(type);
+    }
+    if (!arrayType.hasStaticShape()) {
+      return "dynamic or symbolic payload arrays cannot be copied independently; "
+             "flatten or resolve array shapes first";
+    }
+    return "array element copy is unsupported: " +
+           llzk::getValueCopyFailureReason(arrayType.getElementType());
+  }
+
+  mlir::FailureOr<mlir::Value> materializeValueCopy(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value source
+  ) const final {
+    auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(source.getType());
+    if (!arrayType || !canMaterializeValueCopy(arrayType)) {
+      return mlir::failure();
+    }
+
+    // Shape-only arrays have no element payload that can be independently mutated. Their shape is
+    // fixed by the value, so reusing the SSA value preserves copy semantics even for dynamic or
+    // symbolic shapes.
+    if (llvm::isa<mlir::NoneType>(arrayType.getElementType())) {
+      return source;
+    }
+
+    auto destination = builder.create<llzk::array::CreateArrayOp>(loc, arrayType);
+    std::optional<mlir::SmallVector<mlir::ArrayAttr>> indices = arrayType.getSubelementIndices();
+    assert(indices.has_value() && "static arrays must provide concrete element indices");
+    for (mlir::ArrayAttr index : *indices) {
+      mlir::Value read = llzk::array::ArrayAccessOpInterface::genRead(builder, loc, source, index);
+      mlir::FailureOr<mlir::Value> copied = llzk::materializeValueCopy(builder, loc, read);
+      if (mlir::failed(copied)) {
+        return mlir::failure();
+      }
+      llzk::array::ArrayAccessOpInterface::genWrite(
+          builder, loc, destination.getResult(), index, *copied
+      );
+    }
+    return destination.getResult();
+  }
+};
+
+} // namespace
 
 //===------------------------------------------------------------------===//
 // ArrayDialect
@@ -41,5 +103,5 @@ auto llzk::array::ArrayDialect::initialize() -> void {
     #include "llzk/Dialect/Array/IR/Types.cpp.inc"
   >();
   // clang-format on
-  addInterfaces<LLZKDialectBytecodeInterface<ArrayDialect>>();
+  addInterfaces<LLZKDialectBytecodeInterface<ArrayDialect>, ArrayValueCopyDialectInterface>();
 }

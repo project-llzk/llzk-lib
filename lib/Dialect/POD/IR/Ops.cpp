@@ -13,6 +13,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Shared/ValueCopy.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -149,10 +150,83 @@ std::optional<DestructurableAllocationOpInterface> NewPodOp::handleDestructuring
   return std::nullopt;
 }
 
+namespace {
+
+/// Materialize the semantic snapshot of `source` immediately before `anchor`.
+static Value materializeValueCopyBefore(Operation *anchor, Value source, OpBuilder &builder) {
+  if (!llzk::requiresValueCopy(source.getType())) {
+    return source;
+  }
+  OpBuilder::InsertionGuard guard(builder);
+  builder.setInsertionPoint(anchor);
+  FailureOr<Value> copied = llzk::materializeValueCopy(builder, anchor->getLoc(), source);
+  assert(succeeded(copied) && "copy support must be checked before POD promotion");
+  return *copied;
+}
+
+/// Check the common POD-access requirements imposed by mem2reg.
+static bool canRemovePodAccess(
+    Value podRef, Type accessedType, const MemorySlot &slot,
+    const SmallPtrSetImpl<OpOperand *> &blockingUses
+) {
+  if (blockingUses.size() != 1) {
+    return false;
+  }
+  Value blockingUse = (*blockingUses.begin())->get();
+  return blockingUse == slot.ptr && podRef == slot.ptr && accessedType == slot.elemType &&
+         (!llzk::requiresValueCopy(accessedType) || llzk::canMaterializeValueCopy(accessedType));
+}
+
+} // namespace
+
+/// Required by PromotableMemOpInterface / mem2reg pass
+Value ReadPodOp::getStored(const MemorySlot &, OpBuilder &, Value, const DataLayout &) {
+  llvm_unreachable("getStored() should not be called on ReadPodOp");
+}
+
+/// Required by PromotableMemOpInterface / mem2reg pass
+bool ReadPodOp::canUsesBeRemoved(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    SmallVectorImpl<OpOperand *> & /*newBlockingUses*/, const DataLayout & /*dataLayout*/
+) {
+  return canRemovePodAccess(getPodRef(), getResult().getType(), slot, blockingUses);
+}
+
+/// Required by PromotableMemOpInterface / mem2reg pass
+DeletionKind ReadPodOp::removeBlockingUses(
+    const MemorySlot &, const SmallPtrSetImpl<OpOperand *> &, OpBuilder &builder,
+    Value reachingDefinition, const DataLayout &
+) {
+  getResult().replaceAllUsesWith(materializeValueCopyBefore(*this, reachingDefinition, builder));
+  return DeletionKind::Delete;
+}
+
+/// Required by PromotableMemOpInterface / mem2reg pass
+Value WritePodOp::getStored(const MemorySlot &, OpBuilder &builder, Value, const DataLayout &) {
+  return materializeValueCopyBefore(*this, getValue(), builder);
+}
+
+/// Required by PromotableMemOpInterface / mem2reg pass
+bool WritePodOp::canUsesBeRemoved(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    SmallVectorImpl<OpOperand *> & /*newBlockingUses*/, const DataLayout & /*dataLayout*/
+) {
+  return getValue() != slot.ptr &&
+         canRemovePodAccess(getPodRef(), getValue().getType(), slot, blockingUses);
+}
+
+/// Required by PromotableMemOpInterface / mem2reg pass
+DeletionKind WritePodOp::removeBlockingUses(
+    const MemorySlot &, const SmallPtrSetImpl<OpOperand *> &, OpBuilder &, Value, const DataLayout &
+) {
+  return DeletionKind::Delete;
+}
+
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   ArrayRef<RecordAttr> records = getType().getRecords();
-  if (records.size() != 1) {
+  if (records.size() != 1 || (llzk::requiresValueCopy(records.front().getType()) &&
+                              !llzk::canMaterializeValueCopy(records.front().getType()))) {
     return {};
   }
   return {MemorySlot {getResult(), records.front().getType()}};
@@ -168,8 +242,19 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
   StringRef recordName = records.front().getName().getValue();
   for (RecordValue record : getInitializedRecordValues()) {
     if (record.name == recordName) {
-      return record.value;
+      return materializeValueCopyBefore(*this, record.value, builder);
     }
+  }
+  // Keep nested defaults visible to the allocation-based scalarization fixpoint. Each promoted
+  // read snapshots this storage independently, so mutating one read cannot affect another.
+  if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
+    OpBuilder::InsertionGuard guard(builder);
+    builder.setInsertionPoint(*this);
+    SmallVector<ValueRange> mapOperands;
+    for (OperandRange group : getMapOperands()) {
+      mapOperands.push_back(group);
+    }
+    return builder.create<NewPodOp>(getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
   }
   return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
 }
@@ -184,7 +269,7 @@ std::optional<PromotableAllocationOpInterface> NewPodOp::handlePromotionComplete
   assert(slot.ptr == getResult());
   if (defaultValue && defaultValue.use_empty()) {
     if (Operation *defOp = defaultValue.getDefiningOp()) {
-      if (llvm::isa<llzk::NonDetOp>(defOp)) {
+      if (llvm::isa<llzk::NonDetOp, NewPodOp>(defOp)) {
         defOp->erase();
       }
     }
@@ -193,14 +278,12 @@ std::optional<PromotableAllocationOpInterface> NewPodOp::handlePromotionComplete
   return std::nullopt;
 }
 
-namespace {
-
-static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
+void collectPodMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
   // clang-format off
   llvm::TypeSwitch<Type, void>(type)
     .Case([&mapAttrs](PodType t) {
       for (auto record : t.getRecords()) {
-        collectMapAttrs(record.getType(), mapAttrs);
+        collectPodMapAttrs(record.getType(), mapAttrs);
       }
     })
     .Case([&mapAttrs](array::ArrayType t) {
@@ -221,6 +304,8 @@ static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
     }).Default([](Type) {});
   // clang-format on
 }
+
+namespace {
 
 /// Verifies the initialization values.
 ///
@@ -275,7 +360,7 @@ static LogicalResult verifyInitialValues(
 
 static LogicalResult verifyAffineMapOperands(NewPodOp *op, Type retTy) {
   SmallVector<AffineMapAttr> mapAttrs;
-  collectMapAttrs(retTy, mapAttrs);
+  collectPodMapAttrs(retTy, mapAttrs);
   return affineMapHelpers::verifyAffineMapInstantiations(
       op->getMapOperands(), op->getNumDimsPerMap(), mapAttrs, *op
   );

@@ -1,0 +1,316 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// POD initialization, writes, and reads all copy aggregate values. Mutating either the original
+// child or one read snapshot must not change a second snapshot.
+module attributes {llzk.lang} {
+  function.def @nested_pod_read_and_write_copies(%replacement: index) -> index {
+    %initial = arith.constant 7 : index
+    %inner = pod.new { @value = %initial } : !Inner
+    %outer = pod.new { @inner = %inner } : !Outer
+    %first = pod.read %outer[@inner] : !Outer, !Inner
+    %second = pod.read %outer[@inner] : !Outer, !Inner
+    pod.write %first[@value] = %replacement : !Inner, index
+    pod.write %inner[@value] = %replacement : !Inner, index
+    %observed = pod.read %second[@value] : !Inner, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_pod_read_and_write_copies(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<2 x index>
+!Box = !pod.type<[@values: !Values]>
+
+// The same copy guarantees apply when the POD record is a static array.
+module attributes {llzk.lang} {
+  function.def @nested_array_read_and_write_copies(%replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %a = arith.constant 3 : index
+    %b = arith.constant 4 : index
+    %values = array.new %a, %b : !Values
+    %box = pod.new { @values = %values } : !Box
+    %first = pod.read %box[@values] : !Box, !Values
+    %second = pod.read %box[@values] : !Box, !Values
+    array.write %first[%c0] = %replacement : !Values, index
+    array.write %values[%c0] = %replacement : !Values, index
+    %observed = array.read %second[%c0] : !Values, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_array_read_and_write_copies(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// Aggregate writes in control flow are carried as scalar leaves before the parent write-back.
+module attributes {llzk.lang} {
+  function.def @conditional_aggregate_write(%condition: i1) -> index {
+    %initialValue = arith.constant 7 : index
+    %replacementValue = arith.constant 9 : index
+    %initial = pod.new { @value = %initialValue } : !Inner
+    %outer = pod.new { @inner = %initial } : !Outer
+    scf.if %condition {
+      %replacement = pod.new { @value = %replacementValue } : !Inner
+      pod.write %outer[@inner] = %replacement : !Outer, !Inner
+    }
+    %loaded = pod.read %outer[@inner] : !Outer, !Inner
+    %observed = pod.read %loaded[@value] : !Inner, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @conditional_aggregate_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.select %[[VAL_0]], %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<2 x index>
+!Inner = !pod.type<[@values: !Values]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// Copy construction recurses through alternating POD and static-array layers.
+module attributes {llzk.lang} {
+  function.def @recursive_pod_array_copy(%replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %two = arith.constant 2 : index
+    %values = array.new %one, %two : !Values
+    %inner = pod.new { @values = %values } : !Inner
+    %outer = pod.new { @inner = %inner } : !Outer
+    %first = pod.read %outer[@inner] : !Outer, !Inner
+    %firstValues = pod.read %first[@values] : !Inner, !Values
+    array.write %firstValues[%c0] = %replacement : !Values, index
+    %second = pod.read %outer[@inner] : !Outer, !Inner
+    %secondValues = pod.read %second[@values] : !Inner, !Values
+    %observed = array.read %secondValues[%c0] : !Values, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @recursive_pod_array_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<2 x index>
+!Box = !pod.type<[@values: !Values]>
+
+// Lifting a branch-local write must preserve its snapshot point when the source is mutated later
+// in the same branch.
+module attributes {llzk.lang} {
+  function.def @conditional_array_write_snapshot(%condition: i1, %replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %initial = arith.constant 7 : index
+    %other = arith.constant 8 : index
+    %values = array.new %initial, %other : !Values
+    %box = pod.new { @values = %values } : !Box
+    scf.if %condition {
+      pod.write %box[@values] = %values : !Box, !Values
+      array.write %values[%c0] = %replacement : !Values, index
+    }
+    %loaded = pod.read %box[@values] : !Box, !Values
+    %observed = array.read %loaded[%c0] : !Values, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @conditional_array_write_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
+// CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_5]]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_5]]] = %[[VAL_7]] : <2 x index>, index
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
+// CHECK-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:        scf.yield %[[VAL_10]] : !array.type<2 x index>
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : !array.type<2 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_5]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_2]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_11]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<2 x index>
+!Box = !pod.type<[@values: !Values]>
+
+// Loop lifting must keep each aggregate read independent from the loop-carried storage value.
+module attributes {llzk.lang} {
+  function.def @loop_array_read_snapshot(%replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %initial = arith.constant 7 : index
+    %other = arith.constant 8 : index
+    %values = array.new %initial, %other : !Values
+    %box = pod.new { @values = %values } : !Box
+    scf.for %iv = %c0 to %c1 step %c1 {
+      %snapshot = pod.read %box[@values] : !Box, !Values
+      array.write %snapshot[%iv] = %replacement : !Values, index
+    }
+    %loaded = pod.read %box[@values] : !Box, !Values
+    %observed = array.read %loaded[%c0] : !Values, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @loop_array_read_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <2 x index>, index
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<2 x index>
+!Inner = !pod.type<[@values: !Values]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// A child POD defined outside the branch can still be flattened at the original write point.
+module attributes {llzk.lang} {
+  function.def @conditional_external_nested_pod(%condition: i1, %replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %initial = arith.constant 7 : index
+    %other = arith.constant 8 : index
+    %values = array.new %initial, %other : !Values
+    %inner = pod.new { @values = %values } : !Inner
+    %outer = pod.new { @inner = %inner } : !Outer
+    scf.if %condition {
+      pod.write %outer[@inner] = %inner : !Outer, !Inner
+      %innerValues = pod.read %inner[@values] : !Inner, !Values
+      array.write %innerValues[%c0] = %replacement : !Values, index
+    }
+    %loadedInner = pod.read %outer[@inner] : !Outer, !Inner
+    %loadedValues = pod.read %loadedInner[@values] : !Inner, !Values
+    %observed = array.read %loadedValues[%c0] : !Values, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @conditional_external_nested_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
+// CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        array.write %[[VAL_8]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
+// CHECK-NEXT:        array.write %[[VAL_8]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : !array.type<2 x index>
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_6]] : !array.type<2 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_2]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_9]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<2 x index>
+!Box = !pod.type<[@values: !Values]>
+
+// Function-argument PODs use virtual leaf storage, but reads still produce independent snapshots.
+module attributes {llzk.lang} {
+  function.def @virtual_pod_array_read_copy(%box: !Box, %replacement: index) -> index {
+    %c0 = arith.constant 0 : index
+    %first = pod.read %box[@values] : !Box, !Values
+    array.write %first[%c0] = %replacement : !Values, index
+    %second = pod.read %box[@values] : !Box, !Values
+    %observed = array.read %second[%c0] : !Values, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @virtual_pod_array_read_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Values = !array.type<1 x index>
+!Box = !pod.type<[@values: !Values]>
+module attributes {llzk.lang} {
+  // The branch must observe the write-time snapshot, before the source mutation.
+  function.def @branch_read_snapshot(%condition: i1) -> index {
+    %zero = arith.constant 0 : index
+    %initial = arith.constant 7 : index
+    %changed = arith.constant 9 : index
+    %values = array.new %initial : !Values
+    %box = pod.new : !Box
+    pod.write %box[@values] = %values : !Box, !Values
+    array.write %values[%zero] = %changed : !Values, index
+    %result = scf.if %condition -> (index) {
+      %snapshot = pod.read %box[@values] : !Box, !Values
+      %value = array.read %snapshot[%zero] : !Values, index
+      scf.yield %value : index
+    } else {
+      scf.yield %initial : index
+    }
+    function.return %result : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @branch_read_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
