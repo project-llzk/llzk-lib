@@ -1,0 +1,168 @@
+// RUN: llzk-opt -split-input-file -llzk-array-to-scalar %s | FileCheck %s
+
+// Both read spellings use the declaration's const flag.
+// Non-square dimensions and unequal elements expose incorrect linearization.
+module attributes {llzk.lang} {
+  global.def const @matrix : !array.type<2,3 x !felt.type<"bn128">> = [1, 2, 3, 4, 5, 6]
+
+  function.def @matrix_reads() -> (!felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %two = arith.constant 2 : index
+    %a = global.read @matrix : !array.type<2,3 x !felt.type<"bn128">>
+    %b = global.read const @matrix : !array.type<2,3 x !felt.type<"bn128">>
+    %x = array.read %a[%zero, %two] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+    %y = array.read %a[%one, %zero] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+    %z = array.read %b[%one, %two] : <2,3 x !felt.type<"bn128">>, !felt.type<"bn128">
+    function.return %x, %y, %z : !felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @matrix : !array.type<2,3 x !felt.type<"bn128">> = [ 1 : <"bn128">,  2 : <"bn128">,  3 : <"bn128">,  4 : <"bn128">,  5 : <"bn128">,  6 : <"bn128">]
+// CHECK-NEXT:    function.def @matrix_reads() -> (!felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"bn128">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  4 : <"bn128">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  6 : <"bn128">
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Constant global reads fold to the corresponding scalar types.
+module attributes {llzk.lang} {
+  global.def const @indices : !array.type<2 x index> = [11, 22]
+  global.def const @bits : !array.type<2 x i1> = [false, true]
+  global.def const @strings : !array.type<2 x !string.type> = ["first", "second"]
+
+  function.def @scalar_types() -> (index, i1, !string.type) {
+    %one = arith.constant 1 : index
+    %a = global.read const @indices : !array.type<2 x index>
+    %b = global.read const @bits : !array.type<2 x i1>
+    %c = global.read const @strings : !array.type<2 x !string.type>
+    %x = array.read %a[%one] : <2 x index>, index
+    %y = array.read %b[%one] : <2 x i1>, i1
+    %z = array.read %c[%one] : <2 x !string.type>, !string.type
+    function.return %x, %y, %z : index, i1, !string.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @indices : !array.type<2 x index> = [11, 22]
+// CHECK-NEXT:    global.def const @bits : !array.type<2 x i1> = [false, true]
+// CHECK-NEXT:    global.def const @strings : !array.type<2 x !string.type> = ["first", "second"]
+// CHECK-NEXT:    function.def @scalar_types() -> (index, i1, !string.type) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 22 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = string.new "second"
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : index, i1, !string.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A constant initializer on a mutable declaration is insufficient.
+module attributes {llzk.lang} {
+  global.def @mutable : !array.type<2 x index> = [33, 44]
+
+  function.def @mutable_global() -> index {
+    %zero = arith.constant 0 : index
+    %a = global.read @mutable : !array.type<2 x index>
+    %x = array.read %a[%zero] : <2 x index>, index
+    function.return %x : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @mutable : !array.type<2 x index> = [33, 44]
+// CHECK-NEXT:    function.def @mutable_global() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = global.read @mutable : !array.type<2 x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_0]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// One dynamic use prevents partial rewriting of the same snapshot.
+module attributes {llzk.lang} {
+  global.def const @indices : !array.type<2 x index> = [11, 22]
+
+  function.def @dynamic_index(%i: index) -> (index, index) {
+    %zero = arith.constant 0 : index
+    %a = global.read const @indices : !array.type<2 x index>
+    %x = array.read %a[%zero] : <2 x index>, index
+    %y = array.read %a[%i] : <2 x index>, index
+    function.return %x, %y : index, index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @indices : !array.type<2 x index> = [11, 22]
+// CHECK-NEXT:    function.def @dynamic_index(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = global.read const @indices : !array.type<2 x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_1]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_0]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_3]], %[[VAL_4]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A local write prevents folding this copy, but not an independent read of the same global.
+module attributes {llzk.lang} {
+  global.def const @indices : !array.type<2 x index> = [11, 22]
+
+  function.def @mutated_copy(%replacement: index) -> (index, index) {
+    %zero = arith.constant 0 : index
+    %a = global.read @indices : !array.type<2 x index>
+    array.write %a[%zero] = %replacement : <2 x index>, index
+    %x = array.read %a[%zero] : <2 x index>, index
+    %b = global.read const @indices : !array.type<2 x index>
+    %y = array.read %b[%zero] : <2 x index>, index
+    function.return %x, %y : index, index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @indices : !array.type<2 x index> = [11, 22]
+// CHECK-NEXT:    function.def @mutated_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 11 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = global.read @indices : !array.type<2 x index>
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_0]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_2]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_1]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An escaping snapshot must not be folded.
+module attributes {llzk.lang} {
+  global.def const @indices : !array.type<2 x index> = [11, 22]
+  global.def @sink : !array.type<2 x index>
+
+  function.def @escaping_copy() -> index attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %a = global.read @indices : !array.type<2 x index>
+    global.write @sink = %a : !array.type<2 x index>
+    %x = array.read %a[%zero] : <2 x index>, index
+    function.return %x : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @indices : !array.type<2 x index> = [11, 22]
+// CHECK-NEXT:    global.def @sink : !array.type<2 x index>
+// CHECK-NEXT:    function.def @escaping_copy() -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = global.read @indices : !array.type<2 x index>
+// CHECK-NEXT:      global.write @sink = %[[VAL_1]] : !array.type<2 x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_0]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
