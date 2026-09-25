@@ -1,0 +1,80 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+#inner = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<#inner x !Item>, @tag: index]>
+!OuterArray = !array.type<2 x !Outer>
+// Writing a POD element must snapshot its symbolic array record instead of aliasing it.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @write_elem(%arr: !OuterArray, %elem: !Outer, %i: index) -> !OuterArray {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
+    array.write %arr[%i] = %elem : !OuterArray, !Outer
+    function.return %arr : !OuterArray
+  }
+}
+
+// -----
+
+// COM: This regression test exercises the deferred array.read resolver when the nearest
+// COM: forwardable write stores a bare pod.read-backed array-of-pod value.
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<? x !Item>]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  // expected-note@+1 {{cannot promote POD record 'items'}}
+  function.def @forwarded_write_readback(%src: !Outer, %i: index) -> index {
+    %items = pod.read %src[@items] : !Outer, !array.type<? x !Item>
+    // expected-note@+1 {{cannot promote POD record 'items'}}
+    %dst = pod.new : !Outer
+    pod.write %dst[@items] = %items : !Outer, !array.type<? x !Item>
+
+    %arr = pod.read %dst[@items] : !Outer, !array.type<? x !Item>
+    %item = array.read %arr[%i] : !array.type<? x !Item>, !Item
+    %x = pod.read %item[@x] : !Item, index
+    function.return %x : index
+  }
+}
+
+// -----
+
+#outer = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @nested_if_parent_write(%src: !Outer, %n: index, %i: index, %flag: index) -> index {
+    %items = pod.read %src[@items] : !Outer, !array.type<#outer x !Item>
+    // expected-note@+1 {{cannot promote POD record 'items'}}
+    %p = pod.new()[%n] : !Outer
+    pod.write %p[@items] = %items : !Outer, !array.type<#outer x !Item>
+    %c0 = arith.constant 0 : index
+    %cond = arith.cmpi ne, %flag, %c0 : index
+    %ret = scf.if %cond -> (index) {
+      %arr = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
+      %item = array.read %arr[%i] : !array.type<#outer x !Item>, !Item
+      %x = pod.read %item[@x] : !Item, index
+      scf.yield %x : index
+    } else {
+      scf.yield %c0 : index
+    }
+    function.return %ret : index
+  }
+
+  function.def @nested_if_parent_init(%src: !Outer, %n: index, %i: index, %flag: index) -> index {
+    %items = pod.read %src[@items] : !Outer, !array.type<#outer x !Item>
+    // expected-note@+1 {{cannot promote POD record 'items'}}
+    %p = pod.new { @items = %items }()[%n] : !Outer
+    %c0 = arith.constant 0 : index
+    %cond = arith.cmpi ne, %flag, %c0 : index
+    %ret = scf.if %cond -> (index) {
+      %arr = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
+      %item = array.read %arr[%i] : !array.type<#outer x !Item>, !Item
+      %x = pod.read %item[@x] : !Item, index
+      scf.yield %x : index
+    } else {
+      scf.yield %c0 : index
+    }
+    function.return %ret : index
+  }
+}

@@ -1,0 +1,67 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Leaf]>
+!ElemArray = !array.type<2 x !Elem>
+// Symbolic leaf arrays cannot yet be copied at POD access boundaries. Reject this case instead of
+// silently forwarding the mutable arrays with aliasing semantics.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @materialized(%n: index) -> !ElemArray {
+    %vals0 = array.new{()[%n]} : !Leaf
+    %vals1 = array.new{()[%n]} : !Leaf
+    // expected-note@+1 {{cannot promote POD record 'vals': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
+    %lhs = pod.new()[%n] : !Elem
+    pod.write %lhs[@vals] = %vals0 : !Elem, !Leaf
+    // expected-note@+1 {{cannot promote POD record 'vals': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
+    %rhs = pod.new()[%n] : !Elem
+    pod.write %rhs[@vals] = %vals1 : !Elem, !Leaf
+    %arr = array.new %lhs, %rhs : !ElemArray
+    function.return %arr : !ElemArray
+  }
+}
+
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Leaf]>
+!ElemArray = !array.type<2 x !Elem>
+!Outer = !pod.type<[@items: !ElemArray]>
+// Passing the result of a POD read across a call would expose the aggregate copy. Its symbolic
+// payload leaf cannot yet be copied independently, so this must be rejected rather than aliased.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !ElemArray) {
+    function.return
+  }
+
+  function.def @source(%p: !Outer) {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': array element copy is unsupported: POD record 'vals': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
+    %items = pod.read %p[@items] : !Outer, !ElemArray
+    function.call @sink(%items) : (!ElemArray) -> ()
+    function.return
+  }
+}
+
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!InnerArr = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !InnerArr]>
+!ElemArray = !array.type<2 x !Elem>
+module attributes {llzk.lang} {
+  function.def @conflict(%m: index, %n: index) -> !ElemArray {
+    %vals0 = array.new{()[%m]} : !InnerArr
+    %vals1 = array.new{()[%n]} : !InnerArr
+    %lhs = pod.new()[%m] : !Elem
+    pod.write %lhs[@vals] = %vals0 : !Elem, !InnerArr
+    %rhs = pod.new()[%n] : !Elem
+    pod.write %rhs[@vals] = %vals1 : !Elem, !InnerArr
+    // expected-error@+2 {{'array.new' op with POD elements having conflicting affine map instantiations cannot be promoted to higher dimensional array}}
+    // expected-error@+1 {{failed to legalize operation 'array.new'}}
+    %arr = array.new %lhs, %rhs : !ElemArray
+    function.return %arr : !ElemArray
+  }
+}
