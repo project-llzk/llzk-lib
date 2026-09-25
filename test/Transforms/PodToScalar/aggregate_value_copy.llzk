@@ -81,11 +81,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @conditional_aggregate_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (index) {
-// CHECK-NEXT:        scf.yield %[[VAL_2]] : index
-// CHECK-NEXT:      } else {
-// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
-// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.select %[[VAL_0]], %[[VAL_2]], %[[VAL_1]] : index
 // CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -153,26 +149,23 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <1 x index>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_7]]] = %[[VAL_4]] : <1 x index>, index
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_8]]] : <1 x index>, index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
-// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_5]]] = %[[VAL_9]] : <2 x index>, index
-// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
-// CHECK-NEXT:        array.write %[[VAL_12]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
-// CHECK-NEXT:        array.write %[[VAL_12]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_13]]] = %[[VAL_1]] : <1 x index>, index
-// CHECK-NEXT:        scf.yield %[[VAL_12]] : !array.type<2 x index>
-// CHECK-NEXT:      } else {
+// CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_5]]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_5]]] = %[[VAL_7]] : <2 x index>, index
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
+// CHECK-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <1 x index>, index
 // CHECK-NEXT:        scf.yield %[[VAL_10]] : !array.type<2 x index>
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : !array.type<2 x index>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_5]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_2]]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[VAL_14]] : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_5]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_2]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_11]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -209,14 +202,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
 // CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <2 x index>, index
 // CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_4]] to %[[VAL_3]] step %[[VAL_3]] iter_args(%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_5]]) -> (!array.type<2 x index>) {
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_4]]] : <2 x index>, index
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_3]]] : <2 x index>, index
-// CHECK-NEXT:        scf.yield %[[VAL_8]] : !array.type<2 x index>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_4]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_3]]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[VAL_11]] : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -321,11 +311,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @branch_read_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (index) {
-// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
-// CHECK-NEXT:      } else {
-// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
