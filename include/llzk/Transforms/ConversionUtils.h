@@ -220,13 +220,13 @@ inline function::CallOp createCallPreservingInstantiationOperands(
 
   function::CallOp newCall;
   if (oldCall.getMapOperands().empty()) {
-    newCall = rewriter.create<function::CallOp>(
-        loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
+    newCall = function::CallOp::create(
+        rewriter, loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
     );
   } else {
-    newCall = rewriter.create<function::CallOp>(
-        loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands, oldCall.getNumDimsPerMapAttr(),
-        argOperands, templateParams
+    newCall = function::CallOp::create(
+        rewriter, loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands,
+        oldCall.getNumDimsPerMapAttr(), argOperands, templateParams
     );
   }
   return preserveDiscardableAttrs(oldCall, newCall);
@@ -412,7 +412,11 @@ public:
     if constexpr (requires { ImplClass::finalize(op, prefixResult, adaptor, rewriter); }) {
       ImplClass::finalize(op, prefixResult, adaptor, rewriter);
     }
-    rewriter.eraseOp(op);
+    if constexpr (requires { ImplClass::replacement(op, prefixResult, adaptor, rewriter); }) {
+      rewriter.replaceOp(op, ImplClass::replacement(op, prefixResult, adaptor, rewriter));
+    } else {
+      rewriter.eraseOp(op);
+    }
     return mlir::success();
   }
 };

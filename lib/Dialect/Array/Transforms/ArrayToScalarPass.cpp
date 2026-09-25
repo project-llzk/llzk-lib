@@ -91,6 +91,7 @@
 #include "llzk/Util/Concepts.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -229,12 +230,14 @@ CallOp newCallOpWithSplitResults(
   );
 
   auto newResults = newCall.getResults().begin();
+  SmallVector<Value> replacements;
+  replacements.reserve(oldResults.size());
   for (Value oldVal : oldResults) {
     if (ArrayType at = splittableArray(oldVal.getType())) {
       Location loc = oldVal.getLoc();
-      // Generate `CreateArrayOp` and replace uses of the result with it.
-      auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-      rewriter.replaceAllUsesWith(oldVal, newArray);
+      // Generate a `CreateArrayOp` to replace the original array result.
+      auto newArray = CreateArrayOp::create(rewriter, loc, at);
+      replacements.push_back(newArray);
 
       // For all indices in the ArrayType (i.e., the element count), write the next
       // result from the new CallOp to the new array.
@@ -246,12 +249,14 @@ CallOp newCallOpWithSplitResults(
         newResults++;
       }
     } else {
-      rewriter.replaceAllUsesWith(oldVal, *newResults);
+      replacements.push_back(*newResults);
       newResults++;
     }
   }
-  // erase the original CallOp
-  rewriter.eraseOp(oldCall);
+  // Use the conversion rewriter's operation-level replacement API. Replacing
+  // individual results before erasing the call causes it to register a second
+  // replacement for those values.
+  rewriter.replaceOp(oldCall, replacements);
 
   return newCall;
 }
@@ -411,7 +416,7 @@ public:
       // linear array size so delinearization of `i` will not fail.
       assert(multiDimIdxVals.has_value());
       // Create the write
-      rewriter.create<WriteArrayOp>(loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
+      WriteArrayOp::create(rewriter, loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
     }
     return success();
   }
@@ -473,8 +478,11 @@ public:
           if (ArrayType at = splittableArray(oldV.getType())) {
             Location loc = oldV.getLoc();
             // Generate `CreateArrayOp` and replace uses of the argument with it.
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
+            auto newArray = CreateArrayOp::create(rewriter, loc, at);
+            // ConversionPatternRewriter defers replacements while rollback is enabled, but
+            // eraseArgument destroys the old argument immediately. Update the use-list before
+            // erasing that argument.
+            oldV.replaceAllUsesWith(newArray);
             // Remove the argument from the block
             entryBlock.eraseArgument(i);
             // For all indices in the ArrayType (i.e., the element count), generate a new block
@@ -640,8 +648,8 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the member
-      MemberDefOp newMember = rewriter.create<MemberDefOp>(
-          op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
+      MemberDefOp newMember = MemberDefOp::create(
+          rewriter, op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
       );
       newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
@@ -670,8 +678,8 @@ public:
       ConversionPatternRewriter &rewriter
   ) {
     Value scalarRead = ArrayAccessOpInterface::genRead(rewriter, loc, adaptor.getVal(), idx);
-    rewriter.create<MemberWriteOp>(
-        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
+    MemberWriteOp::create(
+        rewriter, loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
@@ -691,9 +699,12 @@ public:
   }
 
   static CreateArrayOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
-    CreateArrayOp newArray =
-        rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
-    rewriter.replaceAllUsesWith(op, newArray);
+    return CreateArrayOp::create(rewriter, op.getLoc(), llvm::cast<ArrayType>(op.getType()));
+  }
+
+  /// Provide the local array reconstruction as the replacement for the member read.
+  static CreateArrayOp
+  replacement(MemberReadOp, CreateArrayOp newArray, OpAdaptor, ConversionPatternRewriter &) {
     return newArray;
   }
 
@@ -701,8 +712,8 @@ public:
       Location loc, CreateArrayOp newArray, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
-        loc, newMember.second, adaptor.getComponent(), newMember.first
+    MemberReadOp scalarRead = MemberReadOp::create(
+        rewriter, loc, newMember.second, adaptor.getComponent(), newMember.first
     );
     ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, idx, scalarRead);
   }
@@ -715,7 +726,7 @@ static void baseTargetSetup(ConversionTarget &target) {
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
       polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      scf::SCFDialect, ub::UBDialect>();
   target.addLegalOp<ModuleOp>();
 }
 
@@ -728,12 +739,12 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
       auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
       auto newArray = preserveDiscardableAttrs(
-          nondetOp, rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy)
+          nondetOp, CreateArrayOp::create(rewriter, nondetOp.getLoc(), wildcardTy)
       );
       if (wildcardTy == at) {
         rewriter.replaceOp(nondetOp, newArray);
       } else {
-        auto cast = rewriter.create<UnifiableCastOp>(nondetOp.getLoc(), at, newArray);
+        auto cast = UnifiableCastOp::create(rewriter, nondetOp.getLoc(), at, newArray);
         rewriter.replaceOp(nondetOp, cast.getResult());
       }
       return success();
@@ -1022,7 +1033,7 @@ static void promoteStraightLineStaticArrays(ModuleOp module) {
         Value &latest = latestValues[array][index];
         if (!latest) {
           OpBuilder builder(read);
-          latest = builder.create<llzk::NonDetOp>(read.getLoc(), read.getType());
+          latest = llzk::NonDetOp::create(builder, read.getLoc(), read.getType());
         }
         read.getResult().replaceAllUsesWith(latest);
         read.erase();
@@ -1060,6 +1071,38 @@ public:
 class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
   using Base = ArrayToScalarPassBase<PassImpl>;
   using Base::Base;
+
+  /// Create the scalar-memory promotion and cleanup pipeline run after array conversion.
+  static OpPassManager createPostScalarizationPipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
+    // Promote simple arrays directly, avoiding both SROA's temporary allocations and mem2reg's
+    // per-slot block scans.
+    pm.addPass(createStraightLineStaticArrayPromotionPass());
+    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
+    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
+    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
+    pm.addPass(createSpecializedSROAPass<CreateArrayOp>());
+    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
+    pm.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
+    // Cleanup allocations made dead by memory promotion.
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    // Fold and remove local SSA values made dead by array promotion. Avoid the global
+    // remove-dead-values dataflow analysis here: static array lowering can produce very large,
+    // straight-line functions, and the targeted allocation cleanup above has already removed the
+    // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
+    // dead function arguments/results or loop iteration values that canonicalization cannot remove.
+    pm.addPass(createCanonicalizerPass());
+    return pm;
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    auto nestedPM = createPostScalarizationPipeline();
+    nestedPM.getDependentDialects(registry);
+  }
 
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -1102,28 +1145,7 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
       module.dump();
     });
 
-    OpPassManager nestedPM(ModuleOp::getOperationName());
-    // Promote simple arrays directly, avoiding both SROA's temporary allocations and mem2reg's
-    // per-slot block scans.
-    nestedPM.addPass(createStraightLineStaticArrayPromotionPass());
-    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
-    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
-    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
-    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
-    nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
-    // Cleanup allocations made dead by memory promotion.
-    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
-        RemoveUnusedDiscardableAllocationsPassOptions {
-            .allocatorOpName = CreateArrayOp::getOperationName().str()
-        }
-    ));
-    // Fold and remove local SSA values made dead by array promotion. Avoid the global
-    // remove-dead-values dataflow analysis here: static array lowering can produce very large,
-    // straight-line functions, and the targeted allocation cleanup above has already removed the
-    // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
-    // dead function arguments/results or loop iteration values that canonicalization cannot remove.
-    nestedPM.addPass(createCanonicalizerPass());
+    OpPassManager nestedPM = createPostScalarizationPipeline();
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;

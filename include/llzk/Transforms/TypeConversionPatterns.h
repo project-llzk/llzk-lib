@@ -141,7 +141,7 @@ public:
       return rewriter.notifyMatchFailure(op, "could not convert region types");
     }
 
-    auto newOp = rewriter.create<mlir::scf::ExecuteRegionOp>(op.getLoc(), newResultTypes);
+    auto newOp = mlir::scf::ExecuteRegionOp::create(rewriter, op.getLoc(), newResultTypes);
     newOp->setAttrs(op->getAttrs());
     rewriter.inlineRegionBefore(op.getRegion(), newOp.getRegion(), newOp.getRegion().end());
 

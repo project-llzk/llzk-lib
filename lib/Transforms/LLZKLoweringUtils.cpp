@@ -134,8 +134,8 @@ Value rebuildExprInCompute(
       templateParams = params.getValue();
     }
 
-    CallOp rebuilt = builder.create<CallOp>(
-        callOp.getLoc(), callOp.getResultTypes(), callOp.getCalleeAttr(), rebuiltArgs,
+    CallOp rebuilt = CallOp::create(
+        builder, callOp.getLoc(), callOp.getResultTypes(), callOp.getCalleeAttr(), rebuiltArgs,
         templateParams
     );
     for (auto [oldResult, newResult] : llvm::zip(callOp.getResults(), rebuilt.getResults())) {
@@ -174,7 +174,7 @@ Value rebuildExprInCompute(
     if (!lhs || !rhs) {
       return nullptr;
     }
-    return memo[val] = builder.create<AddFeltOp>(add.getLoc(), add.getType(), lhs, rhs);
+    return memo[val] = AddFeltOp::create(builder, add.getLoc(), add.getType(), lhs, rhs);
   }
 
   if (auto sub = val.getDefiningOp<SubFeltOp>()) {
@@ -183,7 +183,7 @@ Value rebuildExprInCompute(
     if (!lhs || !rhs) {
       return nullptr;
     }
-    return memo[val] = builder.create<SubFeltOp>(sub.getLoc(), sub.getType(), lhs, rhs);
+    return memo[val] = SubFeltOp::create(builder, sub.getLoc(), sub.getType(), lhs, rhs);
   }
 
   if (auto mul = val.getDefiningOp<MulFeltOp>()) {
@@ -192,7 +192,7 @@ Value rebuildExprInCompute(
     if (!lhs || !rhs) {
       return nullptr;
     }
-    return memo[val] = builder.create<MulFeltOp>(mul.getLoc(), mul.getType(), lhs, rhs);
+    return memo[val] = MulFeltOp::create(builder, mul.getLoc(), mul.getType(), lhs, rhs);
   }
 
   if (auto neg = val.getDefiningOp<NegFeltOp>()) {
@@ -200,7 +200,7 @@ Value rebuildExprInCompute(
     if (!operand) {
       return nullptr;
     }
-    return memo[val] = builder.create<NegFeltOp>(neg.getLoc(), neg.getType(), operand);
+    return memo[val] = NegFeltOp::create(builder, neg.getLoc(), neg.getType(), operand);
   }
 
   if (auto div = val.getDefiningOp<DivFeltOp>()) {
@@ -209,11 +209,11 @@ Value rebuildExprInCompute(
     if (!lhs || !rhs) {
       return nullptr;
     }
-    return memo[val] = builder.create<DivFeltOp>(div.getLoc(), div.getType(), lhs, rhs);
+    return memo[val] = DivFeltOp::create(builder, div.getLoc(), div.getType(), lhs, rhs);
   }
 
   if (auto c = val.getDefiningOp<FeltConstantOp>()) {
-    return memo[val] = builder.create<FeltConstantOp>(c.getLoc(), c.getValueAttr());
+    return memo[val] = FeltConstantOp::create(builder, c.getLoc(), c.getValueAttr());
   }
 
   if (Operation *op = val.getDefiningOp()) {
@@ -288,7 +288,7 @@ MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type) {
 
   OpBuilder builder(structDef);
   builder.setInsertionPointToEnd(structDef.getBody());
-  return builder.create<MemberDefOp>(structDef.getLoc(), builder.getStringAttr(name), type);
+  return MemberDefOp::create(builder, structDef.getLoc(), builder.getStringAttr(name), type);
 }
 
 unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {

@@ -48,9 +48,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 # Dependency setup
 
-find_package(LLVM 20.1.8 REQUIRED CONFIG)
-find_package(MLIR 20.1.8 REQUIRED CONFIG)
-find_package(Clang 20.1.8 REQUIRED CONFIG)
+find_package(LLVM 23.1.0 REQUIRED CONFIG)
+find_package(MLIR 23.1.0 REQUIRED CONFIG)
+find_package(Clang 23.1.0 REQUIRED CONFIG)
 
 # Optional PCL dialect
 set(LLZK_WITH_PCL
@@ -100,17 +100,24 @@ message(STATUS "Using LLVM in: ${LLVM_DIR}")
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
 
 # Adds an INTERFACE library that only includes headers
-function(add_header_library _name _include_dirs _export_name)
+function(add_header_library _name _build_include_dirs _install_include_dirs _export_name)
   add_library(${_name} INTERFACE)
-  target_include_directories(${_name} SYSTEM INTERFACE ${_include_dirs})
+  target_include_directories(
+    ${_name} SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${_build_include_dirs}>
+    $<INSTALL_INTERFACE:${_install_include_dirs}>)
   install(TARGETS ${_name} EXPORT ${_export_name})
 endfunction()
 
 set(LLZK_EXPORT_TARGETS "LLZKTargets")
 # LLVM & MLIR do not propagate their include dirs correctly. We define them as
-# INTERFACE libraries and link against them
-add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
-add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
+# INTERFACE libraries and link against them. Preserve both the build-tree and
+# installed dependency include paths so consumers of exported LLZK targets can
+# include public headers that transitively include LLVM and MLIR headers.
+add_header_library(LLVMHeaders "${LLVM_INCLUDE_DIRS}" "${LLVM_INCLUDE_DIRS}"
+                   ${LLZK_EXPORT_TARGETS})
+add_header_library(MLIRHeaders "${MLIR_INCLUDE_DIRS}" "${MLIR_INCLUDE_DIRS}"
+                   ${LLZK_EXPORT_TARGETS})
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")

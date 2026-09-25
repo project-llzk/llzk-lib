@@ -105,6 +105,7 @@
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
+#include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/GreedyPatternRewriteDriver.h>
@@ -197,14 +198,6 @@ using CompatiblePodLeafMaterializationMap =
 namespace llvm {
 
 template <> struct DenseMapInfo<RecordChain> {
-  static RecordChain getEmptyKey() {
-    return RecordChain {{DenseMapInfo<StringAttr>::getEmptyKey()}};
-  }
-
-  static RecordChain getTombstoneKey() {
-    return RecordChain {{DenseMapInfo<StringAttr>::getTombstoneKey()}};
-  }
-
   static unsigned getHashValue(const RecordChain &chain) {
     return llvm::hash_combine(
         llvm::hash_combine_range(chain.nameList.begin(), chain.nameList.end()),
@@ -216,14 +209,6 @@ template <> struct DenseMapInfo<RecordChain> {
 };
 
 template <> struct DenseMapInfo<CompatiblePodLeafMaterializationKey> {
-  static CompatiblePodLeafMaterializationKey getEmptyKey() {
-    return {DenseMapInfo<Value>::getEmptyKey(), DenseMapInfo<Type>::getEmptyKey()};
-  }
-
-  static CompatiblePodLeafMaterializationKey getTombstoneKey() {
-    return {DenseMapInfo<Value>::getTombstoneKey(), DenseMapInfo<Type>::getTombstoneKey()};
-  }
-
   static unsigned getHashValue(const CompatiblePodLeafMaterializationKey &key) {
     return llvm::hash_combine(key.source, key.podType);
   }
@@ -457,19 +442,6 @@ static size_t splitPodArrayTypeTo(
   return 1;
 }
 
-/// For each Type in the given input collection, call `splitPodArrayTypeTo(Type,...)`.
-template <typename TypeCollection>
-void splitPodArrayTypeTo(
-    TypeCollection types, SmallVectorImpl<Type> &collect, SmallVector<size_t> *originalIdxToSize
-) {
-  for (Type t : types) {
-    size_t count = splitPodArrayTypeTo(t, collect);
-    if (originalIdxToSize) {
-      originalIdxToSize->push_back(count);
-    }
-  }
-}
-
 /// Return `true` iff splitting `arrTy` produces no concrete POD leaf arrays.
 static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
   SmallVector<Type> splitTypes;
@@ -571,7 +543,7 @@ tagRaggedNestedLeafValue(OpBuilder &bldr, Location loc, Value value, StringRef a
   if (attrName.empty()) {
     return value;
   }
-  auto cast = bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {value.getType()}, value);
+  auto cast = UnrealizedConversionCastOp::create(bldr, loc, TypeRange {value.getType()}, value);
   cast->setAttr(attrName, UnitAttr::get(bldr.getContext()));
   return cast.getResult(0);
 }
@@ -858,7 +830,7 @@ static Value castValueToTypeIfNeeded(OpBuilder &bldr, Location loc, Value value,
     return value;
   }
   assert(typesUnify(value.getType(), targetType) && "expected compatible rewritten types");
-  return bldr.create<UnifiableCastOp>(loc, targetType, value);
+  return UnifiableCastOp::create(bldr, loc, targetType, value);
 }
 
 /// Create a `pod.read` for one record of `podRef`.
@@ -866,7 +838,7 @@ inline static ReadPodOp
 genRead(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName) {
   Type resultType =
       llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
-  return bldr.create<ReadPodOp>(loc, resultType, podRef, recordName);
+  return ReadPodOp::create(bldr, loc, resultType, podRef, recordName);
 }
 
 /// Create a `pod.write` for one record of `podRef`.
@@ -874,8 +846,8 @@ inline static WritePodOp
 genWrite(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName, Value value) {
   Type recordType =
       llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
-  return bldr.create<WritePodOp>(
-      loc, podRef, recordName, castValueToTypeIfNeeded(bldr, loc, value, recordType)
+  return WritePodOp::create(
+      bldr, loc, podRef, recordName, castValueToTypeIfNeeded(bldr, loc, value, recordType)
   );
 }
 
@@ -1116,7 +1088,7 @@ static Value materializeArrayLengthCarrier(
 
   if (auto create = originalArrRef.getDefiningOp<CreateArrayOp>()) {
     if (create.getMapOperands().empty()) {
-      return rewriter.create<CreateArrayOp>(loc, carrierTy);
+      return CreateArrayOp::create(rewriter, loc, carrierTy);
     }
 
     SmallVector<ValueRange> mapOperands;
@@ -1124,15 +1096,15 @@ static Value materializeArrayLengthCarrier(
     for (OperandRange mapOperandGroup : create.getMapOperands()) {
       mapOperands.push_back(mapOperandGroup);
     }
-    return rewriter.create<CreateArrayOp>(
-        loc, carrierTy, mapOperands, create.getNumDimsPerMapAttr()
+    return CreateArrayOp::create(
+        rewriter, loc, carrierTy, mapOperands, create.getNumDimsPerMapAttr()
     );
   }
 
   if (std::optional<ArrayInstantiationInfo> instantiation =
           tryGetArrayInstantiationInfo(originalArrRef)) {
     if (instantiation->mapOperandStorage.empty()) {
-      return rewriter.create<CreateArrayOp>(loc, carrierTy);
+      return CreateArrayOp::create(rewriter, loc, carrierTy);
     }
 
     SmallVector<ValueRange> mapOperands;
@@ -1140,8 +1112,8 @@ static Value materializeArrayLengthCarrier(
     for (const SmallVector<Value> &group : instantiation->mapOperandStorage) {
       mapOperands.push_back(group);
     }
-    return rewriter.create<CreateArrayOp>(
-        loc, carrierTy, mapOperands, ArrayRef<int32_t>(instantiation->numDimsPerMap)
+    return CreateArrayOp::create(
+        rewriter, loc, carrierTy, mapOperands, ArrayRef<int32_t>(instantiation->numDimsPerMap)
     );
   }
 
@@ -1149,10 +1121,10 @@ static Value materializeArrayLengthCarrier(
     return llvm::isa<AffineMapAttr>(dimSize);
   });
   if (!hasAffineDims) {
-    return rewriter.create<CreateArrayOp>(loc, carrierTy);
+    return CreateArrayOp::create(rewriter, loc, carrierTy);
   }
 
-  return rewriter.create<NonDetOp>(loc, carrierTy);
+  return NonDetOp::create(rewriter, loc, carrierTy);
 }
 
 /// Materialize the shape carrier for a rewritten `array.extract` result.
@@ -1171,8 +1143,8 @@ static Value materializeExtractedPodArrayShapeCarrier(
         materializeArrayLengthCarrier(originalArrRef, originalArrTy, op.getLoc(), rewriter);
   }
 
-  return rewriter.create<ExtractArrayOp>(
-      op.getLoc(), getPodArrayShapeCarrierType(resultTy), sourceCarrier, indices
+  return ExtractArrayOp::create(
+      rewriter, op.getLoc(), getPodArrayShapeCarrierType(resultTy), sourceCarrier, indices
   );
 }
 
@@ -1253,8 +1225,8 @@ static Value createSplitPodArrayReplacement(
   ArrayType storageSplitType = getSplitPodArrayStorageType(originalArrTy, id.nameList);
   CreateArrayOp splitArrayOp =
       mapOperands.empty()
-          ? rewriter.create<CreateArrayOp>(loc, storageSplitType)
-          : rewriter.create<CreateArrayOp>(loc, storageSplitType, mapOperands, numDimsPerMap);
+          ? CreateArrayOp::create(rewriter, loc, storageSplitType)
+          : CreateArrayOp::create(rewriter, loc, storageSplitType, mapOperands, numDimsPerMap);
   preserveDiscardableAttrs(src, splitArrayOp);
   return castValueToTypeIfNeeded(rewriter, loc, splitArrayOp, preciseSplitType);
 }
@@ -1284,12 +1256,12 @@ inline static Value createWritableArrayValue(
       for (const SmallVector<Value> &group : instantiation->mapOperandStorage) {
         mapOperands.push_back(group);
       }
-      return bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, instantiation->numDimsPerMap);
+      return CreateArrayOp::create(bldr, loc, arrTy, mapOperands, instantiation->numDimsPerMap);
     }
 
-    return bldr.create<NonDetOp>(loc, arrTy);
+    return NonDetOp::create(bldr, loc, arrTy);
   } else {
-    return bldr.create<CreateArrayOp>(loc, arrTy);
+    return CreateArrayOp::create(bldr, loc, arrTy);
   }
 }
 
@@ -1311,7 +1283,7 @@ tryMaterializeFreshUnwrittenDirectRecordRead(OpBuilder &bldr, Location loc, Read
     );
   }
 
-  return bldr.create<NonDetOp>(loc, recordType).getResult();
+  return NonDetOp::create(bldr, loc, recordType).getResult();
 }
 
 /// Return `true` iff two recovered array instantiations can be rebuilt identically.
@@ -1375,9 +1347,9 @@ genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices,
   Type selectedType = arrTy.getSelectionType(indices.size());
   Value convertedValue = castValueToTypeIfNeeded(bldr, loc, value, selectedType);
   if (llvm::isa<ArrayType>(selectedType)) {
-    return bldr.create<InsertArrayOp>(loc, arrayRef, indices, convertedValue);
+    return InsertArrayOp::create(bldr, loc, arrayRef, indices, convertedValue);
   }
-  return bldr.create<WriteArrayOp>(loc, arrayRef, indices, convertedValue);
+  return WriteArrayOp::create(bldr, loc, arrayRef, indices, convertedValue);
 }
 
 inline static Operation *
@@ -1520,7 +1492,7 @@ static Value genReadAlongPath(
 
     if (strippedValue.getDefiningOp<ReadPodOp>()) {
       auto splitReads =
-          bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
+          UnrealizedConversionCastOp::create(bldr, loc, TypeRange(splitTypes), strippedValue);
       return splitReads.getResult(splitIdx);
     }
 
@@ -1529,7 +1501,7 @@ static Value genReadAlongPath(
           isPodArrayShapeCarrierMarker(recordChain.back()) &&
           "synthetic shape carrier must use the reserved shape marker"
       );
-      return bldr.create<CreateArrayOp>(loc, splitArrTy);
+      return CreateArrayOp::create(bldr, loc, splitArrTy);
     }
 
     if (!arrTy.hasStaticShape()) {
@@ -1588,7 +1560,7 @@ static Value rebuildFlattenedPodRecord(
     const VirtualPodLeafMap &leafValues
 ) {
   if (PodType nestedPodTy = dyn_cast<PodType>(recordType)) {
-    NewPodOp nestedPod = bldr.create<NewPodOp>(loc, nestedPodTy);
+    NewPodOp nestedPod = NewPodOp::create(bldr, loc, nestedPodTy);
     for (RecordAttr record : nestedPodTy.getRecords()) {
       recordChain.push_back(record.getName());
       Value recordValue =
@@ -1613,7 +1585,7 @@ static Value rebuildFlattenedPodRecord(
         leafArrays.push_back(castValueToTypeIfNeeded(bldr, loc, it->second, splitType));
       }
 
-      return bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {arrTy}, leafArrays)
+      return UnrealizedConversionCastOp::create(bldr, loc, TypeRange {arrTy}, leafArrays)
           .getResult(0);
     }
 
@@ -1621,7 +1593,7 @@ static Value rebuildFlattenedPodRecord(
     auto subIndices = arrTy.getSubelementIndices();
     assert(subIndices && "static-shape arrays must provide subelement indices");
 
-    Value rebuiltArray = bldr.create<CreateArrayOp>(loc, arrTy);
+    Value rebuiltArray = CreateArrayOp::create(bldr, loc, arrTy);
     for (ArrayAttr index : *subIndices) {
       VirtualPodLeafMap elementLeafValues;
       SmallVector<StringAttr> elementRecordChain;
@@ -1631,7 +1603,7 @@ static Value rebuildFlattenedPodRecord(
         elementLeafValues[id] = ArrayAccessOpInterface::genRead(bldr, loc, it->second, index);
       });
 
-      NewPodOp elementPod = bldr.create<NewPodOp>(loc, elemPodTy);
+      NewPodOp elementPod = NewPodOp::create(bldr, loc, elemPodTy);
       SmallVector<StringAttr> nestedChain;
       for (RecordAttr record : elemPodTy.getRecords()) {
         nestedChain.push_back(record.getName());
@@ -1789,7 +1761,7 @@ static ArrayRef<Value> getOrMaterializeCompatibleLeafValues(
       location, source, leafTypes, rewriter, it->second,
       [](Location loc, Value src, ArrayRef<Type> targetTypes, OpBuilder &bldr,
          SmallVectorImpl<Value> &out) {
-    auto splitCast = bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(targetTypes), src);
+    auto splitCast = UnrealizedConversionCastOp::create(bldr, loc, TypeRange(targetTypes), src);
     llvm::append_range(out, splitCast.getResults());
   }
   );
@@ -1851,7 +1823,7 @@ static SmallVector<Value> materializeCompatiblePodArrayConvertedValues(
     // Keep the compatible components tied to one split cast so function arguments can
     // be promoted to the concrete component types instead of casting one argument
     // independently to each type.
-    auto splitCast = bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(targetTypes), src);
+    auto splitCast = UnrealizedConversionCastOp::create(bldr, loc, TypeRange(targetTypes), src);
     llvm::append_range(out, splitCast.getResults());
   }
   );
@@ -1904,7 +1876,7 @@ static LogicalResult splitWholePodEmitEquality(
       return failure();
     }
     preserveDiscardableAttrs(
-        op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf)
+        op, constrain::EmitEqualityOp::create(rewriter, op.getLoc(), lhsLeaf, rhsLeaf)
     );
   }
   rewriter.eraseOp(op);
@@ -1921,11 +1893,11 @@ static Value createVirtualPodPlaceholder(
     OpBuilder &bldr, Location loc, PodType podTy, const VirtualPodLeafMap &leafValues
 ) {
   if (!hasAffineMapAttr(podTy)) {
-    return bldr.create<NewPodOp>(loc, podTy);
+    return NewPodOp::create(bldr, loc, podTy);
   }
 
   SmallVector<Value> orderedValues = orderedVirtualPodLeafValues(podTy, loc, bldr, leafValues);
-  return bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {podTy}, orderedValues)
+  return UnrealizedConversionCastOp::create(bldr, loc, TypeRange {podTy}, orderedValues)
       .getResult(0);
 }
 
@@ -1973,7 +1945,7 @@ findVirtualPodMaterializationAnchor(NewPodOp pod, const VirtualPodLeafMap &leafV
 /// Step 3 tracks virtual POD leaf values as straight-line state. Nested writes must remain
 /// materialized so the SCF lifting rewrite can model them as conditional or loop-carried values.
 inline static bool isInsideSupportedScfRegion(Operation *op) {
-  return hasParentThatIsa<scf::IfOp, scf::ForOp, scf::WhileOp>(op);
+  return op->getParentOfType<scf::IfOp, scf::ForOp, scf::WhileOp>();
 }
 
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
@@ -2074,7 +2046,7 @@ inline static void baseTargetSetup(ConversionTarget &target) {
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
       polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      scf::SCFDialect, ub::UBDialect>();
   target.addLegalOp<ModuleOp>();
 }
 
@@ -2137,8 +2109,9 @@ static void flattenPodMemberIntoLeaves(
   forEachPodLeaf(podTy, recordChain, [&](const RecordChain &id, Type ty) {
     StringAttr name =
         id.getFlattenedMemberName(originalMember.getContext(), originalMember.getSymNameAttr());
-    MemberDefOp newMember = rewriter.create<MemberDefOp>(
-        originalMember.getLoc(), name, ty, !id.syntheticShapeCarrier && originalMember.getSignal(),
+    MemberDefOp newMember = MemberDefOp::create(
+        rewriter, originalMember.getLoc(), name, ty,
+        !id.syntheticShapeCarrier && originalMember.getSignal(),
         !id.syntheticShapeCarrier && originalMember.getColumn()
     );
     preserveDiscardableAttrs(originalMember, newMember);
@@ -2223,8 +2196,8 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
       StringAttr name = id.getFlattenedMemberName(op.getContext(), op.getSymNameAttr());
-      MemberDefOp newMember = rewriter.create<MemberDefOp>(
-          op.getLoc(), name, splitType, op.getSignal(), op.getColumn()
+      MemberDefOp newMember = MemberDefOp::create(
+          rewriter, op.getLoc(), name, splitType, op.getSignal(), op.getColumn()
       );
       preserveDiscardableAttrs(op, newMember);
       newMember.setPublicAttr(op.hasPublicAttr());
@@ -2235,7 +2208,7 @@ public:
       StringAttr carrierName =
           getSplitPodArrayShapeMemberName(op.getContext(), op.getSymNameAttr());
       MemberDefOp carrierMember =
-          rewriter.create<MemberDefOp>(op.getLoc(), carrierName, carrierTy, false, op.getColumn());
+          MemberDefOp::create(rewriter, op.getLoc(), carrierName, carrierTy, false, op.getColumn());
       preserveDiscardableAttrs(op, carrierMember);
       carrierMember.setPublicAttr(op.hasPublicAttr());
       localRepMapRef[RecordChain()] =
@@ -2294,7 +2267,6 @@ public:
       return castValueToTypeIfNeeded(bldr, loc, inputs.front(), targetType);
     };
     addTargetMaterialization(materializeCast);
-    addArgumentMaterialization(materializeCast);
     addSourceMaterialization(materializeCast);
   }
 };
@@ -2324,12 +2296,12 @@ public:
     replacements.reserve(splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0));
     for (Type splitType : splitTypes) {
       replacements.push_back(
-          preserveDiscardableAttrs(op, rewriter.create<NonDetOp>(op.getLoc(), splitType))
+          preserveDiscardableAttrs(op, NonDetOp::create(rewriter, op.getLoc(), splitType))
       );
     }
     if (needsPodArrayShapeCarrier(arrTy)) {
       replacements.push_back(preserveDiscardableAttrs(
-          op, rewriter.create<NonDetOp>(op.getLoc(), getPodArrayShapeCarrierType(arrTy))
+          op, NonDetOp::create(rewriter, op.getLoc(), getPodArrayShapeCarrierType(arrTy))
       ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -2439,8 +2411,9 @@ public:
             for (const SmallVector<Value> &values : instantiationInfo.mapOperandStorage) {
               mapOperands.push_back(values);
             }
-            CreateArrayOp splitArrayOp = rewriter.create<CreateArrayOp>(
-                op.getLoc(), materializedType, mapOperands, instantiationInfo.numDimsPerMap
+            CreateArrayOp splitArrayOp = CreateArrayOp::create(
+                rewriter, op.getLoc(), materializedType, mapOperands,
+                instantiationInfo.numDimsPerMap
             );
             preserveDiscardableAttrs(op, splitArrayOp);
             splitArray = splitArrayOp;
@@ -2512,7 +2485,7 @@ public:
     }
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
-    NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
+    NewPodOp pod = NewPodOp::create(rewriter, op.getLoc(), podTy);
     preserveDiscardableAttrs(op, pod);
     VirtualPodLeafMap leafValues;
     auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
@@ -3078,13 +3051,13 @@ public:
       );
 
       for (size_t dim = 0, rank = shapeCheckTy.getDimensionSizes().size(); dim < rank; ++dim) {
-        Value dimVal = rewriter.create<arith::ConstantOp>(
-            op.getLoc(), rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
+        Value dimVal = arith::ConstantOp::create(
+            rewriter, op.getLoc(), rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
         );
-        Value lhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), lhsShapeSource, dimVal);
-        Value rhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), rhsShapeSource, dimVal);
+        Value lhsLen = ArrayLengthOp::create(rewriter, op.getLoc(), lhsShapeSource, dimVal);
+        Value rhsLen = ArrayLengthOp::create(rewriter, op.getLoc(), rhsShapeSource, dimVal);
         preserveDiscardableAttrs(
-            op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLen, rhsLen)
+            op, constrain::EmitEqualityOp::create(rewriter, op.getLoc(), lhsLen, rhsLen)
         );
       }
     }
@@ -3118,7 +3091,7 @@ public:
 
     for (auto [lhs, rhs] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
       preserveDiscardableAttrs(
-          op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhs, rhs)
+          op, constrain::EmitEqualityOp::create(rewriter, op.getLoc(), lhs, rhs)
       );
     }
     rewriter.eraseOp(op);
@@ -3311,25 +3284,26 @@ public:
         lhsCompatibleConvertedValues.empty() ? adaptor.getLhs()
                                              : ValueRange(lhsCompatibleConvertedValues)
     );
-    Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
-    Value trueVal = rewriter.create<arith::ConstantOp>(
-        loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), 1)
+    Value zero = arith::ConstantOp::create(rewriter, loc, rewriter.getIndexAttr(0));
+    Value trueVal = arith::ConstantOp::create(
+        rewriter, loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), 1)
     );
 
     SmallVector<Value> selectedIndices;
     selectedIndices.reserve(selectedDims);
     for (size_t dim = 0; dim < selectedDims; ++dim) {
-      Value idx = rewriter.create<NonDetOp>(loc, IndexType::get(rewriter.getContext()));
-      Value dimVal = rewriter.create<arith::ConstantOp>(
-          loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
+      Value idx = NonDetOp::create(rewriter, loc, IndexType::get(rewriter.getContext()));
+      Value dimVal = arith::ConstantOp::create(
+          rewriter, loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
       );
-      Value dimLen = rewriter.create<ArrayLengthOp>(loc, shapeCarrier, dimVal);
+      Value dimLen = ArrayLengthOp::create(rewriter, loc, shapeCarrier, dimVal);
 
-      Value nonNegative = rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::sge, idx, zero);
-      rewriter.create<constrain::EmitEqualityOp>(loc, nonNegative, trueVal);
+      Value nonNegative =
+          arith::CmpIOp::create(rewriter, loc, arith::CmpIPredicate::sge, idx, zero);
+      constrain::EmitEqualityOp::create(rewriter, loc, nonNegative, trueVal);
 
-      Value inRange = rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::slt, idx, dimLen);
-      rewriter.create<constrain::EmitEqualityOp>(loc, inRange, trueVal);
+      Value inRange = arith::CmpIOp::create(rewriter, loc, arith::CmpIPredicate::slt, idx, dimLen);
+      constrain::EmitEqualityOp::create(rewriter, loc, inRange, trueVal);
 
       selectedIndices.push_back(idx);
     }
@@ -3347,13 +3321,13 @@ public:
               ? shapeCarrier
               : ArrayAccessOpInterface::genRead(rewriter, loc, shapeCarrier, selectedIndices);
       for (size_t dim = 0; dim < rhsRank; ++dim) {
-        Value dimVal = rewriter.create<arith::ConstantOp>(
-            loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
+        Value dimVal = arith::ConstantOp::create(
+            rewriter, loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
         );
-        Value lhsLen = rewriter.create<ArrayLengthOp>(loc, selectedShapeSource, dimVal);
-        Value rhsLen = rewriter.create<ArrayLengthOp>(loc, rhsShapeSource, dimVal);
+        Value lhsLen = ArrayLengthOp::create(rewriter, loc, selectedShapeSource, dimVal);
+        Value rhsLen = ArrayLengthOp::create(rewriter, loc, rhsShapeSource, dimVal);
         preserveDiscardableAttrs(
-            op, rewriter.create<constrain::EmitEqualityOp>(loc, lhsLen, rhsLen)
+            op, constrain::EmitEqualityOp::create(rewriter, loc, lhsLen, rhsLen)
         );
       }
     }
@@ -3361,14 +3335,14 @@ public:
     if (lhsLeaves.empty() && rhsLeaves.empty()) {
       if (rhsArrTy) {
         Value rhsShapeCarrier = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
-        Value selectedShape =
-            selectedIndices.empty()
-                ? shapeCarrier
-                : rewriter.create<ExtractArrayOp>(
-                      loc, getPodArrayShapeCarrierType(rhsArrTy), shapeCarrier, selectedIndices
-                  );
+        Value selectedShape = selectedIndices.empty()
+                                  ? shapeCarrier
+                                  : ExtractArrayOp::create(
+                                        rewriter, loc, getPodArrayShapeCarrierType(rhsArrTy),
+                                        shapeCarrier, selectedIndices
+                                    );
         preserveDiscardableAttrs(
-            op, rewriter.create<constrain::EmitEqualityOp>(loc, selectedShape, rhsShapeCarrier)
+            op, constrain::EmitEqualityOp::create(rewriter, loc, selectedShape, rhsShapeCarrier)
         );
       }
       rewriter.eraseOp(op);
@@ -3380,14 +3354,14 @@ public:
       if (auto rhsLeafArrTy = llvm::dyn_cast<ArrayType>(rhsLeaf.getType())) {
         if (!selectedIndices.empty()) {
           selectedLhs =
-              rewriter.create<ExtractArrayOp>(loc, rhsLeafArrTy, lhsLeaf, selectedIndices);
+              ExtractArrayOp::create(rewriter, loc, rhsLeafArrTy, lhsLeaf, selectedIndices);
         }
       } else {
         selectedLhs =
-            rewriter.create<ReadArrayOp>(loc, rhsLeaf.getType(), lhsLeaf, selectedIndices);
+            ReadArrayOp::create(rewriter, loc, rhsLeaf.getType(), lhsLeaf, selectedIndices);
       }
       preserveDiscardableAttrs(
-          op, rewriter.create<constrain::EmitEqualityOp>(loc, selectedLhs, rhsLeaf)
+          op, constrain::EmitEqualityOp::create(rewriter, loc, selectedLhs, rhsLeaf)
       );
     }
 
@@ -3455,8 +3429,8 @@ public:
       return failure();
     }
     if (shouldDeferPodArrayLengthToStep3(op)) {
-      auto deferred = rewriter.create<ArrayLengthOp>(
-          op.getLoc(), op.getArrRef(), getSingleConvertedValue(adaptor.getDim())
+      auto deferred = ArrayLengthOp::create(
+          rewriter, op.getLoc(), op.getArrRef(), getSingleConvertedValue(adaptor.getDim())
       );
       preserveDiscardableAttrs(op, deferred);
       deferred->setAttr(DEFERRED_POD_ARRAY_LENGTH_ATTR, UnitAttr::get(op.getContext()));
@@ -3583,8 +3557,10 @@ public:
                 /*requireShapeCarrier=*/true
             )
                 .shapeCarrier;
-      } else if (auto it = resolver.deferredPodArrays.find(readOp.getResult());
-                 it != resolver.deferredPodArrays.end() && it->second.shapeCarrier) {
+      } else if (
+          auto it = resolver.deferredPodArrays.find(readOp.getResult());
+          it != resolver.deferredPodArrays.end() && it->second.shapeCarrier
+      ) {
         shapeSource = castValueToTypeIfNeeded(
             rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
         );
@@ -3635,8 +3611,8 @@ public:
     auto splitArrRefs = adaptor.getArrRef().take_front(splitResultTypes.size());
     for (auto [splitArrRange, splitResultType] : llvm::zip_equal(splitArrRefs, splitResultTypes)) {
       replacements.push_back(preserveDiscardableAttrs(
-          op, rewriter.create<ExtractArrayOp>(
-                  op.getLoc(), llvm::cast<ArrayType>(splitResultType),
+          op, ExtractArrayOp::create(
+                  rewriter, op.getLoc(), llvm::cast<ArrayType>(splitResultType),
                   getSingleConvertedValue(splitArrRange), indices
               )
       ));
@@ -3670,8 +3646,8 @@ public:
 
     if (hasZeroLeafPodArraySplit(llvm::cast<ArrayType>(op.getRvalue().getType()))) {
       preserveDiscardableAttrs(
-          op, rewriter.create<InsertArrayOp>(
-                  op.getLoc(), getSingleConvertedValue(adaptor.getArrRef()),
+          op, InsertArrayOp::create(
+                  rewriter, op.getLoc(), getSingleConvertedValue(adaptor.getArrRef()),
                   flattenConvertedValues(adaptor.getIndices()),
                   getSingleConvertedValue(adaptor.getRvalue())
               )
@@ -3688,8 +3664,8 @@ public:
     auto splitRvalues = adaptor.getRvalue().take_front(leafCount);
     for (auto [splitArrRange, splitRvalueRange] : llvm::zip_equal(splitArrRefs, splitRvalues)) {
       preserveDiscardableAttrs(
-          op, rewriter.create<InsertArrayOp>(
-                  op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
+          op, InsertArrayOp::create(
+                  rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
                   getSingleConvertedValue(splitRvalueRange)
               )
       );
@@ -3710,7 +3686,7 @@ public:
       }
 
       preserveDiscardableAttrs(
-          op, rewriter.create<InsertArrayOp>(op.getLoc(), destCarrier, indices, rvalueCarrier)
+          op, InsertArrayOp::create(rewriter, op.getLoc(), destCarrier, indices, rvalueCarrier)
       );
     }
 
@@ -3754,8 +3730,8 @@ public:
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
       preserveDiscardableAttrs(
           op,
-          rewriter.create<MemberWriteOp>(
-              op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+          MemberWriteOp::create(
+              rewriter, op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
               FlatSymbolRefAttr::get(carrierMember.first), getSingleConvertedValue(adaptor.getVal())
           )
       );
@@ -3767,8 +3743,8 @@ public:
     for (auto [id, splitValRange] : llvm::zip_equal(splitIds, splitVals)) {
       const MemberInfo &newMember = idToMember.at(id);
       preserveDiscardableAttrs(
-          op, rewriter.create<MemberWriteOp>(
-                  op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+          op, MemberWriteOp::create(
+                  rewriter, op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
                   FlatSymbolRefAttr::get(newMember.first), getSingleConvertedValue(splitValRange)
               )
       );
@@ -3780,8 +3756,8 @@ public:
       }
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
       preserveDiscardableAttrs(
-          op, rewriter.create<MemberWriteOp>(
-                  op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+          op, MemberWriteOp::create(
+                  rewriter, op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
                   FlatSymbolRefAttr::get(carrierMember.first),
                   castValueToTypeIfNeeded(rewriter, op.getLoc(), carrier, carrierMember.second)
               )
@@ -3845,11 +3821,11 @@ public:
     if (splitTypes.empty()) {
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
       Value carrierRead = preserveDiscardableAttrs(
-          op,
-          rewriter.create<MemberReadOp>(
-              op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
-              carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
-          )
+          op, MemberReadOp::create(
+                  rewriter, op.getLoc(), carrierMember.second,
+                  getSingleConvertedValue(adaptor.getComponent()), carrierMember.first,
+                  op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+              )
       );
       rewriter.replaceOpWithMultiple(op, {ValueRange {carrierRead}});
       return success();
@@ -3859,8 +3835,8 @@ public:
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
       const MemberInfo &newMember = idToMember.at(id);
       replacements.push_back(preserveDiscardableAttrs(
-          op, rewriter.create<MemberReadOp>(
-                  op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()),
+          op, MemberReadOp::create(
+                  rewriter, op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()),
                   newMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
               )
       ));
@@ -3868,11 +3844,11 @@ public:
     if (needsPodArrayShapeCarrier(arrTy)) {
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
       replacements.push_back(preserveDiscardableAttrs(
-          op,
-          rewriter.create<MemberReadOp>(
-              op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
-              carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
-          )
+          op, MemberReadOp::create(
+                  rewriter, op.getLoc(), carrierMember.second,
+                  getSingleConvertedValue(adaptor.getComponent()), carrierMember.first,
+                  op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+              )
       ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -3954,7 +3930,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodArrayInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodArrayInMemberReadOp::legal);
 
-  mlir::scf::populateSCFStructuralTypeConversionsAndLegality(typeConverter, patterns, target);
+  scf::populateSCFStructuralTypeConversionsAndLegality(typeConverter, patterns, target);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 2: split arrays with POD element type\n";);
   return applyPartialConversion(modOp, target, std::move(patterns));
@@ -3979,7 +3955,7 @@ public:
     for (auto [name, init] :
          llvm::zip_equal(adaptor.getInitializedRecords(), adaptor.getInitialValues())) {
       // Create the write
-      rewriter.create<WritePodOp>(loc, op.getResult(), llvm::cast<StringAttr>(name), init);
+      WritePodOp::create(rewriter, loc, op.getResult(), llvm::cast<StringAttr>(name), init);
     }
     // Remove initializations from `op`
     rewriter.modifyOpInPlace(op, [&op]() {
@@ -4151,7 +4127,11 @@ public:
             });
 
             Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
-            rewriter.replaceAllUsesWith(oldV, virtualPod);
+            // Function signature conversion runs with rewrite rollback enabled. In that mode
+            // ConversionPatternRewriter only records this replacement for later application,
+            // but eraseArgument destroys the old argument immediately. Update the use-list
+            // directly before erasing the argument.
+            oldV.replaceAllUsesWith(virtualPod);
             entryBlock.eraseArgument(i);
 
             i += leafValues.size();
@@ -4223,6 +4203,8 @@ static CallOp newCallOpWithSplitResults(
   );
 
   auto newResults = newCall.getResults().begin();
+  SmallVector<Value> replacements;
+  replacements.reserve(oldResults.size());
   for (Value oldVal : oldResults) {
     if (PodType pt = splittablePod(oldVal.getType())) {
       Location loc = oldVal.getLoc();
@@ -4234,14 +4216,15 @@ static CallOp newCallOpWithSplitResults(
       });
       Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
       resolver.virtualPods[virtualPod] = std::move(leafValues);
-      rewriter.replaceAllUsesWith(oldVal, virtualPod);
+      replacements.push_back(virtualPod);
     } else {
-      rewriter.replaceAllUsesWith(oldVal, *newResults);
+      replacements.push_back(*newResults);
       newResults++;
     }
   }
-  // erase the original CallOp
-  rewriter.eraseOp(oldCall);
+  // Replace the call as a whole so the conversion rewriter records one
+  // replacement for each original result.
+  rewriter.replaceOp(oldCall, replacements);
 
   return newCall;
 }
@@ -4318,9 +4301,9 @@ public:
                               ? virtualLeafValues->at(id)
                               : genReadAlongPath(rewriter, op.getLoc(), op.getVal(), id);
       preserveDiscardableAttrs(
-          op, rewriter.create<MemberWriteOp>(
-                  op.getLoc(), adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first),
-                  scalarValue
+          op, MemberWriteOp::create(
+                  rewriter, op.getLoc(), adaptor.getComponent(),
+                  FlatSymbolRefAttr::get(newMember.first), scalarValue
               )
       );
     }
@@ -4363,8 +4346,8 @@ public:
     VirtualPodLeafMap leafValues;
     for (const auto &[id, newMember] : idToMember) {
       leafValues[id] = preserveDiscardableAttrs(
-          op, rewriter.create<MemberReadOp>(
-                  op.getLoc(), newMember.second, adaptor.getComponent(), newMember.first
+          op, MemberReadOp::create(
+                  rewriter, op.getLoc(), newMember.second, adaptor.getComponent(), newMember.first
               )
       );
     }
@@ -5186,8 +5169,8 @@ static LogicalResult updateCallsForPromotedFunctionArgCasts(
     builder.setInsertionPoint(callOp);
     for (auto [i, operand] : llvm::enumerate(callOp.getArgOperands())) {
       if (const PromotedFunctionArgCast *argCast = findPromotedArgCast(signature.argCasts, i)) {
-        auto castOp = builder.create<UnrealizedConversionCastOp>(
-            callOp.getLoc(), TypeRange(argCast->resultTypes), operand
+        auto castOp = UnrealizedConversionCastOp::create(
+            builder, callOp.getLoc(), TypeRange(argCast->resultTypes), operand
         );
         llvm::append_range(newOperands, castOp.getResults());
       } else {
@@ -5333,7 +5316,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   resolver.addPreConversionPatterns(preConversionPatterns);
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(preConversionPatterns),
-          GreedyRewriteConfig {.fold = false, .cseConstants = false}
+          GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false)
       ))) {
     return failure();
   }
@@ -5396,7 +5379,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   resolver.addPostConversionPatterns(postConversionPatterns);
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(postConversionPatterns),
-          GreedyRewriteConfig {.fold = false, .cseConstants = false}
+          GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false)
       ))) {
     return failure();
   }
@@ -5733,7 +5716,7 @@ static void appendYield(
   }));
 
   bldr.setInsertionPointToEnd(&block);
-  auto newYield = bldr.create<scf::YieldOp>(loc, yieldValues);
+  auto newYield = scf::YieldOp::create(bldr, loc, yieldValues);
   if (originalYield) {
     preserveDiscardableAttrs(originalYield, newYield);
   }
@@ -5996,7 +5979,7 @@ public:
     }
 
     rewriter.setInsertionPoint(ifOp);
-    auto newIf = rewriter.create<scf::IfOp>(ifOp.getLoc(), resultTypes, ifOp.getCondition(), true);
+    auto newIf = scf::IfOp::create(rewriter, ifOp.getLoc(), resultTypes, ifOp.getCondition(), true);
     Block &newThenBlock = *newIf.thenBlock();
     Block &newElseBlock = *newIf.elseBlock();
     dropTerminatorIfPresent(newThenBlock);
@@ -6045,8 +6028,8 @@ public:
     rewriter.setInsertionPoint(forOp);
     appendIncomingLoopSlotValues(rewriter, loc, slots, newInitArgs);
 
-    auto newFor = rewriter.create<scf::ForOp>(
-        loc, forOp.getLowerBound(), forOp.getUpperBound(), forOp.getStep(), newInitArgs
+    auto newFor = scf::ForOp::create(
+        rewriter, loc, forOp.getLowerBound(), forOp.getUpperBound(), forOp.getStep(), newInitArgs
     );
     newFor->setAttrs(forOp->getAttrs());
 
@@ -6069,7 +6052,7 @@ public:
         SmallVector<Value> yieldValues =
             remapValuesAndAppendLoopSlots(yieldOp.getOperands(), mapping, slotValues);
         preserveDiscardableAttrs(
-            yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues)
+            yieldOp, scf::YieldOp::create(rewriter, yieldOp.getLoc(), yieldValues)
         );
         return true;
       }
@@ -6112,7 +6095,7 @@ public:
     rewriter.setInsertionPoint(whileOp);
     appendIncomingLoopSlotValues(rewriter, loc, slots, newInits, &newResultTypes);
 
-    auto newWhile = rewriter.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
+    auto newWhile = scf::WhileOp::create(rewriter, loc, newResultTypes, newInits, nullptr, nullptr);
     newWhile->setAttrs(whileOp->getAttrs());
 
     Block &newBeforeBody = *newWhile.getBeforeBody();
@@ -6140,9 +6123,9 @@ public:
             remapValuesAndAppendLoopSlots(conditionOp.getArgs(), beforeMapping, beforeSlotValues);
         preserveDiscardableAttrs(
             conditionOp,
-            rewriter.create<scf::ConditionOp>(
-                conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()),
-                conditionArgs
+            scf::ConditionOp::create(
+                rewriter, conditionOp.getLoc(),
+                beforeMapping.lookupOrDefault(conditionOp.getCondition()), conditionArgs
             )
         );
         return true;
@@ -6170,7 +6153,7 @@ public:
         SmallVector<Value> yieldValues =
             remapValuesAndAppendLoopSlots(yieldOp.getOperands(), afterMapping, afterSlotValues);
         preserveDiscardableAttrs(
-            yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues)
+            yieldOp, scf::YieldOp::create(rewriter, yieldOp.getLoc(), yieldValues)
         );
         return true;
       }
@@ -6584,7 +6567,7 @@ public:
       }
     }
 
-    auto newWhile = rewriter.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
+    auto newWhile = scf::WhileOp::create(rewriter, loc, newResultTypes, newInits, nullptr, nullptr);
     newWhile->setAttrs(whileOp->getAttrs());
     Block &newBeforeBody = *newWhile.getBeforeBody();
     Block &newAfterBody = *newWhile.getAfterBody();
@@ -6635,10 +6618,10 @@ public:
       SmallVector<Value> args =
           expandTerminatorValues(conditionOp.getArgs(), beforeMapping, beforePodValues);
       preserveDiscardableAttrs(
-          conditionOp,
-          rewriter.create<scf::ConditionOp>(
-              conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()), args
-          )
+          conditionOp, scf::ConditionOp::create(
+                           rewriter, conditionOp.getLoc(),
+                           beforeMapping.lookupOrDefault(conditionOp.getCondition()), args
+                       )
       );
       return true;
     }
@@ -6656,7 +6639,7 @@ public:
       }
       SmallVector<Value> args =
           expandTerminatorValues(yieldOp.getOperands(), afterMapping, afterPodValues);
-      preserveDiscardableAttrs(yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), args));
+      preserveDiscardableAttrs(yieldOp, scf::YieldOp::create(rewriter, yieldOp.getLoc(), args));
       return true;
     }
     );
@@ -6671,7 +6654,7 @@ public:
         continue;
       }
 
-      NewPodOp rebuilt = rewriter.create<NewPodOp>(loc, pod->type);
+      NewPodOp rebuilt = NewPodOp::create(rewriter, loc, pod->type);
       VirtualPodLeafMap leafValues;
       for (const RecordChain &path : pod->leafPaths) {
         leafValues[path] = newWhile.getResult(newResultIdx++);
@@ -6725,7 +6708,7 @@ static LogicalResult
 applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = nullptr) {
   return applyPatternsGreedily(
       modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig {.fold = false, .cseConstants = false}, changed
+      GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false), changed
   );
 }
 
@@ -6813,8 +6796,10 @@ static size_t countResidualPodIR(ModuleOp modOp) {
   modOp.walk([&count](Operation *op) {
     if (isa<NewPodOp, ReadPodOp, WritePodOp>(op)) {
       ++count;
-    } else if (auto castOp = dyn_cast<UnrealizedConversionCastOp>(op);
-               castOp && isResidualPodPlaceholderCast(castOp)) {
+    } else if (
+        auto castOp = dyn_cast<UnrealizedConversionCastOp>(op);
+        castOp && isResidualPodPlaceholderCast(castOp)
+    ) {
       ++count;
     }
 
@@ -6929,76 +6914,6 @@ static LogicalResult rejectRemainingRaggedNestedLeafUses(ModuleOp modOp) {
   return rejectRaggedNestedLeafBoundaryCrossings(modOp);
 }
 
-// In MLIR 20.1.8, the `RemoveDeadValues` pass did not handle branching regions as aggressively
-// as the `RunLivenessAnalysis` that it depends on. The liveness analysis can conclude an `scf.if`
-// branch is dead and thus its `scf.yield` operand is also dead. However, RDV does not end up
-// removing that branch but does remove the definition of the `scf.yield` operand, leaving a NULL
-// operand in the `scf.yield` op.
-//
-// The bug is fixed in MLIR 22.1.0 but there is a temporary solution: before running the RDV pass,
-// run "Sparse Conditional Constant Propagation" (SCCP) plus a custom pass that folds `scf.if` with
-// static conditions.
-//
-// Portions adapted from mlir/lib/Dialect/SCF/IR/SCF.cpp
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-namespace temp_fix_pre_mlir_22 {
-
-static void replaceOpWithRegion(
-    PatternRewriter &rewriter, Operation *op, Region &region, ValueRange blockArgs = {}
-) {
-  assert(llvm::hasSingleElement(region) && "expected single-region block");
-  Block *block = &region.front();
-  Operation *terminator = block->getTerminator();
-  ValueRange results = terminator->getOperands();
-  rewriter.inlineBlockBefore(block, op, blockArgs);
-  rewriter.replaceOp(op, results);
-  rewriter.eraseOp(terminator);
-}
-
-struct RemoveStaticCondition : public OpRewritePattern<scf::IfOp> {
-  using OpRewritePattern<scf::IfOp>::OpRewritePattern;
-
-  LogicalResult matchAndRewrite(scf::IfOp op, PatternRewriter &rewriter) const override {
-    BoolAttr condition;
-    if (!matchPattern(op.getCondition(), m_Constant(&condition))) {
-      return failure();
-    }
-    if (condition.getValue()) {
-      replaceOpWithRegion(rewriter, op, op.getThenRegion());
-    } else if (!op.getElseRegion().empty()) {
-      replaceOpWithRegion(rewriter, op, op.getElseRegion());
-    } else {
-      rewriter.eraseOp(op);
-    }
-    return success();
-  }
-};
-
-struct FlattenStaticIfPass : PassWrapper<FlattenStaticIfPass, OperationPass<ModuleOp>> {
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(FlattenStaticIfPass)
-
-  void runOnOperation() override {
-    RewritePatternSet patterns(&getContext());
-    patterns.add<RemoveStaticCondition>(&getContext());
-
-    if (failed(applyPatternsGreedily(
-            getOperation(), std::move(patterns),
-            GreedyRewriteConfig {.fold = false, .cseConstants = false}
-        ))) {
-      signalPassFailure();
-    }
-  }
-};
-
-void add(OpPassManager &pm) {
-  pm.addPass(createSCCPPass());
-  pm.addPass(std::make_unique<FlattenStaticIfPass>());
-}
-
-} // namespace temp_fix_pre_mlir_22
-
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -7006,29 +6921,47 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
 
   WhileCarriedPodRejectionTracker whileCarriedPodRejections;
 
-  LogicalResult runScalarizeAndCleanupPipeline(ModuleOp module) {
-    // 1. Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
+  /// Create the scalar-memory promotion pipeline used for POD scalarization.
+  static OpPassManager createScalarizePipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
+    // Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
     // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
     // up memory, i.e., it can only convert scalar memory access into SSA values.
-    // 2. The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
-    OpPassManager scalarizePM(ModuleOp::getOperationName());
-    scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
-    scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
+    pm.addPass(createSpecializedSROAPass<NewPodOp>());
+    // The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
+    pm.addPass(createSpecializedMem2RegPass<NewPodOp>());
+    return pm;
+  }
 
+  /// Create the cleanup pipeline run after each POD scalar-memory promotion iteration.
+  static OpPassManager createCleanupPipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
     // Cleanup allocations made dead by memory promotion and other dead SSA values.
-    OpPassManager cleanupPM(ModuleOp::getOperationName());
-    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
         RemoveUnusedDiscardableAllocationsPassOptions {
             .allocatorOpName = CreateArrayOp::getOperationName().str()
         }
     ));
-    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
         RemoveUnusedDiscardableAllocationsPassOptions {
             .allocatorOpName = NewPodOp::getOperationName().str()
         }
     ));
-    temp_fix_pre_mlir_22::add(cleanupPM);
-    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
+    pm.addPass(createRemoveDeadValuesWorkaroundPass());
+    return pm;
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    OpPassManager scalarizePM = createScalarizePipeline();
+    scalarizePM.getDependentDialects(registry);
+
+    OpPassManager cleanupPM = createCleanupPipeline();
+    cleanupPM.getDependentDialects(registry);
+  }
+
+  LogicalResult runScalarizeAndCleanupPipeline(ModuleOp module) {
+    OpPassManager scalarizePM = createScalarizePipeline();
+    OpPassManager cleanupPM = createCleanupPipeline();
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);
     while (podAllocWeight != 0) {

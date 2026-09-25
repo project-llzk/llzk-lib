@@ -661,6 +661,7 @@ module attributes {llzk.lang} {
         %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
         function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
       }
+      // expected-error@+1 {{'function.def' op "@constrain" parameters cannot contain affine map attributes but found '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>'}}
       function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %6: !struct.type<@TT2::@T2<[#map1]>>) {
         function.return
       }
@@ -690,10 +691,11 @@ module attributes {llzk.lang} {
     poly.param @S1
 
     struct.def @Tester {
-       // expected-error@+1 {{'function.def' op "@constrain" parameters cannot contain affine map attributes but found '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
+      // expected-error@+1 {{'function.def' op "@constrain" parameters cannot contain affine map attributes but found '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
       function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %6: !struct.type<@TT2::@T2<[#map1]>>) {
         function.return
       }
+      // expected-error@+1 {{'function.def' op "@compute" parameters cannot contain affine map attributes but found '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>'}}
       function.def @compute(%6: !struct.type<@TT2::@T2<[#map1]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
         %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
         function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>

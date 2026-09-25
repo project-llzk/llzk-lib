@@ -1,0 +1,4 @@
+changed:
+  - Upgrade LLVM, MLIR, and Clang from 20.1.8 to 23.1.0
+  - Use MLIR's upstream SMT dialect in place of LLZK's vendored SMT dialect
+  - Renamed `smt.set_info` to `smt_info.set`

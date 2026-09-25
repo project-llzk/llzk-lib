@@ -227,7 +227,7 @@ TEST_F(SourceRefTests, OnlyConstrainEntryArgumentOverlapsComputeSelf) {
   auto successorArg = successor->addArgument(constrainSelf.getType(), loc);
   OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(successor);
-  builder.create<llzk::function::ReturnOp>(loc);
+  llzk::function::ReturnOp::create(builder, loc);
 
   SourceRef computeMember(
       llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
@@ -321,7 +321,7 @@ TEST_F(SourceRefTests, OnlyConstrainEntryArgumentPrintsAsSelf) {
   auto successorArg = successor->addArgument(constrainSelf.getType(), loc);
   OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(successor);
-  builder.create<llzk::function::ReturnOp>(loc);
+  llzk::function::ReturnOp::create(builder, loc);
 
   EXPECT_EQ(buildStringViaPrint(SourceRef(constrainSelf)), "%self");
   EXPECT_EQ(

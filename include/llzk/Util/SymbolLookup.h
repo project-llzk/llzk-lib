@@ -24,6 +24,7 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <memory>
 #include <variant>
 #include <vector>
 
@@ -31,8 +32,8 @@ namespace llzk {
 
 template <typename T> class SymbolLookupResult;
 
-using ManagedResources =
-    std::shared_ptr<std::pair<mlir::OwningOpRef<mlir::ModuleOp>, mlir::SymbolTableCollection>>;
+using ManagedResources = std::shared_ptr<
+    std::pair<mlir::OwningOpRef<mlir::ModuleOp>, std::unique_ptr<mlir::SymbolTableCollection>>>;
 
 class SymbolLookupResultUntyped {
 public:
@@ -98,7 +99,7 @@ public:
 
   mlir::SymbolTableCollection *getSymbolTableCache() {
     if (managedResources) {
-      return &managedResources->second;
+      return managedResources->second.get();
     } else {
       return nullptr;
     }
@@ -108,7 +109,9 @@ public:
   bool isManaged() const { return managedResources != nullptr; }
 
   /// Adds a pointer to the set of resources the result has to manage the lifetime of.
-  void manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr, mlir::SymbolTableCollection &&tables);
+  void manage(
+      mlir::OwningOpRef<mlir::ModuleOp> &&ptr, std::unique_ptr<mlir::SymbolTableCollection> tables
+  );
 
   /// Adds the symbol name from the IncludeOp that caused the module to be loaded.
   void trackIncludeAsName(llvm::StringRef includeOpSymName);

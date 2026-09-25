@@ -132,7 +132,7 @@ DenseMap<Attribute, MemorySlot> NewPodOp::destructure(
       }
     }
 
-    auto subNew = builder.create<NewPodOp>(getLoc(), destructAsPodTy, initialValue);
+    auto subNew = NewPodOp::create(builder, getLoc(), destructAsPodTy, initialValue);
     newAllocators.push_back(subNew);
     slotMap.try_emplace<MemorySlot>(index, {subNew.getResult(), destructAs});
   }
@@ -171,7 +171,7 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
       return record.value;
     }
   }
-  return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
+  return llzk::NonDetOp::create(builder, getLoc(), slot.elemType);
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass

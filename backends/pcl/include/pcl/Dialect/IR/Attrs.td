@@ -17,7 +17,8 @@ include "llzk/Dialect/LLZK/IR/AttributeHelper.td"
 def FeltAttr : AttrDef<PCLDialect, "Felt"> {
   let summary = "Field element represented as an arbitrary precision integer";
   let mnemonic = "felt";
-  let parameters = (ins APIntParameter<"felt constant value">:$value);
+  let parameters =
+      (ins WidthInsensitiveAPIntParameter<"felt constant value">:$value);
 
   let assemblyFormat = "$value";
 }
@@ -29,7 +30,8 @@ def PrimeAttr : AttrDef<PCLDialect, "Prime"> {
     Attach this as a named attribute (e.g. pcl.prime) on builtin.module.
     Use an APInt literal so very large primes are supported.
   }];
-  let parameters = (ins APIntParameter<"field prime modulus">:$value);
+  let parameters =
+      (ins WidthInsensitiveAPIntParameter<"field prime modulus">:$value);
   let assemblyFormat = "`<`$value`>`";
 
   let extraClassDeclaration = [{

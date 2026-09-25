@@ -33,20 +33,20 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @while_if_carried_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> index {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_1]], %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) : (index, index) -> (index, index) {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_6]], %[[VAL_4]] : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_6]], %[[VAL_3]] : index
 // CHECK-NEXT:        scf.condition(%[[VAL_8]]) %[[VAL_6]], %[[VAL_7]] : index, index
 // CHECK-NEXT:      } do {
 // CHECK-NEXT:      ^bb0(%[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index):
 // CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_2]] -> (index) {
 // CHECK-NEXT:          scf.yield %[[VAL_10]] : index
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_10]], %[[VAL_3]] : index
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_10]], %[[VAL_4]] : index
 // CHECK-NEXT:          scf.yield %[[VAL_12]] : index
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_9]], %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_9]], %[[VAL_4]] : index
 // CHECK-NEXT:        scf.yield %[[VAL_13]], %[[VAL_11]] : index, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_5]]#1 : index
@@ -85,15 +85,15 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @nested_loop_carried_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_1]], %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) : (index, index) -> (index, index) {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_6]], %[[VAL_4]] : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_6]], %[[VAL_2]] : index
 // CHECK-NEXT:        scf.condition(%[[VAL_8]]) %[[VAL_6]], %[[VAL_7]] : index, index
 // CHECK-NEXT:      } do {
 // CHECK-NEXT:      ^bb0(%[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index):
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_12:[0-9a-zA-Z_\.]+]] = %[[VAL_4]] to %[[VAL_2]] step %[[VAL_3]] iter_args(%[[VAL_13:[0-9a-zA-Z_\.]+]] = %[[VAL_10]]) -> (index) {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_12:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_4]] step %[[VAL_3]] iter_args(%[[VAL_13:[0-9a-zA-Z_\.]+]] = %[[VAL_10]]) -> (index) {
 // CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_13]], %[[VAL_12]] : index
 // CHECK-NEXT:          scf.yield %[[VAL_14]] : index
 // CHECK-NEXT:        }

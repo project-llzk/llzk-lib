@@ -155,7 +155,7 @@ DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
     ArrayType destructAsArrayTy = llvm::dyn_cast<ArrayType>(destructAs);
     assert(destructAsArrayTy && "expected ArrayType");
 
-    auto subCreate = builder.create<CreateArrayOp>(getLoc(), destructAsArrayTy);
+    auto subCreate = CreateArrayOp::create(builder, getLoc(), destructAsArrayTy);
     newAllocators.push_back(subCreate);
     slotMap.try_emplace<MemorySlot>(index, {subCreate.getResult(), destructAs});
   }
@@ -188,7 +188,7 @@ SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
-  return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
+  return llzk::NonDetOp::create(builder, getLoc(), slot.elemType);
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
@@ -230,7 +230,7 @@ ArrayAccessOpInterface::genIndexConstants(OpBuilder &bldr, Location loc, ArrayAt
   indices.reserve(index.size());
   for (Attribute attr : index) {
     // Note: array index must be an integer attribute.
-    indices.push_back(bldr.create<arith::ConstantOp>(loc, llvm::cast<IntegerAttr>(attr)));
+    indices.push_back(arith::ConstantOp::create(bldr, loc, llvm::cast<IntegerAttr>(attr)));
   }
   return indices;
 }
@@ -242,9 +242,9 @@ Value ArrayAccessOpInterface::genRead(
   ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
   Type selectedType = arrTy.getSelectionType(indices.size());
   if (llvm::isa<ArrayType>(selectedType)) {
-    return bldr.create<ExtractArrayOp>(loc, selectedType, arrayRef, indices);
+    return ExtractArrayOp::create(bldr, loc, selectedType, arrayRef, indices);
   }
-  return bldr.create<ReadArrayOp>(loc, selectedType, arrayRef, indices);
+  return ReadArrayOp::create(bldr, loc, selectedType, arrayRef, indices);
 }
 
 /// Create an `array.read` or `array.extract` for one concrete element or subarray.
@@ -262,10 +262,10 @@ void ArrayAccessOpInterface::genWrite(
   ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
   Type selectedType = arrTy.getSelectionType(indices.size());
   if (llvm::isa<ArrayType>(selectedType)) {
-    bldr.create<InsertArrayOp>(loc, arrayRef, indices, value);
+    InsertArrayOp::create(bldr, loc, arrayRef, indices, value);
     return;
   }
-  bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
+  WriteArrayOp::create(bldr, loc, arrayRef, indices, value);
 }
 
 /// Create an `array.write` or `array.insert` for one concrete element or subarray.
@@ -321,7 +321,7 @@ DeletionKind ArrayAccessOpInterface::rewire(
   //  Write to the sub-slot created for the index of `this`, using index 0
   getArrRefMutable().set(memorySlot.ptr);
   getIndicesMutable().clear();
-  getIndicesMutable().assign(builder.create<arith::ConstantIndexOp>(getLoc(), 0));
+  getIndicesMutable().assign(arith::ConstantIndexOp::create(builder, getLoc(), 0));
 
   return DeletionKind::Keep;
 }

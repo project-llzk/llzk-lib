@@ -255,7 +255,7 @@ FeltType::verify(llvm::function_ref<InFlightDiagnostic()> errFn, StringAttr fiel
 Operation *
 FeltDialect::materializeConstant(OpBuilder &builder, Attribute value, Type, Location loc) {
   if (auto attr = llvm::dyn_cast<FeltConstAttr>(value)) {
-    return builder.create<FeltConstantOp>(loc, attr);
+    return FeltConstantOp::create(builder, loc, attr);
   }
   return nullptr;
 }
