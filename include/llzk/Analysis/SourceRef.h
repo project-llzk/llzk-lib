@@ -26,12 +26,12 @@
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <compare>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -145,7 +145,8 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// an array).
 class SourceRef {
 public:
-  using Path = std::vector<SourceRefIndex>;
+  // 99.5% have a path length of 0 or 1, so we use a small vector to avoid heap allocations.
+  using Path = llvm::SmallVector<SourceRefIndex, 1>;
 
 private:
   // Sort in the following order:
@@ -183,6 +184,10 @@ private:
     }
     return mlir::failure();
   }
+
+  /// Create a DenseMap sentinel without constructing a temporary path or validating the value.
+  explicit SourceRef(mlir::detail::ValueImpl *denseMapSentinel)
+      : value(mlir::BlockArgument(denseMapSentinel)), constant(false) {}
 
   SourceRef(mlir::Value sourceValue, bool isConstantStorage, Path sourcePath = {})
       : value(sourceValue), path(std::move(sourcePath)), constant(isConstantStorage) {
@@ -243,6 +248,8 @@ public:
   bool isTemplateConstant() const {
     return isConstant() && llvm::isa_and_present<polymorphic::ConstReadOp>(value.getDefiningOp());
   }
+  /// Return whether this reference originates from a read of an immutable global.
+  bool isImmutableGlobal() const;
 
   bool isConstant() const { return constant; }
   bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }
@@ -337,11 +344,16 @@ public:
   /// `%self.out[2].values[5]`.
   SourceRef narrowRanges(const SourceRef &rhs) const;
 
-  /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
-  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
-  /// @param prefix
-  /// @return the suffix
-  mlir::FailureOr<std::vector<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
+  /// @brief If `prefix` is a valid prefix of this reference, return a view of the suffix that
+  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`.
+  ///
+  /// The returned view is valid while this reference remains unmodified.
+  mlir::FailureOr<llvm::ArrayRef<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
+
+  /// @brief Return a copy of `prefix` with `suffix` appended when it is rooted.
+  ///
+  /// Constant references cannot have paths, so their copy is returned unchanged.
+  static SourceRef appendSuffix(const SourceRef &prefix, llvm::ArrayRef<SourceRefIndex> suffix);
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a felt.const, the translation will always succeed and
@@ -417,8 +429,8 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);
 
 /* SourceRefSet */
 
-class SourceRefSet : public std::unordered_set<SourceRef, SourceRef::Hash> {
-  using Base = std::unordered_set<SourceRef, SourceRef::Hash>;
+class SourceRefSet : public llvm::DenseSet<SourceRef> {
+  using Base = llvm::DenseSet<SourceRef>;
 
 public:
   using Base::Base;
@@ -438,19 +450,33 @@ static_assert(
 namespace llvm {
 
 template <> struct DenseMapInfo<llzk::SourceRef> {
-  static llzk::SourceRef getEmptyKey() {
-    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
+  static inline mlir::detail::ValueImpl *emptyPointer() {
+    return reinterpret_cast<mlir::detail::ValueImpl *>(1);
   }
-  static inline llzk::SourceRef getTombstoneKey() {
-    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(2)));
+  static inline mlir::detail::ValueImpl *tombstonePointer() {
+    return reinterpret_cast<mlir::detail::ValueImpl *>(2);
   }
+
+  static inline llzk::SourceRef getEmptyKey() { return llzk::SourceRef(emptyPointer()); }
+  static inline llzk::SourceRef getTombstoneKey() { return llzk::SourceRef(tombstonePointer()); }
+
+  static bool isSpecialKey(const llzk::SourceRef &ref) {
+    const void *ptr = ref.getAsOpaquePointer();
+    return ptr == emptyPointer() || ptr == tombstonePointer();
+  }
+
   static unsigned getHashValue(const llzk::SourceRef &ref) {
-    if (ref == getEmptyKey() || ref == getTombstoneKey()) {
+    if (isSpecialKey(ref)) {
       return llvm::hash_value(ref.getAsOpaquePointer());
     }
     return llzk::SourceRef::Hash {}(ref);
   }
-  static bool isEqual(const llzk::SourceRef &lhs, const llzk::SourceRef &rhs) { return lhs == rhs; }
+  static bool isEqual(const llzk::SourceRef &lhs, const llzk::SourceRef &rhs) {
+    if (isSpecialKey(lhs) || isSpecialKey(rhs)) {
+      return lhs.getAsOpaquePointer() == rhs.getAsOpaquePointer();
+    }
+    return lhs == rhs;
+  }
 };
 
 } // namespace llvm

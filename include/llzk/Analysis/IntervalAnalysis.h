@@ -445,7 +445,7 @@ private:
   /// @brief Convert an array access op's indices into SourceRef path components.
   /// Constant indices are tracked precisely, while dynamic indices are widened to
   /// the full valid range for that array dimension.
-  std::vector<SourceRefIndex>
+  SourceRef::Path
   getArrayAccessIndices(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
 
   /// @brief Build the SourceRef addressed by an array access op when its base is a
