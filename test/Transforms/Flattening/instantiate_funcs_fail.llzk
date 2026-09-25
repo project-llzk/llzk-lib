@@ -38,6 +38,36 @@ module attributes {llzk.lang} {
 // CHECK: llzk-flatten failed while instantiating functions in templates
 // -----
 
+// A type-variable wildcard inferred from the callee body must agree with every concrete
+// signature position before flattening specializes the target.
+module attributes {llzk.lang} {
+  poly.template @WildcardLibrary {
+    poly.param @T : !poly.tvar<@T>
+    function.def @both(%first: !poly.tvar<@T>, %second: !poly.tvar<@T>) {
+      %index = poly.unifiable_cast %first : (!poly.tvar<@T>) -> index
+      function.return
+    }
+  }
+
+  struct.def @WildcardMain {
+    function.def @compute(%integer: index, %fielded: !felt.type) -> !struct.type<@WildcardMain> {
+      %self = struct.new : !struct.type<@WildcardMain>
+      // expected-error@+2 {{'function.call' op template instantiation value 'index' for parameter "@T" conflicts with value '!felt.type' inferred from function type signature}}
+      // expected-error@+1 {{incompatible with inferred param value(s)}}
+      function.call @WildcardLibrary::@both<[?]>(%integer, %fielded) :
+          (index, !felt.type) -> ()
+      function.return %self : !struct.type<@WildcardMain>
+    }
+    function.def @constrain(
+        %self: !struct.type<@WildcardMain>, %integer: index, %fielded: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+// CHECK: llzk-flatten failed while instantiating functions in templates
+// -----
+
 // Tests: attempt to instantiate with incompatible types via `poly.tvar` (with template params on CallOp)
 module attributes {llzk.lang} {
   poly.template @template_b1 {

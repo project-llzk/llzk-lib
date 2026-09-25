@@ -11,10 +11,13 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/Debug.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
 
@@ -108,4 +111,36 @@ TEST_F(SymbolHelperTests, test_appendLeaf) {
 TEST_F(SymbolHelperTests, test_appendLeafName) {
   SymbolRefAttr attr = appendLeafName(newExample(2), "_suffix");
   ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2_suffix");
+}
+
+TEST_F(SymbolHelperTests, ambiguousTypeVariableWithoutCandidatesIsRejected) {
+  auto module = parseSourceString<ModuleOp>(
+      R"mlir(
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+    function.def @accept(%value: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+  function.def @caller(%value: !felt.type) {
+    function.call @Target::@accept<[!felt.type]>(%value) : (!felt.type) -> ()
+    function.return
+  }
+}
+)mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+
+  auto target = *module->getOps<polymorphic::TemplateOp>().begin();
+  auto caller = *module->getOps<function::FuncDefOp>().begin();
+  auto call = *caller.getOps<function::CallOp>().begin();
+  UnificationMap unifications;
+  unifications[{getFlatSymbolRefAttr(&ctx, "T"), Side::RHS}] = Attribute();
+
+  EXPECT_TRUE(failed(verifyTemplateParamsMatchInferred(
+      call.getOperation(), call.getTemplateParamsAttr(),
+      target.getConstOps<polymorphic::TemplateParamOp>(), unifications
+  )));
 }

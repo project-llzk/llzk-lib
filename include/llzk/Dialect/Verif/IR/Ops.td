@@ -442,6 +442,35 @@ def IncludeOp
   let description = [{
     Invokes another specification contract from another contract, effectively including the
     specifications from another specification into the current contract.
+
+    When the target contract is inside a `poly.template`, the optional template parameter list
+    supplies one argument per `poly.param`, in declaration order. The list may be omitted when
+    every parameter appears in the contract signature; omitted values are inferred by unifying the
+    inclusion operand types with that signature. Every explicit or inferred argument must satisfy
+    its declared type restriction. If both forms provide a value for the same parameter, the
+    explicit and inferred values must unify. For felt-valued parameters, known fields and concrete
+    values must also agree.
+    An argument that resolves to a binding without a declared type restriction may
+    remain deferred for an index, integer, or fieldless felt parameter; it cannot satisfy a fielded
+    felt or `poly.tvar` restriction. A symbolic argument satisfies a fielded felt restriction only
+    when the referenced binding or global has the required field type. The direct argument for an
+    index or integer restriction must be an integer, not an affine map. The `?` wildcard is valid
+    for any parameter with a `poly.tvar` restriction and leaves that type for later inference based
+    on the target contract. For a parameter with a `poly.tvar` restriction, a type argument must be
+    a valid LLZK type. The verifier recursively resolves references in `struct.type` and `array.type`
+    arguments and resolves a `poly.tvar` parameter reference at the inclusion site. A `poly.tvar`
+    is accepted once its parameter reference resolves, even when its concrete type remains
+    deferred. Record member types within a `pod.type` are not traversed.
+
+    When a target is reached through an `include.from` alias, verification resolves names in its
+    signature relative to the included module. The `callee` attribute retains the caller-visible
+    qualified alias path. This applies when checking explicit arguments and inferring omitted ones.
+
+    Symbol arguments must refer to a `poly.param` or `poly.expr` binding by its flat name or to a
+    constant global by its fully-qualified name. When the enclosing contract's target is nested in
+    a `poly.template`, flat binding names resolve in that target's template; otherwise they resolve
+    in the nearest enclosing template. Unresolved symbols, mutable globals, and symbols that
+    resolve to another operation kind are rejected.
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.

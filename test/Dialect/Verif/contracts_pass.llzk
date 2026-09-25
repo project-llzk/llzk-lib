@@ -1,4 +1,5 @@
-// RUN: llzk-opt -split-input-file -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -I %input_dir -split-input-file -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
+// Escape one dash in separator checks so the input splitter sees only real boundaries.
 
 module attributes {llzk.lang} {
   struct.def @Top {
@@ -16,6 +17,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %1
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Top {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
@@ -31,7 +33,302 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_3]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
+
+// An explicit untyped caller binding remains forwardable to a typed contract parameter before
+// the caller itself is specialized.
+module attributes {llzk.lang} {
+  poly.template @ForwardTarget {
+    poly.param @N : index
+    function.def @accept() {
+      function.return
+    }
+    verif.contract @Base for @ForwardTarget::@accept () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @ForwardCaller {
+    poly.param @U
+    function.def @forward() {
+      function.return
+    }
+    verif.contract @Wrapper for @ForwardCaller::@forward () {
+      verif.include @ForwardTarget::@Base<[@U]>() : () -> ()
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ForwardTarget {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @accept() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @ForwardTarget::@accept () {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_0]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @ForwardCaller {
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      function.def @forward() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Wrapper for @ForwardCaller::@forward () {
+// CHECK-NEXT:        verif.include @ForwardTarget::@Base<[@U]>() : () -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
+// -----
+
+
+// Same-spelled `!poly.tvar` parameters in separate templates are distinct bindings, but a caller
+// binding with a `!poly.tvar` restriction is accepted by omitted template inference.
+module attributes {llzk.lang} {
+  poly.template @TypeOnlyTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !poly.tvar<@T>) {
+      function.return
+    }
+
+    verif.contract @Base for @TypeOnlyTarget::@accept (%value: !poly.tvar<@T>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @TypeOnlyCaller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept_same_name(%value: !poly.tvar<@T>) {
+      function.return
+    }
+
+    verif.contract @AcceptSameName for @TypeOnlyCaller::@accept_same_name (
+        %value: !poly.tvar<@T>
+    ) {
+      verif.include @TypeOnlyTarget::@Base(%value) : (!poly.tvar<@T>) -> ()
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TypeOnlyTarget {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @TypeOnlyTarget::@accept (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeOnlyCaller {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept_same_name(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @AcceptSameName for @TypeOnlyCaller::@accept_same_name (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        verif.include @TypeOnlyTarget::@Base(%[[VAL_4]]) : (!poly.tvar<@T>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
+// -----
+
+
+// Repeated `!poly.tvar` signature positions accept one concrete type when omitted inference finds
+// the same value at both positions.
+module attributes {llzk.lang} {
+  poly.template @RepeatedTypeOnly {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @target(%lhs: !poly.tvar<@T>, %rhs: !poly.tvar<@T>) {
+      function.return
+    }
+
+    verif.contract @Base for @RepeatedTypeOnly::@target (
+        %lhs: !poly.tvar<@T>, %rhs: !poly.tvar<@T>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @matching(%lhs: !felt.type, %rhs: !felt.type) {
+    function.return
+  }
+
+  verif.contract @MatchingWrapper for @matching (
+      %lhs: !felt.type, %rhs: !felt.type
+  ) {
+    verif.include @RepeatedTypeOnly::@Base(%lhs, %rhs) : (!felt.type, !felt.type) -> ()
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @RepeatedTypeOnly {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @target(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @RepeatedTypeOnly::@target (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @matching(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @MatchingWrapper for @matching (%[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      verif.include @RepeatedTypeOnly::@Base(%[[VAL_7]], %[[VAL_8]]) : (!felt.type, !felt.type) -> ()
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_9]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
+// -----
+
+
+// A concrete type inferred through a struct parameter satisfies a `!poly.tvar` restriction.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+    verif.contract @Base for @TypeTarget::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@T]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @concreteType(%value: !struct.type<@BoxTemplate::@Box<[index]>>) {
+    function.return
+  }
+
+  verif.contract @ConcreteType for @concreteType (
+      %value: !struct.type<@BoxTemplate::@Box<[index]>>
+  ) {
+    verif.include @TypeTarget::@Base(%value) :
+        (!struct.type<@BoxTemplate::@Box<[index]>>) -> ()
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @BoxTemplate {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@P]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeTarget {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @TypeTarget::@accept (%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @concreteType(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[index]>>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @ConcreteType for @concreteType (%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[index]>>) {
+// CHECK-NEXT:      verif.include @TypeTarget::@Base(%[[VAL_6]]) : (!struct.type<@BoxTemplate::@Box<[index]>>) -> ()
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_7]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
+// -----
+
+
+// Included target signatures use the namespace established by `include.from` for both explicit
+// and omitted template arguments.
+module attributes {llzk.lang} {
+  include.from "Inputs/template_signature_namespace.llzk" as @Lib
+
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @explicit(%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Explicit for @Caller::@explicit (
+        %value: !struct.type<@Lib::@Target::@Box<[@T]>>
+    ) {
+      verif.include @Lib::@Target::@Base<[@T]>(%value) :
+          (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+    }
+
+    function.def @inferred(%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Inferred for @Caller::@inferred (
+        %value: !struct.type<@Lib::@Target::@Box<[@T]>>
+    ) {
+      verif.include @Lib::@Target::@Base(%value) :
+          (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    include.from "Inputs/template_signature_namespace.llzk" as @Lib
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Explicit for @Caller::@explicit (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        verif.include @Lib::@Target::@Base<[@T]>(%[[VAL_1]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @inferred(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Inferred for @Caller::@inferred (%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        verif.include @Lib::@Target::@Base(%[[VAL_3]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
+// -----
+
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   struct.def @Main {
@@ -50,6 +347,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     verif.require_constrain %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
@@ -66,7 +364,9 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      verif.require_constrain %[[VAL_6]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   struct.def @Top {
@@ -82,6 +382,7 @@ module attributes {llzk.lang} {
   verif.contract @Foo for @Top (%self: !struct.type<@Top>, %a: !felt.type) {
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Top {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Top> attributes {function.allow_witness} {
@@ -95,7 +396,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   module @lib {
@@ -111,6 +414,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    module @lib {
 // CHECK-NEXT:      function.def @token(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
@@ -124,7 +428,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   poly.template @T {
@@ -150,6 +456,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N
@@ -172,7 +479,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   poly.template @T {
@@ -190,6 +499,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N : index
@@ -204,7 +514,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   poly.template @SpecTemplate {
@@ -222,6 +534,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @SpecTemplate {
 // CHECK-NEXT:      poly.param @N : index
@@ -236,7 +549,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   poly.template @T {
@@ -262,6 +577,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N : index
@@ -284,7 +600,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @check(%x: index, %ok: i1) {
@@ -300,6 +618,7 @@ module attributes {llzk.lang} {
     verif.include @Base(%x, %ok) : (index, i1) -> ()
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @check(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -312,7 +631,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.include @Base(%[[VAL_4]], %[[VAL_5]]) : (index, i1) -> ()
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @touch_input_if(%a : !felt.type, %gate: i1) -> !felt.type {
@@ -332,6 +653,7 @@ module attributes {llzk.lang} {
     verif.require_compute %isEq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @touch_input_if(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
 // CHECK-NEXT:      scf.if %[[VAL_1]] {
@@ -348,7 +670,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @same(%a : !felt.type) -> !felt.type {
@@ -365,6 +689,7 @@ module attributes {llzk.lang} {
     verif.require_compute %isEq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @same(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -378,7 +703,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @select_input(%a : !felt.type, %fallback: !felt.type, %gate: i1) -> !felt.type {
@@ -400,6 +727,7 @@ module attributes {llzk.lang} {
     verif.require_compute %isEq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @select_input(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_2]] -> (!felt.type) {
@@ -418,7 +746,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_9]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @check(%ok: i1) {
@@ -432,6 +762,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @check(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -443,7 +774,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   struct.def @GateBox {
@@ -472,6 +805,7 @@ module attributes {llzk.lang} {
     verif.require_compute %selected
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @GateBox {
 // CHECK-NEXT:      struct.member @gate : i1
@@ -498,7 +832,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @same(%a : !felt.type) -> !felt.type {
@@ -515,6 +851,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %isEq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @same(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -528,7 +865,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   struct.def @SecretBox {
@@ -553,6 +892,7 @@ module attributes {llzk.lang} {
     verif.ensure_constrain %isEq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @SecretBox {
 // CHECK-NEXT:      struct.member @secret : !felt.type
@@ -573,7 +913,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_constrain %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   poly.template @SpecTemplate {
@@ -594,6 +936,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @SpecTemplate {
 // CHECK-NEXT:      poly.param @N : index
@@ -610,7 +953,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   struct.def @ProductOnly {
@@ -625,6 +970,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ProductOnly {
 // CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> attributes {function.allow_constraint, function.allow_witness} {
@@ -637,7 +983,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   struct.def @ProductOnlyEmptyArgs {
@@ -652,6 +1000,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ProductOnlyEmptyArgs {
 // CHECK-NEXT:      function.def @product() -> !struct.type<@ProductOnlyEmptyArgs> attributes {function.allow_constraint, function.allow_witness} {
@@ -664,7 +1013,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @passthrough(%a : !felt.type) -> !felt.type {
@@ -677,6 +1028,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %is_eq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @passthrough(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -687,7 +1039,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @passthrough(%a : !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
@@ -700,6 +1054,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %is_eq
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @passthrough(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -710,7 +1065,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   function.def @helper(%x: !felt.type, %ok: i1) {
@@ -737,6 +1094,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:    function.def @helper(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -759,7 +1117,9 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_10]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @nonnativeops(%a : !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
@@ -773,6 +1133,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %3
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @nonnativeops(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -784,7 +1145,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   function.def @helper_gate(%gate: i1) {
@@ -804,6 +1167,7 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @helper_gate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -819,7 +1183,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   struct.def @Main {
@@ -834,6 +1200,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
@@ -841,13 +1208,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint, function.allow_verif_ops} {
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        verif.ensure_constrain %[[VAL_6]]
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_constrain %[[VAL_4]]
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-]}}----
 // -----
+
 
 module attributes {llzk.lang} {
   poly.template @SpecTemplate {
@@ -867,6 +1236,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @SpecTemplate {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
