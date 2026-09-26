@@ -878,10 +878,12 @@ private:
     }
     for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
       if (!typesUnify(includeOpTypes[i], tgtTypes[i], includeSymNames)) {
-        return includeOp->emitOpError().append(
-            aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ",
-            includeOpTypes[i], " for ", aspect, " number ", i
-        );
+        auto diag =
+            includeOp->emitOpError().append(aspect, " type mismatch: expected type ", tgtTypes[i]);
+        if (!includeSymNames.empty()) {
+          diag.append(" from included target \"", includeOp->getCalleeAttr(), '"');
+        }
+        return diag.append(", but found ", includeOpTypes[i], " for ", aspect, " number ", i);
       }
     }
     return success();

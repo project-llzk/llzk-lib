@@ -852,10 +852,12 @@ private:
     }
     for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
       if (!typesUnify(callOpTypes[i], tgtTypes[i], includeSymNames)) {
-        return callOp->emitOpError().append(
-            aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ", callOpTypes[i],
-            " for ", aspect, " number ", i
-        );
+        auto diag =
+            callOp->emitOpError().append(aspect, " type mismatch: expected type ", tgtTypes[i]);
+        if (!includeSymNames.empty()) {
+          diag.append(" from included target \"", callOp->getCalleeAttr(), '"');
+        }
+        return diag.append(", but found ", callOpTypes[i], " for ", aspect, " number ", i);
       }
     }
     return success();

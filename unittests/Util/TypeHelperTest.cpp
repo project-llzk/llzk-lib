@@ -109,6 +109,51 @@ TEST_F(TypeHelperTests, test_structTypesUnify) {
   ASSERT_TRUE(structTypesUnify(a, b));
 }
 
+TEST_F(TypeHelperTests, test_typesUnify_equalRecursiveTypesRespectRhsPrefix) {
+  SymbolRefAttr targetBoxName = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Box")}
+  );
+  SymbolRefAttr includedBoxName = SymbolRefAttr::get(
+      &ctx, "Lib",
+      ArrayRef<FlatSymbolRefAttr> {
+          FlatSymbolRefAttr::get(&ctx, "Target"), FlatSymbolRefAttr::get(&ctx, "Box")
+      }
+  );
+  StructType targetBox = StructType::get(targetBoxName);
+  StructType includedBox = StructType::get(includedBoxName);
+  SymbolRefAttr targetHolderName = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Holder")}
+  );
+  SymbolRefAttr includedHolderName = SymbolRefAttr::get(
+      &ctx, "Lib",
+      ArrayRef<FlatSymbolRefAttr> {
+          FlatSymbolRefAttr::get(&ctx, "Target"), FlatSymbolRefAttr::get(&ctx, "Holder")
+      }
+  );
+  StructType targetHolder =
+      StructType::get(targetHolderName, ArrayRef<Attribute> {TypeAttr::get(targetBox)});
+  StructType includedHolder =
+      StructType::get(includedHolderName, ArrayRef<Attribute> {TypeAttr::get(includedBox)});
+  StructType collidingHolder =
+      StructType::get(includedHolderName, ArrayRef<Attribute> {TypeAttr::get(targetBox)});
+  ArrayType targetArray = ArrayType::get(targetBox, {2});
+  PodType targetPod = PodType::get(
+      &ctx, ArrayRef {RecordAttr::get(&ctx, StringAttr::get(&ctx, "value"), targetBox)}
+  );
+  FunctionType targetFunction = FunctionType::get(&ctx, {IndexType::get(&ctx)}, {targetBox});
+  llvm::StringRef includedNamespace = "Lib";
+  ArrayRef<llvm::StringRef> rhsPrefix(&includedNamespace, 1);
+
+  EXPECT_TRUE(typesUnify(includedBox, targetBox, rhsPrefix));
+  EXPECT_TRUE(typesUnify(includedHolder, targetHolder, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetBox, targetBox, rhsPrefix));
+  EXPECT_FALSE(typesUnify(collidingHolder, targetHolder, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetArray, targetArray, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetPod, targetPod, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetFunction, targetFunction, rhsPrefix));
+  EXPECT_TRUE(typesUnify(IndexType::get(&ctx), IndexType::get(&ctx), rhsPrefix));
+}
+
 TEST_F(TypeHelperTests, test_podTypesUnify_Pass) {
   IndexType tyIndex = IndexType::get(&ctx);
   auto r1 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), tyIndex);
