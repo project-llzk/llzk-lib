@@ -19,6 +19,8 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <optional>
+
 namespace llzk {
 
 // Forward declarations
@@ -264,6 +266,14 @@ bool typesUnify(
     mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 );
+
+/// Check a template argument against an optional restriction and return a compatible value.
+/// A type-variable restriction accepts only a `TypeAttr`. Numeric restrictions accept a
+/// single-result affine map pending instantiation; felt restrictions also accept a compatible
+/// felt constant or integer, preserving an explicit field or applying the required field.
+/// Reject other attribute/restriction pairings.
+mlir::FailureOr<mlir::Attribute>
+materializeTemplateParamValue(mlir::Attribute actualValue, std::optional<mlir::Type> requiredType);
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of template parameters (if applicable within the given types).
