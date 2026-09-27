@@ -98,7 +98,8 @@ rolled `scf.for`/`scf.while`, and exact/changing-argument/affine recursion diagn
 The CMake `check-lit` run discovers 453 tests: 448 pass, four are unsupported, and one is
 expected to fail.
 
-The installed frontend is `/Users/shankarapailoor/veridise/circom/result/bin/circom`.
+The installed frontend is Circom 2.2.2 at
+`/Users/shankarapailoor/veridise/circom/result/bin/circom`.
 The corpus is `/Users/shankarapailoor/veridise/circom-benchmarks`. All runs are serial
 (`--jobs 1`), with Release llzk-opt and Release LLVM/MLIR dependencies. Measurements use
 `--llzk-monomorphize=report=true -o /dev/null`. Frontend time is recorded separately.
@@ -122,3 +123,59 @@ Fresh native Circom `--O0 --r1cs` baselines:
 
 Both have zero public inputs. This milestone does not lower the new representation to
 R1CS or claim equation/witness equivalence; those checks belong to later stages.
+
+### Release measurements
+
+Measured on macOS arm64, 2026-09-26, with a clean source tree at
+`cb55838f0c86fcbb2fba174cb7629b398f7b0120`. These are single samples, not statistical
+performance claims. The compiler build was idle during measurement. Peak memory is the
+llzk-opt process high-water mark reported by `/usr/bin/time -l`.
+
+| Input | Frontend mode | Definitions | Input ops | Specialized ops | Total output ops | Pass ms | Process wall s | Peak MiB |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| and | templated | 1 | 14 | 12 | 26 | 0.056 | 0.037 | 22.25 |
+| iszero | templated | 1 | 34 | 32 | 66 | 0.174 | 0.024 | 22.50 |
+| num2bits | templated | 1 | 60 | 57 | 117 | 1.310 | 0.024 | 23.14 |
+| switcher | templated | 1 | 30 | 28 | 58 | 0.045 | 0.012 | 22.27 |
+| sigma | templated | 1 | 26 | 24 | 50 | 0.046 | 0.023 | 22.22 |
+| binsum | concrete | 1 | 117 | 115 | 232 | 0.090 | 0.022 | 22.75 |
+| poseidon3 | concrete | 75 | 339,150 | 339,070 | 678,220 | 164.031 | 2.625 | 291.66 |
+| poseidon6 | concrete | 78 | 343,149 | 343,066 | 686,215 | 164.883 | 2.713 | 298.14 |
+
+Poseidon3 frontend emission took 1.182 s and peaked at 304.39 MiB; Poseidon6 took
+1.227 s and peaked at 301.62 MiB. These costs are separate from the pass/process
+columns above. The source already contains roughly 339–343 thousand operations; this
+checkpoint retains originals and adds one clone per reachable concrete definition.
+It does not yet trim unused originals or compress frontend constant-building code.
+The focused reuse test verifies that ten loop iterations and repeated calls still use
+one definition per tuple; the family test discovers three definitions for indices
+0, 1, 2 while preserving its single source loop.
+
+The final sample commands, run inside the Release Nix development environment, were:
+
+```sh
+python3 scripts/benchmark-monomorphization.py \
+  --corpus /Users/shankarapailoor/veridise/circom-benchmarks \
+  --frontend /Users/shankarapailoor/veridise/circom/result/bin/circom \
+  --llzk-opt build/bin/llzk-opt --jobs 1 --build-type Release \
+  --tier small --output /tmp/llzk-mono-final-small
+
+python3 scripts/benchmark-monomorphization.py \
+  --corpus /Users/shankarapailoor/veridise/circom-benchmarks \
+  --frontend /Users/shankarapailoor/veridise/circom/result/bin/circom \
+  --llzk-opt build/bin/llzk-opt --jobs 1 --build-type Release \
+  --frontend-mode concrete --plaintext --filter 'binsum|poseidon' \
+  --output /tmp/llzk-mono-final-scale
+```
+
+Frontend IR and native R1CS files were temporary and removed automatically. Summaries
+above retain the useful measurements; raw benchmark summaries, logs, and transient
+fixtures were removed after summarization and are not committed.
+
+### Final build validation
+
+`nix build -L` succeeded for implementation revision
+`cb55838f0c86fcbb2fba174cb7629b398f7b0120`, producing the Release 3.0.0 package.
+Its checks passed all 1,340 unit/C API tests and the same 453-test lit suite
+(448 passed, four unsupported, one expected failure). The standalone CMake
+`check-lit` target also passed. No historical performance-branch changes were imported.
