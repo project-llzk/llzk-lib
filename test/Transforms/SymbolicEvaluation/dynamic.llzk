@@ -1,0 +1,17 @@
+// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints -verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%n: !felt.type) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %n: !felt.type) attributes {function.allow_non_native_field_ops} {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %bound = cast.toindex %n : !felt.type
+      // expected-error @below {{for bounds and positive step must be known integers}}
+      scf.for %i = %zero to %bound step %one { }
+      function.return
+    }
+  }
+}
