@@ -22,7 +22,6 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/Polymorphic/Transforms/Specialization.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -62,13 +61,11 @@
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 
-#include <chrono>
 #include <cstdint>
 
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
 #define GEN_PASS_DEF_FLATTENINGPASS
-#define GEN_PASS_DEF_DEFINITIONMONOMORPHIZATIONPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
 
@@ -2353,6 +2350,3 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 };
 
 } // namespace
-
-// Shares only constant-substitution helpers with the opt-in definition pass.
-#include "DefinitionMonomorphization.inc"

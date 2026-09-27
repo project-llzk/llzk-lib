@@ -38,5 +38,55 @@
     "name": "poseidon6",
     "tier": "scale",
     "source": "tests/libs/zksolid-libs/circomlib/test/circuits/poseidon6_test.circom"
+  },
+  {
+    "name": "lessthan",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/lessthan.circom"
+  },
+  {
+    "name": "lesseqthan",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/lesseqthan.circom"
+  },
+  {
+    "name": "greatereqthan",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/greatereqthan.circom"
+  },
+  {
+    "name": "aliascheck_test",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/aliascheck_test.circom"
+  },
+  {
+    "name": "mimc_test",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mimc_test.circom"
+  },
+  {
+    "name": "mimc_sponge_test",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mimc_sponge_test.circom"
+  },
+  {
+    "name": "mimc_sponge_hash_test",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mimc_sponge_hash_test.circom"
+  },
+  {
+    "name": "binsub_test",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/binsub_test.circom"
+  },
+  {
+    "name": "mux4_1",
+    "tier": "small",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux4_1.circom"
+  },
+  {
+    "name": "multiplexer",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/Multiplexer@multiplexer.circom"
   }
 ]

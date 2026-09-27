@@ -1,14 +1,274 @@
-//===-- DefinitionMonomorphization.inc ---------------------------*- C++ -*-===//
+//===-- DefinitionMonomorphization.cpp --------------------------*- C++ -*-===//
 // Part of the LLZK Project, under the Apache License v2.0.
 // SPDX-License-Identifier: Apache-2.0
-// Included by FlatteningPass.cpp to share private definition-cloning helpers.
-// The worklist below never invokes the legacy pass driver.
+
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolLookup.h"
+#include "llzk/Util/TypeHelper.h"
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/Utils/StaticValueUtils.h>
+#include <mlir/IR/AttrTypeSubElements.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Support/LLVM.h>
+#include <mlir/Support/LogicalResult.h>
+
+#include <llvm/ADT/APInt.h>
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
+
+#include <chrono>
+#include <cstdint>
+#include <functional>
+#include <optional>
+
+namespace llzk::polymorphic {
+#define GEN_PASS_DEF_DEFINITIONMONOMORPHIZATIONPASS
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
+} // namespace llzk::polymorphic
+
+using namespace mlir;
+using namespace llzk;
+using namespace llzk::array;
+using namespace llzk::component;
+using namespace llzk::felt;
+using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 namespace {
 
+/// Attempt to evaluate the concrete result of a single `TemplateExprOp` expression given
+/// the currently-known concrete param values in `paramNameToConcrete`. Returns the result
+/// attribute if all referenced params are concrete and all operations in the body can be
+/// constant-folded; otherwise returns `std::nullopt`.
+static std::optional<Attribute>
+evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+  // Map from SSA value in the expr body to its concrete Attribute.
+  DenseMap<Value, Attribute> valueMap;
+  for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
+    if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
+      auto it = valueMap.find(yieldOp.getVal());
+      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+    }
+
+    if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
+      auto it = paramNameToConcrete.find(constReadOp.getConstNameAttr());
+      if (it == paramNameToConcrete.end()) {
+        return std::nullopt; // a referenced param is not concrete
+      }
+      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
+      // a `FeltConstAttr`.
+      Attribute val = it->second;
+      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
+        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
+          val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
+        }
+      }
+      valueMap[constReadOp.getResult()] = val;
+      continue;
+    }
+
+    // Gather constant attributes for all operands.
+    SmallVector<Attribute> operandAttrs;
+    operandAttrs.reserve(bodyOp.getNumOperands());
+    for (Value operand : bodyOp.getOperands()) {
+      auto it = valueMap.find(operand);
+      if (it == valueMap.end()) {
+        return std::nullopt; // operand not known as a constant
+      }
+      operandAttrs.push_back(it->second);
+    }
+
+    // These casts canonicalize constants but do not implement the fold hook.
+    if (auto castOp = dyn_cast<llzk::cast::IntToFeltOp>(bodyOp)) {
+      auto integer = dyn_cast<IntegerAttr>(operandAttrs.front());
+      if (!integer) {
+        return std::nullopt;
+      }
+      valueMap[castOp.getResult()] =
+          FeltConstAttr::get(bodyOp.getContext(), integer.getValue(), castOp.getType());
+      continue;
+    }
+    if (auto castOp = dyn_cast<llzk::cast::FeltToIndexOp>(bodyOp)) {
+      auto felt = dyn_cast<FeltConstAttr>(operandAttrs.front());
+      if (!felt || felt.getValue().isNegative() || felt.getValue().getActiveBits() > 63) {
+        return std::nullopt;
+      }
+      valueMap[castOp.getResult()] =
+          IntegerAttr::get(castOp.getType(), felt.getValue().getZExtValue());
+      continue;
+    }
+    if (isa<llzk::boolean::AssertOp>(bodyOp)) {
+      auto condition = dyn_cast<IntegerAttr>(operandAttrs.front());
+      if (!condition || condition.getValue().isZero()) {
+        return std::nullopt;
+      }
+      continue;
+    }
+
+    // Try constant folding.
+    SmallVector<OpFoldResult> foldResults;
+    // Folding may mutate an operation; never fold the source template itself.
+    auto *copy = bodyOp.clone();
+    auto folded = copy->fold(operandAttrs, foldResults);
+    copy->destroy();
+    if (succeeded(folded) && foldResults.size() == bodyOp.getNumResults()) {
+      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
+        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
+          valueMap[result] = a;
+        } else if (auto value = valueMap.lookup(llvm::cast<Value>(fr))) {
+          valueMap[result] = value;
+        } else {
+          return std::nullopt;
+        }
+      }
+    } else {
+      return std::nullopt;
+    }
+  }
+  return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
+}
+
+/// Evaluate all `TemplateExprOp`s in `templateOp` that can be computed from the currently-known
+/// concrete param values in `paramNameToConcrete`, and add their results to the map.
+/// Exprs whose operands are not all concrete are silently skipped (partial instantiation).
+static void evaluateTemplateExprs(TemplateOp templ, DenseMap<Attribute, Attribute> &bindings) {
+  for (auto expr : templ.getConstOps<TemplateExprOp>()) {
+    if (auto value = evaluateExpr(expr, bindings)) {
+      bindings.try_emplace(FlatSymbolRefAttr::get(expr.getSymNameAttr()), *value);
+    }
+  }
+}
+
+/// Substitute template values throughout a definition, including nested POD records.
+/// Only type-bearing attributes and explicit call arguments are rewritten as values;
+/// symbol identities such as member names remain unchanged.
+static LogicalResult substituteDefinition(
+    Operation *definition, const DenseMap<Attribute, Attribute> &bindings, StructType oldSelf = {},
+    StructType newSelf = {}
+) {
+  bool invalid = false;
+  AttrTypeReplacer values;
+  values.addReplacement([&](TypeVarType type) -> std::optional<Type> {
+    if (auto value = dyn_cast_or_null<TypeAttr>(bindings.lookup(type.getNameRef()))) {
+      return value.getValue();
+    }
+    return std::nullopt;
+  });
+  values.addReplacement([&](StructType type) -> std::optional<Type> {
+    if (oldSelf && type == oldSelf) {
+      return newSelf;
+    }
+    return std::nullopt;
+  });
+  values.addReplacement([&](ArrayType type) -> std::optional<std::pair<Type, WalkResult>> {
+    SmallVector<Attribute> dimensions;
+    for (Attribute dim : type.getDimensionSizes()) {
+      if (Attribute value = bindings.lookup(dim)) {
+        dim = value;
+      }
+      if (auto felt = dyn_cast<FeltConstAttr>(dim)) {
+        auto integer = felt.getValue();
+        if (integer.isNegative() || integer.getActiveBits() > 63) {
+          definition->emitError("specialized array dimension does not fit a nonnegative index");
+          invalid = true;
+          return std::make_pair(Type(type), WalkResult::skip());
+        }
+        dim = IntegerAttr::get(IndexType::get(type.getContext()), integer.getZExtValue());
+      }
+      dimensions.push_back(dim);
+    }
+    return std::make_pair(
+        Type(ArrayType::get(values.replace(type.getElementType()), dimensions)), WalkResult::skip()
+    );
+  });
+  values.addReplacement([&](SymbolRefAttr name) -> std::optional<Attribute> {
+    if (auto value = bindings.lookup(name)) {
+      return value;
+    }
+    return std::nullopt;
+  });
+
+  // Resolve reads before rewriting types, retaining each read's requested scalar type.
+  SmallVector<ConstReadOp> reads;
+  definition->walk([&](ConstReadOp read) { reads.push_back(read); });
+  for (auto read : reads) {
+    Attribute value = bindings.lookup(read.getConstNameAttr());
+    if (!value) {
+      return read.emitError("cannot evaluate specialization constant ") << read.getConstNameAttr();
+    }
+    OpBuilder builder(read);
+    Value replacement;
+    auto integer = dyn_cast<IntegerAttr>(value);
+    auto felt = dyn_cast<FeltConstAttr>(value);
+    if (!integer && !felt) {
+      return read.emitError("unsupported specialization constant ") << value;
+    }
+    APInt bits = integer ? integer.getValue() : felt.getValue();
+    if (auto type = dyn_cast<FeltType>(read.getType())) {
+      replacement = builder.create<FeltConstantOp>(
+          read.getLoc(), FeltConstAttr::get(read.getContext(), bits, type)
+      );
+    } else if (read.getType().isIndex()) {
+      if (felt && (bits.isNegative() || bits.getActiveBits() > 63)) {
+        return read.emitError("specialization constant does not fit a nonnegative index");
+      }
+      replacement = builder.create<arith::ConstantOp>(
+          read.getLoc(), builder.getIndexAttr(bits.getSExtValue())
+      );
+    } else if (auto integerType = dyn_cast<IntegerType>(read.getType())) {
+      // Circom/LLZK boolean reads interpret every nonzero scalar as true.
+      auto scalar = integerType.getWidth() == 1 ? APInt(1, !bits.isZero())
+                                                : bits.zextOrTrunc(integerType.getWidth());
+      replacement =
+          builder.create<arith::ConstantOp>(read.getLoc(), IntegerAttr::get(integerType, scalar));
+    } else {
+      return read.emitError("unsupported specialization constant type");
+    }
+    read.replaceAllUsesWith(replacement);
+    read.erase();
+  }
+  AttrTypeReplacer types;
+  types.addReplacement([&](Type type) -> std::optional<Type> { return values.replace(type); });
+  types.recursivelyReplaceElementsIn(definition, true, false, true);
+  definition->walk([&](CallOp call) {
+    if (auto args = call.getTemplateParamsAttr()) {
+      call.setTemplateParamsAttr(llvm::cast<ArrayAttr>(values.replace(args)));
+    }
+    auto callee = call.getCalleeAttr();
+    auto binding = dyn_cast_or_null<TypeAttr>(
+        bindings.lookup(FlatSymbolRefAttr::get(callee.getRootReference()))
+    );
+    if (binding) {
+      if (auto type = dyn_cast<StructType>(values.replace(binding.getValue()))) {
+        auto pieces = getPieces(type.getNameRef());
+        llvm::append_range(pieces, callee.getNestedReferences());
+        call.setCalleeAttr(asSymbolRefAttr(pieces));
+      }
+    }
+  });
+  return failure(invalid);
+}
+
 /// Definition-only worklist. This deliberately does not invoke the flattening driver,
-/// greedy folding, inlining, or loop transformations. Shared cloning helpers above
-/// substitute template constants without changing control-flow structure.
+/// greedy folding, inlining, or loop transformations. Substitution recursively
+/// updates types while preserving all source control-flow structure.
 class DefinitionRegistry {
   struct Entry {
     Operation *source;
@@ -19,7 +279,6 @@ class DefinitionRegistry {
   };
   ModuleOp root;
   unsigned limit;
-  ConversionTracker tracker;
   std::unique_ptr<SymbolTableCollection> tables = std::make_unique<SymbolTableCollection>();
   DenseMap<std::pair<std::pair<Operation *, ArrayAttr>, ArrayAttr>, unsigned> cache;
   SmallVector<Entry> entries;
@@ -285,28 +544,6 @@ class DefinitionRegistry {
     return success();
   }
 
-  /// Substitute explicit arguments on nested calls before their symbol verification.
-  void substituteCallArguments(Operation *op, const DenseMap<Attribute, Attribute> &bindings) {
-    AttrTypeReplacer replacer;
-    replacer.addReplacement([&](TypeVarType type) -> std::optional<Type> {
-      if (auto value = dyn_cast_or_null<TypeAttr>(bindings.lookup(type.getNameRef()))) {
-        return value.getValue();
-      }
-      return std::nullopt;
-    });
-    replacer.addReplacement([&](SymbolRefAttr name) -> std::optional<Attribute> {
-      if (auto value = bindings.lookup(name)) {
-        return value;
-      }
-      return std::nullopt;
-    });
-    op->walk([&](CallOp call) {
-      if (auto args = call.getTemplateParamsAttr()) {
-        call.setTemplateParamsAttr(llvm::cast<ArrayAttr>(replacer.replace(args)));
-      }
-    });
-  }
-
   ArrayAttr emptyArgs() { return ArrayAttr::get(root.getContext(), {}); }
 
   /// Return a scalar constant for `value`, folding only regionless producers.
@@ -462,8 +699,9 @@ class DefinitionRegistry {
     if (source->hasAttr("poly.specialization_id")) {
       return type;
     }
-    if (type.getParams() &&
-        !llvm::all_of(type.getParams(), [](Attribute a) { return isConcreteAttr<false>(a); })) {
+    if (type.getParams() && !llvm::all_of(type.getParams(), [](Attribute a) {
+      return isConcreteStructParamAttr(a, false);
+    })) {
       source.emitError("unsupported non-concrete specialization arguments") << type;
       return failure();
     }
@@ -476,38 +714,24 @@ class DefinitionRegistry {
           getFullyQualifiedName(llvm::cast<SymbolOpInterface>(entries[*id].definition))
       );
     }
-    StructDefOp clone;
-    if (!isNullOrEmpty(type.getParams())) {
-      Step1_InstantiateStructs::StructCloner cloner(tracker, root);
-      auto result = cloner.createInstantiatedClone(type);
-      if (failed(result)) {
-        return failure();
-      }
-      // Cloning can change multiple symbol tables; discard all cached lookups.
-      tables = std::make_unique<SymbolTableCollection>();
-      auto def = result->getDefinition(*tables, root);
-      if (failed(def)) {
-        return failure();
-      }
-      clone = def->get();
-      DenseMap<Attribute, Attribute> bindings;
+    auto clone = source.clone();
+    clone.setSymName(("__llzk_spec_" + Twine(*id)).str());
+    auto templ = source->getParentOfType<TemplateOp>();
+    Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
+    tables->getSymbolTable(parent).insert(clone);
+    DenseMap<Attribute, Attribute> bindings;
+    if (type.getParams()) {
       for (auto [name, value] : llvm::zip(source.getType().getParams(), type.getParams())) {
         bindings[name] = value;
       }
-      evaluateTemplateExprs(source->getParentOfType<TemplateOp>(), bindings);
-      substituteCallArguments(clone, bindings);
-    } else {
-      clone = source.clone();
-      clone.setSymName(("__llzk_spec_" + Twine(*id)).str());
-      tables->getSymbolTable(source->getParentOp()).insert(clone);
-      AttrTypeReplacer self;
-      self.addReplacement([&](StructType t) -> std::optional<Type> {
-        if (t == source.getType() || t == type) {
-          return StructType::get(getFullyQualifiedName(clone));
-        }
-        return std::nullopt;
-      });
-      self.recursivelyReplaceElementsIn(clone, true, false, true);
+    }
+    if (templ) {
+      evaluateTemplateExprs(templ, bindings);
+    }
+    if (failed(substituteDefinition(
+            clone, bindings, source.getType(), StructType::get(getFullyQualifiedName(clone))
+        ))) {
+      return failure();
     }
     publish(*id, clone);
     return StructType::get(getFullyQualifiedName(clone));
@@ -561,10 +785,10 @@ class DefinitionRegistry {
             explicitArgs && !explicitArgs.empty()) {
           value = explicitArgs[n];
         } else {
-          value = inferUnifiedParam(*unified, name).value_or(Attribute());
+          value = unified->lookup({name, Side::RHS});
         }
         ++n;
-        if (!value || !isConcreteAttr<false>(value)) {
+        if (!value || !isConcreteStructParamAttr(value, false)) {
           return call.emitError("unsupported non-concrete function parameter ") << name;
         }
         if (failed(call.verifyTemplateParamValueCompatibility(value, param))) {
@@ -612,9 +836,7 @@ class DefinitionRegistry {
       tables->getSymbolTable(parent).insert(clone);
       if (templ) {
         evaluateTemplateExprs(templ, bindings);
-        convertCalleesInPlace(clone, bindings);
-        substituteCallArguments(clone, bindings);
-        if (failed(Step2_InstantiateFunctions::applyBodyConversions(call, clone, bindings))) {
+        if (failed(substituteDefinition(clone, bindings))) {
           tables->invalidateSymbolTable(parent);
           return failure();
         }

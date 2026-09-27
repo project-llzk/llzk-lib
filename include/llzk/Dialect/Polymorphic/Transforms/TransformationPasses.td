@@ -157,4 +157,18 @@ def TypeVarInferencePass : LLZKPass<"llzk-infer-tvar"> {
   }];
 }
 
+
+def SymbolicConstraintEvaluationPass : LLZKPass<"llzk-evaluate-constraints"> {
+  let summary = "Interpret rolled specialized constraints into a scalar function";
+  let description = [{
+    Run after llzk-monomorphize. Interpret static control flow, aggregate values,
+    component families and calls without modifying the source program. Emit a
+    module-level __llzk_flat_constrain function with scalar arguments bound to
+    hierarchical storage by poly.signal_bindings and poly.instances. Unsupported
+    dynamic control flow is diagnosed; no legacy flattening fallback is used.
+  }];
+  let options = [Option<"maxSteps", "max-steps", "uint64_t", "10000000", "Maximum interpreted operations">,
+                 Option<"report", "report", "bool", "false", "Print evaluator counters">];
+}
+
 #endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD
