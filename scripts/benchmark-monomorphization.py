@@ -40,8 +40,11 @@ def measured(command, log, timeout):
         rss = re.search(r"Maximum resident set size \(kbytes\):\s*(\d+)", text)
         peak = int(rss[1]) * 1024 if rss else None
     metrics = dict(re.findall(r"(specializations|operations|input_operations|specialized_operations|pass_ms)=(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)", text))
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", text)
+    diagnostic = next((line.strip() for line in plain.splitlines()
+                       if "error:" in line or "Failed to" in line or "IR is invalid" in line), "")
     return {"status": status, "wall_seconds": elapsed, "peak_rss_bytes": peak,
-            "command": command, **metrics}
+            "command": command, "diagnostic": diagnostic, **metrics}
 
 
 def main():
@@ -55,6 +58,8 @@ def main():
     parser.add_argument("--timeout", type=float, default=300)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--phase", choices=["monomorphize", "parse"], default="monomorphize")
+    parser.add_argument("--build-type", default="unknown", help="Build type of the supplied tools, recorded in summaries")
+    parser.add_argument("--plaintext", action="store_true", help="Use temporary textual frontend IR for bytecode compatibility")
     parser.add_argument("--frontend-mode", choices=["templated", "concrete"], default="templated")
     parser.add_argument("--jobs", type=int, choices=[1], default=1)
     args = parser.parse_args()
@@ -64,6 +69,7 @@ def main():
         parser.error("--output must be outside the repository")
     output.mkdir(parents=True, exist_ok=True)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    dirty = subprocess.run(["git", "diff", "--quiet", "HEAD"], cwd=repo).returncode != 0
     rows = []
     for case in json.loads(args.manifest.read_text()):
         if not re.search(args.filter, case["name"]) or (args.tier and case["tier"] != args.tier):
@@ -71,12 +77,17 @@ def main():
         with tempfile.TemporaryDirectory(prefix="llzk-mono-") as temporary:
             frontend_command = [str(args.frontend.resolve()), str((args.corpus / case["source"]).resolve()),
                                 "--llzk", args.frontend_mode, "--llzk_strip_debug_info", "-o", temporary]
+            if args.plaintext:
+                frontend_command.append("--llzk_plaintext")
             row = {"name": case["name"], "tier": case["tier"], "revision": revision,
-                   "phase": args.phase, "jobs": args.jobs, "frontend_mode": args.frontend_mode}
+                   "phase": args.phase, "jobs": args.jobs, "frontend_mode": args.frontend_mode, "build_type": args.build_type,
+                   "dirty": dirty, "llzk_opt": str(args.llzk_opt.resolve()),
+                   "frontend_tool": str(args.frontend.resolve())}
             row["frontend"] = measured(frontend_command, output / f'{case["name"]}.frontend.log', args.timeout)
             inputs = list(Path(temporary).rglob("*.llzk"))
             if row["frontend"]["status"] == "ok" and len(inputs) == 1:
-                command = [str(args.llzk_opt.resolve()), str(inputs[0]), "-o", os.devnull]
+                command = [str(args.llzk_opt.resolve()), str(inputs[0]), "-o", os.devnull,
+                           "--mlir-print-op-on-diagnostic=false"]
                 if args.phase == "monomorphize":
                     command += ["--llzk-monomorphize=report=true"]
                 row["pass"] = measured(command, output / f'{case["name"]}.pass.log', args.timeout)
@@ -86,7 +97,8 @@ def main():
             print(f'{case["name"]}: {row["pass"]["status"]}', flush=True)
             (output / "summary.json").write_text(json.dumps(rows, indent=2) + "\n")
     flat = [{"name": r["name"], "tier": r["tier"], "revision": r["revision"],
-             "phase": r["phase"], **{k: v for k, v in r["pass"].items() if k != "command"}}
+             "phase": r["phase"], "frontend_mode": r["frontend_mode"],
+             "build_type": r["build_type"], "dirty": r["dirty"], **{k: v for k, v in r["pass"].items() if k != "command"}}
             for r in rows]
     with (output / "summary.csv").open("w", newline="") as stream:
         fields = list(dict.fromkeys(key for row in flat for key in row))
