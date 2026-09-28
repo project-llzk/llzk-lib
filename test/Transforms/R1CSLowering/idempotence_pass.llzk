@@ -1,0 +1,4 @@
+// RUN: llzk-opt %S/evaluated-read-identity_pass.llzk --llzk-full-direct-r1cs-lowering -o %t
+// RUN: llzk-opt %t --llzk-full-direct-r1cs-lowering -o %t.again
+// RUN: diff %t %t.again
+// An already lowered module must remain unchanged on a second lowering.

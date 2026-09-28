@@ -1,0 +1,26 @@
+// RUN: %python %S/check-mutable-input.py llzk-opt llzk-witgen llzk-translate %s %t
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%a: !array.type<1,1 x !felt.type<"babybear">> {llzk.pub}) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      %i = arith.constant 0 : index
+      %x = array.read %a[%i, %i] : !array.type<1,1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %x2 = felt.mul %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      %x3 = felt.mul %x2, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %s[@out] = %x3 : !struct.type<@Main>, !felt.type<"babybear">
+      %z = felt.const 0 : !felt.type<"babybear">
+      array.write %a[%i, %i] = %z : !array.type<1,1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %a: !array.type<1,1 x !felt.type<"babybear">> {llzk.pub}) {
+      %i = arith.constant 0 : index
+      %x = array.read %a[%i, %i] : !array.type<1,1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %x2 = felt.mul %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      %x3 = felt.mul %x2, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = struct.readm %s[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %x3 : !felt.type<"babybear">
+      function.return
+    }
+  }
+}

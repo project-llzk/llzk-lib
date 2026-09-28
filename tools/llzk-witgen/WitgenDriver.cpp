@@ -16,10 +16,13 @@
 #include "WitgenLowering.h"
 #include "WitgenUtils.h"
 #include "WitnessSelection.h"
+#include "r1cs/Transforms/TransformationPasses.h"
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+#include "llzk/Dialect/Polymorphic/Transforms/ConstraintEvaluation.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -34,7 +37,7 @@ namespace llzk::witgen {
 /// Return whether the module needs template/affine flattening before execution.
 static bool requiresFlattening(ModuleOp moduleOp) {
   return moduleOp
-      ->walk([&](Operation *op) {
+      ->walk([](Operation *op) {
     if (isa<function::CallOp>(op)) {
       auto callOp = cast<function::CallOp>(op);
       if (callOp.getTemplateParams() || !callOp.getMapOperands().empty()) {
@@ -58,10 +61,10 @@ Interpreter::Interpreter(
       rng(r) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
-static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
+static llvm::Expected<SmallVector<WitnessVal>> parseArgumentsFromJSON(
     function::FuncDefOp computeFunc, const llvm::json::Value &input, const Field &field
 ) {
-  llvm::SmallVector<WitnessVal> args;
+  SmallVector<WitnessVal> args;
   const auto *jsonObject = input.getAsObject();
   const auto *jsonArray = input.getAsArray();
   if (!jsonObject && !jsonArray) {
@@ -70,7 +73,7 @@ static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
 
   if (jsonObject) {
     for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
-      llvm::StringRef argName;
+      StringRef argName;
       if (std::optional<StringAttr> attr = computeFunc.getArgNameAttr(i)) {
         argName = attr->getValue();
       } else {
@@ -153,7 +156,7 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
     return makeError("failed to select full witness signals");
   }
 
-  llvm::SmallVector<llvm::json::Value> serializedSignals;
+  SmallVector<llvm::json::Value> serializedSignals;
   serializedSignals.reserve(outputBindings->size());
   for (const OutputBinding &binding : *outputBindings) {
     auto leafValue = extractValueAtPath(
@@ -164,7 +167,9 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
       return leafValue.takeError();
     }
     auto serialized = serializeJSONValue(
-        *leafValue, binding.type, tables, computeFunc.getOperation(), SerializationMode::AllSignals
+        *leafValue, binding.type, tables, computeFunc.getOperation(),
+        polymorphic::isEvaluatedModule(moduleOp) ? SerializationMode::AllStorage
+                                                 : SerializationMode::AllSignals
     );
     if (!serialized) {
       return serialized.takeError();
@@ -180,15 +185,18 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
 
 /// Run include preprocessing and flattening before backend execution.
 static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &options) {
-  // normalizeCallOpProperties(moduleOp);
   PassManager pm(moduleOp.getContext());
   if (options.inlineIncludes) {
-    pm.addPass(llzk::include::createInlineIncludesPass());
+    pm.addPass(include::createInlineIncludesPass());
+  }
+  if (polymorphic::isEvaluatedModule(moduleOp)) {
+    pm.addPass(createPolyLoweringPass(PolyLoweringPassOptions {.maxDegree = 2}));
+    pm.addPass(r1cs::createR1CSPreparePass());
   }
   if (options.backend == Backend::ExecutionEngine) {
     addWitgenPreparePipeline(pm, options);
   } else if (requiresFlattening(moduleOp)) {
-    pm.addPass(llzk::polymorphic::createFlatteningPass());
+    pm.addPass(polymorphic::createFlatteningPass());
   }
   if (failed(pm.run(moduleOp))) {
     return makeError("failed to preprocess LLZK module for llzk-witgen");

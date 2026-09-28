@@ -17,6 +17,8 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/Transforms/ConstraintEvaluation.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/LoweringUtils.h"
 
@@ -217,7 +219,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (llvm::isa<FeltConstantOp>(defOp)) {
         return memo[val] = 0;
       }
-      if (llvm::isa<NonDetOp, MemberReadOp>(defOp)) {
+      if (isa<NonDetOp, MemberReadOp, ReadArrayOp, pod::ReadPodOp>(defOp)) {
         return memo[val] = 1;
       }
       if (auto add = llvm::dyn_cast<AddFeltOp>(defOp)) {
@@ -276,7 +278,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
 
     // Degree-neutral roots can still contain over-degree operands.
-    auto lowerBinaryRoot = [&](auto op) -> Value {
+    auto lowerBinaryRoot = [this, structDef, constrainFunc, &dominanceInfo, &degreeMemo, &rewrites,
+                            &auxAssignments, val, &cacheIdentityRewriteIfAbsent](auto op) -> Value {
       Value lhs = lowerExpression(
           op.getLhs(), structDef, constrainFunc, op.getOperation(), dominanceInfo, degreeMemo,
           rewrites, auxAssignments
@@ -661,7 +664,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     if (!activeArrays.insert(arrayValue).second) {
       return emitAmbiguousContainmentRhs(containOp, "cyclic array update");
     }
-    auto cleanup = llvm::scope_exit([&]() { activeArrays.erase(arrayValue); });
+    auto cleanup =
+        llvm::scope_exit([&activeArrays, arrayValue]() { activeArrays.erase(arrayValue); });
 
     MLIRContext *ctx = arrayType.getContext();
 
@@ -896,7 +900,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   /// Postcondition: walks every EmitContainmentOp in \p constrainFunc and
   /// verifies that no containment RHS felt element exceeds maxDegree.
   LogicalResult checkContainmentRhsDegrees(FuncDefOp constrainFunc) {
-    auto res = constrainFunc.walk([&](EmitContainmentOp containOp) -> WalkResult {
+    auto res = constrainFunc.walk([this](EmitContainmentOp containOp) -> WalkResult {
       DenseMap<Value, unsigned> memo;
       return checkContainmentRhsValue(containOp.getRhs(), containOp, memo);
     });
@@ -912,7 +916,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     DominanceInfo dominanceInfo(constrainFunc);
 
     // Lower equality constraints
-    constrainFunc.walk([&](EmitEqualityOp constraintOp) {
+    constrainFunc.walk([this, structDef, constrainFunc, &dominanceInfo, &degreeMemo, &rewrites,
+                        &auxAssignments](EmitEqualityOp constraintOp) {
       if (!llvm::isa<FeltType>(constraintOp.getLhs().getType()) ||
           !llvm::isa<FeltType>(constraintOp.getRhs().getType())) {
         return;
@@ -940,18 +945,22 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     });
 
     // Lower containment lookup rows.
-    auto res = constrainFunc.walk([&](EmitContainmentOp containOp) -> WalkResult {
+    auto res = constrainFunc.walk(
+        [this, structDef, constrainFunc, &dominanceInfo, &degreeMemo, &rewrites,
+         &auxAssignments](EmitContainmentOp containOp) -> WalkResult {
       return lowerContainmentRhsValue(
           containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo, rewrites,
           auxAssignments, containOp
       );
-    });
+    }
+    );
     if (res.wasInterrupted()) {
       return failure();
     }
 
     // Lower function call arguments
-    constrainFunc.walk([&](CallOp callOp) {
+    constrainFunc.walk([this, structDef, constrainFunc, &dominanceInfo, &degreeMemo, &rewrites,
+                        &auxAssignments](CallOp callOp) {
       if (callOp.calleeIsStructConstrain()) {
         SmallVector<Value> newOperands = llvm::to_vector(callOp.getArgOperands());
         bool modified = false;
@@ -998,6 +1007,15 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       return failure();
     }
 
+    SmallVector<Value> expressions;
+    for (const auto &assign : auxAssignments) {
+      expressions.push_back(assign.computedValue);
+    }
+    DenseMap<Value, Value> captured;
+    if (failed(captureAuxiliaryInputs(expressions, computeFunc, captured))) {
+      return failure();
+    }
+
     for (Block &computeBlock : computeFunc.getBody()) {
       auto returnOp = llvm::dyn_cast<ReturnOp>(computeBlock.getTerminator());
       if (!returnOp) {
@@ -1006,7 +1024,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
       Value selfVal = returnOp.getOperands().front();
       OpBuilder builder(returnOp);
-      DenseMap<Value, Value> rebuildMemo;
+      DenseMap<Value, Value> rebuildMemo = captured;
       rebuildMemo[constrainFunc.getSelfValueFromConstrain()] = selfVal;
 
       for (unsigned assignIdx : orderedAuxAssignments) {
@@ -1042,9 +1060,29 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       return;
     }
 
-    auto moduleRes = moduleOp.walk([this](StructDefOp structDef) -> WalkResult {
+    bool processedStruct = false;
+    auto moduleRes =
+        moduleOp.walk([this, moduleOp, &processedStruct](StructDefOp structDef) -> WalkResult {
+      bool evaluated = moduleOp->hasAttr(polymorphic::EVALUATED_MAIN_ATTR_NAME);
+      auto previousDegree =
+          structDef->getAttrOfType<IntegerAttr>(polymorphic::DEGREE_LOWERED_ATTR_NAME);
+      if (evaluated && (!structDef.isMainComponent() ||
+                        (previousDegree && previousDegree.getInt() <= maxDegree))) {
+        return WalkResult::skip();
+      }
+      processedStruct = true;
       try {
-        if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
+        if (evaluated && previousDegree) {
+          // A tighter bound may introduce more auxiliaries. Keep existing witness
+          // assignments and allocate names after the previously generated members.
+          for (auto member : structDef.getMemberDefs()) {
+            StringRef suffix = member.getSymName();
+            unsigned index;
+            if (suffix.consume_front(AUXILIARY_MEMBER_PREFIX) && !suffix.getAsInteger(10, index)) {
+              auxCounter = std::max(auxCounter, index + 1);
+            }
+          }
+        } else if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
           return WalkResult::interrupt();
         }
 
@@ -1087,6 +1125,12 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         if (failed(rebuildInCompute(constrainFunc, computeFunc, auxAssignments))) {
           return WalkResult::interrupt();
         }
+        if (evaluated) {
+          structDef->setAttr(
+              polymorphic::DEGREE_LOWERED_ATTR_NAME,
+              IntegerAttr::get(IntegerType::get(&getContext(), 64), maxDegree)
+          );
+        }
 
       } catch (const DegreeComputationError &err) {
         mlir::emitError(err.getLoc()) << err.what();
@@ -1098,6 +1142,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
     if (moduleRes.wasInterrupted()) {
       signalPassFailure();
+    } else if (!processedStruct) {
+      markAllAnalysesPreserved();
     }
   }
 };

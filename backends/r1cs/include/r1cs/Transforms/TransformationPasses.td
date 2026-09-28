@@ -26,4 +26,29 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   }];
 }
 
+def R1CSPreparePass : LLZKPass<"llzk-r1cs-prepare"> {
+  let summary = "Normalize constraints and materialize R1CS auxiliary witness "
+                "assignments";
+  let description = [{
+    Requires straight-line constrain bodies. Normalizes constraints, adds auxiliary
+    members and their compute assignments, and marks each prepared struct with
+    `r1cs.prepared`. Does not emit circuits or erase structs. Repeated preparation
+    is a no-op. On evaluated modules, prepares only the main struct; otherwise
+    prepares every struct. Shared by the legacy and direct lowering passes.
+  }];
+}
+
+def R1CSDirectLoweringPass : LLZKPass<"llzk-r1cs-direct-lowering"> {
+  let summary = "Lower evaluated storage constraints directly to R1CS";
+  let description = [{
+    Requires `poly.evaluated_main` and an evaluated, straight-line main constrain
+    function with its original aggregate storage interface. Do not pre-flatten
+    evaluated input. Prepares constraints as needed and operates on main only.
+    Preserves structs and rolled compute functions, emits a circuit with
+    `poly.wire_bindings`, and records it in `r1cs.main`. Repeated emission is a
+    no-op. Use `llzk-full-direct-r1cs-lowering` to include degree lowering.
+    Non-evaluated modules are rejected; use `llzk-r1cs-lowering` for legacy input.
+  }];
+}
+
 #endif // R1CS_TRANSFORMATION_PASSES_TD

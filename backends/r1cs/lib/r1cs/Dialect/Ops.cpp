@@ -74,6 +74,9 @@ ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
     }
     result.addAttribute("arg_attrs", DictionaryAttr::get(parser.getContext(), attrs));
   }
+  if (parser.parseOptionalAttrDictWithKeyword(result.attributes)) {
+    return failure();
+  }
   Region *body = result.addRegion();
   return parser.parseRegion(*body, args);
 }
@@ -88,7 +91,7 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
   if (entry.getNumArguments() != 0) {
     p << " inputs (";
     auto dictAttr = getArgAttrs().value_or(DictionaryAttr::get(getContext()));
-    llvm::interleaveComma(entry.getArguments(), p, [&](BlockArgument arg) {
+    llvm::interleaveComma(entry.getArguments(), p, [&p, hasAttrs, dictAttr](BlockArgument arg) {
       p << arg << ": ";
       p.printType(arg.getType());
 
@@ -104,6 +107,7 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
     });
     p << ')';
   }
+  p.printOptionalAttrDictWithKeyword((*this)->getAttrs(), {"sym_name", "arg_attrs"});
   p << ' ';
   p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
 }
@@ -134,7 +138,7 @@ LogicalResult CircuitDefOp::verify() {
         return emitOpError() << "argument index " << index << " out of bounds (only " << numArgs
                              << " arguments)";
       }
-      if (!llvm::isa<r1cs::PublicAttr>(attr.getValue())) {
+      if (!isa<PublicAttr>(attr.getValue())) {
         return emitOpError() << "invalid attribute for argument " << index << ": expected "
                              << PublicAttr::name;
       }
@@ -143,7 +147,6 @@ LogicalResult CircuitDefOp::verify() {
 
   // === Step 2: Check that signal labels are unique ===
   DenseSet<uint32_t> seenLabels;
-  bool foundPublic = false;
 
   for (auto &op : getBody().front()) {
     if (auto def = dyn_cast<SignalDefOp>(op)) {
@@ -151,18 +154,10 @@ LogicalResult CircuitDefOp::verify() {
       if (!seenLabels.insert(label).second) {
         return def.emitOpError() << "duplicate signal label: " << label;
       }
-
-      if (def.getPub().has_value()) {
-        foundPublic = true;
-      }
     }
   }
 
-  // === Step 3: Require at least one public signal ===
-  if (!foundPublic) {
-    return emitOpError() << "at least one signal must be marked public";
-  }
-
+  // R1CS also represents circuits with only private inputs/internal signals.
   return success();
 }
 

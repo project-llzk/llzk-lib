@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s --llzk-full-direct-r1cs-lowering --verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
+  struct.def @Main {
+    struct.member @values : !array.type<2 x !felt.type>
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) attributes {poly.evaluated} {
+      %zero = arith.constant 0 : index
+      %values = struct.readm %self[@values] : !struct.type<@Main>, !array.type<2 x !felt.type>
+      // expected-error @+1 {{invalid evaluated signal storage binding}}
+      %value = array.read %values[%zero] : !array.type<2 x !felt.type>, !felt.type {poly.signal_binding = {path = [999], public = false}}
+      constrain.eq %value, %x : !felt.type
+      function.return
+    }
+  }
+}

@@ -13,6 +13,7 @@
 #include "ValueModel.h"
 #include "WitgenDriver.h"
 #include "WitgenUtils.h"
+#include "WitnessSelection.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
@@ -322,7 +323,7 @@ TEST_P(WitgenFieldTests, SerializeStructOnlyEmitsPublicMembers) {
     module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       struct.def @Main {
         struct.member @out : !felt.type<"babybear"> {llzk.pub}
-        struct.member @tmp : !felt.type<"babybear">
+        struct.member @tmp : !felt.type<"babybear"> {llzk.pub, poly.original_public = false}
         function.def @compute() -> !struct.type<@Main> {
           %self = struct.new : !struct.type<@Main>
           function.return %self : !struct.type<@Main>
@@ -573,3 +574,31 @@ INSTANTIATE_TEST_SUITE_P(
     // Test small, medium, and large prime fields to cover different code paths.
     ::testing::Values("babybear", "goldilocks", "bn254")
 );
+
+TEST_F(WitgenTests, OutputBindingsUseModuleEvaluationMarker) {
+  auto module = parseSourceString<ModuleOp>(
+      R"llzk(
+    module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
+      struct.def @Main {
+        struct.member @private_storage : !felt.type
+        function.def @compute() -> !struct.type<@Main> {
+          %s = struct.new : <@Main>
+          function.return %s : !struct.type<@Main>
+        }
+        function.def @constrain(%s: !struct.type<@Main>) {
+          function.return
+        }
+      }
+    }
+  )llzk",
+      ParserConfig(&ctx)
+  );
+  ASSERT_TRUE(module);
+  auto main = module->lookupSymbol<component::StructDefOp>("Main");
+  SymbolTableCollection tables;
+  auto bindings =
+      witgen::collectOutputBindings(main, tables, main, witgen::OutputScope::FullWitness);
+  ASSERT_TRUE(succeeded(bindings));
+  ASSERT_EQ(bindings->size(), 1u);
+  EXPECT_EQ(bindings->front().path.front(), "private_storage");
+}

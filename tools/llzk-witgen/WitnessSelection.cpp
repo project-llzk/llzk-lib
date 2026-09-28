@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/Transforms/ConstraintEvaluation.h"
 
 #include <mlir/IR/Operation.h>
 
@@ -62,15 +63,13 @@ static LogicalResult appendSignalLeafBindings(
     Type type, ArrayRef<std::string> prefix, SmallVectorImpl<OutputBinding> &out, Operation *origin
 ) {
   if (isa<felt::FeltType, array::ArrayType>(type)) {
-    out.push_back(
-        OutputBinding {llvm::SmallVector<std::string>(prefix.begin(), prefix.end()), type}
-    );
+    out.push_back(OutputBinding {SmallVector<std::string>(prefix.begin(), prefix.end()), type});
     return success();
   }
 
   if (auto podType = dyn_cast<pod::PodType>(type)) {
     for (pod::RecordAttr record : podType.getRecords()) {
-      llvm::SmallVector<std::string> path(prefix.begin(), prefix.end());
+      SmallVector<std::string> path(prefix.begin(), prefix.end());
       path.push_back(record.getName().getValue().str());
       if (failed(appendSignalLeafBindings(record.getType(), path, out, origin))) {
         return failure();
@@ -90,7 +89,7 @@ static LogicalResult appendStructSignalBindings(
     ArrayRef<std::string> prefix = {}
 ) {
   for (component::MemberDefOp member : def.getMemberDefs()) {
-    llvm::SmallVector<std::string> path(prefix.begin(), prefix.end());
+    SmallVector<std::string> path(prefix.begin(), prefix.end());
     path.push_back(member.getSymName().str());
 
     bool isR1CSMember =
@@ -150,12 +149,12 @@ insertLeafJSON(llvm::json::Object &root, ArrayRef<std::string> path, llvm::json:
 
 /// Return `true` iff the member is considered a witness signal.
 bool memberIsSignal(component::StructDefOp owner, component::MemberDefOp member) {
-  return member.getSignal() || (owner.isMainComponent() && member.hasPublicAttr());
+  return member.getSignal() || (owner.isMainComponent() && polymorphic::isOriginallyPublic(member));
 }
 
 /// Collect stable JSON bindings for the main compute inputs.
-llvm::SmallVector<InputBinding> collectInputBindings(function::FuncDefOp computeFunc) {
-  llvm::SmallVector<InputBinding> bindings;
+SmallVector<InputBinding> collectInputBindings(function::FuncDefOp computeFunc) {
+  SmallVector<InputBinding> bindings;
   bindings.reserve(computeFunc.getNumArguments());
   for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
     std::string name;
@@ -170,14 +169,21 @@ llvm::SmallVector<InputBinding> collectInputBindings(function::FuncDefOp compute
 }
 
 /// Collect the selected output bindings for the requested scope.
-FailureOr<llvm::SmallVector<OutputBinding>> collectOutputBindings(
+FailureOr<SmallVector<OutputBinding>> collectOutputBindings(
     component::StructDefOp mainDef, SymbolTableCollection &tables, Operation *origin,
     OutputScope scope
 ) {
-  llvm::SmallVector<OutputBinding> bindings;
+  SmallVector<OutputBinding> bindings;
+  if (scope != OutputScope::Public &&
+      polymorphic::isEvaluatedModule(mainDef->getParentOfType<ModuleOp>())) {
+    for (auto member : mainDef.getMemberDefs()) {
+      bindings.push_back(OutputBinding {{member.getSymName().str()}, member.getType()});
+    }
+    return bindings;
+  }
   if (scope == OutputScope::Public) {
     for (component::MemberDefOp member : mainDef.getMemberDefs()) {
-      if (!member.hasPublicAttr()) {
+      if (!polymorphic::isOriginallyPublic(member)) {
         continue;
       }
       bindings.push_back(OutputBinding {{member.getSymName().str()}, member.getType()});
