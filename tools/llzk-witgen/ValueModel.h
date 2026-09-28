@@ -58,22 +58,38 @@ enum class UninitializedBehavior : std::uint8_t {
   Fail,
 };
 
+/// Shared immutable contents with explicit detachment at mutation sites.
+/// Runtime aliases share the aggregate wrapper; value copies share only contents.
+template <typename Container> class ValueStorage {
+public:
+  const Container &read() const { return *contents; }
+  Container &write() {
+    if (contents.use_count() != 1) {
+      contents = std::make_shared<Container>(*contents);
+    }
+    return *contents;
+  }
+
+private:
+  std::shared_ptr<Container> contents = std::make_shared<Container>();
+};
+
 /// Materialized array value with flattened element storage.
 struct ArrayValue {
   array::ArrayType type;
-  std::vector<WitnessVal> elements;
+  ValueStorage<std::vector<WitnessVal>> elements;
 };
 
 /// Materialized POD value keyed by record name.
 struct PodValue {
   pod::PodType type;
-  llvm::DenseMap<llvm::StringRef, WitnessVal> records;
+  ValueStorage<llvm::DenseMap<llvm::StringRef, WitnessVal>> records;
 };
 
 /// Materialized struct value keyed by member name.
 struct StructValue {
   component::StructType type;
-  llvm::DenseMap<llvm::StringRef, WitnessVal> members;
+  ValueStorage<llvm::DenseMap<llvm::StringRef, WitnessVal>> members;
 };
 
 /// Interpret a runtime value as a boolean.

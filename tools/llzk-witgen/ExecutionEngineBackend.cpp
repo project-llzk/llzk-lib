@@ -226,11 +226,11 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
   if (!elementCount) {
     return elementCount.takeError();
   }
-  if ((*arrayValue)->elements.size() != *elementCount) {
+  if ((*arrayValue)->elements.read().size() != *elementCount) {
     return makeError("input array element count mismatch");
   }
-  for (size_t i = 0; i < (*arrayValue)->elements.size(); ++i) {
-    auto feltValue = asFelt((*arrayValue)->elements[i]);
+  for (size_t i = 0; i < (*arrayValue)->elements.read().size(); ++i) {
+    auto feltValue = asFelt((*arrayValue)->elements.read()[i]);
     if (!feltValue) {
       return feltValue.takeError();
     }
