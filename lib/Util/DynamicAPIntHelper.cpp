@@ -96,11 +96,10 @@ DynamicAPInt toDynamicAPInt(StringRef str) {
 }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
-  // Fast path for smaller values, just use the `int64_t` conversion. However, that only works if
-  // the value is signed or if the sign bit is clear otherwise it will incorrectly interpret the
-  // value as a negative number.
-  if (i.getBitWidth() <= 64 && (i.isSigned() || i.isSignBitClear())) {
-    return DynamicAPInt(i.isNegative() ? i.getSExtValue() : static_cast<int64_t>(i.getZExtValue()));
+  // Use the small representation whenever the value fits, regardless of the
+  // APInt storage width. Respect unsigned values above INT64_MAX.
+  if (i.isRepresentableByInt64()) {
+    return DynamicAPInt(i.getExtValue());
   }
 
   DynamicAPInt res(0), po2(1);

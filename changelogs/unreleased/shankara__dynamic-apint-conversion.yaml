@@ -1,0 +1,2 @@
+changed:
+  - Speed up APInt-to-DynamicAPInt conversion for values that fit in signed 64 bits, regardless of their storage width.

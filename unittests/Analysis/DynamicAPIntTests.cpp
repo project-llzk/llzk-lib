@@ -62,6 +62,26 @@ INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntUnaryTest, testing::ValuesIn(DynamicAPIntUnaryTest::TestingValues())
 );
 
+TEST(DynamicAPIntConversionTest, WideSignedMinimum) {
+  APSInt input(APInt(256, uint64_t(INT64_MIN), /*isSigned=*/true), /*isUnsigned=*/false);
+  EXPECT_EQ(toDynamicAPInt(input), DynamicAPInt(INT64_MIN));
+}
+
+TEST(DynamicAPIntConversionTest, WideUnsignedSignedMaximum) {
+  APSInt input(APInt(256, INT64_MAX), /*isUnsigned=*/true);
+  EXPECT_EQ(toDynamicAPInt(input), DynamicAPInt(INT64_MAX));
+}
+
+TEST(DynamicAPIntConversionTest, WideUnsignedAboveSignedMaximum) {
+  APSInt input(APInt::getOneBitSet(256, 63), /*isUnsigned=*/true);
+  EXPECT_EQ(toDynamicAPInt(input), DynamicAPInt(INT64_MAX) + 1);
+}
+
+TEST(DynamicAPIntConversionTest, WideSignedBelowMinimum) {
+  APSInt input(APInt(256, uint64_t(INT64_MIN), /*isSigned=*/true) - 1, /*isUnsigned=*/false);
+  EXPECT_EQ(toDynamicAPInt(input), DynamicAPInt(INT64_MIN) - 1);
+}
+
 struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
   static const std::vector<std::string> &TestingValues() {
     static std::vector<std::string> vals = {
