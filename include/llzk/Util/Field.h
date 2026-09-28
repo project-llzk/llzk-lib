@@ -72,6 +72,9 @@ public:
   /// @brief For the prime field p, returns p.
   llvm::DynamicAPInt prime() const { return primeMod; }
 
+  /// Return the prime modulus as an APInt.
+  const llvm::APInt &primeAPInt() const { return primeBits; }
+
   /// @brief Returns p / 2.
   llvm::DynamicAPInt half() const { return halfPrime; }
 
@@ -133,6 +136,10 @@ private:
   /// Name of the prime for debugging purposes
   llvm::StringRef primeName;
   llvm::DynamicAPInt primeMod, halfPrime;
+  /// Cache the prime for APInt-based folding to avoid repeated conversions while
+  /// other Field operations still use DynamicAPInt. Remove this duplicate when
+  /// Field stores its constants as APInts.
+  llvm::APInt primeBits;
   unsigned bitwidth;
 
   /// Initialize known prime fields.

@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Util/Field.h"
 
 #include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>
@@ -21,6 +22,7 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include <gtest/gtest.h>
+#include <random>
 
 using namespace mlir;
 using namespace llzk;
@@ -275,6 +277,26 @@ TEST_F(BabyBearFoldTest, InvTwo) {
 
 TEST_F(BabyBearFoldTest, InvZeroNoFold) { expectNoFold(foldUnary<InvFeltOp>(babyBearConst(0))); }
 
+// Import/export must handle multiple words and noncanonical unsigned operands.
+TEST_F(BabyBearFoldTest, InverseNoncanonicalOperands) {
+  for (StringRef name : {StringRef("babybear"), StringRef("goldilocks"), StringRef("bn128")}) {
+    const Field &field = Field::getField(name);
+    APInt prime = field.primeAPInt().zext(field.primeAPInt().getBitWidth() + 128);
+    auto two = FeltConstAttr::get(&ctx, APInt(8, 2), name);
+    auto operand = FeltConstAttr::get(&ctx, prime + 2, name);
+    auto inverse = foldUnary<InvFeltOp>(operand);
+    ASSERT_TRUE(inverse);
+    EXPECT_EQ(toDynamicAPInt(inverse.getValue()), field.inv(DynamicAPInt(2)));
+    auto quotient = foldBinary<DivFeltOp>(two, operand);
+    ASSERT_TRUE(quotient);
+    EXPECT_EQ(quotient.getValue(), APInt(quotient.getValue().getBitWidth(), 1));
+    EXPECT_EQ(quotient.getFieldName(), StringAttr::get(&ctx, name));
+    auto zero = FeltConstAttr::get(&ctx, prime * 2, name);
+    expectNoFold(foldUnary<InvFeltOp>(zero));
+    expectNoFold(foldBinary<DivFeltOp>(two, zero));
+  }
+}
+
 TEST_F(BabyBearFoldTest, InvNoFoldUnspecified) {
   expectNoFold(foldUnary<InvFeltOp>(unspecifiedConst(2)));
 }
@@ -355,4 +377,153 @@ TEST_F(BabyBearFoldTest, BitNotZero) {
 
 TEST_F(BabyBearFoldTest, BitNotNoFoldUnspecified) {
   expectNoFold(foldUnary<NotFeltOp>(unspecifiedConst(0)));
+}
+
+/// Shared exact-oracle inputs for independently reported arithmetic folding tests.
+class APIntFoldTest : public BabyBearFoldTest {
+protected:
+  /// Cover field boundaries and mixed-width, multiword inputs deterministically.
+  template <typename Callback> void forEachField(Callback callback) {
+    std::mt19937_64 random(0x4150496e74);
+    for (StringRef name : {StringRef("babybear"), StringRef("goldilocks"), StringRef("bn128")}) {
+      const Field &field = Field::getField(name);
+      unsigned width = field.primeAPInt().getActiveBits();
+      APInt prime = field.primeAPInt().zextOrTrunc(width);
+      SmallVector<APInt> values = {APInt(width, 0), APInt(width, 1), prime - 1, prime - 2};
+      for (unsigned i = 0; i < 8; ++i) {
+        SmallVector<uint64_t> words((width + 63) / 64);
+        for (auto &word : words) {
+          word = random();
+        }
+        values.push_back(APInt(width, words).urem(prime));
+      }
+      SCOPED_TRACE(name.str());
+      callback(name, field, values);
+    }
+  }
+
+  /// Check the value, field identity, and canonical range of one fold result.
+  void checkResult(
+      FeltConstAttr actual, const DynamicAPInt &expected, const Field &field, StringRef name
+  ) {
+    ASSERT_TRUE(actual);
+    EXPECT_EQ(toDynamicAPInt(actual.getValue()), field.reduce(expected));
+    EXPECT_EQ(actual.getFieldName(), StringAttr::get(&ctx, name));
+    EXPECT_LT(toDynamicAPInt(actual.getValue()), field.prime());
+  }
+
+  /// Compare one binary operation against its exact-arithmetic oracle.
+  template <typename OpTy, typename Oracle>
+  void checkBinaryOracle(Oracle oracle, bool skipZero = false) {
+    forEachField([this, &oracle,
+                  skipZero](StringRef name, const Field &field, ArrayRef<APInt> values) {
+      for (const APInt &a : values) {
+        for (const APInt &b : values) {
+          if (skipZero && b.isZero()) {
+            continue;
+          }
+          auto lhs = FeltConstAttr::get(&ctx, a, name);
+          auto rhs = FeltConstAttr::get(&ctx, b.zext(b.getBitWidth() + 3), name);
+          checkResult(
+              foldBinary<OpTy>(lhs, rhs), oracle(toDynamicAPInt(a), toDynamicAPInt(b), field),
+              field, name
+          );
+        }
+      }
+    });
+  }
+
+  /// Compare one unary operation against its exact-arithmetic oracle.
+  template <typename OpTy, typename Oracle>
+  void checkUnaryOracle(Oracle oracle, bool skipZero = false) {
+    forEachField([this, &oracle,
+                  skipZero](StringRef name, const Field &field, ArrayRef<APInt> values) {
+      for (const APInt &a : values) {
+        if (skipZero && a.isZero()) {
+          continue;
+        }
+        checkResult(
+            foldUnary<OpTy>(FeltConstAttr::get(&ctx, a, name)), oracle(toDynamicAPInt(a), field),
+            field, name
+        );
+      }
+    });
+  }
+
+  /// Equal-width operands near the prime require an expanded intermediate.
+  template <typename OpTy, typename Oracle> void checkWidening(Oracle oracle) {
+    forEachField([this, &oracle](StringRef name, const Field &field, ArrayRef<APInt> values) {
+      auto maximum = FeltConstAttr::get(&ctx, values[2], name);
+      checkResult(foldBinary<OpTy>(maximum, maximum), oracle(field), field, name);
+    });
+  }
+};
+
+TEST_F(APIntFoldTest, AdditionMatchesExactOracle) {
+  checkBinaryOracle<AddFeltOp>([](const auto &x, const auto &y, const Field &) { return x + y; });
+}
+
+TEST_F(APIntFoldTest, SubtractionMatchesExactOracle) {
+  checkBinaryOracle<SubFeltOp>([](const auto &x, const auto &y, const Field &) { return x - y; });
+}
+
+TEST_F(APIntFoldTest, MultiplicationMatchesExactOracle) {
+  checkBinaryOracle<MulFeltOp>([](const auto &x, const auto &y, const Field &) { return x * y; });
+}
+
+TEST_F(APIntFoldTest, DivisionMatchesExactOracle) {
+  checkBinaryOracle<DivFeltOp>([](const auto &x, const auto &y, const Field &field) {
+    return x * field.inv(y);
+  }, true);
+}
+
+TEST_F(APIntFoldTest, NegationMatchesExactOracle) {
+  checkUnaryOracle<NegFeltOp>([](const auto &x, const Field &) { return -x; });
+}
+
+TEST_F(APIntFoldTest, InversionMatchesExactOracle) {
+  checkUnaryOracle<InvFeltOp>([](const auto &x, const Field &field) { return field.inv(x); }, true);
+}
+
+TEST_F(APIntFoldTest, PowerMatchesExactOracle) {
+  forEachField([this](StringRef name, const Field &field, ArrayRef<APInt> values) {
+    for (const APInt &a : values) {
+      for (uint64_t exponent : {0ULL, 1ULL, 2ULL, 17ULL, 255ULL}) {
+        auto power = foldBinary<PowFeltOp>(
+            FeltConstAttr::get(&ctx, a, name), FeltConstAttr::get(&ctx, APInt(64, exponent), name)
+        );
+        checkResult(
+            power, modExp(toDynamicAPInt(a), DynamicAPInt(exponent), field.prime()), field, name
+        );
+      }
+    }
+  });
+}
+
+TEST_F(APIntFoldTest, MultiwordPowerMatchesExactOracle) {
+  const Field &field = Field::getField("bn128");
+  APInt prime = field.primeAPInt();
+  std::mt19937_64 random(0x455850);
+  SmallVector<uint64_t> words((prime.getBitWidth() + 63) / 64);
+  for (auto &word : words) {
+    word = random();
+  }
+  APInt randomExponent(prime.getBitWidth(), words);
+  randomExponent = randomExponent.urem(prime);
+  for (const APInt &exponent : {prime - 2, randomExponent}) {
+    auto power = foldBinary<PowFeltOp>(
+        FeltConstAttr::get(&ctx, APInt(64, 7), "bn128"), FeltConstAttr::get(&ctx, exponent, "bn128")
+    );
+    checkResult(
+        power, modExp(DynamicAPInt(7), toDynamicAPInt(exponent), field.prime()), field, "bn128"
+    );
+  }
+}
+
+TEST_F(APIntFoldTest, AdditionWidensIntermediate) {
+  checkWidening<AddFeltOp>([](const Field &field) { return field.prime() - 2; });
+}
+
+TEST_F(APIntFoldTest, MultiplicationWidensIntermediate) {
+  checkWidening<MulFeltOp>([](const Field &) { return DynamicAPInt(1); });
 }

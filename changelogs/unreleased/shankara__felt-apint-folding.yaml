@@ -1,0 +1,2 @@
+changed:
+  - Speed up finite-field constant folding with APInt arithmetic, avoiding DynamicAPInt conversions and widening intermediate values only when needed.

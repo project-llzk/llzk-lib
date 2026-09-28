@@ -19,6 +19,8 @@
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/SmallString.h>
 
+#include <type_traits>
+
 // TableGen'd implementation files
 #include "llzk/Dialect/Felt/IR/OpInterfaces.cpp.inc"
 
@@ -37,14 +39,16 @@ namespace llzk::felt {
 
 namespace {
 
-struct BinaryFoldData {
-  DynamicAPInt lhsVal, rhsVal;
+/// Constant binary operands and their shared field.
+template <typename Int> struct BinaryFoldData {
+  Int lhsVal, rhsVal;
   StringRef fieldName;
   const Field *field;
 };
 
-struct UnaryFoldData {
-  DynamicAPInt val;
+/// Constant unary operand and its field.
+template <typename Int> struct UnaryFoldData {
+  Int val;
   StringRef fieldName;
   const Field *field;
 };
@@ -54,7 +58,13 @@ struct UnaryFoldData {
 ///   - either operand constant attribute is absent (non-constant operand), or
 ///   - either field name is unspecified (null StringAttr), or
 ///   - the two field names differ.
-static std::optional<BinaryFoldData> tryGetBinaryFoldData(Attribute lhsAttr, Attribute rhsAttr) {
+template <typename Int = DynamicAPInt>
+static std::optional<BinaryFoldData<Int>>
+tryGetBinaryFoldData(Attribute lhsAttr, Attribute rhsAttr) {
+  static_assert(
+      std::is_same_v<Int, APInt> || std::is_same_v<Int, DynamicAPInt>,
+      "fold inputs must use APInt or DynamicAPInt"
+  );
   auto lhs = llvm::dyn_cast_or_null<FeltConstAttr>(lhsAttr);
   auto rhs = llvm::dyn_cast_or_null<FeltConstAttr>(rhsAttr);
   if (!lhs || !rhs) {
@@ -72,14 +82,25 @@ static std::optional<BinaryFoldData> tryGetBinaryFoldData(Attribute lhsAttr, Att
     return std::nullopt;
   }
 
-  return BinaryFoldData {
-      toDynamicAPInt(lhs.getValue()), toDynamicAPInt(rhs.getValue()), lhsFieldName.getValue(),
-      &fieldRes.value().get()
-  };
+  if constexpr (std::is_same_v<Int, APInt>) {
+    return BinaryFoldData<Int> {
+        lhs.getValue(), rhs.getValue(), lhsFieldName.getValue(), &fieldRes.value().get()
+    };
+  } else {
+    return BinaryFoldData<Int> {
+        toDynamicAPInt(lhs.getValue()), toDynamicAPInt(rhs.getValue()), lhsFieldName.getValue(),
+        &fieldRes.value().get()
+    };
+  }
 }
 
 /// Same guard logic for unary felt ops.
-static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
+template <typename Int = DynamicAPInt>
+static std::optional<UnaryFoldData<Int>> tryGetUnaryFoldData(Attribute operandAttr) {
+  static_assert(
+      std::is_same_v<Int, APInt> || std::is_same_v<Int, DynamicAPInt>,
+      "fold inputs must use APInt or DynamicAPInt"
+  );
   auto operand = llvm::dyn_cast_or_null<FeltConstAttr>(operandAttr);
   if (!operand) {
     return std::nullopt;
@@ -95,9 +116,15 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
     return std::nullopt;
   }
 
-  return UnaryFoldData {
-      toDynamicAPInt(operand.getValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
-  };
+  if constexpr (std::is_same_v<Int, APInt>) {
+    return UnaryFoldData<Int> {
+        operand.getValue(), fieldNameAttr.getValue(), &fieldRes.value().get()
+    };
+  } else {
+    return UnaryFoldData<Int> {
+        toDynamicAPInt(operand.getValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
+    };
+  }
 }
 
 /// Builds a FeltConstAttr carrying the reduced result value.
@@ -105,6 +132,77 @@ static FeltConstAttr buildFoldResult(
     MLIRContext *ctx, const DynamicAPInt &val, const Field &field, StringRef fieldName
 ) {
   return FeltConstAttr::get(ctx, toAPInt(val, field.bitWidth()), fieldName);
+}
+
+/// Reduce an exact unsigned intermediate only when it reaches the modulus.
+/// Returned attributes still have canonical field values and a clear sign bit.
+static APInt reduceUnsigned(APInt value, const Field &field) {
+  unsigned width = std::max(value.getBitWidth(), field.primeAPInt().getBitWidth());
+  value = value.zext(width);
+  APInt prime = field.primeAPInt().zext(width);
+  if (value.uge(prime)) {
+    value = value.urem(prime);
+  }
+  return value.zextOrTrunc(field.bitWidth() + 1);
+}
+
+/// Add without losing carry bits, widening only if the original width overflows.
+static APInt exactAdd(const APInt &lhs, const APInt &rhs) {
+  unsigned width = std::max(lhs.getBitWidth(), rhs.getBitWidth());
+  APInt a = lhs.zext(width), b = rhs.zext(width);
+  bool overflow;
+  APInt result = a.uadd_ov(b, overflow);
+  return overflow ? a.zext(width + 1) + b.zext(width + 1) : result;
+}
+
+/// Multiply exactly, widening only if the original width overflows.
+static APInt exactMultiply(const APInt &lhs, const APInt &rhs) {
+  unsigned width = std::max(lhs.getBitWidth(), rhs.getBitWidth());
+  APInt a = lhs.zext(width), b = rhs.zext(width);
+  bool overflow;
+  APInt result = a.umul_ov(b, overflow);
+  if (!overflow) {
+    return result;
+  }
+  width = std::max(width, lhs.getActiveBits() + rhs.getActiveBits());
+  return lhs.zext(width) * rhs.zext(width);
+}
+
+/// Unsigned modular subtraction, including negative integer differences.
+static APInt subtractModulo(const APInt &lhs, const APInt &rhs, const Field &field) {
+  APInt a = reduceUnsigned(lhs, field), b = reduceUnsigned(rhs, field);
+  return a.uge(b) ? a - b : field.primeAPInt().zext(a.getBitWidth()) - (b - a);
+}
+
+/// Exponentiation by squaring with exact products and reduced intermediates.
+static APInt powerModulo(APInt base, const APInt &exponent, const Field &field) {
+  base = reduceUnsigned(base, field);
+  APInt result(base.getBitWidth(), 1);
+  unsigned bits = exponent.getActiveBits();
+  for (unsigned i = 0; i < bits; ++i) {
+    if (exponent[i]) {
+      result = reduceUnsigned(exactMultiply(result, base), field);
+    }
+    if (i + 1 < bits) {
+      base = reduceUnsigned(exactMultiply(base, base), field);
+    }
+  }
+  return result;
+}
+
+/// Invert a nonzero field element using Fermat's little theorem.
+static std::optional<APInt> inverseModulo(const APInt &value, const Field &field) {
+  APInt reduced = reduceUnsigned(value, field);
+  if (reduced.isZero()) {
+    return std::nullopt;
+  }
+  return powerModulo(reduced, field.primeAPInt() - 2, field);
+}
+
+/// Construct a canonical constant without any DynamicAPInt round trip.
+static FeltConstAttr
+buildFoldResult(MLIRContext *ctx, const APInt &val, const Field &field, StringRef fieldName) {
+  return FeltConstAttr::get(ctx, reduceUnsigned(val, field), fieldName);
 }
 
 } // namespace
@@ -139,54 +237,58 @@ bool FeltConstantOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) { return 
 //===------------------------------------------------------------------===//
 
 OpFoldResult AddFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
+  auto data = tryGetBinaryFoldData<APInt>(adaptor.getLhs(), adaptor.getRhs());
   if (!data) {
     return {};
   }
   return buildFoldResult(
-      getContext(), data->field->reduce(data->lhsVal + data->rhsVal), *data->field, data->fieldName
+      getContext(), exactAdd(data->lhsVal, data->rhsVal), *data->field, data->fieldName
   );
 }
 
 OpFoldResult SubFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
+  auto data = tryGetBinaryFoldData<APInt>(adaptor.getLhs(), adaptor.getRhs());
   if (!data) {
     return {};
   }
   return buildFoldResult(
-      getContext(), data->field->reduce(data->lhsVal - data->rhsVal), *data->field, data->fieldName
+      getContext(), subtractModulo(data->lhsVal, data->rhsVal, *data->field), *data->field,
+      data->fieldName
   );
 }
 
 OpFoldResult MulFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
+  auto data = tryGetBinaryFoldData<APInt>(adaptor.getLhs(), adaptor.getRhs());
   if (!data) {
     return {};
   }
   return buildFoldResult(
-      getContext(), data->field->reduce(data->lhsVal * data->rhsVal), *data->field, data->fieldName
+      getContext(), exactMultiply(data->lhsVal, data->rhsVal), *data->field, data->fieldName
   );
 }
 
 OpFoldResult PowFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
+  auto data = tryGetBinaryFoldData<APInt>(adaptor.getLhs(), adaptor.getRhs());
   if (!data) {
     return {};
   }
   return buildFoldResult(
-      getContext(), modExp(data->lhsVal, data->rhsVal, data->field->prime()), *data->field,
+      getContext(), powerModulo(data->lhsVal, data->rhsVal, *data->field), *data->field,
       data->fieldName
   );
 }
 
 OpFoldResult DivFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
+  auto data = tryGetBinaryFoldData<APInt>(adaptor.getLhs(), adaptor.getRhs());
   if (!data || data->rhsVal == 0) {
     return {};
   }
+  auto inverse = inverseModulo(data->rhsVal, *data->field);
+  if (!inverse) {
+    return {};
+  }
   return buildFoldResult(
-      getContext(), data->field->reduce(data->lhsVal * data->field->inv(data->rhsVal)),
-      *data->field, data->fieldName
+      getContext(), exactMultiply(data->lhsVal, *inverse), *data->field, data->fieldName
   );
 }
 
@@ -300,21 +402,26 @@ OpFoldResult ShrFeltOp::fold(FoldAdaptor adaptor) {
 //===------------------------------------------------------------------===//
 
 OpFoldResult NegFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetUnaryFoldData(adaptor.getOperand());
+  auto data = tryGetUnaryFoldData<APInt>(adaptor.getOperand());
   if (!data) {
     return {};
   }
   return buildFoldResult(
-      getContext(), data->field->reduce(-data->val), *data->field, data->fieldName
+      getContext(), subtractModulo(APInt(1, 0), data->val, *data->field), *data->field,
+      data->fieldName
   );
 }
 
 OpFoldResult InvFeltOp::fold(FoldAdaptor adaptor) {
-  auto data = tryGetUnaryFoldData(adaptor.getOperand());
+  auto data = tryGetUnaryFoldData<APInt>(adaptor.getOperand());
   if (!data || data->val == 0) {
     return {};
   }
-  return buildFoldResult(getContext(), data->field->inv(data->val), *data->field, data->fieldName);
+  auto inverse = inverseModulo(data->val, *data->field);
+  if (!inverse) {
+    return {};
+  }
+  return buildFoldResult(getContext(), *inverse, *data->field, data->fieldName);
 }
 
 OpFoldResult NotFeltOp::fold(FoldAdaptor adaptor) {

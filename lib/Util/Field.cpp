@@ -47,7 +47,7 @@ static DenseMap<StringRef, Field> &getKnownFields() {
 
 Field::Field(std::string_view primeStr, StringRef name) : Field(APSInt(primeStr), name) {}
 
-Field::Field(const APInt &prime, StringRef name) : primeName(name) {
+Field::Field(const APInt &prime, StringRef name) : primeName(name), primeBits(prime) {
   primeMod = toDynamicAPInt(prime);
   halfPrime = (primeMod + felt(1)) / felt(2);
   bitwidth = prime.getBitWidth();
