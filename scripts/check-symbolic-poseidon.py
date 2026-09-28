@@ -33,13 +33,21 @@ def witness(path):
 
 
 def check(ir, inputs, native):
-    text = Path(ir).read_text().split("function.def @__llzk_flat_constrain", 1)[1]
-    header, *body = text.splitlines()
-    paths = [ast.literal_eval(re.sub(r" : (?:index|i64)", "", p))
-             for p in re.findall(r"\bpath = (\[[^\]]*\])", header.split("poly.signal_bindings = ", 1)[1].split("poly.source =", 1)[0])]
+    lines = Path(ir).read_text().splitlines()
+    start = next(i for i, line in enumerate(lines)
+                 if "function.def @constrain" in line and "poly.evaluated" in line)
+    indent = lines[start][:len(lines[start]) - len(lines[start].lstrip())]
+    end = next(i for i in range(start + 1, len(lines)) if lines[i] == indent + "}")
+    body = lines[start + 1:end]
     prime, reference = witness(native)
-    values = {f"%arg{i}": int(inputs[p[1]]) % prime for i, p in enumerate(paths)
-              if len(p) == 2 and p[0] == 1}
+    values, paths = {}, {}
+    for line in body:
+        read = re.search(r'(%[\w.]+) = .*poly.signal_binding = .*?\bpath = (\[[^\]]*\])', line)
+        if read:
+            path = ast.literal_eval(re.sub(r" : (?:index|i64)", "", read[2]))
+            paths[read[1]] = path
+            if len(path) == 2 and path[0] == 1:
+                values[read[1]] = int(inputs[path[1]]) % prime
     expressions, equations = {}, []
     for line in body:
         line = line.strip()
@@ -48,6 +56,8 @@ def check(ir, inputs, native):
         constant = re.match(r"(%[\w.]+) = felt.const\s+(-?\d+)", line)
         arithmetic = re.match(r"(%[\w.]+) = felt\.(add|sub|mul) (%[\w.]+), (%[\w.]+)", line)
         equation = re.match(r"constrain.eq (%[\w.]+), (%[\w.]+)", line)
+        if "struct.readm" in line or "array.read" in line or "arith.constant" in line:
+            continue
         if constant:
             expressions[constant[1]] = int(constant[2]) % prime
         elif arithmetic:
@@ -83,16 +93,16 @@ def check(ir, inputs, native):
             a, b = evaluate(lhs, cache), evaluate(rhs, cache)
             if a is not None and b is not None:
                 assert a == b, f"unsatisfied equation {lhs} == {rhs}"
-            elif a is None and b is not None and lhs.startswith("%arg"):
+            elif a is None and b is not None and lhs in paths:
                 values[lhs] = b
-            elif b is None and a is not None and rhs.startswith("%arg"):
+            elif b is None and a is not None and rhs in paths:
                 values[rhs] = a
         if len(values) == previous:
             break
     assert len(values) == len(paths), f"unresolved signals: {len(paths) - len(values)}"
     cache = {}
     assert all(evaluate(a, cache) == evaluate(b, cache) for a, b in equations)
-    output = values[f"%arg{paths.index([0, 'out'])}"]
+    output = values[next(name for name, path in paths.items() if path == [0, "out"])]
     assert output == reference[1], f"native output mismatch: {output} != {reference[1]}"
     detected = 0
     for name, old in list(values.items()):
