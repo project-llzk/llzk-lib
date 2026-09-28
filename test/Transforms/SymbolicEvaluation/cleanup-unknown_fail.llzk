@@ -1,0 +1,15 @@
+// RUN: llzk-opt %s --llzk-evaluate-constraints -verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def private @external(!felt.type) -> !felt.type
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %x: !felt.type) {
+      // expected-error @below {{unavailable or recursive callee}}
+      %unused = function.call @external(%x) : (!felt.type) -> !felt.type
+      function.return
+    }
+  } {poly.specialization_id = 0 : i64}
+}

@@ -10,7 +10,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %one = arith.constant 1 : index
       %bound = cast.toindex %n : !felt.type
       // expected-error @below {{for bounds and positive step must be known integers}}
-      scf.for %i = %zero to %bound step %one { }
+      scf.for %i = %zero to %bound step %one {
+        constrain.eq %n, %n : !felt.type
+      }
       function.return
     }
   }

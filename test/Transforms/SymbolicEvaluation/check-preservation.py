@@ -1,15 +1,13 @@
 """Verify source preservation and the generated function's structural boundary."""
 import subprocess
 import sys
+from ir_helpers import check_preserved_compute, evaluated_method
 
 base = subprocess.check_output([sys.argv[1], sys.argv[2], "--llzk-monomorphize"], text=True)
 evaluated = subprocess.check_output(
     [sys.argv[1], sys.argv[2], "--llzk-monomorphize", "--llzk-evaluate-constraints"], text=True)
-prefix, generated = evaluated.split("  function.def @__llzk_flat_constrain", 1)
-assert base == prefix + "}\n\n", "evaluation changed retained source"
-body = generated.splitlines()[1:]
-for line in body:
-    assert not any(op in line for op in ("scf.", "function.call", "array.", "pod.", "struct.")), line
+generated = check_preserved_compute(base, evaluated)
+assert "struct.readm" in generated and "array.read" in generated
 
 # Normalize equations by logical path and integer polynomial coefficients, not
 # printed SSA order or legacy member-name ordering. This fixture has two children.
@@ -23,11 +21,8 @@ legacy = subprocess.check_output(
 
 def equations(text, flat):
     if flat:
-        text = text.split("function.def @__llzk_flat_constrain", 1)[1]
-        header = text.splitlines()[0].split("poly.signal_bindings = ", 1)[1]
-        paths = [ast.literal_eval(re.sub(r" : (?:index|i64)", "", p))
-                 for p in re.findall(r"\bpath = (\[[^\]]*\])", header)]
-        values = {f"%arg{i}": {(repr(p),): 1} for i, p in enumerate(paths)}
+        text = evaluated_method(text)
+        values = {"%arg1": {(repr([1]),): 1}}
     else:
         text = text.split("function.def @constrain", 1)[1]
         values = {"%arg1": {(repr([1]),): 1}}
@@ -36,7 +31,11 @@ def equations(text, flat):
         read = re.search(r'(%\w+) = struct.readm .*children_(\d+):!s<@Child>\+out', line)
         multiply = re.search(r'(%\w+) = felt.mul (%\w+), (%\w+)', line)
         equal = re.search(r'constrain.eq (%\w+), (%\w+)', line)
-        if read:
+        binding = re.search(r'(%\w+) = .*poly.signal_binding = .*?\bpath = (\[[^\]]*\])', line)
+        if flat and binding:
+            path = ast.literal_eval(re.sub(r" : (?:index|i64)", "", binding[2]))
+            values[binding[1]] = {(repr(path),): 1}
+        elif read:
             values[read[1]] = {(repr([0, "children", int(read[2]), "out"]),): 1}
         elif multiply:
             terms = defaultdict(int)

@@ -39,7 +39,7 @@ def measured(command, log, timeout):
     else:
         rss = re.search(r"Maximum resident set size \(kbytes\):\s*(\d+)", text)
         peak = int(rss[1]) * 1024 if rss else None
-    metrics = dict(re.findall(r"(specializations|operations|input_operations|specialized_operations|pass_ms|evaluation_ms|instances|signals|iterations|calls|constraints|emitted_operations|dag_nodes|retained_operations)=(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)", text))
+    metrics = dict(re.findall(r"(specializations|operations|input_operations|specialized_operations|pass_ms|evaluation_ms|instances|signals|iterations|calls|constraints|emitted_operations|dag_nodes|retained_operations|inverse_cache_hits|inverse_cache_misses)=(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)", text))
     plain = re.sub(r"\x1b\[[0-9;]*m", "", text)
     diagnostic = next((line.strip() for line in plain.splitlines()
                        if "error:" in line or "Failed to" in line or "IR is invalid" in line), "")

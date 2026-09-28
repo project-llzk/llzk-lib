@@ -1,0 +1,24 @@
+// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints -verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @assertion(%c: i1) -> i1 {
+    // expected-error @below {{assertion is not statically true}}
+    bool.assert %c
+    function.return %c : i1
+  }
+  function.def @wrapper(%c: i1) -> i1 {
+    %r = function.call @assertion(%c) : (i1) -> i1
+    function.return %r : i1
+  }
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %x: !felt.type) {
+      %z = felt.const 0
+      %c = bool.cmp eq(%x, %z) : !felt.type, !felt.type
+      %unused = function.call @wrapper(%c) : (i1) -> i1
+      function.return
+    }
+  }
+}
