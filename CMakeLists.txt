@@ -104,8 +104,8 @@ function(add_header_library _name _build_include_dirs _install_include_dirs _exp
   add_library(${_name} INTERFACE)
   target_include_directories(
     ${_name} SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${_build_include_dirs}>
-    $<INSTALL_INTERFACE:${_install_include_dirs}>)
+    "$<BUILD_INTERFACE:${_build_include_dirs}>"
+    "$<INSTALL_INTERFACE:${_install_include_dirs}>")
   install(TARGETS ${_name} EXPORT ${_export_name})
 endfunction()
 
