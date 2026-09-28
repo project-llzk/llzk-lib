@@ -1,0 +1,57 @@
+// RUN: %python %S/check-direct-pipeline.py llzk-opt llzk-witgen llzk-translate %s %t
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Child {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%x: !felt.type<"babybear">) -> !struct.type<@Child> {
+      %s = struct.new : <@Child>
+      %v = felt.mul %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %s[@out] = %v : !struct.type<@Child>, !felt.type<"babybear">
+      function.return %s : !struct.type<@Child>
+    }
+    function.def @constrain(%s: !struct.type<@Child>, %x: !felt.type<"babybear">) {
+      %v = struct.readm %s[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %square = felt.mul %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %v, %square : !felt.type<"babybear">
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.member @children : !array.type<2 x !struct.type<@Child>>
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%inputs: !array.type<2 x !felt.type<"babybear">> {llzk.pub}) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %x = array.read %inputs[%zero] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %y = array.read %inputs[%one] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %a = function.call @Child::@compute(%x) : (!felt.type<"babybear">) -> !struct.type<@Child>
+      %b = function.call @Child::@compute(%y) : (!felt.type<"babybear">) -> !struct.type<@Child>
+      %children = array.new %a, %b : !array.type<2 x !struct.type<@Child>>
+      struct.writem %s[@children] = %children : !struct.type<@Main>, !array.type<2 x !struct.type<@Child>>
+      %av = struct.readm %a[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %bv = struct.readm %b[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %sum = felt.mul %av, %bv : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %s[@out] = %sum : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %inputs: !array.type<2 x !felt.type<"babybear">> {llzk.pub}) {
+      %children = struct.readm %s[@children] : !struct.type<@Main>, !array.type<2 x !struct.type<@Child>>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      scf.for %i = %zero to %two step %one {
+        %child = array.read %children[%i] : !array.type<2 x !struct.type<@Child>>, !struct.type<@Child>
+        %input = array.read %inputs[%i] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+        function.call @Child::@constrain(%child, %input) : (!struct.type<@Child>, !felt.type<"babybear">) -> ()
+      }
+      %a = array.read %children[%zero] : !array.type<2 x !struct.type<@Child>>, !struct.type<@Child>
+      %b = array.read %children[%one] : !array.type<2 x !struct.type<@Child>>, !struct.type<@Child>
+      %av = struct.readm %a[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %bv = struct.readm %b[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %sum = felt.mul %av, %bv : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = struct.readm %s[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %sum : !felt.type<"babybear">
+      function.return
+    }
+  }
+}

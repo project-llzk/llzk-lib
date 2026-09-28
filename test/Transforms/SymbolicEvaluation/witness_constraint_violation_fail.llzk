@@ -1,0 +1,3 @@
+// RUN: %python %S/check-direct-pipeline.py llzk-opt llzk-witgen llzk-translate %S/direct-pipeline_pass.llzk %t --reject-invalid
+// Export succeeds, but a deliberately corrupted output witness must fail the
+// independent binary R1CS equation check.

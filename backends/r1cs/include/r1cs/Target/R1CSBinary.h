@@ -17,6 +17,10 @@
 
 namespace r1cs {
 
+/// Module reference to the exported circuit and its physical witness-wire map.
+constexpr char CIRCUIT_REF_ATTR_NAME[] = "r1cs.main";
+constexpr char WIRE_BINDINGS_ATTR_NAME[] = "poly.wire_bindings";
+
 /// Serialize one circuit in `moduleOp` to the binary .r1cs format.
 mlir::LogicalResult exportR1CSBinary(
     mlir::ModuleOp moduleOp, llvm::raw_ostream &output, llvm::StringRef prime,

@@ -1,0 +1,13 @@
+// RUN: llzk-opt %s --llzk-r1cs-direct-lowering --verify-diagnostics -o /dev/null
+// expected-error @+1 {{direct R1CS lowering requires the original evaluated main struct; do not pre-flatten evaluated input}}
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @OriginalMain} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}

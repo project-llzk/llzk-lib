@@ -1,0 +1,3 @@
+// RUN: llzk-opt %s --llzk-r1cs-lowering --verify-diagnostics -o /dev/null
+// expected-error @+1 {{llzk-r1cs-lowering rejects poly.evaluated_main; use llzk-r1cs-direct-lowering}}
+module attributes {poly.evaluated_main = @Main} {}

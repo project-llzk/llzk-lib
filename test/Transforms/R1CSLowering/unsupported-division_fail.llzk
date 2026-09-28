@@ -1,0 +1,14 @@
+// RUN: %python %S/check-unsupported-division.py llzk-opt llzk-translate %s %t
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%a: !felt.type<"babybear">, %b: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %a: !felt.type<"babybear">, %b: !felt.type<"babybear">) {
+      %quotient = felt.div %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %quotient, %a : !felt.type<"babybear">
+      function.return
+    }
+  }
+}

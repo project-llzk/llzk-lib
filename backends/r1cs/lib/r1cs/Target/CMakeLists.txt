@@ -12,6 +12,7 @@ target_link_libraries(
     MLIRHeaders
   PRIVATE
     LLZKUtil
+    LLZK::DialectRegistration
     R1CSDialect
 )
 

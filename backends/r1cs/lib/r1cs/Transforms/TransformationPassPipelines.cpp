@@ -26,28 +26,31 @@ using namespace mlir;
 
 namespace r1cs {
 
-void buildFullR1CSLoweringPipeline(OpPassManager &pm) {
-  // 1. Polynomial degree lowering and cleanup
-  llzk::FullPolyLoweringConfig config;
-  config.polyLowering = llzk::PolyLoweringPassOptions {.maxDegree = 2};
-  llzk::buildFullPolyLoweringPipeline(pm, config);
-
-  // 2. Convert to R1CS
-  pm.addPass(r1cs::createR1CSLoweringPass());
-
-  // 3. Run CSE to eliminate to_linear ops
+void buildFullR1CSLoweringPipeline(OpPassManager &pm, R1CSLoweringMode mode) {
+  if (mode == R1CSLoweringMode::Direct) {
+    pm.addPass(llzk::createPolyLoweringPass(llzk::PolyLoweringPassOptions {.maxDegree = 2}));
+  } else {
+    llzk::FullPolyLoweringConfig config;
+    config.polyLowering = llzk::PolyLoweringPassOptions {.maxDegree = 2};
+    llzk::buildFullPolyLoweringPipeline(pm, config);
+  }
+  pm.addPass(createR1CSPreparePass());
+  if (mode == R1CSLoweringMode::Direct) {
+    pm.addPass(createR1CSDirectLoweringPass());
+  } else {
+    pm.addPass(createR1CSLoweringPass());
+  }
   pm.addPass(mlir::createCSEPass());
-
-  // Other passes that may be helpful to add in the future:
-  // - llzk::createRemoveDeadValuesWorkaroundPass()
-  // - mlir::createCanonicalizerPass()
-  //    (was run via poly-lowering -> struct-inlining but again may be useful)
 }
 
 void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower polynomial constraints to r1cs",
-      buildFullR1CSLoweringPipeline
+      "llzk-full-r1cs-lowering", "Lower legacy polynomial constraints to R1CS",
+      [](OpPassManager &pm) { buildFullR1CSLoweringPipeline(pm, R1CSLoweringMode::Legacy); }
+  );
+  PassPipelineRegistration<>(
+      "llzk-full-direct-r1cs-lowering", "Lower evaluated storage constraints directly to R1CS",
+      [](OpPassManager &pm) { buildFullR1CSLoweringPipeline(pm, R1CSLoweringMode::Direct); }
   );
 }
 

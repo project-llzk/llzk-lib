@@ -1,0 +1,2 @@
+// RUN: %python %S/check-mutable-input.py llzk-opt llzk-witgen llzk-translate %S/mutable-input_pass.llzk %t 3
+// Tightening an existing degree-three bound must produce valid auxiliary witnesses.
