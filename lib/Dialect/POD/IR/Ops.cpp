@@ -327,8 +327,6 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
    * record_inits : symbol `=` operand `,` record_inits | symbol `=` operand
    */
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   auto &props = result.getOrAddProperties<NewPodOp::Properties>();
 
   SmallVector<Attribute> initializedRecords;
@@ -562,8 +560,6 @@ LogicalResult ReadPodOp::verify() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult WritePodOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   auto &prop = state.getOrAddProperties<Properties>();
   return readRecordNameProperty(reader, prop.record_name);
 }

@@ -34,15 +34,11 @@ void pcl::PCLDialect::initialize() {
     #include "pcl/Dialect/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "pcl/Dialect/IR/Types.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "pcl/Dialect/IR/Attrs.cpp.inc"

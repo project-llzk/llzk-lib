@@ -105,8 +105,6 @@ LogicalResult llzk::smt_info::detail::verifyKeyword(
 
 void SMTInfoDialect::registerAttributes() {
   // clang-format off
-  // Suppress false positive from `clang-tidy`.
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/SMTInfo/IR/SMTInfoAttributes.cpp.inc"

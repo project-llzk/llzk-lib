@@ -35,8 +35,6 @@ auto llzk::cast::CastDialect::initialize() -> void {
     #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Cast/IR/Attrs.cpp.inc"
