@@ -11,7 +11,7 @@
 
 namespace r1cs {
 
-/// Register the translation from R1CS IR to the binary .r1cs format.
+/// Register binary R1CS export and the in-memory LLZK evaluation/lowering translation.
 void registerR1CSTranslation();
 
 } // namespace r1cs
