@@ -726,7 +726,7 @@ static void baseTargetSetup(ConversionTarget &target) {
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
       polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
-      scf::SCFDialect, ub::UBDialect>();
+      scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
 }
 

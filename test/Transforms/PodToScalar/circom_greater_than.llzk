@@ -97,7 +97,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
 // CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_7]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
 // CHECK-NEXT:          scf.yield %[[VAL_21]] : !struct.type<@LessThan_1>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = ub.poison : !struct.type<@LessThan_1>
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@LessThan_1>
 // CHECK-NEXT:          scf.yield %[[VAL_22]] : !struct.type<@LessThan_1>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_20]][@out] : <@LessThan_1>, !felt.type<"bn128">

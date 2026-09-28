@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Analysis/DataLayoutAnalysis.h>
@@ -156,6 +157,7 @@ public:
 
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
     createRemoveDeadValuesPass()->getDependentDialects(registry);
+    registry.insert<LLZKDialect>();
   }
 
   void runOnOperation() final {
@@ -169,9 +171,14 @@ public:
 
     // Upstream RDV only tracks poison values created during its current invocation. This wrapper
     // may run repeatedly, so values created by an earlier invocation can become unused later.
-    for (mlir::ub::PoisonOp poisonOp : walkCollect<mlir::ub::PoisonOp>(*scopeOp, [](auto op) {
-      return op.getResult().use_empty();
-    })) {
+    // Additionally, replace any remaining uses of `ub.poison` with LLZK native `llzk.nondet` op.
+    for (mlir::ub::PoisonOp poisonOp : walkCollect<mlir::ub::PoisonOp>(*scopeOp)) {
+      auto poisonResult = poisonOp.getResult();
+      if (!poisonResult.use_empty()) {
+        mlir::OpBuilder builder(poisonOp);
+        auto nondetOp = NonDetOp::create(builder, poisonOp.getLoc(), poisonOp.getType());
+        poisonResult.replaceAllUsesWith(nondetOp.getResult());
+      }
       poisonOp.erase();
     }
 

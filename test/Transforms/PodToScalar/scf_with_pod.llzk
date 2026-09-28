@@ -66,7 +66,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp>} {
 // CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Nop::@compute(%[[VAL_4]]) : (!felt.type<"bn128">) -> !struct.type<@Nop>
 // CHECK-NEXT:          scf.yield %[[VAL_12]] : !struct.type<@Nop>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = ub.poison : !struct.type<@Nop>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@Nop>
 // CHECK-NEXT:          scf.yield %[[VAL_13]] : !struct.type<@Nop>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        struct.writem %[[VAL_8]][@n$inputs_i] = %[[VAL_4]] : <@SubCmp>, !felt.type<"bn128">
@@ -623,7 +623,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = ub.poison : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] iter_args(%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_5]]) -> (index) {
 // CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_7]] : index
 // CHECK-NEXT:        scf.yield %[[VAL_9]] : index

@@ -115,7 +115,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubC
 // CHECK-NEXT:            %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @Nop::@Nop::@compute(%[[VAL_5]]) : (!felt.type<"bn128">) -> !struct.type<@Nop::@Nop>
 // CHECK-NEXT:            scf.yield %[[VAL_13]] : !struct.type<@Nop::@Nop>
 // CHECK-NEXT:          } else {
-// CHECK-NEXT:            %[[VAL_14:[0-9a-zA-Z_\.]+]] = ub.poison : !struct.type<@Nop::@Nop>
+// CHECK-NEXT:            %[[VAL_14:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@Nop::@Nop>
 // CHECK-NEXT:            scf.yield %[[VAL_14]] : !struct.type<@Nop::@Nop>
 // CHECK-NEXT:          }
 // CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@o] : <@Nop::@Nop>, !felt.type<"bn128">
