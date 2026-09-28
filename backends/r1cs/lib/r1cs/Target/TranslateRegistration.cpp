@@ -13,7 +13,7 @@
 #include "r1cs/Target/R1CSBinary.h"
 #include "r1cs/Transforms/TransformationPassPipelines.h"
 
-#include "llzk/Dialect/DialectRegistration.h"
+#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/Polymorphic/Transforms/ConstraintEvaluation.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 
@@ -22,15 +22,68 @@
 #include <mlir/Tools/mlir-translate/Translation.h>
 
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
 
 namespace {
 
+llvm::cl::OptionCategory r1csTranslationOptions("R1CS translation options");
+
+llvm::cl::opt<std::string> prime(
+    "r1cs-prime", llvm::cl::desc("Prime modulus as a base-10 integer"), llvm::cl::init(""),
+    llvm::cl::cat(r1csTranslationOptions)
+);
+
+llvm::cl::opt<std::string> circuitName(
+    "r1cs-circuit-name",
+    llvm::cl::desc("Circuit symbol to export when the module contains multiple circuits"),
+    llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
+);
+
+llvm::cl::opt<std::string> layoutMapFile(
+    "llzk-layout-map",
+    llvm::cl::desc("Write the LLZK signal layout and R1CS wire relation to this file"),
+    llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
+);
+
+/// Export the optional sidecar only after the binary R1CS stream was produced.
+LogicalResult exportLayoutMap(ModuleOp module, StringRef selectedCircuit) {
+  if (layoutMapFile.empty()) {
+    return success();
+  }
+
+  std::string buffer;
+  llvm::raw_string_ostream layout(buffer);
+  if (failed(r1cs::exportLLZKLayoutMap(module, layout, selectedCircuit))) {
+    return failure();
+  }
+  layout.flush();
+
+  std::error_code error;
+  llvm::raw_fd_ostream symbols(layoutMapFile, error, llvm::sys::fs::OF_Text);
+  if (error) {
+    return module.emitError() << "could not open layout map '" << layoutMapFile
+                              << "': " << error.message();
+  }
+  symbols << buffer;
+  symbols.flush();
+  if (symbols.has_error()) {
+    return module.emitError() << "could not write layout map '" << layoutMapFile << "'";
+  }
+  return success();
+}
+
+LogicalResult exportBinaryAndSymbols(ModuleOp module, llvm::raw_ostream &output) {
+  if (failed(r1cs::exportR1CSBinary(module, output, prime, circuitName))) {
+    return failure();
+  }
+  return exportLayoutMap(module, circuitName);
+}
+
 /// Evaluate and lower LLZK, then serialize the same module without a text round-trip.
-LogicalResult lowerAndExportR1CS(
-    Operation *op, llvm::raw_ostream &output, StringRef prime, StringRef circuitName
-) {
+LogicalResult lowerAndExportR1CS(Operation *op, llvm::raw_ostream &output) {
   auto module = dyn_cast<ModuleOp>(op);
   if (!module) {
     return op->emitOpError() << "expected builtin.module as top level operation";
@@ -44,31 +97,16 @@ LogicalResult lowerAndExportR1CS(
   if (failed(pm.run(module))) {
     return failure();
   }
-  return r1cs::exportR1CSBinary(module, output, prime, circuitName);
+  return exportBinaryAndSymbols(module, output);
 }
 
 } // namespace
 
 void r1cs::registerR1CSTranslation() {
-  static llvm::cl::OptionCategory r1csTranslationOptions("R1CS translation options");
-
-  static llvm::cl::opt<std::string> prime(
-      "r1cs-prime", llvm::cl::desc("Prime modulus as a base-10 integer"), llvm::cl::init(""),
-      llvm::cl::cat(r1csTranslationOptions)
-  );
-
-  static llvm::cl::opt<std::string> circuitName(
-      "r1cs-circuit-name",
-      llvm::cl::desc("Circuit symbol to export when the module contains multiple circuits"),
-      llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
-  );
-
   TranslateFromMLIRRegistration direct(
       "llzk-to-r1cs", "evaluate and lower LLZK directly to binary R1CS in memory",
-      [](Operation *op, llvm::raw_ostream &output) {
-    return lowerAndExportR1CS(op, output, prime, circuitName);
-  }, [](DialectRegistry &registry) {
-    llzk::registerDialects(registry);
+      lowerAndExportR1CS, [](DialectRegistry &registry) {
+    llzk::registerAllDialects(registry);
     registry.insert<R1CSDialect>();
   }
   );
@@ -79,9 +117,9 @@ void r1cs::registerR1CSTranslation() {
     if (!moduleOp) {
       return op->emitOpError() << "expected builtin.module as top level operation";
     }
-    return exportR1CSBinary(moduleOp, output, prime, circuitName);
+    return exportBinaryAndSymbols(moduleOp, output);
   }, [](DialectRegistry &registry) {
-    llzk::registerDialects(registry);
+    llzk::registerAllDialects(registry);
     registry.insert<R1CSDialect>();
   }
   );

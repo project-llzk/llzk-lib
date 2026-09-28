@@ -1,0 +1,8 @@
+// RUN: llzk-translate --llzk-to-r1cs --r1cs-prime=2013265921 --llzk-layout-map=%t.layout %S/../../Transforms/SymbolicEvaluation/direct-array-pipeline_pass.llzk -o %t.r1cs
+// RUN: FileCheck %s --input-file=%t.layout
+
+// CHECK: # LLZK layout map v1
+// CHECK: signal {{[0-9]+}}{{[[:space:]]+}}main["children"][0]["out"]
+// CHECK: # r1cs
+// CHECK-NEXT: wire 0{{[[:space:]]+}}<one>
+// CHECK-NEXT: wire 1{{[[:space:]]+}}signal {{[0-9]+}}

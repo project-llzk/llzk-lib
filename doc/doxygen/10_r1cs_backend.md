@@ -23,6 +23,26 @@ It does not print or reparse intermediate IR. Rolled compute and witness metadat
 remain in memory during lowering. Already evaluated modules are also accepted.
 The existing `--r1cs-to-binary` translation exports already lowered R1CS IR.
 
+### LLZK layout map
+
+Pass `--llzk-layout-map=circuit.llzk-layout` with either binary translation to
+export an optional text sidecar. It is available for circuits produced by direct
+R1CS lowering. The exporter writes this file after the binary R1CS stream; no
+lowering pass performs filesystem output.
+
+The deterministic version-1 format first lists canonical LLZK signal ids and
+their access paths, then maps physical R1CS wires to those ids. The R1CS section
+always contains `wire 0<TAB><one>` for the implicit constant-one wire. The first
+path component is `main` for the main circuit instance or `arg<N>` for a
+constrain-function argument. Members use MLIR string literals in brackets and
+array elements use decimal indices; for example,
+`signal 4<TAB>main["children"][0]["out"]`.
+
+The `wire` fields remain in the order used by binary R1CS and WTNS export. The
+exporter verifies that the direct-lowering bindings cover the complete physical
+R1CS wire layout. Requesting a layout map for an R1CS circuit without those
+bindings is an error.
+
 ## Explicit lowering contracts
 
 `llzk-r1cs-prepare` normalizes straightline constraints, creates auxiliary compute

@@ -30,6 +30,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
+#include <llvm/ADT/StringMap.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -79,6 +80,38 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
   }
 
   return circuits.front();
+}
+
+/// Print a storage path using roots that are meaningful outside the IR.
+///
+/// Root zero is the main circuit instance. Other roots are constrain-function
+/// arguments, numbered as they are in the source IR. Member names remain MLIR
+/// string literals so every valid member name has an unambiguous spelling.
+static LogicalResult printSymbolPath(ArrayAttr path, llvm::raw_ostream &output) {
+  if (path.empty()) {
+    return failure();
+  }
+  auto root = dyn_cast<IntegerAttr>(path.getValue().front());
+  if (!root || root.getInt() < 0) {
+    return failure();
+  }
+  if (root.getInt() == 0) {
+    output << "main";
+  } else {
+    output << "arg" << root.getInt();
+  }
+  for (Attribute segment : path.getValue().drop_front()) {
+    output << '[';
+    if (auto member = dyn_cast<StringAttr>(segment)) {
+      member.print(output);
+    } else if (auto index = dyn_cast<IntegerAttr>(segment); index && index.getInt() >= 0) {
+      output << index.getInt();
+    } else {
+      return failure();
+    }
+    output << ']';
+  }
+  return success();
 }
 
 static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText) {
@@ -632,5 +665,73 @@ LogicalResult r1cs::exportR1CSBinary(
   }
 
   output.write(binary->bytes().data(), llzk::checkedCast<size_t>(binary->size()));
+  return success();
+}
+
+LogicalResult
+r1cs::exportLLZKLayoutMap(ModuleOp moduleOp, llvm::raw_ostream &output, StringRef circuitName) {
+  FailureOr<r1cs::CircuitDefOp> selectedCircuit = selectCircuit(moduleOp, circuitName);
+  if (failed(selectedCircuit)) {
+    return failure();
+  }
+
+  ArrayAttr bindings = (*selectedCircuit)->getAttrOfType<ArrayAttr>(WIRE_BINDINGS_ATTR_NAME);
+  if (!bindings) {
+    return selectedCircuit->emitOpError()
+           << "cannot export layout map: missing '" << WIRE_BINDINGS_ATTR_NAME
+           << "' from direct R1CS lowering";
+  }
+
+  llvm::SmallVector<std::string> paths;
+  llvm::StringMap<uint64_t> ids;
+  for (auto [index, attr] : llvm::enumerate(bindings)) {
+    auto binding = dyn_cast<DictionaryAttr>(attr);
+    auto wire = binding ? binding.getAs<IntegerAttr>("wire") : IntegerAttr();
+    auto path = binding ? binding.getAs<ArrayAttr>("path") : ArrayAttr();
+    uint64_t expectedWire = index + 1;
+    if (!wire || !path || wire.getInt() < 0 ||
+        static_cast<uint64_t>(wire.getInt()) != expectedWire) {
+      return selectedCircuit->emitOpError()
+             << "cannot export layout map: expected '" << WIRE_BINDINGS_ATTR_NAME << "' entry "
+             << index << " to contain wire " << expectedWire << " and an array path";
+    }
+    std::string rendered;
+    llvm::raw_string_ostream pathOutput(rendered);
+    if (failed(printSymbolPath(path, pathOutput))) {
+      return selectedCircuit->emitOpError()
+             << "cannot export layout map: expected '" << WIRE_BINDINGS_ATTR_NAME << "' entry "
+             << index << " to contain a valid storage path";
+    }
+    pathOutput.flush();
+    paths.push_back(std::move(rendered));
+  }
+  llvm::sort(paths);
+  paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
+  for (auto [id, path] : llvm::enumerate(paths)) {
+    ids[path] = id;
+  }
+
+  llvm::APInt layoutPrime(1, 2);
+  CircuitExportModelBuilder modelBuilder(*selectedCircuit, layoutPrime);
+  FailureOr<ExportedCircuit> model = modelBuilder.build();
+  if (failed(model) || model->numWires != bindings.size() + 1) {
+    return selectedCircuit->emitOpError()
+           << "cannot export layout map: '" << WIRE_BINDINGS_ATTR_NAME
+           << "' does not match the physical R1CS wire layout";
+  }
+
+  output << "# LLZK layout map v1\n# signals\n";
+  for (auto [id, path] : llvm::enumerate(paths)) {
+    output << "signal " << id << '\t' << path << '\n';
+  }
+  output << "# r1cs\nwire 0\t<one>\n";
+  for (auto [index, attr] : llvm::enumerate(bindings)) {
+    auto path = cast<ArrayAttr>(cast<DictionaryAttr>(attr).get("path"));
+    std::string rendered;
+    llvm::raw_string_ostream pathOutput(rendered);
+    (void)printSymbolPath(path, pathOutput);
+    pathOutput.flush();
+    output << "wire " << index + 1 << "\tsignal " << ids.lookup(rendered) << '\n';
+  }
   return success();
 }

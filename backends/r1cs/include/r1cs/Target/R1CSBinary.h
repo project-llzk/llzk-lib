@@ -27,4 +27,12 @@ mlir::LogicalResult exportR1CSBinary(
     llvm::StringRef circuitName = {}
 );
 
+/// Serialize direct-lowering signal paths and their R1CS wire layout.
+///
+/// Logical signal ids are derived from canonical LLZK access paths; the R1CS
+/// section relates those ids to the physical wire ids used by binary export.
+mlir::LogicalResult exportLLZKLayoutMap(
+    mlir::ModuleOp moduleOp, llvm::raw_ostream &output, llvm::StringRef circuitName = {}
+);
+
 } // namespace r1cs
