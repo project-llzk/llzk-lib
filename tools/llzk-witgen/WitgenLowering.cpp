@@ -1124,28 +1124,29 @@ private:
   /// Lower one field comparison predicate.
   FailureOr<Value>
   lowerFeltCmp(OpBuilder &builder, Location loc, boolean::CmpOp cmpOp, Value lhs, Value rhs) {
-    arith::CmpIPredicate predicate;
-    switch (cmpOp.getPredicate()) {
-    case boolean::FeltCmpPredicate::EQ:
-      predicate = arith::CmpIPredicate::eq;
-      break;
-    case boolean::FeltCmpPredicate::NE:
-      predicate = arith::CmpIPredicate::ne;
-      break;
-    case boolean::FeltCmpPredicate::LT:
-      predicate = arith::CmpIPredicate::ult;
-      break;
-    case boolean::FeltCmpPredicate::LE:
-      predicate = arith::CmpIPredicate::ule;
-      break;
-    case boolean::FeltCmpPredicate::GT:
-      predicate = arith::CmpIPredicate::ugt;
-      break;
-    case boolean::FeltCmpPredicate::GE:
-      predicate = arith::CmpIPredicate::uge;
-      break;
+    // Implementation note: uses an immediately-invoked lambda to avoid disagreement between the
+    // `-Wmaybe-uninitialized` and `-Wcovered-switch-default` warnings.
+    auto predicate = [&cmpOp, &loc]() -> FailureOr<arith::CmpIPredicate> {
+      switch (cmpOp.getPredicate()) {
+      case boolean::FeltCmpPredicate::EQ:
+        return arith::CmpIPredicate::eq;
+      case boolean::FeltCmpPredicate::NE:
+        return arith::CmpIPredicate::ne;
+      case boolean::FeltCmpPredicate::LT:
+        return arith::CmpIPredicate::ult;
+      case boolean::FeltCmpPredicate::LE:
+        return arith::CmpIPredicate::ule;
+      case boolean::FeltCmpPredicate::GT:
+        return arith::CmpIPredicate::ugt;
+      case boolean::FeltCmpPredicate::GE:
+        return arith::CmpIPredicate::uge;
+      }
+      return emitError(loc, "unsupported comparison predicate");
+    }();
+    if (failed(predicate)) {
+      return failure();
     }
-    return arith::CmpIOp::create(builder, loc, predicate, lhs, rhs).getResult();
+    return arith::CmpIOp::create(builder, loc, *predicate, lhs, rhs).getResult();
   }
 
   /// Lower one LLZK operation into core MLIR dialects.
