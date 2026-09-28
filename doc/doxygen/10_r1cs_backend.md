@@ -9,6 +9,20 @@
 
 \include{doc} build/doc/mlir/dialect/R1CSDialect.md
 
+## Direct binary export
+
+To evaluate constraints, lower their degree, and export binary R1CS in one process:
+
+```sh
+llzk-translate input.llzk --llzk-to-r1cs --r1cs-prime=<decimal-prime> -o circuit.r1cs
+```
+
+This runs monomorphization, symbolic constraint evaluation, and the full direct R1CS
+lowering pipeline on the parsed module, then calls the binary exporter directly.
+It does not print or reparse intermediate IR. Rolled compute and witness metadata
+remain in memory during lowering. Already evaluated modules are also accepted.
+The existing `--r1cs-to-binary` translation exports already lowered R1CS IR.
+
 ## Explicit lowering contracts
 
 `llzk-r1cs-prepare` normalizes straightline constraints, creates auxiliary compute

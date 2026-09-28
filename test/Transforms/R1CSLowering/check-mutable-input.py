@@ -32,10 +32,7 @@ lowered = directory / 'degree.llzk'
 subprocess.check_call([opt, str(evaluated), f'--llzk-poly-lowering-pass=max-degree={degree}',
                        '-o', str(lowered)])
 binary = directory / 'circuit.r1cs'
-r1cs_ir = directory / 'lowered.r1cs.mlir'
-subprocess.check_call([opt, str(lowered), '--llzk-full-r1cs-lowering',
-                       '-o', str(r1cs_ir)])
-subprocess.check_call([translate, str(r1cs_ir), '--r1cs-to-binary',
+subprocess.check_call([translate, str(lowered), '--llzk-to-r1cs',
                        '--r1cs-prime=2013265921', '-o', str(binary)])
 r1cs = sections(binary, b'r1cs')
 width = struct.unpack_from('<I', r1cs[1])[0]

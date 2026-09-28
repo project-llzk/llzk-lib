@@ -14,6 +14,9 @@ target_link_libraries(
     LLZKUtil
     LLZK::DialectRegistration
     R1CSDialect
+    R1CSTransforms
+    LLZKPolymorphicDialect
+    MLIRPass
 )
 
 llzk_target_add_mlir_link_settings(R1CSTarget)

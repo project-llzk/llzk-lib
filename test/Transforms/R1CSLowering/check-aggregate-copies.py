@@ -30,10 +30,7 @@ evaluated = directory / 'case.evaluated.llzk'
 subprocess.check_call([opt, str(raw), '--llzk-monomorphize', '--llzk-evaluate-constraints',
                        '-o', str(evaluated)])
 binary = directory / 'case.r1cs'
-r1cs_ir = directory / 'lowered.r1cs.mlir'
-subprocess.check_call([opt, str(evaluated), '--llzk-full-r1cs-lowering',
-                       '-o', str(r1cs_ir)])
-subprocess.check_call([translate, str(r1cs_ir), '--r1cs-to-binary',
+subprocess.check_call([translate, str(evaluated), '--llzk-to-r1cs',
                        '--r1cs-prime=2013265921', '-o', str(binary)])
 circuit = sections(binary, b'r1cs')
 width = struct.unpack_from('<I', circuit[1])[0]
