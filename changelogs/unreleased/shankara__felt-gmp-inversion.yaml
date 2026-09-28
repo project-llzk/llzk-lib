@@ -1,0 +1,4 @@
+changed:
+  - Speed up constant finite-field division and inversion using GMP extended-GCD inversion.
+added:
+  - Require GMP when building and linking LLZK, with dependency support in CMake and Nix.

@@ -55,6 +55,7 @@ LLZK requires the following to be installed:
 * CMake 3.18 or newer
 * Ninja
 * Z3
+* GMP (including development headers)
 * Clang 16 or higher (use the same compiler for both LLVM and LLZK repos)
 
 To optionally generate API documentation, you need:

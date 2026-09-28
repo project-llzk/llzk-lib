@@ -19,6 +19,7 @@
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/SmallString.h>
 
+#include <gmp.h>
 #include <type_traits>
 
 // TableGen'd implementation files
@@ -190,13 +191,23 @@ static APInt powerModulo(APInt base, const APInt &exponent, const Field &field) 
   return result;
 }
 
-/// Invert a nonzero field element using Fermat's little theorem.
+/// Compute an inverse with GMP's extended GCD, transferring unsigned machine
+/// words directly. A non-invertible operand must remain unfolded.
 static std::optional<APInt> inverseModulo(const APInt &value, const Field &field) {
-  APInt reduced = reduceUnsigned(value, field);
-  if (reduced.isZero()) {
-    return std::nullopt;
+  mpz_t operand, modulus, inverse;
+  mpz_inits(operand, modulus, inverse, nullptr);
+  const APInt &prime = field.primeAPInt();
+  mpz_import(operand, value.getNumWords(), -1, sizeof(uint64_t), 0, 0, value.getRawData());
+  mpz_import(modulus, prime.getNumWords(), -1, sizeof(uint64_t), 0, 0, prime.getRawData());
+  std::optional<APInt> result;
+  if (mpz_invert(inverse, operand, modulus)) {
+    unsigned width = field.bitWidth() + 1;
+    SmallVector<uint64_t> words((width + 63) / 64, 0);
+    mpz_export(words.data(), nullptr, -1, sizeof(uint64_t), 0, 0, inverse);
+    result = APInt(width, words);
   }
-  return powerModulo(reduced, field.primeAPInt() - 2, field);
+  mpz_clears(operand, modulus, inverse, nullptr);
+  return result;
 }
 
 /// Construct a canonical constant without any DynamicAPInt round trip.

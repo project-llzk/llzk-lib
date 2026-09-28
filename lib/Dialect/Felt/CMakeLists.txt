@@ -7,7 +7,7 @@ target_sources(LLZKFeltDialect PRIVATE ${LLZKFeltDialect_SOURCES})
 target_link_libraries(
   LLZKFeltDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
-                     LLVMHeaders MLIRHeaders LLZKUtil)
+                     LLVMHeaders MLIRHeaders LLZKUtil PRIVATE GMP::GMP)
 llzk_target_add_mlir_link_settings(LLZKFeltDialect)
 
 install(TARGETS LLZKFeltDialect EXPORT LLZKTargets)
