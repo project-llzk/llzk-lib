@@ -1,0 +1,30 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt --llzk-to-pcl %s | FileCheck %s
+
+// No canonicalization: the consumer must interpret N modulo its field prime.
+module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
+  struct.def @ReducedConstant {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@ReducedConstant> {
+      %self = struct.new : !struct.type<@ReducedConstant>
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %c : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      function.return %self : !struct.type<@ReducedConstant>
+    }
+    function.def @constrain(%self: !struct.type<@ReducedConstant>) {
+      %out = struct.readm %self[@out] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      constrain.eq %out, %c : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
+// CHECK-NEXT:    func.func @ReducedConstant() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 7
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      return %[[VAL_0]] : !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

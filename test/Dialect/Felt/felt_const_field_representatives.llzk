@@ -1,0 +1,22 @@
+// RUN: llzk-opt --canonicalize %s | FileCheck %s
+
+module attributes {llzk.lang, llzk.fields = #felt.field<"small_prime", 7>} {
+  function.def @custom_field() -> !felt.type<"small_prime"> {
+    %c = felt.const 24 : !felt.type<"small_prime">
+    function.return %c : !felt.type<"small_prime">
+  }
+  function.def @wide_prime() -> !felt.type<"bn254"> {
+    %c = felt.const 65664728615517825666739217235771825265645093201248103031094612559727425486868 : !felt.type<"bn254">
+    function.return %c : !felt.type<"bn254">
+  }
+}
+// CHECK-LABEL: module attributes {llzk.fields = #felt.field<"small_prime", 7>, llzk.lang} {
+// CHECK-NEXT:    function.def @custom_field() -> !felt.type<"small_prime"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"small_prime">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"small_prime">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wide_prime() -> !felt.type<"bn254"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  17 : <"bn254">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn254">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
