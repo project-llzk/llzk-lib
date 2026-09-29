@@ -1222,7 +1222,7 @@ private:
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
       auto intType = IntegerType::get(builder.getContext(), field.bitWidth());
       // Reduce into the field first, then build an APInt with the exact storage width.
-      auto constVal = toDynamicAPInt(feltConst.getValue().getValue());
+      auto constVal = toDynamicAPInt(feltConst.getValue().getRawValue());
       auto modVal = constVal % field.prime();
       auto intVal = llzk::toExactWidthAPInt(modVal, field.bitWidth());
       Value lowered = arith::ConstantOp::create(builder, loc, IntegerAttr::get(intType, intVal));

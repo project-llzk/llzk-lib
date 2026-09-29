@@ -369,7 +369,7 @@ private:
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
-      return bind({WitnessVal(field.reduce(feltConst.getValue().getValue()))});
+      return bind({WitnessVal(field.reduce(feltConst.getValue().getRawValue()))});
     }
 
     auto handleBinaryFelt = [&](auto feltOp, auto fn) -> llvm::Expected<BlockResult> {

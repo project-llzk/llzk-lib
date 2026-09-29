@@ -93,7 +93,16 @@ def LLZK_FeltConstantOp
                               InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "field element constant";
   let description = [{
-    This operation produces a felt-typed SSA value holding an integer constant.
+    This operation produces a constant finite field element.
+    `felt.const N : !felt.type<F>` denotes `N mod p`, where `p` is the prime
+    modulus of field `F`. This meaning does not depend on whether the operation
+    has been canonicalized: raw values congruent modulo `p` denote the same
+    field element.
+
+    The stored integer need not be in `[0, p)`. Canonicalization replaces it
+    with the unique representative in that range without changing its meaning.
+    When the field is unspecified, reduction is deferred until the field is
+    known, and canonicalization leaves the stored integer unchanged.
 
     Example:
 
@@ -107,9 +116,10 @@ def LLZK_FeltConstantOp
   let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
+  let hasCanonicalizeMethod = 1;
   let extraClassDeclaration = [{
-    /// Returns the constant value as an arbitrary-precision integer.
-    ::llvm::APInt getValueAPInt() { return getValue().getValue(); }
+    /// Returns the raw, potentially unreduced integer stored by the constant.
+    ::llvm::APInt getValueAPInt() { return getValue().getRawValue(); }
   }];
 }
 

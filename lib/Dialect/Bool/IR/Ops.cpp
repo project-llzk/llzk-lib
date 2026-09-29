@@ -145,8 +145,8 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   }
 
   // Normalize to a common bit width for unsigned comparison.
-  llvm::APInt lval = lhsAttr.getValue();
-  llvm::APInt rval = rhsAttr.getValue();
+  llvm::APInt lval = lhsAttr.getRawValue();
+  llvm::APInt rval = rhsAttr.getRawValue();
   unsigned w = std::max(lval.getBitWidth(), rval.getBitWidth());
   if (lval.getBitWidth() < w) {
     lval = lval.zext(w);

@@ -20,6 +20,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/SmallVector.h>
 
+#include <array>
 #include <gtest/gtest.h>
 
 using namespace mlir;
@@ -86,13 +87,42 @@ protected:
   /// Assert that fold produced the expected unsigned integer value in babybear.
   void expectValue(FeltConstAttr result, uint64_t expected) {
     ASSERT_TRUE(result) << "expected fold to succeed";
-    EXPECT_EQ(result.getValue().getZExtValue(), expected);
+    EXPECT_EQ(result.getRawValue().getZExtValue(), expected);
     EXPECT_EQ(result.getFieldName(), StringAttr::get(&ctx, BB_FIELD));
   }
 
   /// Assert that no fold occurred (fold returned null/empty).
   void expectNoFold(FeltConstAttr result) { EXPECT_FALSE(result) << "expected fold to be skipped"; }
 };
+
+TEST_F(BabyBearFoldTest, ReducedConstantBoundaries) {
+  for (uint64_t value :
+       std::array<uint64_t, 6> {0, 1, BB_PRIME - 1, BB_PRIME, BB_PRIME + 1, 2 * BB_PRIME}) {
+    auto attr = babyBearConst(value);
+    EXPECT_EQ(attr.getReducedValue().getZExtValue(), value % BB_PRIME);
+    EXPECT_EQ(attr.getRawValue().getZExtValue(), value);
+  }
+}
+
+TEST_F(BabyBearFoldTest, ReducedConstantUsesUnsignedValue) {
+  auto attr = FeltConstAttr::get(&ctx, APInt(8, 255), BB_FIELD);
+  EXPECT_EQ(attr.getReducedValue().getZExtValue(), 255U);
+}
+
+TEST_F(BabyBearFoldTest, ReducedConstantHandlesWideValues) {
+  APInt prime(256, BB_PRIME);
+  APInt raw = prime * APInt::getOneBitSet(256, 128) + APInt(256, 17);
+  auto attr = FeltConstAttr::get(&ctx, raw, BB_FIELD);
+  EXPECT_EQ(attr.getReducedValue().getZExtValue(), 17U);
+  EXPECT_EQ(attr.getRawValue(), raw);
+}
+
+TEST_F(BabyBearFoldTest, ReducedConstantWithoutFieldPreservesRawValue) {
+  APInt raw = APInt::getAllOnes(256);
+  auto attr = FeltConstAttr::get(&ctx, raw);
+  EXPECT_EQ(attr.getReducedValue(), raw);
+  EXPECT_EQ(attr.getReducedValue().getBitWidth(), raw.getBitWidth());
+}
 
 //===------------------------------------------------------------------===//
 // felt.add
