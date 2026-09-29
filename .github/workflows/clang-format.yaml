@@ -24,7 +24,7 @@ jobs:
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
       - name: Setup git-clang-format
         run: |
-          export CLANG_FORMAT_VERSION="20"
+          export CLANG_FORMAT_VERSION="23"
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-${CLANG_FORMAT_VERSION} main" \
               | sudo tee -a /etc/apt/sources.list

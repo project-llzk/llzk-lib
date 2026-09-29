@@ -42,14 +42,17 @@
 /// 3. Replace branch-local reads (in `scf.if`) with the value written by a same-index write op that
 ///    dominates the parent `scf.if` (because the passes below cannot handle that case).
 ///
-/// 4. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1
+/// 4. Promote straight-line static arrays in one walk per block.
+///
+/// 5. Run MLIR "sroa" pass to split each remaining array with linear size `N` into `N` arrays of
+/// size 1
 ///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
 ///
-/// 5. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
-///    values. This pass also runs several standard optimizations so the final result is condensed.
+/// 6. Run MLIR "mem2reg" as a fallback for allocations with control flow or unsupported
+///    uses. This pass also runs several standard optimizations so the final result is condensed.
 ///
-/// 6. Remove array allocations that become unread after memory promotion, then remove SSA values
-///    made dead by that cleanup.
+/// 7. Remove array allocations that become unread after memory promotion, then canonicalize local
+///    SSA values made dead by that cleanup.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -81,13 +84,14 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -100,6 +104,7 @@
 // Include the generated base pass class definitions.
 namespace llzk::array {
 #define GEN_PASS_DEF_ARRAYTOSCALARPASS
+#define GEN_PASS_DEF_STRAIGHTLINESTATICARRAYPROMOTIONPASS
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::array
 
@@ -225,12 +230,14 @@ CallOp newCallOpWithSplitResults(
   );
 
   auto newResults = newCall.getResults().begin();
+  SmallVector<Value> replacements;
+  replacements.reserve(oldResults.size());
   for (Value oldVal : oldResults) {
     if (ArrayType at = splittableArray(oldVal.getType())) {
       Location loc = oldVal.getLoc();
-      // Generate `CreateArrayOp` and replace uses of the result with it.
-      auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-      rewriter.replaceAllUsesWith(oldVal, newArray);
+      // Generate a `CreateArrayOp` to replace the original array result.
+      auto newArray = CreateArrayOp::create(rewriter, loc, at);
+      replacements.push_back(newArray);
 
       // For all indices in the ArrayType (i.e., the element count), write the next
       // result from the new CallOp to the new array.
@@ -242,12 +249,14 @@ CallOp newCallOpWithSplitResults(
         newResults++;
       }
     } else {
-      rewriter.replaceAllUsesWith(oldVal, *newResults);
+      replacements.push_back(*newResults);
       newResults++;
     }
   }
-  // erase the original CallOp
-  rewriter.eraseOp(oldCall);
+  // Use the conversion rewriter's operation-level replacement API. Replacing
+  // individual results before erasing the call causes it to register a second
+  // replacement for those values.
+  rewriter.replaceOp(oldCall, replacements);
 
   return newCall;
 }
@@ -371,7 +380,7 @@ public:
     }
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
-    auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
+    auto newArray = replaceOpWithNewOp<CreateArrayOp>(rewriter, op, at);
     rewriteImpl<LARGE_TO_SMALL>(
         llvm::cast<ArrayAccessOpInterface>(op.getOperation()), at, newArray, adaptor.getArrRef(),
         rewriter
@@ -407,7 +416,7 @@ public:
       // linear array size so delinearization of `i` will not fail.
       assert(multiDimIdxVals.has_value());
       // Create the write
-      rewriter.create<WriteArrayOp>(loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
+      WriteArrayOp::create(rewriter, loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
     }
     return success();
   }
@@ -469,8 +478,11 @@ public:
           if (ArrayType at = splittableArray(oldV.getType())) {
             Location loc = oldV.getLoc();
             // Generate `CreateArrayOp` and replace uses of the argument with it.
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
+            auto newArray = CreateArrayOp::create(rewriter, loc, at);
+            // ConversionPatternRewriter defers replacements while rollback is enabled, but
+            // eraseArgument destroys the old argument immediately. Update the use-list before
+            // erasing that argument.
+            oldV.replaceAllUsesWith(newArray);
             // Remove the argument from the block
             entryBlock.eraseArgument(i);
             // For all indices in the ArrayType (i.e., the element count), generate a new block
@@ -593,7 +605,7 @@ public:
     assert(arrTy); // must have array type per ODS spec of ArrayLengthOp
     std::optional<llvm::APInt> len = getDimSizeIfKnown(adaptor.getDim(), arrTy);
     assert(len.has_value()); // follows from legal() check
-    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, llzk::fromAPInt(len.value()));
+    replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, llzk::fromAPInt(len.value()));
     return success();
   }
 };
@@ -636,8 +648,8 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the member
-      MemberDefOp newMember = rewriter.create<MemberDefOp>(
-          op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
+      MemberDefOp newMember = MemberDefOp::create(
+          rewriter, op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
       );
       newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
@@ -666,8 +678,8 @@ public:
       ConversionPatternRewriter &rewriter
   ) {
     Value scalarRead = ArrayAccessOpInterface::genRead(rewriter, loc, adaptor.getVal(), idx);
-    rewriter.create<MemberWriteOp>(
-        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
+    MemberWriteOp::create(
+        rewriter, loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
@@ -687,9 +699,12 @@ public:
   }
 
   static CreateArrayOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
-    CreateArrayOp newArray =
-        rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
-    rewriter.replaceAllUsesWith(op, newArray);
+    return CreateArrayOp::create(rewriter, op.getLoc(), llvm::cast<ArrayType>(op.getType()));
+  }
+
+  /// Provide the local array reconstruction as the replacement for the member read.
+  static CreateArrayOp
+  replacement(MemberReadOp, CreateArrayOp newArray, OpAdaptor, ConversionPatternRewriter &) {
     return newArray;
   }
 
@@ -697,8 +712,8 @@ public:
       Location loc, CreateArrayOp newArray, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
-        loc, newMember.second, adaptor.getComponent(), newMember.first
+    MemberReadOp scalarRead = MemberReadOp::create(
+        rewriter, loc, newMember.second, adaptor.getComponent(), newMember.first
     );
     ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, idx, scalarRead);
   }
@@ -723,11 +738,13 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
   ) const override {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
       auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
-      auto newArray = rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy);
+      auto newArray = preserveDiscardableAttrs(
+          nondetOp, CreateArrayOp::create(rewriter, nondetOp.getLoc(), wildcardTy)
+      );
       if (wildcardTy == at) {
         rewriter.replaceOp(nondetOp, newArray);
       } else {
-        auto cast = rewriter.create<UnifiableCastOp>(nondetOp.getLoc(), at, newArray);
+        auto cast = UnifiableCastOp::create(rewriter, nondetOp.getLoc(), at, newArray);
         rewriter.replaceOp(nondetOp, cast.getResult());
       }
       return success();
@@ -918,10 +935,174 @@ static void step3(ModuleOp modOp) {
   }
 }
 
+/// Return whether \p accessBlock is reached from \p allocationBlock only through nested,
+/// single-block `scf.execute_region` operations.
+static bool hasStraightLineRegionPath(Block *allocationBlock, Block *accessBlock) {
+  for (Block *block = accessBlock; block != allocationBlock;) {
+    Operation *parent = block->getParentOp();
+    if (!parent || !isa<scf::ExecuteRegionOp>(parent) ||
+        !llvm::hasSingleElement(*block->getParent())) {
+      return false;
+    }
+    block = parent->getBlock();
+  }
+  return true;
+}
+
+/// Collect statically indexed elements of \p alloc whose accesses all have a single linear order
+/// within one block (possibly a loop body) or nested single-block regions. Return false if the
+/// allocation has any escaping or unsupported use, since that could alias an otherwise eligible
+/// element.
+static bool collectStraightLineStaticElements(
+    CreateArrayOp alloc, DenseMap<Attribute, Block *> &elementBlocks
+) {
+  ArrayType type = alloc.getType();
+  if (!type.hasStaticShape() || !alloc.getElements().empty()) {
+    return false;
+  }
+
+  DenseSet<Attribute> ineligibleElements;
+  for (OpOperand &use : alloc.getResult().getUses()) {
+    Operation *owner = use.getOwner();
+    if (use.getOperandNumber() != 0) {
+      return false;
+    }
+
+    ArrayAttr index;
+    if (auto read = dyn_cast<ReadArrayOp>(owner)) {
+      index = mlir::cast<ArrayAccessOpInterface>(owner).indexOperandsToAttributeArray();
+      if (!index || read.getResult().getType() != type.getElementType()) {
+        return false;
+      }
+    } else if (auto write = dyn_cast<WriteArrayOp>(owner)) {
+      index = mlir::cast<ArrayAccessOpInterface>(owner).indexOperandsToAttributeArray();
+      if (!index || write.getRvalue().getType() != type.getElementType()) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+
+    Block *accessBlock = owner->getBlock();
+    auto [it, inserted] = elementBlocks.try_emplace(index, accessBlock);
+    if ((!inserted && it->second != accessBlock) ||
+        !hasStraightLineRegionPath(alloc->getBlock(), accessBlock)) {
+      ineligibleElements.insert(index);
+    }
+  }
+  for (Attribute index : ineligibleElements) {
+    elementBlocks.erase(index);
+  }
+  return true;
+}
+
+/// Promote all eligible straight-line array elements in O(operations + allocation uses). SROA and
+/// generic mem2reg remain responsible for arrays involving branches, loops, dynamic indices,
+/// nested regions, or escaping values.
+static void promoteStraightLineStaticArrays(ModuleOp module) {
+  DenseMap<Block *, DenseMap<Value, DenseSet<Attribute>>> elementsByBlock;
+  SmallVector<CreateArrayOp> allocations;
+  size_t eligibleElementCount = 0;
+  module.walk([&](CreateArrayOp alloc) {
+    DenseMap<Attribute, Block *> elementBlocks;
+    if (!collectStraightLineStaticElements(alloc, elementBlocks)) {
+      return;
+    }
+    allocations.push_back(alloc);
+    eligibleElementCount += elementBlocks.size();
+    for (auto [index, block] : elementBlocks) {
+      elementsByBlock[block][alloc.getResult()].insert(index);
+    }
+  });
+  LLVM_DEBUG(
+      llvm::dbgs() << "Straight-line static array promotion: " << eligibleElementCount
+                   << " elements eligible\n";
+  );
+
+  for (auto &[block, eligibleElements] : elementsByBlock) {
+    DenseMap<Value, DenseMap<Attribute, Value>> latestValues;
+
+    for (Operation &op : llvm::make_early_inc_range(*block)) {
+      if (auto read = dyn_cast<ReadArrayOp>(&op)) {
+        Value array = read.getArrRef();
+        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
+        auto arrayIt = eligibleElements.find(array);
+        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
+          continue;
+        }
+        Value &latest = latestValues[array][index];
+        if (!latest) {
+          OpBuilder builder(read);
+          latest = llzk::NonDetOp::create(builder, read.getLoc(), read.getType());
+        }
+        read.getResult().replaceAllUsesWith(latest);
+        read.erase();
+        continue;
+      }
+
+      if (auto write = dyn_cast<WriteArrayOp>(&op)) {
+        Value array = write.getArrRef();
+        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
+        auto arrayIt = eligibleElements.find(array);
+        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
+          continue;
+        }
+        latestValues[array][index] = write.getRvalue();
+        write.erase();
+      }
+    }
+  }
+
+  for (CreateArrayOp alloc : allocations) {
+    if (alloc.getResult().use_empty()) {
+      alloc.erase();
+    }
+  }
+}
+
+class StraightLineStaticArrayPromotionPassImpl
+    : public llzk::array::impl::StraightLineStaticArrayPromotionPassBase<
+          StraightLineStaticArrayPromotionPassImpl> {
+public:
+  void runOnOperation() override { promoteStraightLineStaticArrays(getOperation()); }
+};
+
 /// Pass driver for the full array-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
   using Base = ArrayToScalarPassBase<PassImpl>;
   using Base::Base;
+
+  /// Create the scalar-memory promotion and cleanup pipeline run after array conversion.
+  static OpPassManager createPostScalarizationPipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
+    // Promote simple arrays directly, avoiding both SROA's temporary allocations and mem2reg's
+    // per-slot block scans.
+    pm.addPass(createStraightLineStaticArrayPromotionPass());
+    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
+    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
+    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
+    pm.addPass(createSpecializedSROAPass<CreateArrayOp>());
+    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
+    pm.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
+    // Cleanup allocations made dead by memory promotion.
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    // Fold and remove local SSA values made dead by array promotion. Avoid the global
+    // remove-dead-values dataflow analysis here: static array lowering can produce very large,
+    // straight-line functions, and the targeted allocation cleanup above has already removed the
+    // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
+    // dead function arguments/results or loop iteration values that canonicalization cannot remove.
+    pm.addPass(createCanonicalizerPass());
+    return pm;
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    auto nestedPM = createPostScalarizationPipeline();
+    nestedPM.getDependentDialects(registry);
+  }
 
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -964,21 +1145,7 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
       module.dump();
     });
 
-    OpPassManager nestedPM(ModuleOp::getOperationName());
-    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
-    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
-    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
-    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
-    nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
-    // Cleanup allocations made dead by memory promotion.
-    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
-        RemoveUnusedDiscardableAllocationsPassOptions {
-            .allocatorOpName = CreateArrayOp::getOperationName().str()
-        }
-    ));
-    // Cleanup SSA values made dead by removing allocations and writes.
-    nestedPM.addPass(createRemoveDeadValuesWorkaroundPass());
+    OpPassManager nestedPM = createPostScalarizationPipeline();
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;

@@ -56,7 +56,7 @@ std::unique_ptr<EmitContainmentOpBuildFuncHelper> EmitContainmentOpBuildFuncHelp
         auto arrType = llzk::array::ArrayType::get(
             idxType, llvm::ArrayRef<mlir::Attribute> {bldr->getIntegerAttr(idxType, 0)}
         );
-        array = bldr->create<llzk::array::CreateArrayOp>(unwrap(location), arrType);
+        array = llzk::array::CreateArrayOp::create(*bldr, unwrap(location), arrType);
       }
       return llzkConstrain_EmitContainmentOpBuild(
           builder, location, wrap(array),

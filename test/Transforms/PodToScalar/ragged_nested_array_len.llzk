@@ -206,10 +206,14 @@ module attributes {llzk.lang} {
     %item = array.read %items[%i] : !OuterArr, !Inner
     %vals = pod.read %item[@vals] : !Inner, !array.type<#map x index>
     %selected = scf.if %cond -> (!array.type<#map x index>) {
+      %then = poly.unifiable_cast %vals
+          : (!array.type<#map x index>) -> !array.type<#map x index>
       // expected-error@+1 {{'scf.yield' op cannot pass nested affine array leaf across an scf.yield boundary after reading an array-of-POD element without per-element shape witnesses}}
-      scf.yield %vals : !array.type<#map x index>
+      scf.yield %then : !array.type<#map x index>
     } else {
-      scf.yield %fallback : !array.type<#map x index>
+      %else = poly.unifiable_cast %fallback
+          : (!array.type<#map x index>) -> !array.type<#map x index>
+      scf.yield %else : !array.type<#map x index>
     }
     constrain.eq %selected, %fallback : !array.type<#map x index>
     function.return
@@ -228,7 +232,8 @@ module attributes {llzk.lang} {
     // expected-error@+1 {{'scf.for' op cannot pass nested dynamic array leaf into an scf.for region after reading an array-of-POD element without per-element shape witnesses}}
     %carried = scf.for %iv = %lb to %ub step %step
         iter_args(%acc = %vals) -> (!array.type<? x index>) {
-      scf.yield %acc : !array.type<? x index>
+      %next = poly.unifiable_cast %acc : (!array.type<? x index>) -> !array.type<? x index>
+      scf.yield %next : !array.type<? x index>
     }
     %c0 = arith.constant 0 : index
     %len = array.len %carried, %c0 : !array.type<? x index>

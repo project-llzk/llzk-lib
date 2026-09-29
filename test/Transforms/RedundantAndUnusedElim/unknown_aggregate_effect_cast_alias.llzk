@@ -1,0 +1,29 @@
+// RUN: llzk-opt --allow-unregistered-dialect -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// An unmodeled operation may mutate an aggregate through a transparent cast.
+// The original and cast values share a ReferenceNode, so invalidating only the
+// cast operand must not allow the read through the original to reuse the
+// array's initializer.
+module attributes {llzk.lang} {
+  function.def @unknown_effect_through_cast_keeps_original_array_read(%value: !felt.type)
+      -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %value : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    %cast = poly.unifiable_cast %array
+        : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+    "test.mutate"(%cast) : (!array.type<1 x !felt.type>) -> ()
+    %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @unknown_effect_through_cast_keeps_original_array_read(%[[VALUE:[0-9a-zA-Z_.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[ARRAY:[0-9a-zA-Z_.]+]] = array.new %[[VALUE]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[ZERO:[0-9a-zA-Z_.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_.]+]] = poly.unifiable_cast %[[ARRAY]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+// CHECK-NEXT:      "test.mutate"(%[[CAST]]) : (!array.type<1 x !felt.type>) -> ()
+// CHECK-NEXT:      %[[OBSERVED:[0-9a-zA-Z_.]+]] = array.read %[[ARRAY]]{{\[}}%[[ZERO]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[OBSERVED]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

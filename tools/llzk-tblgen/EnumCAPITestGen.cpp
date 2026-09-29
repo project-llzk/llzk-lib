@@ -22,7 +22,7 @@
 
 #include "CommonCAPIGen.h"
 
-#include <mlir/TableGen/Attribute.h>
+#include <mlir/TableGen/EnumInfo.h>
 #include <mlir/TableGen/GenInfo.h>
 
 #include <llvm/ADT/StringExtras.h>
@@ -89,13 +89,13 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
 
   /// @brief Generate all tests for a complete enum record
   /// @param enumInfo The enum attribute definition
-  void genCompleteRecord(const EnumAttr &enumInfo) {
-    // EnumAttr does not contain a Dialect reference, so filter by C++ namespace instead.
+  void genCompleteRecord(const EnumInfo &enumInfo) {
+    // EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.
     if (!DialectName.empty() && !enumInfo.getCppNamespace().contains_insensitive(DialectName)) {
       return;
     }
 
-    std::vector<EnumAttrCase> enumCases = enumInfo.getAllCases();
+    std::vector<EnumCase> enumCases = enumInfo.getAllCases();
     if (enumCases.empty()) {
       return;
     }
@@ -131,7 +131,7 @@ static bool emitEnumCAPITests(const llvm::RecordKeeper &records, raw_ostream &os
 
   // Generate tests for each enum
   for (const auto *def : records.getAllDerivedDefinitionsIfDefined("EnumAttrInfo")) {
-    EnumAttr enumInfo(def);
+    EnumInfo enumInfo(def);
     generator.genCompleteRecord(enumInfo);
   }
 

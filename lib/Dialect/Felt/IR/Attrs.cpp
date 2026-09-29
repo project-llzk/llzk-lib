@@ -9,6 +9,8 @@
 
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 
+#include "llzk/Util/DynamicAPIntHelper.h"
+
 using namespace mlir;
 
 namespace llzk::felt {
@@ -16,6 +18,15 @@ namespace llzk::felt {
 StringAttr FeltConstAttr::getFieldName() const {
   auto ft = getType();
   return ft ? ft.getFieldName() : StringAttr();
+}
+
+llvm::APInt FeltConstAttr::getReducedValue() const {
+  auto type = getType();
+  if (!type || !type.hasField()) {
+    return getRawValue();
+  }
+  const Field &field = type.getField();
+  return toAPInt(field.reduce(getRawValue()), field.bitWidth());
 }
 
 } // namespace llzk::felt

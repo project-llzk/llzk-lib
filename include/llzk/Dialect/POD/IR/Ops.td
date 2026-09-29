@@ -226,8 +226,9 @@ def LLZK_NewPodOp
 def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
   let summary = "reads the contents of a plain-old-data struct record";
   let description = [{
-    Reads the current value of a named record from a pod instance.
-    Returns one value of the type of the record.
+    Copies the current value of a named record from a pod instance. The result is a
+    value copy, not a pointer or alias to the record's storage. Returns one value of
+    the type of the record.
 
     The name of the record must be a valid record name for the pod type and the result
     type must match the type of the record.
@@ -251,7 +252,9 @@ def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
 def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
   let summary = "writes content into a plain-old-data struct record";
   let description = [{
-    Writes a value into a named record of a pod instance. This operation has no result values.
+    Copies a value into a named record of a pod instance. It does not create a pointer
+    or alias between the source value and the record's storage. This operation has no
+    result values.
 
     The name of the record must be a valid record name for the pod type and the source
     value type must match the type of the record.

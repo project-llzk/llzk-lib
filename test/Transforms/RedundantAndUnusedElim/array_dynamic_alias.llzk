@@ -200,6 +200,42 @@ module attributes {llzk.lang} {
 
 // -----
 
+module attributes {llzk.lang} {
+  // A second loop iteration observes the preceding iteration's write, not the
+  // pre-loop value. The loop-body read must therefore remain.
+  function.def @loop_write_keeps_read(
+      %before: !felt.type, %after: !felt.type
+  ) -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %before : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    %two = arith.constant 2 : index
+    %one = arith.constant 1 : index
+    %result = scf.for %iv = %zero to %two step %one iter_args(%unused = %before) -> (!felt.type) {
+      %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      array.write %array[%zero] = %after : !array.type<1 x !felt.type>, !felt.type
+      scf.yield %observed : !felt.type
+    }
+    function.return %result : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @loop_write_keeps_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_5]] iter_args(%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) -> (!felt.type) {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_3]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_9]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_6]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
 
 module attributes {llzk.lang} {
   // A dynamic suffix can observe a write below a constant prefix, so the later
@@ -339,5 +375,66 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        scf.yield %[[VAL_10]] : !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_15]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A write in a one-armed conditional is not guaranteed to reach the read.
+  function.def @one_armed_if_write_keeps_read(
+      %before: !felt.type, %after: !felt.type, %cond: i1
+  ) -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %before : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    scf.if %cond {
+      array.write %array[%zero] = %after : !array.type<1 x !felt.type>, !felt.type
+    }
+    %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @one_armed_if_write_keeps_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      scf.if %[[VAL_2]] {
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // The loop may execute zero times, so its write cannot determine the
+  // post-loop read.
+  function.def @zero_trip_loop_write_keeps_post_loop_read(
+      %before: !felt.type, %after: !felt.type, %end: index
+  ) -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %before : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    scf.for %iv = %zero to %end step %one {
+      array.write %array[%zero] = %after : !array.type<1 x !felt.type>, !felt.type
+    }
+    %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @zero_trip_loop_write_keeps_post_loop_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_4]] to %[[VAL_2]] step %[[VAL_5]] {
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

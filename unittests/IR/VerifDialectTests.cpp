@@ -112,8 +112,8 @@ module attributes {llzk.lang} {
 
   OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(parsed->getBody());
-  auto contract = builder.create<ContractOp>(
-      builder.getUnknownLoc(), "Built", SymbolRefAttr::get(&ctx, "check"),
+  auto contract = ContractOp::create(
+      builder, builder.getUnknownLoc(), "Built", SymbolRefAttr::get(&ctx, "check"),
       FunctionType::get(&ctx, TypeRange {}, TypeRange {}), ArrayAttr()
   );
 
@@ -296,7 +296,7 @@ TEST_F(VerifDialectTests, CustomBuilderInfersFunctionTargetContractInvariants) {
   OpBuilder builder(&ctx);
   builder.setInsertionPointToStart(mod->getBody());
 
-  auto contract = builder.create<ContractOp>(loc, "BuiltContract", "TargetFn");
+  auto contract = ContractOp::create(builder, loc, "BuiltContract", "TargetFn");
 
   EXPECT_EQ(contract.getSymName(), "BuiltContract");
   ASSERT_TRUE(contract.getTargetAttr());
@@ -326,7 +326,7 @@ TEST_F(VerifDialectTests, CustomBuilderInfersStructTargetSignatureAndArgAttrs) {
   OpBuilder builder(&ctx);
   builder.setInsertionPointToStart(mod->getBody());
 
-  auto contract = builder.create<ContractOp>(loc, "StructContract", std::string(structNameA));
+  auto contract = ContractOp::create(builder, loc, "StructContract", std::string(structNameA));
 
   EXPECT_EQ(contract.getSymName(), "StructContract");
   ASSERT_TRUE(contract.getTargetAttr());
@@ -367,7 +367,7 @@ module attributes {llzk.lang} {
       &ctx, "T", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "TargetFn")}
   );
 
-  auto contract = builder.create<ContractOp>(loc, "BuiltContract", targetAttr);
+  auto contract = ContractOp::create(builder, loc, "BuiltContract", targetAttr);
 
   ASSERT_TRUE(contract.getTargetAttr());
   EXPECT_EQ(contract.getTarget(), targetAttr);
@@ -391,8 +391,8 @@ TEST_F(VerifDialectTests, StringAndSymbolRefBuildersInferEquivalentFlatTargetInv
   OpBuilder builder(&ctx);
   builder.setInsertionPointToStart(mod->getBody());
 
-  auto byString = builder.create<ContractOp>(loc, "ByString", "TargetFn");
-  auto byAttr = builder.create<ContractOp>(loc, "ByAttr", SymbolRefAttr::get(&ctx, "TargetFn"));
+  auto byString = ContractOp::create(builder, loc, "ByString", "TargetFn");
+  auto byAttr = ContractOp::create(builder, loc, "ByAttr", SymbolRefAttr::get(&ctx, "TargetFn"));
 
   EXPECT_EQ(byString.getTarget(), byAttr.getTarget());
   EXPECT_EQ(byString.getFunctionType(), byAttr.getFunctionType());
@@ -408,7 +408,7 @@ TEST_F(VerifDialectTests, CustomBuilderFailure) {
   builder.setInsertionPointToStart(mod->getBody());
 
   // Build does not fail, since we defer to verify
-  auto contract = builder.create<ContractOp>(loc, "StructContract", "UnknownTarget");
+  auto contract = ContractOp::create(builder, loc, "StructContract", "UnknownTarget");
   ASSERT_NE(contract, nullptr);
   // But verify will fail, since the contract op was not properly built due to
   // target lookup failures.

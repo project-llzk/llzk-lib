@@ -7,9 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 /// \file
-/// This file implements helper methods for constructing DynamicAPInts.
-/// These definitions will be mostly obselete when we upgrade to LLVM 21, which
-/// defines a DynamicAPInt constructor from an APInt.
+/// This file implements helpers for DynamicAPInt operations and conversions
+/// that LLVM does not provide.
 ///
 /// Note that of the operators defined, bitwise negation ('~') is not implemented.
 /// This is because the definition of this operation requires the number of
@@ -23,7 +22,6 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DynamicAPInt.h>
-#include <llvm/ADT/SlowDynamicAPInt.h>
 #include <llvm/ADT/StringRef.h>
 
 #include <climits>
@@ -42,9 +40,9 @@ llvm::DynamicAPInt toDynamicAPInt(llvm::StringRef str);
 
 llvm::DynamicAPInt toDynamicAPInt(const llvm::APSInt &i);
 
-inline llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i) {
-  return toDynamicAPInt(llvm::APSInt(i));
-}
+/// Converts an APInt to a DynamicAPInt, using an unsigned interpretation. For a signed
+/// interpretation, use `DynamicAPInt(const APInt &)` directly.
+llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i);
 
 inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
   return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));

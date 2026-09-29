@@ -367,7 +367,7 @@ public:
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
       if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, newResTy);
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, false);
         return success();
       }
       if (!attrValue.isOne()) {
@@ -382,7 +382,7 @@ public:
             << "\" for this call";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, newResTy);
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
@@ -418,7 +418,7 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   MatchFailureListener failureListener;
   LogicalResult result = applyPatternsGreedily(
       modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig {.maxIterations = 20, .listener = &failureListener, .fold = true},
+      GreedyRewriteConfig().enableFolding().setMaxIterations(20).setListener(&failureListener),
       &currStepModified
   );
   tracker.updateModifiedFlag(currStepModified);
@@ -1479,7 +1479,7 @@ private:
 
     auto recordConcreteParam = [&](FlatSymbolRefAttr paramName, TemplateParamOp paramOp,
                                    Attribute concreteValue) {
-      if (failed(op.verifyTemplateParamCompatibility(concreteValue, paramOp))) {
+      if (failed(op.verifyTemplateParamValueCompatibility(concreteValue, paramOp))) {
         return failIncompatibleInferredParam(op, rewriter, paramName, paramOp);
       }
       paramNameToConcrete[paramName] = concreteValue;
@@ -1519,7 +1519,7 @@ private:
     // As stated earlier, need to run the verification checks again to ensure the
     // instantiation is valid, except for the size check because that cannot change.
     assert((callParams.size() == llvm::range_size(realParams)) && "per CallOpVerifier");
-    if (failed(op.verifyTemplateParamCompatibility(realParams))) {
+    if (failed(op.verifyTemplateParamValuesCompatibility(realParams))) {
       return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
         diag.append("incompatible with specified param type(s)");
       });
@@ -1740,8 +1740,8 @@ public:
   }
 
 private:
-  /// Returns the trip count of the loop-like op if its low bound, high bound and step are
-  /// constants, `nullopt` otherwise. Trip count is computed as ceilDiv(highBound - lowBound, step).
+  /// Returns the statically-known trip count of the loop-like op, `nullopt` otherwise. Trip count
+  /// is computed as ceilDiv(highBound - lowBound, step).
   static std::optional<int64_t> getConstantTripCount(LoopLikeOpInterface loopOp) {
     std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
     std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
@@ -1749,7 +1749,14 @@ private:
     if (!lbVal.has_value() || !ubVal.has_value() || !stepVal.has_value()) {
       return std::nullopt;
     }
-    return constantTripCount(lbVal.value(), ubVal.value(), stepVal.value());
+    bool isSigned = true;
+    if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
+      isSigned = !forOp.getUnsignedCmp();
+    }
+    std::optional<APInt> result = constantTripCount(
+        lbVal.value(), ubVal.value(), stepVal.value(), isSigned, scf::computeUbMinusLb
+    );
+    return result.has_value() ? std::optional<int64_t>(result->getZExtValue()) : std::nullopt;
   }
 };
 
@@ -2203,6 +2210,23 @@ public:
   }
 };
 
+/// Return whether a member type cannot be refined by writes. Concrete struct arguments still
+/// need specialization, and wildcard array dimensions can become static even though
+/// isConcreteType accepts their integer representation.
+static bool isFullySpecializedMemberType(Type type) {
+  if (!isConcreteType(type, /*allowStructParams=*/false)) {
+    return false;
+  }
+  return !type.walk([](ArrayType array) {
+    for (Attribute dim : array.getDimensionSizes()) {
+      if (auto integer = dyn_cast<IntegerAttr>(dim); integer && isDynamic(integer)) {
+        return WalkResult::interrupt();
+      }
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
 /// Update the type of MemberDefOp instances by checking the updated types from MemberWriteOp.
 class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
   ConversionTracker &tracker_;
@@ -2212,6 +2236,11 @@ public:
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
+    // Avoid a whole-struct symbol-use search when writes cannot refine the declaration.
+    if (isFullySpecializedMemberType(op.getType())) {
+      return failure();
+    }
+
     // Find all uses of the member symbol name within its parent struct.
     StructDefOp parentRes = getParentOfType<StructDefOp>(op);
     assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def

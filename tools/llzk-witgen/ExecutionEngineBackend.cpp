@@ -30,7 +30,9 @@
 #include <mlir/Conversion/IndexToLLVM/IndexToLLVM.h>
 #include <mlir/Conversion/MemRefToLLVM/MemRefToLLVM.h>
 #include <mlir/Conversion/Passes.h>
+#include <mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
+#include <mlir/Conversion/VectorToLLVM/ConvertVectorToLLVM.h>
 #include <mlir/Dialect/MemRef/Transforms/Passes.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/ExecutionEngine/CRunnerUtils.h>
@@ -330,7 +332,7 @@ static llvm::Error finalizeExecutionEngineModule(ModuleOp moduleOp) {
   pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::memref::createExpandStridedMetadataPass());
   pm.addPass(mlir::createLowerAffinePass());
-  pm.addPass(mlir::createConvertSCFToCFPass());
+  pm.addPass(mlir::createSCFToControlFlowPass());
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::createConvertToLLVMPass());
@@ -461,6 +463,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     mlir::index::registerConvertIndexToLLVMInterface(registry);
     mlir::registerConvertMemRefToLLVMInterface(registry);
     mlir::ub::registerConvertUBToLLVMInterface(registry);
+    mlir::vector::registerConvertVectorToLLVMInterface(registry);
     (*loweredModule)->getContext()->appendDialectRegistry(registry);
     (*loweredModule)->getContext()->loadAllAvailableDialects();
   }

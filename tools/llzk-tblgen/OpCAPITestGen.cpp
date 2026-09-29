@@ -452,7 +452,9 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
       this->genResultTests(op);
     }
     if (GenExtraClassMethods) {
-      this->genExtraMethods(op.getExtraClassDeclaration());
+      for (const ExtraMethod &method : getCAPIExposedOpMethods(op)) {
+        this->genExtraMethod(method);
+      }
     }
   }
 

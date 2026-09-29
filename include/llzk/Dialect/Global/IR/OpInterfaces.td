@@ -27,6 +27,10 @@ def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
           [{Gets the SSA Value that holds the read/write data for the GlobalRefOp.}],
           "::mlir::Value", "getVal", (ins)>,
       // Requires implementors to have a '$name_ref' argument.
+      InterfaceMethod<
+          [{Gets the name of the global reference attribute on the GlobalRefOp.}],
+          "::mlir::StringAttr", "getNameRefAttrName", (ins),
+          /*methodBody=*/[{ return $_op.getNameRefAttrName(); }]>,
       InterfaceMethod<[{Gets the global name attribute from the GlobalRefOp.}],
                       "::mlir::SymbolRefAttr", "getNameRef", (ins)>,
   ];

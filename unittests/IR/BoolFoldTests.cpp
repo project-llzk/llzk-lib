@@ -60,9 +60,9 @@ protected:
     OpBuilder builder(&ctx);
     builder.setInsertionPoint(&block, block.end());
 
-    auto lhsOp = builder.create<arith::ConstantOp>(loc, lhsAttr);
-    auto rhsOp = builder.create<arith::ConstantOp>(loc, rhsAttr);
-    auto op = builder.create<OpTy>(loc, lhsOp.getResult(), rhsOp.getResult());
+    auto lhsOp = arith::ConstantOp::create(builder, loc, lhsAttr);
+    auto rhsOp = arith::ConstantOp::create(builder, loc, rhsAttr);
+    auto op = OpTy::create(builder, loc, lhsOp.getResult(), rhsOp.getResult());
 
     SmallVector<Attribute, 2> operands = {lhsAttr, rhsAttr};
     SmallVector<OpFoldResult, 1> results;
@@ -78,8 +78,8 @@ protected:
     OpBuilder builder(&ctx);
     builder.setInsertionPoint(&block, block.end());
 
-    auto operandOp = builder.create<arith::ConstantOp>(loc, operandAttr);
-    auto op = builder.create<OpTy>(loc, operandOp.getResult());
+    auto operandOp = arith::ConstantOp::create(builder, loc, operandAttr);
+    auto op = OpTy::create(builder, loc, operandOp.getResult());
 
     SmallVector<Attribute, 1> operands = {operandAttr};
     SmallVector<OpFoldResult, 1> results;
@@ -96,10 +96,10 @@ protected:
     OpBuilder builder(&ctx);
     builder.setInsertionPoint(&block, block.end());
 
-    auto lhsOp = builder.create<FeltConstantOp>(loc, lhsAttr);
-    auto rhsOp = builder.create<FeltConstantOp>(loc, rhsAttr);
+    auto lhsOp = FeltConstantOp::create(builder, loc, lhsAttr);
+    auto rhsOp = FeltConstantOp::create(builder, loc, rhsAttr);
     auto predAttr = FeltCmpPredicateAttr::get(&ctx, pred);
-    auto cmpOp = builder.create<CmpOp>(loc, predAttr, lhsOp.getResult(), rhsOp.getResult());
+    auto cmpOp = CmpOp::create(builder, loc, predAttr, lhsOp.getResult(), rhsOp.getResult());
 
     SmallVector<Attribute, 2> operands = {lhsAttr, rhsAttr};
     SmallVector<OpFoldResult, 1> results;
@@ -268,7 +268,7 @@ TEST_F(BoolFoldTest, AndNoFoldNonConst) {
   // Create block arguments (non-constant)
   auto arg0 = block.addArgument(i1Ty, loc);
   auto arg1 = block.addArgument(i1Ty, loc);
-  auto op = builder.create<AndBoolOp>(loc, arg0, arg1);
+  auto op = AndBoolOp::create(builder, loc, arg0, arg1);
 
   SmallVector<Attribute, 2> operands = {Attribute(), Attribute()};
   SmallVector<OpFoldResult, 1> results;
@@ -287,11 +287,18 @@ TEST_F(BoolFoldTest, CmpNoFoldNonConst) {
   auto arg0 = block.addArgument(feltTy, loc);
   auto arg1 = block.addArgument(feltTy, loc);
   auto predAttr = FeltCmpPredicateAttr::get(&ctx, FeltCmpPredicate::EQ);
-  auto cmpOp = builder.create<CmpOp>(loc, predAttr, arg0, arg1);
+  auto cmpOp = CmpOp::create(builder, loc, predAttr, arg0, arg1);
 
   SmallVector<Attribute, 2> operands = {Attribute(), Attribute()};
   SmallVector<OpFoldResult, 1> results;
   bool folded = succeeded(cmpOp->fold(operands, results)) && !results.empty() &&
                 dyn_cast_if_present<Attribute>(results[0]);
   EXPECT_FALSE(folded) << "expected fold to be skipped for non-constant operands";
+}
+
+TEST_F(BoolFoldTest, CmpReducesUncanonicalizedConstants) {
+  expectBool(foldCmp(FeltCmpPredicate::EQ, babyBearConst(BB_PRIME + 1), babyBearConst(1)), true);
+  expectBool(foldCmp(FeltCmpPredicate::NE, babyBearConst(BB_PRIME), babyBearConst(0)), false);
+  expectBool(foldCmp(FeltCmpPredicate::LT, babyBearConst(BB_PRIME + 1), babyBearConst(2)), true);
+  expectBool(foldCmp(FeltCmpPredicate::GT, babyBearConst(2), babyBearConst(BB_PRIME + 1)), true);
 }

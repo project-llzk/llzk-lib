@@ -24,6 +24,7 @@
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -31,6 +32,7 @@
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
+#include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
 
 #include <llvm/ADT/DenseSet.h>
@@ -170,8 +172,8 @@ void FuncDefOp::build(
     return;
   }
   assert(type.getNumInputs() == argAttrs.size());
-  function_interface_impl::addArgAndResultAttrs(
-      builder, state, argAttrs, /*resultAttrs=*/std::nullopt, getArgAttrsAttrName(state.name),
+  call_interface_impl::addArgAndResultAttrs(
+      builder, state, argAttrs, /*resultAttrs=*/ {}, getArgAttrsAttrName(state.name),
       getResAttrsAttrName(state.name)
   );
 }
@@ -475,23 +477,35 @@ SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
   return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
-Value FuncDefOp::getSelfValueFromCompute() {
-  assert(nameIsCompute()); // skip inStruct check to allow dangling functions
+namespace {
+
+static Value getSelfValueFromWitnessGen(FuncDefOp funcDefOp, Twine name) {
   // Get the single block of the function body
-  Region &body = getBody();
-  assert(!body.empty() && "compute() function body is empty");
-  Block &block = body.back();
+  Region &body = funcDefOp.getBody();
+  ensure(!body.empty(), name + "() function body must not be empty");
 
   // The terminator should be the return op
-  Operation *terminator = block.getTerminator();
-  assert(terminator && "compute() function has no terminator");
+  Operation *terminator = body.back().getTerminator();
+  ensure(terminator, name + "() function must have a terminator op");
   auto retOp = llvm::dyn_cast<ReturnOp>(terminator);
   if (!retOp) {
     llvm::errs() << "Expected '" << ReturnOp::getOperationName() << "' but found '"
                  << terminator->getName() << "'\n";
-    llvm_unreachable("compute() function must end with ReturnOp");
+    ensure(false, name + "() function must end with ReturnOp");
   }
   return retOp.getOperands().front();
+}
+
+} // namespace
+
+Value FuncDefOp::getSelfValueFromCompute() {
+  assert(nameIsCompute()); // skip inStruct check to allow dangling functions
+  return getSelfValueFromWitnessGen(*this, "compute");
+}
+
+Value FuncDefOp::getSelfValueFromProduct() {
+  assert(nameIsProduct()); // skip inStruct check to allow dangling functions
+  return getSelfValueFromWitnessGen(*this, "product");
 }
 
 Value FuncDefOp::getSelfValueFromConstrain() {
@@ -781,14 +795,17 @@ struct KnownTargetVerifier : public CallOpVerifier {
       }
 
       // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(callOp->verifyTemplateParamCompatibility(realParams))) {
+      if (failed(callOp->verifyTemplateParamValuesCompatibility(realParams))) {
         return failure();
       }
 
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult = callOp->unifyTypeSignature(tgtType);
-      assert(succeeded(unifyResult) && "already checked by `verifyInputs()` and `verifyOutputs()`");
+      FailureOr<UnificationMap> unifyResult =
+          callOp->unifyTypeSignatureWithNamespace(tgtType, includeSymNames);
+      if (failed(unifyResult)) {
+        return failure();
+      }
       return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
     } else {
       // Non-template functions cannot contain template parameter instantiations.
@@ -1032,19 +1049,6 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
 }
 
-FunctionType CallOp::getTypeSignature() {
-  return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
-}
-
-FailureOr<UnificationMap> CallOp::unifyTypeSignature(FunctionType other) {
-  UnificationMap unifications;
-  if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
-    return unifications;
-  } else {
-    return failure();
-  }
-}
-
 namespace {
 
 bool calleeIsStructFunctionImpl(
@@ -1087,9 +1091,26 @@ Value CallOp::getSelfValueFromCompute() {
   return getResults().front();
 }
 
+Value CallOp::getSelfValueFromProduct() {
+  assert(calleeIsStructProduct());
+  return getResults().front();
+}
+
 Value CallOp::getSelfValueFromConstrain() {
   assert(calleeIsStructConstrain());
   return getArgOperands().front();
+}
+
+Value CallOp::getSelfValue() {
+  if (calleeIsStructConstrain()) {
+    return getSelfValueFromConstrain();
+  } else if (calleeIsStructCompute()) {
+    return getSelfValueFromCompute();
+  } else if (calleeIsStructProduct()) {
+    return getSelfValueFromProduct();
+  } else {
+    return nullptr;
+  }
 }
 
 FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
@@ -1115,15 +1136,6 @@ CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 /// Set the callee for this operation.
 void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(llvm::cast<SymbolRefAttr>(callee));
-}
-
-SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
-  llvm::SmallVector<ValueRange, 4> output;
-  output.reserve(input.size());
-  for (OperandRange r : input) {
-    output.push_back(r);
-  }
-  return output;
 }
 
 Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {

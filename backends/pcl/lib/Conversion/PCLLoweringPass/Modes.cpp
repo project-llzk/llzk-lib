@@ -22,11 +22,11 @@
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Transforms/DialectConversion.h>
 
@@ -77,7 +77,7 @@ void BaseMode::populateStep1ConversionTarget(ConversionTarget &target) {
       polymorphic::PolymorphicDialect, 
       ram::RAMDialect,
       scf::SCFDialect,
-      smt::SMTDialect, 
+      mlir::smt::SMTDialect,
       string::StringDialect, 
       verif::VerifDialect, 
       arith::ArithDialect,

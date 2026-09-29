@@ -88,7 +88,7 @@ struct FeltDialectBytecodeInterface
   LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &writer) const final {
     if (auto feltConst = dyn_cast<llzk::felt::FeltConstAttr>(attr)) {
       writer.writeVarInt(static_cast<uint64_t>(FeltAttrEncoding::FeltConst));
-      llzk::writeAPInt(writer, feltConst.getValue());
+      llzk::writeAPInt(writer, feltConst.getRawValue());
       writer.writeType(feltConst.getType());
       return success();
     }
@@ -186,7 +186,7 @@ Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
   if (failed(valueRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`"
+        "failed to parse LLZK_FeltConstAttr parameter 'rawValue' which is to be a `::llvm::APInt`"
     );
     return {};
   }
@@ -227,7 +227,7 @@ Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
 // Same as tablegen would generate to serialize version 2 IR.
 void FeltConstAttr::print(AsmPrinter &odsPrinter) const {
   odsPrinter << ' ';
-  odsPrinter.printStrippedAttrOrType(getValue());
+  odsPrinter.printStrippedAttrOrType(getRawValue());
   if (getType() != FeltType::get(getContext())) {
     odsPrinter << " : ";
     odsPrinter.printStrippedAttrOrType(getType());
@@ -255,7 +255,7 @@ FeltType::verify(llvm::function_ref<InFlightDiagnostic()> errFn, StringAttr fiel
 Operation *
 FeltDialect::materializeConstant(OpBuilder &builder, Attribute value, Type, Location loc) {
   if (auto attr = llvm::dyn_cast<FeltConstAttr>(value)) {
-    return builder.create<FeltConstantOp>(loc, attr);
+    return FeltConstantOp::create(builder, loc, attr);
   }
   return nullptr;
 }
@@ -267,15 +267,11 @@ auto FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Felt/IR/Types.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"

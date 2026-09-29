@@ -1,0 +1,52 @@
+// RUN: llzk-opt -llzk-full-r1cs-lowering %s > %t
+// RUN: FileCheck %s --check-prefixes=CHECK,INPUT-FIRST < %t 2> %t.err || FileCheck %s --check-prefixes=CHECK,OUTPUT-FIRST < %t
+
+!F = !felt.type<"bn128">
+!State = !pod.type<[@value: !F]>
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@IsNegative>} {
+  struct.def @IsNegative {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%in: !F) -> !struct.type<@IsNegative> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@IsNegative>
+      %state = pod.new : !State
+      pod.write %state[@value] = %in : !State, !F
+      %zero = felt.const 0 : <"bn128">
+      %result:2 = scf.while (%i = %zero, %pod = %state) : (!F, !State) -> (!F, !State) {
+        %two = felt.const 2 : <"bn128">
+        %continue = bool.cmp lt(%i, %two) : !F, !F
+        scf.condition(%continue) %i, %pod : !F, !State
+      } do {
+      ^bb0(%i: !F, %pod: !State):
+        %value = pod.read %pod[@value] : !State, !F
+        %one = felt.const 1 : <"bn128">
+        %nextValue = felt.sub %value, %one : !F, !F
+        pod.write %pod[@value] = %nextValue : !State, !F
+        %nextI = felt.add %i, %one : !F, !F
+        scf.yield %nextI, %pod : !F, !State
+      }
+      %out = pod.read %result#1[@value] : !State, !F
+      struct.writem %self[@out] = %out : <@IsNegative>, !F
+      function.return %self : !struct.type<@IsNegative>
+    }
+    function.def @constrain(%self: !struct.type<@IsNegative>, %in: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %out = struct.readm %self[@out] : <@IsNegative>, !F
+      constrain.eq %out, %in : !F, !F
+      function.return
+    }
+  }
+}
+
+// Independent linearizations and the commutative add can appear in either order.
+// Check both valid add orders while retaining every operand relationship.
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @IsNegative inputs (%[[INPUT:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-DAG:       %[[OUTPUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:       %[[ZERO:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[INPUT_LINEAR:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[INPUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[OUTPUT_LINEAR:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUTPUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[NEGATED:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUTPUT_LINEAR]],  -1 : i64 : !r1cs.linear
+// INPUT-FIRST:     %[[SUM:[0-9a-zA-Z_\.]+]] = r1cs.add %[[INPUT_LINEAR]], %[[NEGATED]] : !r1cs.linear
+// OUTPUT-FIRST:    %[[SUM:[0-9a-zA-Z_\.]+]] = r1cs.add %[[NEGATED]], %[[INPUT_LINEAR]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[ZERO]], %[[ZERO]], %[[SUM]] : !r1cs.linear
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

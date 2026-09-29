@@ -1,0 +1,76 @@
+//===-- LoweringUtils.h -----------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// Shared utility function implementations for LLZK lowering passes.
+///
+//===----------------------------------------------------------------------===//
+
+#pragma once
+
+#include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Types.h>
+#include <mlir/IR/Value.h>
+#include <mlir/Support/LogicalResult.h>
+
+#include <llvm/ADT/DenseMap.h>
+
+namespace llzk {
+
+struct AuxAssignment {
+  std::string auxMemberName;
+  mlir::Value computedValue;
+};
+
+/// Rebuilds a straight-line constrain-side felt expression in `computeFunc`.
+/// Block arguments are mapped by constrain entry-block position: argument 0 to
+/// compute `%self`, and later arguments to compute inputs.
+/// Returns null after emitting a diagnostic when an expression root cannot be
+/// rebuilt safely in compute.
+mlir::Value rebuildExprInCompute(
+    mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
+    llvm::DenseMap<mlir::Value, mlir::Value> &memo
+);
+
+mlir::LogicalResult
+checkForAuxMemberConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
+
+/// Rejects control flow under `func`; auxiliary materialization assumes control
+/// flow has already been flattened or otherwise lowered away. The region check
+/// catches multi-block function bodies before the operation walk rejects nested
+/// regions or successor-bearing operations.
+mlir::LogicalResult checkFuncBodyIsStraightLine(function::FuncDefOp func, llvm::StringRef passName);
+
+component::MemberDefOp
+addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type);
+
+unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &memo);
+
+/// Replaces all *subsequent uses* of `oldVal` with `newVal`, starting *after* `afterOp`.
+///
+/// Specifically:
+/// - Uses of `oldVal` in operations that come **after** `afterOp` in the same block are replaced.
+/// - Uses in `afterOp` itself are **not replaced** (to avoid self-trivializing rewrites).
+/// - Uses in other blocks are replaced (if applicable).
+///
+/// Typical use case:
+/// - You introduce an auxiliary value (e.g., via EmitEqualityOp) and want to replace
+///   all *later* uses of the original value while preserving the constraint itself.
+///
+/// \param oldVal  The original value whose uses should be redirected.
+/// \param newVal  The new value to replace subsequent uses with.
+/// \param afterOp The operation after which uses of `oldVal` will be replaced.
+void replaceSubsequentUsesWith(mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp);
+
+} // namespace llzk

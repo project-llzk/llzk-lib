@@ -174,18 +174,19 @@ module attributes {llzk.lang} {
 // CHECK-SAME:    %[[ELEM_X:[0-9a-zA-Z_\.]+]]: index,
 // CHECK-SAME:    %[[ELEM_Y:[0-9a-zA-Z_\.]+]]: !felt.type
 // CHECK-SAME:    ) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[C0]] : <2 x index>
-// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
-// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
-// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
-// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
-// CHECK-NEXT:      %[[SEL_X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]]{{\[}}%[[IDX]]] : <2 x index>, index
-// CHECK-NEXT:      constrain.eq %[[SEL_X]], %[[ELEM_X]] : index, index
-// CHECK-NEXT:      %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]]{{\[}}%[[IDX]]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      constrain.eq %[[SEL_Y]], %[[ELEM_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[VAL_7]] : <2 x index>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[VAL_6]], %[[VAL_4]] : index
+// CHECK-NEXT:      constrain.eq %[[VAL_9]], %[[VAL_5]] : i1, i1
+// CHECK-NEXT:      %[[ARR_Y0:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[VAL_6]], %[[VAL_8]] : index
+// CHECK-NEXT:      constrain.eq %[[ARR_Y0]], %[[VAL_5]] : i1, i1
+// CHECK-NEXT:      %[[ARR_Y1:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]]{{\[}}%[[VAL_6]]] : <2 x index>, index
+// CHECK-NEXT:      constrain.eq %[[ARR_Y1]], %[[ELEM_X]] : index, index
+// CHECK-NEXT:      %[[ARR_Y2:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]]{{\[}}%[[VAL_6]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[ARR_Y2]], %[[ELEM_Y]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

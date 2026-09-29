@@ -100,6 +100,8 @@ class ZeroResultRevisitAnalysis
   using Base = llzk::dataflow::SparseForwardDataFlowAnalysis<TestSparseLattice>;
 
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ZeroResultRevisitAnalysis)
+
   using Base::Base;
 
   LogicalResult initialize(Operation *top) override {
@@ -168,6 +170,8 @@ class ZeroResultProgramOrderAnalysis
   using Base = llzk::dataflow::SparseForwardDataFlowAnalysis<TestSparseLattice>;
 
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ZeroResultProgramOrderAnalysis)
+
   using Base::Base;
 
   LogicalResult visitOperation(
@@ -232,6 +236,8 @@ class RegionBranchSkipAnalysis
   using Base = llzk::dataflow::SparseForwardDataFlowAnalysis<TestSparseLattice>;
 
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(RegionBranchSkipAnalysis)
+
   using Base::Base;
 
   LogicalResult visitOperation(
@@ -265,6 +271,8 @@ class ZeroResultLivenessAnalysis
   using Base = llzk::dataflow::SparseForwardDataFlowAnalysis<TestSparseLattice>;
 
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ZeroResultLivenessAnalysis)
+
   using Base::Base;
 
   LogicalResult visitOperation(
@@ -298,6 +306,8 @@ class ZeroResultCallHandlingAnalysis
   using Base = llzk::dataflow::SparseForwardDataFlowAnalysis<TestSparseLattice>;
 
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ZeroResultCallHandlingAnalysis)
+
   using Base::Base;
 
   LogicalResult visitOperation(

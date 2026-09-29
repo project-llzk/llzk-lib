@@ -111,7 +111,7 @@ struct ClangLexerContext::Impl {
   /// Diagnostic IDs for error reporting
   IntrusiveRefCntPtr<DiagnosticIDs> diagIDs;
   /// Diagnostic options for configuring diagnostics
-  IntrusiveRefCntPtr<DiagnosticOptions> diagOpts;
+  std::unique_ptr<DiagnosticOptions> diagOpts;
   /// Diagnostics engine for handling errors and warnings
   std::unique_ptr<DiagnosticsEngine> diags;
   /// Source manager for tracking file locations
@@ -119,14 +119,14 @@ struct ClangLexerContext::Impl {
   /// The actual lexer instance
   std::unique_ptr<Lexer> lexer;
 
-  Impl() : diagIDs(new DiagnosticIDs()), diagOpts(new DiagnosticOptions()) {
+  Impl() : diagIDs(new DiagnosticIDs()), diagOpts(std::make_unique<DiagnosticOptions>()) {
     // Enable C++ language features for lexing
     langOpts.CPlusPlus = true;
     langOpts.CPlusPlus11 = true;
 
     FileSystemOptions fileSystemOpts;
     fileMgr = new FileManager(fileSystemOpts);
-    diags = std::make_unique<DiagnosticsEngine>(diagIDs, diagOpts);
+    diags = std::make_unique<DiagnosticsEngine>(diagIDs, *diagOpts);
     sourceMgr = std::make_unique<SourceManager>(*diags, *fileMgr);
   }
 };

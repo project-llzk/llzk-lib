@@ -10,19 +10,22 @@
 #ifndef LLZK_VERIF_OPS
 #define LLZK_VERIF_OPS
 
-include "llzk/Dialect/Verif/IR/Dialect.td"
-include "llzk/Dialect/Verif/IR/OpInterfaces.td"
-include "llzk/Dialect/SMT/IR/SMTTypes.td"
-include "mlir/Interfaces/CallInterfaces.td"
-include "mlir/Interfaces/FunctionInterfaces.td"
-include "llzk/Dialect/Shared/OpTraits.td"
-include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
+include "llzk/Dialect/Verif/IR/Dialect.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
+include "llzk/Dialect/Shared/CallLikeOpInterfaces.td"
+include "llzk/Dialect/Shared/OpTraits.td"
+include "llzk/Dialect/Shared/Types.td"
 
+include "mlir/Dialect/SMT/IR/SMTTypes.td"
+include "mlir/Interfaces/CallInterfaces.td"
+include "mlir/Interfaces/FunctionInterfaces.td"
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
+include "mlir/Interfaces/CallInterfaces.td"
+include "mlir/Interfaces/FunctionInterfaces.td"
 
 class VerifDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<VerifDialect, mnemonic, traits>;
@@ -53,7 +56,7 @@ class ContractConditionOp<string mnemonic, bit inlinable = false,
                           list<Trait> traits = []>
     : ConditionOp<mnemonic,
                   traits#!if(inlinable,
-                             [HasAncestorOf<["::llzk::verif::ContractOp",
+                             [AncestorOneOf<["::llzk::verif::ContractOp",
                                              "::llzk::function::FuncDefOp"]>],
                              [HasAncestor<"::llzk::verif::ContractOp">])>;
 
@@ -244,7 +247,8 @@ def ContractOp
 
   let arguments = (ins SymbolNameAttr:$sym_name, SymbolRefAttr:$target,
       TypeAttrOf<FunctionType>:$function_type,
-      OptionalAttr<DictArrayAttr>:$arg_attrs);
+      OptionalAttr<DictArrayAttr>:$arg_attrs,
+      OptionalAttr<DictArrayAttr>:$res_attrs);
 
   let regions = (region AnyRegion:$body);
 
@@ -258,21 +262,27 @@ def ContractOp
   let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::TypeAttr":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
-        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs,
+              res_attrs);
       }]>,
                   OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                                 "::mlir::StringAttr":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::TypeAttr":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
         $_state.getOrAddProperties<Properties>().sym_name = sym_name;
         $_state.getOrAddProperties<Properties>().target = target;
         $_state.getOrAddProperties<Properties>().function_type = function_type;
         if (arg_attrs) {
           $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        if (res_attrs) {
+          $_state.getOrAddProperties<Properties>().res_attrs = res_attrs;
         }
         initializeEmptyBody(
             $_builder, $_state, ::llvm::cast<::mlir::FunctionType>(function_type.getValue())
@@ -283,21 +293,27 @@ def ContractOp
                   OpBuilder<(ins "::llvm::StringRef":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::FunctionType":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
-        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs,
+              res_attrs);
       }]>,
                   OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                                 "::llvm::StringRef":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::FunctionType":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
         $_state.getOrAddProperties<Properties>().sym_name = $_builder.getStringAttr(sym_name);
         $_state.getOrAddProperties<Properties>().target = target;
         $_state.getOrAddProperties<Properties>().function_type = ::mlir::TypeAttr::get(function_type);
         if (arg_attrs) {
           $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        if (res_attrs) {
+          $_state.getOrAddProperties<Properties>().res_attrs = res_attrs;
         }
         initializeEmptyBody($_builder, $_state, function_type);
         assert(resultTypes.size() == 0u && "mismatched number of results");
@@ -432,12 +448,11 @@ def ContractEndOp
 //===------------------------------------------------------------------===//
 
 def IncludeOp
-    : VerifDialectOp<
-          "include", [MemRefsNormalizable, AttrSizedOperandSegments,
-                      VerifySizesForMultiAffineOps<1>,
-                      DeclareOpInterfaceMethods<CallOpInterface>,
-                      DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      HasAncestor<"::llzk::verif::ContractOp">]> {
+    : VerifDialectOp<"include", [MemRefsNormalizable, AttrSizedOperandSegments,
+                                 DeclareOpInterfaceMethods<
+                                     LLZKCallLikeOpInterface, ["getSelfValue"]>,
+                                 VerifySizesForMultiAffineOps<1>,
+                                 HasAncestor<"::llzk::verif::ContractOp">]> {
   let summary = "contract inclusion operation";
   let description = [{
     Invokes another specification contract from another contract, effectively including the
@@ -462,7 +477,12 @@ def IncludeOp
       // AffineMap "symbolic" arguments.
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
       // Denotes the size of each variadic group in '$mapOperands'.
-      DenseI32ArrayAttr:$mapOpGroupSizes);
+      DenseI32ArrayAttr:$mapOpGroupSizes,
+      // Per-call argument and result attribute dictionaries required by
+      // CallOpInterface. Includes have no results, so res_attrs is normally
+      // absent.
+      OptionalAttr<DictArrayAttr>:$arg_attrs,
+      OptionalAttr<DictArrayAttr>:$res_attrs);
 
   let assemblyFormat = [{
     $callee
@@ -529,71 +549,12 @@ def IncludeOp
                   }]>];
 
   let extraClassDeclaration = [{
-    /// Required by CallOpInterface
-    ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
-
-    /// Required by CallOpInterface
-    ::mlir::Operation *resolveCallable();
-
-    /// Return the FunctionType inferred from the arg operands of this CallOp.
-    /// This is not necessarily the same as the callee's FunctionType but should unify with it
-    /// or else IR verification will fail.
-    ::mlir::FunctionType getTypeSignature();
-
-    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
-    /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
-    /// unifications that were made. Otherwise, return failure.
-    ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
-
     /// Return `true` iff the contract targets a struct type.
     bool contractTargetsStruct();
-
-    /// Return the "self" value (i.e. the first parameter) from the callee contract,
-    /// assuming the target of the contract is a struct target.
-    ::mlir::Value getSelfValue();
 
     /// Resolve and return the target Contract for this CallOp.
     ::mlir::FailureOr<::llzk::SymbolLookupResult<::llzk::verif::ContractOp>>
     getCalleeTarget(::mlir::SymbolTableCollection &tables);
-
-    /// Allocate consecutive storage of the ValueRange instances in the parameter
-    /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
-    static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
-
-    /// Check type compatibility of the given template parameter value from this `CallOp` against
-    /// the declared type on the given `TemplateParamOp` (if any).
-    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
-      ::mlir::Attribute paramFromIncludeOp, ::llzk::polymorphic::TemplateParamOp targetParam
-    ) {
-      return llzk::verifyTemplateParamValueCompatibility(getOperation(), paramFromIncludeOp, targetParam);
-    }
-
-    /// Check type compatibility of each template parameter value provided in this `CallOp` against
-    /// the declared type on each `TemplateParamOp` (if any).
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
-    ) {
-      return llzk::verifyTemplateParamValuesCompatibility(getOperation(), getTemplateParamsAttr(), targetParamDefs);
-    }
-
-    /// Verify that each template parameter value provided in this `CallOp` is consistent with
-    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
-    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
-    /// the target function type signature.
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    inline ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
-        const UnificationMap &unifications
-    ) {
-      return llzk::verifyTemplateParamsMatchInferred(getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications);
-    }
   }];
 }
 

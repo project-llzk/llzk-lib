@@ -9,7 +9,6 @@
 
 #include "pcl/Dialect/IR/Ops.h"
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "pcl/Dialect/IR/Attrs.h"
 
 #include <mlir/IR/MLIRContext.h>
@@ -518,7 +517,7 @@ private:
       return {X, Yop.getValue()};
     }
 
-    auto negOp = rewriter.create<NegOp>(op.getLoc(), Y);
+    auto negOp = NegOp::create(rewriter, op.getLoc(), Y);
     return {X, negOp};
   }
 

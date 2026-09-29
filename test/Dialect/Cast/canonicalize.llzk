@@ -535,3 +535,25 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: function.def @fold_true()
 // CHECK-NEXT:    %[[ONE:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"babybear">
 // CHECK-COUNT-3: function.call @use_felt(%[[ONE]]) : (!felt.type<"babybear">) -> ()
+// -----
+
+module attributes {llzk.lang} {
+    function.def private @use_index(%i: index) -> ()
+
+    function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
+        %fmax = felt.const 9223372036854775807
+        %ftoo_large = felt.const 9223372036854775808
+        %fnegative = felt.const -1
+
+        %cmax = cast.toindex %fmax
+        %ctoo_large = cast.toindex %ftoo_large
+        %cnegative = cast.toindex %fnegative
+
+        function.call @use_index(%cmax) : (index) -> ()
+        function.call @use_index(%ctoo_large) : (index) -> ()
+        function.call @use_index(%cnegative) : (index) -> ()
+
+        function.return
+    }
+}
+// CHECK: TODO

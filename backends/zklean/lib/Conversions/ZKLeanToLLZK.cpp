@@ -124,12 +124,12 @@ static void emitStructDefsFromZKLean(ModuleOp source, ZKLeanToLLZKState &state) 
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
     auto structDef =
-        state.builder.create<llzk::component::StructDefOp>(def.getLoc(), def.getSymNameAttr());
+        llzk::component::StructDefOp::create(state.builder, def.getLoc(), def.getSymNameAttr());
     auto &body = structDef.getBodyRegion().emplaceBlock();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::zkleanlean::MemberDefOp>()) {
-      memberBuilder.create<llzk::component::MemberDefOp>(
-          member.getLoc(), member.getSymName(), state.feltType
+      llzk::component::MemberDefOp::create(
+          memberBuilder, member.getLoc(), member.getSymName(), state.feltType
       );
     }
     StructState structState;
@@ -160,14 +160,14 @@ static void ensureComputeStub(
   OpBuilder::InsertionGuard guard(ctx.builder);
   ctx.builder.setInsertionPointToEnd(&state.def.getBodyRegion().front());
   // Stub compute: return an empty struct instance when ZKLean has no compute.
-  auto computeFunc = ctx.builder.create<llzk::function::FuncDefOp>(
-      loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_COMPUTE), computeType
+  auto computeFunc = llzk::function::FuncDefOp::create(
+      ctx.builder, loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_COMPUTE), computeType
   );
   computeFunc.setAllowWitnessAttr(true);
   Block *computeBlock = computeFunc.addEntryBlock();
   OpBuilder bodyBuilder = OpBuilder::atBlockEnd(computeBlock);
-  auto selfVal = bodyBuilder.create<llzk::component::CreateStructOp>(loc, structType);
-  bodyBuilder.create<llzk::function::ReturnOp>(loc, selfVal.getResult());
+  auto selfVal = llzk::component::CreateStructOp::create(bodyBuilder, loc, structType);
+  llzk::function::ReturnOp::create(bodyBuilder, loc, selfVal.getResult());
   state.hasCompute = true;
 }
 
@@ -181,13 +181,13 @@ static void ensureConstrainStub(StructState &state, Location loc, ZKLeanToLLZKSt
   auto constrainType = FunctionType::get(ctx.dest.getContext(), ArrayRef<Type> {structType}, {});
   OpBuilder::InsertionGuard guard(ctx.builder);
   ctx.builder.setInsertionPointToEnd(&state.def.getBodyRegion().front());
-  auto constrainFunc = ctx.builder.create<llzk::function::FuncDefOp>(
-      loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN), constrainType
+  auto constrainFunc = llzk::function::FuncDefOp::create(
+      ctx.builder, loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN), constrainType
   );
   constrainFunc.setAllowConstraintAttr(true);
   Block *constrainBlock = constrainFunc.addEntryBlock();
   OpBuilder bodyBuilder = OpBuilder::atBlockEnd(constrainBlock);
-  bodyBuilder.create<llzk::function::ReturnOp>(loc);
+  llzk::function::ReturnOp::create(bodyBuilder, loc);
   state.hasConstrain = true;
 }
 
@@ -333,8 +333,8 @@ struct FunctionConverter {
     if (auto constOp = dyn_cast<llzk::felt::FeltConstantOp>(op)) {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto cloned = state.builder.create<llzk::felt::FeltConstantOp>(
-          constOp.getLoc(), constOp.getResult().getType(), constOp.getValueAttr()
+      auto cloned = llzk::felt::FeltConstantOp::create(
+          state.builder, constOp.getLoc(), constOp.getResult().getType(), constOp.getValueAttr()
       );
       feltValueMap[constOp.getResult()] = cloned.getResult();
       return;
@@ -396,7 +396,7 @@ struct FunctionConverter {
         state.builder.setInsertionPointToEnd(newBlock);
         auto predAttr =
             llzk::boolean::FeltCmpPredicateAttr::get(state.dest.getContext(), *predicate);
-        auto cmpOp = state.builder.create<llzk::boolean::CmpOp>(call.getLoc(), predAttr, lhs, rhs);
+        auto cmpOp = llzk::boolean::CmpOp::create(state.builder, call.getLoc(), predAttr, lhs, rhs);
         leanValueMap[call.getResult(0)] = cmpOp.getResult();
         return;
       }
@@ -416,7 +416,7 @@ struct FunctionConverter {
         OpBuilder::InsertionGuard guard(state.builder);
         state.builder.setInsertionPointToEnd(newBlock);
         auto castOp =
-            state.builder.create<llzk::cast::IntToFeltOp>(call.getLoc(), state.feltType, value);
+            llzk::cast::IntToFeltOp::create(state.builder, call.getLoc(), state.feltType, value);
         zkToFeltMap[call.getResult(0)] = castOp.getResult();
         return;
       }
@@ -436,8 +436,8 @@ struct FunctionConverter {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto memberAttr = state.builder.getStringAttr(accessor.getMemberNameAttr().getValue());
-      auto newRead = state.builder.create<llzk::component::MemberReadOp>(
-          accessor.getLoc(), state.feltType, component, memberAttr
+      auto newRead = llzk::component::MemberReadOp::create(
+          state.builder, accessor.getLoc(), state.feltType, component, memberAttr
       );
       zkToFeltMap[accessor.getValue()] = newRead.getVal();
       return;
@@ -454,7 +454,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltAdd = state.builder.create<llzk::felt::AddFeltOp>(add.getLoc(), lhs, rhs);
+      auto feltAdd = llzk::felt::AddFeltOp::create(state.builder, add.getLoc(), lhs, rhs);
       zkToFeltMap[add.getOutput()] = feltAdd.getResult();
       return;
     }
@@ -470,7 +470,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltSub = state.builder.create<llzk::felt::SubFeltOp>(sub.getLoc(), lhs, rhs);
+      auto feltSub = llzk::felt::SubFeltOp::create(state.builder, sub.getLoc(), lhs, rhs);
       zkToFeltMap[sub.getOutput()] = feltSub.getResult();
       return;
     }
@@ -486,7 +486,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltMul = state.builder.create<llzk::felt::MulFeltOp>(mul.getLoc(), lhs, rhs);
+      auto feltMul = llzk::felt::MulFeltOp::create(state.builder, mul.getLoc(), lhs, rhs);
       zkToFeltMap[mul.getOutput()] = feltMul.getResult();
       return;
     }
@@ -501,7 +501,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltNeg = state.builder.create<llzk::felt::NegFeltOp>(neg.getLoc(), operand);
+      auto feltNeg = llzk::felt::NegFeltOp::create(state.builder, neg.getLoc(), operand);
       zkToFeltMap[neg.getOutput()] = feltNeg.getResult();
       return;
     }
@@ -517,7 +517,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      state.builder.create<llzk::constrain::EmitEqualityOp>(constraint.getLoc(), lhs, rhs);
+      llzk::constrain::EmitEqualityOp::create(state.builder, constraint.getLoc(), lhs, rhs);
       return;
     }
 
@@ -532,7 +532,7 @@ struct FunctionConverter {
   void finalize(Location loc) {
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(newBlock);
-    state.builder.create<llzk::function::ReturnOp>(loc);
+    llzk::function::ReturnOp::create(state.builder, loc);
   }
 };
 
@@ -554,14 +554,15 @@ static llzk::function::FuncDefOp createTargetFunction(
     ensureComputeStub(*structState, baseInputTypes, func.getLoc(), state);
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(&structState->def.getBodyRegion().front());
-    newFunc = state.builder.create<llzk::function::FuncDefOp>(
-        func.getLoc(), state.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN), newFuncType
+    newFunc = llzk::function::FuncDefOp::create(
+        state.builder, func.getLoc(), state.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN),
+        newFuncType
     );
     structState->hasConstrain = true;
   } else {
     state.builder.setInsertionPointToEnd(state.dest.getBody());
-    newFunc = state.builder.create<llzk::function::FuncDefOp>(
-        func.getLoc(), func.getSymName(), newFuncType
+    newFunc = llzk::function::FuncDefOp::create(
+        state.builder, func.getLoc(), func.getSymName(), newFuncType
     );
   }
   newFunc.setAllowConstraintAttr(true);

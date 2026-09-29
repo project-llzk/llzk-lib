@@ -65,7 +65,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@TestComponent04>
     }
     function.def @constrain(%a: !felt.type, %b: !felt.type) {
-      // expected-error@+1 {{custom op 'constrain.in' invalid kind of Type specified}}
+      // expected-error@+1 {{custom op 'constrain.in' invalid kind of type specified: expected array.type, but found '!felt.type'}}
       constrain.in %b, %a : !felt.type, !felt.type
       function.return
     }

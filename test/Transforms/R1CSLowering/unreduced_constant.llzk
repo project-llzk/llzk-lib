@@ -1,0 +1,32 @@
+// RUN: llzk-opt --llzk-r1cs-lowering %s | FileCheck %s
+
+// No canonicalization: the consumer must interpret N modulo its field prime.
+module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
+  struct.def @ReducedConstant {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@ReducedConstant> {
+      %self = struct.new : !struct.type<@ReducedConstant>
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %c : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      function.return %self : !struct.type<@ReducedConstant>
+    }
+    function.def @constrain(%self: !struct.type<@ReducedConstant>) {
+      %out = struct.readm %self[@out] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      constrain.eq %out, %c : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @ReducedConstant {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : i64 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : i64 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.const 7 : i64 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_4]], -1 : i64 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_3]], %[[VAL_5]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_1]], %[[VAL_2]], %[[VAL_6]] : !r1cs.linear
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

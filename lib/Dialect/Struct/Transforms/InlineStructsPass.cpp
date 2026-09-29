@@ -27,12 +27,13 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Transforms/Inliner.h>
 #include <mlir/Transforms/InliningUtils.h>
 #include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
@@ -144,8 +145,8 @@ static bool combineHelper(
 
   // Replace this MemberReadOp with a new one that targets the cloned member.
   OpBuilder builder(readOp);
-  MemberReadOp newRead = builder.create<MemberReadOp>(
-      readOp.getLoc(), readOp.getType(), destMemberRefOp.getComponent(),
+  MemberReadOp newRead = MemberReadOp::create(
+      builder, readOp.getLoc(), readOp.getType(), destMemberRefOp.getComponent(),
       resNewMember->second.getNameAttr()
   );
   readOp.replaceAllUsesWith(newRead.getOperation());
@@ -324,9 +325,10 @@ class StructInliner {
       });
 
       InlinerInterface inliner(destFunc.getContext());
+      InlinerConfig inlinerConfig;
 
       /// Replaces CallOp that target `srcFunc` with an inlined version of `srcFunc`.
-      auto callHandler = [this, &inliner, &srcFunc](CallOp callOp) {
+      auto callHandler = [this, &inliner, &inlinerConfig, &srcFunc](CallOp callOp) {
         // Ensure the CallOp targets `srcFunc`
         auto callOpTarget = callOp.getCalleeTarget(this->data.tables);
         assert(succeeded(callOpTarget));
@@ -354,8 +356,10 @@ class StructInliner {
         this->processCloneBeforeInlining(srcFuncClone);
 
         // Inline the cloned function in place of `callOp`
-        LogicalResult inlineCallRes =
-            inlineCall(inliner, callOp, srcFuncClone, &srcFuncClone.getBody(), false);
+        LogicalResult inlineCallRes = inlineCall(
+            inliner, inlinerConfig.getCloneCallback(), callOp, srcFuncClone,
+            &srcFuncClone.getBody(), false
+        );
         if (failed(inlineCallRes)) {
           callOp.emitError().append("Failed to inline ", srcFunc.getFullyQualifiedName()).report();
           return WalkResult::interrupt(); // use interrupt to signal failure
@@ -669,9 +673,12 @@ private:
     // original argument in the CallOp.
     Value originalBaseVal = paramFromMember.getComponent();
     for (auto [origName, newMemberRef] : newMembers) {
-      splitArgs.push_back(builder.create<MemberReadOp>(
-          inCall.getLoc(), newMemberRef.getType(), originalBaseVal, newMemberRef.getNameAttr()
-      ));
+      splitArgs.push_back(
+          MemberReadOp::create(
+              builder, inCall.getLoc(), newMemberRef.getType(), originalBaseVal,
+              newMemberRef.getNameAttr()
+          )
+      );
     }
     // Generate the new argument list from the original but replace 'argIdx'
     SmallVector<Value> newOpArgs(inCall.getArgOperands());
@@ -679,10 +686,13 @@ private:
         newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
     );
     // Create the new CallOp, replace uses of the old with the new, delete the old
-    inCall.replaceAllUsesWith(builder.create<CallOp>(
-        inCall.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(inCall.getMapOperands()),
-        inCall.getNumDimsPerMapAttr(), newOpArgs
-    ));
+    inCall.replaceAllUsesWith(
+        CallOp::create(
+            builder, inCall.getLoc(), tgtFunc,
+            CallOp::toVectorOfValueRange(inCall.getMapOperands()), inCall.getNumDimsPerMapAttr(),
+            newOpArgs
+        )
+    );
     inCall.erase();
     LLVM_DEBUG({
       llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED function: "
@@ -990,7 +1000,8 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
 
   /// Check for additional conditions that make inlining impossible (at least in the current
   /// implementation).
-  static inline bool canInline(FuncDefOp currentFunc, FuncDefOp successorFunc) {
+  static inline bool
+  canInline(FuncDefOp currentFunc, FuncDefOp successorFunc, SymbolTableCollection &tables) {
     // Find CallOp for `successorFunc` within `currentFunc` and check the condition used by
     // `ConstrainImpl::getSelfRefMember()`.
     //
@@ -1002,7 +1013,11 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
     // `getSelfRefMember()` and new members will still need to be added. They can be prefixed with
     // parameter index since there is no current member name to use as the unique prefix. Handling
     // that would require refactoring the inlining process a bit.
-    WalkResult res = currentFunc.walk([](CallOp c) {
+    WalkResult res = currentFunc.walk([successorFunc, &tables](CallOp c) {
+      auto calleeTarget = c.getCalleeTarget(tables);
+      if (failed(calleeTarget) || calleeTarget->get() != successorFunc) {
+        return WalkResult::advance();
+      }
       return getMemberReadThatDefinesSelfValuePassedToConstrain(c)
                  ? WalkResult::interrupt() // use interrupt to indicate success
                  : WalkResult::advance();
@@ -1205,7 +1220,7 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
           if (!successorFunc) {
             continue;
           }
-          if (canInline(currentFunc, successorFunc)) {
+          if (canInline(currentFunc, successorFunc, tables)) {
             successorsToMerge.push_back(getParentStruct(successorFunc));
           }
         }

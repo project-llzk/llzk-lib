@@ -223,7 +223,9 @@ struct SymbolScope {
 
   /// Walk all of the operations nested under the current scope without
   /// traversing into any nested symbol tables.
-  template <typename CallbackT> std::optional<WalkResult> walkSymbolTable(CallbackT &&cback) {
+  template <typename CallbackT>
+  [[maybe_unused]]
+  std::optional<WalkResult> walkSymbolTable(CallbackT &&cback) {
     if (Region *region = llvm::dyn_cast_if_present<Region *>(limit)) {
       return ::walkSymbolTable(*region, cback);
     }

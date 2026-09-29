@@ -145,15 +145,9 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
 
-enum class Side : std::uint8_t { EMPTY = 0, LHS, RHS, TOMB };
+enum class Side : std::uint8_t { LHS, RHS };
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &val) {
   switch (val) {
-  case Side::EMPTY:
-    os << "EMPTY";
-    break;
-  case Side::TOMB:
-    os << "TOMB";
-    break;
   case Side::LHS:
     os << "LHS";
     break;
@@ -170,9 +164,8 @@ inline Side reverse(Side in) {
     return Side::RHS;
   case Side::RHS:
     return Side::LHS;
-  default:
-    return in;
   }
+  return in;
 }
 
 } // namespace llzk
@@ -180,8 +173,6 @@ inline Side reverse(Side in) {
 namespace llvm {
 template <> struct DenseMapInfo<llzk::Side> {
   using T = llzk::Side;
-  static inline T getEmptyKey() { return T::EMPTY; }
-  static inline T getTombstoneKey() { return T::TOMB; }
   static unsigned getHashValue(const T &val) {
     using UT = std::underlying_type_t<T>;
     return llvm::DenseMapInfo<UT>::getHashValue(static_cast<UT>(val));
@@ -210,7 +201,7 @@ uint64_t computeEmitEqCardinality(mlir::Type type);
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
 /// found (i.e., multiple Occurrences of a specific `SymbolRefAttr` on the same side map to
-/// different Attributes from the other side). The mapped value will be `nullptr`.
+/// different Attributes from the other side), the mapped value will be `nullptr`.
 ///
 /// This map is used by the `llzk-flatten` pass to replace struct parameter `SymbolRefAttr` with
 /// static concrete values to produce the flattened versions of structs.

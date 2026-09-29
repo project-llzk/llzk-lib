@@ -486,7 +486,19 @@ LogicalResult verifyTemplateParamValueCompatibility(
         }
       }
     }
-    if (resolvedLocal && !compatible) {
+    // `verifyTemplateParamSymbol` establishes that this is a constant global, but the global's
+    // type is not otherwise constrained when the parameter is absent from the callee signature.
+    // Resolve it here to enforce the explicit template parameter restriction.
+    if (!resolvedLocal) {
+      FailureOr<SymbolLookupResultUntyped> lookupRes = lookupTopLevelSymbol(tables, symbol, origin);
+      if (failed(lookupRes)) {
+        return failure();
+      }
+      auto global = llvm::cast<GlobalDefOp>(lookupRes->get());
+      assert(global.isConstant() && "already verified by verifyTemplateParamSymbol");
+      compatible = typesUnify(global.getType(), *declaredType);
+    }
+    if (!compatible) {
       return origin->emitOpError().append(
           "instantiation value '", value, "' is not compatible with parameter \"@",
           targetParam.getName(), "\" type restriction ", *declaredType
@@ -549,7 +561,9 @@ LogicalResult verifyTemplateParamsMatchInferred(
       }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
+    // A null entry represents conflicting inferred bindings. It may include symbolic values
+    // that become equal after instantiating an enclosing template, so defer validation.
+    if (it != unifications.end() && it->second && !typeParamsUnify({attr}, {it->second})) {
       return origin->emitOpError().append(
           "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
           "\" conflicts with value '", it->second, "' inferred from function type signature"

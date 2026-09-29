@@ -16,7 +16,6 @@ def PCLDialect : Dialect {
   let name = "pcl";
   let summary = "PCL";
   let cppNamespace = "::pcl";
-  let usePropertiesForAttributes = 0;
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
   let hasConstantMaterializer = 1;

@@ -1,0 +1,85 @@
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @observe_pod(%pod: !pod.type<[@field: index]>) {
+    function.return
+  }
+
+  function.def @observe_array(%array: !array.type<1 x index>) {
+    function.return
+  }
+
+  // A call observes the first POD value, so its initializing write is live
+  // even though the record is overwritten afterward.
+  function.def @call_observes_first_write(%one: index, %two: index) -> index
+      attributes {function.allow_witness} {
+    %pod = pod.new : !pod.type<[@field: index]>
+    pod.write %pod[@field] = %one : !pod.type<[@field: index]>, index
+    function.call @observe_pod(%pod) : (!pod.type<[@field: index]>) -> ()
+    pod.write %pod[@field] = %two : !pod.type<[@field: index]>, index
+    %stored = pod.read %pod[@field] : !pod.type<[@field: index]>, index
+    function.return %stored : index
+  }
+
+  // Constraints likewise observe aggregate operands by value.
+  function.def @constraint_observes_first_write(%one: index, %two: index) -> index
+      attributes {function.allow_constraint} {
+    %pod = pod.new : !pod.type<[@field: index]>
+    pod.write %pod[@field] = %one : !pod.type<[@field: index]>, index
+    constrain.eq %pod, %pod : !pod.type<[@field: index]>, !pod.type<[@field: index]>
+    pod.write %pod[@field] = %two : !pod.type<[@field: index]>, index
+    %stored = pod.read %pod[@field] : !pod.type<[@field: index]>, index
+    function.return %stored : index
+  }
+
+  // The same rule applies to array-element writes below an aggregate operand.
+  function.def @call_observes_first_array_write(%one: index, %two: index) -> index
+      attributes {function.allow_witness} {
+    %array = array.new : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    array.write %array[%index] = %one : !array.type<1 x index>, index
+    function.call @observe_array(%array) : (!array.type<1 x index>) -> ()
+    array.write %array[%index] = %two : !array.type<1 x index>, index
+    %stored = array.read %array[%index] : !array.type<1 x index>, index
+    function.return %stored : index
+  }
+
+  function.def @constraint_observes_first_array_write(%one: index, %two: index) -> index
+      attributes {function.allow_constraint} {
+    %array = array.new : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    array.write %array[%index] = %one : !array.type<1 x index>, index
+    constrain.eq %array, %array : !array.type<1 x index>, !array.type<1 x index>
+    array.write %array[%index] = %two : !array.type<1 x index>, index
+    %stored = array.read %array[%index] : !array.type<1 x index>, index
+    function.return %stored : index
+  }
+}
+
+// CHECK-LABEL: function.def @call_observes_first_write(
+// CHECK: pod.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK: function.call @observe_pod(%{{[0-9a-zA-Z_.]+}}) : (!pod.type<[@field: index]>) -> ()
+// CHECK: pod.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK-NOT: pod.read
+// CHECK: function.return %[[TWO]] : index
+
+// CHECK-LABEL: function.def @constraint_observes_first_write(
+// CHECK: pod.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK: constrain.eq {{.*}} : !pod.type<[@field: index]>, !pod.type<[@field: index]>
+// CHECK: pod.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK-NOT: pod.read
+// CHECK: function.return %[[TWO]] : index
+
+// CHECK-LABEL: function.def @call_observes_first_array_write(
+// CHECK: array.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK: function.call @observe_array(%{{[0-9a-zA-Z_.]+}}) : (!array.type<1 x index>) -> ()
+// CHECK: array.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK-NOT: array.read
+// CHECK: function.return %[[TWO]] : index
+
+// CHECK-LABEL: function.def @constraint_observes_first_array_write(
+// CHECK: array.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK: constrain.eq {{.*}} : !array.type<1 x index>, !array.type<1 x index>
+// CHECK: array.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK-NOT: array.read
+// CHECK: function.return %[[TWO]] : index

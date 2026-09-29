@@ -1,0 +1,58 @@
+// RUN: llzk-opt -llzk-inline-free-functions %s | FileCheck --enable-var-scope %s
+
+// StructType names resolve from the root module. The helper's !struct.type<@Main>
+// therefore denotes the root @Main even though its module defines another @Main.
+module attributes {llzk.lang} {
+  module @lib {
+    struct.def @Main {
+      function.def @product() -> !struct.type<@lib::@Main> {
+        %self = struct.new : !struct.type<@lib::@Main>
+        function.return %self : !struct.type<@lib::@Main>
+      }
+    }
+
+    function.def @identity(%component: !struct.type<@Main>) -> !struct.type<@Main> {
+      function.return %component : !struct.type<@Main>
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %same = function.call @lib::@identity(%self) : (!struct.type<@Main>) -> !struct.type<@Main>
+      %out = struct.readm %same[@out] : !struct.type<@Main>, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @lib {
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        function.def @product() -> !struct.type<@lib::@Main> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@lib::@Main>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@lib::@Main>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @identity(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) -> !struct.type<@Main> {
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

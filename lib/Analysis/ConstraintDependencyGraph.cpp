@@ -348,12 +348,12 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
   // We also want to add the constant values into the printing.
   std::set<std::set<SourceRef>> sortedSets;
   for (auto it = signalSets.begin(); it != signalSets.end(); it++) {
-    if (!it->isLeader()) {
+    if (!(*it)->isLeader()) {
       continue;
     }
 
     std::set<SourceRef> sortedMembers;
-    for (auto mit = signalSets.member_begin(it); mit != signalSets.member_end(); mit++) {
+    for (auto mit = signalSets.member_begin(**it); mit != signalSets.member_end(); mit++) {
       sortedMembers.insert(*mit);
     }
 
@@ -488,11 +488,11 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     // We should be able to just merge what is in the translatedCDG to the current CDG
     auto &tSets = translatedCDG.signalSets;
     for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
-      if (!lit->isLeader()) {
+      if (!(*lit)->isLeader()) {
         continue;
       }
-      auto leader = lit->getData();
-      for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
+      auto leader = (*lit)->getData();
+      for (auto mit = tSets.member_begin(**lit); mit != tSets.member_end(); mit++) {
         signalSets.unionSets(leader, *mit);
       }
     }
@@ -577,12 +577,12 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   };
 
   for (auto leaderIt = signalSets.begin(); leaderIt != signalSets.end(); leaderIt++) {
-    if (!leaderIt->isLeader()) {
+    if (!(*leaderIt)->isLeader()) {
       continue;
     }
     // translate everything in this set first
     std::vector<SourceRef> translatedSignals, translatedConsts;
-    for (auto mit = signalSets.member_begin(leaderIt); mit != signalSets.member_end(); mit++) {
+    for (auto mit = signalSets.member_begin(**leaderIt); mit != signalSets.member_end(); mit++) {
       auto member = translate(*mit);
       if (mlir::failed(member)) {
         continue;
@@ -640,11 +640,11 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
     // A dynamic access is represented by a half-open range. Match every concrete element and
     // range that overlaps the queried path, as well as exact references.
     for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
-      const SourceRef &candidateRef = candidate->getData();
+      const SourceRef &candidateRef = (*candidate)->getData();
       if (!candidateRef.overlaps(*currRef)) {
         continue;
       }
-      for (auto it = signalSets.findLeader(candidate); it != signalSets.member_end(); ++it) {
+      for (auto it = signalSets.findLeader(**candidate); it != signalSets.member_end(); ++it) {
         if (!it->overlaps(ref)) {
           res.insert(*it);
         }

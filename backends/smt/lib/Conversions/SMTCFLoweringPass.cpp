@@ -18,13 +18,13 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
 #include <mlir/IR/BuiltinOps.h>
 
 #include <utility>
@@ -73,8 +73,10 @@ class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
 
 public:
   LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
-    SmallVector<smt::AssertOp> thenAssertions = walkCollect<smt::AssertOp>(ifOp.getThenRegion());
-    SmallVector<smt::AssertOp> elseAssertions = walkCollect<smt::AssertOp>(ifOp.getElseRegion());
+    SmallVector<mlir::smt::AssertOp> thenAssertions =
+        walkCollect<mlir::smt::AssertOp>(ifOp.getThenRegion());
+    SmallVector<mlir::smt::AssertOp> elseAssertions =
+        walkCollect<mlir::smt::AssertOp>(ifOp.getElseRegion());
     if (thenAssertions.empty() && elseAssertions.empty()) {
       // No assertions, nothing to do!
       return success();
@@ -83,8 +85,9 @@ public:
     Value condition = getCondition(ifOp);
     for (auto assertion : thenAssertions) {
       rewriter.setInsertionPoint(assertion);
-      auto implies =
-          rewriter.create<smt::ImpliesOp>(assertion.getLoc(), condition, assertion.getInput());
+      auto implies = mlir::smt::ImpliesOp::create(
+          rewriter, assertion.getLoc(), condition, assertion.getInput()
+      );
       assertion.getInputMutable().assign(implies.getResult());
     }
 
@@ -96,17 +99,18 @@ public:
 
     rewriter.setInsertionPoint(ifOp);
     Value notCondition;
-    if (auto notOp = dyn_cast<smt::NotOp>(condition.getDefiningOp())) {
+    if (auto notOp = dyn_cast<mlir::smt::NotOp>(condition.getDefiningOp())) {
       // Don't generate (not (not x))
       notCondition = notOp.getInput();
     } else {
-      notCondition = rewriter.create<smt::NotOp>(ifOp.getLoc(), condition).getResult();
+      notCondition = mlir::smt::NotOp::create(rewriter, ifOp.getLoc(), condition).getResult();
     }
 
     for (auto assertion : elseAssertions) {
       rewriter.setInsertionPoint(assertion);
-      auto implies =
-          rewriter.create<smt::ImpliesOp>(assertion.getLoc(), notCondition, assertion.getInput());
+      auto implies = mlir::smt::ImpliesOp::create(
+          rewriter, assertion.getLoc(), notCondition, assertion.getInput()
+      );
       assertion.getInputMutable().assign(implies.getResult());
     }
 
@@ -136,8 +140,8 @@ public:
 
     SmallVector<Value> muxedValues;
     for (auto [v1, v2] : yieldedValues) {
-      auto iteOp = rewriter.create<smt::IteOp>(
-          ifOp.getLoc(), getCondition(ifOp), mapping.lookupOrDefault(v1),
+      auto iteOp = mlir::smt::IteOp::create(
+          rewriter, ifOp.getLoc(), getCondition(ifOp), mapping.lookupOrDefault(v1),
           mapping.lookupOrDefault(v2)
       );
       muxedValues.push_back(iteOp.getResult());

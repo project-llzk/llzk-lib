@@ -35,7 +35,7 @@ namespace llzk::global {
 
 // Note: definition is placed here rather than the header to avoid the error:
 //       "vtable will be emitted in every translation unit"
-mlir::StringRef GlobalMemoryResource::getName() { return "GlobalMemory"; }
+mlir::StringRef GlobalMemoryResource::getName() const { return "GlobalMemory"; }
 
 namespace {
 
@@ -69,7 +69,7 @@ normalizeGlobalInitializer(FeltType expectedType, Attribute value, EmitErrorFn) 
     if (!expectedType.hasField() && valueType.hasField()) {
       expectedType = valueType;
     } else if (expectedType.hasField() && !valueType.hasField()) {
-      value = FeltConstAttr::get(value.getContext(), feltValue.getValue(), expectedType);
+      value = FeltConstAttr::get(value.getContext(), feltValue.getRawValue(), expectedType);
     }
   }
   return NormalizedGlobalInitializer {expectedType, value};

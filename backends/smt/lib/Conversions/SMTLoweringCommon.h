@@ -25,13 +25,13 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Field.h"
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
+#include <mlir/Dialect/SMT/IR/SMTTypes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Transforms/DialectConversion.h>
 
@@ -139,6 +139,23 @@ public:
   mlir::LogicalResult matchAndRewrite(
       felt::FeltConstantOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
+};
+
+/// Lower felt negation to upstream SMT subtraction from an explicit zero.
+class FeltNegConverter : public mlir::OpConversionPattern<felt::NegFeltOp> {
+  using mlir::OpConversionPattern<felt::NegFeltOp>::OpConversionPattern;
+
+public:
+  mlir::LogicalResult matchAndRewrite(
+      felt::NegFeltOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override {
+    auto zero = mlir::smt::IntConstantOp::create(
+        rewriter, op.getLoc(),
+        mlir::IntegerAttr::get(getContext(), llvm::APSInt(llvm::APInt(1, 0), false))
+    );
+    rewriter.replaceOpWithNewOp<mlir::smt::IntSubOp>(op, zero.getResult(), adaptor.getOperand());
+    return mlir::success();
+  }
 };
 
 } // namespace llzk::smt::detail

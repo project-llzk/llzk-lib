@@ -33,7 +33,7 @@ TEST_F(OpTests, testCallNoAffine_GoodNoArgs) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  CallOp op = bldr.create<CallOp>(loc, funcB->getResultTypes(), funcB->getFullyQualifiedName());
+  CallOp op = CallOp::create(bldr, loc, funcB->getResultTypes(), funcB->getFullyQualifiedName());
   // module attributes {llzk.lang} {
   //   function.def @FuncA() -> index {
   //     %0 = call @FuncB() : () -> index
@@ -54,10 +54,10 @@ TEST_F(OpTests, testCallNoAffine_GoodWithArgs) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 5);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  CallOp op = bldr.create<CallOp>(
-      loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1, v2}
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 5);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  CallOp op = CallOp::create(
+      bldr, loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1, v2}
   );
   // module attributes {llzk.lang} {
   //   function.def @FuncA(%arg0: index, %arg1: index) -> index {
@@ -81,9 +81,9 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 5);
-  CallOp op = bldr.create<CallOp>(
-      loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1}
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 5);
+  CallOp op = CallOp::create(
+      bldr, loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1}
   );
   // module attributes {llzk.lang} {
   //   function.def @FuncA(%arg0: index, %arg1: index) -> index {
@@ -111,9 +111,9 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 5);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {bldr.getI1Type()}, funcB->getFullyQualifiedName(), ValueRange {v1}
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 5);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {bldr.getI1Type()}, funcB->getFullyQualifiedName(), ValueRange {v1}
   );
   // module attributes {llzk.lang} {
   //   function.def @FuncA(%arg0: index) -> index {
@@ -140,7 +140,7 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
   ASSERT_TRUE(succeeded(funcA));
 
   OpBuilder bldr(funcA->getBody());
-  CallOp op = bldr.create<CallOp>(loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"));
+  CallOp op = CallOp::create(bldr, loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"));
   // module attributes {llzk.lang} {
   //   function.def @FuncA() -> index {
   //     call @invalidName() : () -> ()
@@ -170,8 +170,8 @@ TEST_F(OpTests, testCallNoAffine_InvalidTemplateParam) {
   IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 256), bigValue);
 
   OpBuilder bldr(funcA->getBody());
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {bldr.getIndexType()}, funcB->getFullyQualifiedName(), ValueRange {},
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {bldr.getIndexType()}, funcB->getFullyQualifiedName(), ValueRange {},
       ArrayRef<Attribute> {a}
   );
   // module attributes {llzk.lang} {
@@ -215,10 +215,10 @@ TEST_F(OpTests, testCallWithAffine_Good) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 4);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   ASSERT_TRUE(verify(mod.get()));
@@ -242,10 +242,10 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
       structA->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructA<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 4);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -277,10 +277,10 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
   ); // !struct.type<@StructB<[#m]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 4);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -309,10 +309,10 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m, m})
   ); // !struct.type<@StructB<[#m,#m,#m]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 4);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -341,9 +341,9 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -373,9 +373,9 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1}, ValueRange {v1}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -405,8 +405,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef<ValueRange> {}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -436,9 +436,9 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1}}, ArrayRef<int32_t> {}
   );
   EXPECT_DEATH(
@@ -468,8 +468,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef<ValueRange> {}, ArrayRef<int32_t> {}
   );
   EXPECT_DEATH(
@@ -499,9 +499,9 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[#m,#m]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -531,10 +531,10 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[#m,#m]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 4);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1, v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -564,10 +564,10 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !struct.type<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
-  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
+  auto v1 = arith::ConstantIndexOp::create(bldr, loc, 2);
+  auto v2 = arith::ConstantIndexOp::create(bldr, loc, 4);
+  CallOp op = CallOp::create(
+      bldr, loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1, 1}
   );
   EXPECT_DEATH(
@@ -711,7 +711,7 @@ TEST_F(OpTests, testFuncDefOpArgNameAccessors) {
   opBuilder.setInsertionPointToStart(mod->getBody());
 
   auto funcType = opBuilder.getFunctionType({opBuilder.getI1Type(), opBuilder.getI1Type()}, {});
-  auto func = opBuilder.create<function::FuncDefOp>(loc, "test", funcType);
+  auto func = function::FuncDefOp::create(opBuilder, loc, "test", funcType);
 
   ASSERT_FALSE(func.hasArgName(0));
   ASSERT_FALSE(func.getArgNameAttr(0));

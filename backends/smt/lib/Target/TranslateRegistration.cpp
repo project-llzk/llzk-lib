@@ -12,16 +12,17 @@
 #include "smt/Target/SMTLIBEmitter.h"
 
 #include "llzk/Dialect/Bool/IR/Dialect.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/Tools/mlir-translate/Translation.h>
 
 using namespace mlir;
 using namespace llzk;
 
-void smt::registerSmtTranslation() {
+void llzk::smt::registerSmtTranslation() {
   mlir::TranslateFromMLIRRegistration reg(
       "smt-to-smtlib", "translate from SMT to SMTLIB",
       [](Operation *op, raw_ostream &output) -> LogicalResult {
@@ -34,7 +35,8 @@ void smt::registerSmtTranslation() {
     registry.insert<
         // clang-format off
         func::FuncDialect,
-        smt::SMTDialect,
+        mlir::smt::SMTDialect,
+        smt_info::SMTInfoDialect,
         boolean::BoolDialect,
         arith::ArithDialect
         // clang-format on

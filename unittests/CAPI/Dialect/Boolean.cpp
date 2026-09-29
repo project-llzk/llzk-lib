@@ -172,17 +172,17 @@ template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
   /// Generates an array for passing it to the quantifier op.
   MlirValue generateArrayValue(mlir::OpBuilder &builder, mlir::Location location) {
     auto consts = llvm::map_to_vector(llvm::seq(10), [&](uint64_t v) -> mlir::Value {
-      return builder.create<llzk::felt::FeltConstantOp>(
-          location, llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, v))
+      return llzk::felt::FeltConstantOp::create(
+          builder, location,
+          llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, v))
       );
     });
     return wrap(
-        builder
-            .create<llzk::array::CreateArrayOp>(
-                location,
-                llzk::array::ArrayType::get(llzk::felt::FeltType::get(builder.getContext()), {10}),
-                consts
-            )
+        llzk::array::CreateArrayOp::create(
+            builder, location,
+            llzk::array::ArrayType::get(llzk::felt::FeltType::get(builder.getContext()), {10}),
+            consts
+        )
             .getResult()
     );
   }
@@ -193,17 +193,17 @@ template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
     auto &block = op->getRegion(0).emplaceBlock();
     auto arg = block.addArgument(llzk::felt::FeltType::get(builder.getContext()), location);
     builder.setInsertionPointToStart(&block);
-    auto zero = builder.create<llzk::felt::FeltConstantOp>(
-        location, llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, 0))
+    auto zero = llzk::felt::FeltConstantOp::create(
+        builder, location, llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, 0))
     );
-    auto cmpOp = builder.create<llzk::boolean::CmpOp>(
-        location,
+    auto cmpOp = llzk::boolean::CmpOp::create(
+        builder, location,
         llzk::boolean::FeltCmpPredicateAttr::get(
             builder.getContext(), llzk::boolean::FeltCmpPredicate::EQ
         ),
         arg, zero
     );
-    builder.create<llzk::boolean::YieldOp>(location, cmpOp);
+    llzk::boolean::YieldOp::create(builder, location, cmpOp);
   }
 };
 } // namespace

@@ -56,10 +56,11 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
     ```
   }];
 
-  let parameters =
-      (ins APIntParameter<"Loop variable lower bound (inclusive)">:$lower,
-          APIntParameter<"Loop variable upper bound (exclusive)">:$upper,
-          APIntParameter<"Loop variable step/increment">:$step);
+  let parameters = (ins WidthInsensitiveAPIntParameter<
+                        "Loop variable lower bound (inclusive)">:$lower,
+      WidthInsensitiveAPIntParameter<
+                        "Loop variable upper bound (exclusive)">:$upper,
+      WidthInsensitiveAPIntParameter<"Loop variable step/increment">:$step);
 
   let builders = [AttrBuilder<
       (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper,

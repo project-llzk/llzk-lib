@@ -1,0 +1,71 @@
+// RUN: llzk-opt --llzk-print-interval-analysis='field=koalabear print-compute-intervals' %s 2>&1 | FileCheck %s
+
+// Constants belong to babybear even when the analysis field is overridden.
+// Do not canonicalize: exercise each analysis consumer of the stored literal.
+module attributes {llzk.lang} {
+  struct.def @ConstantValue {
+    struct.member @out : !felt.type<"babybear">
+    function.def @compute() -> !struct.type<@ConstantValue> {
+      %self = struct.new : !struct.type<@ConstantValue>
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %c : !struct.type<@ConstantValue>, !felt.type<"babybear">
+      function.return %self : !struct.type<@ConstantValue>
+    }
+    function.def @constrain(%self: !struct.type<@ConstantValue>) {
+      function.return
+    }
+  }
+  struct.def @ZeroMultiplier {
+    function.def @compute(%a: !felt.type<"babybear">) -> !struct.type<@ZeroMultiplier> {
+      %self = struct.new : !struct.type<@ZeroMultiplier>
+      function.return %self : !struct.type<@ZeroMultiplier>
+    }
+    function.def @constrain(%self: !struct.type<@ZeroMultiplier>, %a: !felt.type<"babybear">) {
+      %p = felt.const 2013265921 : !felt.type<"babybear">
+      %zero = felt.const 0 : !felt.type<"babybear">
+      %prod = felt.mul %a, %p : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %prod, %zero : !felt.type<"babybear">
+      function.return
+    }
+  }
+  struct.def @Decomposition {
+    function.def @compute(%a: !felt.type<"babybear">) -> !struct.type<@Decomposition> {
+      %self = struct.new : !struct.type<@Decomposition>
+      function.return %self : !struct.type<@Decomposition>
+    }
+    function.def @constrain(%self: !struct.type<@Decomposition>, %a: !felt.type<"babybear">) {
+      %two = felt.const 2013265923 : !felt.type<"babybear">
+      %five = felt.const 2013265926 : !felt.type<"babybear">
+      %zero = felt.const 0 : !felt.type<"babybear">
+      %lo = felt.sub %a, %two : !felt.type<"babybear">, !felt.type<"babybear">
+      %hi = felt.sub %a, %five : !felt.type<"babybear">, !felt.type<"babybear">
+      %prod = felt.mul %lo, %hi : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %prod, %zero : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ConstantValue StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Degenerate(7)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+// CHECK-LABEL: @ZeroMultiplier StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+// CHECK-LABEL: @Decomposition StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in TypeA:[ 2, 5 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

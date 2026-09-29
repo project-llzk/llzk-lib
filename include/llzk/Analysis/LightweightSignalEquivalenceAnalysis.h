@@ -15,14 +15,8 @@
 
 namespace llzk {
 
-struct ValueLess {
-  bool operator()(const mlir::Value &v1, const mlir::Value &v2) const {
-    return v1.getAsOpaquePointer() < v2.getAsOpaquePointer();
-  }
-};
-
 class LightweightSignalEquivalenceAnalysis {
-  llvm::EquivalenceClasses<mlir::Value, ValueLess> equivalentSignals;
+  llvm::EquivalenceClasses<mlir::Value> equivalentSignals;
 
 public:
   LightweightSignalEquivalenceAnalysis(mlir::Operation *op);

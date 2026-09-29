@@ -1,0 +1,499 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// Verify global array writes and reads preserve independent copied state.
+module attributes {llzk.lang} {
+  global.def @array : !array.type<1 x index>
+
+  function.def @array_source_copy(%one: index, %two: index) -> index
+      attributes {function.allow_witness} {
+    %array = array.new %one : !array.type<1 x index>
+    global.write @array = %array : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    array.write %array[%index] = %two : !array.type<1 x index>, index
+    %loaded = global.read @array : !array.type<1 x index>
+    %value = array.read %loaded[%index] : !array.type<1 x index>, index
+    function.return %value : index
+  }
+
+  function.def @array_read_copy(%one: index, %two: index) -> (index, index)
+      attributes {function.allow_witness} {
+    %array = array.new %one : !array.type<1 x index>
+    global.write @array = %array : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    %loaded = global.read @array : !array.type<1 x index>
+    array.write %loaded[%index] = %two : !array.type<1 x index>, index
+    %source = array.read %array[%index] : !array.type<1 x index>, index
+    %again = global.read @array : !array.type<1 x index>
+    %stored = array.read %again[%index] : !array.type<1 x index>, index
+    function.return %source, %stored : index, index
+  }
+
+  function.def @array_rewrite_after_mutation(%one: index, %two: index)
+      attributes {function.allow_witness} {
+    %array = array.new %one : !array.type<1 x index>
+    global.write @array = %array : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    array.write %array[%index] = %two : !array.type<1 x index>, index
+    global.write @array = %array : !array.type<1 x index>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @array : !array.type<1 x index>
+// CHECK-NEXT:    function.def @array_source_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x index>
+// CHECK-NEXT:      global.write @array = %[[VAL_2]] : !array.type<1 x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @array_read_copy(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> (index, index) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_4]] : <1 x index>
+// CHECK-NEXT:      global.write @array = %[[VAL_6]] : !array.type<1 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = global.read @array : !array.type<1 x index>
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_7]]] = %[[VAL_5]] : <1 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_4]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @array_rewrite_after_mutation(%[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_9]] : <1 x index>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_11]]{{\[}}%[[VAL_12]]] = %[[VAL_10]] : <1 x index>, index
+// CHECK-NEXT:      global.write @array = %[[VAL_11]] : !array.type<1 x index>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify immutable aggregate snapshots can be forwarded through struct, POD, and global reads.
+module attributes {llzk.lang} {
+  global.def @array : !array.type<1 x index>
+
+  struct.def @StructForward {
+    struct.member @value : !pod.type<[@field: index]>
+    struct.member @result : index
+
+    function.def @compute(%input: index) -> !struct.type<@StructForward>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@StructForward>
+      %source = pod.new : !pod.type<[@field: index]>
+      pod.write %source[@field] = %input : !pod.type<[@field: index]>, index
+      struct.writem %self[@value] = %source : !struct.type<@StructForward>, !pod.type<[@field: index]>
+      %loaded = struct.readm %self[@value] : !struct.type<@StructForward>, !pod.type<[@field: index]>
+      %field = pod.read %loaded[@field] : !pod.type<[@field: index]>, index
+      struct.writem %self[@result] = %field : !struct.type<@StructForward>, index
+      function.return %self : !struct.type<@StructForward>
+    }
+
+    function.def @constrain(%self: !struct.type<@StructForward>, %input: index) {
+      function.return
+    }
+  }
+
+  struct.def @Payload {
+    struct.member @field : index {llzk.pub}
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : !struct.type<@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) { function.return }
+  }
+
+  struct.def @PodForward {
+    struct.member @result : index
+
+    function.def @compute(%source: !struct.type<@Payload>) -> !struct.type<@PodForward>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@PodForward>
+      %pod = pod.new : !pod.type<[@value: !struct.type<@Payload>]>
+      pod.write %pod[@value] = %source : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+      %loaded = pod.read %pod[@value] : !pod.type<[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+      %field = struct.readm %loaded[@field] : !struct.type<@Payload>, index
+      struct.writem %self[@result] = %field : !struct.type<@PodForward>, index
+      function.return %self : !struct.type<@PodForward>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodForward>, %source: !struct.type<@Payload>) {
+      function.return
+    }
+  }
+
+  struct.def @InterveningSourceMutation {
+    struct.member @value : !pod.type<[@field: index]>
+    struct.member @result : index
+
+    function.def @compute(%one: index, %two: index) -> !struct.type<@InterveningSourceMutation>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@InterveningSourceMutation>
+      %source = pod.new { @field = %one } : !pod.type<[@field: index]>
+      struct.writem %self[@value] = %source : !struct.type<@InterveningSourceMutation>, !pod.type<[@field: index]>
+      pod.write %source[@field] = %two : !pod.type<[@field: index]>, index
+      %loaded = struct.readm %self[@value] : !struct.type<@InterveningSourceMutation>, !pod.type<[@field: index]>
+      struct.writem %self[@value] = %loaded : !struct.type<@InterveningSourceMutation>, !pod.type<[@field: index]>
+      function.return %self : !struct.type<@InterveningSourceMutation>
+    }
+
+    function.def @constrain(%self: !struct.type<@InterveningSourceMutation>, %one: index, %two: index) {
+      function.return
+    }
+  }
+
+  function.def @global_forward(%input: index) -> index attributes {function.allow_witness} {
+    %source = array.new %input : !array.type<1 x index>
+    global.write @array = %source : !array.type<1 x index>
+    %loaded = global.read @array : !array.type<1 x index>
+    %index = arith.constant 0 : index
+    %field = array.read %loaded[%index] : !array.type<1 x index>, index
+    function.return %field : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @array : !array.type<1 x index>
+// CHECK-NEXT:    struct.def @StructForward {
+// CHECK-NEXT:      struct.member @value : !pod.type<[@field: index]>
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@StructForward> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@StructForward>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new : <[@field: index]>
+// CHECK-NEXT:        pod.write %[[VAL_2]][@field] = %[[VAL_0]] : <[@field: index]>, index
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_2]] : <@StructForward>, !pod.type<[@field: index]>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_0]] : <@StructForward>, index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@StructForward>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@StructForward>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Payload {
+// CHECK-NEXT:      struct.member @field : index {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Payload> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Payload>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Payload>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @PodForward {
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>) -> !struct.type<@PodForward> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@PodForward>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = pod.new : <[@value: !struct.type<@Payload>]>
+// CHECK-NEXT:        pod.write %[[VAL_9]][@value] = %[[VAL_7]] : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@field] : <@Payload>, index
+// CHECK-NEXT:        struct.writem %[[VAL_8]][@result] = %[[VAL_10]] : <@PodForward>, index
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@PodForward>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@PodForward>, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @InterveningSourceMutation {
+// CHECK-NEXT:      struct.member @value : !pod.type<[@field: index]>
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute(%[[MUT_ONE:[0-9a-zA-Z_\.]+]]: index, %[[MUT_TWO:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@InterveningSourceMutation> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[MUT_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@InterveningSourceMutation>
+// CHECK-NEXT:        %[[MUT_SOURCE:[0-9a-zA-Z_\.]+]] = pod.new { @field = %[[MUT_ONE]] }  : <[@field: index]>
+// CHECK-NEXT:        struct.writem %[[MUT_SELF]][@value] = %[[MUT_SOURCE]] : <@InterveningSourceMutation>, !pod.type<[@field: index]>
+// CHECK-NEXT:        pod.write %[[MUT_SOURCE]][@field] = %[[MUT_TWO]] : <[@field: index]>, index
+// CHECK-NEXT:        function.return %[[MUT_SELF]] : !struct.type<@InterveningSourceMutation>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[MUT_CONSTRAINT_SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@InterveningSourceMutation>, %[[MUT_CONSTRAINT_ONE:[0-9a-zA-Z_\.]+]]: index, %[[MUT_CONSTRAINT_TWO:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @global_forward(%[[VAL_13:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_13]] : <1 x index>
+// CHECK-NEXT:      global.write @array = %[[VAL_14]] : !array.type<1 x index>
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_13]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify a mutation through one aggregate read result prevents reuse of another read result.
+module attributes {llzk.lang} {
+  struct.def @ReadCopy {
+    struct.member @array : !array.type<1 x index>
+    struct.member @result : index
+
+    function.def @compute(%value: index) -> !struct.type<@ReadCopy>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@ReadCopy>
+      %first = struct.readm %self[@array] : !struct.type<@ReadCopy>, !array.type<1 x index>
+      %index = arith.constant 0 : index
+      array.write %first[%index] = %value : !array.type<1 x index>, index
+      %second = struct.readm %self[@array] : !struct.type<@ReadCopy>, !array.type<1 x index>
+      %result = array.read %second[%index] : !array.type<1 x index>, index
+      struct.writem %self[@result] = %result : !struct.type<@ReadCopy>, index
+      function.return %self : !struct.type<@ReadCopy>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadCopy>, %value: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ReadCopy {
+// CHECK-NEXT:      struct.member @array : !array.type<1 x index>
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@ReadCopy> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadCopy>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@array] : <@ReadCopy>, !array.type<1 x index>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <1 x index>, index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@array] : <@ReadCopy>, !array.type<1 x index>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_3]]] : <1 x index>, index
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_5]] : <@ReadCopy>, index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ReadCopy>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadCopy>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify array.insert copies the source again after that source is mutated.
+module attributes {llzk.lang} {
+  function.def @array_insert_rewrite_after_mutation(%one: index, %two: index) -> index
+      attributes {function.allow_witness} {
+    %source = array.new %one : !array.type<1 x index>
+    %target = array.new : !array.type<1,1 x index>
+    %index = arith.constant 0 : index
+    array.insert %target[%index] = %source : !array.type<1,1 x index>, !array.type<1 x index>
+    array.write %source[%index] = %two : !array.type<1 x index>, index
+    array.insert %target[%index] = %source : !array.type<1,1 x index>, !array.type<1 x index>
+    %stored = array.extract %target[%index] : !array.type<1,1 x index>
+    %value = array.read %stored[%index] : !array.type<1 x index>, index
+    function.return %value : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @array_insert_rewrite_after_mutation(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <1,1 x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <1,1 x index>, <1 x index>
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify struct member writes copy an aggregate source after it is mutated.
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @value : !array.type<1 x index>
+    struct.member @result : index
+
+    function.def @compute(%one: index, %two: index) -> !struct.type<@Box>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@Box>
+      %source = array.new %one : !array.type<1 x index>
+      %index = arith.constant 0 : index
+      struct.writem %self[@value] = %source : !struct.type<@Box>, !array.type<1 x index>
+      array.write %source[%index] = %two : !array.type<1 x index>, index
+      struct.writem %self[@value] = %source : !struct.type<@Box>, !array.type<1 x index>
+      %stored = struct.readm %self[@value] : !struct.type<@Box>, !array.type<1 x index>
+      %value = array.read %stored[%index] : !array.type<1 x index>, index
+      struct.writem %self[@result] = %value : !struct.type<@Box>, index
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %one: index, %two: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Box {
+// CHECK-NEXT:      struct.member @value : !array.type<1 x index>
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x index>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_3]] : <@Box>, !array.type<1 x index>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@result] = %[[VAL_1]] : <@Box>, index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Box>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify POD record writes copy an aggregate source after it is mutated.
+module attributes {llzk.lang} {
+  function.def @pod_write_rewrite_after_mutation(%one: index, %two: index) -> index
+      attributes {function.allow_witness} {
+    %source = array.new %one : !array.type<1 x index>
+    %pod = pod.new { @value = %source } : !pod.type<[@value: !array.type<1 x index>]>
+    %index = arith.constant 0 : index
+    array.write %source[%index] = %two : !array.type<1 x index>, index
+    pod.write %pod[@value] = %source : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    %stored = pod.read %pod[@value] : !pod.type<[@value: !array.type<1 x index>]>, !array.type<1 x index>
+    %value = array.read %stored[%index] : !array.type<1 x index>, index
+    function.return %value : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @pod_write_rewrite_after_mutation(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.new { @value = %[[VAL_2]] }  : <[@value: !array.type<1 x index>]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:      pod.write %[[VAL_3]][@value] = %[[VAL_2]] : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify globals deep-copy structs and their nested array members on reads and writes.
+module attributes {llzk.lang} {
+  global.def @source_box : !struct.type<@SourceBox>
+  global.def @read_box : !struct.type<@ReadBox>
+
+  struct.def @SourceBox {
+    struct.member @array : !array.type<1 x index>
+    struct.member @result : index
+
+    function.def @compute(%one: index, %two: index) -> !struct.type<@SourceBox>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@SourceBox>
+      %array = array.new %one : !array.type<1 x index>
+      struct.writem %self[@array] = %array : !struct.type<@SourceBox>, !array.type<1 x index>
+      global.write @source_box = %self : !struct.type<@SourceBox>
+      %index = arith.constant 0 : index
+      array.write %array[%index] = %two : !array.type<1 x index>, index
+      %loaded = global.read @source_box : !struct.type<@SourceBox>
+      %loaded_array = struct.readm %loaded[@array] : !struct.type<@SourceBox>, !array.type<1 x index>
+      %value = array.read %loaded_array[%index] : !array.type<1 x index>, index
+      struct.writem %self[@result] = %value : !struct.type<@SourceBox>, index
+      function.return %self : !struct.type<@SourceBox>
+    }
+
+    function.def @constrain(%self: !struct.type<@SourceBox>, %one: index, %two: index) {
+      function.return
+    }
+  }
+
+  struct.def @ReadBox {
+    struct.member @value : index
+    struct.member @source_result : index
+    struct.member @stored_result : index
+
+    function.def @compute(%one: index, %two: index) -> !struct.type<@ReadBox>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@ReadBox>
+      struct.writem %self[@value] = %one : !struct.type<@ReadBox>, index
+      global.write @read_box = %self : !struct.type<@ReadBox>
+      %loaded = global.read @read_box : !struct.type<@ReadBox>
+      struct.writem %loaded[@value] = %two : !struct.type<@ReadBox>, index
+      %source = struct.readm %self[@value] : !struct.type<@ReadBox>, index
+      %again = global.read @read_box : !struct.type<@ReadBox>
+      %stored = struct.readm %again[@value] : !struct.type<@ReadBox>, index
+      struct.writem %self[@source_result] = %source : !struct.type<@ReadBox>, index
+      struct.writem %self[@stored_result] = %stored : !struct.type<@ReadBox>, index
+      function.return %self : !struct.type<@ReadBox>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadBox>, %one: index, %two: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @source_box : !struct.type<@SourceBox>
+// CHECK-NEXT:    global.def @read_box : !struct.type<@ReadBox>
+// CHECK-NEXT:    struct.def @SourceBox {
+// CHECK-NEXT:      struct.member @array : !array.type<1 x index>
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@SourceBox> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@SourceBox>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x index>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@array] = %[[VAL_3]] : <@SourceBox>, !array.type<1 x index>
+// CHECK-NEXT:        global.write @source_box = %[[VAL_2]] : !struct.type<@SourceBox>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@result] = %[[VAL_0]] : <@SourceBox>, index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@SourceBox>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@SourceBox>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ReadBox {
+// CHECK-NEXT:      struct.member @value : index
+// CHECK-NEXT:      struct.member @source_result : index
+// CHECK-NEXT:      struct.member @stored_result : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: index, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@ReadBox> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadBox>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@value] = %[[VAL_8]] : <@ReadBox>, index
+// CHECK-NEXT:        global.write @read_box = %[[VAL_10]] : !struct.type<@ReadBox>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = global.read @read_box : !struct.type<@ReadBox>
+// CHECK-NEXT:        struct.writem %[[VAL_11]][@value] = %[[VAL_9]] : <@ReadBox>, index
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@source_result] = %[[VAL_8]] : <@ReadBox>, index
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@stored_result] = %[[VAL_8]] : <@ReadBox>, index
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@ReadBox>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadBox>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: index, %[[VAL_14:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Verify globals deep-copy POD values on reads and writes.
+module attributes {llzk.lang} {
+  global.def @pod : !pod.type<[@value: index]>
+
+  function.def @pod_source_copy(%one: index, %two: index) -> index
+      attributes {function.allow_witness} {
+    %pod = pod.new { @value = %one } : !pod.type<[@value: index]>
+    global.write @pod = %pod : !pod.type<[@value: index]>
+    pod.write %pod[@value] = %two : !pod.type<[@value: index]>, index
+    %loaded = global.read @pod : !pod.type<[@value: index]>
+    %value = pod.read %loaded[@value] : !pod.type<[@value: index]>, index
+    function.return %value : index
+  }
+
+  function.def @pod_read_copy(%one: index, %two: index) -> (index, index)
+      attributes {function.allow_witness} {
+    %pod = pod.new { @value = %one } : !pod.type<[@value: index]>
+    global.write @pod = %pod : !pod.type<[@value: index]>
+    %loaded = global.read @pod : !pod.type<[@value: index]>
+    pod.write %loaded[@value] = %two : !pod.type<[@value: index]>, index
+    %source = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+    %again = global.read @pod : !pod.type<[@value: index]>
+    %stored = pod.read %again[@value] : !pod.type<[@value: index]>, index
+    function.return %source, %stored : index, index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @pod : !pod.type<[@value: index]>
+// CHECK-NEXT:    function.def @pod_source_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new { @value = %[[VAL_0]] }  : <[@value: index]>
+// CHECK-NEXT:      global.write @pod = %[[VAL_2]] : !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_2]][@value] = %[[VAL_1]] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @pod_read_copy(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> (index, index) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.new { @value = %[[VAL_3]] }  : <[@value: index]>
+// CHECK-NEXT:      global.write @pod = %[[VAL_5]] : !pod.type<[@value: index]>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = global.read @pod : !pod.type<[@value: index]>
+// CHECK-NEXT:      pod.write %[[VAL_6]][@value] = %[[VAL_4]] : <[@value: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_3]], %[[VAL_3]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

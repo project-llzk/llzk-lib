@@ -115,7 +115,7 @@ Derived &ModuleLikeBuilder<Derived>::insertEmptyStruct(std::string_view structNa
   ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(this->getBodyRegion());
-  auto structDef = opBuilder.create<StructDefOp>(loc, StringAttr::get(context, structName));
+  auto structDef = StructDefOp::create(opBuilder, loc, StringAttr::get(context, structName));
   // populate the initial region
   (void)structDef.getRegion().emplaceBlock();
   structMap[structName] = structDef;
@@ -127,8 +127,8 @@ template <typename Derived>
 FuncDefOp ModuleLikeBuilder<Derived>::buildComputeFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
+  auto fnOp = FuncDefOp::create(
+      opBuilder, loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
       FunctionType::get(context, {}, {op.getType()})
   );
   fnOp.setAllowWitnessAttr();
@@ -153,8 +153,8 @@ template <typename Derived>
 FuncDefOp ModuleLikeBuilder<Derived>::buildConstrainFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
+  auto fnOp = FuncDefOp::create(
+      opBuilder, loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
       FunctionType::get(context, {op.getType()}, {})
   );
   fnOp.setAllowConstraintAttr();
@@ -179,8 +179,8 @@ template <typename Derived>
 FuncDefOp ModuleLikeBuilder<Derived>::buildProductFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
+  auto fnOp = FuncDefOp::create(
+      opBuilder, loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
       FunctionType::get(context, {}, {op.getType()})
   );
   fnOp.setAllowWitnessAttr();
@@ -213,7 +213,7 @@ Derived &ModuleLikeBuilder<Derived>::insertComputeCall(
   auto calleeFn = computeFnMap.at(callee.getName());
 
   OpBuilder builder(callerFn.getBody());
-  builder.create<CallOp>(callLoc, calleeFn);
+  CallOp::create(builder, callLoc, calleeFn);
   return static_cast<Derived &>(*this);
 }
 
@@ -243,18 +243,18 @@ Derived &ModuleLikeBuilder<Derived>::insertConstrainCall(
   // Insert the member declaration op
   {
     OpBuilder builder(caller.getBodyRegion());
-    builder.create<MemberDefOp>(memberDefLoc, memberName, calleeTy);
+    MemberDefOp::create(builder, memberDefLoc, memberName, calleeTy);
   }
 
   // Insert the constrain function ops
   {
     OpBuilder builder(callerFn.getBody());
 
-    auto member = builder.create<MemberReadOp>(
-        callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), memberName
+    auto member = MemberReadOp::create(
+        builder, callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), memberName
     );
-    builder.create<CallOp>(
-        callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}
+    CallOp::create(
+        builder, callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}
     );
   }
   return static_cast<Derived &>(*this);
@@ -277,7 +277,7 @@ Derived &ModuleLikeBuilder<Derived>::insertFreeFunc(
   ensureNoSuchFreeFunc(funcName);
 
   OpBuilder opBuilder(this->getBodyRegion());
-  auto funcDef = opBuilder.create<FuncDefOp>(loc, funcName, type);
+  auto funcDef = FuncDefOp::create(opBuilder, loc, funcName, type);
   auto *block = funcDef.addEntryBlock();
   if (fnBody) {
     OpBuilder::InsertionGuard guard(opBuilder);
@@ -297,7 +297,7 @@ Derived &ModuleLikeBuilder<Derived>::insertFreeCall(
   FuncDefOp calleeFn = freeFuncMap.at(callee);
 
   OpBuilder builder(caller.getBody());
-  builder.create<CallOp>(callLoc, calleeFn);
+  CallOp::create(builder, callLoc, calleeFn);
   return static_cast<Derived &>(*this);
 }
 
@@ -320,11 +320,11 @@ ModuleBuilder::insertTemplate(std::string_view templateName, Location loc, unsig
   ensureNoSuchTemplate(templateName);
 
   OpBuilder opBuilder(myModule.getBodyRegion());
-  auto templateDef = opBuilder.create<TemplateOp>(loc, StringAttr::get(context, templateName));
+  auto templateDef = TemplateOp::create(opBuilder, loc, StringAttr::get(context, templateName));
   opBuilder.setInsertionPointToStart(&templateDef.getBodyRegion().emplaceBlock());
   for (unsigned i = 0; i < numParams; ++i) {
-    opBuilder.create<TemplateParamOp>(
-        loc, StringAttr::get(context, 'T' + std::to_string(i)), TypeAttr()
+    TemplateParamOp::create(
+        opBuilder, loc, StringAttr::get(context, 'T' + std::to_string(i)), TypeAttr()
     );
   }
 
@@ -350,7 +350,7 @@ ModuleBuilder &ModuleBuilder::insertNestedModule(std::string_view moduleName, Lo
   ensureNoSuchNestedModule(moduleName);
 
   OpBuilder opBuilder(myModule.getBodyRegion());
-  auto nestedMod = opBuilder.create<ModuleOp>(loc);
+  auto nestedMod = ModuleOp::create(opBuilder, loc);
   nestedMod.setSymName(moduleName);
 
   auto key = *nestedMod.getSymName();

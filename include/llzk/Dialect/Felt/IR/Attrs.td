@@ -21,10 +21,15 @@ def LLZK_FeltConstAttr
   let mnemonic = "const";
   let summary = "finite field element";
   let description = [{
-    A felt attribute represents a finite field element.
+    A felt attribute represents a finite field element. `rawValue` stores the
+    unreduced unsigned integer. For a specified field with prime modulus `p`,
+    the attribute denotes `rawValue mod p`, regardless of its stored
+    representation. `getReducedValue()` returns the representative in `[0, p)`
+    when the type specifies a field, or the raw value otherwise.
   }];
 
-  let parameters = (ins APIntParameter<"The felt constant value">:$value,
+  let parameters = (ins WidthInsensitiveAPIntParameter<
+                        "The unreduced felt constant value">:$rawValue,
       DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
 
   let hasCustomAssemblyFormat = 1;
@@ -33,8 +38,8 @@ def LLZK_FeltConstAttr
       // Preserve the APInt-facing builder while using a canonical numeric
       // storage key.
       AttrBuilder<
-          (ins "::llvm::APInt":$value, "FeltType":$ty),
-          [{ return $_get(context, ::llzk::APIntValue(std::move(value)), ty); }]>,
+          (ins "::llvm::APInt":$rawValue, "FeltType":$ty),
+          [{ return $_get(context, ::llzk::APIntValue(std::move(rawValue)), ty); }]>,
       // Like the default builder but with convenience overloads for
       // constructing the APInt.
       AttrBuilder<
@@ -45,8 +50,8 @@ def LLZK_FeltConstAttr
               "FeltType":$ty),
           [{ return $_get(context, ::llvm::APInt(numBits, parts), ty); }]>,
       // All APInt combinations but using felt type with unspecified field.
-      AttrBuilder<(ins "::llvm::APInt":$value),
-                  [{ return get(context, value, FeltType::get(context)); }]>,
+      AttrBuilder<(ins "::llvm::APInt":$rawValue),
+                  [{ return get(context, rawValue, FeltType::get(context)); }]>,
       AttrBuilder<
           (ins "unsigned":$numBits, "::llvm::StringRef":$str),
           [{ return get(context, numBits, str, FeltType::get(context)); }]>,
@@ -55,8 +60,8 @@ def LLZK_FeltConstAttr
           [{ return get(context, numBits, parts, FeltType::get(context)); }]>,
       // All APInt combinations but using the field name to construct felt type.
       AttrBuilder<
-          (ins "::llvm::APInt":$value, "::llvm::StringRef":$fieldName),
-          [{ return get(context, value, FeltType::get(context, fieldName)); }]>,
+          (ins "::llvm::APInt":$rawValue, "::llvm::StringRef":$fieldName),
+          [{ return get(context, rawValue, FeltType::get(context, fieldName)); }]>,
       AttrBuilder<
           (ins "unsigned":$numBits, "::llvm::StringRef":$str,
               "::llvm::StringRef":$fieldName),
@@ -67,11 +72,13 @@ def LLZK_FeltConstAttr
           [{ return get(context, numBits, parts, FeltType::get(context, fieldName)); }]>];
 
   let extraClassDeclaration = [{
-    operator ::llvm::APInt() const { return getValue(); }
-
     /// Returns the field name from the stored FeltType, or a null StringAttr
     /// if no type is stored.
     ::mlir::StringAttr getFieldName() const;
+
+    /// Returns the unsigned raw value reduced to [0, p) for the stored field.
+    /// Returns the raw value unchanged if the type has no specified field.
+    ::llvm::APInt getReducedValue() const;
   }];
 }
 
@@ -97,7 +104,7 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
   }];
 
   let parameters = (ins "::mlir::StringAttr":$fieldName,
-      APIntParameter<"The prime modulus">:$prime);
+      WidthInsensitiveAPIntParameter<"The prime modulus">:$prime);
 
   // Format is [{ `<` $fieldName `,` $prime `>` }], but with custom parsing
   // to enable caching of the Field object definition.

@@ -65,8 +65,8 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
         // included module rather than adding these symbols to the existing SymbolTableCollection
         // because it has no means of removing entries from its internal map and it is not safe to
         // leave the dangling pointers in that map after the external module has been freed.
-        SymbolTableCollection external;
-        auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
+        auto external = std::make_unique<SymbolTableCollection>();
+        auto result = lookupSymbolRec(*external, getTailAsSymbolRefAttr(symbol), otherMod->get());
         if (result) {
           result.manage(std::move(*otherMod), std::move(external));
           auto symName = rootOpInc.getSymName();
@@ -100,15 +100,16 @@ SymbolLookupResultUntyped::operator bool() const { return op != nullptr; }
 
 /// Store the resources that the result has to manage the lifetime of.
 void SymbolLookupResultUntyped::manage(
-    OwningOpRef<ModuleOp> &&ptr, SymbolTableCollection &&tables
+    OwningOpRef<ModuleOp> &&ptr, std::unique_ptr<SymbolTableCollection> tables
 ) {
   // This may be called multiple times for the same result Operation but we only need to store the
   // resources from the first call because that call will contain the final ModuleOp loaded in a
   // chain of IncludeOp and that is the one which contains the result Operation*.
   if (!managedResources) {
-    managedResources = std::make_shared<std::pair<OwningOpRef<ModuleOp>, SymbolTableCollection>>(
-        std::make_pair(std::move(ptr), std::move(tables))
-    );
+    managedResources =
+        std::make_shared<std::pair<OwningOpRef<ModuleOp>, std::unique_ptr<SymbolTableCollection>>>(
+            std::make_pair(std::move(ptr), std::move(tables))
+        );
   }
 }
 

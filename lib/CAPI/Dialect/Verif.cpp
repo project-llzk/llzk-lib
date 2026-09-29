@@ -100,6 +100,10 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   );
 }
 
+MlirType llzkVerif_IncludeOpGetTypeSignature(MlirOperation inp) {
+  return wrap(llvm::cast<IncludeOp>(unwrap(inp)).getTypeSignature());
+}
+
 //===----------------------------------------------------------------------===//
 // InvariantOp
 //===----------------------------------------------------------------------===//
