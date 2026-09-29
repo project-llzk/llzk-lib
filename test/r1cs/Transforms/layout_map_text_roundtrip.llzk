@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints --llzk-full-direct-r1cs-lowering -o %t.mlir
+// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints --llzk-full-r1cs-lowering -o %t.mlir
 // RUN: llzk-translate --r1cs-to-binary --r1cs-prime=2013265921 --llzk-layout-map=%t.layout %t.mlir -o %t.r1cs
 // RUN: FileCheck %s --input-file=%t.layout
 // RUN: llzk-translate --llzk-to-r1cs --r1cs-prime=2013265921 --llzk-layout-map=%t.direct.layout %s -o %t.direct.r1cs
