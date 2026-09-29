@@ -1,13 +1,16 @@
 changed:
   - Rename `FeltConstAttr::value` and `getValue()` to `rawValue` and `getRawValue()`.
+  - Remove the implicit conversion from `FeltConstAttr` to `llvm::APInt`; use `getRawValue()` for the stored unsigned integer or the reduced-value accessors for evaluation.
   - Define `felt.const N` in a specified field as `N mod p`, independently of canonicalization. Text and bytecode serialization preserve the raw value.
   - Remove `FeltConstantOp::getValueAPInt()`; use `getValue().getReducedValue()` to obtain an optional reduced field representative.
 
 fixed:
   - Avoid folding fieldless comparisons and index casts; reduce fieldless constants using the selected field in interval analysis and SMT lowering.
-  - Use reduced constants in arithmetic folding, boolean comparisons, index casts, source-reference and interval analysis, witness generation, and PCL, R1CS, SMT, and ZKLean backends.
+  - Use field representatives for constants with a specified field in arithmetic folding, boolean comparisons, index casts, source-reference and interval analysis, witness generation, and PCL, R1CS, SMT, and ZKLean backends.
+  - Preserve raw-value identity for fieldless constants in source-reference equality, hashing, ordering, and printing; numeric evaluation without a field now fails, and array dependency tracking falls back to a range when an exact index cannot be evaluated.
 
 added:
-  - Add `FeltConstAttr::getReducedValue()` to return the representative in `[0, p)` for a specified prime field, or `std::nullopt` when the field is unspecified.
-  - Add `FeltConstAttr::getReducedValueOrRaw()` for callers that explicitly allow an unreduced value when the field is unspecified.
-  - Add canonicalization of `felt.const` to use reduced field representatives.
+  - Add `FeltConstAttr::getReducedValue()` returning `std::optional<llvm::DynamicAPInt>` with the representative in `[0, p)` for a specified prime field, or `std::nullopt` when the field is unspecified.
+  - Add `FeltConstAttr::getReducedValueOrRaw()` returning `llvm::DynamicAPInt` with the reduced representative when the field is specified, otherwise the raw unsigned value.
+  - Add `SourceRef::getConstantValue(const Field &)` to evaluate felt constants in the supplied analysis field while preserving integer semantics for index constants.
+  - Add canonicalization of `felt.const` to use reduced field representatives when the field is specified, leaving fieldless constants unchanged.
