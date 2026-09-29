@@ -46,12 +46,10 @@
 ///
 /// 5. Promote straight-line static arrays in one walk per block.
 ///
-/// 6. Run MLIR "sroa" pass to split each remaining array with linear size `N` into `N` arrays of
-/// size 1
-///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
+/// 6. Run restricted "sroa" pass to split each remaining array with linear size `N` into `N` size-1
+///    arrays (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
 ///
-/// 7. Run MLIR "mem2reg" as a fallback for allocations with control flow or unsupported
-///    uses. This pass also runs several standard optimizations so the final result is condensed.
+/// 7. Run restricted "mem2reg" as a fallback for allocations with control flow or unsupported uses.
 ///
 /// 8. Remove array allocations that become unread after memory promotion, then canonicalize local
 ///    SSA values made dead by that cleanup.
@@ -993,12 +991,12 @@ static void foldConstantGlobalArrayReads(ModuleOp module) {
       OpBuilder builder(read);
       Value constant;
       if (auto integer = llvm::dyn_cast<IntegerAttr>(element)) {
-        constant = builder.create<arith::ConstantOp>(read.getLoc(), integer);
+        constant = arith::ConstantOp::create(builder, read.getLoc(), integer);
       } else if (auto felt = llvm::dyn_cast<felt::FeltConstAttr>(element)) {
-        constant = builder.create<felt::FeltConstantOp>(read.getLoc(), felt);
+        constant = felt::FeltConstantOp::create(builder, read.getLoc(), felt);
       } else {
-        constant = builder.create<string::LitStringOp>(
-            read.getLoc(), read.getType(), llvm::cast<StringAttr>(element)
+        constant = string::LitStringOp::create(
+            builder, read.getLoc(), read.getType(), llvm::cast<StringAttr>(element)
         );
       }
       read.getResult().replaceAllUsesWith(constant);
