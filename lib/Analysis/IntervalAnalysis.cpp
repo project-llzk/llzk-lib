@@ -1200,13 +1200,17 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         recordRefWrite(translatedRef, translatedVal);
       }
     }
-  } else if (auto intToFelt = dyn_cast<IntToFeltOp>(op);
-             intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+  } else if (
+      auto intToFelt = dyn_cast<IntToFeltOp>(op);
+      intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT
+  ) {
     // Non-assert casts can change the value non-monotonically. Forget the operand
     // relation, but initialize the result so sparse dataflow visits its users.
     propagateIfChanged(results[0], results[0]->setValue(createUnknownValue(op->getResult(0))));
-  } else if (auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
-             feltToIndex && feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT) {
+  } else if (
+      auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
+      feltToIndex && feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT
+  ) {
     // See the IntToFeltOp case above.
     propagateIfChanged(results[0], results[0]->setValue(createUnknownValue(op->getResult(0))));
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
