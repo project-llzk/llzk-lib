@@ -36,4 +36,10 @@ inline mlir::ArrayAttr getSpecializationArguments(mlir::Operation *definition) {
   return definition->getAttrOfType<mlir::ArrayAttr>("poly.arguments");
 }
 
+/// Read scalar call arguments specialized by position. A UnitAttr means that
+/// the corresponding function argument remained dynamic; absence means none.
+inline mlir::ArrayAttr getSpecializationConstantArguments(mlir::Operation *definition) {
+  return definition->getAttrOfType<mlir::ArrayAttr>("poly.constant_arguments");
+}
+
 } // namespace llzk::polymorphic
