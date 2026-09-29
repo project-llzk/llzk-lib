@@ -664,7 +664,7 @@ public:
         return storage[value] = {
                    top.getArrayAttr({top.getI64IntegerAttr(number)}),
                    number == 0 || function.hasArgPublicAttr(number)
-               };
+        };
       }
       Operation *read = value.getDefiningOp();
       if (!read || !isa<MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(read)) {
@@ -735,9 +735,11 @@ public:
           return op->emitError("signal binding does not match the storage read");
         }
         add(actual->path, actual->isPublic, op->getResult(0));
-      } else if (auto read = llvm::dyn_cast<MemberReadOp>(op);
-                 read && read.getComponent() == function.getArgument(0) && !read.getTableOffset() &&
-                 read.getMapOperands().empty()) {
+      } else if (
+          auto read = llvm::dyn_cast<MemberReadOp>(op);
+          read && read.getComponent() == function.getArgument(0) && !read.getTableOffset() &&
+          read.getMapOperands().empty()
+      ) {
         auto member = def.getMemberDef(top.getStringAttr(read.getMemberName()));
         auto original = member->getAttrOfType<BoolAttr>(polymorphic::ORIGINAL_PUBLIC_ATTR_NAME);
         add(top.getArrayAttr({top.getI64IntegerAttr(0), top.getStringAttr(read.getMemberName())}),
