@@ -317,10 +317,10 @@ class Evaluator {
         } else {
           SmallVector<Value> indices;
           for (int64_t index : indexValues) {
-            indices.push_back(builder.create<arith::ConstantIndexOp>(loc, index));
+            indices.push_back(arith::ConstantIndexOp::create(builder, loc, index));
           }
           current =
-              builder.create<array::ReadArrayOp>(loc, array.getElementType(), current, indices);
+              array::ReadArrayOp::create(builder, loc, array.getElementType(), current, indices);
           storage[key] = current;
         }
       } else {
@@ -338,12 +338,12 @@ class Evaluator {
             return {};
           }
           Type resultType = storageTypes.lookup(key);
-          current = builder.create<MemberReadOp>(
-              loc, resultType ? resultType : member.getType(), current, name
+          current = MemberReadOp::create(
+              builder, loc, resultType ? resultType : member.getType(), current, name
           );
         } else if (auto pod = dyn_cast<pod::PodType>(type)) {
-          current = builder.create<pod::ReadPodOp>(
-              loc, pod.getRecordMap().lookup(name.getValue()), current, name
+          current = pod::ReadPodOp::create(
+              builder, loc, pod.getRecordMap().lookup(name.getValue()), current, name
           );
         } else {
           (void)error(output, "unsupported witness storage path");
@@ -375,7 +375,7 @@ class Evaluator {
         state.addAttribute("value", v->constant);
         op = builder.create(state);
       } else {
-        op = builder.create<arith::ConstantOp>(loc, v->type, llvm::cast<TypedAttr>(v->constant));
+        op = arith::ConstantOp::create(builder, loc, v->type, llvm::cast<TypedAttr>(v->constant));
       }
       constants[v->constant] = op->getResult(0);
       return op->getResult(0);
@@ -460,9 +460,8 @@ class Evaluator {
       return {};
     }
     const Field &field = fieldResult->get();
-    unsigned width =
-        std::max(denominator.getValue().getBitWidth(), field.primeAPInt().getBitWidth());
-    APInt prime = field.primeAPInt().zext(width);
+    unsigned width = std::max(denominator.getValue().getBitWidth(), field.bitWidth());
+    APInt prime = field.getPrimeAttr(op.getContext(), width).getValue();
     APInt divisor = denominator.getValue().zext(width);
     if (divisor.uge(prime)) {
       divisor = divisor.urem(prime);
@@ -900,8 +899,8 @@ public:
       return error(module, "generated function already exists");
     }
     builder.setInsertionPointAfter(source);
-    output = builder.create<FuncDefOp>(
-        source.getLoc(), "__llzk_flat_constrain", source.getFunctionType()
+    output = FuncDefOp::create(
+        builder, source.getLoc(), "__llzk_flat_constrain", source.getFunctionType()
     );
     output->setAttr("function.allow_constraint", builder.getUnitAttr());
     output->setAttr("function.allow_non_native_field_ops", builder.getUnitAttr());
@@ -925,7 +924,7 @@ public:
       output.erase();
       return failure();
     }
-    builder.create<ReturnOp>(source.getLoc());
+    ReturnOp::create(builder, source.getLoc());
     output->setAttr(polymorphic::SIGNAL_BINDINGS_ATTR_NAME, builder.getArrayAttr(bindings));
     output->setAttr(polymorphic::INSTANCES_ATTR_NAME, builder.getArrayAttr(instances));
     output->setAttr("poly.source", source.getFullyQualifiedName());

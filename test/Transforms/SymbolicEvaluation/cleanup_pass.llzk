@@ -58,8 +58,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-LABEL: module {
 // CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@__llzk_spec_0>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops, poly.evaluated, poly.instances = [{id = 0 : i64, path = [0], specialization = 0 : i64}], poly.signal_bindings = [{instance = 0 : i64, member_path = [1], path = [1], public = false}], poly.source = @Main::@constrain} {
 // CHECK-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type {poly.call_stack = [{callee = @__llzk_spec_2}], poly.loop_indices = [], poly.source_operation = 65 : i64}
-// CHECK-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type {poly.call_stack = [{callee = @__llzk_spec_3}], poly.loop_indices = [0], poly.source_operation = 71 : i64}
-// CHECK-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type {poly.call_stack = [{callee = @__llzk_spec_3}], poly.loop_indices = [1], poly.source_operation = 71 : i64}
+// CHECK-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type {poly.call_stack = [{callee = @__llzk_spec_3}], poly.loop_indices = [0], poly.source_operation = 74 : i64}
+// CHECK-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type {poly.call_stack = [{callee = @__llzk_spec_3}], poly.loop_indices = [1], poly.source_operation = 74 : i64}
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
