@@ -19,7 +19,7 @@ class DefinitionRegistry {
   ModuleOp root;
   unsigned limit;
   ConversionTracker tracker;
-  SymbolTableCollection tables;
+  std::unique_ptr<SymbolTableCollection> tables = std::make_unique<SymbolTableCollection>();
   DenseMap<std::pair<Operation *, ArrayAttr>, unsigned> cache;
   SmallVector<Entry> entries;
   std::optional<unsigned> current;
@@ -93,7 +93,7 @@ class DefinitionRegistry {
       if (failed(specialized)) {
         return failure();
       }
-      auto definition = specialized->getDefinition(tables, root);
+      auto definition = specialized->getDefinition(*tables, root);
       if (failed(definition)) {
         return failure();
       }
@@ -198,7 +198,7 @@ class DefinitionRegistry {
         if (failed(concrete)) {
           return failure();
         }
-        auto target = concrete->getDefinition(tables, root);
+        auto target = concrete->getDefinition(*tables, root);
         if (failed(target)) {
           return failure();
         }
@@ -354,7 +354,7 @@ class DefinitionRegistry {
     if (isFamily(type)) {
       return type;
     }
-    auto found = type.getDefinition(tables, root);
+    auto found = type.getDefinition(*tables, root);
     if (failed(found)) {
       return failure();
     }
@@ -387,8 +387,9 @@ class DefinitionRegistry {
       if (failed(result)) {
         return failure();
       }
-      tables = SymbolTableCollection();
-      auto def = result->getDefinition(tables, root);
+      // Cloning can change multiple symbol tables; discard all cached lookups.
+      tables = std::make_unique<SymbolTableCollection>();
+      auto def = result->getDefinition(*tables, root);
       if (failed(def)) {
         return failure();
       }
@@ -402,7 +403,7 @@ class DefinitionRegistry {
     } else {
       clone = source.clone();
       clone.setSymName(("__llzk_spec_" + Twine(*id)).str());
-      tables.getSymbolTable(source->getParentOp()).insert(clone);
+      tables->getSymbolTable(source->getParentOp()).insert(clone);
       AttrTypeReplacer self;
       self.addReplacement([&](StructType t) -> std::optional<Type> {
         if (t == source.getType() || t == type) {
@@ -417,7 +418,7 @@ class DefinitionRegistry {
   }
 
   LogicalResult specializeCall(CallOp call) {
-    auto target = call.getCalleeTarget(tables);
+    auto target = call.getCalleeTarget(*tables);
     if (failed(target)) {
       return failure();
     }
@@ -486,7 +487,7 @@ class DefinitionRegistry {
       auto clone = source.clone();
       clone.setSymName(("__llzk_spec_" + Twine(*id)).str());
       Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
-      tables.getSymbolTable(parent).insert(clone);
+      tables->getSymbolTable(parent).insert(clone);
       if (templ) {
         evaluateTemplateExprs(templ, bindings);
         convertCalleesInPlace(clone, bindings);
@@ -552,7 +553,7 @@ public:
         if (failed(specializeCall(call))) {
           return WalkResult::interrupt();
         }
-        auto target = call.getCalleeTarget(tables);
+        auto target = call.getCalleeTarget(*tables);
         if (failed(target)) {
           return WalkResult::interrupt();
         }
