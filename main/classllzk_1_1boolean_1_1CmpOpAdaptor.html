@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a357fb87527721889c21b633f106ae2d1" id="r_a357fb87527721889c21b633f106ae2d1"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a357fb87527721889c21b633f106ae2d1">CmpOpAdaptor</a> (<a class="el" href="classllzk_1_1boolean_1_1CmpOp.html">CmpOp</a> op)</td></tr>
 <tr class="memitem:a443c09a7335d3d498a8211a02066b63f" id="r_a443c09a7335d3d498a8211a02066b63f"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a443c09a7335d3d498a8211a02066b63f">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:a989b3751b705ce12b1c308e10fa8c7d7" id="r_a989b3751b705ce12b1c308e10fa8c7d7"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a989b3751b705ce12b1c308e10fa8c7d7">CmpOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:aa971902c9fe264bc08e33f55c41b297b" id="r_aa971902c9fe264bc08e33f55c41b297b"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa971902c9fe264bc08e33f55c41b297b">CmpOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a47b5761d4c458669ca5e1558995748fe" id="r_a47b5761d4c458669ca5e1558995748fe"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a47b5761d4c458669ca5e1558995748fe">CmpOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:a1d487eb5206c640f434682313f596393" id="r_a1d487eb5206c640f434682313f596393"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a1d487eb5206c640f434682313f596393">CmpOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:aad750276242c9dde2d4af20750b1f4c9" id="r_aad750276242c9dde2d4af20750b1f4c9"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aad750276242c9dde2d4af20750b1f4c9">CmpOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase.html#a7aa87f55475b2ea2d116b4bdd4282553">CmpOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:ad396fbd9ae7d3cf438063fd173128d04" id="r_ad396fbd9ae7d3cf438063fd173128d04"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = CmpOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, CmpOp&gt;&gt;&gt; </td></tr>
@@ -180,7 +180,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00856">856</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01089">1089</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a357fb87527721889c21b633f106ae2d1" name="a357fb87527721889c21b633f106ae2d1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a357fb87527721889c21b633f106ae2d1">&#9670;&#160;</a></span>CmpOpAdaptor()</h2>
@@ -197,13 +197,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l00780">780</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01350">1350</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="aa971902c9fe264bc08e33f55c41b297b" name="aa971902c9fe264bc08e33f55c41b297b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa971902c9fe264bc08e33f55c41b297b">&#9670;&#160;</a></span>CmpOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="a47b5761d4c458669ca5e1558995748fe" name="a47b5761d4c458669ca5e1558995748fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47b5761d4c458669ca5e1558995748fe">&#9670;&#160;</a></span>CmpOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -224,7 +224,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -239,7 +239,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00822">822</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01055">1055</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -280,7 +280,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00820">820</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01053">1053</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -311,7 +311,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00824">824</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01057">1057</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -342,7 +342,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00826">826</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01059">1059</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -375,7 +375,7 @@ template&lt;typename LateInst = CmpOp, typename = std::enable_if_t&lt;std::is_sa
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00829">829</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01062">1062</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ template&lt;typename LateInst = CmpOp, typename = std::enable_if_t&lt;std::is_sa
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l00782">782</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01352">1352</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

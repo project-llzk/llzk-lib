@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a19fc6e24ef744682060ce3ca4bff4b01" id="r_a19fc6e24ef744682060ce3ca4bff4b01"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a19fc6e24ef744682060ce3ca4bff4b01">LitStringOpAdaptor</a> (<a class="el" href="classllzk_1_1string_1_1LitStringOp.html">LitStringOp</a> op)</td></tr>
 <tr class="memitem:a6909435e50b55e34a6a1071166fb3ddf" id="r_a6909435e50b55e34a6a1071166fb3ddf"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a6909435e50b55e34a6a1071166fb3ddf">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:a1736303bf02ce311f94ddcaaf5b656ff" id="r_a1736303bf02ce311f94ddcaaf5b656ff"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a1736303bf02ce311f94ddcaaf5b656ff">LitStringOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:ad4bb5c8defad0bbf0d66efa36b193f76" id="r_ad4bb5c8defad0bbf0d66efa36b193f76"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad4bb5c8defad0bbf0d66efa36b193f76">LitStringOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a9953b01d991eca574c3698d38d85200a" id="r_a9953b01d991eca574c3698d38d85200a"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a9953b01d991eca574c3698d38d85200a">LitStringOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:a7cf55ece4e0475057b9d2407130c36f2" id="r_a7cf55ece4e0475057b9d2407130c36f2"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a7cf55ece4e0475057b9d2407130c36f2">LitStringOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:a60df45094447d9df280a6673a2c75606" id="r_a60df45094447d9df280a6673a2c75606"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a60df45094447d9df280a6673a2c75606">LitStringOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase.html#aeed44e1acee6e35f304053c6bc83abbe">LitStringOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:ad54fb3cc7643e73d4612c3fb81c94f19" id="r_ad54fb3cc7643e73d4612c3fb81c94f19"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = LitStringOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, LitStringOp&gt;&gt;&gt; </td></tr>
@@ -178,7 +178,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00113">113</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00116">116</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a19fc6e24ef744682060ce3ca4bff4b01" name="a19fc6e24ef744682060ce3ca4bff4b01"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a19fc6e24ef744682060ce3ca4bff4b01">&#9670;&#160;</a></span>LitStringOpAdaptor()</h2>
@@ -195,13 +195,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html#l00068">68</a> of file <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html#l00066">66</a> of file <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="ad4bb5c8defad0bbf0d66efa36b193f76" name="ad4bb5c8defad0bbf0d66efa36b193f76"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4bb5c8defad0bbf0d66efa36b193f76">&#9670;&#160;</a></span>LitStringOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="a9953b01d991eca574c3698d38d85200a" name="a9953b01d991eca574c3698d38d85200a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9953b01d991eca574c3698d38d85200a">&#9670;&#160;</a></span>LitStringOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -222,7 +222,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -237,7 +237,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00087">87</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00090">90</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -278,7 +278,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00085">85</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00088">88</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -309,7 +309,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00089">89</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00092">92</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -340,7 +340,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00091">91</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00094">94</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -373,7 +373,7 @@ template&lt;typename LateInst = LitStringOp, typename = std::enable_if_t&lt;std:
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00094">94</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8h_8inc_source.html#l00097">97</a> of file <a class="el" href="String_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -392,7 +392,7 @@ template&lt;typename LateInst = LitStringOp, typename = std::enable_if_t&lt;std:
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html#l00070">70</a> of file <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html#l00068">68</a> of file <a class="el" href="String_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

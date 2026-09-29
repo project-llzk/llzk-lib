@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac304cd821d858129b2a435a893076b5e" id="r_ac304cd821d858129b2a435a893076b5e"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac304cd821d858129b2a435a893076b5e">TemplateOpAdaptor</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> op)</td></tr>
 <tr class="memitem:aac9583e1dc86ea11584a3dba4d331b47" id="r_aac9583e1dc86ea11584a3dba4d331b47"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aac9583e1dc86ea11584a3dba4d331b47">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:aa8c406d0ba56f9fd43d2b68c6b0bc574" id="r_aa8c406d0ba56f9fd43d2b68c6b0bc574"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa8c406d0ba56f9fd43d2b68c6b0bc574">TemplateOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:ad592439008c37e8ab908df9e28543896" id="r_ad592439008c37e8ab908df9e28543896"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad592439008c37e8ab908df9e28543896">TemplateOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:ab2abee40dd64d7c85a8a1ebaafacb4ab" id="r_ab2abee40dd64d7c85a8a1ebaafacb4ab"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ab2abee40dd64d7c85a8a1ebaafacb4ab">TemplateOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:ae03b9983d28accfe8e1b1e61236b8a10" id="r_ae03b9983d28accfe8e1b1e61236b8a10"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ae03b9983d28accfe8e1b1e61236b8a10">TemplateOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:ae85fb29fd7042badc7559ddfc4f1fa15" id="r_ae85fb29fd7042badc7559ddfc4f1fa15"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ae85fb29fd7042badc7559ddfc4f1fa15">TemplateOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html#a1b861784cc5b7a108c523386e169f354">TemplateOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a6389a1634c531a1c348408579cbc6ab6" id="r_a6389a1634c531a1c348408579cbc6ab6"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = TemplateOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, TemplateOp&gt;&gt;&gt; </td></tr>
@@ -180,7 +180,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00820">820</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00986">986</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac304cd821d858129b2a435a893076b5e" name="ac304cd821d858129b2a435a893076b5e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac304cd821d858129b2a435a893076b5e">&#9670;&#160;</a></span>TemplateOpAdaptor()</h2>
@@ -197,13 +197,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00966">966</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01176">1176</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="ad592439008c37e8ab908df9e28543896" name="ad592439008c37e8ab908df9e28543896"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad592439008c37e8ab908df9e28543896">&#9670;&#160;</a></span>TemplateOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="ab2abee40dd64d7c85a8a1ebaafacb4ab" name="ab2abee40dd64d7c85a8a1ebaafacb4ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2abee40dd64d7c85a8a1ebaafacb4ab">&#9670;&#160;</a></span>TemplateOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -224,7 +224,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -239,7 +239,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00794">794</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00960">960</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -280,7 +280,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00792">792</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00958">958</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -311,7 +311,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00796">796</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00962">962</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -342,7 +342,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00798">798</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00964">964</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -375,7 +375,7 @@ template&lt;typename LateInst = TemplateOp, typename = std::enable_if_t&lt;std::
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00801">801</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00967">967</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ template&lt;typename LateInst = TemplateOp, typename = std::enable_if_t&lt;std::
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00968">968</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01178">1178</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

@@ -3,6 +3,7 @@ var classllzk_1_1constrain_1_1EmitContainmentOp =
     [ "Adaptor", "classllzk_1_1constrain_1_1EmitContainmentOp.html#aaf82473db0248bbb9641d826a47c306b", null ],
     [ "FoldAdaptor", "classllzk_1_1constrain_1_1EmitContainmentOp.html#a2d19de9bd2f22344408689bfc646abfb", null ],
     [ "GenericAdaptor", "classllzk_1_1constrain_1_1EmitContainmentOp.html#a0eb24192e5384bb37e380840eddf59dd", null ],
+    [ "Properties", "classllzk_1_1constrain_1_1EmitContainmentOp.html#a7c6c9d24b77dccaa25472d973a209c65", null ],
     [ "getAttributeNames", "classllzk_1_1constrain_1_1EmitContainmentOp.html#a35ce0fb9a384467c3b2d0d454324ec77", null ],
     [ "getLhs", "classllzk_1_1constrain_1_1EmitContainmentOp.html#ae8d4f1a32251e7d9e39fb709ec31c756", null ],
     [ "getLhsMutable", "classllzk_1_1constrain_1_1EmitContainmentOp.html#af31cb1365d871eb74d1dad7b3b802be4", null ],

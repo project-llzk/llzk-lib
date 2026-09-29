@@ -152,6 +152,7 @@ Namespaces</h2></td></tr>
 <tr class="memitem:dataflow" id="r_dataflow"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1dataflow.html">dataflow</a></td></tr>
 <tr class="memitem:debug" id="r_debug"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1debug.html">debug</a></td></tr>
 <tr class="memitem:detail" id="r_detail"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1detail.html">detail</a></td></tr>
+<tr class="memdesc:namespacellzk_1_1detail"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides the necessary information to the <span class="tt">RemoveUnusedDiscardableAllocations</span> pass about operations that load or store values from the result of an allocator op marked with the <span class="tt">MemAlloc&lt;<a class="el" href="structllzk_1_1DiscardableAllocationResource.html" title="Memory resource for allocations that may be erased when no stored value is ever read.">DiscardableAllocationResource</a>&gt;</span> memory effect so unused allocators and stores can be removed. <br /></td></tr>
 <tr class="memitem:felt" id="r_felt"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1felt.html">felt</a></td></tr>
 <tr class="memitem:function" id="r_function"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1function.html">function</a></td></tr>
 <tr class="memitem:global" id="r_global"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1global.html">global</a></td></tr>
@@ -160,7 +161,7 @@ Namespaces</h2></td></tr>
 <tr class="memitem:pod" id="r_pod"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1pod.html">pod</a></td></tr>
 <tr class="memitem:polymorphic" id="r_polymorphic"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic.html">polymorphic</a></td></tr>
 <tr class="memitem:ram" id="r_ram"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1ram.html">ram</a></td></tr>
-<tr class="memitem:smt" id="r_smt"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1smt.html">smt</a></td></tr>
+<tr class="memitem:smt_5Finfo" id="r_smt_5Finfo"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1smt__info.html">smt_info</a></td></tr>
 <tr class="memitem:string" id="r_string"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1string.html">string</a></td></tr>
 <tr class="memitem:verif" id="r_verif"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1verif.html">verif</a></td></tr>
 <tr class="memitem:witgen" id="r_witgen"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1witgen.html">witgen</a></td></tr>
@@ -222,8 +223,6 @@ Classes</h2></td></tr>
 <tr class="memitem:FuzzySet" id="r_FuzzySet"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1FuzzySet.html">FuzzySet</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents a set where the membership predicate can take three values: true, false, and "unknown".  <a href="classllzk_1_1FuzzySet.html#details">More...</a><br /></td></tr>
 <tr class="memitem:GlobalSourceMgr" id="r_GlobalSourceMgr"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1GlobalSourceMgr.html">GlobalSourceMgr</a></td></tr>
-<tr class="memitem:HasAncestor" id="r_HasAncestor"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1HasAncestor.html">HasAncestor</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <span class="tt"><a class="el" href="structllzk_1_1HasAncestor.html" title="See HasAncestor ODS documentation for details.">HasAncestor</a></span> ODS documentation for details.  <a href="structllzk_1_1HasAncestor.html#details">More...</a><br /></td></tr>
 <tr class="memitem:InFlightDiagnosticWrapper" id="r_InFlightDiagnosticWrapper"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper around InFlightDiagnostic that can either be a regular InFlightDiagnostic or a special version that asserts false after reporting the diagnostic.  <a href="classllzk_1_1InFlightDiagnosticWrapper.html#details">More...</a><br /></td></tr>
 <tr class="memitem:Interval" id="r_Interval"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1Interval.html">Interval</a></td></tr>
@@ -237,6 +236,7 @@ Classes</h2></td></tr>
 <tr class="memitem:LightweightSignalEquivalenceAnalysis" id="r_LightweightSignalEquivalenceAnalysis"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a></td></tr>
 <tr class="memitem:LLZKCallLikeOpInterface" id="r_LLZKCallLikeOpInterface"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LLZKCallLikeOpInterface.html">LLZKCallLikeOpInterface</a></td></tr>
 <tr class="memitem:LLZKDialect" id="r_LLZKDialect"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LLZKDialect.html">LLZKDialect</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Common LLZK attributes.  <a href="classllzk_1_1LLZKDialect.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LLZKDialectBytecodeInterface" id="r_LLZKDialectBytecodeInterface"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">LLZKDialectBytecodeInterface</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This implements the bytecode interface for the LLZK dialect.  <a href="structllzk_1_1LLZKDialectBytecodeInterface.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LLZKDialectVersion" id="r_LLZKDialectVersion"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1LLZKDialectVersion.html">LLZKDialectVersion</a></td></tr>
@@ -316,7 +316,6 @@ Classes</h2></td></tr>
 <tr class="memitem:UnreducedInterval" id="r_UnreducedInterval"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1UnreducedInterval.html">UnreducedInterval</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An inclusive interval [a, b] where a and b are arbitrary integers not necessarily bound to a given field.  <a href="classllzk_1_1UnreducedInterval.html#details">More...</a><br /></td></tr>
 <tr class="memitem:UnusedDeclarationEliminationPassOptions" id="r_UnusedDeclarationEliminationPassOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1UnusedDeclarationEliminationPassOptions.html">UnusedDeclarationEliminationPassOptions</a></td></tr>
-<tr class="memitem:ValueLess" id="r_ValueLess"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1ValueLess.html">ValueLess</a></td></tr>
 <tr class="memitem:VerifySizesForMultiAffineOps" id="r_VerifySizesForMultiAffineOps"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1VerifySizesForMultiAffineOps.html">VerifySizesForMultiAffineOps</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Produces errors if there is an inconsistency in the various attributes/values that are used to support affine map instantiation in the Op marked with this Trait.  <a href="structllzk_1_1VerifySizesForMultiAffineOps.html#details">More...</a><br /></td></tr>
 <tr class="memitem:Within" id="r_Within"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1Within.html">Within</a></td></tr>
@@ -343,7 +342,7 @@ Typedefs</h2></td></tr>
 <tr class="memdesc:a18840b85883a143d6c8297343ecfe583"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a stable reference to a known <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a>.  <br /></td></tr>
 <tr class="memitem:ace41b88b3084e2fb14bd6573034e41f2" id="r_ace41b88b3084e2fb14bd6573034e41f2"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ace41b88b3084e2fb14bd6573034e41f2">FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="#a18840b85883a143d6c8297343ecfe583">FieldRef</a>, 2&gt;</td></tr>
 <tr class="memdesc:ace41b88b3084e2fb14bd6573034e41f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a set of Fields.  <br /></td></tr>
-<tr class="memitem:ab691f5ae18b16bc65a3ae8dcffba2d97" id="r_ab691f5ae18b16bc65a3ae8dcffba2d97"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ab691f5ae18b16bc65a3ae8dcffba2d97">ManagedResources</a></td></tr>
+<tr class="memitem:ac8a54e0415aa906da6090bb42e428e26" id="r_ac8a54e0415aa906da6090bb42e428e26"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ac8a54e0415aa906da6090bb42e428e26">ManagedResources</a></td></tr>
 <tr class="memitem:a513acdd19d4296f6623ca75ed5eeb904" id="r_a513acdd19d4296f6623ca75ed5eeb904"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> = mlir::DenseMap&lt;std::pair&lt;mlir::SymbolRefAttr, <a class="el" href="#afc702f955fa2d6d30b19fae69930f11a">Side</a>&gt;, mlir::Attribute&gt;</td></tr>
 <tr class="memdesc:a513acdd19d4296f6623ca75ed5eeb904"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional result from type unifications.  <br /></td></tr>
 </table><table class="memberdecls">
@@ -358,10 +357,8 @@ Enumerations</h2></td></tr>
 , <a class="el" href="#a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4">Wildcard</a>
  }</td></tr>
 <tr class="memdesc:a41c7611294e8e147781abc732a50159f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Concreteness classification for an argument to a parameterized struct type.  <a href="#a41c7611294e8e147781abc732a50159f">More...</a><br /></td></tr>
-<tr class="memitem:afc702f955fa2d6d30b19fae69930f11a" id="r_afc702f955fa2d6d30b19fae69930f11a"><td class="memItemLeft">enum class &#160;</td><td class="memItemRight"><a class="el" href="#afc702f955fa2d6d30b19fae69930f11a">Side</a> : std::uint8_t { <a class="el" href="#afc702f955fa2d6d30b19fae69930f11aaba2b45bdc11e2a4a6e86aab2ac693cbb">EMPTY</a> = 0
-, <a class="el" href="#afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b">LHS</a>
+<tr class="memitem:afc702f955fa2d6d30b19fae69930f11a" id="r_afc702f955fa2d6d30b19fae69930f11a"><td class="memItemLeft">enum class &#160;</td><td class="memItemRight"><a class="el" href="#afc702f955fa2d6d30b19fae69930f11a">Side</a> : std::uint8_t { <a class="el" href="#afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b">LHS</a>
 , <a class="el" href="#afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b">RHS</a>
-, <a class="el" href="#afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3">TOMB</a>
  }</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
@@ -485,6 +482,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ac94281b68aaf9718ec33fb2f2cb945a5" id="r_ac94281b68aaf9718ec33fb2f2cb945a5"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#ac94281b68aaf9718ec33fb2f2cb945a5">operator&gt;&gt;</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a591c6bf26566c23d2ccb0c9ed20ab12b" id="r_a591c6bf26566c23d2ccb0c9ed20ab12b"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a591c6bf26566c23d2ccb0c9ed20ab12b">toDynamicAPInt</a> (StringRef str)</td></tr>
 <tr class="memitem:a6487238a0c9232afbc011cfbe1f93cce" id="r_a6487238a0c9232afbc011cfbe1f93cce"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a6487238a0c9232afbc011cfbe1f93cce">toDynamicAPInt</a> (const APSInt &amp;i)</td></tr>
+<tr class="memitem:aa1ac1cda97a61a9c7773b936e2b5a8a2" id="r_aa1ac1cda97a61a9c7773b936e2b5a8a2"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#aa1ac1cda97a61a9c7773b936e2b5a8a2">toDynamicAPInt</a> (const APInt &amp;i)</td></tr>
 <tr class="memitem:ad1bfa5460ac00c7974a989fa2e8ddc56" id="r_ad1bfa5460ac00c7974a989fa2e8ddc56"><td class="memItemLeft">APSInt&#160;</td><td class="memItemRight"><a class="el" href="#ad1bfa5460ac00c7974a989fa2e8ddc56">toAPSInt</a> (const DynamicAPInt &amp;i)</td></tr>
 <tr class="memitem:a6ec06c177f8be824dc8c3adc0ae22eb6" id="r_a6ec06c177f8be824dc8c3adc0ae22eb6"><td class="memItemLeft">APInt&#160;</td><td class="memItemRight"><a class="el" href="#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a> (const DynamicAPInt &amp;val, unsigned bitWidth)</td></tr>
 <tr class="memitem:a7ad816687c36ab31df4f80aa25208f27" id="r_a7ad816687c36ab31df4f80aa25208f27"><td class="memItemLeft">APInt&#160;</td><td class="memItemRight"><a class="el" href="#a7ad816687c36ab31df4f80aa25208f27">toExactWidthAPInt</a> (const DynamicAPInt &amp;val, unsigned bitWidth)</td></tr>
@@ -625,9 +623,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a5b768daf3c60f0a261a34d171f706304" id="r_a5b768daf3c60f0a261a34d171f706304"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
 <tr class="memitem:a5b768daf3c60f0a261a34d171f706304 template"><td class="memItemLeft">OpClass&#160;</td><td class="memItemRight"><a class="el" href="#a5b768daf3c60f0a261a34d171f706304">getParentOfType</a> (mlir::Operation *op)</td></tr>
 <tr class="memdesc:a5b768daf3c60f0a261a34d171f706304"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent/ancestor operation that is of type 'OpClass'.  <br /></td></tr>
-<tr class="memitem:ad080efcf3526896dde0a65efe82cb65f" id="r_ad080efcf3526896dde0a65efe82cb65f"><td class="memTemplParams" colspan="2">template&lt;typename... OpTys&gt; </td></tr>
-<tr class="memitem:ad080efcf3526896dde0a65efe82cb65f template"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ad080efcf3526896dde0a65efe82cb65f">hasParentThatIsa</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:ad080efcf3526896dde0a65efe82cb65f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true if the parameter has a parent/ancestor op that is an instance of one of the template type arguments.  <br /></td></tr>
 <tr class="memitem:ad5a2121be9e3d0627cae5e297852772b" id="r_ad5a2121be9e3d0627cae5e297852772b"><td class="memTemplParams" colspan="2">template&lt;unsigned N&gt; </td></tr>
 <tr class="memitem:ad5a2121be9e3d0627cae5e297852772b template"><td class="memItemLeft">mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#ad5a2121be9e3d0627cae5e297852772b">parseDimAndSymbolList</a> (mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand, N &gt; &amp;mapOperands, mlir::IntegerAttr &amp;numDims)</td></tr>
 <tr class="memitem:a467753751f4011cd7f8e3e628748b92c" id="r_a467753751f4011cd7f8e3e628748b92c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a467753751f4011cd7f8e3e628748b92c">printDimAndSymbolList</a> (mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands, mlir::IntegerAttr numDims)</td></tr>
@@ -727,6 +722,7 @@ Functions</h2></td></tr>
 <tr class="memitem:aee183fbf8efdb7074e4ae15d7a4029a4" id="r_aee183fbf8efdb7074e4ae15d7a4029a4"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#aee183fbf8efdb7074e4ae15d7a4029a4">toDynamicAPInt</a> (llvm::StringRef str)</td></tr>
 <tr class="memitem:a42ddc7147daa762ec4335b255dacd7b3" id="r_a42ddc7147daa762ec4335b255dacd7b3"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a42ddc7147daa762ec4335b255dacd7b3">toDynamicAPInt</a> (const llvm::APSInt &amp;i)</td></tr>
 <tr class="memitem:ad74feac4c1ab67da90787102f5231390" id="r_ad74feac4c1ab67da90787102f5231390"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#ad74feac4c1ab67da90787102f5231390">toDynamicAPInt</a> (const llvm::APInt &amp;i)</td></tr>
+<tr class="memdesc:ad74feac4c1ab67da90787102f5231390"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts an APInt to a DynamicAPInt, using an unsigned interpretation.  <br /></td></tr>
 <tr class="memitem:a254f0d812ac8a3f615d91a868115ee83" id="r_a254f0d812ac8a3f615d91a868115ee83"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a254f0d812ac8a3f615d91a868115ee83">toDynamicAPInt</a> (size_t i)</td></tr>
 <tr class="memitem:a3b93df0843f457f1f81cc0dc5933d1c9" id="r_a3b93df0843f457f1f81cc0dc5933d1c9"><td class="memItemLeft">llvm::APSInt&#160;</td><td class="memItemRight"><a class="el" href="#a3b93df0843f457f1f81cc0dc5933d1c9">toAPSInt</a> (const llvm::DynamicAPInt &amp;i)</td></tr>
 <tr class="memitem:a1998817a76cc8f6e316294d1b18e2e92" id="r_a1998817a76cc8f6e316294d1b18e2e92"><td class="memItemLeft">llvm::APInt&#160;</td><td class="memItemRight"><a class="el" href="#a1998817a76cc8f6e316294d1b18e2e92">toAPInt</a> (const llvm::DynamicAPInt &amp;i, unsigned bitWidth)</td></tr>
@@ -1019,21 +1015,21 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a id="ab691f5ae18b16bc65a3ae8dcffba2d97" name="ab691f5ae18b16bc65a3ae8dcffba2d97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab691f5ae18b16bc65a3ae8dcffba2d97">&#9670;&#160;</a></span>ManagedResources</h2>
+<a id="ac8a54e0415aa906da6090bb42e428e26" name="ac8a54e0415aa906da6090bb42e428e26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8a54e0415aa906da6090bb42e428e26">&#9670;&#160;</a></span>ManagedResources</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="#ab691f5ae18b16bc65a3ae8dcffba2d97">llzk::ManagedResources</a></td>
+          <td class="memname">using <a class="el" href="#ac8a54e0415aa906da6090bb42e428e26">llzk::ManagedResources</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line"> </div>
-<div class="line">std::shared_ptr&lt;std::pair&lt;mlir::OwningOpRef&lt;mlir::ModuleOp&gt;, mlir::SymbolTableCollection&gt;&gt;</div>
+<b>Initial value:</b><div class="fragment"><div class="line">std::shared_ptr&lt;</div>
+<div class="line">   std::pair&lt;mlir::OwningOpRef&lt;mlir::ModuleOp&gt;, std::unique_ptr&lt;mlir::SymbolTableCollection&gt;&gt;&gt;</div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00034">34</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00035">35</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -1120,7 +1116,7 @@ Variables</h2></td></tr>
 <p>Maps <span class="tt">SymbolRefAttr</span> appearing in one type to the associated <span class="tt">Attribute</span> from the other type at the same nested position. The <span class="tt"><a class="el" href="#afc702f955fa2d6d30b19fae69930f11a">Side</a></span> enum in the key indicates which input expression the <span class="tt">SymbolRefAttr</span> is from. Additionally, if a conflict is found (i.e., multiple Occurrences of a specific <span class="tt">SymbolRefAttr</span> on the same side map to different Attributes from the other side), the mapped value will be <span class="tt">nullptr</span>.</p>
 <p>This map is used by the <span class="tt">llzk-flatten</span> pass to replace struct parameter <span class="tt">SymbolRefAttr</span> with static concrete values to produce the flattened versions of structs. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00217">217</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00208">208</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1181,7 +1177,7 @@ Variables</h2></td></tr>
 <tr><td class="fieldname"><a id="ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d" name="ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d"></a>Dbgs&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00012">12</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00013">13</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1205,10 +1201,8 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="afc702f955fa2d6d30b19fae69930f11aaba2b45bdc11e2a4a6e86aab2ac693cbb" name="afc702f955fa2d6d30b19fae69930f11aaba2b45bdc11e2a4a6e86aab2ac693cbb"></a>EMPTY&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b" name="afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b"></a>LHS&#160;</td><td class="fielddoc"></td></tr>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b" name="afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b"></a>LHS&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b" name="afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b"></a>RHS&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3" name="afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3"></a>TOMB&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00148">148</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
@@ -3044,7 +3038,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html#l00207">207</a> of file <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html">LLZKEnforceNoOverwritePass.cpp</a>.</p>
 
@@ -3097,7 +3090,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html#l00294">294</a> of file <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html">LLZKFuseProductControlFlowPass.cpp</a>.</p>
 
@@ -3117,7 +3109,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKInlineFreeFunctionsPass_8cpp_source.html#l00381">381</a> of file <a class="el" href="LLZKInlineFreeFunctionsPass_8cpp_source.html">LLZKInlineFreeFunctionsPass.cpp</a>.</p>
 
@@ -3246,7 +3237,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8cpp_source.html#l00091">91</a> of file <a class="el" href="LLZKValidationPasses_8cpp_source.html">LLZKValidationPasses.cpp</a>.</p>
 
@@ -3342,7 +3332,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html#l00575">575</a> of file <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html">LLZKRedundantOperationEliminationPass.cpp</a>.</p>
 
@@ -3362,7 +3351,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKRedundantReadAndWriteEliminationPass_8cpp_source.html#l00662">662</a> of file <a class="el" href="LLZKRedundantReadAndWriteEliminationPass_8cpp_source.html">LLZKRedundantReadAndWriteEliminationPass.cpp</a>.</p>
 
@@ -3391,7 +3379,7 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00192">192</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00210">210</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3450,7 +3438,7 @@ template&lt;typename AllocOpTy&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00132">132</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00134">134</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3471,7 +3459,7 @@ template&lt;typename AllocOpTy&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00081">81</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00083">83</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3603,7 +3591,6 @@ template&lt;typename AllocOpTy&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKWhileToForPass_8cpp_source.html#l00963">963</a> of file <a class="el" href="LLZKWhileToForPass_8cpp_source.html">LLZKWhileToForPass.cpp</a>.</p>
 
@@ -4227,7 +4214,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00306">306</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00297">297</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4529,7 +4516,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00302">302</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00293">293</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4642,7 +4629,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00021">21</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00022">22</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -5776,29 +5763,6 @@ template&lt;typename GraphT&gt; </div>
 
 </div>
 </div>
-<a id="ad080efcf3526896dde0a65efe82cb65f" name="ad080efcf3526896dde0a65efe82cb65f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad080efcf3526896dde0a65efe82cb65f">&#9670;&#160;</a></span>hasParentThatIsa()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename... OpTys&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">bool llzk::hasParentThatIsa </td>
-          <td>(</td>
-          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return true if the parameter has a parent/ancestor op that is an instance of one of the template type arguments. </p>
-
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00064">64</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
-
-</div>
-</div>
 <a id="a77bb6a13dd663cf33ccf6248ac67029a" name="a77bb6a13dd663cf33ccf6248ac67029a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a77bb6a13dd663cf33ccf6248ac67029a">&#9670;&#160;</a></span>hasReadEffect()</h2>
 
@@ -6626,7 +6590,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00242">242</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00245">245</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -6672,7 +6636,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00227">227</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00230">230</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -6715,7 +6679,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00272">272</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00275">275</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -6756,7 +6720,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00234">234</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00237">237</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -6945,7 +6909,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00155">155</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00149">149</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6994,7 +6958,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00172">172</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00166">166</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7859,7 +7823,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00191">191</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00151">151</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7897,7 +7861,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00161">161</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00121">121</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7933,7 +7897,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00176">176</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00136">136</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7964,7 +7928,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00205">205</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00165">165</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -8148,7 +8112,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00198">198</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00158">158</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -8243,7 +8207,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00169">169</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00129">129</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -8284,7 +8248,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00184">184</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00144">144</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -8345,7 +8309,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00238">238</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00198">198</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -8381,7 +8345,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00245">245</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00205">205</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -8496,7 +8460,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00035">35</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00036">36</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
 
 </div>
 </div>
@@ -8523,7 +8487,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00968">968</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l01006">1006</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8550,7 +8514,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00849">849</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00859">859</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8577,7 +8541,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00856">856</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00866">866</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8604,7 +8568,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00866">866</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00880">880</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8631,7 +8595,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00873">873</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00887">887</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8658,7 +8622,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00974">974</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00987">987</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8685,7 +8649,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00981">981</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00994">994</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8712,7 +8676,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00883">883</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00901">901</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8739,7 +8703,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00890">890</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00908">908</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8766,7 +8730,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00991">991</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01008">1008</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8793,7 +8757,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00998">998</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01015">1015</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8820,7 +8784,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01008">1008</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01029">1029</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8847,7 +8811,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01015">1015</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01036">1036</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8874,7 +8838,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01025">1025</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01050">1050</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8901,7 +8865,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01032">1032</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01057">1057</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8964,7 +8928,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00900">900</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00922">922</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8991,7 +8955,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00907">907</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00929">929</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9018,7 +8982,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00102">102</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00106">106</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9045,7 +9009,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00109">109</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00113">113</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9072,7 +9036,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01042">1042</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01071">1071</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9099,7 +9063,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01049">1049</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01078">1078</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9126,7 +9090,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00917">917</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00943">943</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9153,7 +9117,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00924">924</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00950">950</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9180,7 +9144,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01059">1059</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01092">1092</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9207,7 +9171,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01066">1066</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01099">1099</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9234,7 +9198,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01076">1076</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01113">1113</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9261,7 +9225,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01083">1083</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01120">1120</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9288,7 +9252,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01093">1093</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01134">1134</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9315,7 +9279,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01100">1100</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01141">1141</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9342,7 +9306,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00934">934</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00964">964</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9369,7 +9333,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00941">941</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00971">971</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9396,7 +9360,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00951">951</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00985">985</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9423,7 +9387,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00958">958</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00992">992</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9450,7 +9414,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01144">1144</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01197">1197</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9496,7 +9460,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01110">1110</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01155">1155</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9523,7 +9487,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01117">1117</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01162">1162</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9550,7 +9514,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00119">119</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00127">127</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9577,7 +9541,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01127">1127</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01176">1176</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -9604,7 +9568,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01134">1134</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01183">1183</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -10075,7 +10039,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00167">167</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00161">161</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -10259,7 +10223,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00282">282</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00273">273</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -10339,7 +10303,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00026">26</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00027">27</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -10358,7 +10322,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html#l00011">11</a> of file <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html">AnalysisPassEnums.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html#l00012">12</a> of file <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html">AnalysisPassEnums.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -10519,7 +10483,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00031">31</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8h_8inc_source.html#l00032">32</a> of file <a class="el" href="AnalysisPassEnums_8h_8inc_source.html">AnalysisPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -10538,7 +10502,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html#l00020">20</a> of file <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html">AnalysisPassEnums.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html#l00021">21</a> of file <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html">AnalysisPassEnums.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -10557,7 +10521,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html#l00027">27</a> of file <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html">AnalysisPassEnums.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html#l00028">28</a> of file <a class="el" href="AnalysisPassEnums_8cpp_8inc_source.html">AnalysisPassEnums.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -10667,7 +10631,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00143">143</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00137">137</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -10737,7 +10701,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00122">122</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00116">116</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -10758,8 +10722,27 @@ template&lt;&gt; </div>
 
 </div>
 </div>
+<a id="aa1ac1cda97a61a9c7773b936e2b5a8a2" name="aa1ac1cda97a61a9c7773b936e2b5a8a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa1ac1cda97a61a9c7773b936e2b5a8a2">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[1/7]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">DynamicAPInt llzk::toDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">const APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00108">108</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a6487238a0c9232afbc011cfbe1f93cce" name="a6487238a0c9232afbc011cfbe1f93cce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6487238a0c9232afbc011cfbe1f93cce">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[1/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a6487238a0c9232afbc011cfbe1f93cce">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[2/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -10778,13 +10761,10 @@ template&lt;&gt; </div>
 </div>
 </div>
 <a id="ad74feac4c1ab67da90787102f5231390" name="ad74feac4c1ab67da90787102f5231390"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad74feac4c1ab67da90787102f5231390">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[2/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad74feac4c1ab67da90787102f5231390">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[3/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">llvm::DynamicAPInt llzk::toDynamicAPInt </td>
@@ -10793,19 +10773,15 @@ template&lt;&gt; </div>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00045">45</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
+<p>Converts an APInt to a DynamicAPInt, using an unsigned interpretation. </p>
+<p>For a signed interpretation, use <span class="tt">DynamicAPInt(const APInt &amp;)</span> directly. </p>
 
 </div>
 </div>
 <a id="a42ddc7147daa762ec4335b255dacd7b3" name="a42ddc7147daa762ec4335b255dacd7b3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a42ddc7147daa762ec4335b255dacd7b3">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[3/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a42ddc7147daa762ec4335b255dacd7b3">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[4/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -10822,7 +10798,7 @@ template&lt;&gt; </div>
 </div>
 </div>
 <a id="aee183fbf8efdb7074e4ae15d7a4029a4" name="aee183fbf8efdb7074e4ae15d7a4029a4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aee183fbf8efdb7074e4ae15d7a4029a4">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[4/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aee183fbf8efdb7074e4ae15d7a4029a4">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[5/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -10839,7 +10815,7 @@ template&lt;&gt; </div>
 </div>
 </div>
 <a id="a254f0d812ac8a3f615d91a868115ee83" name="a254f0d812ac8a3f615d91a868115ee83"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a254f0d812ac8a3f615d91a868115ee83">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[5/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a254f0d812ac8a3f615d91a868115ee83">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[6/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -10861,12 +10837,12 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00049">49</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00047">47</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
 
 </div>
 </div>
 <a id="a591c6bf26566c23d2ccb0c9ed20ab12b" name="a591c6bf26566c23d2ccb0c9ed20ab12b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a591c6bf26566c23d2ccb0c9ed20ab12b">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[6/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a591c6bf26566c23d2ccb0c9ed20ab12b">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[7/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -10903,7 +10879,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00149">149</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00143">143</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11043,7 +11019,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the two lists of Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types). </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00271">271</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00262">262</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>

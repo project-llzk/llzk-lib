@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5fe4863f5ba0110c0a6b228710cf44a9" id="r_a5fe4863f5ba0110c0a6b228710cf44a9"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a5fe4863f5ba0110c0a6b228710cf44a9">AssertOpAdaptor</a> (<a class="el" href="classllzk_1_1boolean_1_1AssertOp.html">AssertOp</a> op)</td></tr>
 <tr class="memitem:a4ebe5d6a3443e0d66f06ba18c80fe290" id="r_a4ebe5d6a3443e0d66f06ba18c80fe290"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a4ebe5d6a3443e0d66f06ba18c80fe290">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:a3579f4dbb610a32821c8b1ccf6272d59" id="r_a3579f4dbb610a32821c8b1ccf6272d59"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a3579f4dbb610a32821c8b1ccf6272d59">AssertOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:add861a59dccf0a4328cac4dab235d137" id="r_add861a59dccf0a4328cac4dab235d137"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#add861a59dccf0a4328cac4dab235d137">AssertOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:af3e4910b7052057b732bfc2689b7e7e5" id="r_af3e4910b7052057b732bfc2689b7e7e5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#af3e4910b7052057b732bfc2689b7e7e5">AssertOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:ab338f248e9b3ce0e61d72e78cf83a5c7" id="r_ab338f248e9b3ce0e61d72e78cf83a5c7"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ab338f248e9b3ce0e61d72e78cf83a5c7">AssertOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:aa46f0baa0e121c516d06331f613a44c5" id="r_aa46f0baa0e121c516d06331f613a44c5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa46f0baa0e121c516d06331f613a44c5">AssertOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase.html#a45565f77aa612b2da1d2159695b7dc5d">AssertOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a62733a1de099b67d9859e7055defeacb" id="r_a62733a1de099b67d9859e7055defeacb"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = AssertOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, AssertOp&gt;&gt;&gt; </td></tr>
@@ -179,7 +179,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00639">639</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00857">857</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a5fe4863f5ba0110c0a6b228710cf44a9" name="a5fe4863f5ba0110c0a6b228710cf44a9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5fe4863f5ba0110c0a6b228710cf44a9">&#9670;&#160;</a></span>AssertOpAdaptor()</h2>
@@ -196,13 +196,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l00555">555</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01064">1064</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="add861a59dccf0a4328cac4dab235d137" name="add861a59dccf0a4328cac4dab235d137"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add861a59dccf0a4328cac4dab235d137">&#9670;&#160;</a></span>AssertOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="af3e4910b7052057b732bfc2689b7e7e5" name="af3e4910b7052057b732bfc2689b7e7e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3e4910b7052057b732bfc2689b7e7e5">&#9670;&#160;</a></span>AssertOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -223,7 +223,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -238,7 +238,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00609">609</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00827">827</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -279,7 +279,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00607">607</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00825">825</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -310,7 +310,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00611">611</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00829">829</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -341,7 +341,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00613">613</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00831">831</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -374,7 +374,7 @@ template&lt;typename LateInst = AssertOp, typename = std::enable_if_t&lt;std::is
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00616">616</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l00834">834</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -393,7 +393,7 @@ template&lt;typename LateInst = AssertOp, typename = std::enable_if_t&lt;std::is
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l00557">557</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01066">1066</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

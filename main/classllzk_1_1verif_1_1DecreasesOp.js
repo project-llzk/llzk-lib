@@ -3,6 +3,7 @@ var classllzk_1_1verif_1_1DecreasesOp =
     [ "Adaptor", "classllzk_1_1verif_1_1DecreasesOp.html#a047b4c7a9d9cd6477c35e80f71de4c26", null ],
     [ "FoldAdaptor", "classllzk_1_1verif_1_1DecreasesOp.html#aa7ed41a27b9a6f061a3f8313cbbe31d1", null ],
     [ "GenericAdaptor", "classllzk_1_1verif_1_1DecreasesOp.html#af0b014a75edd05cc9ec8affc544bacb4", null ],
+    [ "Properties", "classllzk_1_1verif_1_1DecreasesOp.html#a0154692c5178f4e1d87c0a8ea754b47c", null ],
     [ "getAttributeNames", "classllzk_1_1verif_1_1DecreasesOp.html#a262466696a6ebaf064085b1e5f496665", null ],
     [ "getEffects", "classllzk_1_1verif_1_1DecreasesOp.html#a5217567ebbabbf099e19643e7ee0ec17", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1verif_1_1DecreasesOp.html#aaf524ffcf1e7a2f51db787c11425e9b7", null ],

@@ -2,8 +2,8 @@ var structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1
 [
     [ "sym_nameTy", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#a78ffa58cf6c1a51901ef5d28c57b13f8", null ],
     [ "type_optTy", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#abc5f7ddcd812a10c2bf9026f538f1e27", null ],
-    [ "getSymName", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#ab55d7fce73186d3944acd4b6e9611b4f", null ],
-    [ "getTypeOpt", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#ae78054950cf304a08dfed29ded0815e0", null ],
+    [ "getSymName", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#ab52986be354fa7373348f789c48c2f98", null ],
+    [ "getTypeOpt", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#aeaa27449d4c158d184d96703ec220928", null ],
     [ "operator!=", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#a42e3f592f49e9c7e6705d604dbb6bca0", null ],
     [ "operator==", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#a2ff6609a1b253db94fc239ccc28844d2", null ],
     [ "setSymName", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html#abdf3f95bb5a296971aaba48fa7f43899", null ],

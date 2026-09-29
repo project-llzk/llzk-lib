@@ -3,6 +3,7 @@ var classllzk_1_1ram_1_1StoreOp =
     [ "Adaptor", "classllzk_1_1ram_1_1StoreOp.html#aeadcaa67c222f6097ca3e5fcc4a16d6f", null ],
     [ "FoldAdaptor", "classllzk_1_1ram_1_1StoreOp.html#a9bd7b3c8f7b71c73e0f410705ef9e2f3", null ],
     [ "GenericAdaptor", "classllzk_1_1ram_1_1StoreOp.html#a5ae053512f53b7e21c72f9cb436b5235", null ],
+    [ "Properties", "classllzk_1_1ram_1_1StoreOp.html#ad238541663fec7adeaa60cb2015a6398", null ],
     [ "getAddr", "classllzk_1_1ram_1_1StoreOp.html#ab501fec4cda57e6d5e9f8b35db0b3fae", null ],
     [ "getAddrMutable", "classllzk_1_1ram_1_1StoreOp.html#a5fec575d77786b01b3a48e59d98fc944", null ],
     [ "getAttributeNames", "classllzk_1_1ram_1_1StoreOp.html#a131eeface49de2cace996a497e215b07", null ],

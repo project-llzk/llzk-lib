@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1b
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1boolean_1_1NotBoolOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::boolean::NotBoolOp Class Reference</div></div>
 </div><!--header-->
@@ -152,6 +153,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:abab0e866c1eb2de02eea1b779ba00f39" id="r_abab0e866c1eb2de02eea1b779ba00f39"><td class="memTemplParams" colspan="2">template&lt;typename RangeT&gt; </td></tr>
 <tr class="memitem:abab0e866c1eb2de02eea1b779ba00f39 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#abab0e866c1eb2de02eea1b779ba00f39">GenericAdaptor</a> = <a class="el" href="classllzk_1_1boolean_1_1NotBoolOpGenericAdaptor.html">NotBoolOpGenericAdaptor</a>&lt;RangeT&gt;</td></tr>
 <tr class="memitem:a0960d5dc5b68e86a57a8a58f64d96bbe" id="r_a0960d5dc5b68e86a57a8a58f64d96bbe"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a0960d5dc5b68e86a57a8a58f64d96bbe">FoldAdaptor</a> = <a class="el" href="#abab0e866c1eb2de02eea1b779ba00f39">GenericAdaptor</a>&lt;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&gt;</td></tr>
+<tr class="memitem:ab1f2e6a7a03d6693f958953acf925a87" id="r_ab1f2e6a7a03d6693f958953acf925a87"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> = <a class="el" href="classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a5b6f8d7d81c7de1325ae34598cf0bc28">FoldAdaptor::Properties</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -172,17 +174,44 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aa3950ffdab816988bfac43dbba156222" id="r_aa3950ffdab816988bfac43dbba156222"><td class="memItemLeft">static constexpr ::llvm::StringLiteral&#160;</td><td class="memItemRight"><a class="el" href="#aa3950ffdab816988bfac43dbba156222">getOperationName</a> ()</td></tr>
+<tr class="memitem:a913de0472d5fdc544ffce5d2e1cc598c" id="r_a913de0472d5fdc544ffce5d2e1cc598c"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a913de0472d5fdc544ffce5d2e1cc598c">setPropertiesFromAttr</a> (<a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;prop, ::mlir::Attribute attr, ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
+<tr class="memitem:aa524bc5236a4c1e78611be487cfe0361" id="r_aa524bc5236a4c1e78611be487cfe0361"><td class="memItemLeft">::mlir::Attribute&#160;</td><td class="memItemRight"><a class="el" href="#aa524bc5236a4c1e78611be487cfe0361">getPropertiesAsAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:acc7bd41c201bb63659254d43978a17b8" id="r_acc7bd41c201bb63659254d43978a17b8"><td class="memItemLeft">static llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#acc7bd41c201bb63659254d43978a17b8">computePropertiesHash</a> (const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a3215fcfd8491415959cc7b36b509dec3" id="r_a3215fcfd8491415959cc7b36b509dec3"><td class="memItemLeft">static std::optional&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a3215fcfd8491415959cc7b36b509dec3">getInherentAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;prop, llvm::StringRef name)</td></tr>
+<tr class="memitem:aa73d2606cc6b4d0372509a155271408f" id="r_aa73d2606cc6b4d0372509a155271408f"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#aa73d2606cc6b4d0372509a155271408f">setInherentAttr</a> (<a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;prop, llvm::StringRef name, mlir::Attribute value)</td></tr>
+<tr class="memitem:a9b3d8553213ed4e73ee39eab661caca4" id="r_a9b3d8553213ed4e73ee39eab661caca4"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a9b3d8553213ed4e73ee39eab661caca4">populateInherentAttrs</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;prop, ::mlir::NamedAttrList &amp;attrs)</td></tr>
+<tr class="memitem:a55d6ab61b632e9527eb6ed5398ddf5f2" id="r_a55d6ab61b632e9527eb6ed5398ddf5f2"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a55d6ab61b632e9527eb6ed5398ddf5f2">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a8d8b27d7fb5f4f9a4372faa618935e95" id="r_a8d8b27d7fb5f4f9a4372faa618935e95"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a8d8b27d7fb5f4f9a4372faa618935e95">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Type result, ::mlir::Value operand)</td></tr>
+<tr class="memitem:a540ff29b48e94646c67e333629eb677a" id="r_a540ff29b48e94646c67e333629eb677a"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a540ff29b48e94646c67e333629eb677a">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Type result, ::mlir::Value operand)</td></tr>
+<tr class="memitem:a838e0b7073968aba15d320c9603daef8" id="r_a838e0b7073968aba15d320c9603daef8"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a838e0b7073968aba15d320c9603daef8">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Type result, ::mlir::Value operand)</td></tr>
 <tr class="memitem:ac42515c0a0a54c21238a3b3cd49d73dd" id="r_ac42515c0a0a54c21238a3b3cd49d73dd"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ac42515c0a0a54c21238a3b3cd49d73dd">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value operand)</td></tr>
+<tr class="memitem:a1d3100009fc3affde57aa4591cfe24bd" id="r_a1d3100009fc3affde57aa4591cfe24bd"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a1d3100009fc3affde57aa4591cfe24bd">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Value operand)</td></tr>
+<tr class="memitem:a9cafae5af9993a44bdd100d9769cf282" id="r_a9cafae5af9993a44bdd100d9769cf282"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a9cafae5af9993a44bdd100d9769cf282">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Value operand)</td></tr>
 <tr class="memitem:a7a9e19f24d0528f15ebd81a2d5e2d021" id="r_a7a9e19f24d0528f15ebd81a2d5e2d021"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a7a9e19f24d0528f15ebd81a2d5e2d021">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value operand)</td></tr>
+<tr class="memitem:a503f3f00a193265bc7c03e744d16f290" id="r_a503f3f00a193265bc7c03e744d16f290"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a503f3f00a193265bc7c03e744d16f290">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value operand)</td></tr>
+<tr class="memitem:a9f704a14d1cbbfdd753c5b2dcf8dc803" id="r_a9f704a14d1cbbfdd753c5b2dcf8dc803"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a9f704a14d1cbbfdd753c5b2dcf8dc803">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value operand)</td></tr>
 <tr class="memitem:a74416f732847d1d754b320168478d96e" id="r_a74416f732847d1d754b320168478d96e"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a74416f732847d1d754b320168478d96e">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a2d0af78fb2d9424ad5c49cb7c9a9cc2e" id="r_a2d0af78fb2d9424ad5c49cb7c9a9cc2e"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a2d0af78fb2d9424ad5c49cb7c9a9cc2e">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a89e2d4bd720cfd853ab29ee7bf95381b" id="r_a89e2d4bd720cfd853ab29ee7bf95381b"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a89e2d4bd720cfd853ab29ee7bf95381b">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
 <tr class="memitem:acefecad4e5f72938548fa3145614b4c7" id="r_acefecad4e5f72938548fa3145614b4c7"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#acefecad4e5f72938548fa3145614b4c7">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
-<tr class="memitem:abd2a4e9ba8d7e0cac606d7940fe4b1fc" id="r_abd2a4e9ba8d7e0cac606d7940fe4b1fc"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#abd2a4e9ba8d7e0cac606d7940fe4b1fc">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
+<tr class="memitem:aaf9d3d80b80ff2bca132ddb29cee6549" id="r_aaf9d3d80b80ff2bca132ddb29cee6549"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aaf9d3d80b80ff2bca132ddb29cee6549">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a03521e3920e98e1e6fe4f6619b2c1606" id="r_a03521e3920e98e1e6fe4f6619b2c1606"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a03521e3920e98e1e6fe4f6619b2c1606">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:ab20f55468c47630051327fdaf5d34d3e" id="r_ab20f55468c47630051327fdaf5d34d3e"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ab20f55468c47630051327fdaf5d34d3e">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a668791bd1278f269d415686f9a4f7fe5" id="r_a668791bd1278f269d415686f9a4f7fe5"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a668791bd1278f269d415686f9a4f7fe5">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:ae9c41fae790315b2002a557c0b75e474" id="r_ae9c41fae790315b2002a557c0b75e474"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ae9c41fae790315b2002a557c0b75e474">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a854c2b8b96ebeb8a415c76d7e105f02c" id="r_a854c2b8b96ebeb8a415c76d7e105f02c"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a854c2b8b96ebeb8a415c76d7e105f02c">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::ValueRange operands, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a61f5956e74030b53ea072d2b29cd6311" id="r_a61f5956e74030b53ea072d2b29cd6311"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a61f5956e74030b53ea072d2b29cd6311">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::ValueRange operands, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a2dfdeaf4e04647579e8e5c70b39dc621" id="r_a2dfdeaf4e04647579e8e5c70b39dc621"><td class="memItemLeft">static <a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a2dfdeaf4e04647579e8e5c70b39dc621">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::ValueRange operands, const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:abb55e6a96c1aa543bfd8daed3f8772d3" id="r_abb55e6a96c1aa543bfd8daed3f8772d3"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#abb55e6a96c1aa543bfd8daed3f8772d3">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::PropertyRef properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
 <tr class="memitem:a6b7706a845e8a632974f289b50fb4988" id="r_a6b7706a845e8a632974f289b50fb4988"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a6b7706a845e8a632974f289b50fb4988">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a1d618212ba5eab3245d582f6c76fd581" id="r_a1d618212ba5eab3245d582f6c76fd581"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a1d618212ba5eab3245d582f6c76fd581">odsIndex_operand</a> = 0</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01082">1082</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01351">1351</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a06369ffdd5bff5796f46c83e6de3afb9" name="a06369ffdd5bff5796f46c83e6de3afb9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a06369ffdd5bff5796f46c83e6de3afb9">&#9670;&#160;</a></span>Adaptor</h2>
@@ -196,7 +225,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01086">1086</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01355">1355</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -212,7 +241,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01089">1089</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01358">1358</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -230,13 +259,29 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01088">1088</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01357">1357</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab1f2e6a7a03d6693f958953acf925a87" name="ab1f2e6a7a03d6693f958953acf925a87"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1f2e6a7a03d6693f958953acf925a87">&#9670;&#160;</a></span>Properties</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">llzk::boolean::NotBoolOp::Properties</a> = <a class="el" href="classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a5b6f8d7d81c7de1325ae34598cf0bc28">FoldAdaptor::Properties</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01360">1360</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a74416f732847d1d754b320168478d96e" name="a74416f732847d1d754b320168478d96e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a74416f732847d1d754b320168478d96e">&#9670;&#160;</a></span>build() <span class="overload">[1/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a74416f732847d1d754b320168478d96e">&#9670;&#160;</a></span>build() <span class="overload">[1/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -277,12 +322,63 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01158">1158</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01956">1956</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab20f55468c47630051327fdaf5d34d3e" name="ab20f55468c47630051327fdaf5d34d3e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab20f55468c47630051327fdaf5d34d3e">&#9670;&#160;</a></span>build() <span class="overload">[2/7]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::boolean::NotBoolOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02006">2006</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a8d8b27d7fb5f4f9a4372faa618935e95" name="a8d8b27d7fb5f4f9a4372faa618935e95"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d8b27d7fb5f4f9a4372faa618935e95">&#9670;&#160;</a></span>build() <span class="overload">[2/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d8b27d7fb5f4f9a4372faa618935e95">&#9670;&#160;</a></span>build() <span class="overload">[3/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -318,12 +414,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01132">1132</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01894">1894</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a7a9e19f24d0528f15ebd81a2d5e2d021" name="a7a9e19f24d0528f15ebd81a2d5e2d021"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a9e19f24d0528f15ebd81a2d5e2d021">&#9670;&#160;</a></span>build() <span class="overload">[3/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a9e19f24d0528f15ebd81a2d5e2d021">&#9670;&#160;</a></span>build() <span class="overload">[4/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -359,12 +455,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01152">1152</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01938">1938</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="ac42515c0a0a54c21238a3b3cd49d73dd" name="ac42515c0a0a54c21238a3b3cd49d73dd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac42515c0a0a54c21238a3b3cd49d73dd">&#9670;&#160;</a></span>build() <span class="overload">[4/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac42515c0a0a54c21238a3b3cd49d73dd">&#9670;&#160;</a></span>build() <span class="overload">[5/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -395,12 +491,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01137">1137</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01911">1911</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="acefecad4e5f72938548fa3145614b4c7" name="acefecad4e5f72938548fa3145614b4c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acefecad4e5f72938548fa3145614b4c7">&#9670;&#160;</a></span>build() <span class="overload">[5/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#acefecad4e5f72938548fa3145614b4c7">&#9670;&#160;</a></span>build() <span class="overload">[6/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -436,7 +532,649 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01166">1166</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01976">1976</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a854c2b8b96ebeb8a415c76d7e105f02c" name="a854c2b8b96ebeb8a415c76d7e105f02c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a854c2b8b96ebeb8a415c76d7e105f02c">&#9670;&#160;</a></span>build() <span class="overload">[7/7]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::boolean::NotBoolOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>odsBuilder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02027">2027</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="acc7bd41c201bb63659254d43978a17b8" name="acc7bd41c201bb63659254d43978a17b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc7bd41c201bb63659254d43978a17b8">&#9670;&#160;</a></span>computePropertiesHash()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::hash_code llzk::boolean::NotBoolOp::computePropertiesHash </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01875">1875</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a838e0b7073968aba15d320c9603daef8" name="a838e0b7073968aba15d320c9603daef8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a838e0b7073968aba15d320c9603daef8">&#9670;&#160;</a></span>create() <span class="overload">[1/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>result</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>operand</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01907">1907</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9f704a14d1cbbfdd753c5b2dcf8dc803" name="a9f704a14d1cbbfdd753c5b2dcf8dc803"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f704a14d1cbbfdd753c5b2dcf8dc803">&#9670;&#160;</a></span>create() <span class="overload">[2/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>operand</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01952">1952</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a89e2d4bd720cfd853ab29ee7bf95381b" name="a89e2d4bd720cfd853ab29ee7bf95381b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89e2d4bd720cfd853ab29ee7bf95381b">&#9670;&#160;</a></span>create() <span class="overload">[3/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01972">1972</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ae9c41fae790315b2002a557c0b75e474" name="ae9c41fae790315b2002a557c0b75e474"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9c41fae790315b2002a557c0b75e474">&#9670;&#160;</a></span>create() <span class="overload">[4/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02023">2023</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9cafae5af9993a44bdd100d9769cf282" name="a9cafae5af9993a44bdd100d9769cf282"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9cafae5af9993a44bdd100d9769cf282">&#9670;&#160;</a></span>create() <span class="overload">[5/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>operand</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01934">1934</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a03521e3920e98e1e6fe4f6619b2c1606" name="a03521e3920e98e1e6fe4f6619b2c1606"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03521e3920e98e1e6fe4f6619b2c1606">&#9670;&#160;</a></span>create() <span class="overload">[6/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02002">2002</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2dfdeaf4e04647579e8e5c70b39dc621" name="a2dfdeaf4e04647579e8e5c70b39dc621"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2dfdeaf4e04647579e8e5c70b39dc621">&#9670;&#160;</a></span>create() <span class="overload">[7/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02054">2054</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a540ff29b48e94646c67e333629eb677a" name="a540ff29b48e94646c67e333629eb677a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a540ff29b48e94646c67e333629eb677a">&#9670;&#160;</a></span>create() <span class="overload">[8/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>result</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>operand</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01899">1899</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a503f3f00a193265bc7c03e744d16f290" name="a503f3f00a193265bc7c03e744d16f290"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a503f3f00a193265bc7c03e744d16f290">&#9670;&#160;</a></span>create() <span class="overload">[9/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>operand</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01944">1944</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2d0af78fb2d9424ad5c49cb7c9a9cc2e" name="a2d0af78fb2d9424ad5c49cb7c9a9cc2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d0af78fb2d9424ad5c49cb7c9a9cc2e">&#9670;&#160;</a></span>create() <span class="overload">[10/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01964">1964</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a668791bd1278f269d415686f9a4f7fe5" name="a668791bd1278f269d415686f9a4f7fe5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a668791bd1278f269d415686f9a4f7fe5">&#9670;&#160;</a></span>create() <span class="overload">[11/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02015">2015</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a1d3100009fc3affde57aa4591cfe24bd" name="a1d3100009fc3affde57aa4591cfe24bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d3100009fc3affde57aa4591cfe24bd">&#9670;&#160;</a></span>create() <span class="overload">[12/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>operand</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01926">1926</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aaf9d3d80b80ff2bca132ddb29cee6549" name="aaf9d3d80b80ff2bca132ddb29cee6549"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaf9d3d80b80ff2bca132ddb29cee6549">&#9670;&#160;</a></span>create() <span class="overload">[13/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01994">1994</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a61f5956e74030b53ea072d2b29cd6311" name="a61f5956e74030b53ea072d2b29cd6311"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61f5956e74030b53ea072d2b29cd6311">&#9670;&#160;</a></span>create() <span class="overload">[14/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">NotBoolOp</a> llzk::boolean::NotBoolOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02046">2046</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -482,7 +1220,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01090">1090</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01361">1361</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -501,7 +1239,43 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01254">1254</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02132">2132</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3215fcfd8491415959cc7b36b509dec3" name="a3215fcfd8491415959cc7b36b509dec3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3215fcfd8491415959cc7b36b509dec3">&#9670;&#160;</a></span>getInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; mlir::Attribute &gt; llzk::boolean::NotBoolOp::getInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01880">1880</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -528,7 +1302,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01098">1098</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01369">1369</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -555,7 +1329,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01102">1102</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01373">1373</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -582,7 +1356,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01117">1117</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01388">1388</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -609,7 +1383,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01121">1121</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01392">1392</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -636,7 +1410,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01108">1108</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01379">1379</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -663,7 +1437,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01112">1112</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01383">1383</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -690,7 +1464,38 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01094">1094</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01365">1365</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa524bc5236a4c1e78611be487cfe0361" name="aa524bc5236a4c1e78611be487cfe0361"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa524bc5236a4c1e78611be487cfe0361">&#9670;&#160;</a></span>getPropertiesAsAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Attribute llzk::boolean::NotBoolOp::getPropertiesAsAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01866">1866</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -717,12 +1522,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01127">1127</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01398">1398</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="abd2a4e9ba8d7e0cac606d7940fe4b1fc" name="abd2a4e9ba8d7e0cac606d7940fe4b1fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abd2a4e9ba8d7e0cac606d7940fe4b1fc">&#9670;&#160;</a></span>inferReturnTypes()</h2>
+<a id="abb55e6a96c1aa543bfd8daed3f8772d3" name="abb55e6a96c1aa543bfd8daed3f8772d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb55e6a96c1aa543bfd8daed3f8772d3">&#9670;&#160;</a></span>inferReturnTypes()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -753,7 +1558,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -773,7 +1578,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01212">1212</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02086">2086</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -804,7 +1609,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01220">1220</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02094">2094</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9b3d8553213ed4e73ee39eab661caca4" name="a9b3d8553213ed4e73ee39eab661caca4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b3d8553213ed4e73ee39eab661caca4">&#9670;&#160;</a></span>populateInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::boolean::NotBoolOp::populateInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01887">1887</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -823,7 +1664,115 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01246">1246</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02124">2124</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa73d2606cc6b4d0372509a155271408f" name="aa73d2606cc6b4d0372509a155271408f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa73d2606cc6b4d0372509a155271408f">&#9670;&#160;</a></span>setInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::boolean::NotBoolOp::setInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01884">1884</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a913de0472d5fdc544ffce5d2e1cc598c" name="a913de0472d5fdc544ffce5d2e1cc598c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a913de0472d5fdc544ffce5d2e1cc598c">&#9670;&#160;</a></span>setPropertiesFromAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::boolean::NotBoolOp::setPropertiesFromAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#ab1f2e6a7a03d6693f958953acf925a87">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01857">1857</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a55d6ab61b632e9527eb6ed5398ddf5f2" name="a55d6ab61b632e9527eb6ed5398ddf5f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a55d6ab61b632e9527eb6ed5398ddf5f2">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::boolean::NotBoolOp::verifyInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OperationName</td>          <td class="paramname"><span class="paramname"><em>opName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01890">1890</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -842,7 +1791,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01208">1208</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02082">2082</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -861,7 +1810,32 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l01184">1184</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l02058">2058</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a1d618212ba5eab3245d582f6c76fd581" name="a1d618212ba5eab3245d582f6c76fd581"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d618212ba5eab3245d582f6c76fd581">&#9670;&#160;</a></span>odsIndex_operand</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::boolean::NotBoolOp::odsIndex_operand = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01359">1359</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

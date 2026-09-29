@@ -4,6 +4,8 @@ var Array_2Transforms_2TransformationPasses_8h =
     [ "GEN_PASS_DECL_ARRAYTOSCALARPASS", "Array_2Transforms_2TransformationPasses_8h.html#a20bfdc276d959b640935cee3d9541b8a", null ],
     [ "GEN_PASS_DECL_STRAIGHTLINESTATICARRAYPROMOTIONPASS", "Array_2Transforms_2TransformationPasses_8h.html#abe3a768a32964a856c4f01decfca03db", null ],
     [ "GEN_PASS_REGISTRATION", "Array_2Transforms_2TransformationPasses_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede", null ],
+    [ "GEN_PASS_REGISTRATION_ARRAYTOSCALARPASS", "Array_2Transforms_2TransformationPasses_8h.html#a236b8ce2776196b3b37da383e7e6d630", null ],
+    [ "GEN_PASS_REGISTRATION_STRAIGHTLINESTATICARRAYPROMOTIONPASS", "Array_2Transforms_2TransformationPasses_8h.html#a3437077e028106ed9cdcc2c56f902e17", null ],
     [ "llzk::array::createArrayToScalarPass", "namespacellzk_1_1array.html#a525e7ad6c9e222da9a66726555b1175e", null ],
     [ "llzk::array::createStraightLineStaticArrayPromotionPass", "namespacellzk_1_1array.html#a1705e029e0a4ead95c92e6cb09cef0cd", null ],
     [ "llzk::array::registerArrayToScalarPass", "namespacellzk_1_1array.html#a014b61095a29e4b1e00eca1a4614ff1f", null ],

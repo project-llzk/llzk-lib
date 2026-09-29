@@ -2,8 +2,8 @@ var structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties
 [
     [ "loop_arg_typesTy", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#abf3fe66aa6e663a3ba3518f997588cc8", null ],
     [ "loop_nameTy", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#aa4fdf6264efc30a2610a0f64e0b64739", null ],
-    [ "getLoopArgTypes", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a19486a18d08f78616730495cae024332", null ],
-    [ "getLoopName", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a23de52855ef8f084eabe997b04bad714", null ],
+    [ "getLoopArgTypes", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a68f62c61ef7b8b9668c0c0b2c174e027", null ],
+    [ "getLoopName", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a03c24b05e1ed124bbdb1e6e913f2c378", null ],
     [ "operator!=", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#ab1528c5c0bdb69e986fd4410bd8bf698", null ],
     [ "operator==", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a78f815053b55f4a8048e13c67b22b3e0", null ],
     [ "setLoopArgTypes", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a33e13d2ebd96e4377db4ab4c8c1f9568", null ],

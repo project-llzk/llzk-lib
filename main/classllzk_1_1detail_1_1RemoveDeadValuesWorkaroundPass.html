@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1d
 </div><!--header-->
 <div class="contents">
 
-<p>A workaround wrapper around MLIR's <span class="tt">remove-dead-values</span> pass that normalizes empty <span class="tt">scf.if</span> else regions before running the upstream implementation and cleans up the trivial regions afterwards.  
+<p>A workaround wrapper around MLIR's <span class="tt">remove-dead-values</span> pass that normalizes empty <span class="tt">scf.if</span> else regions before running the upstream implementation, cleans up the trivial regions afterwards, and removes unused <span class="tt">ub.poison</span> values left by an earlier invocation.  
  <a href="#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>&gt;</code></p>
@@ -153,12 +153,13 @@ Collaboration diagram for llzk::detail::RemoveDeadValuesWorkaroundPass:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a85af92de9cb9d495c83ffc26a59604f4" id="r_a85af92de9cb9d495c83ffc26a59604f4"><td class="memItemLeft">llvm::StringRef&#160;</td><td class="memItemRight"><a class="el" href="#a85af92de9cb9d495c83ffc26a59604f4">getArgument</a> () const override</td></tr>
 <tr class="memitem:a54a805817b574d20777d40039acde302" id="r_a54a805817b574d20777d40039acde302"><td class="memItemLeft">llvm::StringRef&#160;</td><td class="memItemRight"><a class="el" href="#a54a805817b574d20777d40039acde302">getDescription</a> () const override</td></tr>
+<tr class="memitem:a0e78abf090d0259ce3208f1f0deb192f" id="r_a0e78abf090d0259ce3208f1f0deb192f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a0e78abf090d0259ce3208f1f0deb192f">getDependentDialects</a> (mlir::DialectRegistry &amp;registry) const override</td></tr>
 <tr class="memitem:a1128cd7310a65fb115825a1aa73cd4e0" id="r_a1128cd7310a65fb115825a1aa73cd4e0"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a1128cd7310a65fb115825a1aa73cd4e0">runOnOperation</a> () final</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A workaround wrapper around MLIR's <span class="tt">remove-dead-values</span> pass that normalizes empty <span class="tt">scf.if</span> else regions before running the upstream implementation and cleans up the trivial regions afterwards. </p>
+<div class="textblock"><p>A workaround wrapper around MLIR's <span class="tt">remove-dead-values</span> pass that normalizes empty <span class="tt">scf.if</span> else regions before running the upstream implementation, cleans up the trivial regions afterwards, and removes unused <span class="tt">ub.poison</span> values left by an earlier invocation. </p>
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00141">141</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00143">143</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a85af92de9cb9d495c83ffc26a59604f4" name="a85af92de9cb9d495c83ffc26a59604f4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a85af92de9cb9d495c83ffc26a59604f4">&#9670;&#160;</a></span>getArgument()</h2>
@@ -183,7 +184,34 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00146">146</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00155">155</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a0e78abf090d0259ce3208f1f0deb192f" name="a0e78abf090d0259ce3208f1f0deb192f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e78abf090d0259ce3208f1f0deb192f">&#9670;&#160;</a></span>getDependentDialects()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::detail::RemoveDeadValuesWorkaroundPass::getDependentDialects </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DialectRegistry &amp;</td>          <td class="paramname"><span class="paramname"><em>registry</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel override">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00158">158</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -210,7 +238,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00147">147</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00156">156</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -237,7 +265,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00149">149</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00163">163</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>

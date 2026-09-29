@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPITestGe
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="CommonCAPIGen_8h.html">CommonCAPIGen.h</a>&quot;</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/TableGen/Attribute.h&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/TableGen/EnumInfo.h&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/TableGen/GenInfo.h&gt;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;llvm/ADT/StringExtras.h&gt;</span></div>
@@ -205,13 +205,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPITestGe
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    os &lt;&lt; llvm::formatv(fmt, dialectNameCapitalized, cEnumName, firstCaseValue);</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  }</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordtype">void</span> genCompleteRecord(<span class="keyword">const</span> EnumAttr &amp;enumInfo) {</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="comment">// EnumAttr does not contain a Dialect reference, so filter by C++ namespace instead.</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordtype">void</span> genCompleteRecord(<span class="keyword">const</span> EnumInfo &amp;enumInfo) {</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="comment">// EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.</span></div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    <span class="keywordflow">if</span> (!<a class="code hl_variable" href="CommonCAPIGen_8h.html#a5a7a95674096c67390ebb8b066f922c0">DialectName</a>.empty() &amp;&amp; !enumInfo.getCppNamespace().contains_insensitive(<a class="code hl_variable" href="CommonCAPIGen_8h.html#a5a7a95674096c67390ebb8b066f922c0">DialectName</a>)) {</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    }</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    std::vector&lt;EnumAttrCase&gt; enumCases = enumInfo.getAllCases();</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    std::vector&lt;EnumCase&gt; enumCases = enumInfo.getAllCases();</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keywordflow">if</span> (enumCases.empty()) {</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    }</div>
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPITestGe
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="comment">// Generate tests for each enum</span></div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *def : records.getAllDerivedDefinitionsIfDefined(<span class="stringliteral">&quot;EnumAttrInfo&quot;</span>)) {</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    EnumAttr enumInfo(def);</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    EnumInfo enumInfo(def);</div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    generator.genCompleteRecord(enumInfo);</div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  }</div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>

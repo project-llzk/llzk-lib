@@ -3,6 +3,7 @@ var classllzk_1_1array_1_1ArrayLengthOp =
     [ "Adaptor", "classllzk_1_1array_1_1ArrayLengthOp.html#ad9fdfce4b1b5f3253207991ad394f2f5", null ],
     [ "FoldAdaptor", "classllzk_1_1array_1_1ArrayLengthOp.html#ad1f5a16f62f6f42ee0eb269751b43148", null ],
     [ "GenericAdaptor", "classllzk_1_1array_1_1ArrayLengthOp.html#aae12db06418efc2b8411d3dccb9193a4", null ],
+    [ "Properties", "classllzk_1_1array_1_1ArrayLengthOp.html#ae21b4d82e3a53d1b920cdde72cf05b41", null ],
     [ "getArrRef", "classllzk_1_1array_1_1ArrayLengthOp.html#a17af3c4fbfa3fcbb71024177fb3d0c2f", null ],
     [ "getArrRefMutable", "classllzk_1_1array_1_1ArrayLengthOp.html#a0ccea992d3f83f8daf351452a3c633bf", null ],
     [ "getArrRefType", "classllzk_1_1array_1_1ArrayLengthOp.html#a09608bd9a9fa57b09f2cf27699cfc314", null ],

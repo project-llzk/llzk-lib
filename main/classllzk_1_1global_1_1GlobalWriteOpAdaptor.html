@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3d94c987d1adb10b101e68b26c33605f" id="r_a3d94c987d1adb10b101e68b26c33605f"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a3d94c987d1adb10b101e68b26c33605f">GlobalWriteOpAdaptor</a> (<a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">GlobalWriteOp</a> op)</td></tr>
 <tr class="memitem:afd86d1d477c0c37cb57cfdf5cbff5d3b" id="r_afd86d1d477c0c37cb57cfdf5cbff5d3b"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#afd86d1d477c0c37cb57cfdf5cbff5d3b">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:aaadf9864db7f7e0c6c8ab868ba7d1a38" id="r_aaadf9864db7f7e0c6c8ab868ba7d1a38"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aaadf9864db7f7e0c6c8ab868ba7d1a38">GlobalWriteOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a79be7915fde808c8f1e8a5f2c95d57aa" id="r_a79be7915fde808c8f1e8a5f2c95d57aa"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a79be7915fde808c8f1e8a5f2c95d57aa">GlobalWriteOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:ad814a91b6d4a40473c861aecd590f149" id="r_ad814a91b6d4a40473c861aecd590f149"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad814a91b6d4a40473c861aecd590f149">GlobalWriteOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:af0b5d85916255f0c217a89ed8e23748c" id="r_af0b5d85916255f0c217a89ed8e23748c"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#af0b5d85916255f0c217a89ed8e23748c">GlobalWriteOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:a297c98f9c782662b49694f1b94461c24" id="r_a297c98f9c782662b49694f1b94461c24"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a297c98f9c782662b49694f1b94461c24">GlobalWriteOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase.html#aa073e925b4431d09a6bc81da4f234cbb">GlobalWriteOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:ae7c93456f957a62333230f5b1029dfed" id="r_ae7c93456f957a62333230f5b1029dfed"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = GlobalWriteOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, GlobalWriteOp&gt;&gt;&gt; </td></tr>
@@ -179,7 +179,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00668">668</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00731">731</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3d94c987d1adb10b101e68b26c33605f" name="a3d94c987d1adb10b101e68b26c33605f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3d94c987d1adb10b101e68b26c33605f">&#9670;&#160;</a></span>GlobalWriteOpAdaptor()</h2>
@@ -196,13 +196,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l00858">858</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l01130">1130</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a79be7915fde808c8f1e8a5f2c95d57aa" name="a79be7915fde808c8f1e8a5f2c95d57aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79be7915fde808c8f1e8a5f2c95d57aa">&#9670;&#160;</a></span>GlobalWriteOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="ad814a91b6d4a40473c861aecd590f149" name="ad814a91b6d4a40473c861aecd590f149"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad814a91b6d4a40473c861aecd590f149">&#9670;&#160;</a></span>GlobalWriteOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -223,7 +223,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -238,7 +238,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00638">638</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00701">701</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -279,7 +279,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00636">636</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00699">699</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -310,7 +310,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00640">640</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00703">703</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -341,7 +341,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00642">642</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00705">705</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -374,7 +374,7 @@ template&lt;typename LateInst = GlobalWriteOp, typename = std::enable_if_t&lt;st
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00645">645</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00708">708</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -393,7 +393,7 @@ template&lt;typename LateInst = GlobalWriteOp, typename = std::enable_if_t&lt;st
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l00860">860</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l01132">1132</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

@@ -3,6 +3,7 @@ var classllzk_1_1component_1_1CreateStructOp =
     [ "Adaptor", "classllzk_1_1component_1_1CreateStructOp.html#acabd95961066e57ea1959aed690d37f5", null ],
     [ "FoldAdaptor", "classllzk_1_1component_1_1CreateStructOp.html#a766729f8bc25f6f89d79f9b3ef86d5d4", null ],
     [ "GenericAdaptor", "classllzk_1_1component_1_1CreateStructOp.html#a5828abdadaf6af8556ba4c1574768151", null ],
+    [ "Properties", "classllzk_1_1component_1_1CreateStructOp.html#a4c9e813dea3f542b2b36873472f6bf37", null ],
     [ "getAsmResultNames", "classllzk_1_1component_1_1CreateStructOp.html#a42d2fb792f210e1639b0e4b5d5105cfc", null ],
     [ "getAttributeNames", "classllzk_1_1component_1_1CreateStructOp.html#aa72832bae399e7829ab6599191a0b92c", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1component_1_1CreateStructOp.html#a111f4166b5bfa4e6549de33465e59a22", null ],

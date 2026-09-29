@@ -251,20 +251,18 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZK_2IR_2Dial
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="keyword">auto</span> LLZKDialect::initialize() -&gt; <span class="keywordtype">void</span> {</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  addAttributes&lt;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span><span class="preprocessor">    #include &quot;<a class="code" href="LLZK_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/LLZK/IR/Attrs.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  &gt;();</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  addOperations&lt;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span><span class="preprocessor">    #define GET_OP_LIST</span></div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span><span class="preprocessor">    #include &quot;<a class="code" href="LLZK_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/LLZK/IR/Ops.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  &gt;();</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  addInterfaces&lt;LLZKDialectBytecodeInterfaceImpl&gt;();</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>}</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  addAttributes&lt;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="preprocessor">    #include &quot;<a class="code" href="LLZK_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/LLZK/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  &gt;();</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  addOperations&lt;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="preprocessor">    #define GET_OP_LIST</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="preprocessor">    #include &quot;<a class="code" href="LLZK_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/LLZK/IR/Ops.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  &gt;();</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  addInterfaces&lt;LLZKDialectBytecodeInterfaceImpl&gt;();</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>}</div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aConfig_8h_html"><div class="ttname"><a href="Config_8h.html">Config.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Types_8h_html"><div class="ttname"><a href="Felt_2IR_2Types_8h.html">Types.h</a></div></div>
@@ -278,7 +276,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZK_2IR_2Dial
 <div class="ttc" id="aStruct_2IR_2Types_8h_html"><div class="ttname"><a href="Struct_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aVersioning_8h_html"><div class="ttname"><a href="Versioning_8h.html">Versioning.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1LLZKDialect_html_a832e5d255f4154cdfd1117860f540aac"><div class="ttname"><a href="classllzk_1_1LLZKDialect.html#a832e5d255f4154cdfd1117860f540aac">llzk::LLZKDialect::verifyOperationAttribute</a></div><div class="ttdeci">::llvm::LogicalResult verifyOperationAttribute(::mlir::Operation *op, ::mlir::NamedAttribute attribute) override</div><div class="ttdoc">Provides a hook for verifying dialect attributes attached to the given op.</div><div class="ttdef"><b>Definition</b> <a href="#l00112">Dialect.cpp:112</a></div></div>
-<div class="ttc" id="aclassllzk_1_1component_1_1StructType_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructType.html">llzk::component::StructType</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Types_8h_8inc_source.html#l00023">Types.h.inc:23</a></div></div>
+<div class="ttc" id="aclassllzk_1_1component_1_1StructType_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructType.html">llzk::component::StructType</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Types_8h_8inc_source.html#l00047">Types.h.inc:47</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a36fb7107da98c39ae715ff024f4ad07e"><div class="ttname"><a href="namespacellzk.html#a36fb7107da98c39ae715ff024f4ad07e">llzk::writeAPInt</a></div><div class="ttdeci">void writeAPInt(mlir::DialectBytecodeWriter &amp;writer, const llvm::APInt &amp;value)</div><div class="ttdoc">Write an APInt with its bit width, so the bytecode reader can use MLIR&#39;s native APInt payload encodin...</div><div class="ttdef"><b>Definition</b> <a href="Versioning_8h_source.html#l00044">Versioning.h:44</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a82afa19ff769b0dd05db76e22a364bd5"><div class="ttname"><a href="namespacellzk.html#a82afa19ff769b0dd05db76e22a364bd5">llzk::readAPInt</a></div><div class="ttdeci">mlir::FailureOr&lt; llvm::APInt &gt; readAPInt(mlir::DialectBytecodeReader &amp;reader)</div><div class="ttdoc">Read an APInt written by writeAPInt.</div><div class="ttdef"><b>Definition</b> <a href="Versioning_8h_source.html#l00050">Versioning.h:50</a></div></div>

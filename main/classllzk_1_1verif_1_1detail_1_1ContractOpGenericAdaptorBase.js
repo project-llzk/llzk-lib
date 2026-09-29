@@ -12,6 +12,8 @@ var classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase =
     [ "getODSOperandIndexAndLength", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a1aaf0a144ce9d5a9e42568c1bcaee741", null ],
     [ "getProperties", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a37beef5f29ca7996701e3c2786d323a1", null ],
     [ "getRegions", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#adb1842a49735f860c2541c4b5a758297", null ],
+    [ "getResAttrs", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#ab7e806c3c46f51bc697e16a48b969925", null ],
+    [ "getResAttrsAttr", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a1348255678dd4a787c59691f8a1a3236", null ],
     [ "getSymName", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a2de3c45f2ba027099935acf4a9a3eb31", null ],
     [ "getSymNameAttr", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#ab5766f3830e572b7fd958cd52f184529", null ],
     [ "getTarget", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#ad46384d6fdc8259c95ea06b96ec55b99", null ],

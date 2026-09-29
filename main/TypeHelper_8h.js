@@ -9,10 +9,8 @@ var TypeHelper_8h =
       [ "llzk::AttrConcreteness::Wildcard", "namespacellzk.html#a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4", null ]
     ] ],
     [ "llzk::Side", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11a", [
-      [ "llzk::Side::EMPTY", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aaba2b45bdc11e2a4a6e86aab2ac693cbb", null ],
       [ "llzk::Side::LHS", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b", null ],
-      [ "llzk::Side::RHS", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b", null ],
-      [ "llzk::Side::TOMB", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3", null ]
+      [ "llzk::Side::RHS", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b", null ]
     ] ],
     [ "llzk::arrayTypesUnify", "namespacellzk.html#a5920231c88c6c04af215312177a62a68", null ],
     [ "llzk::assertValidAttrForParamOfType", "namespacellzk.html#a3840dc2d50d9f0cda122fb59ebaf32ed", null ],

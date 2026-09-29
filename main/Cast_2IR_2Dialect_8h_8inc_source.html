@@ -139,9 +139,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Cast_2IR_2Dial
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">|*                                                                            *|</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">\*===----------------------------------------------------------------------===*/</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast</a> {</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1cast.html">llzk::cast</a> {</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span></div>
 <div class="foldopen" id="foldopen00013" data-start="{" data-end="};">
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1CastDialect.html">   13</a></span><span class="keyword">class </span>CastDialect : <span class="keyword">public</span> ::mlir::Dialect {</div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>  <span class="keyword">explicit</span> CastDialect(<a class="code hl_friend" href="classllzk_1_1cast_1_1CastDialect.html#a16ba9f9fd76da17f6786169cf6c6079e">::mlir::MLIRContext</a> *context);</div>
@@ -163,17 +162,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Cast_2IR_2Dial
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                      ::mlir::DialectAsmPrinter &amp;os) <span class="keyword">const override</span>;</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>};</div>
 </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>} <span class="comment">// namespace cast</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>} <span class="comment">// namespace llzk::cast</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(<a class="code hl_class" href="classllzk_1_1cast_1_1CastDialect.html">::llzk::cast::CastDialect</a>)</div>
-<div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html">llzk::cast::CastDialect</a></div><div class="ttdef"><b>Definition</b> <a href="#l00013">Dialect.h.inc:13</a></div></div>
+<div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html">llzk::cast::CastDialect</a></div><div class="ttdoc">LLZK type conversion operations.</div><div class="ttdef"><b>Definition</b> <a href="#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_a16ba9f9fd76da17f6786169cf6c6079e"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#a16ba9f9fd76da17f6786169cf6c6079e">llzk::cast::CastDialect::MLIRContext</a></div><div class="ttdeci">friend class ::mlir::MLIRContext</div><div class="ttdef"><b>Definition</b> <a href="#l00017">Dialect.h.inc:17</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_a2c044b42cd4ce376e9f2b14c24c55274"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#a2c044b42cd4ce376e9f2b14c24c55274">llzk::cast::CastDialect::parseAttribute</a></div><div class="ttdeci">::mlir::Attribute parseAttribute(::mlir::DialectAsmParser &amp;parser, ::mlir::Type type) const override</div><div class="ttdoc">Parse an attribute registered to this dialect.</div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_a4f25a4f77bb6ce6214612acc1e0170ac"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#a4f25a4f77bb6ce6214612acc1e0170ac">llzk::cast::CastDialect::~CastDialect</a></div><div class="ttdeci">~CastDialect() override</div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_af1fba1316aa927a234fbe4a412264c5f"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#af1fba1316aa927a234fbe4a412264c5f">llzk::cast::CastDialect::getDialectNamespace</a></div><div class="ttdeci">static constexpr ::llvm::StringLiteral getDialectNamespace()</div><div class="ttdef"><b>Definition</b> <a href="#l00020">Dialect.h.inc:20</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_af48dd0277a7762873dc6a2f3755c3aa4"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#af48dd0277a7762873dc6a2f3755c3aa4">llzk::cast::CastDialect::printAttribute</a></div><div class="ttdeci">void printAttribute(::mlir::Attribute attr, ::mlir::DialectAsmPrinter &amp;os) const override</div><div class="ttdoc">Print an attribute registered to this dialect.</div></div>
 <div class="ttc" id="anamespacellzk_1_1cast_html"><div class="ttname"><a href="namespacellzk_1_1cast.html">llzk::cast</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8cpp_source.html#l00056">Ops.cpp:56</a></div></div>
-<div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

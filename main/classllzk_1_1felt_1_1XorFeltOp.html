@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1f
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1felt_1_1XorFeltOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::felt::XorFeltOp Class Reference</div></div>
 </div><!--header-->
@@ -152,6 +153,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:ab6bbb298ff7e877fee53bbbf118f42b8" id="r_ab6bbb298ff7e877fee53bbbf118f42b8"><td class="memTemplParams" colspan="2">template&lt;typename RangeT&gt; </td></tr>
 <tr class="memitem:ab6bbb298ff7e877fee53bbbf118f42b8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ab6bbb298ff7e877fee53bbbf118f42b8">GenericAdaptor</a> = <a class="el" href="classllzk_1_1felt_1_1XorFeltOpGenericAdaptor.html">XorFeltOpGenericAdaptor</a>&lt;RangeT&gt;</td></tr>
 <tr class="memitem:a44a04d1c87be77c9479fb6416f68d43c" id="r_a44a04d1c87be77c9479fb6416f68d43c"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a44a04d1c87be77c9479fb6416f68d43c">FoldAdaptor</a> = <a class="el" href="#ab6bbb298ff7e877fee53bbbf118f42b8">GenericAdaptor</a>&lt;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&gt;</td></tr>
+<tr class="memitem:a9c0a57ff32025f99a7a8bc33de98a78c" id="r_a9c0a57ff32025f99a7a8bc33de98a78c"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> = <a class="el" href="classllzk_1_1felt_1_1detail_1_1XorFeltOpGenericAdaptorBase.html#a7e5b6422947cf35183580350e12b9370">FoldAdaptor::Properties</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -174,19 +176,47 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a3da707591f80a2ba4954d468a34343e9" id="r_a3da707591f80a2ba4954d468a34343e9"><td class="memItemLeft">static constexpr ::llvm::StringLiteral&#160;</td><td class="memItemRight"><a class="el" href="#a3da707591f80a2ba4954d468a34343e9">getOperationName</a> ()</td></tr>
+<tr class="memitem:a9629ac28936636eb063109700da2fbc8" id="r_a9629ac28936636eb063109700da2fbc8"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a9629ac28936636eb063109700da2fbc8">setPropertiesFromAttr</a> (<a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;prop, ::mlir::Attribute attr, ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
+<tr class="memitem:a827209d5a647bfd40aa7bd330ae974c5" id="r_a827209d5a647bfd40aa7bd330ae974c5"><td class="memItemLeft">::mlir::Attribute&#160;</td><td class="memItemRight"><a class="el" href="#a827209d5a647bfd40aa7bd330ae974c5">getPropertiesAsAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a415fdf1796c817cd556888d5fbd33d06" id="r_a415fdf1796c817cd556888d5fbd33d06"><td class="memItemLeft">static llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#a415fdf1796c817cd556888d5fbd33d06">computePropertiesHash</a> (const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a28c6f8ea9f2b7dbe9bd32fa2aaaaf8ce" id="r_a28c6f8ea9f2b7dbe9bd32fa2aaaaf8ce"><td class="memItemLeft">static std::optional&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a28c6f8ea9f2b7dbe9bd32fa2aaaaf8ce">getInherentAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;prop, llvm::StringRef name)</td></tr>
+<tr class="memitem:a22e7bfe007a83b0805151a07b78822c5" id="r_a22e7bfe007a83b0805151a07b78822c5"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a22e7bfe007a83b0805151a07b78822c5">setInherentAttr</a> (<a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;prop, llvm::StringRef name, mlir::Attribute value)</td></tr>
+<tr class="memitem:af052831d8027353ece5e6b9b4c2b4eed" id="r_af052831d8027353ece5e6b9b4c2b4eed"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#af052831d8027353ece5e6b9b4c2b4eed">populateInherentAttrs</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;prop, ::mlir::NamedAttrList &amp;attrs)</td></tr>
+<tr class="memitem:a352fa65f7c323f3de00b0510aeba2f3f" id="r_a352fa65f7c323f3de00b0510aeba2f3f"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a352fa65f7c323f3de00b0510aeba2f3f">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a988e5e53d0dce454dea0891c5afe7551" id="r_a988e5e53d0dce454dea0891c5afe7551"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a988e5e53d0dce454dea0891c5afe7551">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Type result, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:a5684fb34db7106a17365aae4b59962d9" id="r_a5684fb34db7106a17365aae4b59962d9"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a5684fb34db7106a17365aae4b59962d9">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Type result, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:a32e99cd455e5db03ab7a8e21a72a0727" id="r_a32e99cd455e5db03ab7a8e21a72a0727"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a32e99cd455e5db03ab7a8e21a72a0727">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Type result, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
 <tr class="memitem:af9cbbe3ae2f1587925d7ddd50fe622c7" id="r_af9cbbe3ae2f1587925d7ddd50fe622c7"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#af9cbbe3ae2f1587925d7ddd50fe622c7">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:a3183bd7d586c669552f69c2b98403dc1" id="r_a3183bd7d586c669552f69c2b98403dc1"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a3183bd7d586c669552f69c2b98403dc1">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:aac60b65ddf71092fe479cb9a16f9823f" id="r_aac60b65ddf71092fe479cb9a16f9823f"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aac60b65ddf71092fe479cb9a16f9823f">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
 <tr class="memitem:aded4b34a4a0e7dd0c1254e0d9d14f600" id="r_aded4b34a4a0e7dd0c1254e0d9d14f600"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#aded4b34a4a0e7dd0c1254e0d9d14f600">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:adcdafedb4fb833f6de9dcaaad61627ea" id="r_adcdafedb4fb833f6de9dcaaad61627ea"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#adcdafedb4fb833f6de9dcaaad61627ea">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:a575e214d604b2f50c45058da59305631" id="r_a575e214d604b2f50c45058da59305631"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a575e214d604b2f50c45058da59305631">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
 <tr class="memitem:ab2de8570452ba58d51496e6eb57b2c0a" id="r_ab2de8570452ba58d51496e6eb57b2c0a"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ab2de8570452ba58d51496e6eb57b2c0a">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a92d783acb7c6b2523f08f0e8cd03a7fe" id="r_a92d783acb7c6b2523f08f0e8cd03a7fe"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a92d783acb7c6b2523f08f0e8cd03a7fe">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:ab1e39ecfae970c90465c1d5241e01681" id="r_ab1e39ecfae970c90465c1d5241e01681"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ab1e39ecfae970c90465c1d5241e01681">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
 <tr class="memitem:ae78fa9e99f1237f6be9801a9cad2cdc4" id="r_ae78fa9e99f1237f6be9801a9cad2cdc4"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ae78fa9e99f1237f6be9801a9cad2cdc4">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
-<tr class="memitem:aa7860f81b55498828da8ffeb6c928205" id="r_aa7860f81b55498828da8ffeb6c928205"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aa7860f81b55498828da8ffeb6c928205">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
+<tr class="memitem:ab67b6e47d8531732f8cdeead97127724" id="r_ab67b6e47d8531732f8cdeead97127724"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ab67b6e47d8531732f8cdeead97127724">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a9314ccdb95be9443f67b9ab2a8aaa399" id="r_a9314ccdb95be9443f67b9ab2a8aaa399"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a9314ccdb95be9443f67b9ab2a8aaa399">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:ac984788289ba53b136b7ee3c2a81f9b4" id="r_ac984788289ba53b136b7ee3c2a81f9b4"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ac984788289ba53b136b7ee3c2a81f9b4">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a79c25f495da3300e1afdcdd8d3a50bb8" id="r_a79c25f495da3300e1afdcdd8d3a50bb8"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a79c25f495da3300e1afdcdd8d3a50bb8">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:aca008925c6e1d96f3f7902c47f6ef895" id="r_aca008925c6e1d96f3f7902c47f6ef895"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aca008925c6e1d96f3f7902c47f6ef895">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a2af8e5574f0fe6ff7ab8917ab8dee9cf" id="r_a2af8e5574f0fe6ff7ab8917ab8dee9cf"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a2af8e5574f0fe6ff7ab8917ab8dee9cf">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::ValueRange operands, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:ace3bf49dfe5aff6df5a460cd1fa53a01" id="r_ace3bf49dfe5aff6df5a460cd1fa53a01"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ace3bf49dfe5aff6df5a460cd1fa53a01">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::ValueRange operands, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a4936486c33afb53ab6ce0e5f97b87792" id="r_a4936486c33afb53ab6ce0e5f97b87792"><td class="memItemLeft">static <a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a4936486c33afb53ab6ce0e5f97b87792">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::ValueRange operands, const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a86e7ecdaf0e94db79be7716b12e36e39" id="r_a86e7ecdaf0e94db79be7716b12e36e39"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a86e7ecdaf0e94db79be7716b12e36e39">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::PropertyRef properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
 <tr class="memitem:a6f31c4d92330ff308d44a96e328af653" id="r_a6f31c4d92330ff308d44a96e328af653"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a6f31c4d92330ff308d44a96e328af653">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
 <tr class="memitem:a69f4344fb6278a31c42bb8dbd9fb3c29" id="r_a69f4344fb6278a31c42bb8dbd9fb3c29"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a69f4344fb6278a31c42bb8dbd9fb3c29">inferReturnTypes</a> (::mlir::MLIRContext *context, std::optional&lt;::mlir::Location &gt; location, <a class="el" href="#a3473159ca257f7e1191137a0fa4aea04">Adaptor</a> adaptor, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
 <tr class="memitem:ae3f63c4dd9a15de27cdbee4b06a9a3b7" id="r_ae3f63c4dd9a15de27cdbee4b06a9a3b7"><td class="memItemLeft">static bool&#160;</td><td class="memItemRight"><a class="el" href="#ae3f63c4dd9a15de27cdbee4b06a9a3b7">isCompatibleReturnTypes</a> (::mlir::TypeRange l, ::mlir::TypeRange r)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:af51a237129719204163447cd26627e85" id="r_af51a237129719204163447cd26627e85"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#af51a237129719204163447cd26627e85">odsIndex_lhs</a> = 0</td></tr>
+<tr class="memitem:a8161f1fb012a503fffbe957e79ff8d15" id="r_a8161f1fb012a503fffbe957e79ff8d15"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a8161f1fb012a503fffbe957e79ff8d15">odsIndex_rhs</a> = 1</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03346">3346</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04064">4064</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a3473159ca257f7e1191137a0fa4aea04" name="a3473159ca257f7e1191137a0fa4aea04"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3473159ca257f7e1191137a0fa4aea04">&#9670;&#160;</a></span>Adaptor</h2>
@@ -200,7 +230,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03350">3350</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04068">4068</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -216,7 +246,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03353">3353</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04071">4071</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -234,13 +264,29 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03352">3352</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04070">4070</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9c0a57ff32025f99a7a8bc33de98a78c" name="a9c0a57ff32025f99a7a8bc33de98a78c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9c0a57ff32025f99a7a8bc33de98a78c">&#9670;&#160;</a></span>Properties</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">llzk::felt::XorFeltOp::Properties</a> = <a class="el" href="classllzk_1_1felt_1_1detail_1_1XorFeltOpGenericAdaptorBase.html#a7e5b6422947cf35183580350e12b9370">FoldAdaptor::Properties</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04074">4074</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="ab2de8570452ba58d51496e6eb57b2c0a" name="ab2de8570452ba58d51496e6eb57b2c0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab2de8570452ba58d51496e6eb57b2c0a">&#9670;&#160;</a></span>build() <span class="overload">[1/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2de8570452ba58d51496e6eb57b2c0a">&#9670;&#160;</a></span>build() <span class="overload">[1/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -281,12 +327,63 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03516">3516</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06217">6217</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac984788289ba53b136b7ee3c2a81f9b4" name="ac984788289ba53b136b7ee3c2a81f9b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac984788289ba53b136b7ee3c2a81f9b4">&#9670;&#160;</a></span>build() <span class="overload">[2/7]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::felt::XorFeltOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06267">6267</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a988e5e53d0dce454dea0891c5afe7551" name="a988e5e53d0dce454dea0891c5afe7551"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a988e5e53d0dce454dea0891c5afe7551">&#9670;&#160;</a></span>build() <span class="overload">[2/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a988e5e53d0dce454dea0891c5afe7551">&#9670;&#160;</a></span>build() <span class="overload">[3/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -327,12 +424,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03487">3487</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06152">6152</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="aded4b34a4a0e7dd0c1254e0d9d14f600" name="aded4b34a4a0e7dd0c1254e0d9d14f600"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aded4b34a4a0e7dd0c1254e0d9d14f600">&#9670;&#160;</a></span>build() <span class="overload">[3/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aded4b34a4a0e7dd0c1254e0d9d14f600">&#9670;&#160;</a></span>build() <span class="overload">[4/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -373,12 +470,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03509">3509</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06198">6198</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="af9cbbe3ae2f1587925d7ddd50fe622c7" name="af9cbbe3ae2f1587925d7ddd50fe622c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af9cbbe3ae2f1587925d7ddd50fe622c7">&#9670;&#160;</a></span>build() <span class="overload">[4/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af9cbbe3ae2f1587925d7ddd50fe622c7">&#9670;&#160;</a></span>build() <span class="overload">[5/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -414,12 +511,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03493">3493</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06170">6170</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="ae78fa9e99f1237f6be9801a9cad2cdc4" name="ae78fa9e99f1237f6be9801a9cad2cdc4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae78fa9e99f1237f6be9801a9cad2cdc4">&#9670;&#160;</a></span>build() <span class="overload">[5/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ae78fa9e99f1237f6be9801a9cad2cdc4">&#9670;&#160;</a></span>build() <span class="overload">[6/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -455,7 +552,679 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03524">3524</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06237">6237</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2af8e5574f0fe6ff7ab8917ab8dee9cf" name="a2af8e5574f0fe6ff7ab8917ab8dee9cf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2af8e5574f0fe6ff7ab8917ab8dee9cf">&#9670;&#160;</a></span>build() <span class="overload">[7/7]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::felt::XorFeltOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>odsBuilder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06288">6288</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a415fdf1796c817cd556888d5fbd33d06" name="a415fdf1796c817cd556888d5fbd33d06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a415fdf1796c817cd556888d5fbd33d06">&#9670;&#160;</a></span>computePropertiesHash()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::hash_code llzk::felt::XorFeltOp::computePropertiesHash </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06133">6133</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a32e99cd455e5db03ab7a8e21a72a0727" name="a32e99cd455e5db03ab7a8e21a72a0727"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32e99cd455e5db03ab7a8e21a72a0727">&#9670;&#160;</a></span>create() <span class="overload">[1/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>result</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06166">6166</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a575e214d604b2f50c45058da59305631" name="a575e214d604b2f50c45058da59305631"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a575e214d604b2f50c45058da59305631">&#9670;&#160;</a></span>create() <span class="overload">[2/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06213">6213</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab1e39ecfae970c90465c1d5241e01681" name="ab1e39ecfae970c90465c1d5241e01681"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1e39ecfae970c90465c1d5241e01681">&#9670;&#160;</a></span>create() <span class="overload">[3/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06233">6233</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aca008925c6e1d96f3f7902c47f6ef895" name="aca008925c6e1d96f3f7902c47f6ef895"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca008925c6e1d96f3f7902c47f6ef895">&#9670;&#160;</a></span>create() <span class="overload">[4/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06284">6284</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aac60b65ddf71092fe479cb9a16f9823f" name="aac60b65ddf71092fe479cb9a16f9823f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac60b65ddf71092fe479cb9a16f9823f">&#9670;&#160;</a></span>create() <span class="overload">[5/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06194">6194</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9314ccdb95be9443f67b9ab2a8aaa399" name="a9314ccdb95be9443f67b9ab2a8aaa399"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9314ccdb95be9443f67b9ab2a8aaa399">&#9670;&#160;</a></span>create() <span class="overload">[6/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06263">6263</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a4936486c33afb53ab6ce0e5f97b87792" name="a4936486c33afb53ab6ce0e5f97b87792"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4936486c33afb53ab6ce0e5f97b87792">&#9670;&#160;</a></span>create() <span class="overload">[7/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06315">6315</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a5684fb34db7106a17365aae4b59962d9" name="a5684fb34db7106a17365aae4b59962d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5684fb34db7106a17365aae4b59962d9">&#9670;&#160;</a></span>create() <span class="overload">[8/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>result</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06158">6158</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="adcdafedb4fb833f6de9dcaaad61627ea" name="adcdafedb4fb833f6de9dcaaad61627ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adcdafedb4fb833f6de9dcaaad61627ea">&#9670;&#160;</a></span>create() <span class="overload">[9/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06205">6205</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a92d783acb7c6b2523f08f0e8cd03a7fe" name="a92d783acb7c6b2523f08f0e8cd03a7fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a92d783acb7c6b2523f08f0e8cd03a7fe">&#9670;&#160;</a></span>create() <span class="overload">[10/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06225">6225</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a79c25f495da3300e1afdcdd8d3a50bb8" name="a79c25f495da3300e1afdcdd8d3a50bb8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a79c25f495da3300e1afdcdd8d3a50bb8">&#9670;&#160;</a></span>create() <span class="overload">[11/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06276">6276</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3183bd7d586c669552f69c2b98403dc1" name="a3183bd7d586c669552f69c2b98403dc1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3183bd7d586c669552f69c2b98403dc1">&#9670;&#160;</a></span>create() <span class="overload">[12/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06186">6186</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab67b6e47d8531732f8cdeead97127724" name="ab67b6e47d8531732f8cdeead97127724"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab67b6e47d8531732f8cdeead97127724">&#9670;&#160;</a></span>create() <span class="overload">[13/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06255">6255</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ace3bf49dfe5aff6df5a460cd1fa53a01" name="ace3bf49dfe5aff6df5a460cd1fa53a01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace3bf49dfe5aff6df5a460cd1fa53a01">&#9670;&#160;</a></span>create() <span class="overload">[14/14]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">XorFeltOp</a> llzk::felt::XorFeltOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06307">6307</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -501,7 +1270,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03354">3354</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04076">4076</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -520,7 +1289,43 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03642">3642</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06423">6423</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a28c6f8ea9f2b7dbe9bd32fa2aaaaf8ce" name="a28c6f8ea9f2b7dbe9bd32fa2aaaaf8ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a28c6f8ea9f2b7dbe9bd32fa2aaaaf8ce">&#9670;&#160;</a></span>getInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; mlir::Attribute &gt; llzk::felt::XorFeltOp::getInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06138">6138</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -547,7 +1352,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03372">3372</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04094">4094</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -574,7 +1379,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03380">3380</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04102">4102</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -601,7 +1406,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03362">3362</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04084">4084</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -628,7 +1433,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03366">3366</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04088">4088</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -655,7 +1460,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03390">3390</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04112">4112</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -682,7 +1487,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03394">3394</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04116">4116</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -709,7 +1514,38 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03358">3358</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04080">4080</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a827209d5a647bfd40aa7bd330ae974c5" name="a827209d5a647bfd40aa7bd330ae974c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a827209d5a647bfd40aa7bd330ae974c5">&#9670;&#160;</a></span>getPropertiesAsAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Attribute llzk::felt::XorFeltOp::getPropertiesAsAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06124">6124</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -736,7 +1572,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03400">3400</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04122">4122</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -763,7 +1599,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03376">3376</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04098">4098</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -790,12 +1626,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l03385">3385</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04107">4107</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="aa7860f81b55498828da8ffeb6c928205" name="aa7860f81b55498828da8ffeb6c928205"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa7860f81b55498828da8ffeb6c928205">&#9670;&#160;</a></span>inferReturnTypes() <span class="overload">[1/2]</span></h2>
+<a id="a86e7ecdaf0e94db79be7716b12e36e39" name="a86e7ecdaf0e94db79be7716b12e36e39"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a86e7ecdaf0e94db79be7716b12e36e39">&#9670;&#160;</a></span>inferReturnTypes() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -826,7 +1662,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -846,7 +1682,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03646">3646</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06427">6427</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -916,7 +1752,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03667">3667</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06448">6448</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -947,7 +1783,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03580">3580</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06357">6357</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af052831d8027353ece5e6b9b4c2b4eed" name="af052831d8027353ece5e6b9b4c2b4eed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af052831d8027353ece5e6b9b4c2b4eed">&#9670;&#160;</a></span>populateInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::felt::XorFeltOp::populateInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06145">6145</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -966,7 +1838,115 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03630">3630</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06411">6411</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a22e7bfe007a83b0805151a07b78822c5" name="a22e7bfe007a83b0805151a07b78822c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a22e7bfe007a83b0805151a07b78822c5">&#9670;&#160;</a></span>setInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::felt::XorFeltOp::setInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06142">6142</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9629ac28936636eb063109700da2fbc8" name="a9629ac28936636eb063109700da2fbc8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9629ac28936636eb063109700da2fbc8">&#9670;&#160;</a></span>setPropertiesFromAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::felt::XorFeltOp::setPropertiesFromAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a9c0a57ff32025f99a7a8bc33de98a78c">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06115">6115</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a352fa65f7c323f3de00b0510aeba2f3f" name="a352fa65f7c323f3de00b0510aeba2f3f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a352fa65f7c323f3de00b0510aeba2f3f">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::felt::XorFeltOp::verifyInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OperationName</td>          <td class="paramname"><span class="paramname"><em>opName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06148">6148</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -985,7 +1965,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03576">3576</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06353">6353</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1004,7 +1984,56 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l03542">3542</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html#l06319">6319</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="af51a237129719204163447cd26627e85" name="af51a237129719204163447cd26627e85"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af51a237129719204163447cd26627e85">&#9670;&#160;</a></span>odsIndex_lhs</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::felt::XorFeltOp::odsIndex_lhs = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04072">4072</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8161f1fb012a503fffbe957e79ff8d15" name="a8161f1fb012a503fffbe957e79ff8d15"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8161f1fb012a503fffbe957e79ff8d15">&#9670;&#160;</a></span>odsIndex_rhs</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::felt::XorFeltOp::odsIndex_rhs = 1</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l04073">4073</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

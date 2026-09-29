@@ -3,6 +3,7 @@ var classllzk_1_1array_1_1ReadArrayOp =
     [ "Adaptor", "classllzk_1_1array_1_1ReadArrayOp.html#ad31a84b06d23369ca83b5f4bc86ed5d2", null ],
     [ "FoldAdaptor", "classllzk_1_1array_1_1ReadArrayOp.html#a7c0ebdeb7dc3b94ae0e9335fc07acfce", null ],
     [ "GenericAdaptor", "classllzk_1_1array_1_1ReadArrayOp.html#abe93a24d0bee0ed37b613dd215129a7d", null ],
+    [ "Properties", "classllzk_1_1array_1_1ReadArrayOp.html#a519a38935dde32a0a1c14becc03a5723", null ],
     [ "canEraseAsDeadStoreTo", "classllzk_1_1array_1_1ReadArrayOp.html#a6691898171ad5133de6a34e04ebb674b", null ],
     [ "canRewire", "classllzk_1_1array_1_1ReadArrayOp.html#aa5052e27286b3ee7cf0a4f0a4c3081c3", null ],
     [ "canUsesBeRemoved", "classllzk_1_1array_1_1ReadArrayOp.html#ac841de0f9648a2d1e29ef2127204342f", null ],

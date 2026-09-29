@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0deb9714504b57cd2102b6cfba167fd9" id="r_a0deb9714504b57cd2102b6cfba167fd9"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a0deb9714504b57cd2102b6cfba167fd9">ContractOpAdaptor</a> (<a class="el" href="classllzk_1_1verif_1_1ContractOp.html">ContractOp</a> op)</td></tr>
 <tr class="memitem:a6a0c869cd28549833150f505509e652f" id="r_a6a0c869cd28549833150f505509e652f"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a6a0c869cd28549833150f505509e652f">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:aa48c207eed9491bd177dd000f09f0e5a" id="r_aa48c207eed9491bd177dd000f09f0e5a"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa48c207eed9491bd177dd000f09f0e5a">ContractOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:aab31f7792a165ba1905ac1a3a7d13828" id="r_aab31f7792a165ba1905ac1a3a7d13828"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aab31f7792a165ba1905ac1a3a7d13828">ContractOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a96de1048d8527998b8eb5ba529c7c1a2" id="r_a96de1048d8527998b8eb5ba529c7c1a2"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a96de1048d8527998b8eb5ba529c7c1a2">ContractOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:a8dbab5fd6b81aa92ce6b39420a600c80" id="r_a8dbab5fd6b81aa92ce6b39420a600c80"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a8dbab5fd6b81aa92ce6b39420a600c80">ContractOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:a0917174a0247ce66f361706cb11d79d3" id="r_a0917174a0247ce66f361706cb11d79d3"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a0917174a0247ce66f361706cb11d79d3">ContractOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a39ec73595ad24f7baadcbbe05ec21541">ContractOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:ac08c8fe4c0573568f1ec9fba23e60e24" id="r_ac08c8fe4c0573568f1ec9fba23e60e24"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = ContractOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, ContractOp&gt;&gt;&gt; </td></tr>
@@ -173,6 +173,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a194571e9adab871d6a7ffef903b751cc pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_a194571e9adab871d6a7ffef903b751cc"><td class="memItemLeft">::mlir::FunctionType&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a194571e9adab871d6a7ffef903b751cc">getFunctionType</a> ()</td></tr>
 <tr class="memitem:a5037dd5170cd36efcc6212f5940ec8ab pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_a5037dd5170cd36efcc6212f5940ec8ab"><td class="memItemLeft">::mlir::ArrayAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a5037dd5170cd36efcc6212f5940ec8ab">getArgAttrsAttr</a> ()</td></tr>
 <tr class="memitem:a894450e3780916b05def8d42d8cc56eb pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_a894450e3780916b05def8d42d8cc56eb"><td class="memItemLeft">::std::optional&lt; ::mlir::ArrayAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a894450e3780916b05def8d42d8cc56eb">getArgAttrs</a> ()</td></tr>
+<tr class="memitem:a1348255678dd4a787c59691f8a1a3236 pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_a1348255678dd4a787c59691f8a1a3236"><td class="memItemLeft">::mlir::ArrayAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a1348255678dd4a787c59691f8a1a3236">getResAttrsAttr</a> ()</td></tr>
+<tr class="memitem:ab7e806c3c46f51bc697e16a48b969925 pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_ab7e806c3c46f51bc697e16a48b969925"><td class="memItemLeft">::std::optional&lt; ::mlir::ArrayAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#ab7e806c3c46f51bc697e16a48b969925">getResAttrs</a> ()</td></tr>
 <tr class="memitem:ac357038222514e7f05cdc2f4ae40afbb pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_ac357038222514e7f05cdc2f4ae40afbb"><td class="memItemLeft">::mlir::Region &amp;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#ac357038222514e7f05cdc2f4ae40afbb">getBody</a> ()</td></tr>
 <tr class="memitem:adb1842a49735f860c2541c4b5a758297 pub_methods_classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase" id="r_adb1842a49735f860c2541c4b5a758297"><td class="memItemLeft">::mlir::RegionRange&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#adb1842a49735f860c2541c4b5a758297">getRegions</a> ()</td></tr>
 </table><table class="memberdecls">
@@ -186,7 +188,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00507">507</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00739">739</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a0deb9714504b57cd2102b6cfba167fd9" name="a0deb9714504b57cd2102b6cfba167fd9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0deb9714504b57cd2102b6cfba167fd9">&#9670;&#160;</a></span>ContractOpAdaptor()</h2>
@@ -203,13 +205,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l00432">432</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l00639">639</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="aab31f7792a165ba1905ac1a3a7d13828" name="aab31f7792a165ba1905ac1a3a7d13828"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aab31f7792a165ba1905ac1a3a7d13828">&#9670;&#160;</a></span>ContractOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="a96de1048d8527998b8eb5ba529c7c1a2" name="a96de1048d8527998b8eb5ba529c7c1a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96de1048d8527998b8eb5ba529c7c1a2">&#9670;&#160;</a></span>ContractOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -230,7 +232,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -245,7 +247,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00481">481</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00713">713</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -286,7 +288,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00479">479</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00711">711</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -317,7 +319,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00483">483</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00715">715</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -348,7 +350,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00485">485</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00717">717</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -381,7 +383,7 @@ template&lt;typename LateInst = ContractOp, typename = std::enable_if_t&lt;std::
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00488">488</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00720">720</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -400,7 +402,7 @@ template&lt;typename LateInst = ContractOp, typename = std::enable_if_t&lt;std::
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l00434">434</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l00641">641</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

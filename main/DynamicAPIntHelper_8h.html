@@ -134,13 +134,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('DynamicAPIntHe
 </div><!--header-->
 <div class="contents">
 
-<p>This file implements helper methods for constructing DynamicAPInts.  
+<p>This file implements helpers for DynamicAPInt operations and conversions that LLVM does not provide.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &lt;llvm/ADT/APInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/APSInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DynamicAPInt.h&gt;</code><br />
-<code>#include &lt;llvm/ADT/SlowDynamicAPInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/StringRef.h&gt;</code><br />
 <code>#include &lt;climits&gt;</code><br />
 <code>#include &lt;cstddef&gt;</code><br />
@@ -148,7 +147,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('DynamicAPIntHe
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for DynamicAPIntHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="DynamicAPIntHelper_8h__incl.svg" width="1523" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="DynamicAPIntHelper_8h__incl.svg" width="1279" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -172,6 +171,7 @@ Functions</h2></td></tr>
 <tr class="memitem:aee183fbf8efdb7074e4ae15d7a4029a4" id="r_aee183fbf8efdb7074e4ae15d7a4029a4"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#aee183fbf8efdb7074e4ae15d7a4029a4">llzk::toDynamicAPInt</a> (llvm::StringRef str)</td></tr>
 <tr class="memitem:a42ddc7147daa762ec4335b255dacd7b3" id="r_a42ddc7147daa762ec4335b255dacd7b3"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a42ddc7147daa762ec4335b255dacd7b3">llzk::toDynamicAPInt</a> (const llvm::APSInt &amp;i)</td></tr>
 <tr class="memitem:ad74feac4c1ab67da90787102f5231390" id="r_ad74feac4c1ab67da90787102f5231390"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ad74feac4c1ab67da90787102f5231390">llzk::toDynamicAPInt</a> (const llvm::APInt &amp;i)</td></tr>
+<tr class="memdesc:ad74feac4c1ab67da90787102f5231390"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts an APInt to a DynamicAPInt, using an unsigned interpretation.  <br /></td></tr>
 <tr class="memitem:a254f0d812ac8a3f615d91a868115ee83" id="r_a254f0d812ac8a3f615d91a868115ee83"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a254f0d812ac8a3f615d91a868115ee83">llzk::toDynamicAPInt</a> (size_t i)</td></tr>
 <tr class="memitem:a3b93df0843f457f1f81cc0dc5933d1c9" id="r_a3b93df0843f457f1f81cc0dc5933d1c9"><td class="memItemLeft">llvm::APSInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a3b93df0843f457f1f81cc0dc5933d1c9">llzk::toAPSInt</a> (const llvm::DynamicAPInt &amp;i)</td></tr>
 <tr class="memitem:a1998817a76cc8f6e316294d1b18e2e92" id="r_a1998817a76cc8f6e316294d1b18e2e92"><td class="memItemLeft">llvm::APInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a1998817a76cc8f6e316294d1b18e2e92">llzk::toAPInt</a> (const llvm::DynamicAPInt &amp;i, unsigned bitWidth)</td></tr>
@@ -182,8 +182,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a1f83757b07f122a5c8f74807ce83119a" id="r_a1f83757b07f122a5c8f74807ce83119a"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a1f83757b07f122a5c8f74807ce83119a">llzk::modInversePrime</a> (const llvm::DynamicAPInt &amp;f, const llvm::DynamicAPInt &amp;p)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This file implements helper methods for constructing DynamicAPInts. </p>
-<p>These definitions will be mostly obselete when we upgrade to LLVM 21, which defines a DynamicAPInt constructor from an APInt.</p>
+<div class="textblock"><p>This file implements helpers for DynamicAPInt operations and conversions that LLVM does not provide. </p>
 <p>Note that of the operators defined, bitwise negation ('~') is not implemented. This is because the definition of this operation requires the number of bits to be defined, which may change with dynamically sized integers. </p>
 
 <p class="definition">Definition in file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>

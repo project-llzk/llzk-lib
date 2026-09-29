@@ -146,9 +146,10 @@ Collaboration diagram for llzk::felt::ShrFeltOpGenericAdaptor&lt; RangeT &gt;:</
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9e2cb2894da417dddb8ccb570a87a01e" id="r_a9e2cb2894da417dddb8ccb570a87a01e"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a9e2cb2894da417dddb8ccb570a87a01e">ShrFeltOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a12eb8df52b8cf04c96150db672e2ec08" id="r_a12eb8df52b8cf04c96150db672e2ec08"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a12eb8df52b8cf04c96150db672e2ec08">ShrFeltOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a8cf15cfe93291aaf09e7070cd83c8b5d" id="r_a8cf15cfe93291aaf09e7070cd83c8b5d"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a8cf15cfe93291aaf09e7070cd83c8b5d">ShrFeltOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a1842e4e5f6b7fcf6f31da4b6f76717fb">ShrFeltOpGenericAdaptorBase</a> &amp;base)</td></tr>
+<tr class="memitem:afec3bf2670084211af641dfe399efed5" id="r_afec3bf2670084211af641dfe399efed5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#afec3bf2670084211af641dfe399efed5">ShrFeltOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa9f447f82f1e9c454ed6aa793d22049f">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a6e1e7562d6f4c4fc5777649c3578950c" id="r_a6e1e7562d6f4c4fc5777649c3578950c"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a6e1e7562d6f4c4fc5777649c3578950c">ShrFeltOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a312b56279b83565c63500af1a5f1ee24" id="r_a312b56279b83565c63500af1a5f1ee24"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a312b56279b83565c63500af1a5f1ee24">ShrFeltOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
+<tr class="memitem:a8cf15cfe93291aaf09e7070cd83c8b5d" id="r_a8cf15cfe93291aaf09e7070cd83c8b5d"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a8cf15cfe93291aaf09e7070cd83c8b5d">ShrFeltOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a0a143182b36cc9fe5f059a136b93b8ce">ShrFeltOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a826295e66c69e0511e7c5980cd351f2b" id="r_a826295e66c69e0511e7c5980cd351f2b"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = ShrFeltOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, ShrFeltOp&gt;&gt;&gt; </td></tr>
 <tr class="memitem:a826295e66c69e0511e7c5980cd351f2b template"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a826295e66c69e0511e7c5980cd351f2b">ShrFeltOpGenericAdaptor</a> (RangeT values, LateInst op)</td></tr>
 <tr class="memitem:a2aeb925e2bc2bfadff1871f280eb3c4e" id="r_a2aeb925e2bc2bfadff1871f280eb3c4e"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a2aeb925e2bc2bfadff1871f280eb3c4e">getODSOperandIndexAndLength</a> (unsigned index)</td></tr>
@@ -157,68 +158,29 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a08e3d10bf6fd32558f0d4b53899aa99f" id="r_a08e3d10bf6fd32558f0d4b53899aa99f"><td class="memItemLeft">ValueT&#160;</td><td class="memItemRight"><a class="el" href="#a08e3d10bf6fd32558f0d4b53899aa99f">getRhs</a> ()</td></tr>
 <tr class="memitem:ab3639216d22f2853a773efdbd3930ace" id="r_ab3639216d22f2853a773efdbd3930ace"><td class="memItemLeft">RangeT&#160;</td><td class="memItemRight"><a class="el" href="#ab3639216d22f2853a773efdbd3930ace">getOperands</a> ()</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase"><td colspan="2">Public Member Functions inherited from <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html">llzk::felt::detail::ShrFeltOpGenericAdaptorBase</a></td></tr>
-<tr class="memitem:a1842e4e5f6b7fcf6f31da4b6f76717fb pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_a1842e4e5f6b7fcf6f31da4b6f76717fb"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a1842e4e5f6b7fcf6f31da4b6f76717fb">ShrFeltOpGenericAdaptorBase</a> (::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a989f158def7c05102304c51d0e4ef5e3 pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_a989f158def7c05102304c51d0e4ef5e3"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a989f158def7c05102304c51d0e4ef5e3">ShrFeltOpGenericAdaptorBase</a> (::mlir::Operation *op)</td></tr>
+<tr class="memitem:a0a143182b36cc9fe5f059a136b93b8ce pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_a0a143182b36cc9fe5f059a136b93b8ce"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a0a143182b36cc9fe5f059a136b93b8ce">ShrFeltOpGenericAdaptorBase</a> (::mlir::DictionaryAttr attrs, const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa9f447f82f1e9c454ed6aa793d22049f">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a5f8aeef7b94e82a9fe73420dc8ec3176 pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_a5f8aeef7b94e82a9fe73420dc8ec3176"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a5f8aeef7b94e82a9fe73420dc8ec3176">ShrFeltOpGenericAdaptorBase</a> (<a class="el" href="classllzk_1_1felt_1_1ShrFeltOp.html">ShrFeltOp</a> op)</td></tr>
 <tr class="memitem:aec1d2cef8806da053c4c3b801f3ab826 pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_aec1d2cef8806da053c4c3b801f3ab826"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aec1d2cef8806da053c4c3b801f3ab826">getODSOperandIndexAndLength</a> (unsigned index, unsigned odsOperandsSize)</td></tr>
+<tr class="memitem:aa87bbfe1cd1e8d3b6f755343d60d561a pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_aa87bbfe1cd1e8d3b6f755343d60d561a"><td class="memItemLeft">const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa9f447f82f1e9c454ed6aa793d22049f">Properties</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa87bbfe1cd1e8d3b6f755343d60d561a">getProperties</a> ()</td></tr>
 <tr class="memitem:a3cf82a7dcd862c3eefa359224f2f537f pub_methods_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_a3cf82a7dcd862c3eefa359224f2f537f"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a3cf82a7dcd862c3eefa359224f2f537f">getAttributes</a> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase"><td colspan="2">Public Types inherited from <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html">llzk::felt::detail::ShrFeltOpGenericAdaptorBase</a></td></tr>
+<tr class="memitem:aa9f447f82f1e9c454ed6aa793d22049f pub_types_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_aa9f447f82f1e9c454ed6aa793d22049f"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa9f447f82f1e9c454ed6aa793d22049f">Properties</a> = ::mlir::EmptyProperties</td></tr>
 <tr class="inherit_header pro_attribs_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase"><td colspan="2">Protected Attributes inherited from <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html">llzk::felt::detail::ShrFeltOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:a5212095d4e428aa5586dd73ebf91bfad pro_attribs_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_a5212095d4e428aa5586dd73ebf91bfad"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a5212095d4e428aa5586dd73ebf91bfad">odsAttrs</a></td></tr>
 <tr class="memitem:adb10cc3abe9a90e334c680781ae6673d pro_attribs_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_adb10cc3abe9a90e334c680781ae6673d"><td class="memItemLeft">::std::optional&lt;::mlir::OperationName &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#adb10cc3abe9a90e334c680781ae6673d">odsOpName</a></td></tr>
+<tr class="memitem:ab5f00eda43192bc94e8cd093584b6ecd pro_attribs_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_ab5f00eda43192bc94e8cd093584b6ecd"><td class="memItemLeft"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa9f447f82f1e9c454ed6aa793d22049f">Properties</a>&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#ab5f00eda43192bc94e8cd093584b6ecd">properties</a></td></tr>
 <tr class="memitem:af80461e8930b84da5b3873f179dd02e5 pro_attribs_classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase" id="r_af80461e8930b84da5b3873f179dd02e5"><td class="memItemLeft">::mlir::RegionRange&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#af80461e8930b84da5b3873f179dd02e5">odsRegions</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename RangeT&gt;<br />
 class llzk::felt::ShrFeltOpGenericAdaptor&lt; RangeT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02179">2179</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02659">2659</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a9e2cb2894da417dddb8ccb570a87a01e" name="a9e2cb2894da417dddb8ccb570a87a01e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e2cb2894da417dddb8ccb570a87a01e">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[1/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename RangeT&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1ShrFeltOpGenericAdaptor.html">llzk::felt::ShrFeltOpGenericAdaptor</a>&lt; RangeT &gt;::ShrFeltOpGenericAdaptor </td>
-          <td>(</td>
-          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const ::mlir::EmptyProperties &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::RegionRange</td>          <td class="paramname"><span class="paramname"><em>regions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02183">2183</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="a12eb8df52b8cf04c96150db672e2ec08" name="a12eb8df52b8cf04c96150db672e2ec08"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a12eb8df52b8cf04c96150db672e2ec08">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[2/4]</span></h2>
+<a id="afec3bf2670084211af641dfe399efed5" name="afec3bf2670084211af641dfe399efed5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afec3bf2670084211af641dfe399efed5">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -241,7 +203,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#aa9f447f82f1e9c454ed6aa793d22049f">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -256,12 +218,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02185">2185</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02665">2665</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="a8cf15cfe93291aaf09e7070cd83c8b5d" name="a8cf15cfe93291aaf09e7070cd83c8b5d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8cf15cfe93291aaf09e7070cd83c8b5d">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[3/4]</span></h2>
+<a id="a6e1e7562d6f4c4fc5777649c3578950c" name="a6e1e7562d6f4c4fc5777649c3578950c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6e1e7562d6f4c4fc5777649c3578950c">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -279,7 +241,17 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a1842e4e5f6b7fcf6f31da4b6f76717fb">ShrFeltOpGenericAdaptorBase</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>&#160;)</td>
+          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::RegionRange</td>          <td class="paramname"><span class="paramname"><em>regions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -289,12 +261,78 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02187">2187</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02667">2667</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a312b56279b83565c63500af1a5f1ee24" name="a312b56279b83565c63500af1a5f1ee24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a312b56279b83565c63500af1a5f1ee24">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[3/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename RangeT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1ShrFeltOpGenericAdaptor.html">llzk::felt::ShrFeltOpGenericAdaptor</a>&lt; RangeT &gt;::ShrFeltOpGenericAdaptor </td>
+          <td>(</td>
+          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02669">2669</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8cf15cfe93291aaf09e7070cd83c8b5d" name="a8cf15cfe93291aaf09e7070cd83c8b5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cf15cfe93291aaf09e7070cd83c8b5d">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[4/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename RangeT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1felt_1_1ShrFeltOpGenericAdaptor.html">llzk::felt::ShrFeltOpGenericAdaptor</a>&lt; RangeT &gt;::ShrFeltOpGenericAdaptor </td>
+          <td>(</td>
+          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1felt_1_1detail_1_1ShrFeltOpGenericAdaptorBase.html#a0a143182b36cc9fe5f059a136b93b8ce">ShrFeltOpGenericAdaptorBase</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02671">2671</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a id="a826295e66c69e0511e7c5980cd351f2b" name="a826295e66c69e0511e7c5980cd351f2b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a826295e66c69e0511e7c5980cd351f2b">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[4/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a826295e66c69e0511e7c5980cd351f2b">&#9670;&#160;</a></span>ShrFeltOpGenericAdaptor() <span class="overload">[5/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -324,7 +362,7 @@ template&lt;typename LateInst = ShrFeltOp, typename = std::enable_if_t&lt;std::i
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02190">2190</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02674">2674</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -354,7 +392,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02202">2202</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02686">2686</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -383,7 +421,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02192">2192</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02676">2676</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -412,7 +450,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02196">2196</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02680">2680</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -441,7 +479,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02210">2210</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02694">2694</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -470,7 +508,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02206">2206</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l02690">2690</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

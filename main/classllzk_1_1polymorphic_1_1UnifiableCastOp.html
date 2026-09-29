@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1p
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1polymorphic_1_1UnifiableCastOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::polymorphic::UnifiableCastOp Class Reference</div></div>
 </div><!--header-->
@@ -152,6 +153,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:a70d729c515f1df2d82a6483c390ee48b" id="r_a70d729c515f1df2d82a6483c390ee48b"><td class="memTemplParams" colspan="2">template&lt;typename RangeT&gt; </td></tr>
 <tr class="memitem:a70d729c515f1df2d82a6483c390ee48b template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a70d729c515f1df2d82a6483c390ee48b">GenericAdaptor</a> = <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html">UnifiableCastOpGenericAdaptor</a>&lt;RangeT&gt;</td></tr>
 <tr class="memitem:a41e09e152391deddc18176e5c0b6ab4c" id="r_a41e09e152391deddc18176e5c0b6ab4c"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a41e09e152391deddc18176e5c0b6ab4c">FoldAdaptor</a> = <a class="el" href="#a70d729c515f1df2d82a6483c390ee48b">GenericAdaptor</a>&lt;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&gt;</td></tr>
+<tr class="memitem:a8f591a3a447ee69b6418268865717b2a" id="r_a8f591a3a447ee69b6418268865717b2a"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> = <a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html#adc91249cc70d22f6b9fa0e1d0de95153">FoldAdaptor::Properties</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -172,14 +174,34 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a4de9a8b00e62d50eaa5a7a3eb6730937" id="r_a4de9a8b00e62d50eaa5a7a3eb6730937"><td class="memItemLeft">static constexpr ::llvm::StringLiteral&#160;</td><td class="memItemRight"><a class="el" href="#a4de9a8b00e62d50eaa5a7a3eb6730937">getOperationName</a> ()</td></tr>
+<tr class="memitem:a9e6a6633c8c1d61eca2620c5b5830241" id="r_a9e6a6633c8c1d61eca2620c5b5830241"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a9e6a6633c8c1d61eca2620c5b5830241">setPropertiesFromAttr</a> (<a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;prop, ::mlir::Attribute attr, ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
+<tr class="memitem:add3d4af41eaa6f198c407b3759e13cf5" id="r_add3d4af41eaa6f198c407b3759e13cf5"><td class="memItemLeft">::mlir::Attribute&#160;</td><td class="memItemRight"><a class="el" href="#add3d4af41eaa6f198c407b3759e13cf5">getPropertiesAsAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:aa6a7dbd71a15c56e4b21f7d49d962e8a" id="r_aa6a7dbd71a15c56e4b21f7d49d962e8a"><td class="memItemLeft">static llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#aa6a7dbd71a15c56e4b21f7d49d962e8a">computePropertiesHash</a> (const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a8f6e0851266549180af430bd0b09b31e" id="r_a8f6e0851266549180af430bd0b09b31e"><td class="memItemLeft">static std::optional&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a8f6e0851266549180af430bd0b09b31e">getInherentAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;prop, llvm::StringRef name)</td></tr>
+<tr class="memitem:abc6754fa2791e76f97b11a8fc2685b62" id="r_abc6754fa2791e76f97b11a8fc2685b62"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#abc6754fa2791e76f97b11a8fc2685b62">setInherentAttr</a> (<a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;prop, llvm::StringRef name, mlir::Attribute value)</td></tr>
+<tr class="memitem:af44d6bd9f6a494a7ff92e55f1b42abe4" id="r_af44d6bd9f6a494a7ff92e55f1b42abe4"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#af44d6bd9f6a494a7ff92e55f1b42abe4">populateInherentAttrs</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;prop, ::mlir::NamedAttrList &amp;attrs)</td></tr>
+<tr class="memitem:a3a0599c90b6dc6948a7864abe0e81bbf" id="r_a3a0599c90b6dc6948a7864abe0e81bbf"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a3a0599c90b6dc6948a7864abe0e81bbf">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a25a7c0c6807cf48f358bfb5e00b0803d" id="r_a25a7c0c6807cf48f358bfb5e00b0803d"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a25a7c0c6807cf48f358bfb5e00b0803d">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Type result, ::mlir::Value input)</td></tr>
+<tr class="memitem:ad58a00a305879ca6752a55a29569725d" id="r_ad58a00a305879ca6752a55a29569725d"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ad58a00a305879ca6752a55a29569725d">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Type result, ::mlir::Value input)</td></tr>
+<tr class="memitem:a3eb053f81d4cee4da7a418e5e537dec0" id="r_a3eb053f81d4cee4da7a418e5e537dec0"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a3eb053f81d4cee4da7a418e5e537dec0">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Type result, ::mlir::Value input)</td></tr>
 <tr class="memitem:a4e3184be59e180e91b10d62757120cbd" id="r_a4e3184be59e180e91b10d62757120cbd"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a4e3184be59e180e91b10d62757120cbd">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value input)</td></tr>
+<tr class="memitem:a70f3f13b2ff1a5ea8dbd80598c3d48e0" id="r_a70f3f13b2ff1a5ea8dbd80598c3d48e0"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a70f3f13b2ff1a5ea8dbd80598c3d48e0">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value input)</td></tr>
+<tr class="memitem:a7652b513770faa5ae441ff0d5287f841" id="r_a7652b513770faa5ae441ff0d5287f841"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a7652b513770faa5ae441ff0d5287f841">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value input)</td></tr>
 <tr class="memitem:a4f7e1a1a9e530dd487f83f4d0e39dc44" id="r_a4f7e1a1a9e530dd487f83f4d0e39dc44"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a4f7e1a1a9e530dd487f83f4d0e39dc44">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a793248fb1e98c724a051459024012e5d" id="r_a793248fb1e98c724a051459024012e5d"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a793248fb1e98c724a051459024012e5d">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:ac53785c95ba3bfbcf92ea4bbf275e324" id="r_ac53785c95ba3bfbcf92ea4bbf275e324"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ac53785c95ba3bfbcf92ea4bbf275e324">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a54ce3e09bd376d4b785a133a8199ba7d" id="r_a54ce3e09bd376d4b785a133a8199ba7d"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a54ce3e09bd376d4b785a133a8199ba7d">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:aeac843ecd63211dd1843abb59ba07bec" id="r_aeac843ecd63211dd1843abb59ba07bec"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aeac843ecd63211dd1843abb59ba07bec">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a39c19e9495595eba0ffecd2ee1ec4d86" id="r_a39c19e9495595eba0ffecd2ee1ec4d86"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a39c19e9495595eba0ffecd2ee1ec4d86">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
 <tr class="memitem:acbda28d619904c2551d0e848a171a9f4" id="r_acbda28d619904c2551d0e848a171a9f4"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#acbda28d619904c2551d0e848a171a9f4">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a1ff5f83eb0ee468ef3fd369d2b035e62" id="r_a1ff5f83eb0ee468ef3fd369d2b035e62"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a1ff5f83eb0ee468ef3fd369d2b035e62">odsIndex_input</a> = 0</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01303">1303</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01510">1510</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ac0f95c978e936e312815c0abd17a65d6" name="ac0f95c978e936e312815c0abd17a65d6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac0f95c978e936e312815c0abd17a65d6">&#9670;&#160;</a></span>Adaptor</h2>
@@ -193,7 +215,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01307">1307</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01514">1514</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -209,7 +231,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01310">1310</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01517">1517</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -227,13 +249,29 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01309">1309</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01516">1516</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8f591a3a447ee69b6418268865717b2a" name="a8f591a3a447ee69b6418268865717b2a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f591a3a447ee69b6418268865717b2a">&#9670;&#160;</a></span>Properties</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">llzk::polymorphic::UnifiableCastOp::Properties</a> = <a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html#adc91249cc70d22f6b9fa0e1d0de95153">FoldAdaptor::Properties</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01519">1519</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a4f7e1a1a9e530dd487f83f4d0e39dc44" name="a4f7e1a1a9e530dd487f83f4d0e39dc44"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4f7e1a1a9e530dd487f83f4d0e39dc44">&#9670;&#160;</a></span>build() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f7e1a1a9e530dd487f83f4d0e39dc44">&#9670;&#160;</a></span>build() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -274,12 +312,63 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01493">1493</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01938">1938</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a54ce3e09bd376d4b785a133a8199ba7d" name="a54ce3e09bd376d4b785a133a8199ba7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54ce3e09bd376d4b785a133a8199ba7d">&#9670;&#160;</a></span>build() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::polymorphic::UnifiableCastOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01958">1958</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a25a7c0c6807cf48f358bfb5e00b0803d" name="a25a7c0c6807cf48f358bfb5e00b0803d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a25a7c0c6807cf48f358bfb5e00b0803d">&#9670;&#160;</a></span>build() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a25a7c0c6807cf48f358bfb5e00b0803d">&#9670;&#160;</a></span>build() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -315,12 +404,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01482">1482</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01903">1903</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a4e3184be59e180e91b10d62757120cbd" name="a4e3184be59e180e91b10d62757120cbd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4e3184be59e180e91b10d62757120cbd">&#9670;&#160;</a></span>build() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4e3184be59e180e91b10d62757120cbd">&#9670;&#160;</a></span>build() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -356,7 +445,372 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01487">1487</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01920">1920</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa6a7dbd71a15c56e4b21f7d49d962e8a" name="aa6a7dbd71a15c56e4b21f7d49d962e8a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6a7dbd71a15c56e4b21f7d49d962e8a">&#9670;&#160;</a></span>computePropertiesHash()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::hash_code llzk::polymorphic::UnifiableCastOp::computePropertiesHash </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01884">1884</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3eb053f81d4cee4da7a418e5e537dec0" name="a3eb053f81d4cee4da7a418e5e537dec0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3eb053f81d4cee4da7a418e5e537dec0">&#9670;&#160;</a></span>create() <span class="overload">[1/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>result</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>input</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01916">1916</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a7652b513770faa5ae441ff0d5287f841" name="a7652b513770faa5ae441ff0d5287f841"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7652b513770faa5ae441ff0d5287f841">&#9670;&#160;</a></span>create() <span class="overload">[2/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>input</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01934">1934</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac53785c95ba3bfbcf92ea4bbf275e324" name="ac53785c95ba3bfbcf92ea4bbf275e324"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac53785c95ba3bfbcf92ea4bbf275e324">&#9670;&#160;</a></span>create() <span class="overload">[3/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01954">1954</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a39c19e9495595eba0ffecd2ee1ec4d86" name="a39c19e9495595eba0ffecd2ee1ec4d86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39c19e9495595eba0ffecd2ee1ec4d86">&#9670;&#160;</a></span>create() <span class="overload">[4/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01975">1975</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ad58a00a305879ca6752a55a29569725d" name="ad58a00a305879ca6752a55a29569725d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad58a00a305879ca6752a55a29569725d">&#9670;&#160;</a></span>create() <span class="overload">[5/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>result</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>input</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01908">1908</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a70f3f13b2ff1a5ea8dbd80598c3d48e0" name="a70f3f13b2ff1a5ea8dbd80598c3d48e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70f3f13b2ff1a5ea8dbd80598c3d48e0">&#9670;&#160;</a></span>create() <span class="overload">[6/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>input</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01926">1926</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a793248fb1e98c724a051459024012e5d" name="a793248fb1e98c724a051459024012e5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a793248fb1e98c724a051459024012e5d">&#9670;&#160;</a></span>create() <span class="overload">[7/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01946">1946</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aeac843ecd63211dd1843abb59ba07bec" name="aeac843ecd63211dd1843abb59ba07bec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeac843ecd63211dd1843abb59ba07bec">&#9670;&#160;</a></span>create() <span class="overload">[8/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">UnifiableCastOp</a> llzk::polymorphic::UnifiableCastOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01967">1967</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -383,7 +837,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01311">1311</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01520">1520</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -402,7 +856,43 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01568">1568</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l02050">2050</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8f6e0851266549180af430bd0b09b31e" name="a8f6e0851266549180af430bd0b09b31e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f6e0851266549180af430bd0b09b31e">&#9670;&#160;</a></span>getInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; mlir::Attribute &gt; llzk::polymorphic::UnifiableCastOp::getInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01889">1889</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -429,7 +919,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01329">1329</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01538">1538</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -456,7 +946,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01333">1333</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01542">1542</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -483,7 +973,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01319">1319</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01528">1528</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -510,7 +1000,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01323">1323</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01532">1532</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -537,7 +1027,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01338">1338</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01547">1547</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -564,7 +1054,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01342">1342</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01551">1551</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -591,7 +1081,38 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01315">1315</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01524">1524</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="add3d4af41eaa6f198c407b3759e13cf5" name="add3d4af41eaa6f198c407b3759e13cf5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add3d4af41eaa6f198c407b3759e13cf5">&#9670;&#160;</a></span>getPropertiesAsAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Attribute llzk::polymorphic::UnifiableCastOp::getPropertiesAsAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01875">1875</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -618,7 +1139,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01348">1348</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01557">1557</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -649,7 +1170,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01529">1529</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l02007">2007</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af44d6bd9f6a494a7ff92e55f1b42abe4" name="af44d6bd9f6a494a7ff92e55f1b42abe4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af44d6bd9f6a494a7ff92e55f1b42abe4">&#9670;&#160;</a></span>populateInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::polymorphic::UnifiableCastOp::populateInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01896">1896</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -668,7 +1225,79 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01558">1558</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l02040">2040</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="abc6754fa2791e76f97b11a8fc2685b62" name="abc6754fa2791e76f97b11a8fc2685b62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc6754fa2791e76f97b11a8fc2685b62">&#9670;&#160;</a></span>setInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::polymorphic::UnifiableCastOp::setInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01893">1893</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9e6a6633c8c1d61eca2620c5b5830241" name="a9e6a6633c8c1d61eca2620c5b5830241"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e6a6633c8c1d61eca2620c5b5830241">&#9670;&#160;</a></span>setPropertiesFromAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::polymorphic::UnifiableCastOp::setPropertiesFromAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a8f591a3a447ee69b6418268865717b2a">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01866">1866</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -691,6 +1320,42 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="a3a0599c90b6dc6948a7864abe0e81bbf" name="a3a0599c90b6dc6948a7864abe0e81bbf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a0599c90b6dc6948a7864abe0e81bbf">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::polymorphic::UnifiableCastOp::verifyInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OperationName</td>          <td class="paramname"><span class="paramname"><em>opName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01899">1899</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a88fceed3283812f46a691e5f2c733c21" name="a88fceed3283812f46a691e5f2c733c21"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a88fceed3283812f46a691e5f2c733c21">&#9670;&#160;</a></span>verifyInvariants()</h2>
 
@@ -706,7 +1371,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01523">1523</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l02001">2001</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -725,7 +1390,32 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01501">1501</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01979">1979</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a1ff5f83eb0ee468ef3fd369d2b035e62" name="a1ff5f83eb0ee468ef3fd369d2b035e62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ff5f83eb0ee468ef3fd369d2b035e62">&#9670;&#160;</a></span>odsIndex_input</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::polymorphic::UnifiableCastOp::odsIndex_input = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01518">1518</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

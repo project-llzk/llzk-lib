@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1v
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1verif_1_1StepYieldOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::verif::StepYieldOp Class Reference</div></div>
 </div><!--header-->
@@ -152,6 +153,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:a7e06cc24e9c96a7db450fb806e6c5627" id="r_a7e06cc24e9c96a7db450fb806e6c5627"><td class="memTemplParams" colspan="2">template&lt;typename RangeT&gt; </td></tr>
 <tr class="memitem:a7e06cc24e9c96a7db450fb806e6c5627 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a7e06cc24e9c96a7db450fb806e6c5627">GenericAdaptor</a> = <a class="el" href="classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html">StepYieldOpGenericAdaptor</a>&lt;RangeT&gt;</td></tr>
 <tr class="memitem:a756405ea73bd70f6501094168640419a" id="r_a756405ea73bd70f6501094168640419a"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a756405ea73bd70f6501094168640419a">FoldAdaptor</a> = <a class="el" href="#a7e06cc24e9c96a7db450fb806e6c5627">GenericAdaptor</a>&lt;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&gt;</td></tr>
+<tr class="memitem:aed39e01eedf34228447aa55cd6124691" id="r_aed39e01eedf34228447aa55cd6124691"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> = <a class="el" href="classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase.html#adb6f6a9dd5fafde63712ba127b26d85b">FoldAdaptor::Properties</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -169,14 +171,34 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a08ff5f828a2dcfd509be4059bca1d4f6" id="r_a08ff5f828a2dcfd509be4059bca1d4f6"><td class="memItemLeft">static constexpr ::llvm::StringLiteral&#160;</td><td class="memItemRight"><a class="el" href="#a08ff5f828a2dcfd509be4059bca1d4f6">getOperationName</a> ()</td></tr>
+<tr class="memitem:a312aa0b562105e5c4dac06166b7230c3" id="r_a312aa0b562105e5c4dac06166b7230c3"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a312aa0b562105e5c4dac06166b7230c3">setPropertiesFromAttr</a> (<a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;prop, ::mlir::Attribute attr, ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
+<tr class="memitem:a6a861908856d0c6f76f66a46ce6a3984" id="r_a6a861908856d0c6f76f66a46ce6a3984"><td class="memItemLeft">::mlir::Attribute&#160;</td><td class="memItemRight"><a class="el" href="#a6a861908856d0c6f76f66a46ce6a3984">getPropertiesAsAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a627edf43cd9b4c495ae2468a5f6cb5cd" id="r_a627edf43cd9b4c495ae2468a5f6cb5cd"><td class="memItemLeft">static llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#a627edf43cd9b4c495ae2468a5f6cb5cd">computePropertiesHash</a> (const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:acd4bdc4dcccdf2938b37153cb7aa8e63" id="r_acd4bdc4dcccdf2938b37153cb7aa8e63"><td class="memItemLeft">static std::optional&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="#acd4bdc4dcccdf2938b37153cb7aa8e63">getInherentAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;prop, llvm::StringRef name)</td></tr>
+<tr class="memitem:aaacc1cc14b23665e0dec0eb0899f8432" id="r_aaacc1cc14b23665e0dec0eb0899f8432"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#aaacc1cc14b23665e0dec0eb0899f8432">setInherentAttr</a> (<a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;prop, llvm::StringRef name, mlir::Attribute value)</td></tr>
+<tr class="memitem:a1739a7de8deebaff6d101414fdccdb90" id="r_a1739a7de8deebaff6d101414fdccdb90"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a1739a7de8deebaff6d101414fdccdb90">populateInherentAttrs</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;prop, ::mlir::NamedAttrList &amp;attrs)</td></tr>
+<tr class="memitem:a3757a42d602909dd084158c15345baa6" id="r_a3757a42d602909dd084158c15345baa6"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a3757a42d602909dd084158c15345baa6">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a782aeb911c49671ce47e067445934449" id="r_a782aeb911c49671ce47e067445934449"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a782aeb911c49671ce47e067445934449">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value value)</td></tr>
+<tr class="memitem:aab6e89c1fcc379b996c0fd60a6ae9b67" id="r_aab6e89c1fcc379b996c0fd60a6ae9b67"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aab6e89c1fcc379b996c0fd60a6ae9b67">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Value value)</td></tr>
+<tr class="memitem:ac4a09f9e93239022d92e9a79e64cad29" id="r_ac4a09f9e93239022d92e9a79e64cad29"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ac4a09f9e93239022d92e9a79e64cad29">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Value value)</td></tr>
 <tr class="memitem:a0ba32334bd695e1d78821b76445dd47b" id="r_a0ba32334bd695e1d78821b76445dd47b"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a0ba32334bd695e1d78821b76445dd47b">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value value)</td></tr>
+<tr class="memitem:a8f4741a6785dde84674f0fc6c2cd4eb1" id="r_a8f4741a6785dde84674f0fc6c2cd4eb1"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a8f4741a6785dde84674f0fc6c2cd4eb1">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value value)</td></tr>
+<tr class="memitem:acd78d5b0f411625e9ad83a7d49e2fdd7" id="r_acd78d5b0f411625e9ad83a7d49e2fdd7"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#acd78d5b0f411625e9ad83a7d49e2fdd7">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value value)</td></tr>
 <tr class="memitem:a14ea7704d2f98ae4d6c73af540efc7ba" id="r_a14ea7704d2f98ae4d6c73af540efc7ba"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a14ea7704d2f98ae4d6c73af540efc7ba">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a5b15765ee2f82db7e8c8bbe2260adc10" id="r_a5b15765ee2f82db7e8c8bbe2260adc10"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a5b15765ee2f82db7e8c8bbe2260adc10">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:aa5765d4dc29b7f9be33d3b75aba70fe6" id="r_aa5765d4dc29b7f9be33d3b75aba70fe6"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aa5765d4dc29b7f9be33d3b75aba70fe6">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a77c6db436f7912e038054e793d2b0792" id="r_a77c6db436f7912e038054e793d2b0792"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a77c6db436f7912e038054e793d2b0792">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:ae9f20d963c61039dfe8f6920ee943ef5" id="r_ae9f20d963c61039dfe8f6920ee943ef5"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ae9f20d963c61039dfe8f6920ee943ef5">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a4a036d838124941b17631e53bf338849" id="r_a4a036d838124941b17631e53bf338849"><td class="memItemLeft">static <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a4a036d838124941b17631e53bf338849">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
 <tr class="memitem:aa9aff4174a1a47710dabf55dea22e676" id="r_aa9aff4174a1a47710dabf55dea22e676"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#aa9aff4174a1a47710dabf55dea22e676">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a0d61aa53d2a20ea411457dbfa7048be2" id="r_a0d61aa53d2a20ea411457dbfa7048be2"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a0d61aa53d2a20ea411457dbfa7048be2">odsIndex_value</a> = 0</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02637">2637</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03302">3302</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ab2e04b89c72cf7ac5d3b04c0d7579700" name="ab2e04b89c72cf7ac5d3b04c0d7579700"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab2e04b89c72cf7ac5d3b04c0d7579700">&#9670;&#160;</a></span>Adaptor</h2>
@@ -190,7 +212,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02641">2641</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03306">3306</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -206,7 +228,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02644">2644</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03309">3309</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -224,13 +246,29 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02643">2643</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03308">3308</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="aed39e01eedf34228447aa55cd6124691" name="aed39e01eedf34228447aa55cd6124691"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed39e01eedf34228447aa55cd6124691">&#9670;&#160;</a></span>Properties</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#aed39e01eedf34228447aa55cd6124691">llzk::verif::StepYieldOp::Properties</a> = <a class="el" href="classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase.html#adb6f6a9dd5fafde63712ba127b26d85b">FoldAdaptor::Properties</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03311">3311</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a14ea7704d2f98ae4d6c73af540efc7ba" name="a14ea7704d2f98ae4d6c73af540efc7ba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14ea7704d2f98ae4d6c73af540efc7ba">&#9670;&#160;</a></span>build() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a14ea7704d2f98ae4d6c73af540efc7ba">&#9670;&#160;</a></span>build() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -271,12 +309,63 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02524">2524</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04423">4423</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a77c6db436f7912e038054e793d2b0792" name="a77c6db436f7912e038054e793d2b0792"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77c6db436f7912e038054e793d2b0792">&#9670;&#160;</a></span>build() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::verif::StepYieldOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04443">4443</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a0ba32334bd695e1d78821b76445dd47b" name="a0ba32334bd695e1d78821b76445dd47b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ba32334bd695e1d78821b76445dd47b">&#9670;&#160;</a></span>build() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ba32334bd695e1d78821b76445dd47b">&#9670;&#160;</a></span>build() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -312,12 +401,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02518">2518</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04405">4405</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a782aeb911c49671ce47e067445934449" name="a782aeb911c49671ce47e067445934449"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a782aeb911c49671ce47e067445934449">&#9670;&#160;</a></span>build() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a782aeb911c49671ce47e067445934449">&#9670;&#160;</a></span>build() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -348,7 +437,362 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02514">2514</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04389">4389</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a627edf43cd9b4c495ae2468a5f6cb5cd" name="a627edf43cd9b4c495ae2468a5f6cb5cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a627edf43cd9b4c495ae2468a5f6cb5cd">&#9670;&#160;</a></span>computePropertiesHash()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::hash_code llzk::verif::StepYieldOp::computePropertiesHash </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04370">4370</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="acd78d5b0f411625e9ad83a7d49e2fdd7" name="acd78d5b0f411625e9ad83a7d49e2fdd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acd78d5b0f411625e9ad83a7d49e2fdd7">&#9670;&#160;</a></span>create() <span class="overload">[1/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04419">4419</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa5765d4dc29b7f9be33d3b75aba70fe6" name="aa5765d4dc29b7f9be33d3b75aba70fe6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa5765d4dc29b7f9be33d3b75aba70fe6">&#9670;&#160;</a></span>create() <span class="overload">[2/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04439">4439</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a4a036d838124941b17631e53bf338849" name="a4a036d838124941b17631e53bf338849"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a036d838124941b17631e53bf338849">&#9670;&#160;</a></span>create() <span class="overload">[3/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04460">4460</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac4a09f9e93239022d92e9a79e64cad29" name="ac4a09f9e93239022d92e9a79e64cad29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4a09f9e93239022d92e9a79e64cad29">&#9670;&#160;</a></span>create() <span class="overload">[4/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04401">4401</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8f4741a6785dde84674f0fc6c2cd4eb1" name="a8f4741a6785dde84674f0fc6c2cd4eb1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f4741a6785dde84674f0fc6c2cd4eb1">&#9670;&#160;</a></span>create() <span class="overload">[5/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04411">4411</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a5b15765ee2f82db7e8c8bbe2260adc10" name="a5b15765ee2f82db7e8c8bbe2260adc10"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b15765ee2f82db7e8c8bbe2260adc10">&#9670;&#160;</a></span>create() <span class="overload">[6/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04431">4431</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ae9f20d963c61039dfe8f6920ee943ef5" name="ae9f20d963c61039dfe8f6920ee943ef5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9f20d963c61039dfe8f6920ee943ef5">&#9670;&#160;</a></span>create() <span class="overload">[7/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04452">4452</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aab6e89c1fcc379b996c0fd60a6ae9b67" name="aab6e89c1fcc379b996c0fd60a6ae9b67"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab6e89c1fcc379b996c0fd60a6ae9b67">&#9670;&#160;</a></span>create() <span class="overload">[8/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">StepYieldOp</a> llzk::verif::StepYieldOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04393">4393</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -375,7 +819,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02645">2645</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03312">3312</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="acd4bdc4dcccdf2938b37153cb7aa8e63" name="acd4bdc4dcccdf2938b37153cb7aa8e63"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acd4bdc4dcccdf2938b37153cb7aa8e63">&#9670;&#160;</a></span>getInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; mlir::Attribute &gt; llzk::verif::StepYieldOp::getInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04375">4375</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -402,7 +882,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02653">2653</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03320">3320</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -429,7 +909,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02657">2657</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03324">3324</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -456,7 +936,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02672">2672</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03339">3339</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -483,7 +963,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02676">2676</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03343">3343</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -510,7 +990,38 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02649">2649</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03316">3316</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a6a861908856d0c6f76f66a46ce6a3984" name="a6a861908856d0c6f76f66a46ce6a3984"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a861908856d0c6f76f66a46ce6a3984">&#9670;&#160;</a></span>getPropertiesAsAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Attribute llzk::verif::StepYieldOp::getPropertiesAsAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04361">4361</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -537,7 +1048,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02663">2663</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03330">3330</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -564,7 +1075,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l02667">2667</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03334">3334</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -595,7 +1106,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02549">2549</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04481">4481</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a1739a7de8deebaff6d101414fdccdb90" name="a1739a7de8deebaff6d101414fdccdb90"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1739a7de8deebaff6d101414fdccdb90">&#9670;&#160;</a></span>populateInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::verif::StepYieldOp::populateInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04382">4382</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -614,7 +1161,115 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02568">2568</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04504">4504</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aaacc1cc14b23665e0dec0eb0899f8432" name="aaacc1cc14b23665e0dec0eb0899f8432"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaacc1cc14b23665e0dec0eb0899f8432">&#9670;&#160;</a></span>setInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::verif::StepYieldOp::setInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04379">4379</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a312aa0b562105e5c4dac06166b7230c3" name="a312aa0b562105e5c4dac06166b7230c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a312aa0b562105e5c4dac06166b7230c3">&#9670;&#160;</a></span>setPropertiesFromAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::verif::StepYieldOp::setPropertiesFromAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#aed39e01eedf34228447aa55cd6124691">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04352">4352</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3757a42d602909dd084158c15345baa6" name="a3757a42d602909dd084158c15345baa6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3757a42d602909dd084158c15345baa6">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::verif::StepYieldOp::verifyInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OperationName</td>          <td class="paramname"><span class="paramname"><em>opName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04385">4385</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -633,7 +1288,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02545">2545</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04477">4477</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -652,7 +1307,32 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l02532">2532</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html#l04464">4464</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a0d61aa53d2a20ea411457dbfa7048be2" name="a0d61aa53d2a20ea411457dbfa7048be2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d61aa53d2a20ea411457dbfa7048be2">&#9670;&#160;</a></span>odsIndex_value</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::verif::StepYieldOp::odsIndex_value = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l03310">3310</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

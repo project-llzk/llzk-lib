@@ -136,8 +136,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('llzk-opt_8cpp.
 
 <p>This file implements a version of the mlir-opt tool configured for use on LLZK files.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;r1cs/Dialect/IR/Dialect.h&quot;</code><br />
-<code>#include &quot;r1cs/DialectRegistration.h&quot;</code><br />
+<div class="textblock"><code>#include &quot;r1cs/DialectRegistration.h&quot;</code><br />
 <code>#include &quot;r1cs/Transforms/TransformationPassPipelines.h&quot;</code><br />
 <code>#include &quot;r1cs/Transforms/TransformationPasses.h&quot;</code><br />
 <code>#include &quot;smt/Conversions/ConversionPasses.h&quot;</code><br />
@@ -160,10 +159,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('llzk-opt_8cpp.
 <code>#include &quot;<a class="el" href="SpecializedMemoryPasses_8h_source.html">llzk/Transforms/SpecializedMemoryPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKValidationPasses_8h_source.html">llzk/Validators/LLZKValidationPasses.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</code><br />
-<code>#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</code><br />
-<code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
 <code>#include &lt;mlir/IR/DialectRegistry.h&gt;</code><br />
-<code>#include &lt;mlir/Pass/PassManager.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassRegistry.h&gt;</code><br />
 <code>#include &lt;mlir/Tools/mlir-opt/MlirOptMain.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/Passes.h&gt;</code><br />
@@ -171,18 +167,22 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('llzk-opt_8cpp.
 <code>#include &lt;llvm/Support/CommandLine.h&gt;</code><br />
 <code>#include &lt;llvm/Support/PrettyStackTrace.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Signals.h&gt;</code><br />
+<code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
+<code>#include &lt;cstdlib&gt;</code><br />
+<code>#include &lt;string&gt;</code><br />
+<code>#include &lt;tuple&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for llzk-opt.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-opt_8cpp__incl.svg" width="6031" height="554"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-opt_8cpp__incl.svg" width="5580" height="554"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="llzk-opt_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:mlir_5Fhotfix" id="r_mlir_5Fhotfix"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacemlir__hotfix.html">mlir_hotfix</a></td></tr>
-<tr class="memdesc:namespacemlir__hotfix"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace <span class="tt">mlir::registerTransformsPasses()</span> to register a custom <span class="tt">remove-dead-values</span> pass because MLIR version 20 has a bug in that pass which causes an assertion failure when it encounters an <span class="tt">scf.if</span> op with an empty else region. <br /></td></tr>
+<tr class="memitem:mlir_5Fpatch" id="r_mlir_5Fpatch"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacemlir__patch.html">mlir_patch</a></td></tr>
+<tr class="memdesc:namespacemlir__patch"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace <span class="tt">mlir::registerTransformsPasses()</span> to register a custom <span class="tt">remove-dead-values</span> pass because MLIR version 23.1.0 has a bug where the pass tracks <span class="tt">poison</span> values that it created during its current invocation only and may end up leaving behind dead <span class="tt">poison</span> values. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -212,7 +212,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00100">100</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00102">102</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
 
 </div>
 </div>

@@ -139,9 +139,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Global_2IR_2Di
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">|*                                                                            *|</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">\*===----------------------------------------------------------------------===*/</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a> {</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1global.html">llzk::global</a> {</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span></div>
 <div class="foldopen" id="foldopen00013" data-start="{" data-end="};">
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno"><a class="line" href="classllzk_1_1global_1_1GlobalDialect.html">   13</a></span><span class="keyword">class </span>GlobalDialect : <span class="keyword">public</span> ::mlir::Dialect {</div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>  <span class="keyword">explicit</span> GlobalDialect(<a class="code hl_friend" href="classllzk_1_1global_1_1GlobalDialect.html#a16ba9f9fd76da17f6786169cf6c6079e">::mlir::MLIRContext</a> *context);</div>
@@ -157,15 +156,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Global_2IR_2Di
 </div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>};</div>
 </div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>} <span class="comment">// namespace global</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>} <span class="comment">// namespace llzk::global</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(<a class="code hl_class" href="classllzk_1_1global_1_1GlobalDialect.html">::llzk::global::GlobalDialect</a>)</div>
-<div class="ttc" id="aclassllzk_1_1global_1_1GlobalDialect_html"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalDialect.html">llzk::global::GlobalDialect</a></div><div class="ttdef"><b>Definition</b> <a href="#l00013">Dialect.h.inc:13</a></div></div>
+<div class="ttc" id="aclassllzk_1_1global_1_1GlobalDialect_html"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalDialect.html">llzk::global::GlobalDialect</a></div><div class="ttdoc">LLZK support for global values, defined outside of structs.</div><div class="ttdef"><b>Definition</b> <a href="#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="aclassllzk_1_1global_1_1GlobalDialect_html_a16ba9f9fd76da17f6786169cf6c6079e"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalDialect.html#a16ba9f9fd76da17f6786169cf6c6079e">llzk::global::GlobalDialect::MLIRContext</a></div><div class="ttdeci">friend class ::mlir::MLIRContext</div><div class="ttdef"><b>Definition</b> <a href="#l00017">Dialect.h.inc:17</a></div></div>
 <div class="ttc" id="aclassllzk_1_1global_1_1GlobalDialect_html_a6bfb7f2f9afe5811dc8a2a991815feee"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalDialect.html#a6bfb7f2f9afe5811dc8a2a991815feee">llzk::global::GlobalDialect::getDialectNamespace</a></div><div class="ttdeci">static constexpr ::llvm::StringLiteral getDialectNamespace()</div><div class="ttdef"><b>Definition</b> <a href="#l00020">Dialect.h.inc:20</a></div></div>
 <div class="ttc" id="aclassllzk_1_1global_1_1GlobalDialect_html_adace67347c50a9894efa3d146772cfe7"><div class="ttname"><a href="classllzk_1_1global_1_1GlobalDialect.html#adace67347c50a9894efa3d146772cfe7">llzk::global::GlobalDialect::~GlobalDialect</a></div><div class="ttdeci">~GlobalDialect() override</div></div>
 <div class="ttc" id="anamespacellzk_1_1global_html"><div class="ttname"><a href="namespacellzk_1_1global.html">llzk::global</a></div><div class="ttdef"><b>Definition</b> <a href="InitializerUtils_8h_source.html#l00016">InitializerUtils.h:16</a></div></div>
-<div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('BuilderHelper_
 <div class="foldopen" id="foldopen00021" data-start="{" data-end="}">
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">   21</a></span><span class="keyword">inline</span> OpClass <a class="code hl_function" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build</a>(mlir::Location location, Args &amp;&amp;...args) {</div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  mlir::OpBuilder builder(location-&gt;getContext());</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keywordflow">return</span> builder.create&lt;OpClass&gt;(location, std::forward&lt;Args&gt;(args)...);</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keywordflow">return</span> OpClass::create(builder, location, std::forward&lt;Args&gt;(args)...);</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>}</div>
 </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>

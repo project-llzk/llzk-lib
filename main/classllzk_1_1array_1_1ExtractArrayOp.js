@@ -3,6 +3,7 @@ var classllzk_1_1array_1_1ExtractArrayOp =
     [ "Adaptor", "classllzk_1_1array_1_1ExtractArrayOp.html#a6989a6eb9ac668108ed6e438f7b05968", null ],
     [ "FoldAdaptor", "classllzk_1_1array_1_1ExtractArrayOp.html#ab63536c2b88e732545b26f737c515d19", null ],
     [ "GenericAdaptor", "classllzk_1_1array_1_1ExtractArrayOp.html#a7f7e6295a282b473852df8f0dcfc2e56", null ],
+    [ "Properties", "classllzk_1_1array_1_1ExtractArrayOp.html#abba2b2a88287b22526dba8f3cb628267", null ],
     [ "getArrRef", "classllzk_1_1array_1_1ExtractArrayOp.html#aead49c75ac709a91c9010b365a16b17e", null ],
     [ "getArrRefMutable", "classllzk_1_1array_1_1ExtractArrayOp.html#af7de5fcc3fcb6205bbe10a1558452efa", null ],
     [ "getArrRefType", "classllzk_1_1array_1_1ExtractArrayOp.html#ac246baafeca3b5c3afbd2c832397a8df", null ],

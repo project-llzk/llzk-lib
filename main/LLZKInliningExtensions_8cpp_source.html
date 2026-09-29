@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKInliningEx
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="comment">// `cf::BranchOp` here.</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> returnOp = llvm::dyn_cast&lt;function::ReturnOp&gt;(op)) {</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      OpBuilder builder(op);</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      builder.create&lt;cf::BranchOp&gt;(op-&gt;getLoc(), newDest, returnOp.getOperands());</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      cf::BranchOp::create(builder, op-&gt;getLoc(), newDest, returnOp.getOperands());</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>      op-&gt;erase();</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    }</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>

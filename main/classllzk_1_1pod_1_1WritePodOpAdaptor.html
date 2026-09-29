@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6e3ba70a35b864e1634ff53c6d9ab530" id="r_a6e3ba70a35b864e1634ff53c6d9ab530"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a6e3ba70a35b864e1634ff53c6d9ab530">WritePodOpAdaptor</a> (<a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">WritePodOp</a> op)</td></tr>
 <tr class="memitem:a4b02eb8fdeb62be9767c590ab0a4b753" id="r_a4b02eb8fdeb62be9767c590ab0a4b753"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a4b02eb8fdeb62be9767c590ab0a4b753">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:a2728a481915c379a801d4f94f57a2eb0" id="r_a2728a481915c379a801d4f94f57a2eb0"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a2728a481915c379a801d4f94f57a2eb0">WritePodOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:aa543df394baead90e795162ab2c9a19d" id="r_aa543df394baead90e795162ab2c9a19d"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa543df394baead90e795162ab2c9a19d">WritePodOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a31d2fd5a3d6fbd75108c46cacccc484c" id="r_a31d2fd5a3d6fbd75108c46cacccc484c"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a31d2fd5a3d6fbd75108c46cacccc484c">WritePodOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:aff20765a74b19fc9b0259f9f33a0cbb7" id="r_aff20765a74b19fc9b0259f9f33a0cbb7"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aff20765a74b19fc9b0259f9f33a0cbb7">WritePodOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:ac9516d35edac2cdacdefefd592779a9b" id="r_ac9516d35edac2cdacdefefd592779a9b"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac9516d35edac2cdacdefefd592779a9b">WritePodOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html#aaf96ed1d5cbc31d96ae1f318728fb71a">WritePodOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:aff2899b751603dd1007700d36d5d0f89" id="r_aff2899b751603dd1007700d36d5d0f89"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = WritePodOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, WritePodOp&gt;&gt;&gt; </td></tr>
@@ -180,7 +180,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00669">669</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00779">779</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a6e3ba70a35b864e1634ff53c6d9ab530" name="a6e3ba70a35b864e1634ff53c6d9ab530"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6e3ba70a35b864e1634ff53c6d9ab530">&#9670;&#160;</a></span>WritePodOpAdaptor()</h2>
@@ -197,7 +197,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00896">896</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01117">1117</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -217,12 +217,12 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00898">898</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01119">1119</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="aa543df394baead90e795162ab2c9a19d" name="aa543df394baead90e795162ab2c9a19d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa543df394baead90e795162ab2c9a19d">&#9670;&#160;</a></span>WritePodOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="a31d2fd5a3d6fbd75108c46cacccc484c" name="a31d2fd5a3d6fbd75108c46cacccc484c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31d2fd5a3d6fbd75108c46cacccc484c">&#9670;&#160;</a></span>WritePodOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -243,7 +243,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -258,7 +258,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00635">635</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00745">745</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -299,7 +299,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00633">633</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00743">743</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -330,7 +330,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00637">637</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00747">747</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -361,7 +361,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00639">639</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00749">749</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ template&lt;typename LateInst = WritePodOp, typename = std::enable_if_t&lt;std::
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00642">642</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00752">752</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

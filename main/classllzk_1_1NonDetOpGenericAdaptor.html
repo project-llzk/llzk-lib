@@ -146,77 +146,39 @@ Collaboration diagram for llzk::NonDetOpGenericAdaptor&lt; RangeT &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6db5ed7145ddad63ad43101d860ea1d7" id="r_a6db5ed7145ddad63ad43101d860ea1d7"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a6db5ed7145ddad63ad43101d860ea1d7">NonDetOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a95c580fa737143c9c3e445c8099f0d48" id="r_a95c580fa737143c9c3e445c8099f0d48"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a95c580fa737143c9c3e445c8099f0d48">NonDetOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:aa6aef99f6491d08af395259de2a99a5b" id="r_aa6aef99f6491d08af395259de2a99a5b"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa6aef99f6491d08af395259de2a99a5b">NonDetOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a7713c49cc00d920a52b1a6d539a05e07">NonDetOpGenericAdaptorBase</a> &amp;base)</td></tr>
+<tr class="memitem:a19ca58a3e0382d6017dd9dbfd60bd154" id="r_a19ca58a3e0382d6017dd9dbfd60bd154"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a19ca58a3e0382d6017dd9dbfd60bd154">NonDetOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a005b7de8ca5e4013008522edbd6e5fdb">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a79f81b38b75da4293b12d754b15e5df0" id="r_a79f81b38b75da4293b12d754b15e5df0"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a79f81b38b75da4293b12d754b15e5df0">NonDetOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a3893c63e79a53091c555c4050c9ea7b5" id="r_a3893c63e79a53091c555c4050c9ea7b5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a3893c63e79a53091c555c4050c9ea7b5">NonDetOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
+<tr class="memitem:aa6aef99f6491d08af395259de2a99a5b" id="r_aa6aef99f6491d08af395259de2a99a5b"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa6aef99f6491d08af395259de2a99a5b">NonDetOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a3a83257d0b05bd5a038b26d5d1eaa4f6">NonDetOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a7ada8b9ba95d1bdd6387003712e492c9" id="r_a7ada8b9ba95d1bdd6387003712e492c9"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = NonDetOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, NonDetOp&gt;&gt;&gt; </td></tr>
 <tr class="memitem:a7ada8b9ba95d1bdd6387003712e492c9 template"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a7ada8b9ba95d1bdd6387003712e492c9">NonDetOpGenericAdaptor</a> (RangeT values, LateInst op)</td></tr>
 <tr class="memitem:a661c1e839c2dd1ff00c2c8aad5200b30" id="r_a661c1e839c2dd1ff00c2c8aad5200b30"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a661c1e839c2dd1ff00c2c8aad5200b30">getODSOperandIndexAndLength</a> (unsigned index)</td></tr>
 <tr class="memitem:aa4e8106cd06008405b69fdc567d09041" id="r_aa4e8106cd06008405b69fdc567d09041"><td class="memItemLeft">RangeT&#160;</td><td class="memItemRight"><a class="el" href="#aa4e8106cd06008405b69fdc567d09041">getODSOperands</a> (unsigned index)</td></tr>
 <tr class="memitem:a9f48d32e800a1a48f86b28482b25869a" id="r_a9f48d32e800a1a48f86b28482b25869a"><td class="memItemLeft">RangeT&#160;</td><td class="memItemRight"><a class="el" href="#a9f48d32e800a1a48f86b28482b25869a">getOperands</a> ()</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase"><td colspan="2">Public Member Functions inherited from <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html">llzk::detail::NonDetOpGenericAdaptorBase</a></td></tr>
-<tr class="memitem:a7713c49cc00d920a52b1a6d539a05e07 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a7713c49cc00d920a52b1a6d539a05e07"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a7713c49cc00d920a52b1a6d539a05e07">NonDetOpGenericAdaptorBase</a> (::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a53a923706eaaa04de125d12db4ec02d4 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a53a923706eaaa04de125d12db4ec02d4"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a53a923706eaaa04de125d12db4ec02d4">NonDetOpGenericAdaptorBase</a> (::mlir::Operation *op)</td></tr>
+<tr class="memitem:a3a83257d0b05bd5a038b26d5d1eaa4f6 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a3a83257d0b05bd5a038b26d5d1eaa4f6"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a3a83257d0b05bd5a038b26d5d1eaa4f6">NonDetOpGenericAdaptorBase</a> (::mlir::DictionaryAttr attrs, const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a005b7de8ca5e4013008522edbd6e5fdb">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:ad5dab382600d260cd5eff2b7b63778a8 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_ad5dab382600d260cd5eff2b7b63778a8"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#ad5dab382600d260cd5eff2b7b63778a8">NonDetOpGenericAdaptorBase</a> (<a class="el" href="classllzk_1_1NonDetOp.html">NonDetOp</a> op)</td></tr>
 <tr class="memitem:afbafebee350f6cc5a2b7234453d07ec5 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_afbafebee350f6cc5a2b7234453d07ec5"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#afbafebee350f6cc5a2b7234453d07ec5">getODSOperandIndexAndLength</a> (unsigned index, unsigned odsOperandsSize)</td></tr>
+<tr class="memitem:a760c052ca306d70ae7ceb451c54de868 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a760c052ca306d70ae7ceb451c54de868"><td class="memItemLeft">const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a005b7de8ca5e4013008522edbd6e5fdb">Properties</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a760c052ca306d70ae7ceb451c54de868">getProperties</a> ()</td></tr>
 <tr class="memitem:a3471dfd0d944ebe08144fb7fd96a5e97 pub_methods_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a3471dfd0d944ebe08144fb7fd96a5e97"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a3471dfd0d944ebe08144fb7fd96a5e97">getAttributes</a> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase"><td colspan="2">Public Types inherited from <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html">llzk::detail::NonDetOpGenericAdaptorBase</a></td></tr>
+<tr class="memitem:a005b7de8ca5e4013008522edbd6e5fdb pub_types_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a005b7de8ca5e4013008522edbd6e5fdb"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a005b7de8ca5e4013008522edbd6e5fdb">Properties</a> = ::mlir::EmptyProperties</td></tr>
 <tr class="inherit_header pro_attribs_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase"><td colspan="2">Protected Attributes inherited from <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html">llzk::detail::NonDetOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:a3a5c31837de16929394c078d84b1baf0 pro_attribs_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a3a5c31837de16929394c078d84b1baf0"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a3a5c31837de16929394c078d84b1baf0">odsAttrs</a></td></tr>
 <tr class="memitem:a9a0221ca61d8ba825f448f63b3c98fee pro_attribs_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_a9a0221ca61d8ba825f448f63b3c98fee"><td class="memItemLeft">::std::optional&lt;::mlir::OperationName &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a9a0221ca61d8ba825f448f63b3c98fee">odsOpName</a></td></tr>
+<tr class="memitem:ae2888a19b08c33b45009d3ffdeb16aa2 pro_attribs_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_ae2888a19b08c33b45009d3ffdeb16aa2"><td class="memItemLeft"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a005b7de8ca5e4013008522edbd6e5fdb">Properties</a>&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#ae2888a19b08c33b45009d3ffdeb16aa2">properties</a></td></tr>
 <tr class="memitem:abdc8744ddd054e999b4c1593cee74049 pro_attribs_classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" id="r_abdc8744ddd054e999b4c1593cee74049"><td class="memItemLeft">::mlir::RegionRange&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#abdc8744ddd054e999b4c1593cee74049">odsRegions</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename RangeT&gt;<br />
 class llzk::NonDetOpGenericAdaptor&lt; RangeT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00047">47</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00107">107</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a6db5ed7145ddad63ad43101d860ea1d7" name="a6db5ed7145ddad63ad43101d860ea1d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6db5ed7145ddad63ad43101d860ea1d7">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[1/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename RangeT&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1NonDetOpGenericAdaptor.html">llzk::NonDetOpGenericAdaptor</a>&lt; RangeT &gt;::NonDetOpGenericAdaptor </td>
-          <td>(</td>
-          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const ::mlir::EmptyProperties &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::RegionRange</td>          <td class="paramname"><span class="paramname"><em>regions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00051">51</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="a95c580fa737143c9c3e445c8099f0d48" name="a95c580fa737143c9c3e445c8099f0d48"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a95c580fa737143c9c3e445c8099f0d48">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[2/4]</span></h2>
+<a id="a19ca58a3e0382d6017dd9dbfd60bd154" name="a19ca58a3e0382d6017dd9dbfd60bd154"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19ca58a3e0382d6017dd9dbfd60bd154">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -239,7 +201,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a005b7de8ca5e4013008522edbd6e5fdb">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -254,12 +216,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00053">53</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00111">111</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="aa6aef99f6491d08af395259de2a99a5b" name="aa6aef99f6491d08af395259de2a99a5b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa6aef99f6491d08af395259de2a99a5b">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[3/4]</span></h2>
+<a id="a79f81b38b75da4293b12d754b15e5df0" name="a79f81b38b75da4293b12d754b15e5df0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a79f81b38b75da4293b12d754b15e5df0">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -277,7 +239,17 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a7713c49cc00d920a52b1a6d539a05e07">NonDetOpGenericAdaptorBase</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>&#160;)</td>
+          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::RegionRange</td>          <td class="paramname"><span class="paramname"><em>regions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -287,12 +259,78 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00055">55</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00113">113</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3893c63e79a53091c555c4050c9ea7b5" name="a3893c63e79a53091c555c4050c9ea7b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3893c63e79a53091c555c4050c9ea7b5">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[3/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename RangeT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1NonDetOpGenericAdaptor.html">llzk::NonDetOpGenericAdaptor</a>&lt; RangeT &gt;::NonDetOpGenericAdaptor </td>
+          <td>(</td>
+          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00115">115</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa6aef99f6491d08af395259de2a99a5b" name="aa6aef99f6491d08af395259de2a99a5b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6aef99f6491d08af395259de2a99a5b">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[4/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename RangeT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1NonDetOpGenericAdaptor.html">llzk::NonDetOpGenericAdaptor</a>&lt; RangeT &gt;::NonDetOpGenericAdaptor </td>
+          <td>(</td>
+          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a3a83257d0b05bd5a038b26d5d1eaa4f6">NonDetOpGenericAdaptorBase</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00117">117</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a id="a7ada8b9ba95d1bdd6387003712e492c9" name="a7ada8b9ba95d1bdd6387003712e492c9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7ada8b9ba95d1bdd6387003712e492c9">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[4/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ada8b9ba95d1bdd6387003712e492c9">&#9670;&#160;</a></span>NonDetOpGenericAdaptor() <span class="overload">[5/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -322,7 +360,7 @@ template&lt;typename LateInst = NonDetOp, typename = std::enable_if_t&lt;std::is
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00058">58</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00120">120</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -352,7 +390,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00060">60</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00122">122</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -381,7 +419,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00064">64</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00126">126</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -410,7 +448,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00070">70</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html#l00132">132</a> of file <a class="el" href="LLZK_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

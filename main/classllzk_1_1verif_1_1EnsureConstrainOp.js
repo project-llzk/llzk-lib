@@ -3,6 +3,7 @@ var classllzk_1_1verif_1_1EnsureConstrainOp =
     [ "Adaptor", "classllzk_1_1verif_1_1EnsureConstrainOp.html#a27778d9d6b94a9478877652c55c8f5e2", null ],
     [ "FoldAdaptor", "classllzk_1_1verif_1_1EnsureConstrainOp.html#a23ff9dbc29b904773be9e57873ae1392", null ],
     [ "GenericAdaptor", "classllzk_1_1verif_1_1EnsureConstrainOp.html#a60ef5f164d65ba8f61016451f43a912c", null ],
+    [ "Properties", "classllzk_1_1verif_1_1EnsureConstrainOp.html#abff0d173c849411a41a207497b29022e", null ],
     [ "getAttributeNames", "classllzk_1_1verif_1_1EnsureConstrainOp.html#aee47b59568f30f8c4a3272f459b41ccd", null ],
     [ "getCondition", "classllzk_1_1verif_1_1EnsureConstrainOp.html#afe475f0a85c0fb110ef708b728c0a78c", null ],
     [ "getConditionMutable", "classllzk_1_1verif_1_1EnsureConstrainOp.html#a00c8d95b2b216f9d4b8911fd0293db21", null ],

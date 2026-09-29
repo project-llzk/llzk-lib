@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1p
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1polymorphic_1_1ApplyMapOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::polymorphic::ApplyMapOp Class Reference</div></div>
 </div><!--header-->
@@ -203,14 +204,24 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ac74d378a5fd21d65080456b51d1d0426" id="r_ac74d378a5fd21d65080456b51d1d0426"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ac74d378a5fd21d65080456b51d1d0426">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:ae6e2c8353453211360428b50f2028de8" id="r_ae6e2c8353453211360428b50f2028de8"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ae6e2c8353453211360428b50f2028de8">readProperties</a> (::mlir::DialectBytecodeReader &amp;reader, ::mlir::OperationState &amp;state)</td></tr>
 <tr class="memitem:a852437045e975ee96039d164308b6076" id="r_a852437045e975ee96039d164308b6076"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a852437045e975ee96039d164308b6076">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::AffineMapAttr map, ::mlir::ValueRange mapOperands={})</td></tr>
+<tr class="memitem:a62271c8000615e99b425303d7673cb7c" id="r_a62271c8000615e99b425303d7673cb7c"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a62271c8000615e99b425303d7673cb7c">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::AffineMapAttr map, ::mlir::ValueRange mapOperands={})</td></tr>
+<tr class="memitem:ae50c4ea35ed55de37765ad30b5aacfb6" id="r_ae50c4ea35ed55de37765ad30b5aacfb6"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ae50c4ea35ed55de37765ad30b5aacfb6">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::AffineMapAttr map, ::mlir::ValueRange mapOperands={})</td></tr>
 <tr class="memitem:a5230c2dedfa1626de682af2c782afd79" id="r_a5230c2dedfa1626de682af2c782afd79"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a5230c2dedfa1626de682af2c782afd79">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::AffineMap map, ::mlir::ValueRange mapOperands={})</td></tr>
+<tr class="memitem:a105c47728f05b95f27cb42fa72b22c58" id="r_a105c47728f05b95f27cb42fa72b22c58"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a105c47728f05b95f27cb42fa72b22c58">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::AffineMap map, ::mlir::ValueRange mapOperands={})</td></tr>
+<tr class="memitem:a2248cf27fbc8f202e535ffede63997a4" id="r_a2248cf27fbc8f202e535ffede63997a4"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a2248cf27fbc8f202e535ffede63997a4">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::AffineMap map, ::mlir::ValueRange mapOperands={})</td></tr>
 <tr class="memitem:a754205843944dc113dbf7bb9c70b2310" id="r_a754205843944dc113dbf7bb9c70b2310"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a754205843944dc113dbf7bb9c70b2310">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::AffineExpr expr, ::mlir::ValueRange mapOperands={})</td></tr>
-<tr class="memitem:a5af9e1d490128c3a0a84993af2a8f544" id="r_a5af9e1d490128c3a0a84993af2a8f544"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a5af9e1d490128c3a0a84993af2a8f544">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
+<tr class="memitem:a85a37f6c8a8523417ec9a913592c6b27" id="r_a85a37f6c8a8523417ec9a913592c6b27"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a85a37f6c8a8523417ec9a913592c6b27">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::AffineExpr expr, ::mlir::ValueRange mapOperands={})</td></tr>
+<tr class="memitem:a0cdacb4eb6b21c83c290e042bf718cff" id="r_a0cdacb4eb6b21c83c290e042bf718cff"><td class="memItemLeft">static <a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a0cdacb4eb6b21c83c290e042bf718cff">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::AffineExpr expr, ::mlir::ValueRange mapOperands={})</td></tr>
+<tr class="memitem:a69230eb6d8b58173999deeb3609cd2ea" id="r_a69230eb6d8b58173999deeb3609cd2ea"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a69230eb6d8b58173999deeb3609cd2ea">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::PropertyRef properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
 <tr class="memitem:a55efb137771c93949ffc251e2e9a6f32" id="r_a55efb137771c93949ffc251e2e9a6f32"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a55efb137771c93949ffc251e2e9a6f32">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:accfd11ea4f48895e090b5591e9ee1bcc" id="r_accfd11ea4f48895e090b5591e9ee1bcc"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#accfd11ea4f48895e090b5591e9ee1bcc">odsIndex_mapOperands</a> = 0</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00168">168</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00292">292</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a7e67571b3ab8ec3826fed6ea0b884ad4" name="a7e67571b3ab8ec3826fed6ea0b884ad4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7e67571b3ab8ec3826fed6ea0b884ad4">&#9670;&#160;</a></span>Adaptor</h2>
@@ -224,7 +235,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00172">172</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00296">296</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -240,7 +251,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00175">175</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00299">299</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -258,7 +269,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00174">174</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00298">298</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -274,7 +285,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00176">176</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00301">301</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -316,7 +327,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00391">391</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00414">414</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -357,7 +368,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00386">386</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00397">397</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -398,7 +409,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00376">376</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00375">375</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -425,7 +436,238 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00294">294</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00292">292</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a0cdacb4eb6b21c83c290e042bf718cff" name="a0cdacb4eb6b21c83c290e042bf718cff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0cdacb4eb6b21c83c290e042bf718cff">&#9670;&#160;</a></span>create() <span class="overload">[1/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a> llzk::polymorphic::ApplyMapOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::AffineExpr</td>          <td class="paramname"><span class="paramname"><em>expr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00428">428</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2248cf27fbc8f202e535ffede63997a4" name="a2248cf27fbc8f202e535ffede63997a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2248cf27fbc8f202e535ffede63997a4">&#9670;&#160;</a></span>create() <span class="overload">[2/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a> llzk::polymorphic::ApplyMapOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::AffineMap</td>          <td class="paramname"><span class="paramname"><em>map</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00410">410</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ae50c4ea35ed55de37765ad30b5aacfb6" name="ae50c4ea35ed55de37765ad30b5aacfb6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae50c4ea35ed55de37765ad30b5aacfb6">&#9670;&#160;</a></span>create() <span class="overload">[3/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a> llzk::polymorphic::ApplyMapOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::AffineMapAttr</td>          <td class="paramname"><span class="paramname"><em>map</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00393">393</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a85a37f6c8a8523417ec9a913592c6b27" name="a85a37f6c8a8523417ec9a913592c6b27"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85a37f6c8a8523417ec9a913592c6b27">&#9670;&#160;</a></span>create() <span class="overload">[4/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a> llzk::polymorphic::ApplyMapOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::AffineExpr</td>          <td class="paramname"><span class="paramname"><em>expr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00420">420</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a105c47728f05b95f27cb42fa72b22c58" name="a105c47728f05b95f27cb42fa72b22c58"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a105c47728f05b95f27cb42fa72b22c58">&#9670;&#160;</a></span>create() <span class="overload">[5/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a> llzk::polymorphic::ApplyMapOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::AffineMap</td>          <td class="paramname"><span class="paramname"><em>map</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00402">402</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a62271c8000615e99b425303d7673cb7c" name="a62271c8000615e99b425303d7673cb7c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a62271c8000615e99b425303d7673cb7c">&#9670;&#160;</a></span>create() <span class="overload">[6/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a> llzk::polymorphic::ApplyMapOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::AffineMapAttr</td>          <td class="paramname"><span class="paramname"><em>map</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00385">385</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -473,7 +715,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Returns the affine map to be applied by this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00279">279</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00410">410</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -502,7 +744,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Returns the affine value map computed from this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00282">282</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00413">413</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -529,7 +771,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00177">177</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00302">302</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -558,7 +800,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Returns all dimension operands. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00287">287</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00418">418</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -577,7 +819,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00487">487</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00522">522</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -613,7 +855,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00300">300</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00299">299</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -632,7 +874,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00358">358</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00357">357</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -659,7 +901,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00233">233</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00358">358</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -686,7 +928,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00182">182</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00307">307</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -713,7 +955,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00186">186</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00311">311</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -740,7 +982,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00209">209</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00334">334</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -759,7 +1001,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00228">228</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00226">226</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -778,7 +1020,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00363">363</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00362">362</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -805,7 +1047,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00238">238</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00363">363</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -832,7 +1074,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00190">190</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00315">315</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -859,7 +1101,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00194">194</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00319">319</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -878,7 +1120,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00210">210</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00208">208</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -905,7 +1147,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00203">203</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00328">328</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -932,7 +1174,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00214">214</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00339">339</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -959,7 +1201,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00218">218</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00343">343</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -986,7 +1228,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00198">198</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00323">323</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1017,7 +1259,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00271">271</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00269">269</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1046,12 +1288,12 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Returns all symbol operands. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00294">294</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00425">425</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="a5af9e1d490128c3a0a84993af2a8f544" name="a5af9e1d490128c3a0a84993af2a8f544"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5af9e1d490128c3a0a84993af2a8f544">&#9670;&#160;</a></span>inferReturnTypes()</h2>
+<a id="a69230eb6d8b58173999deeb3609cd2ea" name="a69230eb6d8b58173999deeb3609cd2ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69230eb6d8b58173999deeb3609cd2ea">&#9670;&#160;</a></span>inferReturnTypes()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1082,7 +1324,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1102,7 +1344,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00435">435</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00470">470</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1133,7 +1375,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00443">443</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00478">478</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1169,7 +1411,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00321">321</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00320">320</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1188,7 +1430,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00476">476</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00511">511</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1219,7 +1461,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00342">342</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00341">341</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1255,7 +1497,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00309">309</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00308">308</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1274,7 +1516,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00368">368</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00367">367</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1301,7 +1543,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00243">243</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00368">368</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1320,7 +1562,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00372">372</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00371">371</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1347,7 +1589,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00248">248</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00373">373</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1383,7 +1625,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00234">234</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00232">232</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1438,7 +1680,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00327">327</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00326">326</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1457,7 +1699,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00429">429</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00464">464</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1476,7 +1718,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00397">397</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00432">432</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1495,7 +1737,32 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00352">352</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00351">351</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="accfd11ea4f48895e090b5591e9ee1bcc" name="accfd11ea4f48895e090b5591e9ee1bcc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#accfd11ea4f48895e090b5591e9ee1bcc">&#9670;&#160;</a></span>odsIndex_mapOperands</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::polymorphic::ApplyMapOp::odsIndex_mapOperands = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00300">300</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

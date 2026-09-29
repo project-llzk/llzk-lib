@@ -472,20 +472,20 @@ Analysis Passes</h3>
 <h5 class="doxsection"><a class="anchor" id="options"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream : Specifies the stream to which the pass prints.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-call-graph-sccs"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-call-graph-sccs"></a>
 <span class="tt">-llzk-print-call-graph-sccs</span></h4>
 <p><em>Print the SCCs from the LLZK module's call graph.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-1"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream : Specifies the stream to which the pass prints.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-constraint-dependency-graphs"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-constraint-dependency-graphs"></a>
 <span class="tt">-llzk-print-constraint-dependency-graphs</span></h4>
 <p><em>Print constraint dependency graph for all LLZK structs.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-2"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream          : Specifies the stream to which the pass prints.</div>
 <div class="line">-intraprocedural : Whether to run the analysis intra-procedurally only (default is false).</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-interval-analysis"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-interval-analysis"></a>
 <span class="tt">-llzk-print-interval-analysis</span></h4>
 <p><em>Print interval analysis results for all LLZK structs.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-3"></a>
@@ -497,21 +497,21 @@ Options</h5>
 <div class="line">-print-compute-intervals     : Whether to print compute function intervals (default only prints constrain function intervals).</div>
 <div class="line">-print-unreduced-intervals   : Whether to print tracked unreduced intervals alongside reduced interval summaries.</div>
 <div class="line">-print-ssa-intervals         : Whether to print per-SSA intervals for function arguments and scalar op results.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-predecessors"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-predecessors"></a>
 <span class="tt">-llzk-print-predecessors</span></h4>
 <p><em>Print the predecessors of all operations.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-4"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream : Specifies the stream to which the pass prints.</div>
 <div class="line">-prerun : Whether to pre-run the required dataflow analyses (e.g., liveness analysis).</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-symbol-def-tree"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-symbol-def-tree"></a>
 <span class="tt">-llzk-print-symbol-def-tree</span></h4>
 <p><em>Print symbol definition tree.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-5"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream  : Specifies the stream to which the pass prints.</div>
 <div class="line">-saveDot : Whether to dump the graph to DOT format.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-symbol-use-graph"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-symbol-use-graph"></a>
 <span class="tt">-llzk-print-symbol-use-graph</span></h4>
 <p><em>Print symbol use graph.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-6"></a>
@@ -527,30 +527,30 @@ Transformation Passes</h3>
 <h5 class="doxsection"><a class="anchor" id="options-7"></a>
 Options</h5>
 <div class="fragment"><div class="line">-root-struct : Root struct at which to start alignment (default to `@Main`)</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-duplicate-op-elim"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-duplicate-op-elim"></a>
 <span class="tt">-llzk-duplicate-op-elim</span></h4>
 <p><em>Remove redundant operations</em></p>
 <p>Remove equivalent memory-effect-free operations and duplicate LLZK constraints.</p>
-<p>Pass should be run after <span class="tt">llzk-duplicate-read-write-elim</span> for maximum effect. </p>
+<p>Pass should be run after <span class="tt">llzk-duplicate-read-write-elim</span> for maximum effect.</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-duplicate-read-write-elim"></a>
 <span class="tt">-llzk-duplicate-read-write-elim</span></h4>
 <p><em>Remove redundant reads and writes</em></p>
 <p>Remove redundant or unnecessary reads and writes to struct members, arrays, globals, and RAM. Global writes are removed when they are overwritten or write an already-known value. RAM stores require the same translated address SSA value.</p>
 <p>Struct-member accesses match only when the base, member, table offset, affine map metadata, and translated affine operands match. Omitted member-read offsets and member writes denote the current row.</p>
-<p>Stateful reads are reused when the current analysis state proves the read observes the same value. Writes and stores update that known state, while unknown or non-read state effects invalidate it. </p>
+<p>Stateful reads are reused when the current analysis state proves the read observes the same value. Writes and stores update that known state, while unknown or non-read state effects invalidate it.</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-enforce-no-overwrite"></a>
 <span class="tt">-llzk-enforce-no-overwrite</span></h4>
 <p><em>Checks that every struct member is written exactly once</em></p>
-<p>This pass currently reports an error if any struct member may not be written exactly once (i.e. overwritten or left uninitialized), and does not attempt to perform any repairs (e.g. SSA-ifying overwritten struct members, or default-initializing unwritten members). This pass overapproximates conditionals, and can result in false positives. </p>
+<p>This pass currently reports an error if any struct member may not be written exactly once (i.e. overwritten or left uninitialized), and does not attempt to perform any repairs (e.g. SSA-ifying overwritten struct members, or default-initializing unwritten members). This pass overapproximates conditionals, and can result in false positives.</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-fuse-product-control-flow"></a>
 <span class="tt">-llzk-fuse-product-control-flow</span></h4>
 <p>_Fuse matching compute/constrain control flow in a <span class="tt">@product</span> function_</p>
-<p>Fuse matching witness/constraint loops in a <span class="tt">@product</span> function </p>
+<p>Fuse matching witness/constraint loops in a <span class="tt">@product</span> function</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-free-functions"></a>
 <span class="tt">-llzk-inline-free-functions</span></h4>
 <p><em>Inline calls to free functions</em></p>
 <p>Inlines <span class="tt">function.call</span> operations inside <span class="tt">function.def</span> bodies when the target is a free <span class="tt">function.def</span> directly inside the pass's root <span class="tt">builtin.module</span>. Functions owned by nested modules or templates are also supported when every symbol reference in the function can be resolved from the root module. Calls to other nested functions, included functions, and calls outside <span class="tt">function.def</span> bodies are left unchanged. After inlining, root free functions that have no remaining symbol uses anywhere in the module are erased. This cleanup applies to every non-external root free function, regardless of its symbol visibility or whether any call to it was inlined.</p>
-<p>Inlining is best effort: free functions that participate in a call cycle are skipped (inlining one would re-materialize its calls forever). If inlining a callee fails, its remaining calls are left in place with a warning while processing continues with other callees. </p>
+<p>Inlining is best effort: free functions that participate in a call cycle are skipped (inlining one would re-materialize its calls forever). If inlining a callee fails, its remaining calls are left in place with a warning while processing continues with other callees.</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-poly-lowering-pass"></a>
 <span class="tt">-llzk-poly-lowering-pass</span></h4>
 <p><em>Lower the degree of all polynomial equations to a specified maximum</em></p>
@@ -561,14 +561,14 @@ Options</h5>
 <h5 class="doxsection"><a class="anchor" id="options-8"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-degree : Maximum degree of constraint polynomials (default 2, minimum 2)</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unused-discardable-allocations"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unused-discardable-allocations"></a>
 <span class="tt">-llzk-remove-unused-discardable-allocations</span></h4>
 <p><em>Remove unread discardable allocations and their dead stores</em></p>
 <p>Remove ops with the selected allocator operation name when they are marked with <span class="tt">MemAlloc&lt;DiscardableAllocationResource&gt;</span>, the allocation has no reads, and every direct user is a discardable allocation accessor that can be erased as a dead store.</p>
 <h5 class="doxsection"><a class="anchor" id="options-9"></a>
 Options</h5>
 <div class="fragment"><div class="line">-allocator-op : Operation name of the discardable allocator to remove</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-unused-declaration-elim"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-unused-declaration-elim"></a>
 <span class="tt">-llzk-unused-declaration-elim</span></h4>
 <p><em>Remove unused member and struct declarations</em></p>
 <p>Remove member and struct declarations that are unused within the current compilation unit. Note that this pass may cause linking issues with external modules that depend on any unused member and struct declarations from this compilation unit.</p>
@@ -576,14 +576,14 @@ Options</h5>
 <h5 class="doxsection"><a class="anchor" id="options-10"></a>
 Options</h5>
 <div class="fragment"><div class="line">-remove-structs : Whether to remove unused struct definitions as well. Requires module to declare a Main component, otherwise all components will appear unused.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-while-to-for"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-while-to-for"></a>
 <span class="tt">-llzk-while-to-for</span></h4>
 <p><em>Converts scf.while loops to equivalent scf.for loops when possible</em></p>
 <p>This pass identifies scf.while loops that have an induction variable and a uniform step, and converts them to equivalent scf.for loops, which are preferred by some analyses. This pass may introduce some spurious felt/index casts which should be cleaned up by &ndash;canonicalize.  </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-array-to-scalar"></a>
 <span class="tt">-llzk-array-to-scalar</span></h4>
 <p><em>Replace arrays with scalar values</em></p>
-<p>Replace known-shape arrays with the proper number of scalar values </p>
+<p>Replace known-shape arrays with the proper number of scalar values</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-straight-line-static-array-promotion"></a>
 <span class="tt">-llzk-straight-line-static-array-promotion</span></h4>
 <p><em>Promote straight-line static array accesses to SSA values</em></p>
@@ -594,7 +594,7 @@ Options</h5>
 <p>Replace <span class="tt">bool.forall</span> and <span class="tt">bool.exists</span> over LLZK arrays with <span class="tt">scf.for</span> loops that iterate over the first array dimension and accumulate the predicate result with <span class="tt">bool.and</span> or <span class="tt">bool.or</span>, respectively.  </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-includes"></a>
 <span class="tt">-llzk-inline-includes</span></h4>
-<p><em>Replace all IncludeOp with contents of the referenced file.</em></p>
+<p><em>Replace all IncludeOp with contents of the referenced file.</em>  </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-pcl-trim-expression-size"></a>
 <span class="tt">-pcl-trim-expression-size</span></h4>
 <p><em>Trims the size of expressions by introducing intermediates</em></p>
@@ -654,7 +654,7 @@ Options</h5>
 <p><em>Remove empty templates</em></p>
 <p>Performs the following transformations:</p><ul>
 <li>Convert templates with no constant parameters or expressions into modules.</li>
-<li>Remove templates with no struct or function definitions. </li>
+<li>Remove templates with no struct or function definitions.</li>
 </ul>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-flatten"></a>
 <span class="tt">-llzk-flatten</span></h4>
@@ -668,12 +668,12 @@ Options</h5>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-infer-tvar"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-infer-tvar"></a>
 <span class="tt">-llzk-infer-tvar</span></h4>
 <p><em>Infer concrete function types for polymorphic type variables</em></p>
 <p>Infers concrete replacements for <span class="tt">!poly.tvar</span> template parameters from operations in <span class="tt">function.def</span> or <span class="tt">poly.expr</span> bodies, such as <span class="tt">poly.unifiable_cast</span> between a type variable and a more concrete type (which means for maximum effect you should run it before other optimization passes that can remove <span class="tt">poly.unifiable_cast</span>). Rewrites affected function signatures and body types, removes redundant casts, drops resolved <span class="tt">poly.param</span> declarations, and updates call-site template parameter lists.</p>
 <p>The pass also creates template-local instantiated versions of functions for each type-variable replacement. The <span class="tt">llzk-flatten</span> pass performs similar instantiation of type variables but only as part of its more extensive lowering and flattening, all of which may not be desired in some cases (hence the utility of this pass).</p>
-<p>This pass may result in <span class="tt">poly.template</span> containing no <span class="tt">poly.param</span> or <span class="tt">poly.expr</span>. Run <span class="tt">llzk-drop-empty-templates</span> after this pass to simplify these templates. </p>
+<p>This pass may result in <span class="tt">poly.template</span> containing no <span class="tt">poly.param</span> or <span class="tt">poly.expr</span>. Run <span class="tt">llzk-drop-empty-templates</span> after this pass to simplify these templates.</p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-specialize-wildcard-arrays"></a>
 <span class="tt">-llzk-specialize-wildcard-arrays</span></h4>
 <p><em>Refine wildcard array casts and specialize concrete call targets</em></p>
@@ -862,15 +862,15 @@ Preprocessing</h4>
 <p>Template parameters and affine instantiations are therefore supported only when they can be fully resolved by the preprocessing pipeline before execution.</p>
 <h1 class="doxsection"><a class="anchor" id="llzk-smt-check"></a>
 llzk-smt-check</h1>
-<p><span class="tt">llzk-smt-check</span> runs an external SMT solver on an SMT-LIB 2 script and reports the result of each <span class="tt">check-sat</span> stage. It is intended to consume the staged SMT-LIB emitted by <span class="tt">llzk-opt --smt-to-smtlib</span>, including explicit metadata produced from <span class="tt">smt.set_info</span> ops such as <span class="tt">(set-info :llzk-stage "pre")</span> and <span class="tt">(set-info :status unsat)</span>.</p>
+<p><span class="tt">llzk-smt-check</span> runs an external SMT solver on an SMT-LIB 2 script and reports the result of each <span class="tt">check-sat</span> stage. It is intended to consume the staged SMT-LIB emitted by <span class="tt">llzk-opt --smt-to-smtlib</span>, including explicit metadata produced from <span class="tt">smt_info.set</span> ops such as <span class="tt">(set-info :llzk-stage "pre")</span> and <span class="tt">(set-info :status unsat)</span>.</p>
 <h4 class="doxsection"><a class="anchor" id="basic-usage-1"></a>
 Basic Usage</h4>
 <div class="fragment"><div class="line">llzk-smt-check input.smt2</div>
 <div class="line">llzk-opt --smt-to-smtlib -o /dev/null input.llzk | llzk-smt-check -</div>
-</div><!-- fragment --><p><span class="tt">--smt-to-smtlib</span> exports the unique top-level <span class="tt">smt.solver</span> directly contained in the root <span class="tt">builtin.module</span>. Module-scope <span class="tt">func.func</span> definitions are treated as helpers that may be called from within that solver body. Exported scripts preserve any <span class="tt">smt.set_logic</span> operation in that solver and otherwise begin with the conservative fallback <span class="tt">(set-logic ALL)</span>. Any staged metadata consumed by <span class="tt">llzk-smt-check</span> must be introduced explicitly in the SMT dialect IR using <span class="tt">smt.set_info</span>, for example:</p>
-<div class="fragment"><div class="line">smt.set_info &quot;:llzk-root&quot; &quot;CheckGate&quot;</div>
-<div class="line">smt.set_info &quot;:llzk-stage&quot; &quot;pre&quot;</div>
-<div class="line">smt.set_info &quot;:status&quot; unsat</div>
+</div><!-- fragment --><p><span class="tt">--smt-to-smtlib</span> exports the unique top-level <span class="tt">smt.solver</span> directly contained in the root <span class="tt">builtin.module</span>. Module-scope <span class="tt">func.func</span> definitions are treated as helpers that may be called from within that solver body. Exported scripts preserve any <span class="tt">smt.set_logic</span> operation in that solver and otherwise begin with the conservative fallback <span class="tt">(set-logic ALL)</span>. Any staged metadata consumed by <span class="tt">llzk-smt-check</span> must be introduced explicitly in the SMT dialect IR using <span class="tt">smt_info.set</span>, for example:</p>
+<div class="fragment"><div class="line">smt_info.set &quot;:llzk-root&quot; &quot;CheckGate&quot;</div>
+<div class="line">smt_info.set &quot;:llzk-stage&quot; &quot;pre&quot;</div>
+<div class="line">smt_info.set &quot;:status&quot; unsat</div>
 </div><!-- fragment --><p><span class="tt">smt.check</span> lowers only to a bare <span class="tt">(check-sat)</span>. Because SMT-LIB scripts cannot branch on <span class="tt">check-sat</span> results internally, <span class="tt">--smt-to-smtlib</span> accepts only <span class="tt">smt.check</span> operations whose <span class="tt">sat</span>, <span class="tt">unknown</span>, and <span class="tt">unsat</span> regions are empty. Result-dependent script behavior would need a higher-level driver format outside SMT-LIB.</p>
 <h4 class="doxsection"><a class="anchor" id="llzk-specific-options-3"></a>
 LLZK-Specific Options</h4>

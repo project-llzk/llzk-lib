@@ -146,9 +146,10 @@ Collaboration diagram for llzk::boolean::YieldOpGenericAdaptor&lt; RangeT &gt;:<
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afabd446b7bf0a4584e6ce1705bfc8640" id="r_afabd446b7bf0a4584e6ce1705bfc8640"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#afabd446b7bf0a4584e6ce1705bfc8640">YieldOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:abbf3ee62180c036bda3b6f17db10d571" id="r_abbf3ee62180c036bda3b6f17db10d571"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#abbf3ee62180c036bda3b6f17db10d571">YieldOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a313654810115b9c164d6da71a6161f06" id="r_a313654810115b9c164d6da71a6161f06"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a313654810115b9c164d6da71a6161f06">YieldOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5cf2e61a90faf6a457701a86f08c4858">YieldOpGenericAdaptorBase</a> &amp;base)</td></tr>
+<tr class="memitem:ab909ab0786e425fa4aac508b27ab5072" id="r_ab909ab0786e425fa4aac508b27ab5072"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ab909ab0786e425fa4aac508b27ab5072">YieldOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5d3061d493336926b168a6b1310dac51">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:ad82bc309038206907749efc7b03e2f24" id="r_ad82bc309038206907749efc7b03e2f24"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad82bc309038206907749efc7b03e2f24">YieldOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a2e4e2acc8e60bdf6b04c0f5d1c0b5e81" id="r_a2e4e2acc8e60bdf6b04c0f5d1c0b5e81"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a2e4e2acc8e60bdf6b04c0f5d1c0b5e81">YieldOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
+<tr class="memitem:a313654810115b9c164d6da71a6161f06" id="r_a313654810115b9c164d6da71a6161f06"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a313654810115b9c164d6da71a6161f06">YieldOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#af978c78afcea5eecd6e91e79ec2b3bdf">YieldOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a6211123923b08a30a993e0904abb2027" id="r_a6211123923b08a30a993e0904abb2027"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = YieldOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, YieldOp&gt;&gt;&gt; </td></tr>
 <tr class="memitem:a6211123923b08a30a993e0904abb2027 template"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a6211123923b08a30a993e0904abb2027">YieldOpGenericAdaptor</a> (RangeT values, LateInst op)</td></tr>
 <tr class="memitem:a04f761f7f1f53e5b20bae748ee8a882a" id="r_a04f761f7f1f53e5b20bae748ee8a882a"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a04f761f7f1f53e5b20bae748ee8a882a">getODSOperandIndexAndLength</a> (unsigned index)</td></tr>
@@ -156,68 +157,29 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad40681d4e6b05bb10e24f459c5d413d9" id="r_ad40681d4e6b05bb10e24f459c5d413d9"><td class="memItemLeft">ValueT&#160;</td><td class="memItemRight"><a class="el" href="#ad40681d4e6b05bb10e24f459c5d413d9">getValue</a> ()</td></tr>
 <tr class="memitem:a942c87e824f211b9dc2a060ed9bd2bef" id="r_a942c87e824f211b9dc2a060ed9bd2bef"><td class="memItemLeft">RangeT&#160;</td><td class="memItemRight"><a class="el" href="#a942c87e824f211b9dc2a060ed9bd2bef">getOperands</a> ()</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase"><td colspan="2">Public Member Functions inherited from <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html">llzk::boolean::detail::YieldOpGenericAdaptorBase</a></td></tr>
-<tr class="memitem:a5cf2e61a90faf6a457701a86f08c4858 pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a5cf2e61a90faf6a457701a86f08c4858"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5cf2e61a90faf6a457701a86f08c4858">YieldOpGenericAdaptorBase</a> (::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:a25b2080af902a1427cdb919fd702f817 pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a25b2080af902a1427cdb919fd702f817"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a25b2080af902a1427cdb919fd702f817">YieldOpGenericAdaptorBase</a> (::mlir::Operation *op)</td></tr>
+<tr class="memitem:af978c78afcea5eecd6e91e79ec2b3bdf pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_af978c78afcea5eecd6e91e79ec2b3bdf"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#af978c78afcea5eecd6e91e79ec2b3bdf">YieldOpGenericAdaptorBase</a> (::mlir::DictionaryAttr attrs, const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5d3061d493336926b168a6b1310dac51">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a10e3f9827a2cfe9b24a0594f99344921 pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a10e3f9827a2cfe9b24a0594f99344921"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a10e3f9827a2cfe9b24a0594f99344921">YieldOpGenericAdaptorBase</a> (<a class="el" href="classllzk_1_1boolean_1_1YieldOp.html">YieldOp</a> op)</td></tr>
 <tr class="memitem:a8404e49ccbe50fa5d2d5dd9154649b8f pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a8404e49ccbe50fa5d2d5dd9154649b8f"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a8404e49ccbe50fa5d2d5dd9154649b8f">getODSOperandIndexAndLength</a> (unsigned index, unsigned odsOperandsSize)</td></tr>
+<tr class="memitem:a56bd42d488518803767f078ec7679571 pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a56bd42d488518803767f078ec7679571"><td class="memItemLeft">const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5d3061d493336926b168a6b1310dac51">Properties</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a56bd42d488518803767f078ec7679571">getProperties</a> ()</td></tr>
 <tr class="memitem:a6b39e9a684fc140e75779583f12e557b pub_methods_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a6b39e9a684fc140e75779583f12e557b"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a6b39e9a684fc140e75779583f12e557b">getAttributes</a> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase"><td colspan="2">Public Types inherited from <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html">llzk::boolean::detail::YieldOpGenericAdaptorBase</a></td></tr>
+<tr class="memitem:a5d3061d493336926b168a6b1310dac51 pub_types_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a5d3061d493336926b168a6b1310dac51"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5d3061d493336926b168a6b1310dac51">Properties</a> = ::mlir::EmptyProperties</td></tr>
 <tr class="inherit_header pro_attribs_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase"><td colspan="2">Protected Attributes inherited from <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html">llzk::boolean::detail::YieldOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:a8abb2f7d82ffef3d469e6dbca22b5cb4 pro_attribs_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a8abb2f7d82ffef3d469e6dbca22b5cb4"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a8abb2f7d82ffef3d469e6dbca22b5cb4">odsAttrs</a></td></tr>
 <tr class="memitem:a34e54b49cf53c2603d30ba44891600ae pro_attribs_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_a34e54b49cf53c2603d30ba44891600ae"><td class="memItemLeft">::std::optional&lt;::mlir::OperationName &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a34e54b49cf53c2603d30ba44891600ae">odsOpName</a></td></tr>
+<tr class="memitem:af97fa1c34e51d6c647659e6623adc3bc pro_attribs_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_af97fa1c34e51d6c647659e6623adc3bc"><td class="memItemLeft"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5d3061d493336926b168a6b1310dac51">Properties</a>&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#af97fa1c34e51d6c647659e6623adc3bc">properties</a></td></tr>
 <tr class="memitem:ade689e71c185e98b2b650b494ababe21 pro_attribs_classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" id="r_ade689e71c185e98b2b650b494ababe21"><td class="memItemLeft">::mlir::RegionRange&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#ade689e71c185e98b2b650b494ababe21">odsRegions</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename RangeT&gt;<br />
 class llzk::boolean::YieldOpGenericAdaptor&lt; RangeT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01562">1562</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01940">1940</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="afabd446b7bf0a4584e6ce1705bfc8640" name="afabd446b7bf0a4584e6ce1705bfc8640"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afabd446b7bf0a4584e6ce1705bfc8640">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[1/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename RangeT&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html">llzk::boolean::YieldOpGenericAdaptor</a>&lt; RangeT &gt;::YieldOpGenericAdaptor </td>
-          <td>(</td>
-          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const ::mlir::EmptyProperties &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::RegionRange</td>          <td class="paramname"><span class="paramname"><em>regions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01566">1566</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="abbf3ee62180c036bda3b6f17db10d571" name="abbf3ee62180c036bda3b6f17db10d571"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abbf3ee62180c036bda3b6f17db10d571">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[2/4]</span></h2>
+<a id="ab909ab0786e425fa4aac508b27ab5072" name="ab909ab0786e425fa4aac508b27ab5072"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab909ab0786e425fa4aac508b27ab5072">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -240,7 +202,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5d3061d493336926b168a6b1310dac51">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -255,12 +217,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01568">1568</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01945">1945</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="a313654810115b9c164d6da71a6161f06" name="a313654810115b9c164d6da71a6161f06"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a313654810115b9c164d6da71a6161f06">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[3/4]</span></h2>
+<a id="ad82bc309038206907749efc7b03e2f24" name="ad82bc309038206907749efc7b03e2f24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad82bc309038206907749efc7b03e2f24">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -278,7 +240,17 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#a5cf2e61a90faf6a457701a86f08c4858">YieldOpGenericAdaptorBase</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>&#160;)</td>
+          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::RegionRange</td>          <td class="paramname"><span class="paramname"><em>regions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -288,12 +260,78 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01570">1570</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01947">1947</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2e4e2acc8e60bdf6b04c0f5d1c0b5e81" name="a2e4e2acc8e60bdf6b04c0f5d1c0b5e81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e4e2acc8e60bdf6b04c0f5d1c0b5e81">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[3/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename RangeT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html">llzk::boolean::YieldOpGenericAdaptor</a>&lt; RangeT &gt;::YieldOpGenericAdaptor </td>
+          <td>(</td>
+          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01949">1949</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a313654810115b9c164d6da71a6161f06" name="a313654810115b9c164d6da71a6161f06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a313654810115b9c164d6da71a6161f06">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[4/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename RangeT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html">llzk::boolean::YieldOpGenericAdaptor</a>&lt; RangeT &gt;::YieldOpGenericAdaptor </td>
+          <td>(</td>
+          <td class="paramtype">RangeT</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html#af978c78afcea5eecd6e91e79ec2b3bdf">YieldOpGenericAdaptorBase</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01951">1951</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a id="a6211123923b08a30a993e0904abb2027" name="a6211123923b08a30a993e0904abb2027"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6211123923b08a30a993e0904abb2027">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[4/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a6211123923b08a30a993e0904abb2027">&#9670;&#160;</a></span>YieldOpGenericAdaptor() <span class="overload">[5/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -323,7 +361,7 @@ template&lt;typename LateInst = YieldOp, typename = std::enable_if_t&lt;std::is_
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01573">1573</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01954">1954</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -353,7 +391,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01575">1575</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01956">1956</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -382,7 +420,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01579">1579</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01960">1960</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -411,7 +449,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01589">1589</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01970">1970</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -440,7 +478,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01585">1585</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html#l01966">1966</a> of file <a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

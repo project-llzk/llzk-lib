@@ -3,6 +3,7 @@ var classllzk_1_1boolean_1_1ExistsOp =
     [ "Adaptor", "classllzk_1_1boolean_1_1ExistsOp.html#addedfe1c5899d6905f7448a6cc4bd34f", null ],
     [ "FoldAdaptor", "classllzk_1_1boolean_1_1ExistsOp.html#a437b830305cb4d345b45a18bb6035654", null ],
     [ "GenericAdaptor", "classllzk_1_1boolean_1_1ExistsOp.html#a068a6474822bbfc10d4f347c0418dbe3", null ],
+    [ "Properties", "classllzk_1_1boolean_1_1ExistsOp.html#a268337ca2550583f1bcfc99ad0912023", null ],
     [ "getAttributeNames", "classllzk_1_1boolean_1_1ExistsOp.html#ac1d66fdb5126f7aa13d5c6fcbe2b9903", null ],
     [ "getEffects", "classllzk_1_1boolean_1_1ExistsOp.html#a51ce7b15060df7669d7c2c8f52357a16", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1boolean_1_1ExistsOp.html#a6a7dab6f4ec36fdd33b2503718722b68", null ],

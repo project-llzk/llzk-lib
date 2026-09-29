@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1c
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1component_1_1MemberWriteOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::component::MemberWriteOp Class Reference</div></div>
 </div><!--header-->
@@ -194,15 +195,33 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aee159e9f4414f2e9d2a15688f2d07da9" id="r_aee159e9f4414f2e9d2a15688f2d07da9"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aee159e9f4414f2e9d2a15688f2d07da9">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a88d7cdbd39fb0ae5fcc434c8a2199d5b" id="r_a88d7cdbd39fb0ae5fcc434c8a2199d5b"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a88d7cdbd39fb0ae5fcc434c8a2199d5b">readProperties</a> (::mlir::DialectBytecodeReader &amp;reader, ::mlir::OperationState &amp;state)</td></tr>
 <tr class="memitem:a90e2dd48ba3813a7be687d88d829e438" id="r_a90e2dd48ba3813a7be687d88d829e438"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a90e2dd48ba3813a7be687d88d829e438">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value component, ::mlir::FlatSymbolRefAttr member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:ad704ae0ee410246d7fc5d67d95926260" id="r_ad704ae0ee410246d7fc5d67d95926260"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ad704ae0ee410246d7fc5d67d95926260">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Value component, ::mlir::FlatSymbolRefAttr member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:a507bb72595ed86b2f9521a99e5b31605" id="r_a507bb72595ed86b2f9521a99e5b31605"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a507bb72595ed86b2f9521a99e5b31605">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Value component, ::mlir::FlatSymbolRefAttr member_name, ::mlir::Value val)</td></tr>
 <tr class="memitem:a00275263ea6a66ba8ff1b9279b316176" id="r_a00275263ea6a66ba8ff1b9279b316176"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a00275263ea6a66ba8ff1b9279b316176">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value component, ::mlir::FlatSymbolRefAttr member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:aa81b1d3232259489d614a92e13f6b24b" id="r_aa81b1d3232259489d614a92e13f6b24b"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aa81b1d3232259489d614a92e13f6b24b">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value component, ::mlir::FlatSymbolRefAttr member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:a2e170dd8a4e92031bb524e2f7fa3e1ea" id="r_a2e170dd8a4e92031bb524e2f7fa3e1ea"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a2e170dd8a4e92031bb524e2f7fa3e1ea">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value component, ::mlir::FlatSymbolRefAttr member_name, ::mlir::Value val)</td></tr>
 <tr class="memitem:a14f56cf706dc05c1dae2ebca0eae626d" id="r_a14f56cf706dc05c1dae2ebca0eae626d"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a14f56cf706dc05c1dae2ebca0eae626d">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value component, ::llvm::StringRef member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:ae7a8e8ce86b0127c3b88c2d86475923d" id="r_ae7a8e8ce86b0127c3b88c2d86475923d"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ae7a8e8ce86b0127c3b88c2d86475923d">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Value component, ::llvm::StringRef member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:ae7f2971b81cdaa27d6335a27a1eceec4" id="r_ae7f2971b81cdaa27d6335a27a1eceec4"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ae7f2971b81cdaa27d6335a27a1eceec4">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Value component, ::llvm::StringRef member_name, ::mlir::Value val)</td></tr>
 <tr class="memitem:a92ea6af003d7b38bc163982744af56c5" id="r_a92ea6af003d7b38bc163982744af56c5"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a92ea6af003d7b38bc163982744af56c5">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value component, ::llvm::StringRef member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:aab2ce64df993e29c0bc8e65c9f011d86" id="r_aab2ce64df993e29c0bc8e65c9f011d86"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aab2ce64df993e29c0bc8e65c9f011d86">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value component, ::llvm::StringRef member_name, ::mlir::Value val)</td></tr>
+<tr class="memitem:a5a29ec80bbec52438867a48cac184a96" id="r_a5a29ec80bbec52438867a48cac184a96"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a5a29ec80bbec52438867a48cac184a96">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value component, ::llvm::StringRef member_name, ::mlir::Value val)</td></tr>
 <tr class="memitem:af4783db6b2a1f8acbf114686329d8dc0" id="r_af4783db6b2a1f8acbf114686329d8dc0"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#af4783db6b2a1f8acbf114686329d8dc0">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:acf2e302e477669519720f4c36ef7c4b9" id="r_acf2e302e477669519720f4c36ef7c4b9"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#acf2e302e477669519720f4c36ef7c4b9">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:afd543a2599407ab1516e26c00987765d" id="r_afd543a2599407ab1516e26c00987765d"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#afd543a2599407ab1516e26c00987765d">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:af5eff0fdc97a5b737949d27df44e3ba1" id="r_af5eff0fdc97a5b737949d27df44e3ba1"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#af5eff0fdc97a5b737949d27df44e3ba1">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a4612a22bf23b5a3a8a459bd3249355dc">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a2f07b6db66cd549f115b20487fc49ddc" id="r_a2f07b6db66cd549f115b20487fc49ddc"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a2f07b6db66cd549f115b20487fc49ddc">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a4612a22bf23b5a3a8a459bd3249355dc">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a6def72ae4953e5754a0d749e5fb9ec33" id="r_a6def72ae4953e5754a0d749e5fb9ec33"><td class="memItemLeft">static <a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a6def72ae4953e5754a0d749e5fb9ec33">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a4612a22bf23b5a3a8a459bd3249355dc">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
 <tr class="memitem:aef03d74123a8b51b6590bfeb3790caad" id="r_aef03d74123a8b51b6590bfeb3790caad"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#aef03d74123a8b51b6590bfeb3790caad">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:aa24ec73c4b5aa485a646a3866dc01af3" id="r_aa24ec73c4b5aa485a646a3866dc01af3"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#aa24ec73c4b5aa485a646a3866dc01af3">odsIndex_component</a> = 0</td></tr>
+<tr class="memitem:a91be0ec0478d24f64ced3dc995dc1ac6" id="r_a91be0ec0478d24f64ced3dc995dc1ac6"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a91be0ec0478d24f64ced3dc995dc1ac6">odsIndex_val</a> = 1</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00920">920</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01096">1096</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="adb684abfc2e047b0beb1d81b90b2ff08" name="adb684abfc2e047b0beb1d81b90b2ff08"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adb684abfc2e047b0beb1d81b90b2ff08">&#9670;&#160;</a></span>Adaptor</h2>
@@ -216,7 +235,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00924">924</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01100">1100</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -232,7 +251,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00927">927</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01103">1103</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -250,7 +269,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00926">926</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01102">1102</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -266,13 +285,13 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00928">928</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01106">1106</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="af4783db6b2a1f8acbf114686329d8dc0" name="af4783db6b2a1f8acbf114686329d8dc0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af4783db6b2a1f8acbf114686329d8dc0">&#9670;&#160;</a></span>build() <span class="overload">[1/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af4783db6b2a1f8acbf114686329d8dc0">&#9670;&#160;</a></span>build() <span class="overload">[1/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -313,12 +332,63 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01356">1356</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01621">1621</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af5eff0fdc97a5b737949d27df44e3ba1" name="af5eff0fdc97a5b737949d27df44e3ba1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5eff0fdc97a5b737949d27df44e3ba1">&#9670;&#160;</a></span>build() <span class="overload">[2/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::component::MemberWriteOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a4612a22bf23b5a3a8a459bd3249355dc">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01651">1651</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a92ea6af003d7b38bc163982744af56c5" name="a92ea6af003d7b38bc163982744af56c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a92ea6af003d7b38bc163982744af56c5">&#9670;&#160;</a></span>build() <span class="overload">[2/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a92ea6af003d7b38bc163982744af56c5">&#9670;&#160;</a></span>build() <span class="overload">[3/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -364,12 +434,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01348">1348</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01601">1601</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a00275263ea6a66ba8ff1b9279b316176" name="a00275263ea6a66ba8ff1b9279b316176"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a00275263ea6a66ba8ff1b9279b316176">&#9670;&#160;</a></span>build() <span class="overload">[3/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a00275263ea6a66ba8ff1b9279b316176">&#9670;&#160;</a></span>build() <span class="overload">[4/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -415,12 +485,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01334">1334</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01563">1563</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a14f56cf706dc05c1dae2ebca0eae626d" name="a14f56cf706dc05c1dae2ebca0eae626d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14f56cf706dc05c1dae2ebca0eae626d">&#9670;&#160;</a></span>build() <span class="overload">[4/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a14f56cf706dc05c1dae2ebca0eae626d">&#9670;&#160;</a></span>build() <span class="overload">[5/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -461,12 +531,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01342">1342</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01583">1583</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a90e2dd48ba3813a7be687d88d829e438" name="a90e2dd48ba3813a7be687d88d829e438"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a90e2dd48ba3813a7be687d88d829e438">&#9670;&#160;</a></span>build() <span class="overload">[5/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a90e2dd48ba3813a7be687d88d829e438">&#9670;&#160;</a></span>build() <span class="overload">[6/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -507,7 +577,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01328">1328</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01545">1545</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -534,7 +604,559 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01276">1276</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01492">1492</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a5a29ec80bbec52438867a48cac184a96" name="a5a29ec80bbec52438867a48cac184a96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a29ec80bbec52438867a48cac184a96">&#9670;&#160;</a></span>create() <span class="overload">[1/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01617">1617</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2e170dd8a4e92031bb524e2f7fa3e1ea" name="a2e170dd8a4e92031bb524e2f7fa3e1ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e170dd8a4e92031bb524e2f7fa3e1ea">&#9670;&#160;</a></span>create() <span class="overload">[2/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01579">1579</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="afd543a2599407ab1516e26c00987765d" name="afd543a2599407ab1516e26c00987765d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afd543a2599407ab1516e26c00987765d">&#9670;&#160;</a></span>create() <span class="overload">[3/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01647">1647</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a6def72ae4953e5754a0d749e5fb9ec33" name="a6def72ae4953e5754a0d749e5fb9ec33"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6def72ae4953e5754a0d749e5fb9ec33">&#9670;&#160;</a></span>create() <span class="overload">[4/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a4612a22bf23b5a3a8a459bd3249355dc">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01668">1668</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ae7f2971b81cdaa27d6335a27a1eceec4" name="ae7f2971b81cdaa27d6335a27a1eceec4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7f2971b81cdaa27d6335a27a1eceec4">&#9670;&#160;</a></span>create() <span class="overload">[5/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01597">1597</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a507bb72595ed86b2f9521a99e5b31605" name="a507bb72595ed86b2f9521a99e5b31605"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a507bb72595ed86b2f9521a99e5b31605">&#9670;&#160;</a></span>create() <span class="overload">[6/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01559">1559</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aab2ce64df993e29c0bc8e65c9f011d86" name="aab2ce64df993e29c0bc8e65c9f011d86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab2ce64df993e29c0bc8e65c9f011d86">&#9670;&#160;</a></span>create() <span class="overload">[7/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01609">1609</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa81b1d3232259489d614a92e13f6b24b" name="aa81b1d3232259489d614a92e13f6b24b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa81b1d3232259489d614a92e13f6b24b">&#9670;&#160;</a></span>create() <span class="overload">[8/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01571">1571</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="acf2e302e477669519720f4c36ef7c4b9" name="acf2e302e477669519720f4c36ef7c4b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf2e302e477669519720f4c36ef7c4b9">&#9670;&#160;</a></span>create() <span class="overload">[9/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01639">1639</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2f07b6db66cd549f115b20487fc49ddc" name="a2f07b6db66cd549f115b20487fc49ddc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f07b6db66cd549f115b20487fc49ddc">&#9670;&#160;</a></span>create() <span class="overload">[10/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a4612a22bf23b5a3a8a459bd3249355dc">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01660">1660</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ae7a8e8ce86b0127c3b88c2d86475923d" name="ae7a8e8ce86b0127c3b88c2d86475923d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7a8e8ce86b0127c3b88c2d86475923d">&#9670;&#160;</a></span>create() <span class="overload">[11/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01589">1589</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ad704ae0ee410246d7fc5d67d95926260" name="ad704ae0ee410246d7fc5d67d95926260"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad704ae0ee410246d7fc5d67d95926260">&#9670;&#160;</a></span>create() <span class="overload">[12/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> llzk::component::MemberWriteOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>member_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01551">1551</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -561,7 +1183,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00929">929</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01107">1107</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -588,7 +1210,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00956">956</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01134">1134</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -615,7 +1237,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00964">964</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01142">1142</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -634,7 +1256,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01499">1499</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01797">1797</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -670,7 +1292,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01281">1281</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01498">1498</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -699,7 +1321,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Gets the definition for the <span class="tt">member</span> referenced in this op. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01030">1030</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01221">1221</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -718,7 +1340,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01319">1319</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01536">1536</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -745,7 +1367,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00993">993</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01171">1171</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -772,7 +1394,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00934">934</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01112">1112</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -799,7 +1421,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00938">938</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01116">1116</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -826,7 +1448,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00946">946</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01124">1124</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -853,7 +1475,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00950">950</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01128">1128</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -880,7 +1502,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00974">974</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01152">1152</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -907,7 +1529,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00978">978</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01156">1156</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -934,7 +1556,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00942">942</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01120">1120</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -965,7 +1587,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01260">1260</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01476">1476</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -992,7 +1614,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00960">960</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01138">1138</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1019,7 +1641,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00969">969</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01147">1147</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1040,7 +1662,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01504">1504</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01802">1802</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1071,7 +1693,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01402">1402</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01700">1700</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1107,7 +1729,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01294">1294</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01511">1511</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1126,7 +1748,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01467">1467</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01765">1765</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1157,7 +1779,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01307">1307</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01524">1524</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1193,7 +1815,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01287">1287</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01504">1504</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1212,7 +1834,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01324">1324</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01541">1541</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1239,7 +1861,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00998">998</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01176">1176</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1275,7 +1897,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01237">1237</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01453">1453</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1311,7 +1933,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01298">1298</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01515">1515</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1330,7 +1952,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01398">1398</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01696">1696</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1349,7 +1971,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01374">1374</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01672">1672</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1368,7 +1990,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00737">737</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00739">739</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1387,7 +2009,56 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01314">1314</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01531">1531</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="aa24ec73c4b5aa485a646a3866dc01af3" name="aa24ec73c4b5aa485a646a3866dc01af3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa24ec73c4b5aa485a646a3866dc01af3">&#9670;&#160;</a></span>odsIndex_component</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::component::MemberWriteOp::odsIndex_component = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01104">1104</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a91be0ec0478d24f64ced3dc995dc1ac6" name="a91be0ec0478d24f64ced3dc995dc1ac6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a91be0ec0478d24f64ced3dc995dc1ac6">&#9670;&#160;</a></span>odsIndex_val</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::component::MemberWriteOp::odsIndex_val = 1</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l01105">1105</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

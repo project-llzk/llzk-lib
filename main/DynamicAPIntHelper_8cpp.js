@@ -9,6 +9,7 @@ var DynamicAPIntHelper_8cpp =
     [ "llzk::operator|", "namespacellzk.html#a92b8f56629d729dd2462d2385bdd7094", null ],
     [ "llzk::toAPInt", "namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6", null ],
     [ "llzk::toAPSInt", "namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56", null ],
+    [ "llzk::toDynamicAPInt", "namespacellzk.html#aa1ac1cda97a61a9c7773b936e2b5a8a2", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#a6487238a0c9232afbc011cfbe1f93cce", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b", null ],
     [ "llzk::toExactWidthAPInt", "namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27", null ]

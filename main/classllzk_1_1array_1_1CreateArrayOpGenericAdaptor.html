@@ -147,7 +147,7 @@ Collaboration diagram for llzk::array::CreateArrayOpGenericAdaptor&lt; RangeT &g
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9bc3e181f83d2bc81326f1eed1aae62f" id="r_a9bc3e181f83d2bc81326f1eed1aae62f"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a9bc3e181f83d2bc81326f1eed1aae62f">CreateArrayOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:af8815809997f34b93d21dd399dfbd772" id="r_af8815809997f34b93d21dd399dfbd772"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#af8815809997f34b93d21dd399dfbd772">CreateArrayOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a48b48684ee480d4590cea4a53346d1b5" id="r_a48b48684ee480d4590cea4a53346d1b5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a48b48684ee480d4590cea4a53346d1b5">CreateArrayOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:adc815041048bedece4f003ab2d07a1bc" id="r_adc815041048bedece4f003ab2d07a1bc"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#adc815041048bedece4f003ab2d07a1bc">CreateArrayOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs)</td></tr>
 <tr class="memitem:a4330021adb96b6351ac796973900325b" id="r_a4330021adb96b6351ac796973900325b"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a4330021adb96b6351ac796973900325b">CreateArrayOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase.html#adfbe47492234aa2f77ca5054ed18439f">CreateArrayOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a7b2c8f51a0ab616a21c5f484756a1519" id="r_a7b2c8f51a0ab616a21c5f484756a1519"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = CreateArrayOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, CreateArrayOp&gt;&gt;&gt; </td></tr>
@@ -179,7 +179,7 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename RangeT&gt;<br />
 class llzk::array::CreateArrayOpGenericAdaptor&lt; RangeT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00284">284</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00481">481</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a9bc3e181f83d2bc81326f1eed1aae62f" name="a9bc3e181f83d2bc81326f1eed1aae62f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9bc3e181f83d2bc81326f1eed1aae62f">&#9670;&#160;</a></span>CreateArrayOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
@@ -220,12 +220,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00288">288</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00487">487</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="af8815809997f34b93d21dd399dfbd772" name="af8815809997f34b93d21dd399dfbd772"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af8815809997f34b93d21dd399dfbd772">&#9670;&#160;</a></span>CreateArrayOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
+<a id="a48b48684ee480d4590cea4a53346d1b5" name="a48b48684ee480d4590cea4a53346d1b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48b48684ee480d4590cea4a53346d1b5">&#9670;&#160;</a></span>CreateArrayOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -248,7 +248,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -263,7 +263,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00290">290</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00489">489</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -296,7 +296,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00292">292</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00491">491</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -329,7 +329,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00294">294</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00493">493</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -364,7 +364,7 @@ template&lt;typename LateInst = CreateArrayOp, typename = std::enable_if_t&lt;st
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00297">297</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00496">496</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00309">309</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00508">508</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -423,7 +423,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00313">313</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00512">512</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -452,7 +452,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00299">299</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00498">498</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -481,7 +481,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00303">303</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00502">502</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -510,7 +510,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00325">325</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00524">524</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

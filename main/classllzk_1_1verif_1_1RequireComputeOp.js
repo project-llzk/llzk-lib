@@ -3,6 +3,7 @@ var classllzk_1_1verif_1_1RequireComputeOp =
     [ "Adaptor", "classllzk_1_1verif_1_1RequireComputeOp.html#a4030d725543cef3b0a8e7e5883593b20", null ],
     [ "FoldAdaptor", "classllzk_1_1verif_1_1RequireComputeOp.html#a420dc43e4d601c83bec462ac81ad2244", null ],
     [ "GenericAdaptor", "classllzk_1_1verif_1_1RequireComputeOp.html#a4ba9653e821284ab82e96ae2835f9192", null ],
+    [ "Properties", "classllzk_1_1verif_1_1RequireComputeOp.html#aeaf41f51e4688ff287ac2ee660755b1e", null ],
     [ "getAttributeNames", "classllzk_1_1verif_1_1RequireComputeOp.html#aafb14d5d9e4e06711a73d6611ed6ffb2", null ],
     [ "getCondition", "classllzk_1_1verif_1_1RequireComputeOp.html#ab78c1fd89812d7677ced49604e41524c", null ],
     [ "getConditionMutable", "classllzk_1_1verif_1_1RequireComputeOp.html#aec607394ff3e3c16afeac007fda353ba", null ],

@@ -2,8 +2,8 @@ var structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properti
 [
     [ "constantTy", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a6db04b04dd01ccec319e5e91b5056f5c", null ],
     [ "name_refTy", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a5dcf916729c1b671d24ca181418f1c18", null ],
-    [ "getConstant", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#ab68601350e27be8a4dbdbeef0563106e", null ],
-    [ "getNameRef", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a5db1d0761512c22ebf46369701b11c4c", null ],
+    [ "getConstant", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#aa168d8ce7a3df86c6596eb32e7c85f4c", null ],
+    [ "getNameRef", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#aca6f8d87bba4e274ce12a8530c0eadde", null ],
     [ "operator!=", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a4c2823c14d255a6b4d26194259967ef2", null ],
     [ "operator==", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#aa14f5768d4ac0100051a64a5102cb8de", null ],
     [ "setConstant", "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a7609349889099ab505a81855ab6e2c23", null ],

@@ -139,14 +139,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPIGen_8c
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">//</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="comment">//</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">// EnumCAPIGen generates C API enum declarations from EnumAttr definitions</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">// EnumCAPIGen generates C API enum declarations from EnumInfo definitions</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="comment">// in TableGen files. This allows exposing MLIR enum attributes to C APIs.</span></div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">//</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="CommonCAPIGen_8h.html">CommonCAPIGen.h</a>&quot;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mlir/TableGen/Attribute.h&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mlir/TableGen/EnumInfo.h&gt;</span></div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;mlir/TableGen/GenInfo.h&gt;</span></div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPIGen_8c
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    caseLabels.clear();</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  }</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span> genCaseLabel(<span class="keyword">const</span> EnumAttrCase &amp;enumCase) {</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span> genCaseLabel(<span class="keyword">const</span> EnumCase &amp;enumCase) {</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">char</span> fmt[] = <span class="stringliteral">&quot;  /// `{0}{2}`\n  {1}_{2} = {3}&quot;</span>;</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    assert(!cEnumName.empty() &amp;&amp; <span class="stringliteral">&quot;cEnumName must be set&quot;</span>);</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    assert(!cppQualifiedPrefix.empty() &amp;&amp; <span class="stringliteral">&quot;cppQualifiedPrefix must be set&quot;</span>);</div>
@@ -237,24 +237,24 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPIGen_8c
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  EnumHeaderGenerator generator(<span class="stringliteral">&quot;Enum&quot;</span>, os);</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  generator.genPrologue();</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="comment">// Find all EnumAttr definitions</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="comment">// Find all EnumInfo definitions</span></div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *def : records.getAllDerivedDefinitionsIfDefined(<span class="stringliteral">&quot;EnumAttrInfo&quot;</span>)) {</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <span class="keyword">const</span> EnumAttr enumInfo(def);</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <span class="keyword">const</span> EnumInfo enumInfo(def);</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    StringRef enumCppNamespace = enumInfo.getCppNamespace();</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="comment">// Generate for the selected dialect only</span></div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="comment">// EnumAttr does not contain a Dialect reference, so filter by C++ namespace instead.</span></div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="comment">// EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.</span></div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    <span class="keywordflow">if</span> (!<a class="code hl_variable" href="CommonCAPIGen_8h.html#a5a7a95674096c67390ebb8b066f922c0">DialectName</a>.empty() &amp;&amp; !enumCppNamespace.contains_insensitive(<a class="code hl_variable" href="CommonCAPIGen_8h.html#a5a7a95674096c67390ebb8b066f922c0">DialectName</a>)) {</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    }</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    std::vector&lt;EnumAttrCase&gt; enumCases = enumInfo.getAllCases();</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    std::vector&lt;EnumCase&gt; enumCases = enumInfo.getAllCases();</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    <span class="keywordflow">if</span> (enumCases.empty()) {</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>      <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    }</div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    generator.setEnumName(enumCppNamespace, enumInfo.getEnumClassName());</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    <span class="keywordflow">for</span> (EnumAttrCase &amp;enumCase : enumCases) {</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    <span class="keywordflow">for</span> (EnumCase &amp;enumCase : enumCases) {</div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>      generator.genCaseLabel(enumCase);</div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    }</div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    generator.genEnumDeclaration();</div>
@@ -269,18 +269,18 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPIGen_8c
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  EnumImplementationGenerator generator(<span class="stringliteral">&quot;Enum&quot;</span>, os);</div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="comment">// Find all EnumAttr definitions</span></div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="comment">// Find all EnumInfo definitions</span></div>
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *def : records.getAllDerivedDefinitionsIfDefined(<span class="stringliteral">&quot;EnumAttrInfo&quot;</span>)) {</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <span class="keyword">const</span> EnumAttr enumInfo(def);</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <span class="keyword">const</span> EnumInfo enumInfo(def);</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    StringRef enumCppNamespace = enumInfo.getCppNamespace();</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <span class="comment">// Generate for the selected dialect only</span></div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="comment">// EnumAttr does not contain a Dialect reference, so filter by C++ namespace instead.</span></div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="comment">// EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.</span></div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    <span class="keywordflow">if</span> (!<a class="code hl_variable" href="CommonCAPIGen_8h.html#a5a7a95674096c67390ebb8b066f922c0">DialectName</a>.empty() &amp;&amp; !enumCppNamespace.contains_insensitive(<a class="code hl_variable" href="CommonCAPIGen_8h.html#a5a7a95674096c67390ebb8b066f922c0">DialectName</a>)) {</div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>      <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    }</div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    std::vector&lt;EnumAttrCase&gt; enumCases = enumInfo.getAllCases();</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    std::vector&lt;EnumCase&gt; enumCases = enumInfo.getAllCases();</div>
 <div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    <span class="keywordflow">if</span> (enumCases.empty()) {</div>
 <div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>      <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    }</div>
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('EnumCAPIGen_8c
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>}</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span><span class="keyword">static</span> mlir::GenRegistration genEnumCAPIHeader(</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    <span class="stringliteral">&quot;gen-enum-capi-header&quot;</span>, <span class="stringliteral">&quot;Generate C API enum declarations from EnumAttr definitions&quot;</span>,</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    <span class="stringliteral">&quot;gen-enum-capi-header&quot;</span>, <span class="stringliteral">&quot;Generate C API enum declarations from EnumInfo definitions&quot;</span>,</div>
 <div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    &amp;emitEnumCAPIHeader</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>);</div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>

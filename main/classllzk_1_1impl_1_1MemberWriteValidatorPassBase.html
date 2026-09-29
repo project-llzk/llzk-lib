@@ -179,7 +179,7 @@ Static Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a8c44cbe234c5eacc3b0c73a77eb1468c" id="r_a8c44cbe234c5eacc3b0c73a77eb1468c"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a8c44cbe234c5eacc3b0c73a77eb1468c">createMemberWriteValidatorPass</a> ()</td></tr>
-<tr class="memdesc:a8c44cbe234c5eacc3b0c73a77eb1468c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class.  <br /></td></tr>
+<tr class="memdesc:a8c44cbe234c5eacc3b0c73a77eb1468c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
@@ -640,8 +640,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Explicitly declare the TypeID for this class. </p>
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
+<p>Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8cpp_source.html#l00085">85</a> of file <a class="el" href="LLZKValidationPasses_8cpp_source.html">LLZKValidationPasses.cpp</a>.</p>
 

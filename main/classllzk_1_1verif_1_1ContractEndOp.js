@@ -3,6 +3,7 @@ var classllzk_1_1verif_1_1ContractEndOp =
     [ "Adaptor", "classllzk_1_1verif_1_1ContractEndOp.html#ade95a370bc739afafede1c9bf0772882", null ],
     [ "FoldAdaptor", "classllzk_1_1verif_1_1ContractEndOp.html#ac9389bb139723d969b3b8e94224727f8", null ],
     [ "GenericAdaptor", "classllzk_1_1verif_1_1ContractEndOp.html#a90cc77fbc9fbda2421898fc47b599b97", null ],
+    [ "Properties", "classllzk_1_1verif_1_1ContractEndOp.html#a0d421b54de3162853812094a5525f032", null ],
     [ "getAttributeNames", "classllzk_1_1verif_1_1ContractEndOp.html#a5a8d820a8e6f89a0a746644aedd383ee", null ],
     [ "getEffects", "classllzk_1_1verif_1_1ContractEndOp.html#adaa7b980048e006558428ed8814494b7", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1verif_1_1ContractEndOp.html#af16094650d14102dca4154778de32688", null ],

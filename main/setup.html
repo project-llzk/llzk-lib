@@ -187,6 +187,7 @@ Manual Build Setup</h1>
 <div class="fragment"><div class="line"># Start from llzk repo top level.</div>
 <div class="line"> </div>
 <div class="line"># First, build LLVM + MLIR</div>
+<div class="line">rm -rf third-party</div>
 <div class="line">mkdir third-party</div>
 <div class="line">pushd third-party</div>
 <div class="line">export THIRD_PARTY=&quot;$PWD&quot;</div>
@@ -195,8 +196,8 @@ Manual Build Setup</h1>
 <div class="line">export INSTALL_ROOT=&quot;$THIRD_PARTY/llvm-install-root&quot;</div>
 <div class="line">mkdir &quot;$INSTALL_ROOT&quot;</div>
 <div class="line"> </div>
-<div class="line"># Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)</div>
-<div class="line">git clone https://github.com/llvm/llvm-project.git -b llvmorg-20.1.8 --depth 1</div>
+<div class="line"># Configure LLVM build</div>
+<div class="line">git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.0 --depth 1</div>
 <div class="line">pushd llvm-project</div>
 <div class="line">mkdir build</div>
 <div class="line">pushd build</div>
@@ -213,32 +214,27 @@ Manual Build Setup</h1>
 <div class="line">  -DLLVM_INSTALL_UTILS=on \</div>
 <div class="line">  -DLLVM_ENABLE_Z3_SOLVER=on</div>
 <div class="line"> </div>
-<div class="line"># Note that using llvm dylib will cause llzk to be linked to the built LLVM</div>
-<div class="line"># dylib; if you&#39;d like llzk to be used independent of the build folder, you</div>
-<div class="line"># should leave off the dylib settings.</div>
-<div class="line"> </div>
+<div class="line"># Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)</div>
 <div class="line">cmake --build .</div>
 <div class="line">cmake --build . --target install</div>
 <div class="line">popd # back to llvm-project</div>
 <div class="line">popd # back to third-party</div>
 <div class="line">popd # back to top level</div>
 <div class="line"> </div>
-<div class="line"># Use an alias to avoid &quot;prefixed in the source directory&quot; CMake error.</div>
-<div class="line">ln -s $INSTALL_ROOT ~/llvm-install-root-llzklib</div>
-<div class="line">export INSTALL_ROOT=~/llvm-install-root-llzklib</div>
 <div class="line">export LIT_PATH=$PWD/third-party/llvm-project/llvm/utils/lit/lit.py</div>
 <div class="line"> </div>
 <div class="line"># Generate LLZK build configuration.</div>
 <div class="line"># You can set BUILD_TESTING=off if you don&#39;t want to enable tests.</div>
 <div class="line"># You can set CMAKE_BUILD_TYPE=DebWithSans if you want to enable sanitizers.</div>
-<div class="line">mkdir build &amp;&amp; cd build</div>
+<div class="line">rm -rf build</div>
+<div class="line">mkdir build</div>
+<div class="line">pushd build</div>
 <div class="line">cmake .. -GNinja \</div>
 <div class="line">  -DLLVM_ROOT=&quot;$INSTALL_ROOT&quot; \</div>
 <div class="line">  -DLLVM_DIR=&quot;$INSTALL_ROOT&quot;/lib/cmake/llvm \</div>
 <div class="line">  -DMLIR_DIR=&quot;$INSTALL_ROOT&quot;/lib/cmake/mlir \</div>
 <div class="line">  -DClang_DIR=&quot;$INSTALL_ROOT&quot;/lib/cmake/clang \</div>
 <div class="line">  -DLLVM_EXTERNAL_LIT=&quot;$LIT_PATH&quot; \</div>
-<div class="line">  -DGTEST_ROOT=&quot;$INSTALL_ROOT&quot; \</div>
 <div class="line">  -DLLZK_BUILD_DEVTOOLS=ON</div>
 </div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="dev-workflow"></a>
 Development Workflow</h1>

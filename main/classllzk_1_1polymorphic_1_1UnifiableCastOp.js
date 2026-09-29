@@ -3,6 +3,7 @@ var classllzk_1_1polymorphic_1_1UnifiableCastOp =
     [ "Adaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#ac0f95c978e936e312815c0abd17a65d6", null ],
     [ "FoldAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a41e09e152391deddc18176e5c0b6ab4c", null ],
     [ "GenericAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a70d729c515f1df2d82a6483c390ee48b", null ],
+    [ "Properties", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a8f591a3a447ee69b6418268865717b2a", null ],
     [ "getAttributeNames", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a4ee809b79a070be9c911d1c0386d307f", null ],
     [ "getEffects", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a2915eba85ae483372842f4677cbfb2ca", null ],
     [ "getInput", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a72745fd5c9c528e928a6fe029056d0ca", null ],

@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1c
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classllzk_1_1constrain_1_1EmitEqualityOp-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::constrain::EmitEqualityOp Class Reference</div></div>
 </div><!--header-->
@@ -152,6 +153,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:af6a0bb28c5e3f88d81306220f747b3af" id="r_af6a0bb28c5e3f88d81306220f747b3af"><td class="memTemplParams" colspan="2">template&lt;typename RangeT&gt; </td></tr>
 <tr class="memitem:af6a0bb28c5e3f88d81306220f747b3af template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#af6a0bb28c5e3f88d81306220f747b3af">GenericAdaptor</a> = <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOpGenericAdaptor.html">EmitEqualityOpGenericAdaptor</a>&lt;RangeT&gt;</td></tr>
 <tr class="memitem:a2ff0fc455a137df86a474bb3edaf59d7" id="r_a2ff0fc455a137df86a474bb3edaf59d7"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a2ff0fc455a137df86a474bb3edaf59d7">FoldAdaptor</a> = <a class="el" href="#af6a0bb28c5e3f88d81306220f747b3af">GenericAdaptor</a>&lt;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&gt;</td></tr>
+<tr class="memitem:a2335acb304b9838514700052ce07bee5" id="r_a2335acb304b9838514700052ce07bee5"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> = <a class="el" href="classllzk_1_1constrain_1_1detail_1_1EmitEqualityOpGenericAdaptorBase.html#a84c56b403b87cfcc334465908375f907">FoldAdaptor::Properties</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -172,14 +174,35 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a170a10f32724567b526fc4a5612ce18e" id="r_a170a10f32724567b526fc4a5612ce18e"><td class="memItemLeft">static constexpr ::llvm::StringLiteral&#160;</td><td class="memItemRight"><a class="el" href="#a170a10f32724567b526fc4a5612ce18e">getOperationName</a> ()</td></tr>
+<tr class="memitem:a33347b8d178b9575d38039c14a985d26" id="r_a33347b8d178b9575d38039c14a985d26"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a33347b8d178b9575d38039c14a985d26">setPropertiesFromAttr</a> (<a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;prop, ::mlir::Attribute attr, ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
+<tr class="memitem:a3a47606ac4ece8cac2591d2949194835" id="r_a3a47606ac4ece8cac2591d2949194835"><td class="memItemLeft">::mlir::Attribute&#160;</td><td class="memItemRight"><a class="el" href="#a3a47606ac4ece8cac2591d2949194835">getPropertiesAsAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a727fd971d9f7016c1fb6055206524ebd" id="r_a727fd971d9f7016c1fb6055206524ebd"><td class="memItemLeft">static llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#a727fd971d9f7016c1fb6055206524ebd">computePropertiesHash</a> (const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;prop)</td></tr>
+<tr class="memitem:a36bab03731c3123d599f134bba473580" id="r_a36bab03731c3123d599f134bba473580"><td class="memItemLeft">static std::optional&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a36bab03731c3123d599f134bba473580">getInherentAttr</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;prop, llvm::StringRef name)</td></tr>
+<tr class="memitem:a90d58a4f1d0a8c04148f84f6eacbc331" id="r_a90d58a4f1d0a8c04148f84f6eacbc331"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a90d58a4f1d0a8c04148f84f6eacbc331">setInherentAttr</a> (<a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;prop, llvm::StringRef name, mlir::Attribute value)</td></tr>
+<tr class="memitem:a11c387a325d71e160625d3db0f7c1290" id="r_a11c387a325d71e160625d3db0f7c1290"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a11c387a325d71e160625d3db0f7c1290">populateInherentAttrs</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;prop, ::mlir::NamedAttrList &amp;attrs)</td></tr>
+<tr class="memitem:afc6e28256e989db8cafe20b5aa66521c" id="r_afc6e28256e989db8cafe20b5aa66521c"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#afc6e28256e989db8cafe20b5aa66521c">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:aa074f30af73a98635f5a7509ef93cba6" id="r_aa074f30af73a98635f5a7509ef93cba6"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#aa074f30af73a98635f5a7509ef93cba6">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:aba47d2ea30c0a4aa5c2e291d45f75ffe" id="r_aba47d2ea30c0a4aa5c2e291d45f75ffe"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aba47d2ea30c0a4aa5c2e291d45f75ffe">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:aaa134f96e9b6af0622f8234c6840aefb" id="r_aaa134f96e9b6af0622f8234c6840aefb"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#aaa134f96e9b6af0622f8234c6840aefb">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
 <tr class="memitem:a6f0ed22de167cf636fd5caa78bcd8ec7" id="r_a6f0ed22de167cf636fd5caa78bcd8ec7"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a6f0ed22de167cf636fd5caa78bcd8ec7">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:ac26782e4fdc3a09eef7dd64e0a1c8524" id="r_ac26782e4fdc3a09eef7dd64e0a1c8524"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ac26782e4fdc3a09eef7dd64e0a1c8524">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
+<tr class="memitem:a1a25d9023b074928d85a94baf6d5e2e0" id="r_a1a25d9023b074928d85a94baf6d5e2e0"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a1a25d9023b074928d85a94baf6d5e2e0">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::Value lhs, ::mlir::Value rhs)</td></tr>
 <tr class="memitem:a609e0ecec4fa45e3c24b4a50041472d6" id="r_a609e0ecec4fa45e3c24b4a50041472d6"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a609e0ecec4fa45e3c24b4a50041472d6">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a0a3b838faef1d00f51132e97274966b3" id="r_a0a3b838faef1d00f51132e97274966b3"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a0a3b838faef1d00f51132e97274966b3">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a3fb044c94a48e4bbb59261394bc7311b" id="r_a3fb044c94a48e4bbb59261394bc7311b"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a3fb044c94a48e4bbb59261394bc7311b">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:a9d8ba49673028fbbc835f1f9c9ea8ffe" id="r_a9d8ba49673028fbbc835f1f9c9ea8ffe"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a9d8ba49673028fbbc835f1f9c9ea8ffe">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a9e107f61d0f03d4332d9ed6573632e57" id="r_a9e107f61d0f03d4332d9ed6573632e57"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a9e107f61d0f03d4332d9ed6573632e57">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
+<tr class="memitem:a40424f095d9b36b6a8d090fb95f8aa6b" id="r_a40424f095d9b36b6a8d090fb95f8aa6b"><td class="memItemLeft">static <a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a40424f095d9b36b6a8d090fb95f8aa6b">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
 <tr class="memitem:a7095d50871ffcf5a44d2a0c76e801075" id="r_a7095d50871ffcf5a44d2a0c76e801075"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a7095d50871ffcf5a44d2a0c76e801075">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a9388bb9b656010ec2f84a9a5d451d92f" id="r_a9388bb9b656010ec2f84a9a5d451d92f"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a9388bb9b656010ec2f84a9a5d451d92f">odsIndex_lhs</a> = 0</td></tr>
+<tr class="memitem:a8054b76953462c54c1a236e03826aae0" id="r_a8054b76953462c54c1a236e03826aae0"><td class="memItemLeft">static constexpr int&#160;</td><td class="memItemRight"><a class="el" href="#a8054b76953462c54c1a236e03826aae0">odsIndex_rhs</a> = 1</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00246">246</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00296">296</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a5233115b9f030514888d8fe66abbc23d" name="a5233115b9f030514888d8fe66abbc23d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5233115b9f030514888d8fe66abbc23d">&#9670;&#160;</a></span>Adaptor</h2>
@@ -193,7 +216,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00250">250</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00300">300</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -209,7 +232,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00253">253</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00303">303</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -227,13 +250,29 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00252">252</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00302">302</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2335acb304b9838514700052ce07bee5" name="a2335acb304b9838514700052ce07bee5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2335acb304b9838514700052ce07bee5">&#9670;&#160;</a></span>Properties</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#a2335acb304b9838514700052ce07bee5">llzk::constrain::EmitEqualityOp::Properties</a> = <a class="el" href="classllzk_1_1constrain_1_1detail_1_1EmitEqualityOpGenericAdaptorBase.html#a84c56b403b87cfcc334465908375f907">FoldAdaptor::Properties</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00306">306</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a609e0ecec4fa45e3c24b4a50041472d6" name="a609e0ecec4fa45e3c24b4a50041472d6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a609e0ecec4fa45e3c24b4a50041472d6">&#9670;&#160;</a></span>build() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a609e0ecec4fa45e3c24b4a50041472d6">&#9670;&#160;</a></span>build() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -274,12 +313,63 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00229">229</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00392">392</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9d8ba49673028fbbc835f1f9c9ea8ffe" name="a9d8ba49673028fbbc835f1f9c9ea8ffe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d8ba49673028fbbc835f1f9c9ea8ffe">&#9670;&#160;</a></span>build() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::constrain::EmitEqualityOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00412">412</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a6f0ed22de167cf636fd5caa78bcd8ec7" name="a6f0ed22de167cf636fd5caa78bcd8ec7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6f0ed22de167cf636fd5caa78bcd8ec7">&#9670;&#160;</a></span>build() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f0ed22de167cf636fd5caa78bcd8ec7">&#9670;&#160;</a></span>build() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -320,12 +410,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00222">222</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00373">373</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="aa074f30af73a98635f5a7509ef93cba6" name="aa074f30af73a98635f5a7509ef93cba6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa074f30af73a98635f5a7509ef93cba6">&#9670;&#160;</a></span>build() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aa074f30af73a98635f5a7509ef93cba6">&#9670;&#160;</a></span>build() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -361,7 +451,382 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00217">217</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00356">356</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a727fd971d9f7016c1fb6055206524ebd" name="a727fd971d9f7016c1fb6055206524ebd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a727fd971d9f7016c1fb6055206524ebd">&#9670;&#160;</a></span>computePropertiesHash()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::hash_code llzk::constrain::EmitEqualityOp::computePropertiesHash </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00337">337</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a1a25d9023b074928d85a94baf6d5e2e0" name="a1a25d9023b074928d85a94baf6d5e2e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a25d9023b074928d85a94baf6d5e2e0">&#9670;&#160;</a></span>create() <span class="overload">[1/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00388">388</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3fb044c94a48e4bbb59261394bc7311b" name="a3fb044c94a48e4bbb59261394bc7311b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fb044c94a48e4bbb59261394bc7311b">&#9670;&#160;</a></span>create() <span class="overload">[2/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00408">408</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a40424f095d9b36b6a8d090fb95f8aa6b" name="a40424f095d9b36b6a8d090fb95f8aa6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a40424f095d9b36b6a8d090fb95f8aa6b">&#9670;&#160;</a></span>create() <span class="overload">[3/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00429">429</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aaa134f96e9b6af0622f8234c6840aefb" name="aaa134f96e9b6af0622f8234c6840aefb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa134f96e9b6af0622f8234c6840aefb">&#9670;&#160;</a></span>create() <span class="overload">[4/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::ImplicitLocOpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00369">369</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac26782e4fdc3a09eef7dd64e0a1c8524" name="ac26782e4fdc3a09eef7dd64e0a1c8524"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac26782e4fdc3a09eef7dd64e0a1c8524">&#9670;&#160;</a></span>create() <span class="overload">[5/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00380">380</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a0a3b838faef1d00f51132e97274966b3" name="a0a3b838faef1d00f51132e97274966b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0a3b838faef1d00f51132e97274966b3">&#9670;&#160;</a></span>create() <span class="overload">[6/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00400">400</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9e107f61d0f03d4332d9ed6573632e57" name="a9e107f61d0f03d4332d9ed6573632e57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e107f61d0f03d4332d9ed6573632e57">&#9670;&#160;</a></span>create() <span class="overload">[7/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>resultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>operands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt;</td>          <td class="paramname"><span class="paramname"><em>discardableAttributes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00421">421</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aba47d2ea30c0a4aa5c2e291d45f75ffe" name="aba47d2ea30c0a4aa5c2e291d45f75ffe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba47d2ea30c0a4aa5c2e291d45f75ffe">&#9670;&#160;</a></span>create() <span class="overload">[8/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> llzk::constrain::EmitEqualityOp::create </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00361">361</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -388,7 +853,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00254">254</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00307">307</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a36bab03731c3123d599f134bba473580" name="a36bab03731c3123d599f134bba473580"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36bab03731c3123d599f134bba473580">&#9670;&#160;</a></span>getInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; mlir::Attribute &gt; llzk::constrain::EmitEqualityOp::getInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00342">342</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -415,7 +916,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00272">272</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00325">325</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -442,7 +943,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00280">280</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00333">333</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -469,7 +970,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00262">262</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00315">315</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -496,7 +997,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00266">266</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00319">319</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -523,7 +1024,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00290">290</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00343">343</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -550,7 +1051,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00294">294</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00347">347</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -577,7 +1078,38 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00258">258</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00311">311</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a3a47606ac4ece8cac2591d2949194835" name="a3a47606ac4ece8cac2591d2949194835"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a47606ac4ece8cac2591d2949194835">&#9670;&#160;</a></span>getPropertiesAsAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Attribute llzk::constrain::EmitEqualityOp::getPropertiesAsAttr </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00328">328</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -604,7 +1136,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00276">276</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00329">329</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -631,7 +1163,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00285">285</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00338">338</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -662,7 +1194,43 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00262">262</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00458">458</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a11c387a325d71e160625d3db0f7c1290" name="a11c387a325d71e160625d3db0f7c1290"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11c387a325d71e160625d3db0f7c1290">&#9670;&#160;</a></span>populateInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::constrain::EmitEqualityOp::populateInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00349">349</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -681,7 +1249,115 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00308">308</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00508">508</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a90d58a4f1d0a8c04148f84f6eacbc331" name="a90d58a4f1d0a8c04148f84f6eacbc331"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90d58a4f1d0a8c04148f84f6eacbc331">&#9670;&#160;</a></span>setInherentAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::constrain::EmitEqualityOp::setInherentAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00346">346</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a33347b8d178b9575d38039c14a985d26" name="a33347b8d178b9575d38039c14a985d26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33347b8d178b9575d38039c14a985d26">&#9670;&#160;</a></span>setPropertiesFromAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::constrain::EmitEqualityOp::setPropertiesFromAttr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a2335acb304b9838514700052ce07bee5">Properties</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>prop</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00319">319</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="afc6e28256e989db8cafe20b5aa66521c" name="afc6e28256e989db8cafe20b5aa66521c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc6e28256e989db8cafe20b5aa66521c">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::LogicalResult llzk::constrain::EmitEqualityOp::verifyInherentAttrs </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OperationName</td>          <td class="paramname"><span class="paramname"><em>opName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttrList &amp;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;</td>          <td class="paramname"><span class="paramname"><em>emitError</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00352">352</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -700,7 +1376,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00258">258</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00454">454</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -719,7 +1395,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00237">237</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html#l00433">433</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -739,6 +1415,55 @@ template&lt;typename RangeT&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8cpp_source.html#l00031">31</a> of file <a class="el" href="Constrain_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a9388bb9b656010ec2f84a9a5d451d92f" name="a9388bb9b656010ec2f84a9a5d451d92f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9388bb9b656010ec2f84a9a5d451d92f">&#9670;&#160;</a></span>odsIndex_lhs</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::constrain::EmitEqualityOp::odsIndex_lhs = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00304">304</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8054b76953462c54c1a236e03826aae0" name="a8054b76953462c54c1a236e03826aae0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8054b76953462c54c1a236e03826aae0">&#9670;&#160;</a></span>odsIndex_rhs</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llzk::constrain::EmitEqualityOp::odsIndex_rhs = 1</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html#l00305">305</a> of file <a class="el" href="Constrain_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

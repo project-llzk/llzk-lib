@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9ccfc0968402bef91c9434c55b9389e3" id="r_a9ccfc0968402bef91c9434c55b9389e3"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a9ccfc0968402bef91c9434c55b9389e3">CallOpAdaptor</a> (<a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> op)</td></tr>
 <tr class="memitem:a6a8a61c9da41f25b6ccb53d2022528c2" id="r_a6a8a61c9da41f25b6ccb53d2022528c2"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a6a8a61c9da41f25b6ccb53d2022528c2">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:ab3fcb903730ebe0d326d978b41be771e" id="r_ab3fcb903730ebe0d326d978b41be771e"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ab3fcb903730ebe0d326d978b41be771e">CallOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:ac8f45b0894a1f01dbc40992354cc0472" id="r_ac8f45b0894a1f01dbc40992354cc0472"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac8f45b0894a1f01dbc40992354cc0472">CallOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:afab2717513611181d212ffe868d79568" id="r_afab2717513611181d212ffe868d79568"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#afab2717513611181d212ffe868d79568">CallOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:a8238fb68eca97e4dfeba58c19d6e3324" id="r_a8238fb68eca97e4dfeba58c19d6e3324"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a8238fb68eca97e4dfeba58c19d6e3324">CallOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs)</td></tr>
 <tr class="memitem:a84e2f2630d6695f45ea3cf6a3e0b5cc5" id="r_a84e2f2630d6695f45ea3cf6a3e0b5cc5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a84e2f2630d6695f45ea3cf6a3e0b5cc5">CallOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a012b8fd934ee2e713fa0f7fbae958049">CallOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:a2505dd5c2c36dc7583eb883553c13a5d" id="r_a2505dd5c2c36dc7583eb883553c13a5d"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = CallOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, CallOp&gt;&gt;&gt; </td></tr>
@@ -175,6 +175,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac1e0e97cf999877da290958a3bb26c63 pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_ac1e0e97cf999877da290958a3bb26c63"><td class="memItemLeft">::llvm::ArrayRef&lt; int32_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#ac1e0e97cf999877da290958a3bb26c63">getNumDimsPerMap</a> ()</td></tr>
 <tr class="memitem:a0c36decff4cf1aff79c6b1029940d0ff pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_a0c36decff4cf1aff79c6b1029940d0ff"><td class="memItemLeft">::mlir::DenseI32ArrayAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a0c36decff4cf1aff79c6b1029940d0ff">getMapOpGroupSizesAttr</a> ()</td></tr>
 <tr class="memitem:a1d121c184810c013539e6d20153c0b6c pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_a1d121c184810c013539e6d20153c0b6c"><td class="memItemLeft">::llvm::ArrayRef&lt; int32_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a1d121c184810c013539e6d20153c0b6c">getMapOpGroupSizes</a> ()</td></tr>
+<tr class="memitem:a9cb33f98010dba067200015307616eb0 pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_a9cb33f98010dba067200015307616eb0"><td class="memItemLeft">::mlir::ArrayAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a9cb33f98010dba067200015307616eb0">getArgAttrsAttr</a> ()</td></tr>
+<tr class="memitem:a159003e85b106fb444e3b55b89f3c700 pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_a159003e85b106fb444e3b55b89f3c700"><td class="memItemLeft">::std::optional&lt; ::mlir::ArrayAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a159003e85b106fb444e3b55b89f3c700">getArgAttrs</a> ()</td></tr>
+<tr class="memitem:a3737315b9d715b28e5549c8e43dcbc0c pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_a3737315b9d715b28e5549c8e43dcbc0c"><td class="memItemLeft">::mlir::ArrayAttr&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a3737315b9d715b28e5549c8e43dcbc0c">getResAttrsAttr</a> ()</td></tr>
+<tr class="memitem:ac6240c84774daf2264923e4d8d44d5c1 pub_methods_classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase" id="r_ac6240c84774daf2264923e4d8d44d5c1"><td class="memItemLeft">::std::optional&lt; ::mlir::ArrayAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#ac6240c84774daf2264923e4d8d44d5c1">getResAttrs</a> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -186,7 +190,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00194">194</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00333">333</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a9ccfc0968402bef91c9434c55b9389e3" name="a9ccfc0968402bef91c9434c55b9389e3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9ccfc0968402bef91c9434c55b9389e3">&#9670;&#160;</a></span>CallOpAdaptor()</h2>
@@ -203,7 +207,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00190">190</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00198">198</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -235,12 +239,12 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00154">154</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00293">293</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="ac8f45b0894a1f01dbc40992354cc0472" name="ac8f45b0894a1f01dbc40992354cc0472"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac8f45b0894a1f01dbc40992354cc0472">&#9670;&#160;</a></span>CallOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
+<a id="afab2717513611181d212ffe868d79568" name="afab2717513611181d212ffe868d79568"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afab2717513611181d212ffe868d79568">&#9670;&#160;</a></span>CallOpGenericAdaptor() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -261,7 +265,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -276,7 +280,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00152">152</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00291">291</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -317,7 +321,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00150">150</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00289">289</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -348,7 +352,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00156">156</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00295">295</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -381,7 +385,7 @@ template&lt;typename LateInst = CallOp, typename = std::enable_if_t&lt;std::is_s
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00159">159</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00298">298</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -400,7 +404,7 @@ template&lt;typename LateInst = CallOp, typename = std::enable_if_t&lt;std::is_s
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00192">192</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00200">200</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

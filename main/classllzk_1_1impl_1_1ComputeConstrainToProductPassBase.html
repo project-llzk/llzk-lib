@@ -168,7 +168,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a39e8657ae4f54e75e332b4e0e56dea96" id="r_a39e8657ae4f54e75e332b4e0e56dea96"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a39e8657ae4f54e75e332b4e0e56dea96">getDependentDialects</a> (::mlir::DialectRegistry &amp;registry) const override</td></tr>
 <tr class="memdesc:a39e8657ae4f54e75e332b4e0e56dea96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the dialect that must be loaded in the context before this pass.  <br /></td></tr>
 <tr class="memitem:a41f3e4c4e8d1d7c644386baa7ab3676d" id="r_a41f3e4c4e8d1d7c644386baa7ab3676d"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a41f3e4c4e8d1d7c644386baa7ab3676d">ComputeConstrainToProductPassBase</a> (<a class="el" href="structllzk_1_1ComputeConstrainToProductPassOptions.html">ComputeConstrainToProductPassOptions</a> options)</td></tr>
-<tr class="memdesc:a41f3e4c4e8d1d7c644386baa7ab3676d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class.  <br /></td></tr>
+<tr class="memdesc:a41f3e4c4e8d1d7c644386baa7ab3676d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -181,7 +181,7 @@ Static Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:ad9cf2ca4b684bea3b0da120f2b319eb9" id="r_ad9cf2ca4b684bea3b0da120f2b319eb9"><td class="memItemLeft">::mlir::Pass::Option&lt; std::string &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad9cf2ca4b684bea3b0da120f2b319eb9">rootStruct</a> {*this, &quot;root-struct&quot;, ::llvm::cl::desc(&quot;Root struct at which to start alignment (default to `@Main`)&quot;), ::llvm::cl::init(&quot;Main&quot;)}</td></tr>
+<tr class="memitem:ad9cf2ca4b684bea3b0da120f2b319eb9" id="r_ad9cf2ca4b684bea3b0da120f2b319eb9"><td class="memItemLeft">::mlir::Pass::Option&lt; std::string &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad9cf2ca4b684bea3b0da120f2b319eb9">rootStruct</a> {*this, &quot;root-struct&quot;, ::llvm::cl::desc(R&quot;PO(Root struct at which to start alignment (default to `@Main`))PO&quot;), ::llvm::cl::init(&quot;Main&quot;)}</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -349,8 +349,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Explicitly declare the TypeID for this class. </p>
-<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
+<p>Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKComputeConstrainToProductPass_8cpp_source.html#l00099">99</a> of file <a class="el" href="LLZKComputeConstrainToProductPass_8cpp_source.html">LLZKComputeConstrainToProductPass.cpp</a>.</p>
 
@@ -725,7 +724,7 @@ template&lt;typename DerivedT&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">::mlir::Pass::Option&lt;std::string&gt; <a class="el" href="classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html">llzk::impl::ComputeConstrainToProductPassBase</a>&lt; DerivedT &gt;::rootStruct {*this, &quot;root-struct&quot;, ::llvm::cl::desc(&quot;Root struct at which to start alignment (default to `@Main`)&quot;), ::llvm::cl::init(&quot;Main&quot;)}</td>
+          <td class="memname">::mlir::Pass::Option&lt;std::string&gt; <a class="el" href="classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html">llzk::impl::ComputeConstrainToProductPassBase</a>&lt; DerivedT &gt;::rootStruct {*this, &quot;root-struct&quot;, ::llvm::cl::desc(R&quot;PO(Root struct at which to start alignment (default to `@Main`))PO&quot;), ::llvm::cl::init(&quot;Main&quot;)}</td>
         </tr>
       </table>
   </td>

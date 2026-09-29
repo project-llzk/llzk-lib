@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Support_8cpp.h
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Support.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Support_8cpp__incl.svg" width="3031" height="359"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Support_8cpp__incl.svg" width="3012" height="359"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Support_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -159,8 +159,6 @@ Functions</h2></td></tr>
 <tr class="memdesc:a07244a30f3cfd8c5bbbd445902eda7f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the lookup result, releasing its resources.  <br /></td></tr>
 <tr class="memitem:a4372ae0f04b6144eb2a0a5016ff3838e" id="r_a4372ae0f04b6144eb2a0a5016ff3838e"><td class="memItemLeft">MlirOperation&#160;</td><td class="memItemRight"><a class="el" href="#a4372ae0f04b6144eb2a0a5016ff3838e">LlzkSymbolLookupResultGetOperation</a> (<a class="el" href="structLlzkSymbolLookupResult.html">LlzkSymbolLookupResult</a> wrapped)</td></tr>
 <tr class="memdesc:a4372ae0f04b6144eb2a0a5016ff3838e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the looked up Operation.  <br /></td></tr>
-<tr class="memitem:ab51e0de50021bc4a252f61104a03afb1" id="r_ab51e0de50021bc4a252f61104a03afb1"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab51e0de50021bc4a252f61104a03afb1">mlirOperationReplaceUsesOfWith</a> (MlirOperation op, MlirValue oldValue, MlirValue newValue)</td></tr>
-<tr class="memdesc:ab51e0de50021bc4a252f61104a03afb1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.  <br /></td></tr>
 <tr class="memitem:a746f4290e2b636ad190226538f2ea79c" id="r_a746f4290e2b636ad190226538f2ea79c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a746f4290e2b636ad190226538f2ea79c">mlirOperationWalkReverse</a> (MlirOperation from, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder)</td></tr>
 <tr class="memdesc:a746f4290e2b636ad190226538f2ea79c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Walks operation <span class="tt">op</span> in <span class="tt">walkOrder</span>, with operations at the same nesting level traversed in reverse order, and calls <span class="tt">callback</span> on that operation.  <br /></td></tr>
 <tr class="memitem:a52c8fdc78aef208744f0d6578ea52466" id="r_a52c8fdc78aef208744f0d6578ea52466"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a52c8fdc78aef208744f0d6578ea52466">llzkSymbolTableInsert</a> (MlirOperation symTableOp, MlirOperation newSymbolOp)</td></tr>
@@ -212,7 +210,7 @@ Functions</h2></td></tr>
 <p>Appends a dimension count to the list of dimensions per map. </p>
 <p>If the builder is in <span class="tt">Attr</span> mode allocates an array with enough space and copies the attr's contents into it before appending the new value. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00160">160</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00156">156</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -242,7 +240,7 @@ Functions</h2></td></tr>
 
 <p>Appends the value ranges to the list of map operands. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00144">144</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00140">140</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -278,7 +276,7 @@ Functions</h2></td></tr>
 <p>Appends the value ranges to the list of map operands and indicates how many of these operands are dimensions. </p>
 <p>Asserts that the number of map operands and the number of dimensions per map is the same to avoid going out of sync. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00150">150</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00146">146</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -300,7 +298,7 @@ Functions</h2></td></tr>
 <p>Converts the list of dimensions defined as an attribute into an array. </p>
 <p>This function is a no-op if the list was already in array mode. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00176">176</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00172">172</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -326,7 +324,7 @@ Functions</h2></td></tr>
 <p>Converts the list of dimensions defined as an array into an attribute. </p>
 <p>This function is a no-op if the list was already in attribute mode. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00187">187</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00183">183</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -347,7 +345,7 @@ Functions</h2></td></tr>
 
 <p>Creates a new struct. The owner is responsible for cleaning the struct. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00122">122</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00118">118</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -368,7 +366,7 @@ Functions</h2></td></tr>
 
 <p>Destroys the struct releasing its resources. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00132">132</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00128">128</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -393,7 +391,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of dimensions per map represented as an attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00195">195</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00191">191</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -420,7 +418,7 @@ Functions</h2></td></tr>
 <p>Overwrites the previous values and deallocates if necessary.</p>
 <p>Asserts that the attribute is of type <span class="tt">DenseI32ArrayAttr</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00167">167</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00163">163</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -490,39 +488,7 @@ Functions</h2></td></tr>
 <p>Insertion via the SymbolTable automatically renames <span class="tt">symTableOp</span> if necessary to avoid name collisions.</p>
 <p>Requires that <span class="tt">symTableOp</span> implements the SymbolTable op interface and that <span class="tt">newSymbolOp</span> has a <span class="tt">sym_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00081">81</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
-
-</div>
-</div>
-<a id="ab51e0de50021bc4a252f61104a03afb1" name="ab51e0de50021bc4a252f61104a03afb1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab51e0de50021bc4a252f61104a03afb1">&#9670;&#160;</a></span>mlirOperationReplaceUsesOfWith()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void mlirOperationReplaceUsesOfWith </td>
-          <td>(</td>
-          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>of</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>with</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Note: Duplicated from upstream LLVM. Available in 21.1.8 and later. </p>
-<p>Replace uses of 'of' value with the 'with' value inside the 'op' operation.</p>
-<p>Note: Duplicated from upstream LLVM. Available in 21.1.8 and later. </p>
-
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00046">46</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00077">77</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -558,7 +524,7 @@ Functions</h2></td></tr>
 <p>Walks operation <span class="tt">op</span> in <span class="tt">walkOrder</span>, with operations at the same nesting level traversed in reverse order, and calls <span class="tt">callback</span> on that operation. </p>
 <p><span class="tt">*userData</span> is passed to the callback as well and can be used to tunnel some context or other data into the callback. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00065">65</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00061">61</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>

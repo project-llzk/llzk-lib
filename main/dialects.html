@@ -1093,7 +1093,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('dialects.html'
 </p>
 <h1 class="doxsection"><a class="anchor" id="array-dialect"></a>
 'array' Dialect</h1>
-<p>LLZK array operations.</p>
+<p><em>LLZK array operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="arrayextract-llzkarrayextractarrayop"></a>
@@ -1324,7 +1324,7 @@ Operands:</h4>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="arraytype"></a>
 ArrayType</h3>
-<p>n-dimensional array</p>
+<p><em>N-dimensional array</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">!array.type&lt;</div>
 <div class="line">  ::mlir::Type,   # elementType</div>
@@ -1361,7 +1361,7 @@ Parameters:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="bool-dialect"></a>
 'bool' Dialect</h1>
-<p>LLZK boolean operations.</p>
+<p><em>LLZK boolean operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-1"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="booland-llzkbooleanandboolop"></a>
@@ -1426,7 +1426,7 @@ Operands:</h4>
 <span class="tt">bool.cmp</span> (::llzk::boolean::CmpOp)</h3>
 <p><em>Compare field element values</em></p>
 <p>Syntax:</p>
-<div class="fragment"><div class="line">operation ::= `bool.cmp` `` $predicate `(` $lhs `,` $rhs `)`</div>
+<div class="fragment"><div class="line">operation ::= `bool.cmp` $predicate `(` $lhs `,` $rhs `)`</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($lhs), &quot;true&quot;)</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($rhs), &quot;false&quot;) attr-dict</div>
 </div><!-- fragment --><p>This operation takes two field element values and compares them according to the comparison predicate and returns an <span class="tt">i1</span>. The following comparisons are supported:</p>
@@ -1651,20 +1651,12 @@ Operands:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="feltcmppredicateattr"></a>
 FeltCmpPredicateAttr</h3>
-<p>Field element comparison predicate</p>
+<p><em>Field element comparison predicate</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#bool.cmp&lt;</div>
-<div class="line">  ::llzk::boolean::FeltCmpPredicate   # value</div>
+<div class="line">  `eq` | `ne` | `lt` | `le` | `gt` | `ge`   # value</div>
 <div class="line">&gt;</div>
-</div><!-- fragment --><p>Enum cases:</p><ul>
-<li>eq (<span class="tt">EQ</span>)</li>
-<li>ne (<span class="tt">NE</span>)</li>
-<li>lt (<span class="tt">LT</span>)</li>
-<li>le (<span class="tt">LE</span>)</li>
-<li>gt (<span class="tt">GT</span>)</li>
-<li>ge (<span class="tt">GE</span>)</li>
-</ul>
-<h4 class="doxsection"><a class="anchor" id="parameters-1"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="parameters-1"></a>
 Parameters:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1676,7 +1668,7 @@ Parameters:</h4>
 Enums</h2>
 <h3 class="doxsection"><a class="anchor" id="feltcmppredicate"></a>
 FeltCmpPredicate</h3>
-<p>Field element comparison predicate</p>
+<p><em>Field element comparison predicate</em></p>
 <h4 class="doxsection"><a class="anchor" id="cases"></a>
 Cases:</h4>
 <table class="markdownTable">
@@ -1697,7 +1689,7 @@ Cases:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="cast-dialect"></a>
 'cast' Dialect</h1>
-<p>LLZK type conversion operations.</p>
+<p><em>LLZK type conversion operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-2"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="casttofelt-llzkcastinttofeltop"></a>
@@ -1778,18 +1770,12 @@ Results:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="overflowsemanticsattr"></a>
 OverflowSemanticsAttr</h3>
-<p>Cast overflow semantics</p>
+<p><em>Cast overflow semantics</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#cast.overflow&lt;</div>
-<div class="line">  ::llzk::cast::OverflowSemantics   # value</div>
+<div class="line">  `assert` | `sat` | `wrap` | `trunc`   # value</div>
 <div class="line">&gt;</div>
-</div><!-- fragment --><p>Enum cases:</p><ul>
-<li>assert (<span class="tt">ASSERT</span>)</li>
-<li>sat (<span class="tt">SATURATE</span>)</li>
-<li>wrap (<span class="tt">WRAP</span>)</li>
-<li>trunc (<span class="tt">TRUNCATE</span>)</li>
-</ul>
-<h4 class="doxsection"><a class="anchor" id="parameters-2"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="parameters-2"></a>
 Parameters:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1801,7 +1787,7 @@ Parameters:</h4>
 Enums</h2>
 <h3 class="doxsection"><a class="anchor" id="overflowsemantics"></a>
 OverflowSemantics</h3>
-<p>Cast overflow semantics</p>
+<p><em>Cast overflow semantics</em></p>
 <h4 class="doxsection"><a class="anchor" id="cases-1"></a>
 Cases:</h4>
 <table class="markdownTable">
@@ -1818,7 +1804,7 @@ Cases:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="constrain-dialect"></a>
 'constrain' Dialect</h1>
-<p>LLZK constraint emission operations.</p>
+<p><em>LLZK constraint emission operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-3"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="constraineq-llzkconstrainemitequalityop"></a>
@@ -1861,7 +1847,7 @@ Operands:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="felt-dialect"></a>
 'felt' Dialect</h1>
-<p>LLZK felt (Field ELemenT) type and operations.</p>
+<p><em>LLZK felt (Field ELemenT) type and operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-4"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="feltadd-llzkfeltaddfeltop"></a>
@@ -2395,7 +2381,7 @@ Results:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="feltconstattr"></a>
 FeltConstAttr</h3>
-<p>finite field element</p>
+<p><em>Finite field element</em></p>
 <p>A felt attribute represents a finite field element.</p>
 <h4 class="doxsection"><a class="anchor" id="parameters-3"></a>
 Parameters:</h4>
@@ -2409,7 +2395,7 @@ Parameters:</h4>
 </table>
 <h3 class="doxsection"><a class="anchor" id="fieldspecattr"></a>
 FieldSpecAttr</h3>
-<p>prime field specification</p>
+<p><em>Prime field specification</em></p>
 <p>A specification of a prime field for use by felt types.</p>
 <p>These specifications are provided in the <span class="tt">llzk.fields</span> attribute on the root module as either a single element or a flat array, for example: </p><pre class="fragment">module attributes {llzk.lang, llzk.fields = field&lt;foo, 7&gt; { ... }
 module attributes {llzk.lang, llzk.fields = [field&lt;&gt;]} { ... }
@@ -2435,7 +2421,7 @@ Parameters:</h4>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="felttype"></a>
 FeltType</h3>
-<p>finite field element</p>
+<p><em>Finite field element</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">!felt.type&lt;</div>
 <div class="line">  ::mlir::StringAttr   # fieldName</div>
@@ -2455,7 +2441,7 @@ Parameters:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="function-dialect"></a>
 'function' Dialect</h1>
-<p>LLZK function operations.</p>
+<p><em>LLZK function operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-5"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="functioncall-llzkfunctioncallop"></a>
@@ -2481,7 +2467,7 @@ Operations</h2>
 <div class="line">%r = function.call @A::@compute(%x){(%i)} : (!felt.type) -&gt; !struct.type&lt;@A&lt;[#M]&gt;&gt;</div>
 </div><!-- fragment --><p>When the call targets a free function within a <span class="tt">poly.template</span> region, the optional template parameter list can be used to instantiate all <span class="tt">poly.param</span> symbols within the template. If all <span class="tt">poly.param</span> symbols are used within the function signature, this can be elided. Otherwise, it is required to instantiate the function. The <span class="tt">?</span> wildcard can be used for any <span class="tt">poly.param</span> with a <span class="tt">poly.tvar</span> type restriction, even those that cannot be inferred from the function signature. The wildcard allows for inference of the type within the function body itself during the flattening pass but may fail if the type cannot be inferred from the function body.</p>
 <p>Traits: <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">MemRefsNormalizable</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
-<p>Interfaces: <span class="tt">CallOpInterface</span>, <span class="tt">LLZKCallLikeOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Interfaces: <span class="tt">ArgAndResultAttrsOpInterface</span>, <span class="tt">CallOpInterface</span>, <span class="tt">LLZKCallLikeOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-9"></a>
 Attributes:</h4>
 <table class="doxtable">
@@ -2495,6 +2481,10 @@ Attributes:</h4>
 <td><code>numDimsPerMap</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
 <tr>
 <td><code>mapOpGroupSizes</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
+<tr>
+<td><code>arg_attrs</code></td><td>::mlir::ArrayAttr</td><td>Array of dictionary attributes</td></tr>
+<tr>
+<td><code>res_attrs</code></td><td>::mlir::ArrayAttr</td><td>Array of dictionary attributes</td></tr>
 </table>
 <h4 class="doxsection"><a class="anchor" id="operands-36"></a>
 Operands:</h4>
@@ -2542,7 +2532,7 @@ Results:</h4>
 <div class="line">  function.def @constrain(%a: !felt.type {function.arg_name = &quot;a&quot;}) { function.return }</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>Traits: <span class="tt">AffineScope</span>, <span class="tt">AutomaticAllocationScope</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>&gt;</span>, <span class="tt">IsolatedFromAbove</span></p>
-<p>Interfaces: <span class="tt">CallableOpInterface</span>, <span class="tt">ContractTarget</span>, <span class="tt">FunctionOpInterface</span>, <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>
+<p>Interfaces: <span class="tt">ArgAndResultAttrsOpInterface</span>, <span class="tt">CallableOpInterface</span>, <span class="tt">ContractTarget</span>, <span class="tt">FunctionOpInterface</span>, <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-10"></a>
 Attributes:</h4>
 <table class="doxtable">
@@ -2581,7 +2571,7 @@ Operands:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="global-dialect"></a>
 'global' Dialect</h1>
-<p>LLZK support for global values, defined outside of structs.</p>
+<p><em>LLZK support for global values, defined outside of structs.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-6"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="globaldef-llzkglobalglobaldefop"></a>
@@ -2665,7 +2655,7 @@ Operands:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="include-dialect"></a>
 'include' Dialect</h1>
-<p>LLZK include operations.</p>
+<p><em>LLZK include operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-7"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="includefrom-llzkincludeincludeop"></a>
@@ -2690,7 +2680,7 @@ Attributes:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="llzk-dialect"></a>
 'llzk' Dialect</h1>
-<p>Common LLZK attributes.</p>
+<p><em>Common LLZK attributes.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-8"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="llzknondet-llzknondetop"></a>
@@ -2733,7 +2723,7 @@ Results:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="loopboundsattr"></a>
 LoopBoundsAttr</h3>
-<p>Annotation with the bounds of a loop</p>
+<p><em>Annotation with the bounds of a loop</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#llzk.loopbounds&lt;</div>
 <div class="line">  ::llzk::APIntValue,   # lower</div>
@@ -2761,7 +2751,7 @@ Parameters:</h4>
 </table>
 <h3 class="doxsection"><a class="anchor" id="publicattr"></a>
 PublicAttr</h3>
-<p>A unit attribute to mark an input/output as public</p>
+<p><em>A unit attribute to mark an input/output as public</em></p>
 <p>Syntax: <span class="tt">#llzk.pub</span></p>
 <p>This attribute is used on parameters of <span class="tt">compute()</span> and <span class="tt">constrain()</span> functions within a <span class="tt">struct.def</span> to denote the public inputs of the circuit and on <span class="tt">struct.member</span> ops to denote public output of the circuit.</p>
 <p>Examples:</p>
@@ -2770,7 +2760,7 @@ PublicAttr</h3>
 <div class="line">function.def @compute(%0: !felt.type {llzk.pub})</div>
 </div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="pod-dialect"></a>
 'pod' Dialect</h1>
-<p>Dialect for working with plain-old-data structs.</p>
+<p><em>Dialect for working with plain-old-data structs.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-9"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="podnew-llzkpodnewpodop"></a>
@@ -2906,7 +2896,7 @@ Operands:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="recordattr"></a>
 RecordAttr</h3>
-<p>A named entry in a plain-old-data struct</p>
+<p><em>A named entry in a plain-old-data struct</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#pod.record&lt;</div>
 <div class="line">  ::mlir::StringAttr,   # name</div>
@@ -2926,7 +2916,7 @@ Parameters:</h4>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="podtype"></a>
 PodType</h3>
-<p>plain-old-data struct</p>
+<p><em>Plain-old-data struct</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">!pod.type&lt;</div>
 <div class="line">  ::llvm::ArrayRef&lt;::llzk::pod::RecordAttr&gt;   # records</div>
@@ -2949,7 +2939,7 @@ Parameters:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="poly-dialect"></a>
 'poly' Dialect</h1>
-<p>LLZK types and operations to support templated/parameterized structs.</p>
+<p><em>LLZK types and operations to support templated/parameterized structs.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-10"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="polyapplymap-llzkpolymorphicapplymapop"></a>
@@ -3151,7 +3141,7 @@ Operands:</h4>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="typevartype"></a>
 TypeVarType</h3>
-<p>type variable</p>
+<p><em>Type variable</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">!poly.tvar&lt;</div>
 <div class="line">  ::mlir::FlatSymbolRefAttr   # nameRef</div>
@@ -3175,7 +3165,7 @@ Parameters:</h4>
 </table>
 <h1 class="doxsection"><a class="anchor" id="string-dialect"></a>
 'string' Dialect</h1>
-<p>LLZK string type and operations.</p>
+<p><em>LLZK string type and operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-11"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="stringnew-llzkstringlitstringop"></a>
@@ -3206,11 +3196,11 @@ Results:</h4>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="stringtype"></a>
 StringType</h3>
-<p>string type</p>
+<p><em>String type</em></p>
 <p>Syntax: <span class="tt">!string.type</span></p>
 <h1 class="doxsection"><a class="anchor" id="struct-dialect"></a>
 'struct' Dialect</h1>
-<p>LLZK component/struct operations.</p>
+<p><em>LLZK component/struct operations.</em></p>
 <h2 class="doxsection"><a class="anchor" id="operations-12"></a>
 Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="structdef-llzkcomponentstructdefop"></a>
@@ -3400,7 +3390,7 @@ Operands:</h4>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="structtype"></a>
 StructType</h3>
-<p>circuit component</p>
+<p><em>Circuit component</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">!struct.type&lt;</div>
 <div class="line">  ::mlir::SymbolRefAttr,   # nameRef</div>

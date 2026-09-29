@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Bool_2IR_2Dial
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="comment">// arith.constant ops, which is already used alongside this dialect.</span></div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordflow">if</span> (llvm::isa&lt;mlir::IntegerAttr&gt;(value) &amp;&amp; llvm::isa&lt;mlir::IntegerType&gt;(type) &amp;&amp;</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      llvm::cast&lt;mlir::IntegerType&gt;(type).isInteger(1)) {</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordflow">return</span> builder.create&lt;mlir::arith::ConstantOp&gt;(loc, llvm::cast&lt;mlir::IntegerAttr&gt;(value));</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordflow">return</span> mlir::arith::ConstantOp::create(builder, loc, llvm::cast&lt;mlir::IntegerAttr&gt;(value));</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>}</div>
@@ -185,15 +185,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Bool_2IR_2Dial
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Bool/IR/Ops.cpp.inc</a>&quot;</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  &gt;();</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  addAttributes&lt;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  &gt;();</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;BoolDialect&gt;&gt;();</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  addAttributes&lt;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  &gt;();</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;BoolDialect&gt;&gt;();</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>}</div>
 <div class="ttc" id="aBool_2IR_2Attrs_8cpp_8inc_html"><div class="ttname"><a href="Bool_2IR_2Attrs_8cpp_8inc.html">Attrs.cpp.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8cpp_8inc_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8cpp_8inc.html">Dialect.cpp.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8h_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8h.html">Dialect.h</a></div></div>

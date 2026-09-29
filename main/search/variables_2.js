@@ -17,6 +17,5 @@ var searchData=
   ['constrainfnmap_14',['constrainFnMap',['../classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3',1,'llzk::ModuleLikeBuilder']]],
   ['context_15',['context',['../classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e',1,'llzk::BaseBuilder']]],
   ['contract_16',['contract',['../structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKey.html#aabbe9616e807c9d28de861ed3673bf59',1,'llzk::verif::detail::IncludedContractSummaryKey']]],
-  ['copyright_17',['copyright',['../LICENSE_8txt.html#a57f6ea84cb044ebe0704c5e3aa48e9ad',1,'LICENSE.txt']]],
-  ['count_18',['count',['../structllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase_1_1Properties.html#a512402f55f39603abcfd6df8c4b77d13',1,'llzk::smt::detail::PopOpGenericAdaptorBase::Properties::count'],['../structllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase_1_1Properties.html#a055d5f3b513d3aa6dece5b42cc5f64a3',1,'llzk::smt::detail::PushOpGenericAdaptorBase::Properties::count']]]
+  ['copyright_17',['copyright',['../LICENSE_8txt.html#a57f6ea84cb044ebe0704c5e3aa48e9ad',1,'LICENSE.txt']]]
 ];

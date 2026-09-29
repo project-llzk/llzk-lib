@@ -172,8 +172,7 @@ var menudata={children:[
 {text:"r",url:"functions_type_r.html#index_r"},
 {text:"s",url:"functions_type_s.html#index_s"},
 {text:"t",url:"functions_type_t.html#index_t"},
-{text:"v",url:"functions_type_v.html#index_v"},
-{text:"w",url:"functions_type_w.html#index_w"}]},
+{text:"v",url:"functions_type_v.html#index_v"}]},
 {text:"Enumerations",url:"functions_enum.html"},
 {text:"Related Symbols",url:"functions_rela.html",children:[
 {text:":",url:"functions_rela.html#index__3A"},
@@ -262,5 +261,4 @@ var menudata={children:[
 {text:"c",url:"globals_defs_c.html#index_c"},
 {text:"d",url:"globals_defs_d.html#index_d"},
 {text:"g",url:"globals_defs_g.html#index_g"},
-{text:"h",url:"globals_defs_h.html#index_h"},
 {text:"l",url:"globals_defs_l.html#index_l"}]}]}]}]}

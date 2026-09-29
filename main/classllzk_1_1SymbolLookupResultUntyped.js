@@ -12,7 +12,7 @@ var classllzk_1_1SymbolLookupResultUntyped =
     [ "getNamespace", "classllzk_1_1SymbolLookupResultUntyped.html#a9f67d71c80337065c622cda20745169d", null ],
     [ "getSymbolTableCache", "classllzk_1_1SymbolLookupResultUntyped.html#a09efd5977415056e536864e8d683ef39", null ],
     [ "isManaged", "classllzk_1_1SymbolLookupResultUntyped.html#aa673fb8d26b6ea0e8f222a1637b208d9", null ],
-    [ "manage", "classllzk_1_1SymbolLookupResultUntyped.html#a58d551ed295226cb9e72097a7f07f17e", null ],
+    [ "manage", "classllzk_1_1SymbolLookupResultUntyped.html#aa5f08ae2ba87e250d198986151b1a167", null ],
     [ "operator bool", "classllzk_1_1SymbolLookupResultUntyped.html#a609b36e7ed8647f6a03c74269254923f", null ],
     [ "operator*", "classllzk_1_1SymbolLookupResultUntyped.html#ac6cba89f4c7d8d56366b1282595fb1a8", null ],
     [ "operator*", "classllzk_1_1SymbolLookupResultUntyped.html#a69de682019a58fc37e5af6204c766363", null ],

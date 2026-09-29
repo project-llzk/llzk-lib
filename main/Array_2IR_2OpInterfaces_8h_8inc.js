@@ -7,7 +7,6 @@ var Array_2IR_2OpInterfaces_8h_8inc =
     [ "llzk::array::detail::ArrayRefOpInterfaceInterfaceTraits::ExternalModel&lt; ConcreteModel, ConcreteOp &gt;", "classllzk_1_1array_1_1detail_1_1ArrayRefOpInterfaceInterfaceTraits_1_1ExternalModel.html", "classllzk_1_1array_1_1detail_1_1ArrayRefOpInterfaceInterfaceTraits_1_1ExternalModel" ],
     [ "llzk::array::ArrayRefOpInterface", "classllzk_1_1array_1_1ArrayRefOpInterface.html", "classllzk_1_1array_1_1ArrayRefOpInterface" ],
     [ "llzk::array::ArrayRefOpInterface::Trait&lt; ConcreteOp &gt;", "structllzk_1_1array_1_1ArrayRefOpInterface_1_1Trait.html", null ],
-    [ "llzk::array::detail::ArrayRefOpInterfaceTrait&lt; ConcreteOp &gt;", "structllzk_1_1array_1_1detail_1_1ArrayRefOpInterfaceTrait.html", null ],
     [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits.html", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits" ],
     [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits::Concept", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Concept.html", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Concept" ],
     [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits::Model&lt; ConcreteOp &gt;", "classllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Model.html", "classllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Model" ],
@@ -15,5 +14,6 @@ var Array_2IR_2OpInterfaces_8h_8inc =
     [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits::ExternalModel&lt; ConcreteModel, ConcreteOp &gt;", "classllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1ExternalModel.html", "classllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1ExternalModel" ],
     [ "llzk::array::ArrayAccessOpInterface", "classllzk_1_1array_1_1ArrayAccessOpInterface.html", "classllzk_1_1array_1_1ArrayAccessOpInterface" ],
     [ "llzk::array::ArrayAccessOpInterface::Trait&lt; ConcreteOp &gt;", "structllzk_1_1array_1_1ArrayAccessOpInterface_1_1Trait.html", null ],
+    [ "llzk::array::detail::ArrayRefOpInterfaceTrait&lt; ConcreteOp &gt;", "structllzk_1_1array_1_1detail_1_1ArrayRefOpInterfaceTrait.html", null ],
     [ "llzk::array::detail::ArrayAccessOpInterfaceTrait&lt; ConcreteOp &gt;", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceTrait.html", null ]
 ];

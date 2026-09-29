@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structClangLex
 <div class="dynheader">
 Collaboration diagram for ClangLexerContext::Impl:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="structClangLexerContext_1_1Impl__coll__graph.svg" width="566" height="163"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="structClangLexerContext_1_1Impl__coll__graph.svg" width="566" height="230"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -152,8 +152,8 @@ Public Attributes</h2></td></tr>
 <tr class="memdesc:a8929882c1f7a083ef1ee4172eccb4533"><td class="mdescLeft">&#160;</td><td class="mdescRight">File manager for handling virtual files.  <br /></td></tr>
 <tr class="memitem:abbc46387c906edb94ddb0bcde7a11398" id="r_abbc46387c906edb94ddb0bcde7a11398"><td class="memItemLeft">IntrusiveRefCntPtr&lt; DiagnosticIDs &gt;&#160;</td><td class="memItemRight"><a class="el" href="#abbc46387c906edb94ddb0bcde7a11398">diagIDs</a></td></tr>
 <tr class="memdesc:abbc46387c906edb94ddb0bcde7a11398"><td class="mdescLeft">&#160;</td><td class="mdescRight">Diagnostic IDs for error reporting.  <br /></td></tr>
-<tr class="memitem:a7953aa6b37402eb8d083dfec0594803b" id="r_a7953aa6b37402eb8d083dfec0594803b"><td class="memItemLeft">IntrusiveRefCntPtr&lt; DiagnosticOptions &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a7953aa6b37402eb8d083dfec0594803b">diagOpts</a></td></tr>
-<tr class="memdesc:a7953aa6b37402eb8d083dfec0594803b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Diagnostic options for configuring diagnostics.  <br /></td></tr>
+<tr class="memitem:a4b29fba554b8acb76bd092a8cb8f138f" id="r_a4b29fba554b8acb76bd092a8cb8f138f"><td class="memItemLeft">std::unique_ptr&lt; DiagnosticOptions &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4b29fba554b8acb76bd092a8cb8f138f">diagOpts</a></td></tr>
+<tr class="memdesc:a4b29fba554b8acb76bd092a8cb8f138f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Diagnostic options for configuring diagnostics.  <br /></td></tr>
 <tr class="memitem:aead290ad76f92b34498152b5f99c7065" id="r_aead290ad76f92b34498152b5f99c7065"><td class="memItemLeft">std::unique_ptr&lt; DiagnosticsEngine &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aead290ad76f92b34498152b5f99c7065">diags</a></td></tr>
 <tr class="memdesc:aead290ad76f92b34498152b5f99c7065"><td class="mdescLeft">&#160;</td><td class="mdescRight">Diagnostics engine for handling errors and warnings.  <br /></td></tr>
 <tr class="memitem:ad3c0e941951ee34171c22a950807510b" id="r_ad3c0e941951ee34171c22a950807510b"><td class="memItemLeft">std::unique_ptr&lt; SourceManager &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad3c0e941951ee34171c22a950807510b">sourceMgr</a></td></tr>
@@ -211,14 +211,14 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a7953aa6b37402eb8d083dfec0594803b" name="a7953aa6b37402eb8d083dfec0594803b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7953aa6b37402eb8d083dfec0594803b">&#9670;&#160;</a></span>diagOpts</h2>
+<a id="a4b29fba554b8acb76bd092a8cb8f138f" name="a4b29fba554b8acb76bd092a8cb8f138f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b29fba554b8acb76bd092a8cb8f138f">&#9670;&#160;</a></span>diagOpts</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">IntrusiveRefCntPtr&lt;DiagnosticOptions&gt; ClangLexerContext::Impl::diagOpts</td>
+          <td class="memname">std::unique_ptr&lt;DiagnosticOptions&gt; ClangLexerContext::Impl::diagOpts</td>
         </tr>
       </table>
 </div><div class="memdoc">

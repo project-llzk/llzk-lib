@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4f99ca70e1b096ec558f16f79b4fb647" id="r_a4f99ca70e1b096ec558f16f79b4fb647"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a4f99ca70e1b096ec558f16f79b4fb647">FuncDefOpAdaptor</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> op)</td></tr>
 <tr class="memitem:af3989b34671ac41b9ace42a465665b01" id="r_af3989b34671ac41b9ace42a465665b01"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#af3989b34671ac41b9ace42a465665b01">verify</a> (::mlir::Location loc)</td></tr>
 <tr class="memitem:aa79143040a168949dfd317398d46c889" id="r_aa79143040a168949dfd317398d46c889"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa79143040a168949dfd317398d46c889">FuncDefOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, const <a class="el" href="structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;properties, ::mlir::RegionRange regions={})</td></tr>
-<tr class="memitem:af287083879f83783fdce4e14da67a365" id="r_af287083879f83783fdce4e14da67a365"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#af287083879f83783fdce4e14da67a365">FuncDefOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions={})</td></tr>
+<tr class="memitem:a377d79cb7d693aab0bf8c12dda517abc" id="r_a377d79cb7d693aab0bf8c12dda517abc"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a377d79cb7d693aab0bf8c12dda517abc">FuncDefOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs, ::mlir::PropertyRef properties, ::mlir::RegionRange regions={})</td></tr>
 <tr class="memitem:a4aa35d9cdbddc2c25bd84935cf6a9c7d" id="r_a4aa35d9cdbddc2c25bd84935cf6a9c7d"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a4aa35d9cdbddc2c25bd84935cf6a9c7d">FuncDefOpGenericAdaptor</a> (RangeT values, ::mlir::DictionaryAttr attrs=nullptr)</td></tr>
 <tr class="memitem:a25ebae5d088471bfc774925770ff544a" id="r_a25ebae5d088471bfc774925770ff544a"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a25ebae5d088471bfc774925770ff544a">FuncDefOpGenericAdaptor</a> (RangeT values, const <a class="el" href="classllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase.html#a7f6e2e462a59b8f4ab61414b93c9e83a">FuncDefOpGenericAdaptorBase</a> &amp;base)</td></tr>
 <tr class="memitem:ad284ee20f532b6cd5cb74ebf9db3a388" id="r_ad284ee20f532b6cd5cb74ebf9db3a388"><td class="memTemplParams" colspan="2">template&lt;typename LateInst = FuncDefOp, typename = std::enable_if_t&lt;std::is_same_v&lt;LateInst, FuncDefOp&gt;&gt;&gt; </td></tr>
@@ -186,7 +186,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00585">585</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00794">794</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a4f99ca70e1b096ec558f16f79b4fb647" name="a4f99ca70e1b096ec558f16f79b4fb647"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4f99ca70e1b096ec558f16f79b4fb647">&#9670;&#160;</a></span>FuncDefOpAdaptor()</h2>
@@ -203,13 +203,13 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00745">745</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00989">989</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="af287083879f83783fdce4e14da67a365" name="af287083879f83783fdce4e14da67a365"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af287083879f83783fdce4e14da67a365">&#9670;&#160;</a></span>FuncDefOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
+<a id="a377d79cb7d693aab0bf8c12dda517abc" name="a377d79cb7d693aab0bf8c12dda517abc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a377d79cb7d693aab0bf8c12dda517abc">&#9670;&#160;</a></span>FuncDefOpGenericAdaptor() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -230,7 +230,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::OpaqueProperties</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
+          <td class="paramtype">::mlir::PropertyRef</td>          <td class="paramname"><span class="paramname"><em>properties</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -245,7 +245,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00559">559</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00768">768</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -286,7 +286,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00557">557</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00766">766</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -317,7 +317,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00561">561</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00770">770</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -348,7 +348,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00563">563</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00772">772</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -381,7 +381,7 @@ template&lt;typename LateInst = FuncDefOp, typename = std::enable_if_t&lt;std::i
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00566">566</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00775">775</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -400,7 +400,7 @@ template&lt;typename LateInst = FuncDefOp, typename = std::enable_if_t&lt;std::i
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00747">747</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html#l00991">991</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
