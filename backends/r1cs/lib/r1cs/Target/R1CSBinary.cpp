@@ -87,7 +87,8 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
 /// Root zero is the main circuit instance. Other roots are constrain-function
 /// arguments, numbered as they are in the source IR. Member names remain MLIR
 /// string literals so every valid member name has an unambiguous spelling.
-static LogicalResult printSymbolPath(ArrayAttr path, llvm::raw_ostream &output) {
+static LogicalResult
+printSymbolPath(ArrayAttr path, DictionaryAttr rootNames, llvm::raw_ostream &output) {
   if (path.empty()) {
     return failure();
   }
@@ -95,8 +96,9 @@ static LogicalResult printSymbolPath(ArrayAttr path, llvm::raw_ostream &output) 
   if (!root || root.getInt() < 0) {
     return failure();
   }
-  if (root.getInt() == 0) {
-    output << "main";
+  auto name = rootNames.getAs<StringAttr>(std::to_string(root.getInt()));
+  if (name) {
+    output << name.getValue();
   } else {
     output << "arg" << root.getInt();
   }
@@ -682,33 +684,46 @@ r1cs::exportLLZKLayoutMap(ModuleOp moduleOp, llvm::raw_ostream &output, StringRe
            << "' from direct R1CS lowering";
   }
 
-  llvm::SmallVector<std::string> paths;
-  llvm::StringMap<uint64_t> ids;
+  ArrayAttr layoutSignals = (*selectedCircuit)->getAttrOfType<ArrayAttr>(LAYOUT_SIGNALS_ATTR_NAME);
+  DictionaryAttr rootNames =
+      (*selectedCircuit)->getAttrOfType<DictionaryAttr>(LAYOUT_ROOT_NAMES_ATTR_NAME);
+  if (!layoutSignals) {
+    return selectedCircuit->emitOpError()
+           << "cannot export layout map: missing '" << LAYOUT_SIGNALS_ATTR_NAME
+           << "' from direct R1CS lowering";
+  }
+  SmallVector<std::string> paths;
+  for (auto [id, attr] : llvm::enumerate(layoutSignals)) {
+    auto signal = dyn_cast<DictionaryAttr>(attr);
+    auto signalId = signal ? signal.getAs<IntegerAttr>("id") : IntegerAttr();
+    auto path = signal ? signal.getAs<ArrayAttr>("path") : ArrayAttr();
+    if (!signalId || !path || signalId.getInt() < 0 ||
+        static_cast<uint64_t>(signalId.getInt()) != id) {
+      return selectedCircuit->emitOpError()
+             << "cannot export layout map: invalid layout signal " << id;
+    }
+    std::string rendered;
+    llvm::raw_string_ostream pathOutput(rendered);
+    if (failed(printSymbolPath(path, rootNames, pathOutput))) {
+      return selectedCircuit->emitOpError()
+             << "cannot export layout map: invalid layout signal path";
+    }
+    pathOutput.flush();
+    paths.push_back(std::move(rendered));
+  }
   for (auto [index, attr] : llvm::enumerate(bindings)) {
     auto binding = dyn_cast<DictionaryAttr>(attr);
     auto wire = binding ? binding.getAs<IntegerAttr>("wire") : IntegerAttr();
     auto path = binding ? binding.getAs<ArrayAttr>("path") : ArrayAttr();
+    auto signal = binding ? binding.getAs<IntegerAttr>("signal") : IntegerAttr();
     uint64_t expectedWire = index + 1;
-    if (!wire || !path || wire.getInt() < 0 ||
+    if (!wire || !path || !signal || wire.getInt() < 0 || signal.getInt() < 0 ||
+        static_cast<uint64_t>(signal.getInt()) >= paths.size() ||
         static_cast<uint64_t>(wire.getInt()) != expectedWire) {
       return selectedCircuit->emitOpError()
              << "cannot export layout map: expected '" << WIRE_BINDINGS_ATTR_NAME << "' entry "
              << index << " to contain wire " << expectedWire << " and an array path";
     }
-    std::string rendered;
-    llvm::raw_string_ostream pathOutput(rendered);
-    if (failed(printSymbolPath(path, pathOutput))) {
-      return selectedCircuit->emitOpError()
-             << "cannot export layout map: expected '" << WIRE_BINDINGS_ATTR_NAME << "' entry "
-             << index << " to contain a valid storage path";
-    }
-    pathOutput.flush();
-    paths.push_back(std::move(rendered));
-  }
-  llvm::sort(paths);
-  paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
-  for (auto [id, path] : llvm::enumerate(paths)) {
-    ids[path] = id;
   }
 
   llvm::APInt layoutPrime(1, 2);
@@ -725,13 +740,22 @@ r1cs::exportLLZKLayoutMap(ModuleOp moduleOp, llvm::raw_ostream &output, StringRe
     output << "signal " << id << '\t' << path << '\n';
   }
   output << "# r1cs\nwire 0\t<one>\n";
-  for (auto [index, attr] : llvm::enumerate(bindings)) {
-    auto path = cast<ArrayAttr>(cast<DictionaryAttr>(attr).get("path"));
-    std::string rendered;
-    llvm::raw_string_ostream pathOutput(rendered);
-    (void)printSymbolPath(path, pathOutput);
-    pathOutput.flush();
-    output << "wire " << index + 1 << "\tsignal " << ids.lookup(rendered) << '\n';
+  ArrayAttr argumentSignals =
+      (*selectedCircuit)->getAttrOfType<ArrayAttr>(LAYOUT_ARGUMENT_SIGNALS_ATTR_NAME);
+  for (const ExportedWireInfo &wire : model->wires) {
+    IntegerAttr signal;
+    if (auto argument = dyn_cast<BlockArgument>(wire.signal)) {
+      signal = argumentSignals && argument.getArgNumber() < argumentSignals.size()
+                   ? dyn_cast<IntegerAttr>(argumentSignals[argument.getArgNumber()])
+                   : IntegerAttr();
+    } else if (Operation *definition = wire.signal.getDefiningOp()) {
+      signal = definition->getAttrOfType<IntegerAttr>(LAYOUT_SIGNAL_ATTR_NAME);
+    }
+    if (!signal || signal.getInt() < 0 || static_cast<uint64_t>(signal.getInt()) >= paths.size()) {
+      return selectedCircuit->emitOpError() << "cannot export layout map: physical wire "
+                                            << wire.wireId << " has no valid layout signal";
+    }
+    output << "wire " << wire.wireId << "\tsignal " << signal.getInt() << '\n';
   }
   return success();
 }

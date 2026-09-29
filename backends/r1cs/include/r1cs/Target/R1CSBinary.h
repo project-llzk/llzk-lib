@@ -20,6 +20,10 @@ namespace r1cs {
 /// Module reference to the exported circuit and its physical witness-wire map.
 constexpr char CIRCUIT_REF_ATTR_NAME[] = "r1cs.main";
 constexpr char WIRE_BINDINGS_ATTR_NAME[] = "poly.wire_bindings";
+constexpr char LAYOUT_SIGNALS_ATTR_NAME[] = "poly.layout_signals";
+constexpr char LAYOUT_SIGNAL_ATTR_NAME[] = "poly.layout_signal";
+constexpr char LAYOUT_ARGUMENT_SIGNALS_ATTR_NAME[] = "poly.layout_argument_signals";
+constexpr char LAYOUT_ROOT_NAMES_ATTR_NAME[] = "poly.layout_root_names";
 
 /// Serialize one circuit in `moduleOp` to the binary .r1cs format.
 mlir::LogicalResult exportR1CSBinary(

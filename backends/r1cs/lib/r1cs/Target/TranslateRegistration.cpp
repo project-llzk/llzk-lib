@@ -23,6 +23,7 @@
 
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
@@ -62,16 +63,18 @@ LogicalResult exportLayoutMap(ModuleOp module, StringRef selectedCircuit) {
   layout.flush();
 
   std::error_code error;
-  llvm::raw_fd_ostream symbols(layoutMapFile, error, llvm::sys::fs::OF_Text);
+  auto symbols =
+      std::make_unique<llvm::ToolOutputFile>(layoutMapFile, error, llvm::sys::fs::OF_None);
   if (error) {
     return module.emitError() << "could not open layout map '" << layoutMapFile
                               << "': " << error.message();
   }
-  symbols << buffer;
-  symbols.flush();
-  if (symbols.has_error()) {
+  symbols->os() << buffer;
+  symbols->os().flush();
+  if (symbols->os().has_error()) {
     return module.emitError() << "could not write layout map '" << layoutMapFile << "'";
   }
+  symbols->keep();
   return success();
 }
 
