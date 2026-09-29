@@ -267,8 +267,17 @@ LogicalResult YieldConverter::matchAndRewrite(
 LogicalResult FeltConstConverter::matchAndRewrite(
     felt::FeltConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
+  auto attr = op.getValue();
+  // Preserve the constant's representative in its specified field, if any. But
+  // fieldless constants acquire their field from the SMT lowering configuration.
+  auto r = attr.getReducedValue();
+  if (!r) {
+    // If not already reduced, reduce the raw value modulo that prime before emitting
+    // an SMT integer: SMT integers do not implicitly apply finite-field reduction.
+    r = toDynamicAPInt(attr.getRawValue()) % toDynamicAPInt(prime);
+  }
   rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
-      op, IntegerAttr::get(getContext(), APSInt {op.getValue().getReducedValue()})
+      op, IntegerAttr::get(getContext(), toAPSInt(*r))
   );
   return success();
 }

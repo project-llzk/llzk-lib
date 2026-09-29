@@ -16,17 +16,24 @@ using namespace mlir;
 namespace llzk::felt {
 
 StringAttr FeltConstAttr::getFieldName() const {
-  auto ft = getType();
+  FeltType ft = getType();
   return ft ? ft.getFieldName() : StringAttr();
 }
 
-llvm::APInt FeltConstAttr::getReducedValue() const {
-  auto type = getType();
+std::optional<llvm::DynamicAPInt> FeltConstAttr::getReducedValue() const {
+  FeltType type = getType();
   if (!type || !type.hasField()) {
-    return getRawValue();
+    return std::nullopt;
   }
   const Field &field = type.getField();
-  return toAPInt(field.reduce(getRawValue()), field.bitWidth());
+  return field.reduce(getRawValue());
+}
+
+llvm::DynamicAPInt FeltConstAttr::getReducedValueOrRaw() const {
+  if (auto reduced = getReducedValue()) {
+    return *reduced;
+  }
+  return toDynamicAPInt(getRawValue());
 }
 
 } // namespace llzk::felt

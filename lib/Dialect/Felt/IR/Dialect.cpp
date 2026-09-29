@@ -228,9 +228,10 @@ Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
 void FeltConstAttr::print(AsmPrinter &odsPrinter) const {
   odsPrinter << ' ';
   odsPrinter.printStrippedAttrOrType(getRawValue());
-  if (getType() != FeltType::get(getContext())) {
+  FeltType ty = getType();
+  if (ty != FeltType::get(getContext())) {
     odsPrinter << " : ";
-    odsPrinter.printStrippedAttrOrType(getType());
+    odsPrinter.printStrippedAttrOrType(ty);
   }
 }
 

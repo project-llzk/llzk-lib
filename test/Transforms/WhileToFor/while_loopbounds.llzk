@@ -20,18 +20,27 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: function.def @product(%{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type)
-// CHECK-DAG:     %[[STEP_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-DAG:     %[[UB_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
-// CHECK-DAG:     %[[LB_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK:         %[[ARRAY:[0-9a-zA-Z_\.]+]] = array.new
-// CHECK-NOT:     scf.while
-// CHECK:         scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB_IDX]] to %[[UB_IDX]] step %[[STEP_IDX]] {
-// CHECK-NEXT:      %[[IV_FELT:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[IV]]
-// CHECK-NEXT:      %[[WRITE_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[IV_FELT]]
-// CHECK-NEXT:      array.write %[[ARRAY]][%[[WRITE_IDX]]] = %[[IV_FELT]]
+// Fieldless loop bounds retain explicit casts until a field is known.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  10
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <10 x !felt.type>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_5]] : !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_4]] : !felt.type
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_3]] : !felt.type
+// CHECK-NEXT:        scf.for %[[VAL_11:[0-9a-zA-Z_\.]+]] = %[[VAL_8]] to %[[VAL_9]] step %[[VAL_10]] {
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_11]] : index, !felt.type
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_12]] : !felt.type
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_13]]] = %[[VAL_12]] : <10 x !felt.type>, !felt.type
+// CHECK-NEXT:        } {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@A>
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NOT:     scf.while
+// CHECK-NEXT:  }
 // -----
 
 // Same as above but using a specified felt type "babybear"

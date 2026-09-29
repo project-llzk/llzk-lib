@@ -1,11 +1,13 @@
 changed:
   - Rename `FeltConstAttr::value` and `getValue()` to `rawValue` and `getRawValue()`.
   - Define `felt.const N` in a specified field as `N mod p`, independently of canonicalization. Text and bytecode serialization preserve the raw value.
-  - Make `FeltConstantOp::getValueAPInt()` return the reduced field representative when a field is specified.
+  - Remove `FeltConstantOp::getValueAPInt()`; use `getValue().getReducedValue()` to obtain an optional reduced field representative.
 
 fixed:
+  - Avoid folding fieldless comparisons and index casts; reduce fieldless constants using the selected field in interval analysis and SMT lowering.
   - Use reduced constants in arithmetic folding, boolean comparisons, index casts, source-reference and interval analysis, witness generation, and PCL, R1CS, SMT, and ZKLean backends.
 
 added:
-  - Add `FeltConstAttr::getReducedValue()` to return the representative in `[0, p)` for a specified prime field, or the raw value when the field is unspecified.
+  - Add `FeltConstAttr::getReducedValue()` to return the representative in `[0, p)` for a specified prime field, or `std::nullopt` when the field is unspecified.
+  - Add `FeltConstAttr::getReducedValueOrRaw()` for callers that explicitly allow an unreduced value when the field is unspecified.
   - Add canonicalization of `felt.const` to use reduced field representatives.

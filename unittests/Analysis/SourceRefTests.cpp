@@ -402,3 +402,30 @@ TEST_F(SourceRefTests, ConstantFeltValueUsesFieldRepresentative) {
   ASSERT_TRUE(succeeded(value));
   EXPECT_EQ(*value, DynamicAPInt(7));
 }
+
+/// Fieldless constants have no numeric field representative until a field is supplied.
+/// Their equality, hashing, ordering, and printing must still use the raw value:
+/// 2013265928 reduces to 7 in BabyBear, but remains distinct from a fieldless 7.
+TEST_F(SourceRefTests, FieldlessConstantsSeparateIdentityFromEvaluation) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, APInt(64, 2013265928));
+  auto first = felt::FeltConstantOp::create(builder, loc, attr);
+  auto second = felt::FeltConstantOp::create(builder, loc, attr);
+  auto seven =
+      felt::FeltConstantOp::create(builder, loc, felt::FeltConstAttr::get(&ctx, APInt(64, 7)));
+  EXPECT_FALSE(first.getValue().getReducedValue());
+  SourceRef a(first), b(second), c(seven);
+  EXPECT_TRUE(failed(a.getConstantFeltValue()));
+  EXPECT_TRUE(failed(a.getConstantValue()));
+  auto value = a.getConstantValue(Field::getField("babybear"));
+  ASSERT_TRUE(succeeded(value));
+  EXPECT_EQ(*value, DynamicAPInt(7));
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(SourceRef::Hash {}(a), SourceRef::Hash {}(b));
+  EXPECT_NE(a, c);
+  EXPECT_EQ(a <=> b, std::strong_ordering::equal);
+  EXPECT_NE(a <=> c, std::strong_ordering::equal);
+  EXPECT_EQ(buildStringViaPrint(a), "<felt.const: 2013265928>");
+}

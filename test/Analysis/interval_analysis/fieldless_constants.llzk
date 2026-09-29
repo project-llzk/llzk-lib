@@ -1,0 +1,72 @@
+// RUN: llzk-opt --llzk-print-interval-analysis='field=babybear print-compute-intervals' %s 2>&1 | FileCheck %s
+
+// Fieldless constants must be reduced using the selected analysis field.
+// Do not canonicalize: exercise each analysis consumer of the stored literal.
+module attributes {llzk.lang} {
+  struct.def @ConstantValue {
+    struct.member @out : !felt.type
+    function.def @compute() -> !struct.type<@ConstantValue> {
+      %self = struct.new : !struct.type<@ConstantValue>
+      %c = felt.const 2013265928 : !felt.type
+      struct.writem %self[@out] = %c : !struct.type<@ConstantValue>, !felt.type
+      function.return %self : !struct.type<@ConstantValue>
+    }
+    function.def @constrain(%self: !struct.type<@ConstantValue>) {
+      function.return
+    }
+  }
+  struct.def @ZeroMultiplier {
+    function.def @compute(%a: !felt.type) -> !struct.type<@ZeroMultiplier> {
+      %self = struct.new : !struct.type<@ZeroMultiplier>
+      function.return %self : !struct.type<@ZeroMultiplier>
+    }
+    function.def @constrain(%self: !struct.type<@ZeroMultiplier>, %a: !felt.type) {
+      %p = felt.const 2013265921 : !felt.type
+      %zero = felt.const 0 : !felt.type
+      %prod = felt.mul %a, %p : !felt.type, !felt.type
+      constrain.eq %prod, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @Decomposition {
+    function.def @compute(%a: !felt.type) -> !struct.type<@Decomposition> {
+      %self = struct.new : !struct.type<@Decomposition>
+      function.return %self : !struct.type<@Decomposition>
+    }
+    function.def @constrain(%self: !struct.type<@Decomposition>, %a: !felt.type) {
+      %two = felt.const 2013265923 : !felt.type
+      %five = felt.const 2013265926 : !felt.type
+      %zero = felt.const 0 : !felt.type
+      %lo = felt.sub %a, %two : !felt.type, !felt.type
+      %hi = felt.sub %a, %five : !felt.type, !felt.type
+      %prod = felt.mul %lo, %hi : !felt.type, !felt.type
+      constrain.eq %prod, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConstantValue StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Degenerate(7)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+// CHECK-LABEL: @ZeroMultiplier StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+// CHECK-LABEL: @Decomposition StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in TypeA:[ 2, 5 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

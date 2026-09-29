@@ -1,0 +1,28 @@
+// RUN: llzk-opt --canonicalize %s | FileCheck %s
+
+// A fieldless constant cannot determine a comparison result or integer index.
+function.def @equal() -> i1 {
+  %a = felt.const 2013265921
+  %b = felt.const 0
+  %eq = bool.cmp eq(%a, %b)
+  function.return %eq : i1
+}
+function.def @index() -> index attributes {function.allow_non_native_field_ops} {
+  %a = felt.const 2013265921
+  %i = cast.toindex %a
+  function.return %i : index
+}
+
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @equal() -> i1 {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  2013265921
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_0]], %[[VAL_1]]) : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_2]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @index() -> index attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2013265921
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_3]] : !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

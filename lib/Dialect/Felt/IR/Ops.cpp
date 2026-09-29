@@ -73,8 +73,8 @@ static std::optional<BinaryFoldData> tryGetBinaryFoldData(Attribute lhsAttr, Att
   }
 
   return BinaryFoldData {
-      toDynamicAPInt(lhs.getReducedValue()), toDynamicAPInt(rhs.getReducedValue()),
-      lhsFieldName.getValue(), &fieldRes.value().get()
+      *lhs.getReducedValue(), *rhs.getReducedValue(), lhsFieldName.getValue(),
+      &fieldRes.value().get()
   };
 }
 
@@ -96,7 +96,7 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
   }
 
   return UnaryFoldData {
-      toDynamicAPInt(operand.getReducedValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
+      *operand.getReducedValue(), fieldNameAttr.getValue(), &fieldRes.value().get()
   };
 }
 
@@ -125,12 +125,12 @@ OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue
 /// Replaces a constant's raw value with its canonical field representative.
 LogicalResult FeltConstantOp::canonicalize(FeltConstantOp op, PatternRewriter &rewriter) {
   FeltConstAttr valueAttr = op.getValue();
-  APInt reduced = valueAttr.getReducedValue();
-  if (APInt::isSameValue(valueAttr.getRawValue(), reduced)) {
+  auto reduced = valueAttr.getReducedValue();
+  if (!reduced || toDynamicAPInt(valueAttr.getRawValue()) == *reduced) {
     return failure();
   }
   rewriter.modifyOpInPlace(op, [&]() {
-    op.setValueAttr(FeltConstAttr::get(op.getContext(), reduced, valueAttr.getType()));
+    op.setValueAttr(FeltConstAttr::get(op.getContext(), toAPSInt(*reduced), valueAttr.getType()));
   });
   return success();
 }

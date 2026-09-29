@@ -5,13 +5,13 @@ module attributes {llzk.lang} {
     struct.member @foo : !array.type<2 x !felt.type>
     function.def @product(%inp : !array.type<2 x !felt.type>)  -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@A>
-      %fc0 = felt.const 0
-      %fc1 = felt.const 1
+      %fc0 = felt.const 0 : !felt.type<"babybear">
+      %fc1 = felt.const 1 : !felt.type<"babybear">
 
       %foo = array.new : !array.type<2 x !felt.type>
 
-      %c0 = cast.toindex %fc0 : !felt.type
-      %c1 = cast.toindex %fc1 : !felt.type
+      %c0 = cast.toindex %fc0 : !felt.type<"babybear">
+      %c1 = cast.toindex %fc1 : !felt.type<"babybear">
 
       %x = array.read %inp[%c0] : !array.type<2 x !felt.type>, !felt.type
       %y = array.read %inp[%c1] : !array.type<2 x !felt.type>, !felt.type

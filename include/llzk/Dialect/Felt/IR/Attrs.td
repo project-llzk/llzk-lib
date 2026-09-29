@@ -25,7 +25,7 @@ def LLZK_FeltConstAttr
     unreduced unsigned integer. For a specified field with prime modulus `p`,
     the attribute denotes `rawValue mod p`, regardless of its stored
     representation. `getReducedValue()` returns the representative in `[0, p)`
-    when the type specifies a field, or the raw value otherwise.
+    when the type specifies a field, or `std::nullopt` otherwise.
   }];
 
   let parameters = (ins WidthInsensitiveAPIntParameter<
@@ -77,8 +77,14 @@ def LLZK_FeltConstAttr
     ::mlir::StringAttr getFieldName() const;
 
     /// Returns the unsigned raw value reduced to [0, p) for the stored field.
-    /// Returns the raw value unchanged if the type has no specified field.
-    ::llvm::APInt getReducedValue() const;
+    /// The result is a nonnegative integer independent of the storage bit width.
+    /// Returns std::nullopt if the type has no specified field.
+    std::optional<::llvm::DynamicAPInt> getReducedValue() const;
+
+    /// Returns the reduced value when the type specifies a field, otherwise
+    /// the raw unsigned value. The result is not guaranteed to be reduced.
+    /// Use getReducedValue() when folding requires a known field representative.
+    ::llvm::DynamicAPInt getReducedValueOrRaw() const;
   }];
 }
 

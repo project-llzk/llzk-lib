@@ -117,10 +117,6 @@ def LLZK_FeltConstantOp
   let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
   let hasCanonicalizeMethod = 1;
-  let extraClassDeclaration = [{
-    /// Returns the field representative, or the raw integer if the field is unspecified.
-    ::llvm::APInt getValueAPInt() { return getValue().getReducedValue(); }
-  }];
 }
 
 //===------------------------------------------------------------------===//

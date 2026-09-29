@@ -101,29 +101,35 @@ TEST_F(BabyBearFoldTest, ReducedConstantBoundaries) {
   for (uint64_t value :
        std::array<uint64_t, 6> {0, 1, BB_PRIME - 1, BB_PRIME, BB_PRIME + 1, 2 * BB_PRIME}) {
     auto attr = babyBearConst(value);
-    EXPECT_EQ(attr.getReducedValue().getZExtValue(), value % BB_PRIME);
+    ASSERT_TRUE(attr.getReducedValue());
+    EXPECT_EQ(*attr.getReducedValue(), value % BB_PRIME);
+    EXPECT_EQ(attr.getReducedValueOrRaw(), value % BB_PRIME);
     EXPECT_EQ(attr.getRawValue().getZExtValue(), value);
   }
 }
 
 TEST_F(BabyBearFoldTest, ReducedConstantUsesUnsignedValue) {
   auto attr = FeltConstAttr::get(&ctx, APInt(8, 255), BB_FIELD);
-  EXPECT_EQ(attr.getReducedValue().getZExtValue(), 255U);
+  ASSERT_TRUE(attr.getReducedValue());
+  EXPECT_EQ(*attr.getReducedValue(), 255U);
 }
 
 TEST_F(BabyBearFoldTest, ReducedConstantHandlesWideValues) {
   APInt prime(256, BB_PRIME);
   APInt raw = prime * APInt::getOneBitSet(256, 128) + APInt(256, 17);
   auto attr = FeltConstAttr::get(&ctx, raw, BB_FIELD);
-  EXPECT_EQ(attr.getReducedValue().getZExtValue(), 17U);
+  ASSERT_TRUE(attr.getReducedValue());
+  EXPECT_EQ(*attr.getReducedValue(), 17U);
   EXPECT_EQ(attr.getRawValue(), raw);
 }
 
-TEST_F(BabyBearFoldTest, ReducedConstantWithoutFieldPreservesRawValue) {
+TEST_F(BabyBearFoldTest, ReducedConstantWithoutFieldIsAbsent) {
   APInt raw = APInt::getAllOnes(256);
   auto attr = FeltConstAttr::get(&ctx, raw);
-  EXPECT_EQ(attr.getReducedValue(), raw);
-  EXPECT_EQ(attr.getReducedValue().getBitWidth(), raw.getBitWidth());
+  EXPECT_FALSE(attr.getReducedValue());
+  EXPECT_EQ(attr.getReducedValueOrRaw(), toDynamicAPInt(raw));
+  EXPECT_GT(attr.getReducedValueOrRaw(), 0);
+  EXPECT_EQ(attr.getRawValue(), raw);
 }
 
 //===------------------------------------------------------------------===//
@@ -411,7 +417,8 @@ TEST_F(BabyBearFoldTest, CastToIndexReducesWithoutCanonicalizingConstant) {
   PatternRewriter rewriter(&ctx);
   rewriter.setInsertionPointToEnd(&block);
   auto constant = FeltConstantOp::create(rewriter, loc, babyBearConst(BB_PRIME + 7));
-  EXPECT_EQ(constant.getValueAPInt().getZExtValue(), 7U);
+  ASSERT_TRUE(constant.getValue().getReducedValue());
+  EXPECT_EQ(*constant.getValue().getReducedValue(), 7U);
   auto cast = llzk::cast::FeltToIndexOp::create(rewriter, loc, constant.getResult());
   ASSERT_TRUE(succeeded(llzk::cast::FeltToIndexOp::canonicalize(cast, rewriter)));
   auto index = dyn_cast<arith::ConstantIndexOp>(block.back());

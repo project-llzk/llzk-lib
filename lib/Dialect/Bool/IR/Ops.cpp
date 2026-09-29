@@ -119,20 +119,21 @@ OpFoldResult NotBoolOp::fold(FoldAdaptor adaptor) {
 // CmpOp
 //===------------------------------------------------------------------===//
 
-inline static bool eval(FeltCmpPredicate pred, const llvm::APInt &lval, const llvm::APInt &rval) {
+inline static bool
+eval(FeltCmpPredicate pred, const llvm::DynamicAPInt &lval, const llvm::DynamicAPInt &rval) {
   switch (pred) {
   case FeltCmpPredicate::EQ:
     return lval == rval;
   case FeltCmpPredicate::NE:
     return lval != rval;
   case FeltCmpPredicate::LT:
-    return lval.ult(rval);
+    return lval < rval;
   case FeltCmpPredicate::LE:
-    return lval.ule(rval);
+    return lval <= rval;
   case FeltCmpPredicate::GT:
-    return lval.ugt(rval);
+    return lval > rval;
   case FeltCmpPredicate::GE:
-    return lval.uge(rval);
+    return lval >= rval;
   }
   llvm_unreachable("invalid FeltCmpPredicate");
 }
@@ -144,17 +145,13 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
     return {};
   }
 
-  // Normalize to a common bit width for unsigned comparison.
-  llvm::APInt lval = lhsAttr.getReducedValue();
-  llvm::APInt rval = rhsAttr.getReducedValue();
-  unsigned w = std::max(lval.getBitWidth(), rval.getBitWidth());
-  if (lval.getBitWidth() < w) {
-    lval = lval.zext(w);
+  auto lhs = lhsAttr.getReducedValue();
+  auto rhs = rhsAttr.getReducedValue();
+  if (!lhs || !rhs) {
+    return {};
   }
-  if (rval.getBitWidth() < w) {
-    rval = rval.zext(w);
-  }
-  return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
+
+  return makeBoolAttr(getContext(), eval(getPredicate(), *lhs, *rhs));
 }
 
 //===------------------------------------------------------------------===//
