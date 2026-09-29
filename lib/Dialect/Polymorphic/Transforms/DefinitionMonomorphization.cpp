@@ -222,22 +222,22 @@ static LogicalResult substituteDefinition(
     }
     APInt bits = integer ? integer.getValue() : felt.getValue();
     if (auto type = dyn_cast<FeltType>(read.getType())) {
-      replacement = builder.create<FeltConstantOp>(
-          read.getLoc(), FeltConstAttr::get(read.getContext(), bits, type)
+      replacement = FeltConstantOp::create(
+          builder, read.getLoc(), FeltConstAttr::get(read.getContext(), bits, type)
       );
     } else if (read.getType().isIndex()) {
       if (felt && (bits.isNegative() || bits.getActiveBits() > 63)) {
         return read.emitError("specialization constant does not fit a nonnegative index");
       }
-      replacement = builder.create<arith::ConstantOp>(
-          read.getLoc(), builder.getIndexAttr(bits.getSExtValue())
+      replacement = arith::ConstantOp::create(
+          builder, read.getLoc(), builder.getIndexAttr(bits.getSExtValue())
       );
     } else if (auto integerType = dyn_cast<IntegerType>(read.getType())) {
       // Circom/LLZK boolean reads interpret every nonzero scalar as true.
       auto scalar = integerType.getWidth() == 1 ? APInt(1, !bits.isZero())
                                                 : bits.zextOrTrunc(integerType.getWidth());
       replacement =
-          builder.create<arith::ConstantOp>(read.getLoc(), IntegerAttr::get(integerType, scalar));
+          arith::ConstantOp::create(builder, read.getLoc(), IntegerAttr::get(integerType, scalar));
     } else {
       return read.emitError("unsupported specialization constant type");
     }

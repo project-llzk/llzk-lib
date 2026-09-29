@@ -20,10 +20,13 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
         %x = cast.tofelt %i : index, !felt.type<"babybear">
         function.call @check(%x) : (!felt.type<"babybear">) -> ()
       }
-      %retained = felt.const 2 : <"babybear">
-      %first = felt.const 1 : <"babybear">
-      function.call @check(%retained) : (!felt.type<"babybear">) -> ()
-      function.call @check(%first) : (!felt.type<"babybear">) -> ()
+      // Evaluate the retained and evicted keys after the cache has reached capacity.
+      %three = arith.constant 3 : index
+      scf.for %i = %one to %three step %one {
+        %key = arith.subi %three, %i : index
+        %x = cast.tofelt %key : index, !felt.type<"babybear">
+        function.call @check(%x) : (!felt.type<"babybear">) -> ()
+      }
       function.return
     }
   }
