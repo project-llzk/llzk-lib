@@ -118,8 +118,8 @@ def LLZK_FeltConstantOp
   let hasFolder = 1;
   let hasCanonicalizeMethod = 1;
   let extraClassDeclaration = [{
-    /// Returns the raw, potentially unreduced integer stored by the constant.
-    ::llvm::APInt getValueAPInt() { return getValue().getRawValue(); }
+    /// Returns the field representative, or the raw integer if the field is unspecified.
+    ::llvm::APInt getValueAPInt() { return getValue().getReducedValue(); }
   }];
 }
 

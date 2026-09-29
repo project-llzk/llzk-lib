@@ -390,3 +390,15 @@ module attributes {llzk.lang} {
   SourceRef afterArg(whileOp.getAfter().front().getArgument(0));
   EXPECT_EQ(buildStringViaPrint(afterArg), "%arg0");
 }
+
+TEST_F(SourceRefTests, ConstantFeltValueUsesFieldRepresentative) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, APInt(64, 2013265928), "babybear");
+  auto constant = felt::FeltConstantOp::create(builder, loc, attr);
+  SourceRef ref(constant);
+  auto value = ref.getConstantFeltValue();
+  ASSERT_TRUE(succeeded(value));
+  EXPECT_EQ(*value, DynamicAPInt(7));
+}

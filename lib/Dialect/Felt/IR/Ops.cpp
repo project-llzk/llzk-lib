@@ -73,8 +73,8 @@ static std::optional<BinaryFoldData> tryGetBinaryFoldData(Attribute lhsAttr, Att
   }
 
   return BinaryFoldData {
-      toDynamicAPInt(lhs.getRawValue()), toDynamicAPInt(rhs.getRawValue()), lhsFieldName.getValue(),
-      &fieldRes.value().get()
+      toDynamicAPInt(lhs.getReducedValue()), toDynamicAPInt(rhs.getReducedValue()),
+      lhsFieldName.getValue(), &fieldRes.value().get()
   };
 }
 
@@ -96,7 +96,7 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
   }
 
   return UnaryFoldData {
-      toDynamicAPInt(operand.getRawValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
+      toDynamicAPInt(operand.getReducedValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
   };
 }
 
@@ -116,7 +116,7 @@ static FeltConstAttr buildFoldResult(
 void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
   SmallString<32> buf;
   llvm::raw_svector_ostream(buf) << "felt_const_";
-  getValueAPInt().toStringUnsigned(buf);
+  getValue().getRawValue().toStringUnsigned(buf);
   setNameFn(getResult(), buf);
 }
 

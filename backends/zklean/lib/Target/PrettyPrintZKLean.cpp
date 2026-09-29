@@ -176,7 +176,7 @@ static std::string formatOperationCall(Operation &op, llvm::DenseMap<Value, std:
 // Render a felt constant as a decimal literal.
 // Uses a base-10 string conversion for readability.
 static std::string formatFeltConstant(llzk::felt::FeltConstantOp constOp) {
-  auto value = constOp.getValueAttr().getRawValue();
+  auto value = constOp.getValueAttr().getReducedValue();
   llvm::SmallString<32> buffer;
   value.toString(buffer, 10, false, false, false, false);
   return std::string(buffer);

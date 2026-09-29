@@ -107,7 +107,7 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    auto value = constOp.getValue().getRawValue();
+    auto value = constOp.getValue().getReducedValue();
     // Require a nonnegative APInt representation that fits in the signed 64-bit index builder.
     // The sign check also protects programmatically constructed attributes whose APInt width was
     // not normalized by the textual IR parser.

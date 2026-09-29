@@ -268,7 +268,7 @@ LogicalResult FeltConstConverter::matchAndRewrite(
     felt::FeltConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
   rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
-      op, IntegerAttr::get(getContext(), APSInt {op.getValue().getRawValue()})
+      op, IntegerAttr::get(getContext(), APSInt {op.getValue().getReducedValue()})
   );
   return success();
 }
