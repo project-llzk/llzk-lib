@@ -21,5 +21,5 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_ma
 
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main, r1cs.main = @Main__r1cs} {
-// CHECK-NEXT:    r1cs.circuit @Main__r1cs inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}) attributes {poly.wire_bindings = [{path = [1], public = true, wire = 1 : i64}]} {
+// CHECK-NEXT:    r1cs.circuit @Main__r1cs inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}) attributes {poly.layout_argument_signals = [0], poly.layout_root_names = {}, poly.layout_signals = [{id = 0 : i64, path = [1]}], poly.wire_bindings = [{path = [1], public = true, signal = 0 : i64, wire = 1 : i64}]} {
 // CHECK-NEXT:    }

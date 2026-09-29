@@ -30,8 +30,11 @@ export an optional text sidecar. It is available for circuits produced by direct
 R1CS lowering. The exporter writes this file after the binary R1CS stream; no
 lowering pass performs filesystem output.
 
-The deterministic version-1 format first lists canonical LLZK signal ids and
-their access paths, then maps physical R1CS wires to those ids. The R1CS section
+The deterministic version-1 format assigns logical signal ids in lexicographic
+order of the serialized storage paths, independently of physical wire order.
+Argument SSA names do not supply names: use the explicit `function.arg_name`
+argument attribute. The map lists signal ids and their access paths, then maps
+physical R1CS wires to those ids. The R1CS section
 always contains `wire 0<TAB><one>` for the implicit constant-one wire. The first
 path component is `main` for the main circuit instance or `arg["<name>"]` for
 a named constrain-function argument; unnamed arguments use `arg<N>`. Members

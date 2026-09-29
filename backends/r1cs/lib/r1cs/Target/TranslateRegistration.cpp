@@ -78,7 +78,7 @@ LogicalResult exportLayoutMap(ModuleOp module, StringRef selectedCircuit) {
   return success();
 }
 
-LogicalResult exportBinaryAndSymbols(ModuleOp module, llvm::raw_ostream &output) {
+LogicalResult exportBinaryAndLayoutMap(ModuleOp module, llvm::raw_ostream &output) {
   if (failed(r1cs::exportR1CSBinary(module, output, prime, circuitName))) {
     return failure();
   }
@@ -100,7 +100,7 @@ LogicalResult lowerAndExportR1CS(Operation *op, llvm::raw_ostream &output) {
   if (failed(pm.run(module))) {
     return failure();
   }
-  return exportBinaryAndSymbols(module, output);
+  return exportBinaryAndLayoutMap(module, output);
 }
 
 } // namespace
@@ -120,7 +120,7 @@ void r1cs::registerR1CSTranslation() {
     if (!moduleOp) {
       return op->emitOpError() << "expected builtin.module as top level operation";
     }
-    return exportBinaryAndSymbols(moduleOp, output);
+    return exportBinaryAndLayoutMap(moduleOp, output);
   }, [](DialectRegistry &registry) {
     llzk::registerAllDialects(registry);
     registry.insert<R1CSDialect>();

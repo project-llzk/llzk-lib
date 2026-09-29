@@ -6,8 +6,8 @@
 // CHECK-NEXT: signal 0{{[[:space:]]+}}main["children"][0]["out"]
 // CHECK-NEXT: signal 1{{[[:space:]]+}}main["children"][1]["out"]
 // CHECK-NEXT: signal 2{{[[:space:]]+}}main["out"]
-// CHECK-NEXT: signal 3{{[[:space:]]+}}arg["inputs"][0]
-// CHECK-NEXT: signal 4{{[[:space:]]+}}arg["inputs"][1]
+// CHECK-NEXT: signal 3{{[[:space:]]+}}arg1[0]
+// CHECK-NEXT: signal 4{{[[:space:]]+}}arg1[1]
 // CHECK-NEXT: # r1cs
 // CHECK-NEXT: wire 0{{[[:space:]]+}}<one>
 // CHECK-NEXT: wire 1{{[[:space:]]+}}signal 2

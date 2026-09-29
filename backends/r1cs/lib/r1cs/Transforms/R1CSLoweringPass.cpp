@@ -762,15 +762,19 @@ public:
       path.print(output);
       return output.str();
     };
-    llvm::sort(signals, [&pathText](const Signal &lhs, const Signal &rhs) {
-      return pathText(lhs.path) < pathText(rhs.path);
+    SmallVector<Signal *> orderedSignals;
+    for (auto &signal : signals) {
+      orderedSignals.push_back(&signal);
+    }
+    llvm::sort(orderedSignals, [&pathText](const Signal *lhs, const Signal *rhs) {
+      return pathText(lhs->path) < pathText(rhs->path);
     });
     SmallVector<Attribute> layoutSignals;
-    for (auto [id, signal] : llvm::enumerate(signals)) {
-      signal.layoutId = id;
+    for (auto [id, signal] : llvm::enumerate(orderedSignals)) {
+      signal->layoutId = id;
       NamedAttrList layout;
       layout.set("id", top.getI64IntegerAttr(id));
-      layout.set("path", signal.path);
+      layout.set("path", signal->path);
       layoutSignals.push_back(layout.getDictionary(top.getContext()));
     }
     NamedAttrList inputAttrs;
@@ -787,7 +791,6 @@ public:
     );
     circuit->setAttr(r1cs::LAYOUT_SIGNALS_ATTR_NAME, top.getArrayAttr(layoutSignals));
     NamedAttrList rootNames;
-    rootNames.set("0", top.getStringAttr("main"));
     for (unsigned index = 1; index < function.getNumArguments(); ++index) {
       if (auto name = function.getArgNameAttr(index)) {
         rootNames.set(std::to_string(index), *name);
