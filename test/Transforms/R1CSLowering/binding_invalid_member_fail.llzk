@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-full-direct-r1cs-lowering --verify-diagnostics -o /dev/null
+// RUN: llzk-opt %s --llzk-full-r1cs-lowering --verify-diagnostics -o /dev/null
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
   struct.def @Main {
     struct.member @values : !array.type<2 x !felt.type>

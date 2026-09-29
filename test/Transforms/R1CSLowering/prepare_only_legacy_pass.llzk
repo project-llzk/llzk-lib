@@ -1,5 +1,5 @@
 // RUN: llzk-opt %s --llzk-r1cs-prepare -o %t
-// RUN: llzk-opt %t --llzk-r1cs-lowering | FileCheck %s
+// RUN: llzk-opt %t --llzk-r1cs-lowering=legacy=true | FileCheck %s
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {

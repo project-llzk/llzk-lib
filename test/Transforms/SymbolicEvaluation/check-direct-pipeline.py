@@ -17,7 +17,7 @@ def run(*args):
 evaluated = run(opt, source, '--llzk-monomorphize', '--llzk-evaluate-constraints')
 eval_file = directory / 'evaluated.llzk'
 eval_file.write_text(evaluated)
-r1cs_ir = run(opt, str(eval_file), '--llzk-full-direct-r1cs-lowering')
+r1cs_ir = run(opt, str(eval_file), '--llzk-full-r1cs-lowering')
 r1cs_file = directory / 'lowered.llzk'
 r1cs_file.write_text(r1cs_ir)
 binary = directory / 'circuit.r1cs'

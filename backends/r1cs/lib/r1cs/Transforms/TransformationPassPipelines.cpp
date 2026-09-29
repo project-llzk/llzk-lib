@@ -35,22 +35,20 @@ void buildFullR1CSLoweringPipeline(OpPassManager &pm, R1CSLoweringMode mode) {
     llzk::buildFullPolyLoweringPipeline(pm, config);
   }
   pm.addPass(createR1CSPreparePass());
-  if (mode == R1CSLoweringMode::Direct) {
-    pm.addPass(createR1CSDirectLoweringPass());
-  } else {
-    pm.addPass(createR1CSLoweringPass());
-  }
+  pm.addPass(
+      createR1CSLoweringPass(R1CSLoweringPassOptions {.legacy = mode == R1CSLoweringMode::Legacy})
+  );
   pm.addPass(mlir::createCSEPass());
 }
 
 void registerTransformationPassPipelines() {
-  PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower legacy polynomial constraints to R1CS",
-      [](OpPassManager &pm) { buildFullR1CSLoweringPipeline(pm, R1CSLoweringMode::Legacy); }
-  );
-  PassPipelineRegistration<>(
-      "llzk-full-direct-r1cs-lowering", "Lower evaluated storage constraints directly to R1CS",
-      [](OpPassManager &pm) { buildFullR1CSLoweringPipeline(pm, R1CSLoweringMode::Direct); }
+  PassPipelineRegistration<FullR1CSLoweringOptions>(
+      "llzk-full-r1cs-lowering", "Lower constraints to R1CS (direct by default)",
+      [](OpPassManager &pm, const FullR1CSLoweringOptions &options) {
+    buildFullR1CSLoweringPipeline(
+        pm, options.legacy ? R1CSLoweringMode::Legacy : R1CSLoweringMode::Direct
+    );
+  }
   );
 }
 

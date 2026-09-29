@@ -1,5 +1,5 @@
-// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
-// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering=legacy=true -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering=legacy=true %s | r1cs-opt -o /dev/null
 
 module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   // lowers constraints to be at most degree 2 polynomials

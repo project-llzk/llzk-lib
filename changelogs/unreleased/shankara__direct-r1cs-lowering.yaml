@@ -1,2 +1,4 @@
 added:
-  - Add separate R1CS preparation and direct lowering passes for evaluated constraints, with validated storage-to-wire bindings for witness generation.
+  - Add R1CS preparation and validated storage-to-wire bindings for witness generation.
+changed:
+  - Make llzk-r1cs-lowering and llzk-full-r1cs-lowering use direct evaluated-storage lowering by default; select legacy=true for flattened-input lowering.

@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-full-direct-r1cs-lowering | FileCheck %s
+// RUN: llzk-opt %s --llzk-full-r1cs-lowering | FileCheck %s
 // Successful lowering; a contradictory equation must remain unsatisfiable.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
   struct.def @Main {
