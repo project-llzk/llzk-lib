@@ -96,9 +96,13 @@ printSymbolPath(ArrayAttr path, DictionaryAttr rootNames, llvm::raw_ostream &out
   if (!root || root.getInt() < 0) {
     return failure();
   }
-  auto name = rootNames.getAs<StringAttr>(std::to_string(root.getInt()));
-  if (name) {
-    output << name.getValue();
+  auto name = rootNames ? rootNames.getAs<StringAttr>(std::to_string(root.getInt())) : StringAttr();
+  if (root.getInt() == 0) {
+    output << "main";
+  } else if (name) {
+    output << "arg[";
+    name.print(output);
+    output << ']';
   } else {
     output << "arg" << root.getInt();
   }
@@ -137,6 +141,19 @@ static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText)
   }
 
   return prime;
+}
+
+/// Read the logical layout id carried by a signal in the binary export model.
+static IntegerAttr getLayoutSignalId(Value signal, ArrayAttr argumentSignals) {
+  if (auto argument = dyn_cast<BlockArgument>(signal)) {
+    return argumentSignals && argument.getArgNumber() < argumentSignals.size()
+               ? dyn_cast<IntegerAttr>(argumentSignals[argument.getArgNumber()])
+               : IntegerAttr();
+  }
+  if (Operation *definition = signal.getDefiningOp()) {
+    return definition->getAttrOfType<IntegerAttr>(r1cs::LAYOUT_SIGNAL_ATTR_NAME);
+  }
+  return {};
 }
 
 enum class ExportWireClass : std::uint8_t {
@@ -222,6 +239,15 @@ public:
       model.constraints.push_back({*a, *b, *c});
     }
 
+    return model;
+  }
+
+  /// Build just the wire model for layout-map validation.  Layout maps must
+  /// not depend on a placeholder field modulus or flatten constraints.
+  FailureOr<ExportedCircuit> buildWireLayout() {
+    if (failed(assignWires())) {
+      return failure();
+    }
     return model;
   }
 
@@ -726,9 +752,12 @@ r1cs::exportLLZKLayoutMap(ModuleOp moduleOp, llvm::raw_ostream &output, StringRe
     }
   }
 
-  llvm::APInt layoutPrime(1, 2);
+  // A layout map needs only the physical wire assignment.  In particular, do
+  // not parse constraints using a dummy modulus, which could truncate a field
+  // element or fail on otherwise valid R1CS text.
+  llvm::APInt layoutPrime(2, 2);
   CircuitExportModelBuilder modelBuilder(*selectedCircuit, layoutPrime);
-  FailureOr<ExportedCircuit> model = modelBuilder.build();
+  FailureOr<ExportedCircuit> model = modelBuilder.buildWireLayout();
   if (failed(model) || model->numWires != bindings.size() + 1) {
     return selectedCircuit->emitOpError()
            << "cannot export layout map: '" << WIRE_BINDINGS_ATTR_NAME
@@ -743,17 +772,19 @@ r1cs::exportLLZKLayoutMap(ModuleOp moduleOp, llvm::raw_ostream &output, StringRe
   ArrayAttr argumentSignals =
       (*selectedCircuit)->getAttrOfType<ArrayAttr>(LAYOUT_ARGUMENT_SIGNALS_ATTR_NAME);
   for (const ExportedWireInfo &wire : model->wires) {
-    IntegerAttr signal;
-    if (auto argument = dyn_cast<BlockArgument>(wire.signal)) {
-      signal = argumentSignals && argument.getArgNumber() < argumentSignals.size()
-                   ? dyn_cast<IntegerAttr>(argumentSignals[argument.getArgNumber()])
-                   : IntegerAttr();
-    } else if (Operation *definition = wire.signal.getDefiningOp()) {
-      signal = definition->getAttrOfType<IntegerAttr>(LAYOUT_SIGNAL_ATTR_NAME);
-    }
+    IntegerAttr signal = getLayoutSignalId(wire.signal, argumentSignals);
     if (!signal || signal.getInt() < 0 || static_cast<uint64_t>(signal.getInt()) >= paths.size()) {
       return selectedCircuit->emitOpError() << "cannot export layout map: physical wire "
                                             << wire.wireId << " has no valid layout signal";
+    }
+    auto binding = dyn_cast<DictionaryAttr>(bindings[wire.wireId - 1]);
+    auto bindingWire = binding ? binding.getAs<IntegerAttr>("wire") : IntegerAttr();
+    auto bindingSignal = binding ? binding.getAs<IntegerAttr>("signal") : IntegerAttr();
+    if (!bindingWire || !bindingSignal || bindingWire.getInt() != wire.wireId ||
+        bindingSignal.getInt() != signal.getInt()) {
+      return selectedCircuit->emitOpError()
+             << "cannot export layout map: '" << WIRE_BINDINGS_ATTR_NAME << "' entry for wire "
+             << wire.wireId << " does not match the binary export signal";
     }
     output << "wire " << wire.wireId << "\tsignal " << signal.getInt() << '\n';
   }

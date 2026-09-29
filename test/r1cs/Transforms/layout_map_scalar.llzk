@@ -3,11 +3,11 @@
 
 // CHECK: # LLZK layout map v1
 // CHECK-NEXT: # signals
-// CHECK-NEXT: signal 0{{[[:space:]]+}}arg1
-// CHECK-NEXT: signal 1{{[[:space:]]+}}arg2
-// CHECK-NEXT: signal 2{{[[:space:]]+}}main["out"]
+// CHECK-NEXT: signal 0{{[[:space:]]+}}main["out"]
+// CHECK-NEXT: signal 1{{[[:space:]]+}}arg["secret"]
+// CHECK-NEXT: signal 2{{[[:space:]]+}}arg["visible"]
 // CHECK-NEXT: # r1cs
 // CHECK-NEXT: wire 0{{[[:space:]]+}}<one>
-// CHECK-NEXT: wire 1{{[[:space:]]+}}signal 2
-// CHECK-NEXT: wire 2{{[[:space:]]+}}signal 1
-// CHECK-NEXT: wire 3{{[[:space:]]+}}signal 0
+// CHECK-NEXT: wire 1{{[[:space:]]+}}signal 0
+// CHECK-NEXT: wire 2{{[[:space:]]+}}signal 2
+// CHECK-NEXT: wire 3{{[[:space:]]+}}signal 1

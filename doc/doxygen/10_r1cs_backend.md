@@ -33,15 +33,15 @@ lowering pass performs filesystem output.
 The deterministic version-1 format first lists canonical LLZK signal ids and
 their access paths, then maps physical R1CS wires to those ids. The R1CS section
 always contains `wire 0<TAB><one>` for the implicit constant-one wire. The first
-path component is `main` for the main circuit instance or `arg<N>` for a
-constrain-function argument. Members use MLIR string literals in brackets and
-array elements use decimal indices; for example,
+path component is `main` for the main circuit instance or `arg["<name>"]` for
+a named constrain-function argument; unnamed arguments use `arg<N>`. Members
+use MLIR string literals in brackets and array elements use decimal indices; for example,
 `signal 4<TAB>main["children"][0]["out"]`.
 
 The `wire` fields remain in the order used by binary R1CS and WTNS export. The
-exporter verifies that the direct-lowering bindings cover the complete physical
-R1CS wire layout. Requesting a layout map for an R1CS circuit without those
-bindings is an error.
+exporter verifies that the direct-lowering bindings match the complete physical
+R1CS wire layout and each wire's attached logical signal. Requesting a layout
+map for an R1CS circuit without those bindings is an error.
 
 ## Explicit lowering contracts
 

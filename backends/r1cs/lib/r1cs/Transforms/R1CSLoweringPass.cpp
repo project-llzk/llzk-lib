@@ -37,6 +37,7 @@
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <deque>
 #include <memory>
@@ -753,6 +754,17 @@ public:
     if (reads.wasInterrupted()) {
       return failure();
     }
+    // Logical ids are part of the exported layout-map contract.  Derive them
+    // from a stable ordering of complete storage paths, never walk order.
+    auto pathText = [](ArrayAttr path) {
+      std::string text;
+      llvm::raw_string_ostream output(text);
+      path.print(output);
+      return output.str();
+    };
+    llvm::sort(signals, [&pathText](const Signal &lhs, const Signal &rhs) {
+      return pathText(lhs.path) < pathText(rhs.path);
+    });
     SmallVector<Attribute> layoutSignals;
     for (auto [id, signal] : llvm::enumerate(signals)) {
       signal.layoutId = id;

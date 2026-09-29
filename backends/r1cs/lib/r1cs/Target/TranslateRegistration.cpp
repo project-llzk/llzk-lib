@@ -63,18 +63,18 @@ LogicalResult exportLayoutMap(ModuleOp module, StringRef selectedCircuit) {
   layout.flush();
 
   std::error_code error;
-  auto symbols =
+  auto layoutFile =
       std::make_unique<llvm::ToolOutputFile>(layoutMapFile, error, llvm::sys::fs::OF_None);
   if (error) {
     return module.emitError() << "could not open layout map '" << layoutMapFile
                               << "': " << error.message();
   }
-  symbols->os() << buffer;
-  symbols->os().flush();
-  if (symbols->os().has_error()) {
+  layoutFile->os() << buffer;
+  layoutFile->os().flush();
+  if (layoutFile->os().has_error()) {
     return module.emitError() << "could not write layout map '" << layoutMapFile << "'";
   }
-  symbols->keep();
+  layoutFile->keep();
   return success();
 }
 
