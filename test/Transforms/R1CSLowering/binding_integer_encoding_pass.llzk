@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-full-direct-r1cs-lowering | FileCheck %s
+// RUN: llzk-opt %s --llzk-full-r1cs-lowering | FileCheck %s
 // Equivalent index/i64 path segments must intern to the same wire.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
   struct.def @Child {

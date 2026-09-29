@@ -92,13 +92,14 @@ the same reason as `-llzk-full-struct-inlining`.
 
 ### `-llzk-full-r1cs-lowering`
 
-_Lower polynomial constraints to R1CS._
+_Lower evaluated constraints to R1CS, or opt into legacy flattened lowering._
 
-Runs the following passes in order:
+By default, input must have been processed by `-llzk-monomorphize` and
+`-llzk-evaluate-constraints`, retaining its original storage interface.
+Runs degree lowering to degree two, `-llzk-r1cs-prepare`,
+`-llzk-r1cs-lowering`, and MLIR's `-cse`.
 
-1. `-llzk-full-poly-lowering` with `lowering={max-degree=2}`
-2. `-llzk-r1cs-lowering`
-3. MLIR's `-cse`
-
-The polynomial-lowering stage prepares flattened, degree-two constraints for
-R1CS conversion. CSE then removes redundant `r1cs.to_linear` operations.
+Use `-llzk-full-r1cs-lowering="legacy=true"` for the legacy pipeline: full
+polynomial lowering (including flattening), R1CS preparation, legacy emission,
+and CSE. Legacy mode rejects evaluated input. There are no separate direct
+pass or pipeline names.

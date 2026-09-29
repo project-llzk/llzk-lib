@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-full-direct-r1cs-lowering | FileCheck %s
+// RUN: llzk-opt %s --llzk-full-r1cs-lowering | FileCheck %s
 // One unused public input must still receive a wire.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
   struct.def @Main {

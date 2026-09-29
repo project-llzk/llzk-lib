@@ -13,17 +13,23 @@
 include "llzk/Pass/PassBase.td"
 
 def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
-  let summary = "Rewrite constraints to be compatible with R1CS constraints, "
-                "i.e a*b - c = 0";
+  let summary = "Lower LLZK constraints to R1CS";
   let description = [{
-    Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
-    The pass expects already-flattened, straight-line `constrain` bodies. Run `llzk-flatten` or
-    another control-flow lowering pass before this pass; nested-region, successor-bearing, or
-    multi-block constraints are rejected before R1CS normalization.
-    This pass is best used on already-flattened input as part of the `-llzk-full-r1cs-lowering`
-    pipeline which includes a degree lowering pass and clean up passes to ensure correctness and
-    performance.
+    By default, requires `poly.evaluated_main` and a straight-line main constrain
+    function with its original aggregate storage interface. Run
+    `llzk-monomorphize` and `llzk-evaluate-constraints` first. Do not pre-flatten
+    evaluated input. Preserves structs and rolled compute functions, emits a
+    circuit with `poly.wire_bindings`, and records it in `r1cs.main`. Repeated
+    direct emission is a no-op.
+
+    With `legacy=true`, accepts flattened, straight-line constrain bodies and
+    replaces structs with circuits. Evaluated modules are rejected in legacy
+    mode. Nested-region, successor-bearing, and multi-block constraints must be
+    lowered before emission. Both modes prepare constraints as needed; use
+    `llzk-full-r1cs-lowering` with the same legacy option for degree lowering.
   }];
+  let options = [Option<"legacy", "legacy", "bool", "false",
+                        "Use legacy flattened-input lowering instead of direct storage lowering">];
 }
 
 def R1CSPreparePass : LLZKPass<"llzk-r1cs-prepare"> {
@@ -34,20 +40,7 @@ def R1CSPreparePass : LLZKPass<"llzk-r1cs-prepare"> {
     members and their compute assignments, and marks each prepared struct with
     `r1cs.prepared`. Does not emit circuits or erase structs. Repeated preparation
     is a no-op. On evaluated modules, prepares only the main struct; otherwise
-    prepares every struct. Shared by the legacy and direct lowering passes.
-  }];
-}
-
-def R1CSDirectLoweringPass : LLZKPass<"llzk-r1cs-direct-lowering"> {
-  let summary = "Lower evaluated storage constraints directly to R1CS";
-  let description = [{
-    Requires `poly.evaluated_main` and an evaluated, straight-line main constrain
-    function with its original aggregate storage interface. Do not pre-flatten
-    evaluated input. Prepares constraints as needed and operates on main only.
-    Preserves structs and rolled compute functions, emits a circuit with
-    `poly.wire_bindings`, and records it in `r1cs.main`. Repeated emission is a
-    no-op. Use `llzk-full-direct-r1cs-lowering` to include degree lowering.
-    Non-evaluated modules are rejected; use `llzk-r1cs-lowering` for legacy input.
+    prepares every struct. Shared by both lowering modes.
   }];
 }
 

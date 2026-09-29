@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-r1cs-lowering -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -llzk-r1cs-lowering=legacy=true -verify-diagnostics %s
 
 module attributes {llzk.lang = "llzk"} {
   struct.def @R1CSLoopAuxScope {

@@ -1,4 +1,11 @@
-// RUN: llzk-opt %S/evaluated-read-identity_pass.llzk --llzk-full-direct-r1cs-lowering -o %t
-// RUN: llzk-opt %t --llzk-full-direct-r1cs-lowering -o %t.again
+// RUN: llzk-opt %S/evaluated-read-identity_pass.llzk --llzk-full-r1cs-lowering -o %t
+// RUN: llzk-opt %t --llzk-full-r1cs-lowering -o %t.again
 // RUN: diff %t %t.again
 // An already lowered module must remain unchanged on a second lowering.
+// RUN: llzk-opt %S/evaluated-read-identity_pass.llzk --llzk-full-r1cs-lowering=legacy=false -o %t.explicit
+// RUN: diff %t %t.explicit
+// RUN: llzk-opt %S/evaluated-read-identity_pass.llzk '--pass-pipeline=builtin.module(llzk-full-r1cs-lowering{legacy=false})' -o %t.pipeline
+// RUN: diff %t %t.pipeline
+// RUN: llzk-opt %t --llzk-r1cs-lowering -o %t.emit
+// RUN: diff %t %t.emit
+// Default and explicit direct modes preserve the same evaluated storage layout.

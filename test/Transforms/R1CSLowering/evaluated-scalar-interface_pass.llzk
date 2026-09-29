@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints --llzk-full-direct-r1cs-lowering | FileCheck %s
+// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints --llzk-full-r1cs-lowering | FileCheck %s
 // Private input precedes public input in the signature; wire order remains public first.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {

@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-full-direct-r1cs-lowering | FileCheck %s
+// RUN: llzk-opt %s --llzk-full-r1cs-lowering | FileCheck %s
 // Two reads of one storage location must use one wire.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
   struct.def @Child {

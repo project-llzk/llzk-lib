@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// Shared R1CS normalization and the preparation, legacy, and direct passes.
+/// Shared R1CS normalization, preparation, and direct or legacy emission.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -45,7 +45,6 @@
 namespace r1cs {
 #define GEN_PASS_DEF_R1CSLOWERINGPASS
 #define GEN_PASS_DEF_R1CSPREPAREPASS
-#define GEN_PASS_DEF_R1CSDIRECTLOWERINGPASS
 #include "r1cs/Transforms/TransformationPasses.h.inc"
 } // namespace r1cs
 
@@ -1066,16 +1065,29 @@ class R1CSPreparePass : public r1cs::impl::R1CSPreparePassBase<R1CSPreparePass> 
   }
 };
 
-/// Preserve the legacy flattened-input API, rejecting evaluated storage layouts.
+/// Emit evaluated storage by default, or flattened constraints in legacy mode.
 class R1CSLoweringPass : public r1cs::impl::R1CSLoweringPassBase<R1CSLoweringPass> {
+public:
+  using R1CSLoweringPassBase::R1CSLoweringPassBase;
+
+private:
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
     registry.insert<r1cs::R1CSDialect>();
   }
   void runOnOperation() override {
+    if (legacy) {
+      lowerLegacy();
+    } else {
+      lowerDirect();
+    }
+  }
+
+  /// Replace flattened structs with circuits without evaluated storage bindings.
+  void lowerLegacy() {
     ModuleOp module = getOperation();
     if (polymorphic::isEvaluatedModule(module)) {
       module.emitError(
-          "llzk-r1cs-lowering rejects poly.evaluated_main; use llzk-r1cs-direct-lowering"
+          "llzk-r1cs-lowering with legacy=true rejects poly.evaluated_main; use direct mode"
       );
       signalPassFailure();
       return;
@@ -1100,19 +1112,13 @@ class R1CSLoweringPass : public r1cs::impl::R1CSLoweringPassBase<R1CSLoweringPas
     eraseEmptyNestedModules(module);
     module->removeAttr(MAIN_ATTR_NAME);
   }
-};
 
-/// Emit only the evaluated main circuit while retaining its witness storage.
-class R1CSDirectLoweringPass
-    : public r1cs::impl::R1CSDirectLoweringPassBase<R1CSDirectLoweringPass> {
-  void getDependentDialects(mlir::DialectRegistry &registry) const override {
-    registry.insert<r1cs::R1CSDialect>();
-  }
-  void runOnOperation() override {
+  /// Emit only the evaluated main circuit while retaining its witness storage.
+  void lowerDirect() {
     ModuleOp module = getOperation();
     if (!polymorphic::isEvaluatedModule(module)) {
       module.emitError(
-          "llzk-r1cs-direct-lowering requires poly.evaluated_main; run llzk-evaluate-constraints "
+          "llzk-r1cs-lowering requires poly.evaluated_main; run llzk-evaluate-constraints "
           "first"
       );
       signalPassFailure();

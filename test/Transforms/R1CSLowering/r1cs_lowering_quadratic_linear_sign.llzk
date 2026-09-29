@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering=legacy=true -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@MulOut>} {
   struct.def @MulOut {

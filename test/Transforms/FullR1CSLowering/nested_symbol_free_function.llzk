@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-inline-free-functions -llzk-full-r1cs-lowering %s | FileCheck %s
+// RUN: llzk-opt -llzk-inline-free-functions -llzk-full-r1cs-lowering=legacy=true %s | FileCheck %s
 
 !F = !felt.type<"bn128">
 

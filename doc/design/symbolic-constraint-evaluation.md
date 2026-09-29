@@ -45,7 +45,7 @@ To inspect the intermediate IR, the equivalent two-tool path is:
 
 ```sh
 llzk-opt input.llzk --llzk-monomorphize --llzk-evaluate-constraints \
-  --llzk-full-direct-r1cs-lowering -o lowered.llzk
+  --llzk-full-r1cs-lowering -o lowered.llzk
 llzk-translate lowered.llzk --r1cs-to-binary --r1cs-prime=<decimal-prime> -o circuit.r1cs
 ```
 
