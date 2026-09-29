@@ -19,6 +19,7 @@
 #include "llzk/Util/BinaryBuffer.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
@@ -125,10 +126,15 @@ printSymbolPath(ArrayAttr path, DictionaryAttr rootNames, llvm::raw_ostream &out
   return success();
 }
 
+/// Resolve an explicit modulus, or infer the unique field used by LLZK felt types.
 static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText) {
   if (primeText.empty()) {
+    if (auto field = llzk::tryDetectSpecifiedField(moduleOp)) {
+      return llzk::toAPInt(field->get().prime(), field->get().bitWidth());
+    }
     return moduleOp.emitOpError()
-           << "R1CS binary export requires a non-empty '--r1cs-prime' option";
+           << "R1CS binary export requires a non-empty '--r1cs-prime' option when the input "
+              "does not specify a unique field";
   }
   if (!llvm::all_of(primeText, llvm::isDigit)) {
     return moduleOp.emitOpError() << "'--r1cs-prime' must be a base-10 integer";

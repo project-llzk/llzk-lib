@@ -14,8 +14,14 @@
 To evaluate constraints, lower their degree, and export binary R1CS in one process:
 
 ```sh
-llzk-translate input.llzk --llzk-to-r1cs --r1cs-prime=<decimal-prime> -o circuit.r1cs
+llzk-translate input.llzk --llzk-to-r1cs -o circuit.r1cs
 ```
+
+The modulus defaults to the unique field used by the module's LLZK felt types,
+including built-in fields such as `bn128` and custom fields. Pass
+`--r1cs-prime=<decimal-prime>` to override it or when the input does not specify
+one unique field. Bare R1CS IR whose LLZK field types have been erased still
+requires the explicit option. This applies to both binary export commands.
 
 This runs monomorphization, symbolic constraint evaluation, and the full direct R1CS
 lowering pipeline on the parsed module, then calls the binary exporter directly.

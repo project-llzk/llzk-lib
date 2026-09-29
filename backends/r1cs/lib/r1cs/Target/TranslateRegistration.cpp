@@ -33,8 +33,9 @@ namespace {
 llvm::cl::OptionCategory r1csTranslationOptions("R1CS translation options");
 
 llvm::cl::opt<std::string> prime(
-    "r1cs-prime", llvm::cl::desc("Prime modulus as a base-10 integer"), llvm::cl::init(""),
-    llvm::cl::cat(r1csTranslationOptions)
+    "r1cs-prime",
+    llvm::cl::desc("Prime modulus as a base-10 integer (default: infer the unique LLZK field)"),
+    llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
 );
 
 llvm::cl::opt<std::string> circuitName(

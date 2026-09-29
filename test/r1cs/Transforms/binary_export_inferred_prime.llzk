@@ -1,0 +1,17 @@
+// RUN: %python %S/check-inferred-prime.py llzk-opt llzk-translate %s %t
+// Compare binary exports with inferred and explicit primes, including custom fields.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      struct.writem %self[@out] = %input : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %input : !felt.type<"babybear">
+      function.return
+    }
+  }
+}

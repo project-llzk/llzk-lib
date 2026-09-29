@@ -26,8 +26,10 @@ constexpr char LAYOUT_ARGUMENT_SIGNALS_ATTR_NAME[] = "poly.layout_argument_signa
 constexpr char LAYOUT_ROOT_NAMES_ATTR_NAME[] = "poly.layout_root_names";
 
 /// Serialize one circuit in `moduleOp` to the binary .r1cs format.
+/// An empty prime infers the unique field used by the module's LLZK felt types.
+/// Supply a decimal modulus explicitly when no unique field can be inferred.
 mlir::LogicalResult exportR1CSBinary(
-    mlir::ModuleOp moduleOp, llvm::raw_ostream &output, llvm::StringRef prime,
+    mlir::ModuleOp moduleOp, llvm::raw_ostream &output, llvm::StringRef prime = {},
     llvm::StringRef circuitName = {}
 );
 

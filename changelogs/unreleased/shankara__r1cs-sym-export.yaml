@@ -1,2 +1,4 @@
 added:
   - Add optional direct-R1CS LLZK layout-map export through `llzk-translate --llzk-layout-map`.
+changed:
+  - Infer the R1CS export modulus from the unique LLZK field when r1cs-prime is omitted; retain the explicit option for overrides and inputs without a unique field.
