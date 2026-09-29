@@ -209,6 +209,7 @@ struct ExportedCircuit {
 };
 
 /// Builds the in-memory representation that will later be serialized to `.r1cs`.
+/// Each builder is single-use: call exactly one of build() or buildWireLayout().
 ///
 /// Key assumptions documented here because they affect the binary layout:
 /// 1. `wire 0` is always the implicit constant-one wire mandated by the format.

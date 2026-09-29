@@ -37,7 +37,6 @@
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
-#include <llvm/Support/raw_ostream.h>
 
 #include <deque>
 #include <memory>
@@ -60,6 +59,30 @@ using namespace llzk::constrain;
 #define R1CS_AUXILIARY_MEMBER_PREFIX "__llzk_r1cs_lowering_pass_aux_member_"
 
 namespace {
+
+/// Order storage paths by numeric root, then by numeric indices or member names.
+/// Numeric segments precede string segments; a prefix precedes its extensions.
+/// Integer attribute types and MLIR's printed spelling do not affect this order.
+static bool storagePathLess(ArrayAttr lhs, ArrayAttr rhs) {
+  for (auto [left, right] : llvm::zip(lhs, rhs)) {
+    auto leftIndex = dyn_cast<IntegerAttr>(left);
+    auto rightIndex = dyn_cast<IntegerAttr>(right);
+    if (leftIndex && rightIndex) {
+      if (leftIndex.getInt() != rightIndex.getInt()) {
+        return leftIndex.getInt() < rightIndex.getInt();
+      }
+    } else if (leftIndex || rightIndex) {
+      return static_cast<bool>(leftIndex);
+    } else {
+      auto leftName = cast<StringAttr>(left).getValue();
+      auto rightName = cast<StringAttr>(right).getValue();
+      if (leftName != rightName) {
+        return leftName < rightName;
+      }
+    }
+  }
+  return lhs.size() < rhs.size();
+}
 
 /// A LinearCombination is a map from a Value (like a variable or MemberRead) to a felt constant.
 struct LinearCombination {
@@ -756,18 +779,12 @@ public:
     }
     // Logical ids are part of the exported layout-map contract.  Derive them
     // from a stable ordering of complete storage paths, never walk order.
-    auto pathText = [](ArrayAttr path) {
-      std::string text;
-      llvm::raw_string_ostream output(text);
-      path.print(output);
-      return output.str();
-    };
     SmallVector<Signal *> orderedSignals;
     for (auto &signal : signals) {
       orderedSignals.push_back(&signal);
     }
-    llvm::sort(orderedSignals, [&pathText](const Signal *lhs, const Signal *rhs) {
-      return pathText(lhs->path) < pathText(rhs->path);
+    llvm::sort(orderedSignals, [](const Signal *lhs, const Signal *rhs) {
+      return storagePathLess(lhs->path, rhs->path);
     });
     SmallVector<Attribute> layoutSignals;
     for (auto [id, signal] : llvm::enumerate(orderedSignals)) {

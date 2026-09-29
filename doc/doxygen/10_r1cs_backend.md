@@ -30,8 +30,12 @@ export an optional text sidecar. It is available for circuits produced by direct
 R1CS lowering. The exporter writes this file after the binary R1CS stream; no
 lowering pass performs filesystem output.
 
-The deterministic version-1 format assigns logical signal ids in lexicographic
-order of the serialized storage paths, independently of physical wire order.
+The deterministic version-1 format assigns logical signal ids by structural
+path order, independently of physical wire order or MLIR's attribute printer.
+Roots and array indices compare numerically; member names compare
+lexicographically. Numeric segments precede string segments, and a path precedes
+any longer path for which it is a prefix. Root zero (`main`) therefore precedes
+argument roots, and array index 2 precedes index 10.
 Argument SSA names do not supply names: use the explicit `function.arg_name`
 argument attribute. The map lists signal ids and their access paths, then maps
 physical R1CS wires to those ids. The R1CS section

@@ -1,0 +1,42 @@
+// RUN: llzk-translate --llzk-to-r1cs --r1cs-prime=17 --llzk-layout-map=%t.layout %s -o %t.r1cs
+// RUN: FileCheck %s --input-file=%t.layout
+
+// Member declarations deliberately differ from path order. Indices 2 and 10
+// distinguish numeric ordering from MLIR attribute-text ordering.
+// CHECK: # signals
+// CHECK-NEXT: signal 0{{[[:space:]]+}}main["a"]
+// CHECK-NEXT: signal 1{{[[:space:]]+}}main["z"]
+// CHECK-NEXT: signal 2{{[[:space:]]+}}arg1[0]
+// CHECK-NEXT: signal 3{{[[:space:]]+}}arg1[1]
+// CHECK-NEXT: signal 4{{[[:space:]]+}}arg1[2]
+// CHECK-NEXT: signal 5{{[[:space:]]+}}arg1[3]
+// CHECK-NEXT: signal 6{{[[:space:]]+}}arg1[4]
+// CHECK-NEXT: signal 7{{[[:space:]]+}}arg1[5]
+// CHECK-NEXT: signal 8{{[[:space:]]+}}arg1[6]
+// CHECK-NEXT: signal 9{{[[:space:]]+}}arg1[7]
+// CHECK-NEXT: signal 10{{[[:space:]]+}}arg1[8]
+// CHECK-NEXT: signal 11{{[[:space:]]+}}arg1[9]
+// CHECK-NEXT: signal 12{{[[:space:]]+}}arg1[10]
+// CHECK-NEXT: # r1cs
+// CHECK-NEXT: wire 0{{[[:space:]]+}}<one>
+// CHECK-NEXT: wire 1{{[[:space:]]+}}signal 2
+// CHECK: wire 11{{[[:space:]]+}}signal 12
+// CHECK-NEXT: wire 12{{[[:space:]]+}}signal 1
+// CHECK-NEXT: wire 13{{[[:space:]]+}}signal 0
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main} {
+  struct.def @Main {
+    struct.member @z : !felt.type
+    struct.member @a : !felt.type
+    function.def @compute(%inputs: !array.type<11 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %inputs: !array.type<11 x !felt.type>) attributes {poly.evaluated} {
+      %a = struct.readm %self[@a] : !struct.type<@Main>, !felt.type
+      %z = struct.readm %self[@z] : !struct.type<@Main>, !felt.type
+      constrain.eq %a, %z : !felt.type
+      function.return
+    }
+  }
+}
