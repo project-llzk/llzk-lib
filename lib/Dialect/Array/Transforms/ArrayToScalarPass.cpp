@@ -92,6 +92,7 @@
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -944,8 +945,6 @@ static void step3(ModuleOp modOp) {
 /// copy unchanged. Only accessed elements are materialized, never the full initializer.
 static void foldConstantGlobalArrayReads(ModuleOp module) {
   SymbolTableCollection tables;
-  SmallVector<global::GlobalReadOp> globalReads;
-  module.walk([&globalReads](global::GlobalReadOp read) { globalReads.push_back(read); });
   // Rewriting erases later array-read operations, so finish walking before mutating the IR.
   auto foldRead = [&tables](global::GlobalReadOp globalRead) {
     auto arrayType = llvm::dyn_cast<ArrayType>(globalRead.getType());
@@ -975,7 +974,7 @@ static void foldConstantGlobalArrayReads(ModuleOp module) {
         return;
       }
       std::optional<int64_t> index = indexGen.linearize(indices.getValue());
-      if (!index || *index < 0 || static_cast<uint64_t>(*index) >= initializer.size()) {
+      if (!index || *index < 0 || checkedCast<size_t>(*index) >= initializer.size()) {
         return;
       }
       Attribute element = initializer[*index];
@@ -1005,7 +1004,7 @@ static void foldConstantGlobalArrayReads(ModuleOp module) {
     // The declaration proves immutability even if this read omits its optional `const` marker.
     globalRead.erase();
   };
-  for (global::GlobalReadOp read : globalReads) {
+  for (global::GlobalReadOp read : walkCollect<global::GlobalReadOp>(module)) {
     foldRead(read);
   }
 }
