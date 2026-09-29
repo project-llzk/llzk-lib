@@ -117,7 +117,8 @@ def WildcardArraySpecializationPass
 }
 
 def DefinitionMonomorphizationPass : LLZKPass<"llzk-monomorphize"> {
-  let summary = "Specialize reachable definitions while retaining calls and loops";
+  let summary =
+      "Specialize reachable definitions while retaining calls and loops";
   let description = [{
     Opt-in definition specialization rooted at llzk.main. A worklist and structural
     cache share definitions by source symbol and concrete parameter tuple. Source
@@ -125,10 +126,10 @@ def DefinitionMonomorphizationPass : LLZKPass<"llzk-monomorphize"> {
     carry poly.specialization_id, poly.origin, and poly.arguments attributes; names
     are not identities. Does not run any legacy flattening or scalarization pipeline.
   }];
-  let options = [Option<"maxSpecializations", "max-specializations", "unsigned", "10000",
-                       "Bound the number of unique definitions">,
+  let options = [Option<"maxSpecializations", "max-specializations", "unsigned",
+                        "10000", "Bound the number of unique definitions">,
                  Option<"report", "report", "bool", "false",
-                       "Print specialization and operation counters">];
+                        "Print specialization and operation counters">];
 }
 
 def TypeVarInferencePass : LLZKPass<"llzk-infer-tvar"> {
