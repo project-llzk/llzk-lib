@@ -29,7 +29,8 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
     `llzk-full-r1cs-lowering` with the same legacy option for degree lowering.
   }];
   let options = [Option<"legacy", "legacy", "bool", "false",
-                        "Use legacy flattened-input lowering instead of direct storage lowering">];
+                        "Use legacy flattened-input lowering instead of direct "
+                        "storage lowering">];
 }
 
 def R1CSPreparePass : LLZKPass<"llzk-r1cs-prepare"> {
