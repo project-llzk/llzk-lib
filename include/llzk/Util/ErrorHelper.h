@@ -21,11 +21,13 @@
 namespace llzk {
 
 /// Wrapper around InFlightDiagnostic that can either be a regular InFlightDiagnostic or a
-/// special version that asserts false after reporting the diagnostic.
+/// special version that unconditionally terminates with a fatal internal error after reporting
+/// the diagnostic, in both debug and release builds.
 /// See `wrapNullableInFlightDiagnostic()` below for details.
 class InFlightDiagnosticWrapper {
 private:
-  /// Implementation that gives an assertion failure after reporting.
+  /// Implementation that unconditionally terminates with a fatal internal error after reporting,
+  /// in both debug and release builds.
   /// See `wrapNullableInFlightDiagnostic()` below for details.
   class DefaultAndFailInFlightDiagnostic : public mlir::InFlightDiagnostic {
   public:
@@ -60,16 +62,16 @@ public:
   explicit InFlightDiagnosticWrapper(mlir::InFlightDiagnostic &&diag) : inner(std::move(diag)) {}
 
   /// Constructor for DefaultAndFailInFlightDiagnostic from MLIRContext.
-  /// NOTE: This is not a common use case since it will always result in an assertion failure
-  /// immediately after reporting the error; likely only useful in custom type builders.
+  /// NOTE: Reporting the diagnostic unconditionally terminates with a fatal internal error in
+  /// both debug and release builds; likely only useful in custom type builders.
   explicit InFlightDiagnosticWrapper(mlir::MLIRContext *ctx)
       : InFlightDiagnosticWrapper(
             DefaultAndFailInFlightDiagnostic(mlir::detail::getDefaultDiagnosticEmitFn(ctx)())
         ) {}
 
   /// Constructor for DefaultAndFailInFlightDiagnostic from Location.
-  /// NOTE: This is not a common use case since it will always result in an assertion failure
-  /// immediately after reporting the error; likely only useful in custom type builders.
+  /// NOTE: Reporting the diagnostic unconditionally terminates with a fatal internal error in
+  /// both debug and release builds; likely only useful in custom type builders.
   explicit InFlightDiagnosticWrapper(const mlir::Location &loc)
       : InFlightDiagnosticWrapper(loc.getContext()) {}
 
@@ -165,16 +167,12 @@ inline void ensure(bool condition, const llvm::Twine &errMsg) {
   }
 }
 
-/// If the given `emitError` is non-null, return it. Otherwise, mirror how the verification failure
-/// is handled by `*Type::get()` via `StorageUserBase` (i.e., use DefaultDiagnosticEmitFn and assert
-/// after reporting the error).
+/// If the given `emitError` is non-null, wrap it as a regular diagnostic emitter. Otherwise, use
+/// DefaultDiagnosticEmitFn and unconditionally terminate with a fatal internal error after
+/// reporting the diagnostic, in both debug and release builds.
 ///
-/// NOTE: Passing `emitError == null` is not a common use case since it will always result in an
-/// assertion failure immediately after reporting the error; likely only useful in custom type
-/// builders.
-///
-/// SEE:
-/// https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
+/// NOTE: Passing `emitError == null` is likely only useful in custom type builders, where a type
+/// construction failure must be fatal even when assertions are disabled.
 inline OwningEmitErrorFn wrapNullableInFlightDiagnostic(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx
 ) {
