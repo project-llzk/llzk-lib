@@ -489,7 +489,7 @@ LogicalResult IndexConstConverter::matchAndRewrite(
 }
 
 WriteArrayConverter::WriteArrayConverter(
-    mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy writePolicy,
+    TypeConverter &converter, MLIRContext *context, ArrayWritePolicy writePolicy,
     SMTIntTheoryEmitter *theoryEmitter
 )
     : OpConversionPattern<array::WriteArrayOp>(converter, context, /*benefit=*/2),
@@ -498,6 +498,11 @@ WriteArrayConverter::WriteArrayConverter(
 LogicalResult WriteArrayConverter::matchAndRewrite(
     array::WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
+
+  if (!isa<felt::FeltType>(op.getArrRef().getType().getElementType())) {
+    return failure();
+  }
+
   // Turn `arr[i] = val` to `assert arr[i] == val`
   if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
     Value selected =
