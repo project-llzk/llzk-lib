@@ -2052,9 +2052,8 @@ static LogicalResult rejectUnsupportedRaggedSnapshots(ModuleOp module) {
         llzk::canMaterializeValueCopy(cast.getResult(0).getType())) {
       return WalkResult::advance();
     }
-    cast.emitError() << "cannot copy nested array leaf: "
+    return cast.emitError("cannot copy nested array leaf: ")
                      << llzk::getValueCopyFailureReason(cast.getResult(0).getType());
-    return WalkResult::interrupt();
   });
   return failure(result.wasInterrupted());
 }
@@ -2082,7 +2081,7 @@ static LogicalResult rejectUnsupportedPodReadArrayMutations(ModuleOp modOp) {
                                .Case<InsertArrayOp>([rejectMutation](InsertArrayOp insertOp) {
       return rejectMutation(insertOp, insertOp.getArrRef(), insertOp.getArrRefType());
     }).Default([](Operation *) { return success(); });
-    return failed(status) ? WalkResult::interrupt() : WalkResult::advance();
+    return status;
   });
   return failure(result.wasInterrupted());
 }
