@@ -465,7 +465,7 @@ std::string NaiveNonNativeStrategy::getFreshName(StringRef baseName) const {
   }
 
   std::string uniqueName(baseName);
-  uniqueName += "_";
+  uniqueName += '_';
   uniqueName += std::to_string(count);
   return uniqueName;
 }

@@ -6468,7 +6468,7 @@ static LogicalResult checkWhileCarriedPods(
     }
     for (Operation *user : init.getUsers()) {
       if (user != whileOp.getOperation() &&
-          !(user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp))) {
+          (user->getBlock() != whileOp->getBlock() || !user->isBeforeInBlock(whileOp))) {
         return reject("POD initializer remains observable at or after the loop");
       }
     }

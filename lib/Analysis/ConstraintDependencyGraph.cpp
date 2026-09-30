@@ -347,7 +347,7 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
   // not guaranteed to be sorted. So, we will sort members before printing them.
   // We also want to add the constant values into the printing.
   std::set<std::set<SourceRef>> sortedSets;
-  for (auto it = signalSets.begin(); it != signalSets.end(); it++) {
+  for (const auto *it = signalSets.begin(); it != signalSets.end(); it++) {
     if (!(*it)->isLeader()) {
       continue;
     }
@@ -487,7 +487,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG
     auto &tSets = translatedCDG.signalSets;
-    for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
+    for (const auto *lit = tSets.begin(); lit != tSets.end(); lit++) {
       if (!(*lit)->isLeader()) {
         continue;
       }
@@ -576,7 +576,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     return refs;
   };
 
-  for (auto leaderIt = signalSets.begin(); leaderIt != signalSets.end(); leaderIt++) {
+  for (const auto *leaderIt = signalSets.begin(); leaderIt != signalSets.end(); leaderIt++) {
     if (!(*leaderIt)->isLeader()) {
       continue;
     }
@@ -639,7 +639,7 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   while (mlir::succeeded(currRef)) {
     // A dynamic access is represented by a half-open range. Match every concrete element and
     // range that overlaps the queried path, as well as exact references.
-    for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
+    for (const auto *candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
       const SourceRef &candidateRef = (*candidate)->getData();
       if (!candidateRef.overlaps(*currRef)) {
         continue;
