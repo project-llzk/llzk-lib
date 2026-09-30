@@ -147,8 +147,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <code>#include &quot;<a class="el" href="Cast_2IR_2Dialect_8h_source.html">llzk/Dialect/Cast/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Dialect_8h_source.html">llzk/Dialect/Constrain/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Dialect_8h_source.html">llzk/Dialect/Felt/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Felt_2IR_2Ops_8h_source.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Dialect_8h_source.html">llzk/Dialect/Function/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Include_2IR_2Dialect_8h_source.html">llzk/Dialect/Include/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZK_2IR_2Dialect_8h_source.html">llzk/Dialect/LLZK/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZK_2IR_2Ops_8h_source.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</code><br />
@@ -157,12 +159,15 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="RAM_2IR_2Dialect_8h_source.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="String_2IR_2Dialect_8h_source.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="String_2IR_2Ops_8h_source.html">llzk/Dialect/String/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="ConversionUtils_8h_source.html">llzk/Transforms/ConversionUtils.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SpecializedMemoryPasses_8h_source.html">llzk/Transforms/SpecializedMemoryPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Concepts_8h_source.html">llzk/Util/Concepts.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Walk_8h_source.html">llzk/Util/Walk.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/UB/IR/UBOps.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
@@ -175,7 +180,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ArrayToScalarP
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for ArrayToScalarPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="ArrayToScalarPass_8cpp__incl.svg" width="5890" height="722"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="ArrayToScalarPass_8cpp__incl.svg" width="5852" height="722"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="ArrayToScalarPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -219,9 +224,10 @@ Functions</h2></td></tr>
 </ul>
 </li>
 <li>Replace branch-local reads (in <span class="tt">scf.if</span>) with the value written by a same-index write op that dominates the parent <span class="tt">scf.if</span> (because the passes below cannot handle that case).</li>
+<li>Fold read-only, constant-index accesses to constant global arrays without expanding them.</li>
 <li>Promote straight-line static arrays in one walk per block.</li>
-<li>Run MLIR "sroa" pass to split each remaining array with linear size <span class="tt">N</span> into <span class="tt">N</span> arrays of size 1 (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).</li>
-<li>Run MLIR "mem2reg" as a fallback for allocations with control flow or unsupported uses. This pass also runs several standard optimizations so the final result is condensed.</li>
+<li>Run restricted "sroa" pass to split each remaining array with linear size <span class="tt">N</span> into <span class="tt">N</span> size-1 arrays (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).</li>
+<li>Run restricted "mem2reg" as a fallback for allocations with control flow or unsupported uses.</li>
 <li>Remove array allocations that become unread after memory promotion, then canonicalize local SSA values made dead by that cleanup.</li>
 </ol>
 <p>Note: This transformation imposes a "last write wins" semantics on array elements. If different/configurable semantics are added in the future, some additional transformation would be necessary before/during this pass so that multiple writes to the same index can be handled properly while they still exist.</p>
@@ -241,7 +247,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00118">118</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00123">123</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -257,7 +263,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00106">106</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00111">111</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -273,7 +279,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00107">107</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00112">112</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
