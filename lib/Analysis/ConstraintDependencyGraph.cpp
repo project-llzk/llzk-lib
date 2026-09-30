@@ -22,6 +22,7 @@
 #include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 #include <mlir/IR/Value.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Debug.h>
 
 #include <numeric>
@@ -90,8 +91,7 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
       const auto &currVals = it->second;
 
       std::vector<SourceRefIndex> indices;
-      for (size_t i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
-        auto idxOperand = arrayAccessOp.getIndices()[i];
+      for (auto [i, idxOperand] : llvm::enumerate(arrayAccessOp.getIndices())) {
         auto idxIt = operandVals.find(idxOperand);
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
         const auto &idxVals = idxIt->second;
@@ -191,8 +191,8 @@ LogicalResult SourceRefAnalysis::visitOperation(
     }
 
     SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
-    for (size_t i = 0; i < elements.size(); i++) {
-      (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(elements[i])->getValue());
+    for (auto [i, element] : llvm::enumerate(elements)) {
+      (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(element)->getValue());
     }
     propagateIfChanged(results.front(), results.front()->setValue(newArrayVal));
     return success();
@@ -255,13 +255,11 @@ void SourceRefAnalysis::visitExternalCall(
   const auto returnSites = predecessors->getKnownPredecessors();
 
   std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
-  for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
-    translation[SourceRef(funcOp.getArgument(i))] =
-        static_cast<const Lattice *>(operandLattices[i])->getValue();
+  for (auto [arg, lattice] : llvm::zip_equal(funcOp.getArguments(), operandLattices)) {
+    translation[SourceRef(arg)] = lattice->getValue();
   }
 
   for (auto [result, resultLattice] : llvm::zip(call->getResults(), resultLattices)) {
-    (void)result;
     SourceRefLatticeValue combined;
     unsigned resultNum = llvm::cast<OpResult>(result).getResultNumber();
     for (Operation *returnSite : returnSites) {
@@ -273,7 +271,7 @@ void SourceRefAnalysis::visitExternalCall(
       auto [translatedVal, _] = retVal.translate(translation);
       (void)combined.update(translatedVal);
     }
-    propagateIfChanged(resultLattice, static_cast<Lattice *>(resultLattice)->setValue(combined));
+    propagateIfChanged(resultLattice, resultLattice->setValue(combined));
   }
 }
 
@@ -300,8 +298,7 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
   const auto &currVals = it->second->getValue();
 
   std::vector<SourceRefIndex> indices;
-  for (size_t i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
-    auto idxOperand = arrayAccessOp.getIndices()[i];
+  for (auto [i, idxOperand] : llvm::enumerate(arrayAccessOp.getIndices())) {
     auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     const auto &idxVals = idxIt->second->getValue();
@@ -347,15 +344,13 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
   // not guaranteed to be sorted. So, we will sort members before printing them.
   // We also want to add the constant values into the printing.
   std::set<std::set<SourceRef>> sortedSets;
-  for (const auto *it = signalSets.begin(); it != signalSets.end(); it++) {
-    if (!(*it)->isLeader()) {
+  for (const auto *entry : signalSets) {
+    if (!entry->isLeader()) {
       continue;
     }
 
-    std::set<SourceRef> sortedMembers;
-    for (auto mit = signalSets.member_begin(**it); mit != signalSets.member_end(); mit++) {
-      sortedMembers.insert(*mit);
-    }
+    auto members = signalSets.members(*entry);
+    std::set<SourceRef> sortedMembers(members.begin(), members.end());
 
     // We only want to print sets with a size > 1, because size == 1 means the
     // signal is not in a constraint.
@@ -375,22 +370,13 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
 
   os << "ConstraintDependencyGraph { ";
 
-  for (auto it = sortedSets.begin(); it != sortedSets.end();) {
+  llvm::interleave(sortedSets, os, [&](const auto &members) {
     os << "\n    { ";
-    for (auto mit = it->begin(); mit != it->end();) {
-      os << *mit;
-      mit++;
-      if (mit != it->end()) {
-        os << ", ";
-      }
-    }
-
-    it++;
-    if (it == sortedSets.end()) {
-      os << " }\n";
-    } else {
-      os << " },";
-    }
+    llvm::interleaveComma(members, os);
+    os << " }";
+  }, ",");
+  if (!sortedSets.empty()) {
+    os << '\n';
   }
 
   os << "}\n";
@@ -465,11 +451,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     SourceRefRemappings translations;
 
     // Map fn parameters to args in the call op
-    for (unsigned i = 0; i < fn.getNumArguments(); i++) {
-      SourceRef prefix(fn.getArgument(i));
-      Value operand = fnCall.getOperand(i);
-      SourceRefLatticeValue val = SourceRefAnalysis::getValueState(solver, operand);
-      translations.push_back({prefix, val});
+    for (auto [arg, operand] : llvm::zip_equal(fn.getArguments(), fnCall.getArgOperands())) {
+      translations.push_back({SourceRef(arg), SourceRefAnalysis::getValueState(solver, operand)});
     }
     auto &childAnalysis =
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
@@ -487,13 +470,13 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG
     auto &tSets = translatedCDG.signalSets;
-    for (const auto *lit = tSets.begin(); lit != tSets.end(); lit++) {
-      if (!(*lit)->isLeader()) {
+    for (const auto *entry : tSets) {
+      if (!entry->isLeader()) {
         continue;
       }
-      auto leader = (*lit)->getData();
-      for (auto mit = tSets.member_begin(**lit); mit != tSets.member_end(); mit++) {
-        signalSets.unionSets(leader, *mit);
+      auto leader = entry->getData();
+      for (const SourceRef &member : tSets.members(*entry)) {
+        signalSets.unionSets(leader, member);
       }
     }
     // And update the constant sets
@@ -526,10 +509,9 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   // Compute a transitive closure over the signals.
   if (!signalUsages.empty()) {
-    auto it = signalUsages.begin();
-    auto leader = signalSets.getOrInsertLeaderValue(*it);
-    for (it++; it != signalUsages.end(); it++) {
-      signalSets.unionSets(leader, *it);
+    auto leader = signalSets.getOrInsertLeaderValue(signalUsages.front());
+    for (const SourceRef &signal : llvm::drop_begin(signalUsages)) {
+      signalSets.unionSets(leader, signal);
     }
   }
   // Also update constant references for each value.
@@ -576,18 +558,18 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     return refs;
   };
 
-  for (const auto *leaderIt = signalSets.begin(); leaderIt != signalSets.end(); leaderIt++) {
-    if (!(*leaderIt)->isLeader()) {
+  for (const auto *entry : signalSets) {
+    if (!entry->isLeader()) {
       continue;
     }
     // translate everything in this set first
     std::vector<SourceRef> translatedSignals, translatedConsts;
-    for (auto mit = signalSets.member_begin(**leaderIt); mit != signalSets.member_end(); mit++) {
-      auto member = translate(*mit);
-      if (mlir::failed(member)) {
+    for (const SourceRef &member : signalSets.members(*entry)) {
+      auto translated = translate(member);
+      if (mlir::failed(translated)) {
         continue;
       }
-      for (const auto &ref : *member) {
+      for (const auto &ref : *translated) {
         if (ref.isConstant()) {
           translatedConsts.push_back(ref);
         } else {
@@ -595,7 +577,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
         }
       }
       // Also add the constants from the original CDG
-      if (auto it = constantSets.find(*mit); it != constantSets.end()) {
+      if (auto it = constantSets.find(member); it != constantSets.end()) {
         const auto &origConstSet = it->second;
         translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
       }
@@ -606,12 +588,11 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     }
 
     // Now we can insert the translated signals
-    auto it = translatedSignals.begin();
-    auto leader = *it;
+    auto leader = translatedSignals.front();
     res.signalSets.insert(leader);
-    for (it++; it != translatedSignals.end(); it++) {
-      res.signalSets.insert(*it);
-      res.signalSets.unionSets(leader, *it);
+    for (const SourceRef &signal : llvm::drop_begin(translatedSignals)) {
+      res.signalSets.insert(signal);
+      res.signalSets.unionSets(leader, signal);
     }
 
     // And update the constant references
@@ -639,14 +620,14 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   while (mlir::succeeded(currRef)) {
     // A dynamic access is represented by a half-open range. Match every concrete element and
     // range that overlaps the queried path, as well as exact references.
-    for (const auto *candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
-      const SourceRef &candidateRef = (*candidate)->getData();
+    for (const auto *candidate : signalSets) {
+      const SourceRef &candidateRef = candidate->getData();
       if (!candidateRef.overlaps(*currRef)) {
         continue;
       }
-      for (auto it = signalSets.findLeader(**candidate); it != signalSets.member_end(); ++it) {
-        if (!it->overlaps(ref)) {
-          res.insert(*it);
+      for (const SourceRef &member : signalSets.members(candidateRef)) {
+        if (!member.overlaps(ref)) {
+          res.insert(member);
         }
       }
       auto constIt = constantSets.find(candidateRef);
