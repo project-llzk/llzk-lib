@@ -2053,7 +2053,7 @@ static LogicalResult rejectUnsupportedRaggedSnapshots(ModuleOp module) {
       return WalkResult::advance();
     }
     return cast.emitError("cannot copy nested array leaf: ")
-                     << llzk::getValueCopyFailureReason(cast.getResult(0).getType());
+           << llzk::getValueCopyFailureReason(cast.getResult(0).getType());
   });
   return failure(result.wasInterrupted());
 }
