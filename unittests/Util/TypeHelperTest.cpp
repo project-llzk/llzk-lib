@@ -195,7 +195,7 @@ TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI256) {
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromSignedI128) {
   IntegerType signedI128 = IntegerType::get(&ctx, 128, IntegerType::SignednessSemantics::Signed);
-  for (APInt value : {APInt::getAllOnes(128), APInt::getSignedMinValue(64).sext(128)}) {
+  for (const APInt &value : {APInt::getAllOnes(128), APInt::getSignedMinValue(64).sext(128)}) {
     FailureOr<IntegerAttr> normalized = forceIntType(IntegerAttr::get(signedI128, value), errFn);
     ASSERT_TRUE(succeeded(normalized));
     ASSERT_EQ(normalized->getValue().sext(128), value);

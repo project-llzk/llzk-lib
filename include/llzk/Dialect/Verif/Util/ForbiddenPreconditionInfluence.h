@@ -35,8 +35,8 @@ namespace llzk::verif {
 /// make sense.
 enum class ForbiddenPreconditionInfluence : uint8_t {
   None = 0,
-  StructMember = 1 << 0,
-  FunctionReturn = 1 << 1,
+  StructMember = 1U << 0U,
+  FunctionReturn = 1U << 1U,
 };
 
 /// Summary of forbidden precondition influence along with representative source

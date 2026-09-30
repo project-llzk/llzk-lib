@@ -313,7 +313,7 @@ SourceRefLatticeValue::elementwiseTransform(
         res |= mlir::ChangeResult::Change;
       }
     }
-    newVal.getScalarValue() = indexed;
+    newVal.getScalarValue() = std::move(indexed);
   } else {
     for (auto &elem : newVal.getArrayValue()) {
       auto transformedElem = elem->elementwiseTransform(transform);

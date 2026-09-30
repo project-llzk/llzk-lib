@@ -514,8 +514,6 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
 
 namespace llzk {
 
-// Suppress false positive from `clang-tidy`
-// NOLINTNEXTLINE(bugprone-exception-escape)
 class StructIntervals {
 public:
   /// @brief Compute the struct intervals.
