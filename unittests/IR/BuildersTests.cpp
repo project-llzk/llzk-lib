@@ -50,7 +50,9 @@ protected:
 
     builder.setInsertionPointToStart(mod->getBody());
 
-    return builder.create<polymorphic::TemplateOp>(location, builder.getStringAttr("testTemplate"));
+    return polymorphic::TemplateOp::create(
+        builder, location, builder.getStringAttr("testTemplate")
+    );
   }
 };
 

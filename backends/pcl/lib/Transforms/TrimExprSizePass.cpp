@@ -101,20 +101,20 @@ class PassImpl : public pcl::impl::TrimExprSizePassBase<PassImpl> {
       auto name = plan.nextBinding();
       OpBuilder::InsertionGuard guard(builder);
       builder.setInsertionPointAfter(cut);
-      auto varOp = builder.create<pcl::VarOp>(loc, name, false);
+      auto varOp = pcl::VarOp::create(builder, loc, name, false);
 
       if (isa<pcl::BoolType>(cutOpResult.getType())) {
         auto value = pcl::FeltAttr::get(&getContext(), llvm::APInt::getZero(2));
-        auto zeroOp = builder.create<pcl::ConstOp>(loc, value);
-        auto cmpEqOp = builder.create<pcl::CmpEqOp>(loc, varOp, zeroOp);
-        auto notOp = builder.create<pcl::NotOp>(loc, cmpEqOp);
+        auto zeroOp = pcl::ConstOp::create(builder, loc, value);
+        auto cmpEqOp = pcl::CmpEqOp::create(builder, loc, varOp, zeroOp);
+        auto notOp = pcl::NotOp::create(builder, loc, cmpEqOp);
         cut->replaceAllUsesWith(notOp);
-        cutOpResult = builder.create<pcl::AsFeltOp>(loc, cutOpResult);
+        cutOpResult = pcl::AsFeltOp::create(builder, loc, cutOpResult);
       } else {
         cut->replaceAllUsesWith(varOp);
       }
-      auto cmpEqOp = builder.create<pcl::CmpEqOp>(loc, varOp, cutOpResult);
-      builder.create<pcl::AssertOp>(loc, cmpEqOp);
+      auto cmpEqOp = pcl::CmpEqOp::create(builder, loc, varOp, cutOpResult);
+      pcl::AssertOp::create(builder, loc, cmpEqOp);
     }
   }
 

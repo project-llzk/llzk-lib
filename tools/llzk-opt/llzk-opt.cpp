@@ -13,7 +13,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
 #include "r1cs/Transforms/TransformationPassPipelines.h"
 #include "r1cs/Transforms/TransformationPasses.h"
@@ -39,10 +38,7 @@
 #include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
-#include <mlir/Dialect/Func/IR/FuncOps.h>
-#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/DialectRegistry.h>
-#include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Tools/mlir-opt/MlirOptMain.h>
 #include <mlir/Transforms/Passes.h>
@@ -51,10 +47,14 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
+#include <llvm/Support/raw_ostream.h>
+
+#include <cstdlib>
+#include <string>
+#include <tuple>
 
 #if LLZK_WITH_PCL
 #include "pcl/Conversion/ConversionPasses.h"
-#include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/DialectRegistration.h"
 #include "pcl/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
@@ -68,34 +68,36 @@ static llvm::cl::opt<bool>
     PrintAllOps("print-llzk-ops", llvm::cl::desc("Print a list of all ops registered in LLZK"));
 
 /// Replace `mlir::registerTransformsPasses()` to register a custom `remove-dead-values` pass
-/// because MLIR version 20 has a bug in that pass which causes an assertion failure when it
-/// encounters an `scf.if` op with an empty else region.
-namespace mlir_hotfix {
+/// because MLIR version 23.1.0 has a bug where the pass tracks `poison` values that it created
+/// during its current invocation only and may end up leaving behind dead `poison` values.
+namespace mlir_patch {
 
 inline static void registerTransformsPasses() {
-  mlir::registerCSE();
-  mlir::registerCanonicalizer();
+  mlir::registerBubbleDownMemorySpaceCastsPass();
+  mlir::registerCSEPass();
+  mlir::registerCanonicalizerPass();
   mlir::registerCompositeFixedPointPass();
-  mlir::registerControlFlowSink();
-  mlir::registerGenerateRuntimeVerification();
-  mlir::registerInliner();
-  mlir::registerLocationSnapshot();
-  mlir::registerLoopInvariantCodeMotion();
-  mlir::registerLoopInvariantSubsetHoisting();
-  mlir::registerMem2Reg();
+  mlir::registerControlFlowSinkPass();
+  mlir::registerGenerateRuntimeVerificationPass();
+  mlir::registerInlinerPass();
+  mlir::registerLocationSnapshotPass();
+  mlir::registerLoopInvariantCodeMotionPass();
+  mlir::registerLoopInvariantSubsetHoistingPass();
+  mlir::registerMem2RegPass();
   mlir::registerPrintIRPass();
-  mlir::registerPrintOpStats();
+  mlir::registerPrintOpStatsPass();
   mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
-  mlir::registerSCCP();
-  mlir::registerSROA();
-  mlir::registerStripDebugInfo();
-  mlir::registerSymbolDCE();
-  mlir::registerSymbolPrivatize();
-  mlir::registerTopologicalSort();
-  mlir::registerViewOpGraph();
+  mlir::registerSCCPPass();
+  mlir::registerSROAPass();
+  mlir::registerStripDebugInfoPass();
+  mlir::registerSymbolDCEPass();
+  mlir::registerSymbolPrivatizePass();
+  mlir::registerTopologicalSortPass();
+  mlir::registerTrivialDeadCodeEliminationPass();
+  mlir::registerViewOpGraphPass();
 }
 
-} // namespace mlir_hotfix
+} // namespace mlir_patch
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
@@ -111,7 +113,7 @@ int main(int argc, char **argv) {
   // MLIR initialization
   mlir::DialectRegistry registry;
   // registers CSE, etc
-  mlir_hotfix::registerTransformsPasses();
+  mlir_patch::registerTransformsPasses();
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
   zklean::registerAllDialects(registry);

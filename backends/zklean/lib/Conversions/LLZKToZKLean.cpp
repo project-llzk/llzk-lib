@@ -143,7 +143,7 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
     auto zkStruct =
-        state.builder.create<llzk::zkleanlean::StructDefOp>(def.getLoc(), def.getSymNameAttr());
+        llzk::zkleanlean::StructDefOp::create(state.builder, def.getLoc(), def.getSymNameAttr());
     auto &body = zkStruct.getBodyRegion().emplaceBlock();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::component::MemberDefOp>()) {
@@ -152,8 +152,8 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
         state.hadError = true;
         continue;
       }
-      memberBuilder.create<llzk::zkleanlean::MemberDefOp>(
-          member.getLoc(), member.getSymNameAttr(), TypeAttr::get(state.zkType)
+      llzk::zkleanlean::MemberDefOp::create(
+          memberBuilder, member.getLoc(), member.getSymNameAttr(), TypeAttr::get(state.zkType)
       );
     }
   }
@@ -189,8 +189,8 @@ struct FunctionConverter {
 
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
-    leanFunc = state.builder.create<mlir::func::FuncOp>(
-        func.getLoc(), buildLeanFunctionName(func), newFuncType
+    leanFunc = mlir::func::FuncOp::create(
+        state.builder, func.getLoc(), buildLeanFunctionName(func), newFuncType
     );
 
     newBlock = leanFunc.addEntryBlock();
@@ -234,7 +234,7 @@ struct FunctionConverter {
     }
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(newBlock);
-    auto literal = state.builder.create<llzk::zkexpr::LiteralOp>(v.getLoc(), state.zkType, newArg);
+    auto literal = llzk::zkexpr::LiteralOp::create(state.builder, v.getLoc(), state.zkType, newArg);
     zkValues[v] = literal.getOutput();
     return literal.getOutput();
   }
@@ -255,11 +255,11 @@ struct FunctionConverter {
     if (auto constOp = dyn_cast<llzk::felt::FeltConstantOp>(op)) {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto newConst = state.builder.create<llzk::felt::FeltConstantOp>(
-          constOp.getLoc(), constOp.getResult().getType(), constOp.getValueAttr()
+      auto newConst = llzk::felt::FeltConstantOp::create(
+          state.builder, constOp.getLoc(), constOp.getResult().getType(), constOp.getValueAttr()
       );
-      auto literal = state.builder.create<llzk::zkexpr::LiteralOp>(
-          constOp.getLoc(), state.zkType, newConst.getResult()
+      auto literal = llzk::zkexpr::LiteralOp::create(
+          state.builder, constOp.getLoc(), state.zkType, newConst.getResult()
       );
       zkValues[constOp.getResult()] = literal.getOutput();
       return;
@@ -273,7 +273,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto zkAdd = state.builder.create<llzk::zkexpr::AddOp>(add.getLoc(), lhs, rhs);
+      auto zkAdd = llzk::zkexpr::AddOp::create(state.builder, add.getLoc(), lhs, rhs);
       zkValues[add.getResult()] = zkAdd.getOutput();
       return;
     }
@@ -286,7 +286,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto zkSub = state.builder.create<llzk::zkexpr::SubOp>(sub.getLoc(), lhs, rhs);
+      auto zkSub = llzk::zkexpr::SubOp::create(state.builder, sub.getLoc(), lhs, rhs);
       zkValues[sub.getResult()] = zkSub.getOutput();
       return;
     }
@@ -299,7 +299,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto zkMul = state.builder.create<llzk::zkexpr::MulOp>(mul.getLoc(), lhs, rhs);
+      auto zkMul = llzk::zkexpr::MulOp::create(state.builder, mul.getLoc(), lhs, rhs);
       zkValues[mul.getResult()] = zkMul.getOutput();
       return;
     }
@@ -311,7 +311,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto zkNeg = state.builder.create<llzk::zkexpr::NegOp>(neg.getLoc(), operand);
+      auto zkNeg = llzk::zkexpr::NegOp::create(state.builder, neg.getLoc(), operand);
       zkValues[neg.getResult()] = zkNeg.getOutput();
       return;
     }
@@ -326,8 +326,8 @@ struct FunctionConverter {
       callee.append(cmpPredicateSuffix(cmp.getPredicate()));
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto call = state.builder.create<llzk::zkleanlean::CallOp>(
-          cmp.getLoc(), state.builder.getI1Type(),
+      auto call = llzk::zkleanlean::CallOp::create(
+          state.builder, cmp.getLoc(), state.builder.getI1Type(),
           SymbolRefAttr::get(state.dest.getContext(), callee), ValueRange {lhs, rhs}
       );
       leanValues[cmp.getResult()] = call.getResult(0);
@@ -341,9 +341,9 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto call = state.builder.create<llzk::zkleanlean::CallOp>(
-          cast.getLoc(), state.zkType, SymbolRefAttr::get(state.dest.getContext(), "cast.tofelt"),
-          ValueRange {value}
+      auto call = llzk::zkleanlean::CallOp::create(
+          state.builder, cast.getLoc(), state.zkType,
+          SymbolRefAttr::get(state.dest.getContext(), "cast.tofelt"), ValueRange {value}
       );
       zkValues[cast.getResult()] = call.getResult(0);
       return;
@@ -358,8 +358,8 @@ struct FunctionConverter {
         state.hadError = true;
         return;
       }
-      auto accessorOp = state.builder.create<llzk::zkleanlean::AccessorOp>(
-          read.getLoc(), state.zkType, component, read.getMemberNameAttr()
+      auto accessorOp = llzk::zkleanlean::AccessorOp::create(
+          state.builder, read.getLoc(), state.zkType, component, read.getMemberNameAttr()
       );
       zkValues[read.getResult()] = accessorOp.getValue();
       return;
@@ -374,7 +374,7 @@ struct FunctionConverter {
       auto stateType = llzk::zkbuilder::ZKBuilderStateType::get(state.dest.getContext());
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      state.builder.create<llzk::zkbuilder::ConstrainEqOp>(eq.getLoc(), stateType, lhs, rhs);
+      llzk::zkbuilder::ConstrainEqOp::create(state.builder, eq.getLoc(), stateType, lhs, rhs);
       return;
     }
     if (auto ret = dyn_cast<llzk::function::ReturnOp>(op)) {
@@ -391,7 +391,7 @@ struct FunctionConverter {
   void finalize() {
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(newBlock);
-    state.builder.create<mlir::func::ReturnOp>(func.getLoc());
+    mlir::func::ReturnOp::create(state.builder, func.getLoc());
   }
 };
 

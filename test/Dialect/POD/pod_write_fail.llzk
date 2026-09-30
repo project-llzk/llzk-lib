@@ -15,7 +15,7 @@ function.def @write_pod(%pod: !pod.type<[@n: index]>, %value: !felt.type)  {
 // -----
 
 function.def @write_pod(%pod: !felt.type, %value: !felt.type) {
-  // expected-error@+1 {{custom op 'pod.write' invalid kind of Type specified}}
+  // expected-error@+1 {{custom op 'pod.write' invalid kind of type specified: expected pod.type, but found '!felt.type'}}
   pod.write %pod[@n] = %value : !felt.type, !felt.type
 }
 

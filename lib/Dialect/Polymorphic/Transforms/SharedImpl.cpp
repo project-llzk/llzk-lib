@@ -227,11 +227,9 @@ LogicalResult llzk::polymorphic::detail::FromEraseSet::eraseUnusedDefinitions() 
   }
   // The `visitedPlusSafetyResult` may contain child FuncDefOp within an erased StructDefOp, so
   // reduce the map to only top-level erase targets before erasing in a separate loop.
-  for (auto &it : llvm::make_early_inc_range(visitedPlusSafetyResult)) {
-    if (!it.second || !tryToErase.contains(it.first)) {
-      visitedPlusSafetyResult.erase(it.first);
-    }
-  }
+  visitedPlusSafetyResult.remove_if([this](const auto &entry) {
+    return !entry.second || !tryToErase.contains(entry.first);
+  });
   for (auto &[sym, _] : visitedPlusSafetyResult) {
     LLVM_DEBUG(llvm::dbgs() << "[EraseIfUnused] removing: " << sym.getNameAttr() << '\n');
     sym.erase();

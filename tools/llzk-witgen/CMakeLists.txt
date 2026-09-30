@@ -50,6 +50,7 @@ target_link_libraries(
     MLIRTargetLLVMIRExport
     MLIRTransforms
     MLIRUBToLLVM
+    MLIRVectorToLLVM
     R1CSTransforms
     mlir_c_runner_utils
 )

@@ -75,17 +75,17 @@ public:
       return mlir::failure();
     }
 
-    auto destination = builder.create<llzk::pod::NewPodOp>(loc, podType);
+    auto destination = llzk::pod::NewPodOp::create(builder, loc, podType);
     for (llzk::pod::RecordAttr record : podType.getRecords()) {
       auto read =
-          builder.create<llzk::pod::ReadPodOp>(loc, record.getType(), source, record.getName());
+          llzk::pod::ReadPodOp::create(builder, loc, record.getType(), source, record.getName());
       mlir::FailureOr<mlir::Value> copied =
           llzk::materializeValueCopy(builder, loc, read.getResult());
       if (mlir::failed(copied)) {
         return mlir::failure();
       }
-      builder.create<llzk::pod::WritePodOp>(
-          loc, destination.getResult(), record.getName(), *copied
+      llzk::pod::WritePodOp::create(
+          builder, loc, destination.getResult(), record.getName(), *copied
       );
     }
     return destination.getResult();
@@ -105,15 +105,11 @@ auto llzk::pod::PODDialect::initialize() -> void {
     #include "llzk/Dialect/POD/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/POD/IR/Types.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/POD/IR/Attrs.cpp.inc"

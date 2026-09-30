@@ -68,7 +68,7 @@ LLZK \<-\> ZKLean IR -\> ZKLean pipeline implemented and tested on LLZK circom i
 
 Please see the LLZK's [Setup and Development Page](https://project-llzk.github.io/llzk-lib/main/setup.html). Follow the Manual Build Setup and Development Workflow.
 
-This will build LLVM 20.1.8 in third-party/ and create a build/ directory,
+This will build LLVM 23.1.0 in third-party/ and create a build/ directory,
 pointing LLZK at LLVM. (NOTE: Z3 is included but not necessary to run
 conversion / zklean pretty printing passes.)
 

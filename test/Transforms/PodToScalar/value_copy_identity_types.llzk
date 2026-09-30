@@ -116,16 +116,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_8]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @while_carried_handle(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Child>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]]:3 = scf.while (%[[VAL_15:[0-9a-zA-Z_\.]+]] = %[[VAL_10]], %[[VAL_16:[0-9a-zA-Z_\.]+]] = %[[VAL_11]], %[[VAL_17:[0-9a-zA-Z_\.]+]] = %[[VAL_9]]) : (index, !felt.type<"bn128">, !struct.type<@Child>) -> (index, !felt.type<"bn128">, !struct.type<@Child>) {
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_15]], %[[VAL_13]] : index
-// CHECK-NEXT:        scf.condition(%[[VAL_18]]) %[[VAL_15]], %[[VAL_16]], %[[VAL_17]] : index, !felt.type<"bn128">, !struct.type<@Child>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_15:[0-9a-zA-Z_\.]+]] = %[[VAL_10]], %[[VAL_16:[0-9a-zA-Z_\.]+]] = %[[VAL_11]]) : (index, !felt.type<"bn128">) -> (index, !felt.type<"bn128">) {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_15]], %[[VAL_12]] : index
+// CHECK-NEXT:        scf.condition(%[[VAL_17]]) %[[VAL_15]], %[[VAL_16]] : index, !felt.type<"bn128">
 // CHECK-NEXT:      } do {
-// CHECK-NEXT:      ^bb0(%[[VAL_19:[0-9a-zA-Z_\.]+]]: index, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_21:[0-9a-zA-Z_\.]+]]: !struct.type<@Child>):
-// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_21]][@out] : <@Child>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_19]], %[[VAL_12]] : index
-// CHECK-NEXT:        scf.yield %[[VAL_23]], %[[VAL_22]], %[[VAL_21]] : index, !felt.type<"bn128">, !struct.type<@Child>
+// CHECK-NEXT:      ^bb0(%[[VAL_18:[0-9a-zA-Z_\.]+]]: index, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@out] : <@Child>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_18]], %[[VAL_13]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_21]], %[[VAL_20]] : index, !felt.type<"bn128">
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_14]]#1 : !felt.type<"bn128">
 // CHECK-NEXT:    }

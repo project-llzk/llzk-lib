@@ -62,11 +62,7 @@ namespace {
 class ReferenceID {
 public:
   explicit ReferenceID(Value v) {
-    // reserved special pointer values for DenseMapInfo
-    if (v == llvm::DenseMapInfo<Value>::getEmptyKey() ||
-        v == llvm::DenseMapInfo<Value>::getTombstoneKey()) {
-      identifier = v;
-    } else if (auto constVal = dyn_cast_if_present<FeltConstantOp>(v.getDefiningOp())) {
+    if (auto constVal = dyn_cast_if_present<FeltConstantOp>(v.getDefiningOp())) {
       identifier = constVal.getValue();
     } else if (auto constIdxVal = dyn_cast_if_present<arith::ConstantIndexOp>(v.getDefiningOp())) {
       identifier = llvm::cast<IntegerAttr>(constIdxVal.getValue()).getValue();
@@ -134,10 +130,6 @@ namespace llvm {
 
 /// @brief Allows ReferenceID to be a DenseMap key.
 template <> struct DenseMapInfo<ReferenceID> {
-  static ReferenceID getEmptyKey() { return ReferenceID(DenseMapInfo<Value>::getEmptyKey()); }
-  static inline ReferenceID getTombstoneKey() {
-    return ReferenceID(DenseMapInfo<Value>::getTombstoneKey());
-  }
   static unsigned getHashValue(const ReferenceID &r) {
     if (r.isValue()) {
       return hash_value(r.getValue());
@@ -677,8 +669,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       if (auto memberWrite = dyn_cast<MemberWriteOp>(op)) {
         recordAggregateWriteTarget(memberWrite.getComponent());
         knownAggregateWrite = true;
-      } else if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
-                 arrayAccess && !arrayAccess.isRead()) {
+      } else if (
+          auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
+          arrayAccess && !arrayAccess.isRead()
+      ) {
         recordAggregateWriteTarget(arrayAccess.getArrRef());
         knownAggregateWrite = true;
       } else if (auto podWrite = dyn_cast<pod::WritePodOp>(op)) {
@@ -1418,8 +1412,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
           };
         }
         writeCandidates.globals.erase(name);
-      } else if (auto it = state.globals.find(name);
-                 it != state.globals.end() && it->second.scalar) {
+      } else if (
+          auto it = state.globals.find(name); it != state.globals.end() && it->second.scalar
+      ) {
         replacementMap[result] = *it->second.scalar;
       } else {
         state.globals[name] = GlobalState {.scalar = result, .aggregate = nullptr};

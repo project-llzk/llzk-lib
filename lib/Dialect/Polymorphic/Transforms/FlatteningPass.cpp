@@ -367,7 +367,7 @@ public:
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
       if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, newResTy);
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, false);
         return success();
       }
       if (!attrValue.isOne()) {
@@ -382,7 +382,7 @@ public:
             << "\" for this call";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, newResTy);
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
@@ -418,7 +418,7 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   MatchFailureListener failureListener;
   LogicalResult result = applyPatternsGreedily(
       modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig {.maxIterations = 20, .listener = &failureListener, .fold = true},
+      GreedyRewriteConfig().enableFolding().setMaxIterations(20).setListener(&failureListener),
       &currStepModified
   );
   tracker.updateModifiedFlag(currStepModified);
@@ -1740,8 +1740,8 @@ public:
   }
 
 private:
-  /// Returns the trip count of the loop-like op if its low bound, high bound and step are
-  /// constants, `nullopt` otherwise. Trip count is computed as ceilDiv(highBound - lowBound, step).
+  /// Returns the statically-known trip count of the loop-like op, `nullopt` otherwise. Trip count
+  /// is computed as ceilDiv(highBound - lowBound, step).
   static std::optional<int64_t> getConstantTripCount(LoopLikeOpInterface loopOp) {
     std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
     std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
@@ -1749,7 +1749,14 @@ private:
     if (!lbVal.has_value() || !ubVal.has_value() || !stepVal.has_value()) {
       return std::nullopt;
     }
-    return constantTripCount(lbVal.value(), ubVal.value(), stepVal.value());
+    bool isSigned = true;
+    if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
+      isSigned = !forOp.getUnsignedCmp();
+    }
+    std::optional<APInt> result = constantTripCount(
+        lbVal.value(), ubVal.value(), stepVal.value(), isSigned, scf::computeUbMinusLb
+    );
+    return result.has_value() ? std::optional<int64_t>(result->getZExtValue()) : std::nullopt;
   }
 };
 

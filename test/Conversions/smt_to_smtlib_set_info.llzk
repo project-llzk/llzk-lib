@@ -1,12 +1,12 @@
 // RUN: llzk-translate --smt-to-smtlib  %s | FileCheck %s
-// Purpose: generic smt.set_info emission, including structured metadata payloads.
+// Purpose: generic smt_info.set emission, including structured metadata payloads.
 
 module {
   smt.solver () : () -> () {
-    smt.set_info ":llzk-root" "Demo"
-    smt.set_info ":notes" (:phase_one pass 7 true)
-    smt.set_info ":llzk-stage" "pre"
-    smt.set_info ":status" unsat
+    smt_info.set ":llzk-root" "Demo"
+    smt_info.set ":notes" (:phase_one pass 7 true)
+    smt_info.set ":llzk-stage" "pre"
+    smt_info.set ":status" unsat
     smt.check sat {
       smt.yield
     } unknown {

@@ -1,0 +1,7 @@
+add_library(SMTInfoDialect)
+target_link_libraries(LLZKAllDialects INTERFACE SMTInfoDialect)
+target_sources(SMTInfoDialect PRIVATE SMTInfoAttributes.cpp SMTInfoDialect.cpp SMTInfoOps.cpp)
+target_link_libraries(SMTInfoDialect PUBLIC LLZKDialectHeaders MLIRIR MLIRHeaders LLVMHeaders)
+llzk_target_add_mlir_link_settings(SMTInfoDialect)
+add_dependencies(SMTInfoDialect SMTInfoDialectIncGen)
+install(TARGETS SMTInfoDialect EXPORT LLZKTargets)

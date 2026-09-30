@@ -146,7 +146,7 @@ std::optional<SmallVector<Value>>
 ArrayIndexGen::delinearize(int64_t linearIndex, Location loc, OpBuilder &bldr) const {
   return delinearizeImpl<Value>(
       linearIndex, linearSize, strides, bldr.getContext(),
-      [&](IntegerAttr a) { return bldr.create<arith::ConstantOp>(loc, a); }
+      [&](IntegerAttr a) { return arith::ConstantOp::create(bldr, loc, a); }
   );
 }
 

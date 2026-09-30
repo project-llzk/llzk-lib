@@ -35,7 +35,7 @@ namespace llzk::global {
 
 // Note: definition is placed here rather than the header to avoid the error:
 //       "vtable will be emitted in every translation unit"
-mlir::StringRef GlobalMemoryResource::getName() { return "GlobalMemory"; }
+mlir::StringRef GlobalMemoryResource::getName() const { return "GlobalMemory"; }
 
 namespace {
 

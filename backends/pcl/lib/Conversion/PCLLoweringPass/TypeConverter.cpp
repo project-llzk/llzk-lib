@@ -30,7 +30,7 @@ PCLTypeConverter::PCLTypeConverter() {
     if (values.size() != 1) {
       return nullptr;
     }
-    return builder.create<UnrealizedConversionCastOp>(location, t, values[0]).getResult(0);
+    return UnrealizedConversionCastOp::create(builder, location, t, values[0]).getResult(0);
   }
   );
 
@@ -40,7 +40,7 @@ PCLTypeConverter::PCLTypeConverter() {
       return nullptr;
     }
 
-    return builder.create<UnrealizedConversionCastOp>(location, t, values[0]).getResult(0);
+    return UnrealizedConversionCastOp::create(builder, location, t, values[0]).getResult(0);
   }
   );
 
@@ -70,7 +70,7 @@ PCLTypeConverter::PCLTypeConverter() {
     if (values.size() != 1 || !llvm::isa<BoolType>(values[0].getType())) {
       return nullptr;
     }
-    return builder.create<AsFeltOp>(location, values[0]);
+    return AsFeltOp::create(builder, location, values[0]);
   }
   );
 
@@ -87,9 +87,9 @@ PCLTypeConverter::PCLTypeConverter() {
     }
 
     llvm::APInt zeroValue;
-    auto zero = builder.create<ConstOp>(location, FeltAttr::get(builder.getContext(), zeroValue));
-    auto eqOp = builder.create<CmpEqOp>(location, values[0], zero);
-    return builder.create<NotOp>(location, eqOp);
+    auto zero = ConstOp::create(builder, location, FeltAttr::get(builder.getContext(), zeroValue));
+    auto eqOp = CmpEqOp::create(builder, location, values[0], zero);
+    return NotOp::create(builder, location, eqOp);
   }
   );
 }

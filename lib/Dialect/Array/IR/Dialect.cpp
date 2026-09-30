@@ -66,7 +66,7 @@ public:
       return source;
     }
 
-    auto destination = builder.create<llzk::array::CreateArrayOp>(loc, arrayType);
+    auto destination = llzk::array::CreateArrayOp::create(builder, loc, arrayType);
     std::optional<mlir::SmallVector<mlir::ArrayAttr>> indices = arrayType.getSubelementIndices();
     assert(indices.has_value() && "static arrays must provide concrete element indices");
     for (mlir::ArrayAttr index : *indices) {
@@ -96,8 +96,6 @@ auto llzk::array::ArrayDialect::initialize() -> void {
     #include "llzk/Dialect/Array/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Array/IR/Types.cpp.inc"

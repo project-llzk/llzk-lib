@@ -21,6 +21,11 @@ using namespace mlir;
 
 namespace r1cs {
 
+void CircuitDefOp::build(OpBuilder &builder, OperationState &state, StringRef name) {
+  state.addAttribute(SymbolTable::getSymbolAttrName(), builder.getStringAttr(name));
+  state.addRegion();
+}
+
 ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
   // Parse symbol name
   StringAttr symName;

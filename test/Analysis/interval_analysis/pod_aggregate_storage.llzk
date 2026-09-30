@@ -20,13 +20,11 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: @PodStorage StructIntervals {
-// CHECK: compute {
-// CHECK-NEXT:         %self.storage.initialized in Degenerate(5)
-// CHECK-NEXT:         %self.storage.written in Degenerate(7)
-// CHECK: }
-
+// CHECK:      compute {
+// CHECK-NEXT:   %self.storage.initialized in Degenerate(5)
+// CHECK-NEXT:   %self.storage.written in Degenerate(7)
+// CHECK-NEXT: }
 // -----
 
 module attributes {llzk.lang} {
@@ -49,13 +47,11 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: @PodArrayStorage StructIntervals {
-// CHECK: compute {
-// CHECK-NEXT:         %self.storage[0].value in Degenerate(3)
-// CHECK-NEXT:         %self.storage[1].value in Degenerate(9)
-// CHECK: }
-
+// CHECK:       compute {
+// CHECK-NEXT:    %self.storage[0].value in Degenerate(3)
+// CHECK-NEXT:    %self.storage[1].value in Degenerate(9)
+// CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
@@ -83,8 +79,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: @LoopCarriedPodStorage StructIntervals {
-// CHECK: compute {
-// CHECK-NEXT:         %self.storage.value in TypeA:[ 5, 7 ]
-// CHECK: }
+// CHECK:       compute {
+// CHECK-NEXT:    %self.storage.value in TypeA:[ 5, 7 ]
+// CHECK-NEXT:  }

@@ -74,7 +74,7 @@
           };
 
           llzkDebWithSansGCC = mkLlzkDebWithSans final.gccStdenv "gcc";
-          llzkDebWithSansClang = mkLlzkDebWithSans final.clangStdenv "clang";
+          llzkDebWithSansClang = mkLlzkDebWithSans final.llzk-llvmPackages.stdenv "clang";
 
           llzkDebWithSansClangCov = final.llzkDebWithSansClang.overrideAttrs (attrs: {
             postCheck = ''

@@ -133,7 +133,7 @@ DenseMap<Attribute, MemorySlot> NewPodOp::destructure(
       }
     }
 
-    auto subNew = builder.create<NewPodOp>(getLoc(), destructAsPodTy, initialValue);
+    auto subNew = NewPodOp::create(builder, getLoc(), destructAsPodTy, initialValue);
     newAllocators.push_back(subNew);
     slotMap.try_emplace<MemorySlot>(index, {subNew.getResult(), destructAs});
   }
@@ -254,9 +254,21 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
     for (OperandRange group : getMapOperands()) {
       mapOperands.push_back(group);
     }
-    return builder.create<NewPodOp>(getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
+    return NewPodOp::create(builder, getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
   }
-  return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
+  // Keep nested defaults visible to the allocation-based scalarization fixpoint. Each promoted
+  // read snapshots this storage independently, so mutating one read cannot affect another.
+  if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
+    OpBuilder::InsertionGuard guard(builder);
+    builder.setInsertionPoint(*this);
+    SmallVector<ValueRange> mapOperands;
+    for (OperandRange group : getMapOperands()) {
+      mapOperands.push_back(group);
+    }
+    return NewPodOp::create(builder, getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
+  }
+
+  return llzk::NonDetOp::create(builder, getLoc(), slot.elemType);
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
@@ -412,8 +424,6 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
    * record_inits : symbol `=` operand `,` record_inits | symbol `=` operand
    */
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   auto &props = result.getOrAddProperties<NewPodOp::Properties>();
 
   SmallVector<Attribute> initializedRecords;
@@ -647,8 +657,6 @@ LogicalResult ReadPodOp::verify() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult WritePodOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   auto &prop = state.getOrAddProperties<Properties>();
   return readRecordNameProperty(reader, prop.record_name);
 }

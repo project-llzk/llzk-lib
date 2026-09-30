@@ -48,15 +48,15 @@ static Value convertToConstantValue(GlobalReadOp readOp, Attribute attr) {
   OpBuilder bldr(readOp);
   Location loc = readOp.getLoc();
   if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-    return bldr.create<arith::ConstantOp>(loc, intAttr).getResult();
+    return arith::ConstantOp::create(bldr, loc, intAttr).getResult();
   } else if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
-    Value constant = bldr.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
+    Value constant = felt::FeltConstantOp::create(bldr, loc, feltAttr).getResult();
     if (constant.getType() == readOp.getType()) {
       return constant;
     }
-    return bldr.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant).getResult();
+    return polymorphic::UnifiableCastOp::create(bldr, loc, readOp.getType(), constant).getResult();
   } else if (auto strAttr = llvm::dyn_cast<StringAttr>(attr)) {
-    return bldr.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
+    return string::LitStringOp::create(bldr, loc, readOp.getType(), strAttr).getResult();
   } else {
     llvm::outs() << "Encountered: " << attr.getAbstractAttribute().getName() << '\n';
     llvm_unreachable("Unsupported constant attribute type");

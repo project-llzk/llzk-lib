@@ -163,7 +163,7 @@ def LLZK_CmpOp
       LLZK_FeltType:$rhs);
   let results = (outs I1:$result);
   let assemblyFormat = [{
-    `` $predicate `(` $lhs `,` $rhs `)`
+    $predicate `(` $lhs `,` $rhs `)`
     `` custom<InferredOrParsedType>(type($lhs), "true")
     `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict
   }];
@@ -174,7 +174,7 @@ class QuantifierOp<string mnemonic, string cond, list<Trait> traits = []>
     : BoolDialectOp<mnemonic, traits#[NotFieldNative, Pure, SingleBlock]> {
   let summary = mnemonic#" quantifier operation";
   let description = [{
-    This operation applies a predicate to each element of the given sort. 
+    This operation applies a predicate to each element of the given sort.
     Returns true iff the predicate is true for }]#cond#[{ of the sort.
 
     Only LLZK arrays are supported as the sort type at the moment.
@@ -206,7 +206,7 @@ def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator, ReturnLike,
                                       ParentOneOf<["ForAllOp", "ExistsOp"]>]> {
   let summary = "boolean yield operation";
   let description = [{
-    This terminator operation yields the boolean value of the predicate inside the body of 
+    This terminator operation yields the boolean value of the predicate inside the body of
     `bool.forall` and `bool.exists` operations.
   }];
 

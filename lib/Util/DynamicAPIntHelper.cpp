@@ -96,27 +96,21 @@ DynamicAPInt toDynamicAPInt(StringRef str) {
 }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
-  // Fast path for smaller values, just use the `int64_t` conversion. However, that only works if
-  // the value is signed or if the sign bit is clear otherwise it will incorrectly interpret the
-  // value as a negative number.
-  if (i.getBitWidth() <= 64 && (i.isSigned() || i.isSignBitClear())) {
-    return DynamicAPInt(i.isNegative() ? i.getSExtValue() : static_cast<int64_t>(i.getZExtValue()));
+  // DynamicAPInt interprets APInt (implicit cast from APSInt for the constructor below) as
+  // signed. Extend unsigned APSInts with a 0 sign bit so their positive value is preserved.
+  if (i.isUnsigned() && i.isSignBitSet()) {
+    return DynamicAPInt(i.zext(i.getBitWidth() + 1));
+  } else {
+    return DynamicAPInt(i);
   }
+}
 
-  DynamicAPInt res(0), po2(1);
-  // Since LLVM 20 doesn't have a direct APInt to DynamicAPInt constructor, we
-  // manually construct the DynamicAPInt from bits of the input.
-  // We use the positive representation so our negation works at the end.
-  APSInt raw = i < 0 ? -i : i;
-  for (unsigned b = 0; b < raw.getActiveBits(); b++) {
-    DynamicAPInt bitSet(raw[b]);
-    res += (bitSet * po2);
-    po2 *= 2;
+DynamicAPInt toDynamicAPInt(const APInt &i) {
+  if (i.isSignBitSet()) {
+    return DynamicAPInt(i.zext(i.getBitWidth() + 1));
+  } else {
+    return DynamicAPInt(i);
   }
-  if (i.isNegative() && res > 0) {
-    res = -res;
-  }
-  return res;
 }
 
 APSInt toAPSInt(const DynamicAPInt &i) {

@@ -53,7 +53,7 @@ TEST_F(CAPITest, exportPclModule) {
 
   mlir::OpBuilder builder(ctx);
 
-  auto module = builder.create<mlir::ModuleOp>(builder.getUnknownLoc());
+  auto module = mlir::ModuleOp::create(builder, builder.getUnknownLoc());
   module->setDiscardableAttr(
       builder.getStringAttr(PCL_PRIME_ATTR_NAME),
       pcl::PrimeAttr::get(ctx, llvm::APInt(/*numBits=*/4, /*val=*/SEVEN))
@@ -62,8 +62,8 @@ TEST_F(CAPITest, exportPclModule) {
     mlir::OpBuilder::InsertionGuard guard(builder);
     builder.setInsertionPointToStart(module.getBody());
 
-    auto func = builder.create<mlir::func::FuncOp>(
-        builder.getUnknownLoc(), builder.getStringAttr("A"),
+    auto func = mlir::func::FuncOp::create(
+        builder, builder.getUnknownLoc(), builder.getStringAttr("A"),
         builder.getFunctionType({pcl::FeltType::get(ctx)}, {pcl::FeltType::get(ctx)})
     );
 
@@ -75,11 +75,11 @@ TEST_F(CAPITest, exportPclModule) {
       builder.setInsertionPointToStart(&block);
 
       auto inVar = block.getArgument(0);
-      auto outVar = builder.create<pcl::VarOp>(builder.getUnknownLoc(), "out", true);
-      auto eq = builder.create<pcl::CmpEqOp>(builder.getUnknownLoc(), inVar, outVar);
-      builder.create<pcl::AssertOp>(builder.getUnknownLoc(), eq);
+      auto outVar = pcl::VarOp::create(builder, builder.getUnknownLoc(), "out", true);
+      auto eq = pcl::CmpEqOp::create(builder, builder.getUnknownLoc(), inVar, outVar);
+      pcl::AssertOp::create(builder, builder.getUnknownLoc(), eq);
 
-      builder.create<mlir::func::ReturnOp>(builder.getUnknownLoc(), mlir::ValueRange({outVar}));
+      mlir::func::ReturnOp::create(builder, builder.getUnknownLoc(), mlir::ValueRange({outVar}));
     }
   }
 

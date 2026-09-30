@@ -24,8 +24,9 @@ def LLZK_FeltConstAttr
     A felt attribute represents a finite field element.
   }];
 
-  let parameters = (ins APIntParameter<"The felt constant value">:$value,
-      DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
+  let parameters =
+      (ins WidthInsensitiveAPIntParameter<"The felt constant value">:$value,
+          DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
 
   let hasCustomAssemblyFormat = 1;
 
@@ -97,7 +98,7 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
   }];
 
   let parameters = (ins "::mlir::StringAttr":$fieldName,
-      APIntParameter<"The prime modulus">:$prime);
+      WidthInsensitiveAPIntParameter<"The prime modulus">:$prime);
 
   // Format is [{ `<` $fieldName `,` $prime `>` }], but with custom parsing
   // to enable caching of the Field object definition.

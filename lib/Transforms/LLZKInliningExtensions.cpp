@@ -66,7 +66,7 @@ struct FuncInlinerInterface
     // `cf::BranchOp` here.
     if (auto returnOp = llvm::dyn_cast<function::ReturnOp>(op)) {
       OpBuilder builder(op);
-      builder.create<cf::BranchOp>(op->getLoc(), newDest, returnOp.getOperands());
+      cf::BranchOp::create(builder, op->getLoc(), newDest, returnOp.getOperands());
       op->erase();
     }
   }

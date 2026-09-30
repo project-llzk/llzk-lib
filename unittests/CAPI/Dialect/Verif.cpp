@@ -89,8 +89,9 @@ static llzk::verif::ContractOp createCppContract(
     MlirOpBuilder builder, MlirLocation location, llvm::StringRef name, llvm::StringRef target,
     mlir::ArrayRef<mlir::Type> inputs, mlir::ArrayRef<mlir::Type> outputs = {}
 ) {
-  return unwrap(builder)->create<llzk::verif::ContractOp>(
-      unwrap(location), name, mlir::SymbolRefAttr::get(unwrap(builder)->getContext(), target),
+  return llzk::verif::ContractOp::create(
+      *unwrap(builder), unwrap(location), name,
+      mlir::SymbolRefAttr::get(unwrap(builder)->getContext(), target),
       mlir::FunctionType::get(unwrap(builder)->getContext(), inputs, outputs), mlir::ArrayAttr()
   );
 }
@@ -121,15 +122,15 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildSmoke) {
   auto funcType = mlir::FunctionType::get(unwrap(context), {}, {});
   modBuilder.insertFreeFunc("target", funcType, unwrap(location));
 
-  auto base = unwrap(builder)->create<llzk::verif::ContractOp>(
-      unwrap(location), "Base", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
-      mlir::ArrayAttr()
+  auto base = llzk::verif::ContractOp::create(
+      *unwrap(builder), unwrap(location), "Base",
+      mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType, mlir::ArrayAttr()
   );
   expectContractHasImplicitTerminator(wrap(base));
 
-  auto wrapper = unwrap(builder)->create<llzk::verif::ContractOp>(
-      unwrap(location), "Wrapper", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
-      mlir::ArrayAttr()
+  auto wrapper = llzk::verif::ContractOp::create(
+      *unwrap(builder), unwrap(location), "Wrapper",
+      mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType, mlir::ArrayAttr()
   );
   unwrap(builder)->setInsertionPointToStart(&wrapper.getBody().front());
 
@@ -276,15 +277,15 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
   auto funcType = mlir::FunctionType::get(unwrap(context), {}, {});
   modBuilder.insertFreeFunc("target", funcType, unwrap(location));
 
-  auto base = unwrap(builder)->create<llzk::verif::ContractOp>(
-      unwrap(location), "Base", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
-      mlir::ArrayAttr()
+  auto base = llzk::verif::ContractOp::create(
+      *unwrap(builder), unwrap(location), "Base",
+      mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType, mlir::ArrayAttr()
   );
   expectContractHasImplicitTerminator(wrap(base));
 
-  auto wrapper = unwrap(builder)->create<llzk::verif::ContractOp>(
-      unwrap(location), "Wrapper", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
-      mlir::ArrayAttr()
+  auto wrapper = llzk::verif::ContractOp::create(
+      *unwrap(builder), unwrap(location), "Wrapper",
+      mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType, mlir::ArrayAttr()
   );
   unwrap(builder)->setInsertionPointToStart(&wrapper.getBody().front());
 
@@ -456,7 +457,7 @@ TEST_F(CAPITest, llzkVerifInvariantOpBuild) {
 module attributes {llzk.lang} {
  function.def @target() attributes {function.allow_witness} {
     scf.while : () -> () {
-      %true = arith.constant  true 
+      %true = arith.constant  true
       scf.condition(%true)
     } do {
       scf.yield
@@ -488,9 +489,9 @@ TEST_F(CAPITest, llzkVerifInvariantOpBuildWithArgs) {
       R"mlir(
 module attributes {llzk.lang} {
  function.def @target() attributes {function.allow_witness} {
-      %c0 = arith.constant 0 : index 
-      %c10 = arith.constant 10 : index 
-      %c1 = arith.constant 1  : index 
+      %c0 = arith.constant 0 : index
+      %c10 = arith.constant 10 : index
+      %c1 = arith.constant 1  : index
       scf.for %iv = %c0 to %c10 step %c1 {
         scf.yield
       } {loop_label = "loopA"}
@@ -528,9 +529,9 @@ struct VerifInvariantInnerOpBuildBase {
         R"mlir(
 module attributes {llzk.lang} {
  function.def @target() attributes {function.allow_witness} {
-      %c0 = arith.constant 0 : index 
-      %c10 = arith.constant 10 : index 
-      %c1 = arith.constant 1  : index 
+      %c0 = arith.constant 0 : index
+      %c10 = arith.constant 10 : index
+      %c1 = arith.constant 1  : index
       scf.for %iv = %c0 to %c10 step %c1 {
         scf.yield
       } {loop_label = "loopA"}
@@ -565,7 +566,7 @@ std::unique_ptr<IncreasesOpBuildFuncHelper> IncreasesOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto args = prepareInsertionSite(testClass, builder, location);
-      auto step = unwrap(builder)->create<llzk::cast::IntToFeltOp>(unwrap(location), args[3]);
+      auto step = llzk::cast::IntToFeltOp::create(*unwrap(builder), unwrap(location), args[3]);
       return llzkVerif_IncreasesOpBuild(builder, location, wrap(step->getResult(0)));
     }
   };
@@ -577,7 +578,7 @@ std::unique_ptr<DecreasesOpBuildFuncHelper> DecreasesOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto args = prepareInsertionSite(testClass, builder, location);
-      auto step = unwrap(builder)->create<llzk::cast::IntToFeltOp>(unwrap(location), args[3]);
+      auto step = llzk::cast::IntToFeltOp::create(*unwrap(builder), unwrap(location), args[3]);
       return llzkVerif_DecreasesOpBuild(builder, location, wrap(step->getResult(0)));
     }
   };
@@ -592,10 +593,10 @@ std::unique_ptr<StepOpBuildFuncHelper> StepOpBuildFuncHelper::get() {
       auto op = llzkVerif_StepOpBuild(builder, location);
       auto *region = unwrap(llzkVerif_StepOpGetRegion(op));
       unwrap(builder)->setInsertionPointToEnd(&region->emplaceBlock());
-      auto trueOp = unwrap(builder)->create<mlir::arith::ConstantIntOp>(
-          unwrap(location), 1, unwrap(builder)->getI1Type()
+      auto trueOp = mlir::arith::ConstantIntOp::create(
+          *unwrap(builder), unwrap(location), unwrap(builder)->getI1Type(), 1
       );
-      unwrap(builder)->create<llzk::verif::StepYieldOp>(unwrap(location), trueOp);
+      llzk::verif::StepYieldOp::create(*unwrap(builder), unwrap(location), trueOp);
       return op;
     }
   };
@@ -607,10 +608,10 @@ std::unique_ptr<StepYieldOpBuildFuncHelper> StepYieldOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       prepareInsertionSite(testClass, builder, location);
-      auto stepOp = unwrap(builder)->create<llzk::verif::StepOp>(unwrap(location));
+      auto stepOp = llzk::verif::StepOp::create(*unwrap(builder), unwrap(location));
       unwrap(builder)->setInsertionPointToEnd(&stepOp.getRegion().emplaceBlock());
-      auto trueOp = unwrap(builder)->create<mlir::arith::ConstantIntOp>(
-          unwrap(location), 1, unwrap(builder)->getI1Type()
+      auto trueOp = mlir::arith::ConstantIntOp::create(
+          *unwrap(builder), unwrap(location), unwrap(builder)->getI1Type(), 1
       );
       return llzkVerif_StepYieldOpBuild(builder, location, wrap(trueOp.getResult()));
     }
@@ -623,14 +624,14 @@ std::unique_ptr<OldOpBuildFuncHelper> OldOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto args = prepareInsertionSite(testClass, builder, location);
-      auto stepOp = unwrap(builder)->create<llzk::verif::StepOp>(unwrap(location));
+      auto stepOp = llzk::verif::StepOp::create(*unwrap(builder), unwrap(location));
       unwrap(builder)->setInsertionPointToEnd(&stepOp.getRegion().emplaceBlock());
       auto op = llzkVerif_OldOpBuild(builder, location, wrap(args[1]));
 
-      auto trueOp = unwrap(builder)->create<mlir::arith::ConstantIntOp>(
-          unwrap(location), 1, unwrap(builder)->getI1Type()
+      auto trueOp = mlir::arith::ConstantIntOp::create(
+          *unwrap(builder), unwrap(location), unwrap(builder)->getI1Type(), 1
       );
-      unwrap(builder)->create<llzk::verif::StepYieldOp>(unwrap(location), trueOp);
+      llzk::verif::StepYieldOp::create(*unwrap(builder), unwrap(location), trueOp);
       return op;
     }
   };

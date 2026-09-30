@@ -193,10 +193,11 @@ std::unique_ptr<ArrayLengthOpBuildFuncHelper> ArrayLengthOpBuildFuncHelper::get(
         mlir::OpBuilder *bldr = unwrap(builder);
         auto idxType = bldr->getIndexType();
         auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
-        array = bldr->create<llzk::array::CreateArrayOp>(
-            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
+        array = llzk::array::CreateArrayOp::create(
+            *bldr, cppLoc,
+            llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
         );
-        dim = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr1);
+        dim = mlir::arith::ConstantOp::create(*bldr, cppLoc, idxType, intAttr1);
       }
       return llzkArray_ArrayLengthOpBuild(builder, location, wrap(array), wrap(dim));
     }
@@ -220,10 +221,11 @@ std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
         auto idxType = bldr->getIndexType();
         auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
         elemType = idxType;
-        array = bldr->create<llzk::array::CreateArrayOp>(
-            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
+        array = llzk::array::CreateArrayOp::create(
+            *bldr, cppLoc,
+            llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
         );
-        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        mlir::Value idx = mlir::arith::ConstantOp::create(*bldr, cppLoc, idxType, intAttr0);
         indices.push_back(wrap(idx));
       }
       return llzkArray_ReadArrayOpBuild(
@@ -250,10 +252,11 @@ std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() 
         mlir::OpBuilder *bldr = unwrap(builder);
         auto idxType = bldr->getIndexType();
         auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
-        array = bldr->create<llzk::array::CreateArrayOp>(
-            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
+        array = llzk::array::CreateArrayOp::create(
+            *bldr, cppLoc,
+            llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
         );
-        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        mlir::Value idx = mlir::arith::ConstantOp::create(*bldr, cppLoc, idxType, intAttr0);
         indices.push_back(wrap(idx));
         value = idx;
       }
@@ -343,15 +346,17 @@ std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get(
         auto idxType = bldr->getIndexType();
         auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
         auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
-        array_big = bldr->create<llzk::array::CreateArrayOp>(
-            cppLoc, llzk::array::ArrayType::get(
-                        idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
-                    )
+        array_big = llzk::array::CreateArrayOp::create(
+            *bldr, cppLoc,
+            llzk::array::ArrayType::get(
+                idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
+            )
         );
-        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        mlir::Value idx = mlir::arith::ConstantOp::create(*bldr, cppLoc, idxType, intAttr0);
         indices.push_back(wrap(idx));
-        array_small = bldr->create<llzk::array::CreateArrayOp>(
-            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
+        array_small = llzk::array::CreateArrayOp::create(
+            *bldr, cppLoc,
+            llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
         );
       }
       return llzkArray_InsertArrayOpBuild(
@@ -458,12 +463,13 @@ std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::ge
         auto idxType = bldr->getIndexType();
         auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
         auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
-        array_big = bldr->create<llzk::array::CreateArrayOp>(
-            cppLoc, llzk::array::ArrayType::get(
-                        idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
-                    )
+        array_big = llzk::array::CreateArrayOp::create(
+            *bldr, cppLoc,
+            llzk::array::ArrayType::get(
+                idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
+            )
         );
-        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        mlir::Value idx = mlir::arith::ConstantOp::create(*bldr, cppLoc, idxType, intAttr0);
         indices.push_back(wrap(idx));
         small_type =
             llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1});

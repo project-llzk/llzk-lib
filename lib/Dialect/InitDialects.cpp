@@ -21,7 +21,7 @@
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Verif/IR/Dialect.h"
@@ -29,6 +29,7 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/DialectRegistry.h>
 
 namespace llzk {
@@ -49,7 +50,8 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::string::StringDialect,
       llzk::pod::PODDialect,
       llzk::polymorphic::PolymorphicDialect,
-      llzk::smt::SMTDialect,
+      mlir::smt::SMTDialect,
+      llzk::smt_info::SMTInfoDialect,
       llzk::verif::VerifDialect,
       mlir::arith::ArithDialect,
       mlir::scf::SCFDialect

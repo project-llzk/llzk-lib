@@ -152,15 +152,15 @@ LogicalResult migrateToV2(Operation *rootOp) {
     // struct's own name (it becomes the outer template name).
     OpBuilder builder(structOp);
     auto templateOp =
-        builder.create<polymorphic::TemplateOp>(structOp.getLoc(), structOp.getSymName());
+        polymorphic::TemplateOp::create(builder, structOp.getLoc(), structOp.getSymName());
 
     // Populate TemplateParamOps (in order) before the struct inside the template.
     Block &templateBody = templateOp.getBodyRegion().emplaceBlock();
     OpBuilder templateBuilder = OpBuilder::atBlockBegin(&templateBody);
     auto constParams = llvm::cast<ArrayAttr>(constParamsAttr);
     for (auto paramRef : constParams.getAsRange<FlatSymbolRefAttr>()) {
-      templateBuilder.create<polymorphic::TemplateParamOp>(
-          structOp.getLoc(), paramRef.getValue(),
+      polymorphic::TemplateParamOp::create(
+          templateBuilder, structOp.getLoc(), paramRef.getValue(),
           /*type_opt=*/TypeAttr {}
       );
     }
@@ -236,8 +236,6 @@ auto llzk::component::StructDialect::initialize() -> void {
     #include "llzk/Dialect/Struct/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Struct/IR/Types.cpp.inc"

@@ -47,17 +47,35 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: function.def @free() {...}:
 // CHECK-NEXT:    <@free>:%felt_const_7 = felt.const  7 predecessors:
 // CHECK-NEXT:        <(no parent function op)>:function.def @free() {...}
 // CHECK-NEXT:    <@free>:function.return predecessors:
 // CHECK-NEXT:        <@free>:%felt_const_7 = felt.const  7
+//
 // CHECK-LABEL: function.def @compute(%arg0: !felt.type) -> !struct.type<@TA::@A<[@Start, @Stop, @Step]>> attributes {function.allow_witness} {...}:
 // CHECK-NEXT:    <@free>:%felt_const_7 = felt.const  7 predecessors:
 // CHECK-NEXT:        <(no parent function op)>:function.def @free() {...}
 // CHECK-NEXT:    <@free>:function.return predecessors:
 // CHECK-NEXT:        <@free>:%felt_const_7 = felt.const  7
+// CHECK-NEXT:    <@TA::@A::@compute>:scf.for %arg1 = %c0 to %c4 step %c1 {...} predecessors:
+// CHECK-NEXT:        <@TA::@A::@compute>:%2 = poly.read_const @Step : index
+// CHECK-NEXT:    <@TA::@A::@compute>:function.call @free() : () -> () predecessors:
+// CHECK-NEXT:        <@TA::@A::@compute>:scf.yield
+// CHECK-NEXT:    <@TA::@A::@compute>:scf.for %arg1 = %0 to %1 step %2 {...} predecessors:
+// CHECK-NEXT:        <@free>:function.return
+// CHECK-NEXT:    <@TA::@A::@compute>:struct.writem %self[@foo] = %array : <@TA::@A<[@Start, @Stop, @Step]>>, !array.type<4 x !felt.type> predecessors:
+// CHECK-DAG:         <@TA::@A::@compute>:scf.for %arg1 = %0 to %1 step %2 {...}
+// CHECK-DAG:         <@TA::@A::@compute>:scf.yield
+// CHECK-NEXT:    <@TA::@A::@compute>:function.return %self : !struct.type<@TA::@A<[@Start, @Stop, @Step]>> predecessors:
+// CHECK-NEXT:        <@TA::@A::@compute>:struct.writem %self[@foo] = %array : <@TA::@A<[@Start, @Stop, @Step]>>, !array.type<4 x !felt.type>
+// CHECK-NEXT:    <@TA::@A::@compute>:%3 = array.read %array[%c0] : <4 x !felt.type>, !felt.type predecessors:
+// CHECK-DAG:         <@TA::@A::@compute>:scf.for %arg1 = %0 to %1 step %2 {...}
+// CHECK-DAG:         <@TA::@A::@compute>:scf.yield
+// CHECK-NEXT:    <@TA::@A::@compute>:array.write %array[%c1] = %3 : <4 x !felt.type>, !felt.type predecessors:
+// CHECK-NEXT:        <@TA::@A::@compute>:%3 = array.read %array[%c0] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:    <@TA::@A::@compute>:scf.yield predecessors:
+// CHECK-NEXT:        <@TA::@A::@compute>:array.write %array[%c1] = %3 : <4 x !felt.type>, !felt.type
 // CHECK-NEXT:    <@TA::@A::@compute>:%self = struct.new : <@TA::@A<[@Start, @Stop, @Step]>> predecessors:
 // CHECK-NEXT:        <(no parent function op)>:function.def @compute(%arg0: !felt.type) -> !struct.type<@TA::@A<[@Start, @Stop, @Step]>> attributes {function.allow_witness} {...}
 // CHECK-NEXT:    <@TA::@A::@compute>:%array = array.new  : <4 x !felt.type> predecessors:
@@ -74,30 +92,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        <@TA::@A::@compute>:%0 = poly.read_const @Start : index
 // CHECK-NEXT:    <@TA::@A::@compute>:%2 = poly.read_const @Step : index predecessors:
 // CHECK-NEXT:        <@TA::@A::@compute>:%1 = poly.read_const @Stop : index
-// CHECK-NEXT:    <@TA::@A::@compute>:scf.for %arg1 = %c0 to %c4 step %c1 {...} predecessors:
-// CHECK-NEXT:        <@TA::@A::@compute>:%2 = poly.read_const @Step : index
-// CHECK-NEXT:    <@TA::@A::@compute>:function.call @free() : () -> () predecessors:
-// CHECK-DAG:         <@TA::@A::@compute>:scf.for %arg1 = %c0 to %c4 step %c1 {...}
-// CHECK-DAG:         <@TA::@A::@compute>:scf.yield
-// CHECK-NEXT:    <@TA::@A::@compute>:scf.for %arg1 = %0 to %1 step %2 {...} predecessors:
-// CHECK-NEXT:        <@free>:function.return
-// CHECK-NEXT:    <@TA::@A::@compute>:struct.writem %self[@foo] = %array : <@TA::@A<[@Start, @Stop, @Step]>>, !array.type<4 x !felt.type> predecessors:
-// CHECK-DAG:         <@TA::@A::@compute>:scf.for %arg1 = %0 to %1 step %2 {...}
-// CHECK-DAG:         <@TA::@A::@compute>:scf.yield
-// CHECK-NEXT:    <@TA::@A::@compute>:function.return %self : !struct.type<@TA::@A<[@Start, @Stop, @Step]>> predecessors:
-// CHECK-NEXT:        <@TA::@A::@compute>:struct.writem %self[@foo] = %array : <@TA::@A<[@Start, @Stop, @Step]>>, !array.type<4 x !felt.type>
-// CHECK-NEXT:    <@TA::@A::@compute>:%3 = array.read %array[%c0] : <4 x !felt.type>, !felt.type predecessors:
-// CHECK-DAG:         <@TA::@A::@compute>:scf.for %arg1 = %0 to %1 step %2 {...}
-// CHECK-DAG:         <@TA::@A::@compute>:scf.yield
-// CHECK-NEXT:    <@TA::@A::@compute>:array.write %array[%c1] = %3 : <4 x !felt.type>, !felt.type predecessors:
-// CHECK-NEXT:        <@TA::@A::@compute>:%3 = array.read %array[%c0] : <4 x !felt.type>, !felt.type
-// CHECK-NEXT:    <@TA::@A::@compute>:scf.yield predecessors:
-// CHECK-NEXT:        <@TA::@A::@compute>:array.write %array[%c1] = %3 : <4 x !felt.type>, !felt.type
 // CHECK-NEXT:    <@TA::@A::@compute>:array.write %array[%c0] = %arg0 : <4 x !felt.type>, !felt.type predecessors:
 // CHECK-DAG:         <@TA::@A::@compute>:scf.for %arg1 = %c0 to %c4 step %c1 {...}
 // CHECK-DAG:         <@TA::@A::@compute>:scf.yield
 // CHECK-NEXT:    <@TA::@A::@compute>:scf.yield predecessors:
 // CHECK-NEXT:        <@TA::@A::@compute>:array.write %array[%c0] = %arg0 : <4 x !felt.type>, !felt.type
+//
 // CHECK-LABEL: function.def @constrain(%arg0: !struct.type<@TA::@A<[@Start, @Stop, @Step]>>, %arg1: !felt.type) attributes {function.allow_constraint} {...}:
 // CHECK-NEXT:    <@TA::@A::@constrain>:function.return predecessors:
 // CHECK-NEXT:        <(no parent function op)>:function.def @constrain(%arg0: !struct.type<@TA::@A<[@Start, @Stop, @Step]>>, %arg1: !felt.type) attributes {function.allow_constraint} {...}
@@ -131,8 +131,7 @@ module attributes {llzk.lang = "llzk"} {
     }
   }
 }
-
-// CHECK-LABEL:  function.def @compute(%arg0: !felt.type, %arg1: !felt.type, %arg2: i1) -> !struct.type<@A> attributes {function.allow_witness} {...}:
+// CHECK-LABEL: function.def @compute(%arg0: !felt.type, %arg1: !felt.type, %arg2: i1) -> !struct.type<@A> attributes {function.allow_witness} {...}:
 // CHECK-NEXT:    <@A::@compute>:%0 = scf.if %arg2 -> (!felt.type) {...} else {...} predecessors:
 // CHECK-NEXT:        <@A::@compute>:%array = array.new  : <1 x !felt.type>
 // CHECK-NEXT:    <@A::@compute>:%1 = felt.sub %0, %arg1 : !felt.type, !felt.type predecessors:
@@ -158,6 +157,7 @@ module attributes {llzk.lang = "llzk"} {
 // CHECK-NEXT:        <@A::@compute>:%0 = scf.if %arg2 -> (!felt.type) {...} else {...}
 // CHECK-NEXT:    <@A::@compute>:scf.yield %2 : !felt.type predecessors:
 // CHECK-NEXT:        <@A::@compute>:%2 = felt.add %arg0, %arg0 : !felt.type, !felt.type
-// CHECK-LABEL:  function.def @constrain(%arg0: !struct.type<@A>, %arg1: !felt.type, %arg2: !felt.type, %arg3: i1) attributes {function.allow_constraint} {...}:
+//
+// CHECK-LABEL: function.def @constrain(%arg0: !struct.type<@A>, %arg1: !felt.type, %arg2: !felt.type, %arg3: i1) attributes {function.allow_constraint} {...}:
 // CHECK-NEXT:    <@A::@constrain>:function.return predecessors:
 // CHECK-NEXT:        <(no parent function op)>:function.def @constrain(%arg0: !struct.type<@A>, %arg1: !felt.type, %arg2: !felt.type, %arg3: i1) attributes {function.allow_constraint} {...}

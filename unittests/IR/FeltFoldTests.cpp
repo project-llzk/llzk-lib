@@ -54,9 +54,9 @@ protected:
     OpBuilder builder(&ctx);
     builder.setInsertionPoint(&block, block.end());
 
-    auto lhsOp = builder.create<FeltConstantOp>(loc, lhsAttr);
-    auto rhsOp = builder.create<FeltConstantOp>(loc, rhsAttr);
-    auto op = builder.create<OpTy>(loc, lhsOp.getResult(), rhsOp.getResult());
+    auto lhsOp = FeltConstantOp::create(builder, loc, lhsAttr);
+    auto rhsOp = FeltConstantOp::create(builder, loc, rhsAttr);
+    auto op = OpTy::create(builder, loc, lhsOp.getResult(), rhsOp.getResult());
 
     SmallVector<Attribute, 2> operands = {lhsAttr, rhsAttr};
     SmallVector<OpFoldResult, 1> results;
@@ -72,8 +72,8 @@ protected:
     OpBuilder builder(&ctx);
     builder.setInsertionPoint(&block, block.end());
 
-    auto operandOp = builder.create<FeltConstantOp>(loc, operandAttr);
-    auto op = builder.create<OpTy>(loc, operandOp.getResult());
+    auto operandOp = FeltConstantOp::create(builder, loc, operandAttr);
+    auto op = OpTy::create(builder, loc, operandOp.getResult());
 
     SmallVector<Attribute, 1> operands = {operandAttr};
     SmallVector<OpFoldResult, 1> results;

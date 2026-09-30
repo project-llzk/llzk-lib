@@ -197,7 +197,7 @@ std::unique_ptr<ReadPodOpBuildFuncHelper> ReadPodOpBuildFuncHelper::get() {
       auto podTy = llzk::pod::PodType::get(
           unwrap(testClass.context), {createRecordAttrCpp(name, unwrap(indexTy))}
       );
-      auto newPodOp = unwrap(builder)->create<llzk::pod::NewPodOp>(unwrap(location), podTy);
+      auto newPodOp = llzk::pod::NewPodOp::create(*unwrap(builder), unwrap(location), podTy);
       auto recordName = mlir::StringAttr::get(unwrap(testClass.context), name);
       return llzkPod_ReadPodOpBuild(
           builder, location, indexTy, wrap(newPodOp.getResult()), wrap(recordName)
@@ -221,7 +221,7 @@ std::unique_ptr<WritePodOpBuildFuncHelper> WritePodOpBuildFuncHelper::get() {
       auto podTy = llzk::pod::PodType::get(
           unwrap(testClass.context), {createRecordAttrCpp(name, unwrap(indexTy))}
       );
-      auto newPodOp = unwrap(builder)->create<llzk::pod::NewPodOp>(unwrap(location), podTy);
+      auto newPodOp = llzk::pod::NewPodOp::create(*unwrap(builder), unwrap(location), podTy);
       auto recordName = mlir::StringAttr::get(unwrap(testClass.context), name);
       return llzkPod_WritePodOpBuild(
           builder, location, wrap(newPodOp.getResult()),

@@ -31,50 +31,50 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@HasUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":8:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":8:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@HasUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":4:3)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":8:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":9:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":10:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":12:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":4:3)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":8:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":9:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":10:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":12:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@HasUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":12:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":12:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R05:[0-9a-f]+]]] '@TNoUse::@NoUse::@f2' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":21:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":21:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R09:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@TNoUse::@T' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":22:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":23:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":24:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":21:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":22:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":23:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":24:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":26:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@TNoUse::@NoUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":22:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":22:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]], 0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@TNoUse::@NoUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":22:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":23:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":24:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":22:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":23:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":24:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":26:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R07]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@TNoUse::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":26:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@g' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:1 offset ":4:3)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":4:3)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  ------------------------
@@ -115,50 +115,50 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@StructsWithinNestedModule::@THasUse::@HasUse::@f1' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":12:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":92:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@StructsWithinNestedModule::@THasUse::@T' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":12:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":13:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":14:19)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":15:11)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":17:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":92:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":93:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":94:19)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":95:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":97:9)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@StructsWithinNestedModule::@THasUse::@HasUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":13:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":93:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R05:[0-9a-f]+]], 0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@StructsWithinNestedModule::@THasUse::@HasUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":4:3)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":13:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":14:19)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":15:11)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":17:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":84:3)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":93:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":94:19)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":95:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":97:9)
 //CHECK-NEXT:  --- Predecessors : [0x[[R03]], 0x[[R04]], 0x[[R06:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@StructsWithinNestedModule::@THasUse::@HasUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":17:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":97:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R05]], 0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R07:[0-9a-f]+]]] '@StructsWithinNestedModule::@NoUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":106:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@StructsWithinNestedModule::@NoUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":26:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":27:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":28:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":30:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":106:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":107:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":108:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":110:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R09:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@StructsWithinNestedModule::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":30:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":110:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]]]
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@a' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:81 offset ":4:3)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":84:3)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R05]]]
 //CHECK-NEXT:  ------------------------
@@ -205,65 +205,65 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@GlobalsWithinNestedModule::@NestedAgain::@NestedEvenMore::@a' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":9:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":173:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@THasUse::@HasUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":5:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":7:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":9:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":11:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":13:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":22:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":23:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":24:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":169:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":171:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":173:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":175:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":177:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":186:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":187:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":188:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":190:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@GlobalsWithinNestedModule::@NestedAgain::@SiblingNesting::@a' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":13:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":177:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@GlobalsWithinNestedModule::@NestedAgain::@a' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":7:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":171:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@GlobalsWithinNestedModule::@NestedAgain::@b' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":11:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":175:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@GlobalsWithinNestedModule::@a' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":5:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":169:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@THasUse::@HasUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":22:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":186:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R09:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@THasUse::@T' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":22:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":23:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":24:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":186:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":187:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":188:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":190:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R08]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@THasUse::@HasUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":26:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":190:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R10:[0-9a-f]+]]] '@NoUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":33:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":197:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R11:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R11]]] '@NoUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":33:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":34:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":35:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":37:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":197:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":198:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":199:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":201:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R10]], 0x[[R12:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R12]]] '@NoUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:165 offset ":37:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":201:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R11]]]
 //CHECK-NEXT:  ------------------------
@@ -319,50 +319,50 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@FreeFuncModule::@Level2A::@Level3::@struct_param' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":7:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":276:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@StructModule::@MoreNested::@THasUse::@HasUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":7:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":15:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":29:11)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":30:21)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":31:13)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":33:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":276:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":284:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":298:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":299:21)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":300:13)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":302:11)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@FreeFuncModule::@Level2B::@Level3::@struct_param' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":15:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":284:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@StructModule::@MoreNested::@THasUse::@HasUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":29:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":298:11)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R06:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@StructModule::@MoreNested::@THasUse::@T' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":29:11)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":30:21)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":31:13)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":33:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":298:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":299:21)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":300:13)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":302:11)
 //CHECK-NEXT:  --- Predecessors : [0x[[R04]], 0x[[R05]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@StructModule::@MoreNested::@THasUse::@HasUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":33:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":302:11)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R06]]]
 //CHECK-NEXT:  - Node : [0x[[R08:[0-9a-f]+]]] '@StructModule::@MoreNested::@NoUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":40:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":309:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@StructModule::@MoreNested::@NoUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":40:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":41:19)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":42:11)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":44:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":309:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":310:19)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":311:11)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":313:9)
 //CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R09:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@StructModule::@MoreNested::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:270 offset ":44:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":313:9)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R07]]]
 //CHECK-NEXT:  ------------------------
@@ -398,51 +398,51 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@TComponent06::@Component06::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":14:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":382:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@TComponent06::@Component06' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":4:3)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":10:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":11:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":12:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":14:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":20:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":26:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":372:3)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":378:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":379:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":380:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":382:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":388:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":389:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":394:12)
 //CHECK-NEXT:  --- Predecessors : [0x[[R04:[0-9a-f]+]], 0x[[R01]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@TComponent06::@Z' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":10:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":11:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":12:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":14:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":378:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":379:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":380:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":382:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R04]], 0x[[R01]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":19:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":387:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]], 0x[[R02]], 0x[[R04]], 0x[[R07]]]
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@Main' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":19:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":22:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":23:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":25:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":387:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":390:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":391:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":393:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R05]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@TComponent06::@Component06::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":10:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":20:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":378:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":388:12)
 //CHECK-NEXT:  --- Predecessors : [0x[[R06]]]
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]]]
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@gvar' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":26:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":4:3)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":394:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":389:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":372:3)
 //CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R06]]]
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:369 offset ":25:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":393:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R02]], 0x[[R07]]]
 //CHECK-NEXT:  ------------------------
@@ -497,80 +497,80 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Main::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":5:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":453:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@DirectUseFromMain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":5:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":17:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":18:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":19:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":21:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":453:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":465:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":466:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":467:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":469:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R05:[0-9a-f]+]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":6:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":454:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R06:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@Main' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":6:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":7:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":8:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":10:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":454:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":455:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":456:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":458:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":10:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":458:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R06]]]
 //CHECK-NEXT:  - Node : [0x[[R08:[0-9a-f]+]]] '@DirectUseFromMain::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":16:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":464:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R09:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@TransitiveUseFromMain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":16:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":27:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":28:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":29:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":31:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":464:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":475:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":476:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":477:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":479:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@DirectUseFromMain::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":17:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":465:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@DirectUseFromMain::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":21:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":469:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
 //CHECK-NEXT:  - Node : [0x[[R10]]] '@TransitiveUseFromMain::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":27:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":475:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R11]]] '@TransitiveUseFromMain::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":31:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":479:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R12:[0-9a-f]+]]] '@TNoUse::@NoUse::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":40:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":488:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R13:[0-9a-f]+]], 0x[[R14:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R13]]] '@TNoUse::@NoUse' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":40:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":41:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":42:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":44:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":488:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":489:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":490:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":492:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R12]], 0x[[R15:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R14]]] '@TNoUse::@T' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":40:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":41:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":42:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":44:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":488:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":489:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":490:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":492:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R12]], 0x[[R15]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R15]]] '@TNoUse::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:449 offset ":44:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":492:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R13]], 0x[[R14]]]
 //CHECK-NEXT:  ------------------------
@@ -667,151 +667,151 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":6:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":582:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@Main' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":6:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":7:15)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":9:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":10:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":12:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":13:13)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":582:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":583:15)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":585:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":586:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":588:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":589:13)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@M1::@S' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":5:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":8:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":9:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":13:13)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":22:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":24:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":25:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":27:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":28:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":581:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":584:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":585:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":589:13)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":597:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":598:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":600:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":601:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":603:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":604:14)
 //CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R07]], 0x[[R01]], 0x[[R04]], 0x[[R08:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@M1::@S::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":8:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":21:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":584:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":597:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]]]
 //CHECK-NEXT:  --- Successors : [0x[[R03]], 0x[[R09:[0-9a-f]+]], 0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@M1::@T' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":20:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":23:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":24:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":28:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":34:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":35:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":36:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":38:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":596:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":599:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":600:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":604:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":610:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":611:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":612:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":614:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R11]], 0x[[R08]], 0x[[R04]], 0x[[R10]], 0x[[R12:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R10]]] '@M1::@T::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":23:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":34:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":599:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":610:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R04]]]
 //CHECK-NEXT:  --- Successors : [0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R11]]] '@M1::@S::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":20:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":28:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":24:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":596:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":604:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":600:9)
 //CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R04]]]
 //CHECK-NEXT:  --- Successors : [0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@Main::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":5:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":13:13)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":9:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":581:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":589:13)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":585:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R01]]]
 //CHECK-NEXT:  --- Successors : [0x[[R03]]]
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":12:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":588:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]], 0x[[R06]]]
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@M1::@S::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":27:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":603:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R03]], 0x[[R09]], 0x[[R11]]]
 //CHECK-NEXT:  - Node : [0x[[R12]]] '@M1::@T::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":38:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":614:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R09]], 0x[[R13:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R13]]] '@M1::@free' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":39:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":46:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":615:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":622:5)
 //CHECK-NEXT:  --- Predecessors : [0x[[R12]]]
 //CHECK-NEXT:  --- Successors : [0x[[R14:[0-9a-f]+]], 0x[[R15:[0-9a-f]+]], 0x[[R16:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R14]]] '@M1::@X' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":44:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":47:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":48:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":54:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":55:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":56:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":57:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":59:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":620:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":623:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":624:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":630:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":631:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":632:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":633:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":635:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R17:[0-9a-f]+]], 0x[[R18:[0-9a-f]+]], 0x[[R15]], 0x[[R13]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R15]]] '@M1::@gvar' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":44:5)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":47:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":620:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":623:12)
 //CHECK-NEXT:  --- Predecessors : [0x[[R13]]]
 //CHECK-NEXT:  --- Successors : [0x[[R14]]]
 //CHECK-NEXT:  - Node : [0x[[R16]]] '@M1::@X::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":56:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":48:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":632:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":624:12)
 //CHECK-NEXT:  --- Predecessors : [0x[[R17]], 0x[[R13]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R17]]] '@M1::@X::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":54:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":630:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R14]], 0x[[R16]]]
 //CHECK-NEXT:  - Node : [0x[[R18]]] '@M1::@X::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":59:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":635:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R14]]]
 //CHECK-NEXT:  - Node : [0x[[R19:[0-9a-f]+]]] '@M2::@S::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":69:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":645:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R20:[0-9a-f]+]], 0x[[R21:[0-9a-f]+]], 0x[[R22:[0-9a-f]+]], 0x[[R23:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R20]]] '@M2::@S' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":69:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":70:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":72:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":73:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":75:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":76:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":645:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":646:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":648:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":649:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":651:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":652:14)
 //CHECK-NEXT:  --- Predecessors : [0x[[R19]], 0x[[R24:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R21]]] '@M2::@T' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":68:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":71:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":72:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":76:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":82:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":83:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":84:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":86:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":644:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":647:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":648:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":652:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":658:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":659:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":660:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":662:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R23]], 0x[[R24]], 0x[[R19]], 0x[[R22]], 0x[[R25:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R22]]] '@M2::@T::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":71:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":82:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":647:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":658:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R19]]]
 //CHECK-NEXT:  --- Successors : [0x[[R21]]]
 //CHECK-NEXT:  - Node : [0x[[R23]]] '@M2::@S::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":68:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":76:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":72:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":644:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":652:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":648:9)
 //CHECK-NEXT:  --- Predecessors : [0x[[R24]], 0x[[R19]]]
 //CHECK-NEXT:  --- Successors : [0x[[R21]]]
 //CHECK-NEXT:  - Node : [0x[[R24]]] '@M2::@S::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":75:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":651:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R20]], 0x[[R21]], 0x[[R23]]]
 //CHECK-NEXT:  - Node : [0x[[R25]]] '@M2::@T::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:577 offset ":86:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":662:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R21]]]
 //CHECK-NEXT:  ------------------------
@@ -851,64 +851,64 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@TComponent1B::@Component1B::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":12:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":829:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@TComponent1B::@Component1B' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":8:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":9:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":10:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":12:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":24:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":25:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":29:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":825:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":826:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":827:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":829:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":838:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":841:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":842:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":846:14)
 //CHECK-NEXT:  --- Predecessors : [0x[[R04:[0-9a-f]+]], 0x[[R01]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@TComponent1B::@T' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":8:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":9:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":10:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":12:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":825:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":826:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":827:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":829:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R04]], 0x[[R01]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@TComponent1A::@Component1A::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":22:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":839:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]], 0x[[R02]], 0x[[R04]], 0x[[R05]]]
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@TComponent1A::@Component1A' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":22:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":23:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":25:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":26:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":28:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":29:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":839:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":840:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":842:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":843:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":845:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":846:14)
 //CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R06]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@TComponent1A::@S' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":22:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":23:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":24:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":25:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":26:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":28:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":29:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":838:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":839:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":840:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":841:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":842:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":843:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":845:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":846:14)
 //CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R07]], 0x[[R06]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@TComponent1B::@Component1B::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":8:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":24:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":825:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":841:14)
 //CHECK-NEXT:  --- Predecessors : [0x[[R07]]]
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]]]
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@TComponent1A::@Component1A::@f' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":21:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":29:14)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":25:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":838:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":846:14)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":842:9)
 //CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R07]]]
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R09]]]
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@TComponent1A::@Component1A::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:818 offset ":28:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":845:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]], 0x[[R02]], 0x[[R05]]]
 //CHECK-NEXT:  ------------------------
@@ -940,38 +940,38 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] '@MyTemplate::@MyStruct::@compute' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":929:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R01:[0-9a-f]+]], 0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R01]]] '@MyTemplate::@MyStruct' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":16:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":17:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":929:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":930:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":931:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":933:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R00]], 0x[[R04:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@MyTemplate::@A' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":8:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":16:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":17:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":922:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":929:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":930:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":931:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":933:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R00]], 0x[[R04]], 0x[[R05:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] '@MyTemplate::@B' (struct param) with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":9:12)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":16:17)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":17:9)
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":923:12)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":929:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":930:17)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":931:9)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":933:7)
 //CHECK-NEXT:  --- Predecessors : [0x[[R00]], 0x[[R04]], 0x[[R05]]]
 //CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@MyTemplate::@MyStruct::@constrain' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":933:7)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R01]], 0x[[R02]], 0x[[R03]]]
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@MyTemplate::@C' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":7:5)
+//CHECK-NEXT:  --- loc("{{.*}}symbol_use_graph_pass.llzk":921:5)
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]]]
 //CHECK-NEXT:  ------------------------

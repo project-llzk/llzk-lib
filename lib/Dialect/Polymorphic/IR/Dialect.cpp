@@ -36,7 +36,7 @@ mlir::Operation *llzk::polymorphic::PolymorphicDialect::materializeConstant(
 ) {
   if (llvm::isa<mlir::IndexType, mlir::IntegerType>(type)) {
     if (auto intAttr = llvm::dyn_cast<mlir::IntegerAttr>(value)) {
-      return builder.create<mlir::arith::ConstantOp>(loc, intAttr);
+      return mlir::arith::ConstantOp::create(builder, loc, intAttr);
     }
   }
   return nullptr;
@@ -49,8 +49,6 @@ auto llzk::polymorphic::PolymorphicDialect::initialize() -> void {
     #include "llzk/Dialect/Polymorphic/IR/Ops.cpp.inc"
   >();
 
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Polymorphic/IR/Types.cpp.inc"

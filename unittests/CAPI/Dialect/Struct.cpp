@@ -363,8 +363,9 @@ struct MemberDefOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest>
   ) {
     this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
     auto *bldr = unwrap(builder);
-    auto structDef =
-        bldr->create<llzk::component::StructDefOp>(unwrap(location), mlir::StringRef("TestStruct"));
+    auto structDef = llzk::component::StructDefOp::create(
+        *bldr, unwrap(location), mlir::StringRef("TestStruct")
+    );
     bldr->setInsertionPointToStart(&structDef.getBodyRegion().emplaceBlock());
   }
 };
@@ -567,8 +568,8 @@ std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
         auto fn = llzk::ModuleBuilder::buildProductFn(structDefOp, cppLoc);
         // error: empty block: expect at least a terminator
         mlir::OpBuilder bldr(fn.getBody());
-        auto v = bldr.create<llzk::component::CreateStructOp>(cppLoc, structDefOp.getType());
-        bldr.create<llzk::function::ReturnOp>(cppLoc, mlir::ValueRange {v});
+        auto v = llzk::component::CreateStructOp::create(bldr, cppLoc, structDefOp.getType());
+        llzk::function::ReturnOp::create(bldr, cppLoc, mlir::ValueRange {v});
       }
       return result;
     }
@@ -593,11 +594,12 @@ std::unique_ptr<MemberWriteOpBuildFuncHelper> MemberWriteOpBuildFuncHelper::get(
         );
         mlir::Location cppLoc = unwrap(location);
         mlir::OpBuilder *bldr = unwrap(builder);
-        component = bldr->create<llzk::component::CreateStructOp>(
-            cppLoc, bldr->getInsertionBlock()
-                        ->getParentOp()
-                        ->getParentOfType<llzk::component::StructDefOp>()
-                        .getType()
+        component = llzk::component::CreateStructOp::create(
+            *bldr, cppLoc,
+            bldr->getInsertionBlock()
+                ->getParentOp()
+                ->getParentOfType<llzk::component::StructDefOp>()
+                .getType()
         );
         memberNameAttr = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "MemberName");
       }

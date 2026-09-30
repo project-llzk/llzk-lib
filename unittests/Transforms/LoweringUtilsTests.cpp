@@ -38,7 +38,7 @@ TEST_F(LoweringUtilsTests, RejectsSingleBlockSuccessorBearingConstrainBody) {
   builder.setInsertionPointToStart(module->getBody());
 
   auto funcType = builder.getFunctionType(TypeRange {}, TypeRange {});
-  auto constrainFunc = builder.create<function::FuncDefOp>(loc, "constrain", funcType);
+  auto constrainFunc = function::FuncDefOp::create(builder, loc, "constrain", funcType);
   Block *entryBlock = constrainFunc.addEntryBlock();
 
   // No registered LLZK test op has successors without regions, so use a synthetic op to cover the
@@ -48,7 +48,7 @@ TEST_F(LoweringUtilsTests, RejectsSingleBlockSuccessorBearingConstrainBody) {
   entryBlock->push_back(Operation::create(successorOpState));
 
   builder.setInsertionPointToEnd(entryBlock);
-  builder.create<function::ReturnOp>(loc);
+  function::ReturnOp::create(builder, loc);
 
   EXPECT_TRUE(failed(checkFuncBodyIsStraightLine(constrainFunc, "test pass")));
 }
@@ -141,14 +141,14 @@ TEST_F(LoweringUtilsTests, AppendValuesWithExactTypesDoesNotLeakPartialMatches) 
   builder.setInsertionPointToStart(module->getBody());
 
   auto funcType = builder.getFunctionType(TypeRange {}, TypeRange {});
-  auto func = builder.create<function::FuncDefOp>(loc, "test", funcType);
+  auto func = function::FuncDefOp::create(builder, loc, "test", funcType);
   Block *entryBlock = func.addEntryBlock();
   entryBlock->addArguments(
       {builder.getIndexType(), builder.getI1Type(), builder.getIndexType()},
       SmallVector<Location>(3, loc)
   );
   builder.setInsertionPointToEnd(entryBlock);
-  builder.create<function::ReturnOp>(loc);
+  function::ReturnOp::create(builder, loc);
 
   SmallVector<Value> candidateValues {entryBlock->getArgument(0), entryBlock->getArgument(1)};
   SmallVector<Type> expectedTypes {builder.getIndexType(), builder.getIndexType()};

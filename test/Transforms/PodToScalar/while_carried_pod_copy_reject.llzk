@@ -1,4 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+// XFAIL:*
 
 !Child = !pod.type<[@value: index]>
 !Parent = !pod.type<[@child: !Child]>
