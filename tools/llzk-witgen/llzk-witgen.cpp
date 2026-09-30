@@ -50,39 +50,47 @@
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
 
+#include <cstdlib>
+#include <exception>
+
 using namespace mlir;
 
-static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional, llvm::cl::Required);
-static llvm::cl::opt<std::string>
-    InputsFilename("inputs", llvm::cl::Required, llvm::cl::desc("JSON input file"));
-static llvm::cl::list<std::string> IncludeDirs(
-    "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
-    llvm::cl::Prefix
-);
-static llvm::cl::opt<std::string> BackendName(
-    "backend", llvm::cl::desc("Execution backend: interpreter or execution-engine"),
-    llvm::cl::init("interpreter")
-);
-static llvm::cl::opt<std::string> OutputScopeName(
-    "output-scope", llvm::cl::desc("Output scope: public or full-witness"), llvm::cl::init("public")
-);
-static llvm::cl::opt<std::string> UninitializedBehaviorName(
-    "uninitialized-behavior", llvm::cl::desc("Uninitialized value behavior: zero, random, or fail"),
-    llvm::cl::init("zero")
-);
-static llvm::cl::opt<uint64_t>
-    UninitializedSeed("uninitialized-seed", llvm::cl::desc("Seed for random uninitialized values"));
-static llvm::cl::opt<bool>
-    DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));
-static llvm::cl::opt<bool>
-    DumpJITLLVM("dump-jit-llvm", llvm::cl::desc("Print the post-LLVM JIT module"));
-static llvm::cl::opt<std::string>
-    CheckOutputFilename("check-output", llvm::cl::desc("JSON file with expected witgen output"));
-static llvm::cl::opt<std::string>
-    WtnsOutputFilename("output-wtns", llvm::cl::desc("Write a snarkjs-compatible .wtns file"));
-
 /// Execute the llzk-witgen command-line tool.
-int main(int argc, char **argv) {
+static int runMain(int argc, char **argv) {
+  llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional, llvm::cl::Required);
+  llvm::cl::opt<std::string> InputsFilename(
+      "inputs", llvm::cl::Required, llvm::cl::desc("JSON input file")
+  );
+  llvm::cl::list<std::string> IncludeDirs(
+      "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
+      llvm::cl::Prefix
+  );
+  llvm::cl::opt<std::string> BackendName(
+      "backend", llvm::cl::desc("Execution backend: interpreter or execution-engine"),
+      llvm::cl::init("interpreter")
+  );
+  llvm::cl::opt<std::string> OutputScopeName(
+      "output-scope", llvm::cl::desc("Output scope: public or full-witness"),
+      llvm::cl::init("public")
+  );
+  llvm::cl::opt<std::string> UninitializedBehaviorName(
+      "uninitialized-behavior",
+      llvm::cl::desc("Uninitialized value behavior: zero, random, or fail"), llvm::cl::init("zero")
+  );
+  llvm::cl::opt<uint64_t> UninitializedSeed(
+      "uninitialized-seed", llvm::cl::desc("Seed for random uninitialized values")
+  );
+  llvm::cl::opt<bool> DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));
+  llvm::cl::opt<bool> DumpJITLLVM(
+      "dump-jit-llvm", llvm::cl::desc("Print the post-LLVM JIT module")
+  );
+  llvm::cl::opt<std::string> CheckOutputFilename(
+      "check-output", llvm::cl::desc("JSON file with expected witgen output")
+  );
+  llvm::cl::opt<std::string> WtnsOutputFilename(
+      "output-wtns", llvm::cl::desc("Write a snarkjs-compatible .wtns file")
+  );
+
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
   llvm::setBugReportMsg(
       "PLEASE submit a bug report to " BUG_REPORT_URL
@@ -233,4 +241,15 @@ int main(int argc, char **argv) {
 
   llvm::outs() << llvm::formatv("{0:2}", *result) << '\n';
   return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) noexcept {
+  try {
+    return runMain(argc, argv);
+  } catch (const std::exception &ex) {
+    llvm::errs() << "llzk-witgen: unhandled exception: " << ex.what() << '\n';
+  } catch (...) {
+    llvm::errs() << "llzk-witgen: unhandled non-standard exception\n";
+  }
+  return EXIT_FAILURE;
 }

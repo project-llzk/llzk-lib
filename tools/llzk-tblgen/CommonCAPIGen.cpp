@@ -13,6 +13,8 @@
 
 #include "CommonCAPIGen.h"
 
+#include "CAPIGenRegistration.h"
+
 #include <llvm/ADT/StringMap.h>
 
 #include <clang/Basic/FileManager.h>
@@ -24,81 +26,143 @@
 using namespace mlir;
 using namespace clang;
 
-llvm::cl::OptionCategory
-    OpGenCat("Options for -gen-op-capi-header, -gen-op-capi-impl, and -gen-op-capi-tests");
+/// Return the shared option category, initializing it before its options.
+static llvm::cl::OptionCategory &getOpGenCat() {
+  static llvm::cl::OptionCategory option(
+      "Options for -gen-op-capi-header, -gen-op-capi-impl, and -gen-op-capi-tests"
+  );
+  return option;
+}
 
-llvm::cl::opt<std::string> DialectName(
-    "dialect",
-    llvm::cl::desc(
-        "The dialect name to use for this group of ops. "
-        "Must match across header, implementation, and test generation."
-    ),
-    llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<std::string> &getDialectName() {
+  static llvm::cl::opt<std::string> option(
+      "dialect",
+      llvm::cl::desc(
+          "The dialect name to use for this group of ops. "
+          "Must match across header, implementation, and test generation."
+      ),
+      llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<std::string> FunctionPrefix(
-    "prefix",
-    llvm::cl::desc(
-        "The prefix to use for generated C API function names. "
-        "Default is 'mlir'. Must match across header, implementation, and test generation."
-    ),
-    llvm::cl::init("mlir"), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<std::string> &getFunctionPrefix() {
+  static llvm::cl::opt<std::string> option(
+      "prefix",
+      llvm::cl::desc(
+          "The prefix to use for generated C API function names. "
+          "Default is 'mlir'. Must match across header, implementation, and test generation."
+      ),
+      llvm::cl::init("mlir"), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenIsA(
-    "gen-isa", llvm::cl::desc("Generate IsA checks"), llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenIsA() {
+  static llvm::cl::opt<bool> option(
+      "gen-isa", llvm::cl::desc("Generate IsA checks"), llvm::cl::init(true),
+      llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpBuild(
-    "gen-op-build", llvm::cl::desc("Generate operation build(..) functions"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpBuild() {
+  static llvm::cl::opt<bool> option(
+      "gen-op-build", llvm::cl::desc("Generate operation build(..) functions"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpOperandGetters(
-    "gen-operand-getters", llvm::cl::desc("Generate operand getters for operations"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpOperandGetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-operand-getters", llvm::cl::desc("Generate operand getters for operations"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpOperandSetters(
-    "gen-operand-setters", llvm::cl::desc("Generate operand setters for operations"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpOperandSetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-operand-setters", llvm::cl::desc("Generate operand setters for operations"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpAttributeGetters(
-    "gen-attribute-getters", llvm::cl::desc("Generate attribute getters for operations"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpAttributeGetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-attribute-getters", llvm::cl::desc("Generate attribute getters for operations"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpAttributeSetters(
-    "gen-attribute-setters", llvm::cl::desc("Generate attribute setters for operations"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpAttributeSetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-attribute-setters", llvm::cl::desc("Generate attribute setters for operations"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpRegionGetters(
-    "gen-region-getters", llvm::cl::desc("Generate region getters for operations"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpRegionGetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-region-getters", llvm::cl::desc("Generate region getters for operations"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenOpResultGetters(
-    "gen-result-getters", llvm::cl::desc("Generate result getters for operations"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenOpResultGetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-result-getters", llvm::cl::desc("Generate result getters for operations"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenTypeOrAttrGet(
-    "gen-type-attr-get", llvm::cl::desc("Generate get functions for types and attributes"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenTypeOrAttrGet() {
+  static llvm::cl::opt<bool> option(
+      "gen-type-attr-get", llvm::cl::desc("Generate get functions for types and attributes"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenTypeOrAttrParamGetters(
-    "gen-parameter-getters", llvm::cl::desc("Generate parameter getters for types and attributes"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenTypeOrAttrParamGetters() {
+  static llvm::cl::opt<bool> option(
+      "gen-parameter-getters",
+      llvm::cl::desc("Generate parameter getters for types and attributes"), llvm::cl::init(true),
+      llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
 
-llvm::cl::opt<bool> GenExtraClassMethods(
-    "gen-extra-class-methods",
-    llvm::cl::desc("Generate C API wrappers for methods in `extraClassDeclaration`"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
+llvm::cl::opt<bool> &getGenExtraClassMethods() {
+  static llvm::cl::opt<bool> option(
+      "gen-extra-class-methods",
+      llvm::cl::desc("Generate C API wrappers for methods in `extraClassDeclaration`"),
+      llvm::cl::init(true), llvm::cl::cat(getOpGenCat())
+  );
+  return option;
+}
+
+void llzk::registerCAPIOptions() {
+  (void)getDialectName();
+  (void)getFunctionPrefix();
+  (void)getGenIsA();
+  (void)getGenOpBuild();
+  (void)getGenOpOperandGetters();
+  (void)getGenOpOperandSetters();
+  (void)getGenOpAttributeGetters();
+  (void)getGenOpAttributeSetters();
+  (void)getGenOpRegionGetters();
+  (void)getGenOpResultGetters();
+  (void)getGenTypeOrAttrGet();
+  (void)getGenTypeOrAttrParamGetters();
+  (void)getGenExtraClassMethods();
+}
 
 //===----------------------------------------------------------------------===//
 // ClangLexerContext Implementation
