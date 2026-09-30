@@ -72,12 +72,9 @@ TEST_F(TypeTests, testArrayTypeGetWithAttributeEmptyShapeError) {
         IndexType tyIndex = IndexType::get(&ctx);
         std::vector<Attribute> newDimsVec;
         ArrayRef<Attribute> dimensionSizes(newDimsVec);
-        if (ArrayType() == ArrayType::get(tyIndex, dimensionSizes)) {
-          // Force the error to be reported even when compiled in release mode
-          std::abort();
-        }
+        ArrayType::get(tyIndex, dimensionSizes);
       },
-      "error: array must have at least one dimension"
+      "type construction invariant violated"
   );
 }
 
@@ -87,12 +84,9 @@ TEST_F(TypeTests, testArrayTypeGetWithAttributeWrongAttrKindError) {
         IndexType tyIndex = IndexType::get(&ctx);
         std::vector<Attribute> newDimsVec = {UnitAttr::get(&ctx)};
         ArrayRef<Attribute> dimensionSizes(newDimsVec);
-        if (ArrayType() == ArrayType::get(tyIndex, dimensionSizes)) {
-          // Force the error to be reported even when compiled in release mode
-          std::abort();
-        }
+        ArrayType::get(tyIndex, dimensionSizes);
       },
-      "error: Array dimension must be one of .* but found 'builtin.unit'"
+      "type construction invariant violated"
   );
 }
 
