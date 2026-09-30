@@ -1,6 +1,7 @@
 // RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
 
-// Concrete substitutions expose the conflict that is deferred by call verification.
+// An explicit type argument cannot hide an incompatible value inferred from another
+// signature position.
 module attributes {llzk.lang} {
   poly.template @T2 {
     poly.param @T : !poly.tvar<@T>
@@ -12,7 +13,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@Caller>
       %x = felt.const 0 : !felt.type
       %y = arith.constant 0 : index
-      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!felt.type', but found 'index' for operand number 1}}
+      // expected-error@+1 {{'function.call' op template instantiation value '!felt.type' for parameter "@T" conflicts with value 'index' inferred from function type signature}}
       function.call @T2::@f<[!felt.type]>(%x, %y) : (!felt.type, index) -> ()
       function.return %self : !struct.type<@Caller>
     }

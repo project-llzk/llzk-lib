@@ -77,3 +77,15 @@ function.def private @o(%x: !array.type<[] x !felt.type>)
 
 // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
 function.def private @p(%x: !array.type<affine_map<(i) -> ()> x !felt.type>)
+// -----
+
+// A symbolic array dimension must establish its index type at the use site.
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-note@+1 {{referenced binding declared here}}
+    poly.param @N
+
+    // expected-error@+1 {{ref "@N" in type '!array.type<@N x index>' refers to a 'poly.param' that must have type 'index'}}
+    function.def private @use(%x: !array.type<@N x index>)
+  }
+}

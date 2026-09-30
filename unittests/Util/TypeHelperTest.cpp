@@ -12,6 +12,7 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
@@ -24,6 +25,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::felt;
 using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {
@@ -109,6 +111,51 @@ TEST_F(TypeHelperTests, test_structTypesUnify) {
   ASSERT_TRUE(structTypesUnify(a, b));
 }
 
+TEST_F(TypeHelperTests, test_typesUnify_equalRecursiveTypesRespectRhsPrefix) {
+  SymbolRefAttr targetBoxName = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Box")}
+  );
+  SymbolRefAttr includedBoxName = SymbolRefAttr::get(
+      &ctx, "Lib",
+      ArrayRef<FlatSymbolRefAttr> {
+          FlatSymbolRefAttr::get(&ctx, "Target"), FlatSymbolRefAttr::get(&ctx, "Box")
+      }
+  );
+  StructType targetBox = StructType::get(targetBoxName);
+  StructType includedBox = StructType::get(includedBoxName);
+  SymbolRefAttr targetHolderName = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Holder")}
+  );
+  SymbolRefAttr includedHolderName = SymbolRefAttr::get(
+      &ctx, "Lib",
+      ArrayRef<FlatSymbolRefAttr> {
+          FlatSymbolRefAttr::get(&ctx, "Target"), FlatSymbolRefAttr::get(&ctx, "Holder")
+      }
+  );
+  StructType targetHolder =
+      StructType::get(targetHolderName, ArrayRef<Attribute> {TypeAttr::get(targetBox)});
+  StructType includedHolder =
+      StructType::get(includedHolderName, ArrayRef<Attribute> {TypeAttr::get(includedBox)});
+  StructType collidingHolder =
+      StructType::get(includedHolderName, ArrayRef<Attribute> {TypeAttr::get(targetBox)});
+  ArrayType targetArray = ArrayType::get(targetBox, {2});
+  PodType targetPod = PodType::get(
+      &ctx, ArrayRef {RecordAttr::get(&ctx, StringAttr::get(&ctx, "value"), targetBox)}
+  );
+  FunctionType targetFunction = FunctionType::get(&ctx, {IndexType::get(&ctx)}, {targetBox});
+  llvm::StringRef includedNamespace = "Lib";
+  ArrayRef<llvm::StringRef> rhsPrefix(&includedNamespace, 1);
+
+  EXPECT_TRUE(typesUnify(includedBox, targetBox, rhsPrefix));
+  EXPECT_TRUE(typesUnify(includedHolder, targetHolder, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetBox, targetBox, rhsPrefix));
+  EXPECT_FALSE(typesUnify(collidingHolder, targetHolder, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetArray, targetArray, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetPod, targetPod, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetFunction, targetFunction, rhsPrefix));
+  EXPECT_TRUE(typesUnify(IndexType::get(&ctx), IndexType::get(&ctx), rhsPrefix));
+}
+
 TEST_F(TypeHelperTests, test_podTypesUnify_Pass) {
   IndexType tyIndex = IndexType::get(&ctx);
   auto r1 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), tyIndex);
@@ -142,6 +189,42 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Pass) {
   ASSERT_TRUE(functionTypesUnify(a, b));
 }
 
+TEST_F(TypeHelperTests, test_functionTypesUnify_equalSymbolsDoNotChangeGenericUnifications) {
+  FlatSymbolRefAttr param = FlatSymbolRefAttr::get(&ctx, "F");
+  StructType structType =
+      StructType::get(FlatSymbolRefAttr::get(&ctx, "Box"), ArrayRef<Attribute> {param});
+  FunctionType functionType = FunctionType::get(&ctx, {structType}, {});
+  UnificationMap unifications;
+
+  ASSERT_TRUE(functionTypesUnify(functionType, functionType, {}, &unifications));
+  EXPECT_TRUE(unifications.empty());
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnify_recordsRepeatedCandidates) {
+  FlatSymbolRefAttr param = FlatSymbolRefAttr::get(&ctx, "F");
+  FlatSymbolRefAttr global = FlatSymbolRefAttr::get(&ctx, "G");
+  FeltConstAttr literal = FeltConstAttr::get(&ctx, APInt(8, 35), FeltType::get(&ctx, "bn128"));
+  FlatSymbolRefAttr box = FlatSymbolRefAttr::get(&ctx, "Box");
+  StructType globalType = StructType::get(box, ArrayRef<Attribute> {global});
+  StructType literalType = StructType::get(box, ArrayRef<Attribute> {literal});
+  StructType parameterType = StructType::get(box, ArrayRef<Attribute> {param});
+  FunctionType caller = FunctionType::get(&ctx, {globalType, literalType}, {});
+  FunctionType callee = FunctionType::get(&ctx, {parameterType, parameterType}, {});
+  UnificationMap unifications;
+  llvm::DenseMap<std::pair<SymbolRefAttr, Side>, SmallVector<Attribute, 2>> candidates;
+  auto recordCandidate = [&](SymbolRefAttr symbol, Side side, Attribute value) {
+    candidates[{symbol, side}].push_back(value);
+  };
+
+  ASSERT_TRUE(functionTypesUnify(caller, callee, {}, &unifications, recordCandidate));
+  auto key = std::make_pair(param, Side::RHS);
+  ASSERT_TRUE(unifications.contains(key));
+  EXPECT_FALSE(unifications.lookup(key));
+  ASSERT_EQ(candidates.lookup(key).size(), 2);
+  EXPECT_EQ(candidates.lookup(key)[0], global);
+  EXPECT_EQ(candidates.lookup(key)[1], literal);
+}
+
 TEST_F(TypeHelperTests, test_functionTypesUnify_Input_Fail) {
   IndexType tyIndex = IndexType::get(&ctx);
   FunctionType a = FunctionType::get(&ctx, {IntegerType::get(&ctx, 8)}, {tyIndex});
@@ -154,6 +237,64 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   FunctionType a = FunctionType::get(&ctx, {tyIndex}, {IntegerType::get(&ctx, 8)});
   FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
   ASSERT_FALSE(functionTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_templateParamTypeCompatibility_feltFields) {
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+
+  ASSERT_TRUE(isTemplateParamTypeCompatible(bn128, fieldless));
+  ASSERT_TRUE(isTemplateParamTypeCompatible(fieldless, fieldless));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(fieldless, bn128));
+  ASSERT_TRUE(isTemplateParamTypeCompatible(bn128, bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(goldilocks, bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(IndexType::get(&ctx), bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(std::nullopt, bn128));
+}
+
+TEST_F(TypeHelperTests, test_templateParamValuesUnify_feltRepresentations) {
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, APInt(8, 35), fieldless);
+  FeltConstAttr fielded = FeltConstAttr::get(&ctx, APInt(8, 35), bn128);
+  FeltConstAttr differentValue = FeltConstAttr::get(&ctx, APInt(8, 36), bn128);
+  FeltConstAttr differentField = FeltConstAttr::get(&ctx, APInt(8, 35), goldilocks);
+  IntegerAttr integer = IntegerAttr::get(IndexType::get(&ctx), 35);
+  FlatSymbolRefAttr actualSymbol = FlatSymbolRefAttr::get(&ctx, "Actual");
+  FlatSymbolRefAttr inferredSymbol = FlatSymbolRefAttr::get(&ctx, "Inferred");
+
+  EXPECT_TRUE(templateParamValuesUnify(unspecified, fielded, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(unspecified, fielded, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(integer, fielded, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(fielded, integer, bn128));
+  EXPECT_FALSE(templateParamValuesUnify(differentValue, fielded, bn128));
+  EXPECT_FALSE(templateParamValuesUnify(differentField, fielded, fieldless));
+  EXPECT_FALSE(templateParamValuesUnify(differentField, differentField, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(actualSymbol, inferredSymbol, bn128));
+}
+
+TEST_F(TypeHelperTests, test_templateParamValuesUnify_widthIndependentFeltValues) {
+  static constexpr unsigned NARROW_WIDTH = 8;
+  static constexpr unsigned WIDE_WIDTH = 64;
+  static constexpr unsigned VALUE = 35;
+
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+  IntegerAttr wideInteger = IntegerAttr::get(IntegerType::get(&ctx, WIDE_WIDTH), VALUE);
+  IntegerAttr differentWideInteger =
+      IntegerAttr::get(IntegerType::get(&ctx, WIDE_WIDTH), VALUE + 1);
+  FeltConstAttr narrowBn128 = FeltConstAttr::get(&ctx, APInt(NARROW_WIDTH, VALUE), bn128);
+  FeltConstAttr wideBn128 = FeltConstAttr::get(&ctx, APInt(WIDE_WIDTH, VALUE), bn128);
+  FeltConstAttr narrowGoldilocks = FeltConstAttr::get(&ctx, APInt(NARROW_WIDTH, VALUE), goldilocks);
+
+  EXPECT_TRUE(templateParamValuesUnify(wideInteger, narrowBn128, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(narrowBn128, wideInteger, fieldless));
+  EXPECT_FALSE(templateParamValuesUnify(differentWideInteger, narrowBn128, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(wideBn128, narrowBn128, fieldless));
+  EXPECT_FALSE(templateParamValuesUnify(wideBn128, narrowGoldilocks, fieldless));
 }
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {

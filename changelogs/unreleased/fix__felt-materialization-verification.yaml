@@ -1,0 +1,3 @@
+fixed:
+  - Accept fieldless felt constants and integer literals in the required field for struct, call, and include template arguments; reject incompatible or ambiguous values
+  - Resolve paths in included function and contract signatures relative to the included module when verifying explicit or inferred template arguments
