@@ -249,21 +249,8 @@ Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
   if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
     OpBuilder::InsertionGuard guard(builder);
     builder.setInsertionPoint(*this);
-    SmallVector<ValueRange> mapOperands;
-    for (OperandRange group : getMapOperands()) {
-      mapOperands.push_back(group);
-    }
-    return NewPodOp::create(builder, getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
-  }
-  // Keep nested defaults visible to the allocation-based scalarization fixpoint. Each promoted
-  // read snapshots this storage independently, so mutating one read cannot affect another.
-  if (auto podType = llvm::dyn_cast<PodType>(slot.elemType)) {
-    OpBuilder::InsertionGuard guard(builder);
-    builder.setInsertionPoint(*this);
-    SmallVector<ValueRange> mapOperands;
-    for (OperandRange group : getMapOperands()) {
-      mapOperands.push_back(group);
-    }
+    OperandRangeRange groups = getMapOperands();
+    SmallVector<ValueRange> mapOperands(groups.begin(), groups.end());
     return NewPodOp::create(builder, getLoc(), podType, mapOperands, getNumDimsPerMapAttr());
   }
 
