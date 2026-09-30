@@ -186,15 +186,15 @@ Manual Build Setup</h1>
 <p>Once you have CMake, Ninja, and Python3, you can use the following script to build the rest of the dependencies and LLZK:</p>
 <div class="fragment"><div class="line"># Start from llzk repo top level.</div>
 <div class="line"> </div>
+<div class="line"># LLVM&#39;s install tree must be outside the LLZK source tree.</div>
+<div class="line">export INSTALL_ROOT=&quot;$(dirname &quot;$(pwd -P)&quot;)/llzk-llvm-install-root&quot;</div>
+<div class="line">mkdir -p &quot;$INSTALL_ROOT&quot;</div>
+<div class="line"> </div>
 <div class="line"># First, build LLVM + MLIR</div>
 <div class="line">rm -rf third-party</div>
 <div class="line">mkdir third-party</div>
 <div class="line">pushd third-party</div>
 <div class="line">export THIRD_PARTY=&quot;$PWD&quot;</div>
-<div class="line"> </div>
-<div class="line"># This is where llvm will be installed.</div>
-<div class="line">export INSTALL_ROOT=&quot;$THIRD_PARTY/llvm-install-root&quot;</div>
-<div class="line">mkdir &quot;$INSTALL_ROOT&quot;</div>
 <div class="line"> </div>
 <div class="line"># Configure LLVM build</div>
 <div class="line">git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.0 --depth 1</div>
