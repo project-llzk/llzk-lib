@@ -1,11 +1,10 @@
 // RUN: llzk-opt -split-input-file %s -o /dev/null
 // RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
 
+// A symbolic array cannot be enumerated to materialize an independent value copy.
 #len = affine_map<()[s0] -> (s0)>
 !Values = !array.type<#len x index>
 !Box = !pod.type<[@values: !Values]>
-
-// A symbolic array cannot be enumerated to materialize an independent value copy.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @unsupported_symbolic_copy(%n: index) -> !Values {
@@ -18,11 +17,10 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A preceding write must not make an unsupported symbolic array silently alias its source.
 #len = affine_map<()[s0] -> (s0)>
 !Values = !array.type<#len x index>
 !Box = !pod.type<[@values: !Values]>
-
-// A preceding write must not make an unsupported symbolic array silently alias its source.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @unsupported_symbolic_forwarding(%n: index, %source: !Values) -> !Values {
@@ -36,18 +34,19 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A virtual POD argument must not turn an unsupported aggregate read into an alias of its leaf.
 #len = affine_map<()[s0] -> (s0)>
 !Values = !array.type<#len x index>
 !Box = !pod.type<[@values: !Values]>
-
-// A virtual POD argument must not turn an unsupported aggregate read into an alias of its leaf.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @unsupported_virtual_pod_read(
       %box: !Box, %index: index, %replacement: index
   ) -> index {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'values': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %first = pod.read %box[@values] : !Box, !Values
     array.write %first[%index] = %replacement : !Values, index
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'values': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %second = pod.read %box[@values] : !Box, !Values
     %observed = array.read %second[%index] : !Values, index
     function.return %observed : index
@@ -56,12 +55,11 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Split leaf arrays for a symbolic array-of-POD must not be forwarded as mutable backing storage.
 #len = affine_map<()[s0] -> (s0)>
 !Item = !pod.type<[@x: index]>
 !Items = !array.type<#len x !Item>
 !Box = !pod.type<[@items: !Items]>
-
-// Split leaf arrays for a symbolic array-of-POD must not be forwarded as mutable backing storage.
 module attributes {llzk.lang} {
   function.def @unsupported_deferred_array_copy(
       %box: !Box, %replacement: !Item, %index: index
@@ -78,16 +76,16 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A projection must not bypass the unsupported copies at either POD boundary.
 !Item = !pod.type<[@x: index]>
 !Items = !array.type<? x !Item>
 !Box = !pod.type<[@items: !Items]>
-// A projection must not bypass the unsupported copies at either POD boundary.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
-  // expected-note@+1 {{cannot promote POD record 'items'}}
+  // expected-note@+1 {{cannot promote POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
   function.def @deferred_write_read(%source: !Box, %i: index) -> index {
     %items = pod.read %source[@items] : !Box, !Items
-    // expected-note@+1 {{cannot promote POD record 'items'}}
+    // expected-note@+1 {{cannot promote POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %destination = pod.new : !Box
     pod.write %destination[@items] = %items : !Box, !Items
     %snapshot = pod.read %destination[@items] : !Box, !Items
@@ -110,6 +108,25 @@ module attributes {llzk.lang} {
     array.write %first[%j] = %replacement : !array.type<? x index>, index
     %value = array.read %second[%j] : !array.type<? x index>, index
     function.return %value : index
+  }
+}
+
+// -----
+
+// An affine payload projection must not bypass the unsupported POD read copy.
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Inner]>
+!Outer = !pod.type<[@items: !array.type<2 x !Elem>]>
+module attributes {llzk.lang} {
+  function.def @read_unwritten_affine_leaf(%i: index, %j: index) -> index {
+    %p = llzk.nondet : !Outer
+    %items = pod.read %p[@items] : !Outer, !array.type<2 x !Elem>
+    // expected-error@+1 {{cannot copy nested array leaf: dynamic or symbolic payload arrays cannot be copied independently}}
+    %item = array.read %items[%i] : !array.type<2 x !Elem>, !Elem
+    %vals = pod.read %item[@vals] : !Elem, !Inner
+    %x = array.read %vals[%j] : !Inner, index
+    function.return %x : index
   }
 }
 

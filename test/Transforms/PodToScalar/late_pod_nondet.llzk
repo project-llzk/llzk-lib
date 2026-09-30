@@ -24,10 +24,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @read_uninitialized_nested_pod() -> index {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
-// CHECK-NEXT:      function.return %nondet : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @independent_uninitialized_reads(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
-// CHECK-NEXT:      function.return %nondet : index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

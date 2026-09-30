@@ -1,10 +1,10 @@
 // RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
 
+// Writing a POD element must snapshot its symbolic array record instead of aliasing it.
 #inner = affine_map<()[s0] -> (s0)>
 !Item = !pod.type<[@x: index]>
 !Outer = !pod.type<[@items: !array.type<#inner x !Item>, @tag: index]>
 !OuterArray = !array.type<2 x !Outer>
-// Writing a POD element must snapshot its symbolic array record instead of aliasing it.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @write_elem(%arr: !OuterArray, %elem: !Outer, %i: index) -> !OuterArray {
@@ -16,16 +16,16 @@ module attributes {llzk.lang} {
 
 // -----
 
-// COM: This regression test exercises the deferred array.read resolver when the nearest
-// COM: forwardable write stores a bare pod.read-backed array-of-pod value.
+// This regression test exercises the deferred array.read resolver when the nearest
+// forwardable write stores a bare pod.read-backed array-of-pod value.
 !Item = !pod.type<[@x: index]>
 !Outer = !pod.type<[@items: !array.type<? x !Item>]>
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
-  // expected-note@+1 {{cannot promote POD record 'items'}}
+  // expected-note@+1 {{cannot promote POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
   function.def @forwarded_write_readback(%src: !Outer, %i: index) -> index {
     %items = pod.read %src[@items] : !Outer, !array.type<? x !Item>
-    // expected-note@+1 {{cannot promote POD record 'items'}}
+    // expected-note@+1 {{cannot promote POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %dst = pod.new : !Outer
     pod.write %dst[@items] = %items : !Outer, !array.type<? x !Item>
 
@@ -44,8 +44,9 @@ module attributes {llzk.lang} {
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @nested_if_parent_write(%src: !Outer, %n: index, %i: index, %flag: index) -> index {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %items = pod.read %src[@items] : !Outer, !array.type<#outer x !Item>
-    // expected-note@+1 {{cannot promote POD record 'items'}}
+    // expected-note@+1 {{cannot promote POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %p = pod.new()[%n] : !Outer
     pod.write %p[@items] = %items : !Outer, !array.type<#outer x !Item>
     %c0 = arith.constant 0 : index
@@ -62,8 +63,9 @@ module attributes {llzk.lang} {
   }
 
   function.def @nested_if_parent_init(%src: !Outer, %n: index, %i: index, %flag: index) -> index {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %items = pod.read %src[@items] : !Outer, !array.type<#outer x !Item>
-    // expected-note@+1 {{cannot promote POD record 'items'}}
+    // expected-note@+1 {{cannot promote POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
     %p = pod.new { @items = %items }()[%n] : !Outer
     %c0 = arith.constant 0 : index
     %cond = arith.cmpi ne, %flag, %c0 : index

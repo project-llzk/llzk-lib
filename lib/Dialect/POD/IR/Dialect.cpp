@@ -30,35 +30,39 @@
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/POD/IR/Attrs.cpp.inc"
 
+using namespace mlir;
+using namespace llzk;
+using namespace llzk::pod;
+
 namespace {
 
-class PODValueCopyDialectInterface final : public llzk::ValueCopyDialectInterface {
+class PODValueCopyDialectInterface final : public ValueCopyDialectInterface {
 public:
-  explicit PODValueCopyDialectInterface(mlir::Dialect *owner) : ValueCopyDialectInterface(owner) {}
+  explicit PODValueCopyDialectInterface(Dialect *owner) : ValueCopyDialectInterface(owner) {}
 
-  bool canMaterializeValueCopy(mlir::Type type) const final {
-    auto podType = llvm::dyn_cast<llzk::pod::PodType>(type);
+  bool canMaterializeValueCopy(Type type) const final {
+    auto podType = llvm::dyn_cast<PodType>(type);
     if (!podType) {
       return false;
     }
     // Copy eligibility is type-based and must also hold for block arguments and read results.
     // Until copies can recover their instantiation groups, do not synthesize invalid pod.new ops.
-    mlir::SmallVector<mlir::AffineMapAttr> maps;
-    llzk::pod::collectPodMapAttrs(podType, maps);
+    SmallVector<AffineMapAttr> maps;
+    collectPodMapAttrs(podType, maps);
     if (!maps.empty()) {
       return false;
     }
-    return llvm::all_of(podType.getRecords(), [](llzk::pod::RecordAttr record) {
+    return llvm::all_of(podType.getRecords(), [](RecordAttr record) {
       return llzk::canMaterializeValueCopy(record.getType());
     });
   }
 
-  std::string getValueCopyFailureReason(mlir::Type type) const final {
-    auto podType = llvm::dyn_cast<llzk::pod::PodType>(type);
+  std::string getValueCopyFailureReason(Type type) const final {
+    auto podType = llvm::dyn_cast<PodType>(type);
     if (!podType) {
       return ValueCopyDialectInterface::getValueCopyFailureReason(type);
     }
-    for (llzk::pod::RecordAttr record : podType.getRecords()) {
+    for (RecordAttr record : podType.getRecords()) {
       if (!llzk::canMaterializeValueCopy(record.getType())) {
         return "POD record '" + record.getName().getValue().str() +
                "': " + llzk::getValueCopyFailureReason(record.getType());
@@ -67,26 +71,21 @@ public:
     return "POD copy requires affine-map instantiation operands that cannot be recovered";
   }
 
-  mlir::FailureOr<mlir::Value> materializeValueCopy(
-      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value source
-  ) const final {
-    auto podType = llvm::dyn_cast<llzk::pod::PodType>(source.getType());
+  FailureOr<Value>
+  materializeValueCopy(OpBuilder &builder, Location loc, Value source) const final {
+    auto podType = llvm::dyn_cast<PodType>(source.getType());
     if (!podType || !canMaterializeValueCopy(podType)) {
-      return mlir::failure();
+      return failure();
     }
 
-    auto destination = llzk::pod::NewPodOp::create(builder, loc, podType);
-    for (llzk::pod::RecordAttr record : podType.getRecords()) {
-      auto read =
-          llzk::pod::ReadPodOp::create(builder, loc, record.getType(), source, record.getName());
-      mlir::FailureOr<mlir::Value> copied =
-          llzk::materializeValueCopy(builder, loc, read.getResult());
-      if (mlir::failed(copied)) {
-        return mlir::failure();
+    auto destination = NewPodOp::create(builder, loc, podType);
+    for (RecordAttr record : podType.getRecords()) {
+      auto read = ReadPodOp::create(builder, loc, record.getType(), source, record.getName());
+      FailureOr<Value> copied = llzk::materializeValueCopy(builder, loc, read.getResult());
+      if (failed(copied)) {
+        return failure();
       }
-      llzk::pod::WritePodOp::create(
-          builder, loc, destination.getResult(), record.getName(), *copied
-      );
+      WritePodOp::create(builder, loc, destination.getResult(), record.getName(), *copied);
     }
     return destination.getResult();
   }
@@ -98,7 +97,7 @@ public:
 // PODDialect
 //===------------------------------------------------------------------===//
 
-auto llzk::pod::PODDialect::initialize() -> void {
+auto PODDialect::initialize() -> void {
   // clang-format off
   addOperations<
     #define GET_OP_LIST

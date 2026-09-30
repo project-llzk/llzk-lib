@@ -54,6 +54,11 @@ bool requiresValueCopy(mlir::Type type);
 /// payload.
 bool canMaterializeValueCopy(mlir::Type type);
 
+/// Return whether `type` requires a value copy that cannot currently be materialized.
+inline bool requiresUnsupportedValueCopy(mlir::Type type) {
+  return requiresValueCopy(type) && !canMaterializeValueCopy(type);
+}
+
 /// Explain the unsupported type or recursive copy requirement. Return an empty string for a
 /// supported type, and reserve shape-resolution advice for unsupported non-static array payloads.
 std::string getValueCopyFailureReason(mlir::Type type);

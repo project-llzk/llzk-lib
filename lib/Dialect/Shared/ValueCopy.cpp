@@ -49,7 +49,7 @@ bool canMaterializeValueCopy(Type type) {
 
 std::string ValueCopyDialectInterface::getValueCopyFailureReason(Type type) const {
   std::string reason;
-  llvm::raw_string_ostream(reason) << "unsupported value-copy type '" << type << "'";
+  llvm::raw_string_ostream(reason) << "unsupported value-copy type '" << type << '\'';
   return reason;
 }
 
@@ -61,7 +61,7 @@ std::string getValueCopyFailureReason(Type type) {
     return interface->getValueCopyFailureReason(type);
   }
   std::string reason;
-  llvm::raw_string_ostream(reason) << "unsupported value-copy type '" << type << "'";
+  llvm::raw_string_ostream(reason) << "unsupported value-copy type '" << type << '\'';
   return reason;
 }
 

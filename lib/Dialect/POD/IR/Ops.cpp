@@ -174,7 +174,7 @@ static bool canRemovePodAccess(
   }
   Value blockingUse = (*blockingUses.begin())->get();
   return blockingUse == slot.ptr && podRef == slot.ptr && accessedType == slot.elemType &&
-         (!llzk::requiresValueCopy(accessedType) || llzk::canMaterializeValueCopy(accessedType));
+         !llzk::requiresUnsupportedValueCopy(accessedType);
 }
 
 } // namespace
@@ -225,8 +225,7 @@ DeletionKind WritePodOp::removeBlockingUses(
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
   ArrayRef<RecordAttr> records = getType().getRecords();
-  if (records.size() != 1 || (llzk::requiresValueCopy(records.front().getType()) &&
-                              !llzk::canMaterializeValueCopy(records.front().getType()))) {
+  if (records.size() != 1 || llzk::requiresUnsupportedValueCopy(records.front().getType())) {
     return {};
   }
   return {MemorySlot {getResult(), records.front().getType()}};

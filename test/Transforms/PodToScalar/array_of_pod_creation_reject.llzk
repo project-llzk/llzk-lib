@@ -1,11 +1,11 @@
 // RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
 
+// Symbolic leaf arrays cannot yet be copied at POD access boundaries. Reject this case
+// instead of silently forwarding the mutable arrays with aliasing semantics.
 #inner = affine_map<()[s0] -> (s0 + 1)>
 !Leaf = !array.type<#inner x index>
 !Elem = !pod.type<[@vals: !Leaf]>
 !ElemArray = !array.type<2 x !Elem>
-// Symbolic leaf arrays cannot yet be copied at POD access boundaries. Reject this case instead of
-// silently forwarding the mutable arrays with aliasing semantics.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @materialized(%n: index) -> !ElemArray {
@@ -24,13 +24,13 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Passing the result of a POD read across a call would expose the aggregate copy. Its symbolic
+// payload leaf cannot yet be copied independently, so this must be rejected rather than aliased.
 #inner = affine_map<()[s0] -> (s0 + 1)>
 !Leaf = !array.type<#inner x index>
 !Elem = !pod.type<[@vals: !Leaf]>
 !ElemArray = !array.type<2 x !Elem>
 !Outer = !pod.type<[@items: !ElemArray]>
-// Passing the result of a POD read across a call would expose the aggregate copy. Its symbolic
-// payload leaf cannot yet be copied independently, so this must be rejected rather than aliased.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @sink(%arr: !ElemArray) {

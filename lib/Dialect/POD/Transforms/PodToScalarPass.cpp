@@ -1964,7 +1964,7 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
     });
     return supported;
   }
-  if (llzk::requiresValueCopy(recType) && !llzk::canMaterializeValueCopy(recType)) {
+  if (llzk::requiresUnsupportedValueCopy(recType)) {
     return false;
   }
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
@@ -4501,7 +4501,7 @@ public:
 /// Collect stored virtual leaf arrays without bypassing a POD write boundary.
 /// Materialized POD storage must be promoted with explicit write-time copies first.
 static bool tryCollectReadPodSplitPodArrayLeafValues(
-    ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
+    ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds,
     const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
 ) {
   if (hasEarlierWrite(readOp) || findNearestForwardableWrite(readOp)) {
@@ -4539,7 +4539,7 @@ static bool resolveReadPodSplitPodArrayLeafValues(
 
   SmallVector<Value> sourceLeafArrays;
   if (tryCollectReadPodSplitPodArrayLeafValues(
-          readOp, arrTy, splitIds, splitTypes, virtualPods, sourceLeafArrays
+          readOp, arrTy, splitIds, virtualPods, sourceLeafArrays
       )) {
     OpBuilder::InsertionGuard guard(bldr);
     // Unlike synthetic unwritten storage, a resolved backing is a semantic copy of existing POD
@@ -4758,7 +4758,7 @@ public:
 
     SmallVector<Value> ignoredLeafArrays;
     return tryCollectReadPodSplitPodArrayLeafValues(
-               fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
+               fieldRead, arrTy, splitIds, resolver.virtualPods, ignoredLeafArrays
            ) ||
            isFreshUnwrittenPodRead(fieldRead);
   }
@@ -4832,7 +4832,7 @@ public:
 
     SmallVector<Value> ignoredLeafArrays;
     if (tryCollectReadPodSplitPodArrayLeafValues(
-            fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
+            fieldRead, arrTy, splitIds, resolver.virtualPods, ignoredLeafArrays
         )) {
       return true;
     }
@@ -5612,8 +5612,7 @@ public:
   using OpRewritePattern<ReadPodOp>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
-    if (llzk::requiresValueCopy(readOp.getType()) &&
-        !llzk::canMaterializeValueCopy(readOp.getType())) {
+    if (llzk::requiresUnsupportedValueCopy(readOp.getType())) {
       return failure();
     }
     auto ifOp = readOp->getParentOfType<scf::IfOp>();
@@ -5719,8 +5718,7 @@ public:
       }
     }
 
-    if (llzk::requiresValueCopy(readOp.getType()) &&
-        !llzk::canMaterializeValueCopy(readOp.getType())) {
+    if (llzk::requiresUnsupportedValueCopy(readOp.getType())) {
       return failure();
     }
     rewriter.setInsertionPoint(readOp);
@@ -6167,7 +6165,7 @@ public:
 
     llvm::erase_if(slots, [ifOp, &thenBlock, elseBlock](const IfWriteSlot &slot) {
       return isValueDefinedInside(ifOp, slot.podRef) ||
-             (llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type)) ||
+             llzk::requiresUnsupportedValueCopy(slot.type) ||
              !branchSlotCanBeLifted(&thenBlock, slot.podRef, slot.recordName) ||
              !branchSlotCanBeLifted(elseBlock, slot.podRef, slot.recordName);
     });
@@ -6278,9 +6276,7 @@ public:
     if (slots.empty() ||
         llvm::any_of(
             slots,
-            [](const LoopPodSlot &slot) {
-      return llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
-    }
+            [](const LoopPodSlot &slot) { return llzk::requiresUnsupportedValueCopy(slot.type); }
         ) ||
         hasUnliftableLoopPodUses(body, slots)) {
       return failure();
@@ -6350,9 +6346,7 @@ public:
     if (slots.empty() ||
         llvm::any_of(
             slots,
-            [](const LoopPodSlot &slot) {
-      return llzk::requiresValueCopy(slot.type) && !llzk::canMaterializeValueCopy(slot.type);
-    }
+            [](const LoopPodSlot &slot) { return llzk::requiresUnsupportedValueCopy(slot.type); }
         ) ||
         hasUnliftableLoopPodUses(beforeBody, slots) || hasUnliftableLoopPodUses(afterBody, slots)) {
       return failure();
@@ -6737,7 +6731,7 @@ static LogicalResult checkWhileCarriedPods(
     }
     for (Operation *user : init.getUsers()) {
       if (user != whileOp.getOperation() &&
-          !(user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp))) {
+          (user->getBlock() != whileOp->getBlock() || !user->isBeforeInBlock(whileOp))) {
         return reject("POD initializer remains observable at or after the loop");
       }
     }
@@ -7354,14 +7348,29 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.walk([&diagnostic](NewPodOp newPod) {
           ArrayRef<RecordAttr> records = newPod.getType().getRecords();
           Type recordType = records.size() == 1 ? records.front().getType() : Type {};
-          if (recordType && llzk::requiresValueCopy(recordType) &&
-              !llzk::canMaterializeValueCopy(recordType)) {
+          if (recordType && llzk::requiresUnsupportedValueCopy(recordType)) {
             diagnostic.attachNote(newPod.getLoc())
                 << "cannot promote POD record '" << records.front().getName().getValue()
                 << "': " << llzk::getValueCopyFailureReason(recordType);
           }
         });
         llvm::DenseSet<Operation *> diagnosedReads;
+        // Virtual POD reads can remain when their leaves cannot be copied independently, even
+        // without a deferred array-of-POD cast or materialized pod.new to explain the failure.
+        VirtualPodValueMap virtualPods;
+        rehydrateVirtualPodPlaceholders(module, virtualPods);
+        module.walk([&diagnostic, &diagnosedReads, &virtualPods](ReadPodOp readOp) {
+          Type recordType = readOp.getType();
+          if (!lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods) ||
+              !llzk::requiresUnsupportedValueCopy(recordType)) {
+            return;
+          }
+
+          diagnosedReads.insert(readOp.getOperation());
+          diagnostic.attachNote(readOp.getLoc())
+              << "cannot lower value-copy read of POD record '" << readOp.getRecordName()
+              << "': " << llzk::getValueCopyFailureReason(recordType);
+        });
         module.walk([&diagnostic, &diagnosedReads](UnrealizedConversionCastOp castOp) {
           ArrayType arrTy;
           SmallVector<RecordChain> splitIds;
