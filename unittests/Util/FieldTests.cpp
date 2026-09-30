@@ -17,11 +17,14 @@
 using namespace llvm;
 using namespace llzk;
 
-static const Field &f = Field::getField("babybear");
-
 struct FieldTests : public testing::TestWithParam<DynamicAPInt> {
+  const Field &f = Field::getField("babybear");
+
   static const std::vector<DynamicAPInt> &TestingValues() {
-    static std::vector<DynamicAPInt> vals = {f.zero(), f.one(), f.half(), f.maxVal(), f.prime()};
+    const Field &field = Field::getField("babybear");
+    static std::vector<DynamicAPInt> vals = {
+        field.zero(), field.one(), field.half(), field.maxVal(), field.prime()
+    };
     return vals;
   }
 };

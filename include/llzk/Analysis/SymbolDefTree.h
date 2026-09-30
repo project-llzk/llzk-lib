@@ -179,10 +179,6 @@ struct DOTGraphTraits<const llzk::SymbolDefTree *>
   DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<NodeRef>(isSimple) {}
 
   static std::string getGraphName(GraphType) { return "Symbol Def Tree"; }
-
-  std::string getNodeLabel(NodeRef n, GraphType g) {
-    return DOTGraphTraits<NodeRef>::getNodeLabel(n, g);
-  }
 };
 
 } // namespace llvm

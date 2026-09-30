@@ -345,7 +345,7 @@ public:
   LogicalResult handleRewrite(
       Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
-    APInt attrValue = a.getValue();
+    const APInt &attrValue = a.getValue();
     Type origResTy = op.getType();
     Type newResTy = getTypeConverter()->convertType(origResTy);
     if (!newResTy) {
@@ -2084,7 +2084,7 @@ private:
     }
     );
 
-    out.paramsOfStructTy = newReturnStructParams;
+    out.paramsOfStructTy = std::move(newReturnStructParams);
     assert(out.paramsOfStructTy.size() == in.paramsOfStructTy.size() && "post-condition");
     assert(out.mapOpGroups.empty() && "post-condition");
     assert(out.dimsPerGroup.empty() && "post-condition");

@@ -50,6 +50,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <cstdlib>
+#include <exception>
 #include <string>
 #include <tuple>
 
@@ -58,14 +59,6 @@
 #include "pcl/DialectRegistration.h"
 #include "pcl/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
-
-static llvm::cl::list<std::string> IncludeDirs(
-    "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
-    llvm::cl::Prefix
-);
-
-static llvm::cl::opt<bool>
-    PrintAllOps("print-llzk-ops", llvm::cl::desc("Print a list of all ops registered in LLZK"));
 
 /// Replace `mlir::registerTransformsPasses()` to register a custom `remove-dead-values` pass
 /// because MLIR version 23.1.0 has a bug where the pass tracks `poison` values that it created
@@ -99,7 +92,17 @@ inline static void registerTransformsPasses() {
 
 } // namespace mlir_patch
 
-int main(int argc, char **argv) {
+/// Register options and passes, then run the LLZK optimizer.
+static int runMain(int argc, char **argv) {
+  llvm::cl::list<std::string> IncludeDirs(
+      "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
+      llvm::cl::Prefix
+  );
+
+  llvm::cl::opt<bool> PrintAllOps(
+      "print-llzk-ops", llvm::cl::desc("Print a list of all ops registered in LLZK")
+  );
+
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
   llvm::setBugReportMsg(
       "PLEASE submit a bug report to " BUG_REPORT_URL
@@ -168,4 +171,15 @@ int main(int argc, char **argv) {
   // Run 'mlir-opt'
   auto result = mlir::MlirOptMain(argc, argv, inputFilename, outputFilename, registry);
   return mlir::asMainReturnCode(result);
+}
+
+int main(int argc, char **argv) noexcept {
+  try {
+    return runMain(argc, argv);
+  } catch (const std::exception &ex) {
+    llvm::errs() << "llzk-opt: unhandled exception: " << ex.what() << '\n';
+  } catch (...) {
+    llvm::errs() << "llzk-opt: unhandled non-standard exception\n";
+  }
+  return EXIT_FAILURE;
 }

@@ -1867,7 +1867,7 @@ LogicalResult StructIntervals::computeIntervals(
       if (existing != memberRanges.end()) {
         Interval mergedInterval = existing->second.intersect(interval);
         bool intervalChanged = mergedInterval != existing->second;
-        existing->second = mergedInterval;
+        existing->second = std::move(mergedInterval);
 
         if (unreducedInterval.has_value()) {
           auto *existingUnreduced = memberUnreducedRanges.find(ref);
@@ -2038,8 +2038,8 @@ LogicalResult StructIntervals::computeIntervals(
         // existing parent intervals before merging back into each translated parent ref.
         llvm::EquivalenceClasses<SourceRef> directEqRefs =
             collectDirectEqualityRefs(solver, calledFn);
-        for (auto leaderIt = directEqRefs.begin(); leaderIt != directEqRefs.end(); ++leaderIt) {
-          if (!(*leaderIt)->isLeader()) {
+        for (const auto *leader : directEqRefs) {
+          if (!leader->isLeader()) {
             continue;
           }
 
@@ -2048,21 +2048,20 @@ LogicalResult StructIntervals::computeIntervals(
           bool hasInterval = false;
           bool ambiguousTranslation = false;
 
-          for (auto memberIt = directEqRefs.member_begin(**leaderIt);
-               memberIt != directEqRefs.member_end(); ++memberIt) {
+          for (const SourceRef &member : directEqRefs.members(*leader)) {
             Interval memberInterval = Interval::Entire(ctx.getField());
-            if (const auto *childIntervalIt = constrainIntervals.find(*memberIt);
+            if (const auto *childIntervalIt = constrainIntervals.find(member);
                 childIntervalIt != constrainIntervals.end()) {
               memberInterval = memberInterval.intersect(childIntervalIt->second);
             }
-            if (auto *callOperandIt = callOperandIntervals.find(*memberIt);
+            if (auto *callOperandIt = callOperandIntervals.find(member);
                 callOperandIt != callOperandIntervals.end()) {
               memberInterval = memberInterval.intersect(callOperandIt->second);
               contextualInterval = contextualInterval.intersect(memberInterval);
               hasInterval = true;
             }
 
-            auto translatedRefs = translateRef(*memberIt, identityTranslations);
+            auto translatedRefs = translateRef(member, identityTranslations);
             if (failed(translatedRefs)) {
               continue;
             }
