@@ -264,8 +264,8 @@ Classes</h2></td></tr>
 <tr class="memitem:NonDetOp" id="r_NonDetOp"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1NonDetOp.html">NonDetOp</a></td></tr>
 <tr class="memitem:NonDetOpAdaptor" id="r_NonDetOpAdaptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1NonDetOpAdaptor.html">NonDetOpAdaptor</a></td></tr>
 <tr class="memitem:NonDetOpGenericAdaptor" id="r_NonDetOpGenericAdaptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1NonDetOpGenericAdaptor.html">NonDetOpGenericAdaptor</a></td></tr>
-<tr class="memitem:OpClassesWithStructTypes" id="r_OpClassesWithStructTypes"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><b>OpClassesWithStructTypes</b></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lists all LLZK op classes that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> in their results or attributes. <br /></td></tr>
+<tr class="memitem:OpClassesWithStructTypes" id="r_OpClassesWithStructTypes"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1OpClassesWithStructTypes.html">OpClassesWithStructTypes</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lists all LLZK op classes that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> in their results or attributes.  <a href="structllzk_1_1OpClassesWithStructTypes.html#details">More...</a><br /></td></tr>
 <tr class="memitem:OpHash" id="r_OpHash"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1OpHash.html">OpHash</a></td></tr>
 <tr class="memitem:OpLocationLess" id="r_OpLocationLess"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1OpLocationLess.html">OpLocationLess</a></td></tr>
 <tr class="memitem:PolyLoweringPassOptions" id="r_PolyLoweringPassOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1PolyLoweringPassOptions.html">PolyLoweringPassOptions</a></td></tr>
@@ -556,6 +556,26 @@ Functions</h2></td></tr>
 <tr class="memitem:a4a2ab06a3956dbf1490063c357bf10c7" id="r_a4a2ab06a3956dbf1490063c357bf10c7"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a> (Type ty)</td></tr>
 <tr class="memitem:a4fa2606f37aa2ff8d905d847d3756ac7" id="r_a4fa2606f37aa2ff8d905d847d3756ac7"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a4fa2606f37aa2ff8d905d847d3756ac7">isValidMainSignalType</a> (Type pType)</td></tr>
 <tr class="memitem:aea3b7ee27fa12dad9dec8c9808c5ad4b" id="r_aea3b7ee27fa12dad9dec8c9808c5ad4b"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aea3b7ee27fa12dad9dec8c9808c5ad4b">createMemberWriteValidatorPass</a> ()</td></tr>
+<tr class="memitem:a0d6afde4601c321f47cd1e6846823321" id="r_a0d6afde4601c321f47cd1e6846823321"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a0d6afde4601c321f47cd1e6846823321">registerCAPIOptions</a> ()</td></tr>
+<tr class="memdesc:a0d6afde4601c321f47cd1e6846823321"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register shared C API options before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a7daf198b32d3408a74044c39287df394" id="r_a7daf198b32d3408a74044c39287df394"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a7daf198b32d3408a74044c39287df394">registerAttrCAPIGenerators</a> ()</td></tr>
+<tr class="memdesc:a7daf198b32d3408a74044c39287df394"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the attribute C API generators before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a4c7d134496d61d8dea7add6cabe5fbc2" id="r_a4c7d134496d61d8dea7add6cabe5fbc2"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a4c7d134496d61d8dea7add6cabe5fbc2">registerAttrCAPITestGenerator</a> ()</td></tr>
+<tr class="memdesc:a4c7d134496d61d8dea7add6cabe5fbc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the attribute C API test generator before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a97f03a8639f24b14b14af28267d45ac7" id="r_a97f03a8639f24b14b14af28267d45ac7"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a97f03a8639f24b14b14af28267d45ac7">registerTypeCAPIGenerators</a> ()</td></tr>
+<tr class="memdesc:a97f03a8639f24b14b14af28267d45ac7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the type C API generators before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a33b1b2798a60bf891181d48a402424f2" id="r_a33b1b2798a60bf891181d48a402424f2"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a33b1b2798a60bf891181d48a402424f2">registerTypeCAPITestGenerator</a> ()</td></tr>
+<tr class="memdesc:a33b1b2798a60bf891181d48a402424f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the type C API test generator before command-line parsing.  <br /></td></tr>
+<tr class="memitem:ab0580bfd1ae0c66db8b795e9d198a9ba" id="r_ab0580bfd1ae0c66db8b795e9d198a9ba"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab0580bfd1ae0c66db8b795e9d198a9ba">registerEnumCAPIGenerators</a> ()</td></tr>
+<tr class="memdesc:ab0580bfd1ae0c66db8b795e9d198a9ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the enum C API generators before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a89fb083888d9fcdba4e99f9f3da5f19f" id="r_a89fb083888d9fcdba4e99f9f3da5f19f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a89fb083888d9fcdba4e99f9f3da5f19f">registerEnumCAPITestGenerator</a> ()</td></tr>
+<tr class="memdesc:a89fb083888d9fcdba4e99f9f3da5f19f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the enum C API test generator before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a0b16bd5e6302942c1e98dad8a6fc23b2" id="r_a0b16bd5e6302942c1e98dad8a6fc23b2"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a0b16bd5e6302942c1e98dad8a6fc23b2">registerOpCAPIGenerators</a> ()</td></tr>
+<tr class="memdesc:a0b16bd5e6302942c1e98dad8a6fc23b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the operation C API generators before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a88d14c6933a2277036ec8b20cce13fd1" id="r_a88d14c6933a2277036ec8b20cce13fd1"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a88d14c6933a2277036ec8b20cce13fd1">registerOpCAPITestGenerator</a> ()</td></tr>
+<tr class="memdesc:a88d14c6933a2277036ec8b20cce13fd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the operation C API test generator before command-line parsing.  <br /></td></tr>
+<tr class="memitem:a7117643dd438ef7e0c1fc451a88d1d47" id="r_a7117643dd438ef7e0c1fc451a88d1d47"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a7117643dd438ef7e0c1fc451a88d1d47">registerDialectCAPITestGenerator</a> ()</td></tr>
+<tr class="memdesc:a7117643dd438ef7e0c1fc451a88d1d47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register the dialect C API test generator before command-line parsing.  <br /></td></tr>
 <tr class="memitem:a9e37c6f9f1b5779c100b03e6b3871826" id="r_a9e37c6f9f1b5779c100b03e6b3871826"><td class="memItemLeft">::llvm::StringRef&#160;</td><td class="memItemRight"><a class="el" href="#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a> (<a class="el" href="#ac64174fed27e22bfcf57e4332be0b8f2">OutputStream</a> val)</td></tr>
 <tr class="memitem:a46fcc59822ccf934d7d4801ae59bfa6c" id="r_a46fcc59822ccf934d7d4801ae59bfa6c"><td class="memItemLeft">::std::optional&lt; <a class="el" href="#ac64174fed27e22bfcf57e4332be0b8f2">OutputStream</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a46fcc59822ccf934d7d4801ae59bfa6c">symbolizeOutputStream</a> (::llvm::StringRef str)</td></tr>
 <tr class="memitem:a365be55c2c1a6154f1abc6b3d07a862f" id="r_a365be55c2c1a6154f1abc6b3d07a862f"><td class="memItemLeft">::std::optional&lt; <a class="el" href="#ac64174fed27e22bfcf57e4332be0b8f2">OutputStream</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a365be55c2c1a6154f1abc6b3d07a862f">symbolizeOutputStream</a> (uint32_t value)</td></tr>
@@ -975,7 +995,7 @@ Variables</h2></td></tr>
 
 <p>Callback to produce an error diagnostic. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00145">145</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00148">148</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1064,7 +1084,7 @@ Variables</h2></td></tr>
 <p>This type is required in cases like the functions below to take ownership of the lambda so it is not destroyed upon return from the function. </p>
 <p>It can be implicitly converted to <a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7" title="Callback to produce an error diagnostic.">EmitErrorFn</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00149">149</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00152">152</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -3379,7 +3399,7 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00210">210</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00212">212</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3438,7 +3458,7 @@ template&lt;typename AllocOpTy&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00134">134</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00136">136</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3459,7 +3479,7 @@ template&lt;typename AllocOpTy&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00083">83</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00085">85</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3722,7 +3742,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00159">159</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00162">162</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4347,7 +4367,7 @@ template&lt;typename OpT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00151">151</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00154">154</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4376,7 +4396,7 @@ template&lt;typename OpImplClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00155">155</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00158">158</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -7072,7 +7092,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 <p>All fallback patterns use benefit 0 so higher-benefit patterns can override if needed.</p>
 <p>The <span class="tt">GeneralTypeReplacePattern</span> is used for all classes in <span class="tt">AdditionalOpClasses</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeConversionPatterns_8h_source.html#l00302">302</a> of file <a class="el" href="TypeConversionPatterns_8h_source.html">TypeConversionPatterns.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeConversionPatterns_8h_source.html#l00300">300</a> of file <a class="el" href="TypeConversionPatterns_8h_source.html">TypeConversionPatterns.h</a>.</p>
 
 </div>
 </div>
@@ -8491,6 +8511,48 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
+<a id="a7daf198b32d3408a74044c39287df394" name="a7daf198b32d3408a74044c39287df394"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7daf198b32d3408a74044c39287df394">&#9670;&#160;</a></span>registerAttrCAPIGenerators()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerAttrCAPIGenerators </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the attribute C API generators before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="AttrCAPIGen_8cpp_source.html#l00060">60</a> of file <a class="el" href="AttrCAPIGen_8cpp_source.html">AttrCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4c7d134496d61d8dea7add6cabe5fbc2" name="a4c7d134496d61d8dea7add6cabe5fbc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c7d134496d61d8dea7add6cabe5fbc2">&#9670;&#160;</a></span>registerAttrCAPITestGenerator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerAttrCAPITestGenerator </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the attribute C API test generator before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="AttrCAPITestGen_8cpp_source.html#l00060">60</a> of file <a class="el" href="AttrCAPITestGen_8cpp_source.html">AttrCAPITestGen.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a70f1f25bfaea0554bef926a549b1ccfd" name="a70f1f25bfaea0554bef926a549b1ccfd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a70f1f25bfaea0554bef926a549b1ccfd">&#9670;&#160;</a></span>registerCallGraphPrinterPass()</h2>
 
@@ -8596,6 +8658,28 @@ template&lt;typename ConcreteOp&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="AnalysisPasses_8h_source.html#l00887">887</a> of file <a class="el" href="AnalysisPasses_8h_source.html">AnalysisPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a0d6afde4601c321f47cd1e6846823321" name="a0d6afde4601c321f47cd1e6846823321"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d6afde4601c321f47cd1e6846823321">&#9670;&#160;</a></span>registerCAPIOptions()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerCAPIOptions </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register shared C API options before command-line parsing. </p>
+<p>Initialization failures propagate to the caller; do not retry after failure. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00151">151</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -8707,6 +8791,27 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
+<a id="a7117643dd438ef7e0c1fc451a88d1d47" name="a7117643dd438ef7e0c1fc451a88d1d47"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7117643dd438ef7e0c1fc451a88d1d47">&#9670;&#160;</a></span>registerDialectCAPITestGenerator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerDialectCAPITestGenerator </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the dialect C API test generator before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="DialectCAPITestGen_8cpp_source.html#l00089">89</a> of file <a class="el" href="DialectCAPITestGen_8cpp_source.html">DialectCAPITestGen.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ae3e54e31d7ac526c7a4a85373bc8ce78" name="ae3e54e31d7ac526c7a4a85373bc8ce78"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae3e54e31d7ac526c7a4a85373bc8ce78">&#9670;&#160;</a></span>registerEnforceNoMemberOverwritePass()</h2>
 
@@ -8758,6 +8863,48 @@ template&lt;typename ConcreteOp&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l01015">1015</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="ab0580bfd1ae0c66db8b795e9d198a9ba" name="ab0580bfd1ae0c66db8b795e9d198a9ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0580bfd1ae0c66db8b795e9d198a9ba">&#9670;&#160;</a></span>registerEnumCAPIGenerators()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerEnumCAPIGenerators </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the enum C API generators before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="EnumCAPIGen_8cpp_source.html#l00176">176</a> of file <a class="el" href="EnumCAPIGen_8cpp_source.html">EnumCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a89fb083888d9fcdba4e99f9f3da5f19f" name="a89fb083888d9fcdba4e99f9f3da5f19f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89fb083888d9fcdba4e99f9f3da5f19f">&#9670;&#160;</a></span>registerEnumCAPITestGenerator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerEnumCAPITestGenerator </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the enum C API test generator before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="EnumCAPITestGen_8cpp_source.html#l00143">143</a> of file <a class="el" href="EnumCAPITestGen_8cpp_source.html">EnumCAPITestGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -9010,6 +9157,48 @@ template&lt;typename ConcreteOp&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKValidationPasses_8h_source.html#l00113">113</a> of file <a class="el" href="LLZKValidationPasses_8h_source.html">LLZKValidationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a0b16bd5e6302942c1e98dad8a6fc23b2" name="a0b16bd5e6302942c1e98dad8a6fc23b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0b16bd5e6302942c1e98dad8a6fc23b2">&#9670;&#160;</a></span>registerOpCAPIGenerators()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerOpCAPIGenerators </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the operation C API generators before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00908">908</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a88d14c6933a2277036ec8b20cce13fd1" name="a88d14c6933a2277036ec8b20cce13fd1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88d14c6933a2277036ec8b20cce13fd1">&#9670;&#160;</a></span>registerOpCAPITestGenerator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerOpCAPITestGenerator </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the operation C API test generator before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="OpCAPITestGen_8cpp_source.html#l00572">572</a> of file <a class="el" href="OpCAPITestGen_8cpp_source.html">OpCAPITestGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -9434,6 +9623,48 @@ template&lt;typename ConcreteOp&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html#l00142">142</a> of file <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html">LLZKTransformationPassPipelines.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a97f03a8639f24b14b14af28267d45ac7" name="a97f03a8639f24b14b14af28267d45ac7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97f03a8639f24b14b14af28267d45ac7">&#9670;&#160;</a></span>registerTypeCAPIGenerators()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerTypeCAPIGenerators </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the type C API generators before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeCAPIGen_8cpp_source.html#l00060">60</a> of file <a class="el" href="TypeCAPIGen_8cpp_source.html">TypeCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a33b1b2798a60bf891181d48a402424f2" name="a33b1b2798a60bf891181d48a402424f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33b1b2798a60bf891181d48a402424f2">&#9670;&#160;</a></span>registerTypeCAPITestGenerator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerTypeCAPITestGenerator </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register the type C API test generator before command-line parsing. </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeCAPITestGen_8cpp_source.html#l00060">60</a> of file <a class="el" href="TypeCAPITestGen_8cpp_source.html">TypeCAPITestGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -12255,7 +12486,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00186">186</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00189">189</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -12291,7 +12522,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 <p>NOTE: Passing <span class="tt">emitError == null</span> is not a common use case since it will always result in an assertion failure immediately after reporting the error; likely only useful in custom type builders.</p>
 <p>SEE: <a href="https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180">https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180</a> </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00175">175</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00178">178</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>

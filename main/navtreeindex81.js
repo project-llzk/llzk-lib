@@ -1,5 +1,17 @@
 var NAVTREEINDEX81 =
 {
+"tools.html#autotoc_md-llzk-remove-unused-discardable-allocations":[3,0,0,1,7],
+"tools.html#autotoc_md-llzk-specialize-wildcard-arrays":[3,0,0,1,19],
+"tools.html#autotoc_md-llzk-straight-line-static-array-promotion":[3,0,0,1,11],
+"tools.html#autotoc_md-llzk-to-pcl":[3,0,0,1,21],
+"tools.html#autotoc_md-llzk-unused-declaration-elim":[3,0,0,1,8],
+"tools.html#autotoc_md-llzk-validate-member-writes":[3,0,0,2,0],
+"tools.html#autotoc_md-llzk-while-to-for":[3,0,0,1,9],
+"tools.html#autotoc_md-pcl-trim-expression-size":[3,0,0,1,14],
+"tools.html#llzk-lsp-server":[3,4],
+"tools.html#llzk-opt":[3,0],
+"tools.html#llzk-smt-check":[3,3],
+"tools.html#llzk-translate":[3,1],
 "tools.html#llzk-witgen":[3,2],
 "tools.html#options":[3,0,0,0,0,0],
 "tools.html#options-1":[3,0,0,0,1,0],

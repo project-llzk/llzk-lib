@@ -819,6 +819,7 @@ var hierarchy =
       [ "llzk::verif::VerifProveOp", "classllzk_1_1verif_1_1VerifProveOp.html", null ],
       [ "llzk::verif::VerifSMTProveOp", "classllzk_1_1verif_1_1VerifSMTProveOp.html", null ]
     ] ],
+    [ "llzk::OpClassesWithStructTypes", "structllzk_1_1OpClassesWithStructTypes.html", null ],
     [ "mlir::OpConversionPattern", null, [
       [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", null ]
     ] ],

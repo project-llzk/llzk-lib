@@ -135,18 +135,22 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('llzk-tblgen_8c
 
 <p>This file implements the main entry point for the llzk-tblgen tool.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;mlir/Tools/mlir-tblgen/MlirTblgenMain.h&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="CAPIGenRegistration_8h_source.html">CAPIGenRegistration.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Tools/mlir-tblgen/MlirTblgenMain.h&gt;</code><br />
+<code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
+<code>#include &lt;cstdlib&gt;</code><br />
+<code>#include &lt;exception&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for llzk-tblgen.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-tblgen_8cpp__incl.svg" width="171" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-tblgen_8cpp__incl.svg" width="790" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="llzk-tblgen_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a3c04138a5bfe5d72780bb7e82a18e627" id="r_a3c04138a5bfe5d72780bb7e82a18e627"><td class="memItemLeft">int&#160;</td><td class="memItemRight"><a class="el" href="#a3c04138a5bfe5d72780bb7e82a18e627">main</a> (int argc, char **argv)</td></tr>
+<tr class="memitem:ad35f9eeb874daf0af7dbcc6a444f65f7" id="r_ad35f9eeb874daf0af7dbcc6a444f65f7"><td class="memItemLeft">int&#160;</td><td class="memItemRight"><a class="el" href="#ad35f9eeb874daf0af7dbcc6a444f65f7">main</a> (int argc, char **argv) noexcept</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file implements the main entry point for the llzk-tblgen tool. </p>
@@ -154,11 +158,14 @@ Functions</h2></td></tr>
 
 <p class="definition">Definition in file <a class="el" href="llzk-tblgen_8cpp_source.html">llzk-tblgen.cpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="a3c04138a5bfe5d72780bb7e82a18e627" name="a3c04138a5bfe5d72780bb7e82a18e627"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c04138a5bfe5d72780bb7e82a18e627">&#9670;&#160;</a></span>main()</h2>
+<a id="ad35f9eeb874daf0af7dbcc6a444f65f7" name="ad35f9eeb874daf0af7dbcc6a444f65f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad35f9eeb874daf0af7dbcc6a444f65f7">&#9670;&#160;</a></span>main()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">int main </td>
@@ -171,9 +178,14 @@ Functions</h2></td></tr>
           <td class="paramtype">char **</td>          <td class="paramname"><span class="paramname"><em>argv</em></span>&#160;)</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-tblgen_8cpp_source.html#l00021">21</a> of file <a class="el" href="llzk-tblgen_8cpp_source.html">llzk-tblgen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="llzk-tblgen_8cpp_source.html#l00028">28</a> of file <a class="el" href="llzk-tblgen_8cpp_source.html">llzk-tblgen.cpp</a>.</p>
 
 </div>
 </div>

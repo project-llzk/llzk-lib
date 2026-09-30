@@ -1,146 +1,149 @@
 <map id="build/include/llzk/Dialect/LLZK/IR/Dialect.h.inc" name="build/include/llzk/Dialect/LLZK/IR/Dialect.h.inc">
-<area shape="rect" id="Node000001" title=" " alt="" coords="7362,5,7572,50"/>
-<area shape="rect" id="Node000002" href="$LLZK_2IR_2Dialect_8h.html" title=" " alt="" coords="7394,98,7540,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="7469,64,7469,100,7465,96,7465,68"/>
-<area shape="rect" id="Node000003" href="$PassBase_8h.html" title=" " alt="" coords="3564,199,3770,227"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="7376,123,6121,147,5178,168,4203,193,3770,210,3770,204,4203,188,5178,162,6121,142,7382,123"/>
-<area shape="rect" id="Node000014" href="$ArrayToScalarPass_8cpp.html" title="This file implements the &#45;llzk&#45;array&#45;to&#45;scalar pass." alt="" coords="3846,402,4048,446"/>
-<area shape="poly" id="edge77_Node000002_Node000014" title=" " alt="" coords="7376,123,6901,131,6191,143,5463,164,5158,177,4927,193,4766,209,4642,226,4518,249,4361,286,4261,314,4162,346,4002,404,4001,398,4160,340,4259,309,4360,281,4517,244,4641,220,4766,204,4927,188,5157,172,5462,158,6191,138,6901,125,7382,122"/>
-<area shape="rect" id="Node000019" href="$PodToScalarPass_8cpp.html" title="This file implements the &#45;llzk&#45;pod&#45;to&#45;scalar pass." alt="" coords="4072,402,4267,446"/>
-<area shape="poly" id="edge80_Node000002_Node000019" title=" " alt="" coords="7376,123,6841,139,6026,168,5594,189,5187,216,4836,248,4691,266,4573,286,4472,311,4374,342,4219,403,4217,398,4373,337,4471,306,4572,281,4691,261,4835,243,5187,211,5594,184,6026,163,6841,134,7382,123"/>
-<area shape="rect" id="Node000042" href="$Dialect_2InitDialects_8cpp.html" title=" " alt="" coords="9326,410,9518,438"/>
-<area shape="poly" id="edge78_Node000002_Node000042" title=" " alt="" coords="7419,151,7400,171,7387,192,7368,235,7358,273,7358,291,7363,308,7372,325,7386,343,7397,349,7418,355,7485,366,7703,380,8000,387,8337,389,8978,387,9203,387,9314,390,9385,410,9380,409,9313,396,9203,392,8978,392,8337,395,8000,392,7702,385,7484,371,7417,361,7395,354,7383,347,7367,328,7358,310,7353,291,7353,272,7363,233,7382,189,7396,168,7414,153"/>
-<area shape="rect" id="Node000047" href="$LLZKInliningExtensions_8cpp.html" title=" " alt="" coords="9542,402,9739,446"/>
-<area shape="poly" id="edge83_Node000002_Node000047" title=" " alt="" coords="7442,154,7430,176,7423,197,7422,216,7430,234,7449,249,7477,262,7556,287,7662,308,7792,324,7940,337,8102,348,8452,361,9126,373,9380,379,9470,384,9530,390,9570,401,9564,401,9529,396,9470,389,9380,385,9126,379,8452,367,8102,353,7940,343,7791,330,7661,313,7554,292,7475,267,7446,253,7426,237,7417,218,7417,196,7425,174,7437,157"/>
-<area shape="rect" id="Node000057" href="$LLZK_8cpp.html" title=" " alt="" coords="7440,199,7624,227"/>
-<area shape="poly" id="edge76_Node000002_Node000057" title=" " alt="" coords="7492,153,7525,200,7520,197,7490,157"/>
-<area shape="rect" id="Node000058" href="$LLZK_2IR_2Dialect_8cpp.html" title=" " alt="" coords="7649,191,7789,235"/>
-<area shape="poly" id="edge79_Node000002_Node000058" title=" " alt="" coords="7542,146,7661,191,7656,190,7541,151"/>
-<area shape="rect" id="Node000059" href="$SharedImpl_8cpp.html" title=" " alt="" coords="7814,191,8016,235"/>
-<area shape="poly" id="edge81_Node000002_Node000059" title=" " alt="" coords="7555,137,7816,191,7811,191,7555,142"/>
-<area shape="rect" id="Node000060" href="$Builders_8cpp.html" title=" " alt="" coords="8040,191,8176,235"/>
-<area shape="poly" id="edge82_Node000002_Node000060" title=" " alt="" coords="7555,126,7772,149,7900,166,8029,188,8042,193,8037,193,8028,193,7900,172,7771,154,7555,131"/>
-<area shape="rect" id="Node000061" href="$llzk-witgen_8cpp.html" title=" " alt="" coords="8201,191,8357,235"/>
-<area shape="poly" id="edge84_Node000002_Node000061" title=" " alt="" coords="7555,124,7838,145,8013,164,8189,188,8203,193,8198,193,8188,193,8013,169,7838,150,7555,129"/>
-<area shape="rect" id="Node000004" href="$AnalysisPasses_8h.html" title=" " alt="" coords="884,292,1039,336"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="3546,218,2744,246,1624,286,1039,312,1039,306,1624,281,2743,241,3552,218"/>
-<area shape="rect" id="Node000012" href="$Array_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="1636,283,1874,345"/>
-<area shape="poly" id="edge11_Node000003_Node000012" title=" " alt="" coords="3546,217,2902,239,2470,259,2031,286,1875,301,1874,296,2031,281,2470,253,2902,234,3551,217"/>
-<area shape="rect" id="Node000016" href="$Bool_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="2043,283,2275,345"/>
-<area shape="poly" id="edge16_Node000003_Node000016" title=" " alt="" coords="3547,219,3062,245,2749,263,2433,286,2276,302,2275,296,2432,281,2749,258,3062,239,3552,219"/>
-<area shape="rect" id="Node000020" href="$Global_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="2444,283,2690,345"/>
-<area shape="poly" id="edge21_Node000003_Node000020" title=" " alt="" coords="3547,225,2691,304,2690,299,3552,225"/>
-<area shape="rect" id="Node000023" href="$InlineIncludesPass_8h.html" title=" " alt="" coords="3095,283,3338,345"/>
-<area shape="poly" id="edge25_Node000003_Node000023" title=" " alt="" coords="3595,230,3338,289,3338,284,3590,231"/>
-<area shape="rect" id="Node000027" href="$POD_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="3551,283,3783,345"/>
-<area shape="poly" id="edge30_Node000003_Node000027" title=" " alt="" coords="3669,240,3669,285,3665,281,3665,244"/>
-<area shape="rect" id="Node000029" href="$Polymorphic_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="4584,283,4766,345"/>
-<area shape="poly" id="edge35_Node000003_Node000029" title=" " alt="" coords="3785,223,4586,304,4581,304,3785,229"/>
-<area shape="rect" id="Node000037" href="$Struct_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="5997,283,6238,345"/>
-<area shape="poly" id="edge48_Node000003_Node000037" title=" " alt="" coords="3785,216,5999,308,5994,308,3785,222"/>
-<area shape="rect" id="Node000040" href="$LLZKTransformationPasses_8h.html" title=" " alt="" coords="7104,292,7315,336"/>
-<area shape="poly" id="edge53_Node000003_Node000040" title=" " alt="" coords="3785,215,6250,281,7107,309,7101,309,6250,286,3785,220"/>
-<area shape="rect" id="Node000054" href="$LLZKValidationPasses_8h.html" title=" " alt="" coords="9687,292,9866,336"/>
-<area shape="poly" id="edge73_Node000003_Node000054" title=" " alt="" coords="3785,214,9687,309,9686,314,3785,219"/>
-<area shape="rect" id="Node000005" href="$CallGraphPasses_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;call&#45;graph and &#45;llzk&#45;print&#45;call&#45;graph&#45;sccs passes." alt="" coords="5,410,241,438"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="866,323,592,350,423,370,253,396,175,412,173,407,252,390,422,365,592,345,872,321"/>
-<area shape="rect" id="Node000006" href="$ConstraintDependencyGraphPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;constraint&#45;dependency&#45;graphs pass." alt="" coords="264,402,512,446"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="867,332,525,396,487,403,485,398,524,390,872,330"/>
-<area shape="rect" id="Node000007" href="$IntervalAnalysisPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;interval&#45;analysis pass." alt="" coords="536,402,742,446"/>
-<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="885,341,705,403,703,398,880,343"/>
-<area shape="rect" id="Node000008" href="$PredecessorAnalysisPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;predecessors pass." alt="" coords="765,402,945,446"/>
-<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="932,347,878,403,875,399,927,349"/>
-<area shape="rect" id="Node000009" href="$SymbolDefTreePass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;symbol&#45;def&#45;tree pass." alt="" coords="969,402,1168,446"/>
-<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="995,345,1049,402,1044,400,993,350"/>
-<area shape="rect" id="Node000010" href="$SymbolUseGraphPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;symbol&#45;use&#45;graph pass." alt="" coords="1192,402,1406,446"/>
-<area shape="poly" id="edge9_Node000004_Node000010" title=" " alt="" coords="1045,339,1234,401,1228,401,1044,344"/>
-<area shape="rect" id="Node000011" href="$llzk-opt_8cpp.html" title="This file implements a version of the mlir&#45;opt tool configured for use on LLZK files." alt="" coords="3618,503,3751,547"/>
-<area shape="poly" id="edge10_Node000004_Node000011" title=" " alt="" coords="1055,316,1135,323,1228,336,1325,358,1419,391,1444,406,1460,423,1477,439,1501,452,1558,465,1645,475,1890,487,2203,492,2549,492,3210,489,3458,492,3606,500,3620,505,3615,504,3605,505,3458,497,3210,495,2549,498,2203,497,1890,492,1645,480,1557,470,1499,457,1473,443,1457,427,1441,410,1417,395,1323,363,1227,342,1134,328,1055,321"/>
-<area shape="poly" id="edge15_Node000012_Node000011" title=" " alt="" coords="1624,329,1593,342,1566,355,1541,373,1521,395,1512,410,1508,425,1511,439,1521,452,1549,459,1618,466,1854,476,2556,488,3261,495,3606,500,3620,505,3615,504,3605,505,3261,500,2556,494,1854,481,1618,471,1548,465,1517,457,1506,441,1503,425,1507,408,1517,391,1538,369,1563,351,1591,337,1619,330"/>
-<area shape="rect" id="Node000013" href="$Array_8cpp.html" title=" " alt="" coords="1532,410,1717,438"/>
-<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="1709,354,1641,412,1639,407,1704,356"/>
-<area shape="poly" id="edge13_Node000012_Node000014" title=" " alt="" coords="1890,329,2031,342,2207,350,2426,353,2934,355,3194,357,3441,363,3659,373,3834,390,3877,401,3872,401,3833,396,3658,379,3441,368,3194,363,2933,361,2426,359,2207,355,2031,348,1890,335"/>
-<area shape="rect" id="Node000015" href="$LLZKTransformationPassPipelines_8cpp.html" title="This file implements logic for registering several pass pipelines." alt="" coords="3348,503,3594,547"/>
-<area shape="poly" id="edge14_Node000012_Node000015" title=" " alt="" coords="1761,358,1777,410,1791,434,1810,452,1832,460,1877,468,2023,481,2224,492,2461,501,2958,513,3350,522,3345,522,2957,519,2461,506,2224,497,2022,486,1877,473,1831,465,1807,457,1787,437,1772,412,1758,362"/>
-<area shape="poly" id="edge20_Node000016_Node000011" title=" " alt="" coords="2030,329,1937,349,1896,360,1860,374,1833,390,1818,409,1816,418,1817,429,1833,453,1862,464,1923,474,2124,487,2397,495,2708,497,3297,496,3504,497,3606,500,3620,505,3615,504,3605,505,3504,502,3297,502,2708,503,2397,500,2123,493,1923,479,1860,469,1829,457,1812,430,1811,418,1813,406,1830,386,1857,369,1894,355,1936,344,2025,330"/>
-<area shape="rect" id="Node000017" href="$Bool_8cpp.html" title=" " alt="" coords="1843,410,2024,438"/>
-<area shape="poly" id="edge17_Node000016_Node000017" title=" " alt="" coords="2084,352,1962,412,1961,407,2079,353"/>
-<area shape="rect" id="Node000018" href="$LowerBoolQuantifiersPass_8cpp.html" title="This file implements the &#45;llzk&#45;lower&#45;bool&#45;quantifiers pass." alt="" coords="2049,402,2269,446"/>
-<area shape="poly" id="edge18_Node000016_Node000018" title=" " alt="" coords="2161,359,2161,403,2157,399,2157,363"/>
-<area shape="poly" id="edge19_Node000016_Node000019" title=" " alt="" coords="2291,329,2433,342,2591,349,2789,353,3248,356,3706,364,3903,374,4061,390,4102,401,4096,401,4060,396,3902,379,3706,369,3247,361,2789,358,2591,355,2432,348,2291,334"/>
-<area shape="poly" id="edge24_Node000020_Node000011" title=" " alt="" coords="2432,330,2403,343,2377,356,2354,373,2334,395,2325,410,2322,425,2325,439,2334,453,2355,461,2399,468,2542,480,2738,487,2961,491,3384,495,3606,500,3620,505,3615,504,3605,505,3384,501,2961,497,2738,492,2542,485,2398,474,2353,466,2331,457,2320,441,2317,425,2320,408,2330,391,2350,369,2374,352,2401,338,2427,331"/>
-<area shape="rect" id="Node000021" href="$Global_8cpp.html" title=" " alt="" coords="2344,410,2539,438"/>
-<area shape="poly" id="edge22_Node000020_Node000021" title=" " alt="" coords="2523,354,2458,412,2456,407,2518,356"/>
-<area shape="rect" id="Node000022" href="$ConstGlobalPropagationPass_8cpp.html" title="This file implements the &#45;llzk&#45;const&#45;global&#45;propagation pass." alt="" coords="2563,393,2822,455"/>
-<area shape="poly" id="edge23_Node000020_Node000022" title=" " alt="" coords="2614,353,2660,393,2655,392,2613,358"/>
-<area shape="poly" id="edge28_Node000023_Node000011" title=" " alt="" coords="3082,329,2990,348,2948,360,2913,374,2887,390,2872,408,2870,418,2871,428,2886,453,2902,462,2928,470,3009,482,3116,490,3236,493,3467,495,3606,500,3620,505,3614,505,3605,505,3467,501,3236,498,3116,495,3009,488,2927,476,2900,467,2882,457,2866,430,2864,417,2867,406,2883,386,2911,369,2947,355,2989,343,3077,329"/>
-<area shape="rect" id="Node000024" href="$Include_8cpp.html" title=" " alt="" coords="2897,410,3096,438"/>
-<area shape="poly" id="edge26_Node000023_Node000024" title=" " alt="" coords="3144,352,3024,412,3023,407,3138,353"/>
-<area shape="rect" id="Node000025" href="$InlineIncludesPass_8cpp.html" title="This file implements the &#45;llzk&#45;inline&#45;includes pass." alt="" coords="3121,393,3312,455"/>
-<area shape="poly" id="edge27_Node000023_Node000025" title=" " alt="" coords="3218,359,3218,394,3214,391,3214,362"/>
-<area shape="rect" id="Node000026" href="$WitgenDriver_8cpp.html" title=" " alt="" coords="3336,402,3515,446"/>
-<area shape="poly" id="edge29_Node000023_Node000026" title=" " alt="" coords="3289,350,3386,402,3381,401,3288,355"/>
-<area shape="poly" id="edge34_Node000027_Node000011" title=" " alt="" coords="3643,357,3631,394,3625,424,3631,454,3645,479,3663,504,3658,501,3640,482,3626,456,3620,424,3626,392,3639,361"/>
-<area shape="poly" id="edge33_Node000027_Node000015" title=" " alt="" coords="3631,355,3492,505,3490,500,3626,357"/>
-<area shape="poly" id="edge32_Node000027_Node000019" title=" " alt="" coords="3798,336,4061,390,4095,401,4090,401,4060,396,3798,342"/>
-<area shape="rect" id="Node000028" href="$POD_8cpp.html" title=" " alt="" coords="3641,410,3821,438"/>
-<area shape="poly" id="edge31_Node000027_Node000028" title=" " alt="" coords="3694,356,3725,411,3721,408,3691,361"/>
-<area shape="poly" id="edge45_Node000029_Node000011" title=" " alt="" coords="4571,321,4511,332,4450,346,4388,367,4331,395,4315,410,4307,426,4298,442,4280,457,4237,474,4178,488,4033,508,3879,519,3751,525,3751,519,3878,514,4032,503,4177,483,4235,469,4278,452,4294,439,4302,423,4311,406,4328,391,4386,362,4448,341,4510,327,4566,322"/>
-<area shape="poly" id="edge40_Node000029_Node000019" title=" " alt="" coords="4571,335,4286,396,4253,404,4252,398,4285,390,4566,335"/>
-<area shape="poly" id="edge46_Node000029_Node000026" title=" " alt="" coords="4571,321,4156,349,3893,370,3629,396,3516,411,3516,405,3628,390,3893,365,4156,344,4566,321"/>
-<area shape="rect" id="Node000030" href="$LLZKTransformationPassPipelines_8h.html" title=" " alt="" coords="5376,402,5630,446"/>
-<area shape="poly" id="edge36_Node000029_Node000030" title=" " alt="" coords="4782,322,5048,348,5206,367,5365,390,5410,401,5405,401,5364,396,5206,373,5047,353,4782,327"/>
-<area shape="rect" id="Node000031" href="$Poly_8cpp.html" title=" " alt="" coords="4342,410,4520,438"/>
-<area shape="poly" id="edge39_Node000029_Node000031" title=" " alt="" coords="4595,351,4461,412,4460,407,4590,352"/>
-<area shape="rect" id="Node000032" href="$EmptyTemplateRemovalPass_8cpp.html" title="This file implements the &#45;llzk&#45;drop&#45;empty&#45;templates pass." alt="" coords="4544,393,4806,455"/>
-<area shape="poly" id="edge41_Node000029_Node000032" title=" " alt="" coords="4677,359,4677,394,4673,391,4673,362"/>
-<area shape="rect" id="Node000033" href="$FlatteningPass_8cpp.html" title="This file implements the &#45;llzk&#45;flatten pass." alt="" coords="5654,402,5877,446"/>
-<area shape="poly" id="edge42_Node000029_Node000033" title=" " alt="" coords="4782,316,4948,324,5163,337,5402,359,5642,390,5685,401,5680,401,5641,396,5401,364,5162,343,4948,329,4782,321"/>
-<area shape="rect" id="Node000034" href="$TypeVarInferencePass_8cpp.html" title="This file implements the &#45;llzk&#45;infer&#45;tvar pass." alt="" coords="4830,393,5043,455"/>
-<area shape="poly" id="edge43_Node000029_Node000034" title=" " alt="" coords="4763,349,4866,393,4860,392,4762,354"/>
-<area shape="rect" id="Node000035" href="$WildcardArraySpecializationPass_8cpp.html" title="This file implements the &#45;llzk&#45;specialize&#45;wildcard&#45;arrays pass." alt="" coords="5068,393,5352,455"/>
-<area shape="poly" id="edge44_Node000029_Node000035" title=" " alt="" coords="4781,334,5070,394,5064,394,4781,339"/>
-<area shape="rect" id="Node000036" href="$WitgenLowering_8cpp.html" title=" " alt="" coords="5901,402,6081,446"/>
-<area shape="poly" id="edge47_Node000029_Node000036" title=" " alt="" coords="4781,312,4987,314,5263,324,5576,348,5735,367,5890,390,5927,401,5922,401,5889,396,5734,372,5575,353,5263,330,4987,319,4781,317"/>
-<area shape="poly" id="edge38_Node000030_Node000011" title=" " alt="" coords="5400,449,5365,457,5214,472,5016,484,4540,504,3752,525,3751,520,4540,499,5015,479,5214,466,5364,452,5394,450"/>
-<area shape="poly" id="edge37_Node000030_Node000015" title=" " alt="" coords="5401,449,5365,457,5098,483,4872,494,4672,494,4486,489,4300,483,4100,481,3873,487,3606,505,3595,506,3594,501,3605,500,3873,481,4100,476,4300,478,4486,484,4672,489,4871,488,5098,478,5364,452,5396,450"/>
-<area shape="poly" id="edge52_Node000037_Node000011" title=" " alt="" coords="6125,358,6125,385,6120,411,6111,436,6094,457,6063,464,5995,471,5761,484,5049,504,4273,519,3751,526,3751,520,4273,513,5049,499,5761,479,5994,466,6062,459,6091,452,6106,433,6115,410,6119,385,6121,362"/>
-<area shape="poly" id="edge49_Node000037_Node000030" title=" " alt="" coords="5984,336,5642,396,5602,404,5601,398,5641,390,5979,336"/>
-<area shape="rect" id="Node000038" href="$Struct_8cpp.html" title=" " alt="" coords="6154,410,6345,438"/>
-<area shape="poly" id="edge50_Node000037_Node000038" title=" " alt="" coords="6167,352,6236,410,6231,409,6165,357"/>
-<area shape="rect" id="Node000039" href="$InlineStructsPass_8cpp.html" title="This file implements the &#45;llzk&#45;inline&#45;structs pass." alt="" coords="6369,402,6608,446"/>
-<area shape="poly" id="edge51_Node000037_Node000039" title=" " alt="" coords="6237,347,6416,401,6411,401,6236,352"/>
-<area shape="poly" id="edge71_Node000040_Node000011" title=" " alt="" coords="7092,323,6976,335,6855,349,6746,369,6703,382,6671,395,6655,409,6647,426,6638,443,6620,457,6570,469,6475,479,6175,495,5766,508,5295,516,4361,525,3752,526,3752,521,4361,519,5295,511,5766,502,6175,490,6475,474,6569,463,6618,452,6634,439,6642,423,6651,406,6668,391,6701,377,6745,364,6854,344,6975,330,7086,323"/>
-<area shape="poly" id="edge56_Node000040_Node000014" title=" " alt="" coords="7086,320,6250,348,5770,351,5153,351,4837,354,4537,362,4273,375,4061,396,4020,404,4019,398,4060,390,4273,370,4537,356,4837,349,5153,346,5770,346,6250,342,7092,319"/>
-<area shape="poly" id="edge58_Node000040_Node000019" title=" " alt="" coords="7086,320,6250,348,5829,354,5289,360,4749,371,4517,381,4330,396,4268,405,4268,399,4329,390,4516,376,4749,366,5289,354,5829,349,6250,342,7092,319"/>
-<area shape="poly" id="edge54_Node000040_Node000030" title=" " alt="" coords="7092,319,6351,349,5941,370,5771,382,5642,396,5595,404,5594,398,5641,390,5771,377,5941,365,6351,343,7086,319"/>
-<area shape="poly" id="edge59_Node000040_Node000033" title=" " alt="" coords="7086,316,6865,322,6566,333,6229,357,6058,374,5890,396,5848,404,5847,398,5889,390,6057,369,6229,351,6566,328,6865,317,7092,315"/>
-<area shape="poly" id="edge72_Node000040_Node000036" title=" " alt="" coords="7092,319,6670,345,6407,366,6143,396,6081,406,6081,401,6143,390,6407,361,6669,340,7086,320"/>
-<area shape="rect" id="Node000041" href="$Transforms_8cpp.html" title=" " alt="" coords="6681,410,6856,438"/>
-<area shape="poly" id="edge55_Node000040_Node000041" title=" " alt="" coords="7093,340,6868,396,6810,412,6810,407,6866,390,7088,341"/>
-<area shape="poly" id="edge57_Node000040_Node000042" title=" " alt="" coords="7305,338,7334,342,7490,360,7634,372,7766,378,7889,380,8114,374,8324,361,8535,349,8760,345,8882,348,9015,356,9158,370,9314,390,9385,410,9380,409,9313,396,9157,375,9014,362,8882,354,8760,350,8535,354,8325,366,8114,379,7889,385,7766,383,7633,377,7490,365,7333,348,7304,343"/>
-<area shape="rect" id="Node000043" href="$LLZKComputeConstrainToProductPass_8cpp.html" title="This file implements the &#45;llzk&#45;product&#45;program pass." alt="" coords="6879,402,7087,446"/>
-<area shape="poly" id="edge60_Node000040_Node000043" title=" " alt="" coords="7153,343,7029,403,7028,398,7148,344"/>
-<area shape="rect" id="Node000044" href="$LLZKEnforceNoOverwritePass_8cpp.html" title="This file implements the &#45;llzk&#45;enforce&#45;no&#45;overwrite pass." alt="" coords="7110,402,7309,446"/>
-<area shape="poly" id="edge61_Node000040_Node000044" title=" " alt="" coords="7212,350,7212,403,7208,399,7208,354"/>
-<area shape="rect" id="Node000045" href="$LLZKFuseProductControlFlowPass_8cpp.html" title="This file implements the &#45;llzk&#45;fuse&#45;product&#45;control&#45;flow pass." alt="" coords="7333,402,7561,446"/>
-<area shape="poly" id="edge62_Node000040_Node000045" title=" " alt="" coords="7272,341,7402,401,7396,400,7271,346"/>
-<area shape="rect" id="Node000046" href="$LLZKInlineFreeFunctionsPass_8cpp.html" title="This file implements the &#45;llzk&#45;inline&#45;free&#45;functions pass." alt="" coords="7585,402,7770,446"/>
-<area shape="poly" id="edge63_Node000040_Node000046" title=" " alt="" coords="7314,338,7334,342,7454,366,7574,390,7607,401,7602,401,7573,396,7453,371,7333,348,7313,343"/>
-<area shape="poly" id="edge64_Node000040_Node000047" title=" " alt="" coords="7330,336,7385,342,7594,355,7853,359,8458,358,8769,358,9062,361,9322,371,9433,379,9530,390,9572,401,9567,401,9529,396,9433,385,9321,376,9062,366,8769,363,8458,363,7853,365,7593,360,7384,348,7330,341"/>
-<area shape="rect" id="Node000048" href="$LLZKPolyLoweringPass_8cpp.html" title="This file implements the &#45;llzk&#45;poly&#45;lowering pass." alt="" coords="7794,402,8030,446"/>
-<area shape="poly" id="edge65_Node000040_Node000048" title=" " alt="" coords="7309,338,7334,342,7460,360,7558,367,7657,374,7783,390,7827,401,7821,401,7783,396,7657,379,7558,372,7459,365,7333,348,7309,343"/>
-<area shape="rect" id="Node000049" href="$LLZKRedundantOperationEliminationPass_8cpp.html" title="This file implements the &#45;llzk&#45;duplicate&#45;op&#45;elim pass." alt="" coords="8055,402,8274,446"/>
-<area shape="poly" id="edge66_Node000040_Node000049" title=" " alt="" coords="7307,337,7334,342,7441,356,7533,363,7688,366,7844,369,7936,376,8043,390,8086,401,8081,401,8043,396,7935,382,7844,375,7688,371,7532,368,7441,361,7333,348,7306,343"/>
-<area shape="rect" id="Node000050" href="$LLZKRedundantReadAndWriteEliminationPass_8cpp.html" title="This file implements the &#45;llzk&#45;duplicate&#45;read&#45;write&#45;elim pass." alt="" coords="8298,402,8542,446"/>
-<area shape="poly" id="edge67_Node000040_Node000050" title=" " alt="" coords="7306,338,7334,342,7478,359,7600,367,7708,369,7809,368,8019,368,8142,375,8286,390,8334,401,8329,401,8285,396,8141,380,8019,373,7809,373,7708,374,7600,373,7478,365,7333,348,7306,343"/>
-<area shape="rect" id="Node000051" href="$LLZKRemoveUnusedDiscardableAllocationsPass_8cpp.html" title="This file implements the &#45;llzk&#45;remove&#45;unused&#45;discardable&#45;allocations pass." alt="" coords="8567,402,8842,446"/>
-<area shape="poly" id="edge68_Node000040_Node000051" title=" " alt="" coords="7306,338,7334,342,7519,363,7676,372,7814,373,7944,370,8073,367,8212,366,8370,373,8555,390,8609,401,8604,401,8555,396,8370,378,8212,372,8073,372,7944,376,7814,379,7676,377,7518,368,7333,348,7305,343"/>
-<area shape="rect" id="Node000052" href="$LLZKUnusedDeclarationEliminationPass_8cpp.html" title="This file implements the &#45;llzk&#45;unused&#45;declaration&#45;elim pass." alt="" coords="8866,402,9092,446"/>
-<area shape="poly" id="edge69_Node000040_Node000052" title=" " alt="" coords="7305,338,7334,342,7564,366,7760,375,7932,373,8094,367,8255,360,8428,358,8624,367,8854,390,8900,401,8895,401,8853,396,8623,372,8428,363,8255,365,8094,372,7932,379,7760,380,7564,372,7333,348,7305,343"/>
-<area shape="rect" id="Node000053" href="$LLZKWhileToForPass_8cpp.html" title="This file identifies scf.while loops that can be converted to scf.for loops and performs the conversi..." alt="" coords="9116,402,9301,446"/>
-<area shape="poly" id="edge70_Node000040_Node000053" title=" " alt="" coords="7305,338,7334,342,7474,358,7602,369,7830,376,8032,371,8220,360,8408,350,8609,347,8719,350,8837,358,8965,371,9105,390,9144,401,9139,401,9104,396,8964,377,8837,364,8719,356,8609,352,8408,355,8220,365,8032,376,7830,382,7602,374,7473,364,7333,348,7304,343"/>
-<area shape="poly" id="edge75_Node000054_Node000011" title=" " alt="" coords="9783,350,9784,378,9780,407,9771,434,9752,457,9731,462,9681,466,9503,475,8881,489,7999,501,6975,510,4958,522,3751,526,3751,521,4958,516,6975,505,7999,496,8880,484,9503,470,9681,461,9730,457,9750,452,9766,432,9775,406,9779,378,9779,354"/>
-<area shape="rect" id="Node000055" href="$Validators_8cpp.html" title=" " alt="" coords="9814,410,9981,438"/>
-<area shape="poly" id="edge74_Node000054_Node000055" title=" " alt="" coords="9813,344,9886,411,9881,409,9811,349"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="9171,5,9380,50"/>
+<area shape="rect" id="Node000002" href="$LLZK_2IR_2Dialect_8h.html" title=" " alt="" coords="9203,98,9348,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="9278,64,9278,100,9274,96,9274,68"/>
+<area shape="rect" id="Node000003" href="$PassBase_8h.html" title=" " alt="" coords="7282,199,7488,227"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="9190,126,7488,209,7488,204,9185,126"/>
+<area shape="rect" id="Node000014" href="$ArrayToScalarPass_8cpp.html" title="This file implements the &#45;llzk&#45;array&#45;to&#45;scalar pass." alt="" coords="9325,402,9528,446"/>
+<area shape="poly" id="edge80_Node000002_Node000014" title=" " alt="" coords="9281,156,9290,196,9304,234,9313,249,9322,258,9345,282,9386,345,9417,402,9413,400,9382,348,9340,285,9318,262,9309,252,9299,237,9284,197,9278,160"/>
+<area shape="rect" id="Node000019" href="$PodToScalarPass_8cpp.html" title="This file implements the &#45;llzk&#45;pod&#45;to&#45;scalar pass." alt="" coords="8749,402,8944,446"/>
+<area shape="poly" id="edge83_Node000002_Node000019" title=" " alt="" coords="9191,128,9105,145,9013,173,8968,193,8926,218,8888,248,8855,285,8842,313,8838,344,8839,375,8843,403,8839,400,8834,376,8833,344,8837,312,8851,282,8884,245,8923,213,8966,188,9011,168,9104,140,9185,128"/>
+<area shape="rect" id="Node000042" href="$Dialect_2InitDialects_8cpp.html" title=" " alt="" coords="2700,410,2892,438"/>
+<area shape="poly" id="edge81_Node000002_Node000042" title=" " alt="" coords="9185,122,8186,128,7398,135,6515,148,5605,167,4741,196,4349,214,3994,235,3686,259,3434,286,3262,314,3094,349,2843,412,2842,407,3092,344,3261,309,3433,281,3685,254,3993,230,4348,209,4741,191,5605,162,6514,142,7398,130,8186,123,9191,122"/>
+<area shape="rect" id="Node000047" href="$LLZKInliningExtensions_8cpp.html" title=" " alt="" coords="2916,402,3113,446"/>
+<area shape="poly" id="edge86_Node000002_Node000047" title=" " alt="" coords="9185,123,8492,134,7292,160,6572,181,5811,208,5036,243,4275,286,3950,304,3697,319,3446,345,3126,396,3089,404,3088,398,3125,390,3445,340,3697,314,3950,299,4274,281,5036,238,5811,203,6572,175,7292,154,8492,129,9190,122"/>
+<area shape="rect" id="Node000057" href="$SpecializedMemoryPasses_8h.html" title="Provides SpecializedSROA&lt;AllocOpTy&gt; and SpecializedMem2Reg&lt;AllocOpTy&gt;: pass templates that replicate ..." alt="" coords="9120,292,9330,336"/>
+<area shape="poly" id="edge75_Node000002_Node000057" title=" " alt="" coords="9268,156,9260,191,9232,293,9229,289,9255,190,9264,159"/>
+<area shape="rect" id="Node000058" href="$LLZK_8cpp.html" title=" " alt="" coords="9313,199,9497,227"/>
+<area shape="poly" id="edge79_Node000002_Node000058" title=" " alt="" coords="9319,149,9389,199,9384,198,9318,154"/>
+<area shape="rect" id="Node000059" href="$LLZK_2IR_2Dialect_8cpp.html" title=" " alt="" coords="9522,191,9662,235"/>
+<area shape="poly" id="edge82_Node000002_Node000059" title=" " alt="" coords="9364,144,9524,192,9518,191,9363,149"/>
+<area shape="rect" id="Node000060" href="$SharedImpl_8cpp.html" title=" " alt="" coords="9687,191,9889,235"/>
+<area shape="poly" id="edge84_Node000002_Node000060" title=" " alt="" coords="9364,134,9675,188,9689,193,9684,193,9674,193,9364,139"/>
+<area shape="rect" id="Node000061" href="$Builders_8cpp.html" title=" " alt="" coords="9913,191,10049,235"/>
+<area shape="poly" id="edge85_Node000002_Node000061" title=" " alt="" coords="9364,125,9607,146,9755,165,9902,188,9915,193,9910,193,9901,193,9754,170,9607,152,9364,130"/>
+<area shape="rect" id="Node000062" href="$llzk-witgen_8cpp.html" title=" " alt="" coords="10074,191,10230,235"/>
+<area shape="poly" id="edge87_Node000002_Node000062" title=" " alt="" coords="9364,123,9673,143,9867,162,10062,188,10076,193,10071,193,10061,193,9867,167,9673,148,9364,128"/>
+<area shape="rect" id="Node000004" href="$AnalysisPasses_8h.html" title=" " alt="" coords="4287,292,4441,336"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="7264,218,5243,286,4442,313,4441,308,5242,281,7270,218"/>
+<area shape="rect" id="Node000012" href="$Array_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="9446,283,9684,345"/>
+<area shape="poly" id="edge11_Node000003_Node000012" title=" " alt="" coords="7503,212,7822,215,8276,225,8805,246,9076,261,9343,281,9448,295,9443,295,9342,286,9076,266,8804,251,8276,230,7821,220,7503,217"/>
+<area shape="rect" id="Node000016" href="$Bool_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="8273,283,8505,345"/>
+<area shape="poly" id="edge16_Node000003_Node000016" title=" " alt="" coords="7503,223,8275,301,8270,301,7503,229"/>
+<area shape="rect" id="Node000020" href="$Global_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="7262,283,7508,345"/>
+<area shape="poly" id="edge21_Node000003_Node000020" title=" " alt="" coords="7387,240,7387,285,7383,281,7383,244"/>
+<area shape="rect" id="Node000023" href="$InlineIncludesPass_8h.html" title=" " alt="" coords="7649,283,7892,345"/>
+<area shape="poly" id="edge25_Node000003_Node000023" title=" " alt="" coords="7452,229,7655,283,7650,282,7451,234"/>
+<area shape="rect" id="Node000027" href="$POD_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="8866,283,9097,345"/>
+<area shape="poly" id="edge30_Node000003_Node000027" title=" " alt="" coords="7503,219,8517,281,8868,305,8862,305,8517,286,7503,224"/>
+<area shape="rect" id="Node000029" href="$Polymorphic_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="5926,283,6108,345"/>
+<area shape="poly" id="edge35_Node000003_Node000029" title=" " alt="" coords="7270,223,6109,309,6109,304,7265,223"/>
+<area shape="rect" id="Node000037" href="$Struct_2Transforms_2TransformationPasses_8h.html" title=" " alt="" coords="6524,283,6766,345"/>
+<area shape="poly" id="edge48_Node000003_Node000037" title=" " alt="" coords="7274,229,6767,299,6766,294,7269,230"/>
+<area shape="rect" id="Node000040" href="$LLZKTransformationPasses_8h.html" title=" " alt="" coords="2241,292,2452,336"/>
+<area shape="poly" id="edge53_Node000003_Node000040" title=" " alt="" coords="7267,219,2452,313,2452,308,7267,214"/>
+<area shape="rect" id="Node000054" href="$LLZKValidationPasses_8h.html" title=" " alt="" coords="5255,292,5433,336"/>
+<area shape="poly" id="edge73_Node000003_Node000054" title=" " alt="" coords="7270,220,5915,286,5433,311,5433,305,5914,281,7264,220"/>
+<area shape="rect" id="Node000005" href="$CallGraphPasses_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;call&#45;graph and &#45;llzk&#45;print&#45;call&#45;graph&#45;sccs passes." alt="" coords="3622,410,3858,438"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="4274,328,4086,358,3870,396,3793,412,3793,407,3869,390,4085,353,4269,328"/>
+<area shape="rect" id="Node000006" href="$ConstraintDependencyGraphPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;constraint&#45;dependency&#45;graphs pass." alt="" coords="3881,402,4129,446"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="4279,341,4078,404,4077,398,4274,342"/>
+<area shape="rect" id="Node000007" href="$IntervalAnalysisPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;interval&#45;analysis pass." alt="" coords="4153,402,4358,446"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="4334,347,4279,403,4277,398,4329,349"/>
+<area shape="rect" id="Node000008" href="$PredecessorAnalysisPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;predecessors pass." alt="" coords="4382,402,4562,446"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="4397,345,4453,402,4448,400,4395,350"/>
+<area shape="rect" id="Node000009" href="$SymbolDefTreePass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;symbol&#45;def&#45;tree pass." alt="" coords="4586,402,4785,446"/>
+<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="4444,339,4623,401,4618,401,4443,345"/>
+<area shape="rect" id="Node000010" href="$SymbolUseGraphPass_8cpp.html" title="This file implements the &#45;llzk&#45;print&#45;symbol&#45;use&#45;graph pass." alt="" coords="3385,402,3598,446"/>
+<area shape="poly" id="edge9_Node000004_Node000010" title=" " alt="" coords="4274,321,3976,347,3794,368,3611,396,3572,404,3572,398,3610,390,3793,363,3976,342,4269,321"/>
+<area shape="rect" id="Node000011" href="$llzk-opt_8cpp.html" title="This file implements a version of the mlir&#45;opt tool configured for use on LLZK files." alt="" coords="6686,503,6820,547"/>
+<area shape="poly" id="edge10_Node000004_Node000011" title=" " alt="" coords="4457,316,4533,323,4620,336,4711,358,4798,391,4821,406,4835,423,4849,439,4872,452,4916,464,4985,474,5183,491,5438,503,5725,511,6294,520,6689,524,6683,524,6294,525,5724,517,5437,508,5182,496,4985,479,4915,469,4869,457,4846,443,4831,427,4818,410,4796,395,4710,363,4619,341,4532,328,4457,321"/>
+<area shape="poly" id="edge15_Node000012_Node000011" title=" " alt="" coords="9572,358,9572,385,9568,411,9558,436,9541,457,9506,466,9425,473,9152,487,8767,498,8317,507,7415,520,6820,526,6820,520,7415,515,8317,502,8767,493,9151,481,9425,468,9505,460,9538,452,9554,433,9563,410,9567,385,9568,362"/>
+<area shape="rect" id="Node000013" href="$Array_8cpp.html" title=" " alt="" coords="9603,410,9788,438"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="9615,353,9682,410,9677,409,9613,358"/>
+<area shape="poly" id="edge13_Node000012_Node000014" title=" " alt="" coords="9517,354,9455,404,9453,399,9512,355"/>
+<area shape="rect" id="Node000015" href="$LLZKTransformationPassPipelines_8cpp.html" title="This file implements logic for registering several pass pipelines." alt="" coords="9114,503,9360,547"/>
+<area shape="poly" id="edge14_Node000012_Node000015" title=" " alt="" coords="9699,327,9729,337,9757,351,9782,369,9803,391,9813,408,9817,424,9814,440,9803,457,9781,469,9743,479,9630,497,9492,511,9361,520,9361,514,9492,505,9629,492,9742,474,9779,464,9799,453,9809,438,9811,425,9808,410,9799,395,9779,373,9754,355,9727,342,9699,332"/>
+<area shape="poly" id="edge20_Node000016_Node000011" title=" " alt="" coords="8335,353,8288,395,8274,412,8266,428,8255,444,8237,457,8203,469,8150,479,7999,495,7804,507,7582,516,7138,525,6820,526,6820,521,7138,519,7582,510,7804,502,7999,490,8149,473,8201,463,8235,452,8252,440,8261,426,8270,409,8285,391,8330,355"/>
+<area shape="rect" id="Node000017" href="$Bool_8cpp.html" title=" " alt="" coords="8298,410,8480,438"/>
+<area shape="poly" id="edge17_Node000016_Node000017" title=" " alt="" coords="8391,358,8391,411,8387,407,8387,362"/>
+<area shape="rect" id="Node000018" href="$LowerBoolQuantifiersPass_8cpp.html" title="This file implements the &#45;llzk&#45;lower&#45;bool&#45;quantifiers pass." alt="" coords="8504,402,8725,446"/>
+<area shape="poly" id="edge18_Node000016_Node000018" title=" " alt="" coords="8467,350,8572,401,8566,400,8466,355"/>
+<area shape="poly" id="edge19_Node000016_Node000019" title=" " alt="" coords="8521,341,8738,390,8771,401,8766,401,8737,396,8521,346"/>
+<area shape="poly" id="edge24_Node000020_Node000011" title=" " alt="" coords="7250,325,7196,338,7143,351,7091,370,7043,395,7027,409,7018,425,7009,441,6992,457,6950,480,6906,497,6820,518,6820,512,6904,492,6948,475,6989,453,7005,438,7013,422,7023,406,7040,391,7089,365,7142,346,7195,332,7245,326"/>
+<area shape="rect" id="Node000021" href="$Global_8cpp.html" title=" " alt="" coords="7539,410,7733,438"/>
+<area shape="poly" id="edge22_Node000020_Node000021" title=" " alt="" coords="7470,349,7608,410,7603,409,7469,354"/>
+<area shape="rect" id="Node000022" href="$ConstGlobalPropagationPass_8cpp.html" title="This file implements the &#45;llzk&#45;const&#45;global&#45;propagation pass." alt="" coords="7256,393,7514,455"/>
+<area shape="poly" id="edge23_Node000020_Node000022" title=" " alt="" coords="7387,359,7387,394,7383,391,7383,362"/>
+<area shape="poly" id="edge28_Node000023_Node000011" title=" " alt="" coords="7777,359,7773,411,7763,436,7747,457,7727,468,7695,478,7602,494,7479,506,7337,515,7045,524,6820,526,6820,521,7045,519,7336,509,7478,501,7601,489,7694,473,7725,463,7743,453,7759,433,7768,410,7773,362"/>
+<area shape="rect" id="Node000024" href="$Include_8cpp.html" title=" " alt="" coords="7808,410,8008,438"/>
+<area shape="poly" id="edge26_Node000023_Node000024" title=" " alt="" coords="7822,352,7894,410,7888,409,7820,357"/>
+<area shape="rect" id="Node000025" href="$InlineIncludesPass_8cpp.html" title="This file implements the &#45;llzk&#45;inline&#45;includes pass." alt="" coords="8032,393,8224,455"/>
+<area shape="poly" id="edge27_Node000023_Node000025" title=" " alt="" coords="7886,347,8034,394,8029,393,7885,353"/>
+<area shape="rect" id="Node000026" href="$WitgenDriver_8cpp.html" title=" " alt="" coords="7053,402,7232,446"/>
+<area shape="poly" id="edge29_Node000023_Node000026" title=" " alt="" coords="7637,330,7449,358,7244,396,7212,404,7212,398,7243,390,7448,353,7631,331"/>
+<area shape="poly" id="edge34_Node000027_Node000011" title=" " alt="" coords="8988,358,8988,385,8984,411,8974,436,8957,457,8923,470,8855,481,8638,498,8339,511,7992,519,7295,526,6821,527,6820,521,7295,521,7992,514,8339,506,8638,493,8855,476,8921,465,8954,453,8970,433,8979,410,8983,385,8984,362"/>
+<area shape="poly" id="edge33_Node000027_Node000015" title=" " alt="" coords="9112,344,9174,366,9198,378,9214,391,9230,418,9239,448,9241,504,9237,501,9233,449,9225,420,9210,395,9195,383,9172,371,9111,350"/>
+<area shape="poly" id="edge32_Node000027_Node000019" title=" " alt="" coords="8934,354,8874,404,8873,399,8929,356"/>
+<area shape="rect" id="Node000028" href="$POD_8cpp.html" title=" " alt="" coords="9019,410,9199,438"/>
+<area shape="poly" id="edge31_Node000027_Node000028" title=" " alt="" coords="9030,353,9096,410,9091,409,9028,358"/>
+<area shape="poly" id="edge45_Node000029_Node000011" title=" " alt="" coords="6084,351,6138,391,6153,409,6162,425,6171,439,6188,452,6228,468,6282,481,6419,501,6565,513,6689,522,6683,522,6564,518,6419,506,6281,487,6226,473,6185,457,6167,443,6157,428,6148,412,6134,395,6082,356"/>
+<area shape="poly" id="edge40_Node000029_Node000019" title=" " alt="" coords="6124,320,6513,342,6731,347,7000,348,7627,347,7949,350,8253,356,8522,369,8637,378,8738,390,8779,401,8774,401,8737,396,8637,384,8521,374,8253,361,7949,355,7627,353,7000,354,6730,353,6513,348,6124,326"/>
+<area shape="poly" id="edge46_Node000029_Node000026" title=" " alt="" coords="6124,320,6577,352,6816,372,6991,390,7055,403,7050,403,6990,396,6816,377,6576,357,6124,325"/>
+<area shape="rect" id="Node000030" href="$LLZKTransformationPassPipelines_8h.html" title=" " alt="" coords="6198,402,6452,446"/>
+<area shape="poly" id="edge36_Node000029_Node000030" title=" " alt="" coords="6118,348,6266,401,6260,401,6117,353"/>
+<area shape="rect" id="Node000031" href="$Poly_8cpp.html" title=" " alt="" coords="5423,410,5601,438"/>
+<area shape="poly" id="edge39_Node000029_Node000031" title=" " alt="" coords="5913,333,5769,362,5614,396,5554,412,5553,407,5613,390,5768,357,5908,333"/>
+<area shape="rect" id="Node000032" href="$EmptyTemplateRemovalPass_8cpp.html" title="This file implements the &#45;llzk&#45;drop&#45;empty&#45;templates pass." alt="" coords="5625,393,5886,455"/>
+<area shape="poly" id="edge41_Node000029_Node000032" title=" " alt="" coords="5932,351,5830,395,5829,390,5927,352"/>
+<area shape="rect" id="Node000033" href="$FlatteningPass_8cpp.html" title="This file implements the &#45;llzk&#45;flatten pass." alt="" coords="3138,402,3361,446"/>
+<area shape="poly" id="edge42_Node000029_Node000033" title=" " alt="" coords="5913,322,5445,348,4992,354,4408,356,4108,359,3825,366,3575,377,3374,396,3329,404,3329,398,3373,390,3574,372,3825,360,4108,354,4408,351,4991,349,5445,342,5908,322"/>
+<area shape="rect" id="Node000034" href="$TypeVarInferencePass_8cpp.html" title="This file implements the &#45;llzk&#45;infer&#45;tvar pass." alt="" coords="5910,393,6124,455"/>
+<area shape="poly" id="edge43_Node000029_Node000034" title=" " alt="" coords="6019,359,6019,394,6015,391,6015,362"/>
+<area shape="rect" id="Node000035" href="$WildcardArraySpecializationPass_8cpp.html" title="This file implements the &#45;llzk&#45;specialize&#45;wildcard&#45;arrays pass." alt="" coords="5114,393,5398,455"/>
+<area shape="poly" id="edge44_Node000029_Node000035" title=" " alt="" coords="5913,327,5681,357,5411,396,5399,398,5398,392,5410,390,5680,352,5908,327"/>
+<area shape="rect" id="Node000036" href="$WitgenLowering_8cpp.html" title=" " alt="" coords="4910,402,5090,446"/>
+<area shape="poly" id="edge47_Node000029_Node000036" title=" " alt="" coords="5913,318,5752,327,5550,340,5326,362,5102,396,5067,404,5067,398,5101,390,5325,357,5550,334,5752,321,5908,318"/>
+<area shape="poly" id="edge38_Node000030_Node000011" title=" " alt="" coords="6434,447,6689,508,6683,508,6433,453"/>
+<area shape="poly" id="edge37_Node000030_Node000015" title=" " alt="" coords="6464,446,6515,452,6755,468,7073,482,7834,502,8585,514,9116,523,9111,523,8585,520,7834,507,7073,487,6755,473,6514,457,6464,452"/>
+<area shape="poly" id="edge52_Node000037_Node000011" title=" " alt="" coords="6555,353,6533,373,6517,394,6509,410,6506,425,6508,438,6516,453,6542,472,6585,488,6689,514,6684,513,6584,493,6540,476,6513,456,6503,440,6501,424,6504,409,6512,392,6529,369,6550,354"/>
+<area shape="poly" id="edge49_Node000037_Node000030" title=" " alt="" coords="6543,350,6390,404,6389,398,6538,351"/>
+<area shape="rect" id="Node000038" href="$Struct_8cpp.html" title=" " alt="" coords="6789,410,6979,438"/>
+<area shape="poly" id="edge50_Node000037_Node000038" title=" " alt="" coords="6726,349,6857,410,6852,409,6725,354"/>
+<area shape="rect" id="Node000039" href="$InlineStructsPass_8cpp.html" title="This file implements the &#45;llzk&#45;inline&#45;structs pass." alt="" coords="6526,402,6764,446"/>
+<area shape="poly" id="edge51_Node000037_Node000039" title=" " alt="" coords="6647,359,6647,403,6643,399,6643,362"/>
+<area shape="poly" id="edge71_Node000040_Node000011" title=" " alt="" coords="2467,328,2555,351,2598,369,2639,391,2655,407,2664,424,2673,439,2689,452,2743,460,2865,468,3279,481,3857,493,4527,502,5855,515,6689,523,6683,523,5854,520,4527,508,3857,498,3279,487,2865,473,2742,466,2687,457,2669,443,2659,427,2651,410,2636,395,2596,373,2553,356,2467,333"/>
+<area shape="poly" id="edge56_Node000040_Node000014" title=" " alt="" coords="2467,315,4275,342,6744,354,8287,367,8865,377,9212,390,9327,406,9322,406,9212,396,8865,382,8287,372,6744,359,4274,348,2467,320"/>
+<area shape="poly" id="edge58_Node000040_Node000019" title=" " alt="" coords="2467,315,4275,342,5112,343,6508,343,7240,347,7902,355,8425,369,8612,379,8738,390,8780,401,8774,401,8737,396,8611,384,8425,374,7902,360,7240,352,6508,349,5112,348,4274,348,2467,320"/>
+<area shape="poly" id="edge54_Node000040_Node000030" title=" " alt="" coords="2467,315,4466,350,5572,373,5950,383,6136,390,6205,401,6200,401,6136,396,5950,388,5572,378,4466,356,2467,320"/>
+<area shape="poly" id="edge59_Node000040_Node000033" title=" " alt="" coords="2467,320,2767,344,2947,364,3126,390,3168,401,3162,401,3125,396,2946,370,2767,350,2467,325"/>
+<area shape="poly" id="edge72_Node000040_Node000036" title=" " alt="" coords="2467,315,3620,340,4299,362,4583,376,4797,390,4912,407,4907,407,4797,396,4582,381,4299,368,3620,345,2467,320"/>
+<area shape="rect" id="Node000041" href="$Transforms_8cpp.html" title=" " alt="" coords="465,410,639,438"/>
+<area shape="poly" id="edge55_Node000040_Node000041" title=" " alt="" coords="2223,317,1881,327,1426,340,978,363,792,378,651,396,589,412,587,407,650,390,791,373,977,358,1426,335,1881,321,2228,317"/>
+<area shape="poly" id="edge57_Node000040_Node000042" title=" " alt="" coords="2458,338,2682,390,2749,410,2744,409,2681,396,2457,343"/>
+<area shape="rect" id="Node000043" href="$LLZKComputeConstrainToProductPass_8cpp.html" title="This file implements the &#45;llzk&#45;product&#45;program pass." alt="" coords="663,402,870,446"/>
+<area shape="poly" id="edge60_Node000040_Node000043" title=" " alt="" coords="2223,319,1538,347,1159,369,1002,382,883,396,843,403,842,398,882,390,1002,376,1158,363,1537,342,2228,319"/>
+<area shape="rect" id="Node000044" href="$LLZKEnforceNoOverwritePass_8cpp.html" title="This file implements the &#45;llzk&#45;enforce&#45;no&#45;overwrite pass." alt="" coords="894,402,1092,446"/>
+<area shape="poly" id="edge61_Node000040_Node000044" title=" " alt="" coords="2223,315,2014,321,1734,332,1420,356,1260,373,1104,396,1066,404,1065,398,1103,390,1260,368,1419,350,1734,327,2014,316,2228,315"/>
+<area shape="rect" id="Node000045" href="$LLZKFuseProductControlFlowPass_8cpp.html" title="This file implements the &#45;llzk&#45;fuse&#45;product&#45;control&#45;flow pass." alt="" coords="1116,402,1345,446"/>
+<area shape="poly" id="edge62_Node000040_Node000045" title=" " alt="" coords="2223,319,2055,329,1838,343,1597,365,1356,396,1315,404,1314,398,1355,390,1597,359,1837,338,2055,324,2229,319"/>
+<area shape="rect" id="Node000046" href="$LLZKInlineFreeFunctionsPass_8cpp.html" title="This file implements the &#45;llzk&#45;inline&#45;free&#45;functions pass." alt="" coords="1368,402,1554,446"/>
+<area shape="poly" id="edge63_Node000040_Node000046" title=" " alt="" coords="2223,321,2090,332,1925,346,1745,367,1566,396,1531,404,1530,398,1565,390,1744,362,1924,341,2090,327,2228,321"/>
+<area shape="poly" id="edge64_Node000040_Node000047" title=" " alt="" coords="2467,325,2672,351,2904,390,2941,401,2936,401,2903,396,2672,357,2467,331"/>
+<area shape="rect" id="Node000048" href="$LLZKPolyLoweringPass_8cpp.html" title="This file implements the &#45;llzk&#45;poly&#45;lowering pass." alt="" coords="1578,402,1814,446"/>
+<area shape="poly" id="edge65_Node000040_Node000048" title=" " alt="" coords="2228,331,2038,360,1827,396,1788,403,1787,398,1826,390,2037,355,2223,331"/>
+<area shape="rect" id="Node000049" href="$LLZKRedundantOperationEliminationPass_8cpp.html" title="This file implements the &#45;llzk&#45;duplicate&#45;op&#45;elim pass." alt="" coords="1838,402,2058,446"/>
+<area shape="poly" id="edge66_Node000040_Node000049" title=" " alt="" coords="2254,341,2029,404,2028,398,2249,341"/>
+<area shape="rect" id="Node000050" href="$LLZKRedundantReadAndWriteEliminationPass_8cpp.html" title="This file implements the &#45;llzk&#45;duplicate&#45;read&#45;write&#45;elim pass." alt="" coords="2082,402,2326,446"/>
+<area shape="poly" id="edge67_Node000040_Node000050" title=" " alt="" coords="2308,345,2234,403,2232,398,2303,347"/>
+<area shape="rect" id="Node000051" href="$LLZKRemoveUnusedDiscardableAllocationsPass_8cpp.html" title="This file implements the &#45;llzk&#45;remove&#45;unused&#45;discardable&#45;allocations pass." alt="" coords="2350,402,2626,446"/>
+<area shape="poly" id="edge68_Node000040_Node000051" title=" " alt="" coords="2388,344,2462,402,2457,400,2386,349"/>
+<area shape="rect" id="Node000052" href="$LLZKUnusedDeclarationEliminationPass_8cpp.html" title="This file implements the &#45;llzk&#45;unused&#45;declaration&#45;elim pass." alt="" coords="5,402,232,446"/>
+<area shape="poly" id="edge69_Node000040_Node000052" title=" " alt="" coords="2223,317,1807,326,1234,340,662,362,423,377,243,396,200,403,198,398,242,390,423,372,661,357,1234,334,1807,321,2229,317"/>
+<area shape="rect" id="Node000053" href="$LLZKWhileToForPass_8cpp.html" title="This file identifies scf.while loops that can be converted to scf.for loops and performs the conversi..." alt="" coords="255,402,440,446"/>
+<area shape="poly" id="edge70_Node000040_Node000053" title=" " alt="" coords="2223,317,1845,326,1333,339,824,361,613,377,454,396,417,404,415,398,453,390,613,372,824,356,1333,333,1845,320,2228,317"/>
+<area shape="poly" id="edge74_Node000054_Node000011" title=" " alt="" coords="5241,317,5103,328,5033,337,4969,350,4919,367,4900,378,4887,390,4880,403,4879,417,4886,434,4900,453,4926,464,4980,474,5159,490,5406,503,5694,511,6278,520,6689,524,6683,524,6278,525,5694,516,5406,508,5158,496,4980,479,4925,469,4897,457,4881,437,4874,418,4875,401,4883,386,4897,373,4916,362,4968,344,5032,331,5102,323,5236,317"/>
+<area shape="poly" id="edge78_Node000057_Node000011" title=" " alt="" coords="9235,350,9239,378,9237,406,9230,433,9213,457,9182,465,9112,472,8874,485,8145,506,7352,519,6820,526,6820,520,7352,514,8145,500,8874,480,9112,467,9181,460,9210,452,9225,431,9232,405,9233,378,9232,354"/>
+<area shape="poly" id="edge76_Node000057_Node000014" title=" " alt="" coords="9280,342,9388,401,9383,400,9279,347"/>
+<area shape="poly" id="edge77_Node000057_Node000019" title=" " alt="" coords="9137,341,8923,404,8923,398,9131,342"/>
 </map>

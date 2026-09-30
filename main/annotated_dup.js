@@ -642,6 +642,7 @@ var annotated_dup =
       [ "NonDetOp", "classllzk_1_1NonDetOp.html", "classllzk_1_1NonDetOp" ],
       [ "NonDetOpAdaptor", "classllzk_1_1NonDetOpAdaptor.html", "classllzk_1_1NonDetOpAdaptor" ],
       [ "NonDetOpGenericAdaptor", "classllzk_1_1NonDetOpGenericAdaptor.html", "classllzk_1_1NonDetOpGenericAdaptor" ],
+      [ "OpClassesWithStructTypes", "structllzk_1_1OpClassesWithStructTypes.html", "structllzk_1_1OpClassesWithStructTypes" ],
       [ "OpHash", "structllzk_1_1OpHash.html", "structllzk_1_1OpHash" ],
       [ "OpLocationLess", "structllzk_1_1OpLocationLess.html", "structllzk_1_1OpLocationLess" ],
       [ "PolyLoweringPassOptions", "structllzk_1_1PolyLoweringPassOptions.html", "structllzk_1_1PolyLoweringPassOptions" ],

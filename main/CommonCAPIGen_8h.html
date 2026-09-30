@@ -187,6 +187,32 @@ Functions</h2></td></tr>
 <tr class="memitem:a35489b90c6da1161396e7c63315f6534" id="r_a35489b90c6da1161396e7c63315f6534"><td class="memTemplParams" colspan="2">template&lt;typename S&gt; </td></tr>
 <tr class="memitem:a35489b90c6da1161396e7c63315f6534 template"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a35489b90c6da1161396e7c63315f6534">warnSkippedNoConversion</a> (const S &amp;methodName, const std::string &amp;cppType)</td></tr>
 <tr class="memdesc:a35489b90c6da1161396e7c63315f6534"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print warning about skipping a function due to no conversion of C++ type to C API type.  <br /></td></tr>
+<tr class="memitem:a3fd7813ae3ce3ced96b1f3459e9faec4" id="r_a3fd7813ae3ce3ced96b1f3459e9faec4"><td class="memItemLeft">llvm::cl::opt&lt; std::string &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a3fd7813ae3ce3ced96b1f3459e9faec4">getDialectName</a> ()</td></tr>
+<tr class="memdesc:a3fd7813ae3ce3ced96b1f3459e9faec4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the DialectName option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:a114326daba3ce3d38f9038bb351175bf" id="r_a114326daba3ce3d38f9038bb351175bf"><td class="memItemLeft">llvm::cl::opt&lt; std::string &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a114326daba3ce3d38f9038bb351175bf">getFunctionPrefix</a> ()</td></tr>
+<tr class="memdesc:a114326daba3ce3d38f9038bb351175bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the FunctionPrefix option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:ad68fbefb7c54d6b676c3ad6c9246de30" id="r_ad68fbefb7c54d6b676c3ad6c9246de30"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ad68fbefb7c54d6b676c3ad6c9246de30">getGenIsA</a> ()</td></tr>
+<tr class="memdesc:ad68fbefb7c54d6b676c3ad6c9246de30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenIsA option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:ab282c02a679aedaf34b6ab3da0a45449" id="r_ab282c02a679aedaf34b6ab3da0a45449"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ab282c02a679aedaf34b6ab3da0a45449">getGenOpBuild</a> ()</td></tr>
+<tr class="memdesc:ab282c02a679aedaf34b6ab3da0a45449"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpBuild option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:a01a48cde0940a0096234be4e45c83dfd" id="r_a01a48cde0940a0096234be4e45c83dfd"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a01a48cde0940a0096234be4e45c83dfd">getGenOpOperandGetters</a> ()</td></tr>
+<tr class="memdesc:a01a48cde0940a0096234be4e45c83dfd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpOperandGetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:ad839c150c30cff93b2a5249dcbb2c2c4" id="r_ad839c150c30cff93b2a5249dcbb2c2c4"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ad839c150c30cff93b2a5249dcbb2c2c4">getGenOpOperandSetters</a> ()</td></tr>
+<tr class="memdesc:ad839c150c30cff93b2a5249dcbb2c2c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpOperandSetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:ab4890b84d3d855eed2371d2a820c5942" id="r_ab4890b84d3d855eed2371d2a820c5942"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ab4890b84d3d855eed2371d2a820c5942">getGenOpAttributeGetters</a> ()</td></tr>
+<tr class="memdesc:ab4890b84d3d855eed2371d2a820c5942"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpAttributeGetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:aa7878abde06245782dda6fa421dcb9d7" id="r_aa7878abde06245782dda6fa421dcb9d7"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#aa7878abde06245782dda6fa421dcb9d7">getGenOpAttributeSetters</a> ()</td></tr>
+<tr class="memdesc:aa7878abde06245782dda6fa421dcb9d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpAttributeSetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:a1a7100f527e312e0030db54f8d28a89c" id="r_a1a7100f527e312e0030db54f8d28a89c"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a1a7100f527e312e0030db54f8d28a89c">getGenOpRegionGetters</a> ()</td></tr>
+<tr class="memdesc:a1a7100f527e312e0030db54f8d28a89c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpRegionGetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:a3bef4e83d5f20780478462d00371143a" id="r_a3bef4e83d5f20780478462d00371143a"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a3bef4e83d5f20780478462d00371143a">getGenOpResultGetters</a> ()</td></tr>
+<tr class="memdesc:a3bef4e83d5f20780478462d00371143a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenOpResultGetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:adddcaf0175b53c6b7e4b8af82e0b063c" id="r_adddcaf0175b53c6b7e4b8af82e0b063c"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#adddcaf0175b53c6b7e4b8af82e0b063c">getGenTypeOrAttrGet</a> ()</td></tr>
+<tr class="memdesc:adddcaf0175b53c6b7e4b8af82e0b063c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenTypeOrAttrGet option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:ad58207e812e282af24f5cd245184d8b4" id="r_ad58207e812e282af24f5cd245184d8b4"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ad58207e812e282af24f5cd245184d8b4">getGenTypeOrAttrParamGetters</a> ()</td></tr>
+<tr class="memdesc:ad58207e812e282af24f5cd245184d8b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenTypeOrAttrParamGetters option, registering it on first access.  <br /></td></tr>
+<tr class="memitem:ac8ab5ce5c82ba8a2cbc49cb3fa673d4a" id="r_ac8ab5ce5c82ba8a2cbc49cb3fa673d4a"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ac8ab5ce5c82ba8a2cbc49cb3fa673d4a">getGenExtraClassMethods</a> ()</td></tr>
+<tr class="memdesc:ac8ab5ce5c82ba8a2cbc49cb3fa673d4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the GenExtraClassMethods option, registering it on first access.  <br /></td></tr>
 <tr class="memitem:ae7b67e75239015f879f2e7ffa336f699" id="r_ae7b67e75239015f879f2e7ffa336f699"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#ae7b67e75239015f879f2e7ffa336f699">toPascalCase</a> (mlir::StringRef str)</td></tr>
 <tr class="memdesc:ae7b67e75239015f879f2e7ffa336f699"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert names separated by underscore or colon to PascalCase.  <br /></td></tr>
 <tr class="memitem:a991b2313368129538e13d0914f7d82a4" id="r_a991b2313368129538e13d0914f7d82a4"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a991b2313368129538e13d0914f7d82a4">isIntegerType</a> (mlir::StringRef type)</td></tr>
@@ -219,20 +245,6 @@ Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:a982fab10f100b8649763ed6ce835880f" id="r_a982fab10f100b8649763ed6ce835880f"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#a982fab10f100b8649763ed6ce835880f">WARN_SKIPPED_METHODS</a> = false</td></tr>
-<tr class="memitem:a0302e341412826c87500fe51f040e0d0" id="r_a0302e341412826c87500fe51f040e0d0"><td class="memItemLeft">llvm::cl::OptionCategory&#160;</td><td class="memItemRight"><a class="el" href="#a0302e341412826c87500fe51f040e0d0">OpGenCat</a></td></tr>
-<tr class="memitem:a5a7a95674096c67390ebb8b066f922c0" id="r_a5a7a95674096c67390ebb8b066f922c0"><td class="memItemLeft">llvm::cl::opt&lt; std::string &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5a7a95674096c67390ebb8b066f922c0">DialectName</a></td></tr>
-<tr class="memitem:a792dfd7adc8b654aa7931bdd44af83da" id="r_a792dfd7adc8b654aa7931bdd44af83da"><td class="memItemLeft">llvm::cl::opt&lt; std::string &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a792dfd7adc8b654aa7931bdd44af83da">FunctionPrefix</a></td></tr>
-<tr class="memitem:a4508e9da9258bea164266610d21234f1" id="r_a4508e9da9258bea164266610d21234f1"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4508e9da9258bea164266610d21234f1">GenIsA</a></td></tr>
-<tr class="memitem:a5924224823bbcc54ddce5557e3497a65" id="r_a5924224823bbcc54ddce5557e3497a65"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5924224823bbcc54ddce5557e3497a65">GenOpBuild</a></td></tr>
-<tr class="memitem:ad7870c3e259c3433b0aab27a5a823a32" id="r_ad7870c3e259c3433b0aab27a5a823a32"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad7870c3e259c3433b0aab27a5a823a32">GenOpOperandGetters</a></td></tr>
-<tr class="memitem:a0b39f625395117db406d1e2a52d58704" id="r_a0b39f625395117db406d1e2a52d58704"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a0b39f625395117db406d1e2a52d58704">GenOpOperandSetters</a></td></tr>
-<tr class="memitem:a9bd595433e4320cb788062ba05c5a9af" id="r_a9bd595433e4320cb788062ba05c5a9af"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9bd595433e4320cb788062ba05c5a9af">GenOpAttributeGetters</a></td></tr>
-<tr class="memitem:aa7d4856e318fbcaccec413938f661fca" id="r_aa7d4856e318fbcaccec413938f661fca"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa7d4856e318fbcaccec413938f661fca">GenOpAttributeSetters</a></td></tr>
-<tr class="memitem:a9413da626f0abcd93f52360701164bc9" id="r_a9413da626f0abcd93f52360701164bc9"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9413da626f0abcd93f52360701164bc9">GenOpRegionGetters</a></td></tr>
-<tr class="memitem:a9b13a85288cd3f8454a3607e75c986fc" id="r_a9b13a85288cd3f8454a3607e75c986fc"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9b13a85288cd3f8454a3607e75c986fc">GenOpResultGetters</a></td></tr>
-<tr class="memitem:a28f7f8795873d9c584398b7b925a7728" id="r_a28f7f8795873d9c584398b7b925a7728"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a28f7f8795873d9c584398b7b925a7728">GenTypeOrAttrGet</a></td></tr>
-<tr class="memitem:a0e328bea87d6cd4893d3e8849aa6655b" id="r_a0e328bea87d6cd4893d3e8849aa6655b"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a0e328bea87d6cd4893d3e8849aa6655b">GenTypeOrAttrParamGetters</a></td></tr>
-<tr class="memitem:af09f16e9ae15d17366e83de1d103c1be" id="r_af09f16e9ae15d17366e83de1d103c1be"><td class="memItemLeft">llvm::cl::opt&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#af09f16e9ae15d17366e83de1d103c1be">GenExtraClassMethods</a></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a018220ae1d7b99cb622e3f019ebd611a" name="a018220ae1d7b99cb622e3f019ebd611a"></a>
@@ -260,7 +272,7 @@ Variables</h2></td></tr>
 
 <p>Extract element type from ArrayRef&lt;...&gt;. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00204">204</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00225">225</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -283,6 +295,279 @@ Variables</h2></td></tr>
 <p>Interface methods must be named in <span class="tt">alwaysOverriddenMethods</span> (the optional method list passed to <span class="tt">DeclareOpInterfaceMethods</span>). This makes C API exposure an explicit opt-in and avoids colliding with the standard op C API accessors. Static methods and methods implemented directly in an interface trait are excluded. An extra class method takes precedence over an interface method with the same name, because the C API does not support overloads. </p>
 
 <p class="definition">Definition at line <a class="el" href="OpCAPIParamHelper_8cpp_source.html#l00020">20</a> of file <a class="el" href="OpCAPIParamHelper_8cpp_source.html">OpCAPIParamHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3fd7813ae3ce3ced96b1f3459e9faec4" name="a3fd7813ae3ce3ced96b1f3459e9faec4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fd7813ae3ce3ced96b1f3459e9faec4">&#9670;&#160;</a></span>getDialectName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; std::string &gt; &amp; getDialectName </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the DialectName option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00037">37</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a114326daba3ce3d38f9038bb351175bf" name="a114326daba3ce3d38f9038bb351175bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a114326daba3ce3d38f9038bb351175bf">&#9670;&#160;</a></span>getFunctionPrefix()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; std::string &gt; &amp; getFunctionPrefix </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the FunctionPrefix option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00049">49</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac8ab5ce5c82ba8a2cbc49cb3fa673d4a" name="ac8ab5ce5c82ba8a2cbc49cb3fa673d4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8ab5ce5c82ba8a2cbc49cb3fa673d4a">&#9670;&#160;</a></span>getGenExtraClassMethods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenExtraClassMethods </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenExtraClassMethods option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00142">142</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad68fbefb7c54d6b676c3ad6c9246de30" name="ad68fbefb7c54d6b676c3ad6c9246de30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad68fbefb7c54d6b676c3ad6c9246de30">&#9670;&#160;</a></span>getGenIsA()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenIsA </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenIsA option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00061">61</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ab4890b84d3d855eed2371d2a820c5942" name="ab4890b84d3d855eed2371d2a820c5942"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4890b84d3d855eed2371d2a820c5942">&#9670;&#160;</a></span>getGenOpAttributeGetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpAttributeGetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpAttributeGetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00093">93</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aa7878abde06245782dda6fa421dcb9d7" name="aa7878abde06245782dda6fa421dcb9d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7878abde06245782dda6fa421dcb9d7">&#9670;&#160;</a></span>getGenOpAttributeSetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpAttributeSetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpAttributeSetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00101">101</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ab282c02a679aedaf34b6ab3da0a45449" name="ab282c02a679aedaf34b6ab3da0a45449"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab282c02a679aedaf34b6ab3da0a45449">&#9670;&#160;</a></span>getGenOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpBuild </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpBuild option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00069">69</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a01a48cde0940a0096234be4e45c83dfd" name="a01a48cde0940a0096234be4e45c83dfd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01a48cde0940a0096234be4e45c83dfd">&#9670;&#160;</a></span>getGenOpOperandGetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpOperandGetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpOperandGetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00077">77</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad839c150c30cff93b2a5249dcbb2c2c4" name="ad839c150c30cff93b2a5249dcbb2c2c4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad839c150c30cff93b2a5249dcbb2c2c4">&#9670;&#160;</a></span>getGenOpOperandSetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpOperandSetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpOperandSetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00085">85</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a1a7100f527e312e0030db54f8d28a89c" name="a1a7100f527e312e0030db54f8d28a89c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a7100f527e312e0030db54f8d28a89c">&#9670;&#160;</a></span>getGenOpRegionGetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpRegionGetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpRegionGetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00109">109</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3bef4e83d5f20780478462d00371143a" name="a3bef4e83d5f20780478462d00371143a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3bef4e83d5f20780478462d00371143a">&#9670;&#160;</a></span>getGenOpResultGetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenOpResultGetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenOpResultGetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00117">117</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="adddcaf0175b53c6b7e4b8af82e0b063c" name="adddcaf0175b53c6b7e4b8af82e0b063c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adddcaf0175b53c6b7e4b8af82e0b063c">&#9670;&#160;</a></span>getGenTypeOrAttrGet()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenTypeOrAttrGet </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenTypeOrAttrGet option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00125">125</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad58207e812e282af24f5cd245184d8b4" name="ad58207e812e282af24f5cd245184d8b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad58207e812e282af24f5cd245184d8b4">&#9670;&#160;</a></span>getGenTypeOrAttrParamGetters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::cl::opt&lt; bool &gt; &amp; getGenTypeOrAttrParamGetters </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the GenTypeOrAttrParamGetters option, registering it on first access. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00133">133</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -318,7 +603,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is an APInt or LLZK's numeric APInt storage key </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00185">185</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00206">206</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -354,7 +639,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is ArrayRef, llvm::ArrayRef, or ::llvm::ArrayRef </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00197">197</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00218">218</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -390,7 +675,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the name is a C++ language construct (if, for, while, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00166">166</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00187">187</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -426,7 +711,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the token is a C++ modifier (inline, static, virtual, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00149">149</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00170">170</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -462,7 +747,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is an integer type (size_t, unsigned, int*, uint*, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00104">104</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00125">125</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -499,7 +784,7 @@ Variables</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is a primitive (bool, void, int, etc.)</dd></dl>
 <dl class="section note"><dt>Note</dt><dd>This function must be called on the CPP type because after converting to CAPI type, some things like APInt become primitive which can lead to missing wrap/unwrap functions. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00140">140</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00161">161</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -655,7 +940,7 @@ Variables</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>The converted PascalCase string</dd></dl>
 <p>Examples: "no_inline" -&gt; "NoInline" "::llzk::boolean::Type" -&gt; "LlzkBooleanType" </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00079">79</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00100">100</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -756,314 +1041,6 @@ template&lt;typename S&gt; </div>
 </div>
 </div>
 <a name="doc-var-members" id="doc-var-members"></a><h2 id="header-doc-var-members" class="groupheader">Variable Documentation</h2>
-<a id="a5a7a95674096c67390ebb8b066f922c0" name="a5a7a95674096c67390ebb8b066f922c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a7a95674096c67390ebb8b066f922c0">&#9670;&#160;</a></span>DialectName</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;std::string&gt; DialectName</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a792dfd7adc8b654aa7931bdd44af83da" name="a792dfd7adc8b654aa7931bdd44af83da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a792dfd7adc8b654aa7931bdd44af83da">&#9670;&#160;</a></span>FunctionPrefix</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;std::string&gt; FunctionPrefix</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af09f16e9ae15d17366e83de1d103c1be" name="af09f16e9ae15d17366e83de1d103c1be"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af09f16e9ae15d17366e83de1d103c1be">&#9670;&#160;</a></span>GenExtraClassMethods</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenExtraClassMethods</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a4508e9da9258bea164266610d21234f1" name="a4508e9da9258bea164266610d21234f1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4508e9da9258bea164266610d21234f1">&#9670;&#160;</a></span>GenIsA</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenIsA</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9bd595433e4320cb788062ba05c5a9af" name="a9bd595433e4320cb788062ba05c5a9af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9bd595433e4320cb788062ba05c5a9af">&#9670;&#160;</a></span>GenOpAttributeGetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpAttributeGetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa7d4856e318fbcaccec413938f661fca" name="aa7d4856e318fbcaccec413938f661fca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa7d4856e318fbcaccec413938f661fca">&#9670;&#160;</a></span>GenOpAttributeSetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpAttributeSetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5924224823bbcc54ddce5557e3497a65" name="a5924224823bbcc54ddce5557e3497a65"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5924224823bbcc54ddce5557e3497a65">&#9670;&#160;</a></span>GenOpBuild</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpBuild</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ad7870c3e259c3433b0aab27a5a823a32" name="ad7870c3e259c3433b0aab27a5a823a32"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad7870c3e259c3433b0aab27a5a823a32">&#9670;&#160;</a></span>GenOpOperandGetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpOperandGetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a0b39f625395117db406d1e2a52d58704" name="a0b39f625395117db406d1e2a52d58704"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0b39f625395117db406d1e2a52d58704">&#9670;&#160;</a></span>GenOpOperandSetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpOperandSetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9413da626f0abcd93f52360701164bc9" name="a9413da626f0abcd93f52360701164bc9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9413da626f0abcd93f52360701164bc9">&#9670;&#160;</a></span>GenOpRegionGetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpRegionGetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9b13a85288cd3f8454a3607e75c986fc" name="a9b13a85288cd3f8454a3607e75c986fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9b13a85288cd3f8454a3607e75c986fc">&#9670;&#160;</a></span>GenOpResultGetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenOpResultGetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a28f7f8795873d9c584398b7b925a7728" name="a28f7f8795873d9c584398b7b925a7728"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a28f7f8795873d9c584398b7b925a7728">&#9670;&#160;</a></span>GenTypeOrAttrGet</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenTypeOrAttrGet</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a0e328bea87d6cd4893d3e8849aa6655b" name="a0e328bea87d6cd4893d3e8849aa6655b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e328bea87d6cd4893d3e8849aa6655b">&#9670;&#160;</a></span>GenTypeOrAttrParamGetters</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::opt&lt;bool&gt; GenTypeOrAttrParamGetters</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a0302e341412826c87500fe51f040e0d0" name="a0302e341412826c87500fe51f040e0d0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0302e341412826c87500fe51f040e0d0">&#9670;&#160;</a></span>OpGenCat</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::cl::OptionCategory OpGenCat</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a982fab10f100b8649763ed6ce835880f" name="a982fab10f100b8649763ed6ce835880f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a982fab10f100b8649763ed6ce835880f">&#9670;&#160;</a></span>WARN_SKIPPED_METHODS</h2>
 

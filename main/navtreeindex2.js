@@ -185,6 +185,8 @@ var NAVTREEINDEX2 =
 "Builders_8cpp_source.html":[14,0,3,3,12,0],
 "Builders_8h.html":[14,0,2,0,2,12,0],
 "Builders_8h_source.html":[14,0,2,0,2,12,0],
+"CAPIGenRegistration_8h.html":[14,0,4,4,2],
+"CAPIGenRegistration_8h_source.html":[14,0,4,4,2],
 "CAPI_2InitDialects_8cpp.html":[14,0,3,2,4],
 "CAPI_2InitDialects_8cpp.html#af27964eac03870c6f5b1324c56e1c574":[14,0,3,2,4,0],
 "CAPI_2InitDialects_8cpp_source.html":[14,0,3,2,4],
@@ -247,7 +249,5 @@ var NAVTREEINDEX2 =
 "Cast_2IR_2Dialect_8h.html":[14,0,2,0,2,2,0,2],
 "Cast_2IR_2Dialect_8h_8inc.html":[14,0,0,0,0,2,2,0,7],
 "Cast_2IR_2Dialect_8h_8inc_source.html":[14,0,0,0,0,2,2,0,7],
-"Cast_2IR_2Dialect_8h_source.html":[14,0,2,0,2,2,0,2],
-"Cast_2IR_2Dialect_8td.html":[14,0,2,0,2,2,0,3],
-"Cast_2IR_2Dialect_8td_source.html":[14,0,2,0,2,2,0,3]
+"Cast_2IR_2Dialect_8h_source.html":[14,0,2,0,2,2,0,2]
 };

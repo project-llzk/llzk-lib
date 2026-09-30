@@ -2070,7 +2070,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IntervalAnalys
 <div class="line"><a id="l01867" name="l01867"></a><span class="lineno"> 1867</span>      <span class="keywordflow">if</span> (existing != memberRanges.end()) {</div>
 <div class="line"><a id="l01868" name="l01868"></a><span class="lineno"> 1868</span>        <a class="code hl_class" href="classllzk_1_1Interval.html">Interval</a> mergedInterval = existing-&gt;second.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(interval);</div>
 <div class="line"><a id="l01869" name="l01869"></a><span class="lineno"> 1869</span>        <span class="keywordtype">bool</span> intervalChanged = mergedInterval != existing-&gt;second;</div>
-<div class="line"><a id="l01870" name="l01870"></a><span class="lineno"> 1870</span>        existing-&gt;second = mergedInterval;</div>
+<div class="line"><a id="l01870" name="l01870"></a><span class="lineno"> 1870</span>        existing-&gt;second = std::move(mergedInterval);</div>
 <div class="line"><a id="l01871" name="l01871"></a><span class="lineno"> 1871</span> </div>
 <div class="line"><a id="l01872" name="l01872"></a><span class="lineno"> 1872</span>        <span class="keywordflow">if</span> (unreducedInterval.has_value()) {</div>
 <div class="line"><a id="l01873" name="l01873"></a><span class="lineno"> 1873</span>          <span class="keyword">auto</span> *existingUnreduced = memberUnreducedRanges.find(ref);</div>
@@ -2241,8 +2241,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IntervalAnalys
 <div class="line"><a id="l02038" name="l02038"></a><span class="lineno"> 2038</span>        <span class="comment">// existing parent intervals before merging back into each translated parent ref.</span></div>
 <div class="line"><a id="l02039" name="l02039"></a><span class="lineno"> 2039</span>        llvm::EquivalenceClasses&lt;SourceRef&gt; directEqRefs =</div>
 <div class="line"><a id="l02040" name="l02040"></a><span class="lineno"> 2040</span>            collectDirectEqualityRefs(solver, calledFn);</div>
-<div class="line"><a id="l02041" name="l02041"></a><span class="lineno"> 2041</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> leaderIt = directEqRefs.begin(); leaderIt != directEqRefs.end(); ++leaderIt) {</div>
-<div class="line"><a id="l02042" name="l02042"></a><span class="lineno"> 2042</span>          <span class="keywordflow">if</span> (!(*leaderIt)-&gt;isLeader()) {</div>
+<div class="line"><a id="l02041" name="l02041"></a><span class="lineno"> 2041</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *leader : directEqRefs) {</div>
+<div class="line"><a id="l02042" name="l02042"></a><span class="lineno"> 2042</span>          <span class="keywordflow">if</span> (!leader-&gt;isLeader()) {</div>
 <div class="line"><a id="l02043" name="l02043"></a><span class="lineno"> 2043</span>            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l02044" name="l02044"></a><span class="lineno"> 2044</span>          }</div>
 <div class="line"><a id="l02045" name="l02045"></a><span class="lineno"> 2045</span> </div>
@@ -2251,193 +2251,192 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IntervalAnalys
 <div class="line"><a id="l02048" name="l02048"></a><span class="lineno"> 2048</span>          <span class="keywordtype">bool</span> hasInterval = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l02049" name="l02049"></a><span class="lineno"> 2049</span>          <span class="keywordtype">bool</span> ambiguousTranslation = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l02050" name="l02050"></a><span class="lineno"> 2050</span> </div>
-<div class="line"><a id="l02051" name="l02051"></a><span class="lineno"> 2051</span>          <span class="keywordflow">for</span> (<span class="keyword">auto</span> memberIt = directEqRefs.member_begin(**leaderIt);</div>
-<div class="line"><a id="l02052" name="l02052"></a><span class="lineno"> 2052</span>               memberIt != directEqRefs.member_end(); ++memberIt) {</div>
-<div class="line"><a id="l02053" name="l02053"></a><span class="lineno"> 2053</span>            <a class="code hl_class" href="classllzk_1_1Interval.html">Interval</a> memberInterval = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">Interval::Entire</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
-<div class="line"><a id="l02054" name="l02054"></a><span class="lineno"> 2054</span>            <span class="keywordflow">if</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *childIntervalIt = constrainIntervals.find(*memberIt);</div>
-<div class="line"><a id="l02055" name="l02055"></a><span class="lineno"> 2055</span>                childIntervalIt != constrainIntervals.end()) {</div>
-<div class="line"><a id="l02056" name="l02056"></a><span class="lineno"> 2056</span>              memberInterval = memberInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(childIntervalIt-&gt;second);</div>
-<div class="line"><a id="l02057" name="l02057"></a><span class="lineno"> 2057</span>            }</div>
-<div class="line"><a id="l02058" name="l02058"></a><span class="lineno"> 2058</span>            <span class="keywordflow">if</span> (<span class="keyword">auto</span> *callOperandIt = callOperandIntervals.find(*memberIt);</div>
-<div class="line"><a id="l02059" name="l02059"></a><span class="lineno"> 2059</span>                callOperandIt != callOperandIntervals.end()) {</div>
-<div class="line"><a id="l02060" name="l02060"></a><span class="lineno"> 2060</span>              memberInterval = memberInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(callOperandIt-&gt;second);</div>
-<div class="line"><a id="l02061" name="l02061"></a><span class="lineno"> 2061</span>              contextualInterval = contextualInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(memberInterval);</div>
-<div class="line"><a id="l02062" name="l02062"></a><span class="lineno"> 2062</span>              hasInterval = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l02063" name="l02063"></a><span class="lineno"> 2063</span>            }</div>
-<div class="line"><a id="l02064" name="l02064"></a><span class="lineno"> 2064</span> </div>
-<div class="line"><a id="l02065" name="l02065"></a><span class="lineno"> 2065</span>            <span class="keyword">auto</span> translatedRefs = translateRef(*memberIt, identityTranslations);</div>
-<div class="line"><a id="l02066" name="l02066"></a><span class="lineno"> 2066</span>            <span class="keywordflow">if</span> (failed(translatedRefs)) {</div>
-<div class="line"><a id="l02067" name="l02067"></a><span class="lineno"> 2067</span>              <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l02068" name="l02068"></a><span class="lineno"> 2068</span>            }</div>
-<div class="line"><a id="l02069" name="l02069"></a><span class="lineno"> 2069</span> </div>
-<div class="line"><a id="l02070" name="l02070"></a><span class="lineno"> 2070</span>            <a class="code hl_class" href="classllzk_1_1SourceRefSet.html">SourceRefSet</a> uniqueTranslatedRefs;</div>
-<div class="line"><a id="l02071" name="l02071"></a><span class="lineno"> 2071</span>            <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;translatedRef : *translatedRefs) {</div>
-<div class="line"><a id="l02072" name="l02072"></a><span class="lineno"> 2072</span>              uniqueTranslatedRefs.insert(translatedRef);</div>
-<div class="line"><a id="l02073" name="l02073"></a><span class="lineno"> 2073</span>            }</div>
-<div class="line"><a id="l02074" name="l02074"></a><span class="lineno"> 2074</span>            <span class="keywordflow">if</span> (uniqueTranslatedRefs.size() != 1) {</div>
-<div class="line"><a id="l02075" name="l02075"></a><span class="lineno"> 2075</span>              ambiguousTranslation = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l02076" name="l02076"></a><span class="lineno"> 2076</span>              <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l02077" name="l02077"></a><span class="lineno"> 2077</span>            }</div>
-<div class="line"><a id="l02078" name="l02078"></a><span class="lineno"> 2078</span> </div>
-<div class="line"><a id="l02079" name="l02079"></a><span class="lineno"> 2079</span>            <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;translatedRef = *uniqueTranslatedRefs.begin();</div>
-<div class="line"><a id="l02080" name="l02080"></a><span class="lineno"> 2080</span>            <span class="keywordflow">if</span> (!functionRefs.contains(translatedRef)) {</div>
-<div class="line"><a id="l02081" name="l02081"></a><span class="lineno"> 2081</span>              <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l02082" name="l02082"></a><span class="lineno"> 2082</span>            }</div>
-<div class="line"><a id="l02083" name="l02083"></a><span class="lineno"> 2083</span> </div>
-<div class="line"><a id="l02084" name="l02084"></a><span class="lineno"> 2084</span>            <span class="keywordflow">if</span> (<span class="keyword">auto</span> *parentIntervalIt = memberRanges.find(translatedRef);</div>
-<div class="line"><a id="l02085" name="l02085"></a><span class="lineno"> 2085</span>                parentIntervalIt != memberRanges.end()) {</div>
-<div class="line"><a id="l02086" name="l02086"></a><span class="lineno"> 2086</span>              memberInterval = memberInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(parentIntervalIt-&gt;second);</div>
-<div class="line"><a id="l02087" name="l02087"></a><span class="lineno"> 2087</span>            }</div>
-<div class="line"><a id="l02088" name="l02088"></a><span class="lineno"> 2088</span> </div>
-<div class="line"><a id="l02089" name="l02089"></a><span class="lineno"> 2089</span>            translatedEqRefs[translatedRef] = memberInterval;</div>
-<div class="line"><a id="l02090" name="l02090"></a><span class="lineno"> 2090</span>            contextualInterval = contextualInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(memberInterval);</div>
-<div class="line"><a id="l02091" name="l02091"></a><span class="lineno"> 2091</span>            hasInterval = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l02092" name="l02092"></a><span class="lineno"> 2092</span>          }</div>
-<div class="line"><a id="l02093" name="l02093"></a><span class="lineno"> 2093</span> </div>
-<div class="line"><a id="l02094" name="l02094"></a><span class="lineno"> 2094</span>          <span class="keywordflow">if</span> (ambiguousTranslation || !hasInterval || translatedEqRefs.empty()) {</div>
-<div class="line"><a id="l02095" name="l02095"></a><span class="lineno"> 2095</span>            <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l02096" name="l02096"></a><span class="lineno"> 2096</span>          }</div>
-<div class="line"><a id="l02097" name="l02097"></a><span class="lineno"> 2097</span> </div>
-<div class="line"><a id="l02098" name="l02098"></a><span class="lineno"> 2098</span>          <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[translatedRef, _] : translatedEqRefs) {</div>
-<div class="line"><a id="l02099" name="l02099"></a><span class="lineno"> 2099</span>            mergeInterval(translatedRef, contextualInterval);</div>
-<div class="line"><a id="l02100" name="l02100"></a><span class="lineno"> 2100</span>            searchSet.erase(translatedRef);</div>
-<div class="line"><a id="l02101" name="l02101"></a><span class="lineno"> 2101</span>          }</div>
-<div class="line"><a id="l02102" name="l02102"></a><span class="lineno"> 2102</span>        }</div>
-<div class="line"><a id="l02103" name="l02103"></a><span class="lineno"> 2103</span>      };</div>
-<div class="line"><a id="l02104" name="l02104"></a><span class="lineno"> 2104</span> </div>
-<div class="line"><a id="l02105" name="l02105"></a><span class="lineno"> 2105</span>      fn.walk(mergeChildConstrainIntervals);</div>
-<div class="line"><a id="l02106" name="l02106"></a><span class="lineno"> 2106</span>    }</div>
-<div class="line"><a id="l02107" name="l02107"></a><span class="lineno"> 2107</span> </div>
-<div class="line"><a id="l02108" name="l02108"></a><span class="lineno"> 2108</span>    <span class="comment">// For all unfound refs, default to the entire range.</span></div>
-<div class="line"><a id="l02109" name="l02109"></a><span class="lineno"> 2109</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;ref : searchSet) {</div>
-<div class="line"><a id="l02110" name="l02110"></a><span class="lineno"> 2110</span>      memberRanges[ref] = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">Interval::Entire</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
-<div class="line"><a id="l02111" name="l02111"></a><span class="lineno"> 2111</span>      <span class="keywordflow">if</span> (ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#ab010f938e7c29c5989d93a8c84164a12">doTrackUnreducedIntervals</a>()) {</div>
-<div class="line"><a id="l02112" name="l02112"></a><span class="lineno"> 2112</span>        setUnreducedRange(ref, memberRanges[ref].firstUnreduced());</div>
-<div class="line"><a id="l02113" name="l02113"></a><span class="lineno"> 2113</span>      }</div>
-<div class="line"><a id="l02114" name="l02114"></a><span class="lineno"> 2114</span>    }</div>
-<div class="line"><a id="l02115" name="l02115"></a><span class="lineno"> 2115</span> </div>
-<div class="line"><a id="l02116" name="l02116"></a><span class="lineno"> 2116</span>    <span class="comment">// Sort the outputs since we assembled things out of order.</span></div>
-<div class="line"><a id="l02117" name="l02117"></a><span class="lineno"> 2117</span>    <span class="comment">//</span></div>
-<div class="line"><a id="l02118" name="l02118"></a><span class="lineno"> 2118</span>    <span class="comment">// `llvm::MapVector` maintains an internal key -&gt; index map. Sorting it in</span></div>
-<div class="line"><a id="l02119" name="l02119"></a><span class="lineno"> 2119</span>    <span class="comment">// place corrupts lookup semantics because the backing vector is reordered</span></div>
-<div class="line"><a id="l02120" name="l02120"></a><span class="lineno"> 2120</span>    <span class="comment">// without rebuilding that map. Reinsert into a fresh MapVector instead.</span></div>
-<div class="line"><a id="l02121" name="l02121"></a><span class="lineno"> 2121</span>    llvm::SmallVector&lt;std::pair&lt;SourceRef, Interval&gt;&gt; sortedRanges;</div>
-<div class="line"><a id="l02122" name="l02122"></a><span class="lineno"> 2122</span>    sortedRanges.reserve(memberRanges.size());</div>
-<div class="line"><a id="l02123" name="l02123"></a><span class="lineno"> 2123</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberRanges) {</div>
-<div class="line"><a id="l02124" name="l02124"></a><span class="lineno"> 2124</span>      sortedRanges.emplace_back(ref, interval);</div>
-<div class="line"><a id="l02125" name="l02125"></a><span class="lineno"> 2125</span>    }</div>
-<div class="line"><a id="l02126" name="l02126"></a><span class="lineno"> 2126</span>    llvm::sort(sortedRanges, [](<span class="keyword">const</span> <span class="keyword">auto</span> &amp;a, <span class="keyword">const</span> <span class="keyword">auto</span> &amp;b) { <span class="keywordflow">return</span> a.first &lt; b.first; });</div>
-<div class="line"><a id="l02127" name="l02127"></a><span class="lineno"> 2127</span>    llvm::SmallVector&lt;std::pair&lt;SourceRef, UnreducedInterval&gt;&gt; sortedUnreducedRanges;</div>
-<div class="line"><a id="l02128" name="l02128"></a><span class="lineno"> 2128</span>    sortedUnreducedRanges.reserve(memberUnreducedRanges.size());</div>
-<div class="line"><a id="l02129" name="l02129"></a><span class="lineno"> 2129</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberUnreducedRanges) {</div>
-<div class="line"><a id="l02130" name="l02130"></a><span class="lineno"> 2130</span>      sortedUnreducedRanges.emplace_back(ref, interval);</div>
-<div class="line"><a id="l02131" name="l02131"></a><span class="lineno"> 2131</span>    }</div>
-<div class="line"><a id="l02132" name="l02132"></a><span class="lineno"> 2132</span>    llvm::sort(sortedUnreducedRanges, [](<span class="keyword">const</span> <span class="keyword">auto</span> &amp;a, <span class="keyword">const</span> <span class="keyword">auto</span> &amp;b) {</div>
-<div class="line"><a id="l02133" name="l02133"></a><span class="lineno"> 2133</span>      <span class="keywordflow">return</span> a.first &lt; b.first;</div>
-<div class="line"><a id="l02134" name="l02134"></a><span class="lineno"> 2134</span>    });</div>
-<div class="line"><a id="l02135" name="l02135"></a><span class="lineno"> 2135</span>    memberRanges.clear();</div>
-<div class="line"><a id="l02136" name="l02136"></a><span class="lineno"> 2136</span>    memberUnreducedRanges.clear();</div>
-<div class="line"><a id="l02137" name="l02137"></a><span class="lineno"> 2137</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;[ref, interval] : sortedRanges) {</div>
-<div class="line"><a id="l02138" name="l02138"></a><span class="lineno"> 2138</span>      memberRanges[ref] = interval;</div>
-<div class="line"><a id="l02139" name="l02139"></a><span class="lineno"> 2139</span>    }</div>
-<div class="line"><a id="l02140" name="l02140"></a><span class="lineno"> 2140</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;[ref, interval] : sortedUnreducedRanges) {</div>
-<div class="line"><a id="l02141" name="l02141"></a><span class="lineno"> 2141</span>      memberUnreducedRanges.insert({ref, interval});</div>
-<div class="line"><a id="l02142" name="l02142"></a><span class="lineno"> 2142</span>    }</div>
-<div class="line"><a id="l02143" name="l02143"></a><span class="lineno"> 2143</span>  };</div>
-<div class="line"><a id="l02144" name="l02144"></a><span class="lineno"> 2144</span> </div>
-<div class="line"><a id="l02145" name="l02145"></a><span class="lineno"> 2145</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> computeFn = structDef.getComputeFuncOp()) {</div>
-<div class="line"><a id="l02146" name="l02146"></a><span class="lineno"> 2146</span>    computeIntervalsImpl(</div>
-<div class="line"><a id="l02147" name="l02147"></a><span class="lineno"> 2147</span>        computeFn, computeMemberRanges, computeMemberUnreducedRanges, computeSolverConstraints</div>
-<div class="line"><a id="l02148" name="l02148"></a><span class="lineno"> 2148</span>    );</div>
-<div class="line"><a id="l02149" name="l02149"></a><span class="lineno"> 2149</span>  }</div>
-<div class="line"><a id="l02150" name="l02150"></a><span class="lineno"> 2150</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> constrainFn = structDef.getConstrainFuncOp()) {</div>
-<div class="line"><a id="l02151" name="l02151"></a><span class="lineno"> 2151</span>    computeIntervalsImpl(</div>
-<div class="line"><a id="l02152" name="l02152"></a><span class="lineno"> 2152</span>        constrainFn, constrainMemberRanges, constrainMemberUnreducedRanges,</div>
-<div class="line"><a id="l02153" name="l02153"></a><span class="lineno"> 2153</span>        constrainSolverConstraints</div>
-<div class="line"><a id="l02154" name="l02154"></a><span class="lineno"> 2154</span>    );</div>
-<div class="line"><a id="l02155" name="l02155"></a><span class="lineno"> 2155</span>  }</div>
-<div class="line"><a id="l02156" name="l02156"></a><span class="lineno"> 2156</span> </div>
-<div class="line"><a id="l02157" name="l02157"></a><span class="lineno"> 2157</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l02158" name="l02158"></a><span class="lineno"> 2158</span>}</div>
+<div class="line"><a id="l02051" name="l02051"></a><span class="lineno"> 2051</span>          <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;member : directEqRefs.members(*leader)) {</div>
+<div class="line"><a id="l02052" name="l02052"></a><span class="lineno"> 2052</span>            <a class="code hl_class" href="classllzk_1_1Interval.html">Interval</a> memberInterval = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">Interval::Entire</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
+<div class="line"><a id="l02053" name="l02053"></a><span class="lineno"> 2053</span>            <span class="keywordflow">if</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *childIntervalIt = constrainIntervals.find(member);</div>
+<div class="line"><a id="l02054" name="l02054"></a><span class="lineno"> 2054</span>                childIntervalIt != constrainIntervals.end()) {</div>
+<div class="line"><a id="l02055" name="l02055"></a><span class="lineno"> 2055</span>              memberInterval = memberInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(childIntervalIt-&gt;second);</div>
+<div class="line"><a id="l02056" name="l02056"></a><span class="lineno"> 2056</span>            }</div>
+<div class="line"><a id="l02057" name="l02057"></a><span class="lineno"> 2057</span>            <span class="keywordflow">if</span> (<span class="keyword">auto</span> *callOperandIt = callOperandIntervals.find(member);</div>
+<div class="line"><a id="l02058" name="l02058"></a><span class="lineno"> 2058</span>                callOperandIt != callOperandIntervals.end()) {</div>
+<div class="line"><a id="l02059" name="l02059"></a><span class="lineno"> 2059</span>              memberInterval = memberInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(callOperandIt-&gt;second);</div>
+<div class="line"><a id="l02060" name="l02060"></a><span class="lineno"> 2060</span>              contextualInterval = contextualInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(memberInterval);</div>
+<div class="line"><a id="l02061" name="l02061"></a><span class="lineno"> 2061</span>              hasInterval = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l02062" name="l02062"></a><span class="lineno"> 2062</span>            }</div>
+<div class="line"><a id="l02063" name="l02063"></a><span class="lineno"> 2063</span> </div>
+<div class="line"><a id="l02064" name="l02064"></a><span class="lineno"> 2064</span>            <span class="keyword">auto</span> translatedRefs = translateRef(member, identityTranslations);</div>
+<div class="line"><a id="l02065" name="l02065"></a><span class="lineno"> 2065</span>            <span class="keywordflow">if</span> (failed(translatedRefs)) {</div>
+<div class="line"><a id="l02066" name="l02066"></a><span class="lineno"> 2066</span>              <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l02067" name="l02067"></a><span class="lineno"> 2067</span>            }</div>
+<div class="line"><a id="l02068" name="l02068"></a><span class="lineno"> 2068</span> </div>
+<div class="line"><a id="l02069" name="l02069"></a><span class="lineno"> 2069</span>            <a class="code hl_class" href="classllzk_1_1SourceRefSet.html">SourceRefSet</a> uniqueTranslatedRefs;</div>
+<div class="line"><a id="l02070" name="l02070"></a><span class="lineno"> 2070</span>            <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;translatedRef : *translatedRefs) {</div>
+<div class="line"><a id="l02071" name="l02071"></a><span class="lineno"> 2071</span>              uniqueTranslatedRefs.insert(translatedRef);</div>
+<div class="line"><a id="l02072" name="l02072"></a><span class="lineno"> 2072</span>            }</div>
+<div class="line"><a id="l02073" name="l02073"></a><span class="lineno"> 2073</span>            <span class="keywordflow">if</span> (uniqueTranslatedRefs.size() != 1) {</div>
+<div class="line"><a id="l02074" name="l02074"></a><span class="lineno"> 2074</span>              ambiguousTranslation = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l02075" name="l02075"></a><span class="lineno"> 2075</span>              <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l02076" name="l02076"></a><span class="lineno"> 2076</span>            }</div>
+<div class="line"><a id="l02077" name="l02077"></a><span class="lineno"> 2077</span> </div>
+<div class="line"><a id="l02078" name="l02078"></a><span class="lineno"> 2078</span>            <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;translatedRef = *uniqueTranslatedRefs.begin();</div>
+<div class="line"><a id="l02079" name="l02079"></a><span class="lineno"> 2079</span>            <span class="keywordflow">if</span> (!functionRefs.contains(translatedRef)) {</div>
+<div class="line"><a id="l02080" name="l02080"></a><span class="lineno"> 2080</span>              <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l02081" name="l02081"></a><span class="lineno"> 2081</span>            }</div>
+<div class="line"><a id="l02082" name="l02082"></a><span class="lineno"> 2082</span> </div>
+<div class="line"><a id="l02083" name="l02083"></a><span class="lineno"> 2083</span>            <span class="keywordflow">if</span> (<span class="keyword">auto</span> *parentIntervalIt = memberRanges.find(translatedRef);</div>
+<div class="line"><a id="l02084" name="l02084"></a><span class="lineno"> 2084</span>                parentIntervalIt != memberRanges.end()) {</div>
+<div class="line"><a id="l02085" name="l02085"></a><span class="lineno"> 2085</span>              memberInterval = memberInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(parentIntervalIt-&gt;second);</div>
+<div class="line"><a id="l02086" name="l02086"></a><span class="lineno"> 2086</span>            }</div>
+<div class="line"><a id="l02087" name="l02087"></a><span class="lineno"> 2087</span> </div>
+<div class="line"><a id="l02088" name="l02088"></a><span class="lineno"> 2088</span>            translatedEqRefs[translatedRef] = memberInterval;</div>
+<div class="line"><a id="l02089" name="l02089"></a><span class="lineno"> 2089</span>            contextualInterval = contextualInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d">intersect</a>(memberInterval);</div>
+<div class="line"><a id="l02090" name="l02090"></a><span class="lineno"> 2090</span>            hasInterval = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l02091" name="l02091"></a><span class="lineno"> 2091</span>          }</div>
+<div class="line"><a id="l02092" name="l02092"></a><span class="lineno"> 2092</span> </div>
+<div class="line"><a id="l02093" name="l02093"></a><span class="lineno"> 2093</span>          <span class="keywordflow">if</span> (ambiguousTranslation || !hasInterval || translatedEqRefs.empty()) {</div>
+<div class="line"><a id="l02094" name="l02094"></a><span class="lineno"> 2094</span>            <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l02095" name="l02095"></a><span class="lineno"> 2095</span>          }</div>
+<div class="line"><a id="l02096" name="l02096"></a><span class="lineno"> 2096</span> </div>
+<div class="line"><a id="l02097" name="l02097"></a><span class="lineno"> 2097</span>          <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[translatedRef, _] : translatedEqRefs) {</div>
+<div class="line"><a id="l02098" name="l02098"></a><span class="lineno"> 2098</span>            mergeInterval(translatedRef, contextualInterval);</div>
+<div class="line"><a id="l02099" name="l02099"></a><span class="lineno"> 2099</span>            searchSet.erase(translatedRef);</div>
+<div class="line"><a id="l02100" name="l02100"></a><span class="lineno"> 2100</span>          }</div>
+<div class="line"><a id="l02101" name="l02101"></a><span class="lineno"> 2101</span>        }</div>
+<div class="line"><a id="l02102" name="l02102"></a><span class="lineno"> 2102</span>      };</div>
+<div class="line"><a id="l02103" name="l02103"></a><span class="lineno"> 2103</span> </div>
+<div class="line"><a id="l02104" name="l02104"></a><span class="lineno"> 2104</span>      fn.walk(mergeChildConstrainIntervals);</div>
+<div class="line"><a id="l02105" name="l02105"></a><span class="lineno"> 2105</span>    }</div>
+<div class="line"><a id="l02106" name="l02106"></a><span class="lineno"> 2106</span> </div>
+<div class="line"><a id="l02107" name="l02107"></a><span class="lineno"> 2107</span>    <span class="comment">// For all unfound refs, default to the entire range.</span></div>
+<div class="line"><a id="l02108" name="l02108"></a><span class="lineno"> 2108</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;ref : searchSet) {</div>
+<div class="line"><a id="l02109" name="l02109"></a><span class="lineno"> 2109</span>      memberRanges[ref] = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">Interval::Entire</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
+<div class="line"><a id="l02110" name="l02110"></a><span class="lineno"> 2110</span>      <span class="keywordflow">if</span> (ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#ab010f938e7c29c5989d93a8c84164a12">doTrackUnreducedIntervals</a>()) {</div>
+<div class="line"><a id="l02111" name="l02111"></a><span class="lineno"> 2111</span>        setUnreducedRange(ref, memberRanges[ref].firstUnreduced());</div>
+<div class="line"><a id="l02112" name="l02112"></a><span class="lineno"> 2112</span>      }</div>
+<div class="line"><a id="l02113" name="l02113"></a><span class="lineno"> 2113</span>    }</div>
+<div class="line"><a id="l02114" name="l02114"></a><span class="lineno"> 2114</span> </div>
+<div class="line"><a id="l02115" name="l02115"></a><span class="lineno"> 2115</span>    <span class="comment">// Sort the outputs since we assembled things out of order.</span></div>
+<div class="line"><a id="l02116" name="l02116"></a><span class="lineno"> 2116</span>    <span class="comment">//</span></div>
+<div class="line"><a id="l02117" name="l02117"></a><span class="lineno"> 2117</span>    <span class="comment">// `llvm::MapVector` maintains an internal key -&gt; index map. Sorting it in</span></div>
+<div class="line"><a id="l02118" name="l02118"></a><span class="lineno"> 2118</span>    <span class="comment">// place corrupts lookup semantics because the backing vector is reordered</span></div>
+<div class="line"><a id="l02119" name="l02119"></a><span class="lineno"> 2119</span>    <span class="comment">// without rebuilding that map. Reinsert into a fresh MapVector instead.</span></div>
+<div class="line"><a id="l02120" name="l02120"></a><span class="lineno"> 2120</span>    llvm::SmallVector&lt;std::pair&lt;SourceRef, Interval&gt;&gt; sortedRanges;</div>
+<div class="line"><a id="l02121" name="l02121"></a><span class="lineno"> 2121</span>    sortedRanges.reserve(memberRanges.size());</div>
+<div class="line"><a id="l02122" name="l02122"></a><span class="lineno"> 2122</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberRanges) {</div>
+<div class="line"><a id="l02123" name="l02123"></a><span class="lineno"> 2123</span>      sortedRanges.emplace_back(ref, interval);</div>
+<div class="line"><a id="l02124" name="l02124"></a><span class="lineno"> 2124</span>    }</div>
+<div class="line"><a id="l02125" name="l02125"></a><span class="lineno"> 2125</span>    llvm::sort(sortedRanges, [](<span class="keyword">const</span> <span class="keyword">auto</span> &amp;a, <span class="keyword">const</span> <span class="keyword">auto</span> &amp;b) { <span class="keywordflow">return</span> a.first &lt; b.first; });</div>
+<div class="line"><a id="l02126" name="l02126"></a><span class="lineno"> 2126</span>    llvm::SmallVector&lt;std::pair&lt;SourceRef, UnreducedInterval&gt;&gt; sortedUnreducedRanges;</div>
+<div class="line"><a id="l02127" name="l02127"></a><span class="lineno"> 2127</span>    sortedUnreducedRanges.reserve(memberUnreducedRanges.size());</div>
+<div class="line"><a id="l02128" name="l02128"></a><span class="lineno"> 2128</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberUnreducedRanges) {</div>
+<div class="line"><a id="l02129" name="l02129"></a><span class="lineno"> 2129</span>      sortedUnreducedRanges.emplace_back(ref, interval);</div>
+<div class="line"><a id="l02130" name="l02130"></a><span class="lineno"> 2130</span>    }</div>
+<div class="line"><a id="l02131" name="l02131"></a><span class="lineno"> 2131</span>    llvm::sort(sortedUnreducedRanges, [](<span class="keyword">const</span> <span class="keyword">auto</span> &amp;a, <span class="keyword">const</span> <span class="keyword">auto</span> &amp;b) {</div>
+<div class="line"><a id="l02132" name="l02132"></a><span class="lineno"> 2132</span>      <span class="keywordflow">return</span> a.first &lt; b.first;</div>
+<div class="line"><a id="l02133" name="l02133"></a><span class="lineno"> 2133</span>    });</div>
+<div class="line"><a id="l02134" name="l02134"></a><span class="lineno"> 2134</span>    memberRanges.clear();</div>
+<div class="line"><a id="l02135" name="l02135"></a><span class="lineno"> 2135</span>    memberUnreducedRanges.clear();</div>
+<div class="line"><a id="l02136" name="l02136"></a><span class="lineno"> 2136</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;[ref, interval] : sortedRanges) {</div>
+<div class="line"><a id="l02137" name="l02137"></a><span class="lineno"> 2137</span>      memberRanges[ref] = interval;</div>
+<div class="line"><a id="l02138" name="l02138"></a><span class="lineno"> 2138</span>    }</div>
+<div class="line"><a id="l02139" name="l02139"></a><span class="lineno"> 2139</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;[ref, interval] : sortedUnreducedRanges) {</div>
+<div class="line"><a id="l02140" name="l02140"></a><span class="lineno"> 2140</span>      memberUnreducedRanges.insert({ref, interval});</div>
+<div class="line"><a id="l02141" name="l02141"></a><span class="lineno"> 2141</span>    }</div>
+<div class="line"><a id="l02142" name="l02142"></a><span class="lineno"> 2142</span>  };</div>
+<div class="line"><a id="l02143" name="l02143"></a><span class="lineno"> 2143</span> </div>
+<div class="line"><a id="l02144" name="l02144"></a><span class="lineno"> 2144</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> computeFn = structDef.getComputeFuncOp()) {</div>
+<div class="line"><a id="l02145" name="l02145"></a><span class="lineno"> 2145</span>    computeIntervalsImpl(</div>
+<div class="line"><a id="l02146" name="l02146"></a><span class="lineno"> 2146</span>        computeFn, computeMemberRanges, computeMemberUnreducedRanges, computeSolverConstraints</div>
+<div class="line"><a id="l02147" name="l02147"></a><span class="lineno"> 2147</span>    );</div>
+<div class="line"><a id="l02148" name="l02148"></a><span class="lineno"> 2148</span>  }</div>
+<div class="line"><a id="l02149" name="l02149"></a><span class="lineno"> 2149</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> constrainFn = structDef.getConstrainFuncOp()) {</div>
+<div class="line"><a id="l02150" name="l02150"></a><span class="lineno"> 2150</span>    computeIntervalsImpl(</div>
+<div class="line"><a id="l02151" name="l02151"></a><span class="lineno"> 2151</span>        constrainFn, constrainMemberRanges, constrainMemberUnreducedRanges,</div>
+<div class="line"><a id="l02152" name="l02152"></a><span class="lineno"> 2152</span>        constrainSolverConstraints</div>
+<div class="line"><a id="l02153" name="l02153"></a><span class="lineno"> 2153</span>    );</div>
+<div class="line"><a id="l02154" name="l02154"></a><span class="lineno"> 2154</span>  }</div>
+<div class="line"><a id="l02155" name="l02155"></a><span class="lineno"> 2155</span> </div>
+<div class="line"><a id="l02156" name="l02156"></a><span class="lineno"> 2156</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l02157" name="l02157"></a><span class="lineno"> 2157</span>}</div>
 </div>
-<div class="line"><a id="l02159" name="l02159"></a><span class="lineno"> 2159</span> </div>
-<div class="foldopen" id="foldopen02160" data-start="{" data-end="}">
-<div class="line"><a id="l02160" name="l02160"></a><span class="lineno"><a class="line" href="classllzk_1_1StructIntervals.html#a91f41e7e5aa189f28fe908f2a481ad1b"> 2160</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1StructIntervals.html#a91f41e7e5aa189f28fe908f2a481ad1b">StructIntervals::print</a>(</div>
-<div class="line"><a id="l02161" name="l02161"></a><span class="lineno"> 2161</span>    mlir::raw_ostream &amp;os, <span class="keywordtype">bool</span> withConstraints, <span class="keywordtype">bool</span> printCompute, <span class="keywordtype">bool</span> printUnreduced</div>
-<div class="line"><a id="l02162" name="l02162"></a><span class="lineno"> 2162</span>)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l02163" name="l02163"></a><span class="lineno"> 2163</span>  <span class="keyword">auto</span> writeIntervals =</div>
-<div class="line"><a id="l02164" name="l02164"></a><span class="lineno"> 2164</span>      [&amp;os, &amp;withConstraints, &amp;printUnreduced](</div>
-<div class="line"><a id="l02165" name="l02165"></a><span class="lineno"> 2165</span>          <span class="keyword">const</span> <span class="keywordtype">char</span> *fnName, <span class="keyword">const</span> llvm::MapVector&lt;SourceRef, Interval&gt; &amp;memberRanges,</div>
-<div class="line"><a id="l02166" name="l02166"></a><span class="lineno"> 2166</span>          <span class="keyword">const</span> llvm::MapVector&lt;SourceRef, UnreducedInterval&gt; &amp;memberUnreducedRanges,</div>
-<div class="line"><a id="l02167" name="l02167"></a><span class="lineno"> 2167</span>          <span class="keyword">const</span> llvm::SetVector&lt;ExpressionValue&gt; &amp;solverConstraints, <span class="keywordtype">bool</span> printName</div>
-<div class="line"><a id="l02168" name="l02168"></a><span class="lineno"> 2168</span>      ) {</div>
-<div class="line"><a id="l02169" name="l02169"></a><span class="lineno"> 2169</span>    <span class="keywordtype">int</span> indent = 4;</div>
-<div class="line"><a id="l02170" name="l02170"></a><span class="lineno"> 2170</span>    <span class="keywordflow">if</span> (printName) {</div>
-<div class="line"><a id="l02171" name="l02171"></a><span class="lineno"> 2171</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02172" name="l02172"></a><span class="lineno"> 2172</span>      os.indent(indent) &lt;&lt; fnName &lt;&lt; <span class="stringliteral">&quot; {&quot;</span>;</div>
-<div class="line"><a id="l02173" name="l02173"></a><span class="lineno"> 2173</span>      indent += 4;</div>
-<div class="line"><a id="l02174" name="l02174"></a><span class="lineno"> 2174</span>    }</div>
-<div class="line"><a id="l02175" name="l02175"></a><span class="lineno"> 2175</span> </div>
-<div class="line"><a id="l02176" name="l02176"></a><span class="lineno"> 2176</span>    <span class="keywordflow">if</span> (memberRanges.empty()) {</div>
-<div class="line"><a id="l02177" name="l02177"></a><span class="lineno"> 2177</span>      os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
-<div class="line"><a id="l02178" name="l02178"></a><span class="lineno"> 2178</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02179" name="l02179"></a><span class="lineno"> 2179</span>    }</div>
-<div class="line"><a id="l02180" name="l02180"></a><span class="lineno"> 2180</span> </div>
-<div class="line"><a id="l02181" name="l02181"></a><span class="lineno"> 2181</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberRanges) {</div>
-<div class="line"><a id="l02182" name="l02182"></a><span class="lineno"> 2182</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02183" name="l02183"></a><span class="lineno"> 2183</span>      os.indent(indent) &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span> &lt;&lt; interval;</div>
-<div class="line"><a id="l02184" name="l02184"></a><span class="lineno"> 2184</span>      <span class="keywordflow">if</span> (printUnreduced) {</div>
-<div class="line"><a id="l02185" name="l02185"></a><span class="lineno"> 2185</span>        <span class="keyword">const</span> <span class="keyword">auto</span> *unreducedIt = memberUnreducedRanges.find(ref);</div>
-<div class="line"><a id="l02186" name="l02186"></a><span class="lineno"> 2186</span>        <span class="keywordflow">if</span> (unreducedIt != memberUnreducedRanges.end()) {</div>
-<div class="line"><a id="l02187" name="l02187"></a><span class="lineno"> 2187</span>          os &lt;&lt; <span class="stringliteral">&quot; ( &quot;</span> &lt;&lt; unreducedIt-&gt;second &lt;&lt; <span class="stringliteral">&quot; )&quot;</span>;</div>
-<div class="line"><a id="l02188" name="l02188"></a><span class="lineno"> 2188</span>        }</div>
-<div class="line"><a id="l02189" name="l02189"></a><span class="lineno"> 2189</span>      }</div>
-<div class="line"><a id="l02190" name="l02190"></a><span class="lineno"> 2190</span>    }</div>
-<div class="line"><a id="l02191" name="l02191"></a><span class="lineno"> 2191</span> </div>
-<div class="line"><a id="l02192" name="l02192"></a><span class="lineno"> 2192</span>    <span class="keywordflow">if</span> (withConstraints) {</div>
-<div class="line"><a id="l02193" name="l02193"></a><span class="lineno"> 2193</span>      os &lt;&lt; <span class="stringliteral">&quot;\n\n&quot;</span>;</div>
-<div class="line"><a id="l02194" name="l02194"></a><span class="lineno"> 2194</span>      os.indent(indent) &lt;&lt; <span class="stringliteral">&quot;Solver Constraints { &quot;</span>;</div>
-<div class="line"><a id="l02195" name="l02195"></a><span class="lineno"> 2195</span>      <span class="keywordflow">if</span> (solverConstraints.empty()) {</div>
-<div class="line"><a id="l02196" name="l02196"></a><span class="lineno"> 2196</span>        os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
-<div class="line"><a id="l02197" name="l02197"></a><span class="lineno"> 2197</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l02198" name="l02198"></a><span class="lineno"> 2198</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;e : solverConstraints) {</div>
-<div class="line"><a id="l02199" name="l02199"></a><span class="lineno"> 2199</span>          os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02200" name="l02200"></a><span class="lineno"> 2200</span>          os.indent(indent + 4);</div>
-<div class="line"><a id="l02201" name="l02201"></a><span class="lineno"> 2201</span>          e.getExpr()-&gt;print(os);</div>
-<div class="line"><a id="l02202" name="l02202"></a><span class="lineno"> 2202</span>        }</div>
-<div class="line"><a id="l02203" name="l02203"></a><span class="lineno"> 2203</span>        os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02204" name="l02204"></a><span class="lineno"> 2204</span>        os.indent(indent) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
-<div class="line"><a id="l02205" name="l02205"></a><span class="lineno"> 2205</span>      }</div>
-<div class="line"><a id="l02206" name="l02206"></a><span class="lineno"> 2206</span>    }</div>
-<div class="line"><a id="l02207" name="l02207"></a><span class="lineno"> 2207</span> </div>
-<div class="line"><a id="l02208" name="l02208"></a><span class="lineno"> 2208</span>    <span class="keywordflow">if</span> (printName) {</div>
-<div class="line"><a id="l02209" name="l02209"></a><span class="lineno"> 2209</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02210" name="l02210"></a><span class="lineno"> 2210</span>      os.indent(indent - 4) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
-<div class="line"><a id="l02211" name="l02211"></a><span class="lineno"> 2211</span>    }</div>
-<div class="line"><a id="l02212" name="l02212"></a><span class="lineno"> 2212</span>  };</div>
-<div class="line"><a id="l02213" name="l02213"></a><span class="lineno"> 2213</span> </div>
-<div class="line"><a id="l02214" name="l02214"></a><span class="lineno"> 2214</span>  os &lt;&lt; <span class="stringliteral">&quot;StructIntervals { &quot;</span>;</div>
-<div class="line"><a id="l02215" name="l02215"></a><span class="lineno"> 2215</span>  <span class="keywordflow">if</span> (constrainMemberRanges.empty() &amp;&amp; (!printCompute || computeMemberRanges.empty())) {</div>
-<div class="line"><a id="l02216" name="l02216"></a><span class="lineno"> 2216</span>    os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
-<div class="line"><a id="l02217" name="l02217"></a><span class="lineno"> 2217</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02218" name="l02218"></a><span class="lineno"> 2218</span>  }</div>
-<div class="line"><a id="l02219" name="l02219"></a><span class="lineno"> 2219</span> </div>
-<div class="line"><a id="l02220" name="l02220"></a><span class="lineno"> 2220</span>  <span class="keywordflow">if</span> (printCompute) {</div>
-<div class="line"><a id="l02221" name="l02221"></a><span class="lineno"> 2221</span>    writeIntervals(</div>
-<div class="line"><a id="l02222" name="l02222"></a><span class="lineno"> 2222</span>        <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, computeMemberRanges, computeMemberUnreducedRanges,</div>
-<div class="line"><a id="l02223" name="l02223"></a><span class="lineno"> 2223</span>        computeSolverConstraints, printCompute</div>
-<div class="line"><a id="l02224" name="l02224"></a><span class="lineno"> 2224</span>    );</div>
-<div class="line"><a id="l02225" name="l02225"></a><span class="lineno"> 2225</span>  }</div>
-<div class="line"><a id="l02226" name="l02226"></a><span class="lineno"> 2226</span>  writeIntervals(</div>
-<div class="line"><a id="l02227" name="l02227"></a><span class="lineno"> 2227</span>      <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>, constrainMemberRanges, constrainMemberUnreducedRanges,</div>
-<div class="line"><a id="l02228" name="l02228"></a><span class="lineno"> 2228</span>      constrainSolverConstraints, printCompute</div>
-<div class="line"><a id="l02229" name="l02229"></a><span class="lineno"> 2229</span>  );</div>
-<div class="line"><a id="l02230" name="l02230"></a><span class="lineno"> 2230</span> </div>
-<div class="line"><a id="l02231" name="l02231"></a><span class="lineno"> 2231</span>  os &lt;&lt; <span class="stringliteral">&quot;\n}\n&quot;</span>;</div>
-<div class="line"><a id="l02232" name="l02232"></a><span class="lineno"> 2232</span>}</div>
+<div class="line"><a id="l02158" name="l02158"></a><span class="lineno"> 2158</span> </div>
+<div class="foldopen" id="foldopen02159" data-start="{" data-end="}">
+<div class="line"><a id="l02159" name="l02159"></a><span class="lineno"><a class="line" href="classllzk_1_1StructIntervals.html#a91f41e7e5aa189f28fe908f2a481ad1b"> 2159</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1StructIntervals.html#a91f41e7e5aa189f28fe908f2a481ad1b">StructIntervals::print</a>(</div>
+<div class="line"><a id="l02160" name="l02160"></a><span class="lineno"> 2160</span>    mlir::raw_ostream &amp;os, <span class="keywordtype">bool</span> withConstraints, <span class="keywordtype">bool</span> printCompute, <span class="keywordtype">bool</span> printUnreduced</div>
+<div class="line"><a id="l02161" name="l02161"></a><span class="lineno"> 2161</span>)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l02162" name="l02162"></a><span class="lineno"> 2162</span>  <span class="keyword">auto</span> writeIntervals =</div>
+<div class="line"><a id="l02163" name="l02163"></a><span class="lineno"> 2163</span>      [&amp;os, &amp;withConstraints, &amp;printUnreduced](</div>
+<div class="line"><a id="l02164" name="l02164"></a><span class="lineno"> 2164</span>          <span class="keyword">const</span> <span class="keywordtype">char</span> *fnName, <span class="keyword">const</span> llvm::MapVector&lt;SourceRef, Interval&gt; &amp;memberRanges,</div>
+<div class="line"><a id="l02165" name="l02165"></a><span class="lineno"> 2165</span>          <span class="keyword">const</span> llvm::MapVector&lt;SourceRef, UnreducedInterval&gt; &amp;memberUnreducedRanges,</div>
+<div class="line"><a id="l02166" name="l02166"></a><span class="lineno"> 2166</span>          <span class="keyword">const</span> llvm::SetVector&lt;ExpressionValue&gt; &amp;solverConstraints, <span class="keywordtype">bool</span> printName</div>
+<div class="line"><a id="l02167" name="l02167"></a><span class="lineno"> 2167</span>      ) {</div>
+<div class="line"><a id="l02168" name="l02168"></a><span class="lineno"> 2168</span>    <span class="keywordtype">int</span> indent = 4;</div>
+<div class="line"><a id="l02169" name="l02169"></a><span class="lineno"> 2169</span>    <span class="keywordflow">if</span> (printName) {</div>
+<div class="line"><a id="l02170" name="l02170"></a><span class="lineno"> 2170</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02171" name="l02171"></a><span class="lineno"> 2171</span>      os.indent(indent) &lt;&lt; fnName &lt;&lt; <span class="stringliteral">&quot; {&quot;</span>;</div>
+<div class="line"><a id="l02172" name="l02172"></a><span class="lineno"> 2172</span>      indent += 4;</div>
+<div class="line"><a id="l02173" name="l02173"></a><span class="lineno"> 2173</span>    }</div>
+<div class="line"><a id="l02174" name="l02174"></a><span class="lineno"> 2174</span> </div>
+<div class="line"><a id="l02175" name="l02175"></a><span class="lineno"> 2175</span>    <span class="keywordflow">if</span> (memberRanges.empty()) {</div>
+<div class="line"><a id="l02176" name="l02176"></a><span class="lineno"> 2176</span>      os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
+<div class="line"><a id="l02177" name="l02177"></a><span class="lineno"> 2177</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02178" name="l02178"></a><span class="lineno"> 2178</span>    }</div>
+<div class="line"><a id="l02179" name="l02179"></a><span class="lineno"> 2179</span> </div>
+<div class="line"><a id="l02180" name="l02180"></a><span class="lineno"> 2180</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberRanges) {</div>
+<div class="line"><a id="l02181" name="l02181"></a><span class="lineno"> 2181</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02182" name="l02182"></a><span class="lineno"> 2182</span>      os.indent(indent) &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span> &lt;&lt; interval;</div>
+<div class="line"><a id="l02183" name="l02183"></a><span class="lineno"> 2183</span>      <span class="keywordflow">if</span> (printUnreduced) {</div>
+<div class="line"><a id="l02184" name="l02184"></a><span class="lineno"> 2184</span>        <span class="keyword">const</span> <span class="keyword">auto</span> *unreducedIt = memberUnreducedRanges.find(ref);</div>
+<div class="line"><a id="l02185" name="l02185"></a><span class="lineno"> 2185</span>        <span class="keywordflow">if</span> (unreducedIt != memberUnreducedRanges.end()) {</div>
+<div class="line"><a id="l02186" name="l02186"></a><span class="lineno"> 2186</span>          os &lt;&lt; <span class="stringliteral">&quot; ( &quot;</span> &lt;&lt; unreducedIt-&gt;second &lt;&lt; <span class="stringliteral">&quot; )&quot;</span>;</div>
+<div class="line"><a id="l02187" name="l02187"></a><span class="lineno"> 2187</span>        }</div>
+<div class="line"><a id="l02188" name="l02188"></a><span class="lineno"> 2188</span>      }</div>
+<div class="line"><a id="l02189" name="l02189"></a><span class="lineno"> 2189</span>    }</div>
+<div class="line"><a id="l02190" name="l02190"></a><span class="lineno"> 2190</span> </div>
+<div class="line"><a id="l02191" name="l02191"></a><span class="lineno"> 2191</span>    <span class="keywordflow">if</span> (withConstraints) {</div>
+<div class="line"><a id="l02192" name="l02192"></a><span class="lineno"> 2192</span>      os &lt;&lt; <span class="stringliteral">&quot;\n\n&quot;</span>;</div>
+<div class="line"><a id="l02193" name="l02193"></a><span class="lineno"> 2193</span>      os.indent(indent) &lt;&lt; <span class="stringliteral">&quot;Solver Constraints { &quot;</span>;</div>
+<div class="line"><a id="l02194" name="l02194"></a><span class="lineno"> 2194</span>      <span class="keywordflow">if</span> (solverConstraints.empty()) {</div>
+<div class="line"><a id="l02195" name="l02195"></a><span class="lineno"> 2195</span>        os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
+<div class="line"><a id="l02196" name="l02196"></a><span class="lineno"> 2196</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l02197" name="l02197"></a><span class="lineno"> 2197</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;e : solverConstraints) {</div>
+<div class="line"><a id="l02198" name="l02198"></a><span class="lineno"> 2198</span>          os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02199" name="l02199"></a><span class="lineno"> 2199</span>          os.indent(indent + 4);</div>
+<div class="line"><a id="l02200" name="l02200"></a><span class="lineno"> 2200</span>          e.getExpr()-&gt;print(os);</div>
+<div class="line"><a id="l02201" name="l02201"></a><span class="lineno"> 2201</span>        }</div>
+<div class="line"><a id="l02202" name="l02202"></a><span class="lineno"> 2202</span>        os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02203" name="l02203"></a><span class="lineno"> 2203</span>        os.indent(indent) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
+<div class="line"><a id="l02204" name="l02204"></a><span class="lineno"> 2204</span>      }</div>
+<div class="line"><a id="l02205" name="l02205"></a><span class="lineno"> 2205</span>    }</div>
+<div class="line"><a id="l02206" name="l02206"></a><span class="lineno"> 2206</span> </div>
+<div class="line"><a id="l02207" name="l02207"></a><span class="lineno"> 2207</span>    <span class="keywordflow">if</span> (printName) {</div>
+<div class="line"><a id="l02208" name="l02208"></a><span class="lineno"> 2208</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02209" name="l02209"></a><span class="lineno"> 2209</span>      os.indent(indent - 4) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
+<div class="line"><a id="l02210" name="l02210"></a><span class="lineno"> 2210</span>    }</div>
+<div class="line"><a id="l02211" name="l02211"></a><span class="lineno"> 2211</span>  };</div>
+<div class="line"><a id="l02212" name="l02212"></a><span class="lineno"> 2212</span> </div>
+<div class="line"><a id="l02213" name="l02213"></a><span class="lineno"> 2213</span>  os &lt;&lt; <span class="stringliteral">&quot;StructIntervals { &quot;</span>;</div>
+<div class="line"><a id="l02214" name="l02214"></a><span class="lineno"> 2214</span>  <span class="keywordflow">if</span> (constrainMemberRanges.empty() &amp;&amp; (!printCompute || computeMemberRanges.empty())) {</div>
+<div class="line"><a id="l02215" name="l02215"></a><span class="lineno"> 2215</span>    os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
+<div class="line"><a id="l02216" name="l02216"></a><span class="lineno"> 2216</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02217" name="l02217"></a><span class="lineno"> 2217</span>  }</div>
+<div class="line"><a id="l02218" name="l02218"></a><span class="lineno"> 2218</span> </div>
+<div class="line"><a id="l02219" name="l02219"></a><span class="lineno"> 2219</span>  <span class="keywordflow">if</span> (printCompute) {</div>
+<div class="line"><a id="l02220" name="l02220"></a><span class="lineno"> 2220</span>    writeIntervals(</div>
+<div class="line"><a id="l02221" name="l02221"></a><span class="lineno"> 2221</span>        <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, computeMemberRanges, computeMemberUnreducedRanges,</div>
+<div class="line"><a id="l02222" name="l02222"></a><span class="lineno"> 2222</span>        computeSolverConstraints, printCompute</div>
+<div class="line"><a id="l02223" name="l02223"></a><span class="lineno"> 2223</span>    );</div>
+<div class="line"><a id="l02224" name="l02224"></a><span class="lineno"> 2224</span>  }</div>
+<div class="line"><a id="l02225" name="l02225"></a><span class="lineno"> 2225</span>  writeIntervals(</div>
+<div class="line"><a id="l02226" name="l02226"></a><span class="lineno"> 2226</span>      <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>, constrainMemberRanges, constrainMemberUnreducedRanges,</div>
+<div class="line"><a id="l02227" name="l02227"></a><span class="lineno"> 2227</span>      constrainSolverConstraints, printCompute</div>
+<div class="line"><a id="l02228" name="l02228"></a><span class="lineno"> 2228</span>  );</div>
+<div class="line"><a id="l02229" name="l02229"></a><span class="lineno"> 2229</span> </div>
+<div class="line"><a id="l02230" name="l02230"></a><span class="lineno"> 2230</span>  os &lt;&lt; <span class="stringliteral">&quot;\n}\n&quot;</span>;</div>
+<div class="line"><a id="l02231" name="l02231"></a><span class="lineno"> 2231</span>}</div>
 </div>
-<div class="line"><a id="l02233" name="l02233"></a><span class="lineno"> 2233</span> </div>
-<div class="line"><a id="l02234" name="l02234"></a><span class="lineno"> 2234</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l02232" name="l02232"></a><span class="lineno"> 2232</span> </div>
+<div class="line"><a id="l02233" name="l02233"></a><span class="lineno"> 2233</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aAnalysisUtil_8h_html"><div class="ttname"><a href="AnalysisUtil_8h.html">AnalysisUtil.h</a></div></div>
 <div class="ttc" id="aArrayTypeHelper_8h_html"><div class="ttname"><a href="ArrayTypeHelper_8h.html">ArrayTypeHelper.h</a></div></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -2499,7 +2498,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IntervalAnalys
 <div class="ttc" id="aclassllzk_1_1Interval_html_ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f"><div class="ttname"><a href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">llzk::Interval::Type::Entire</a></div><div class="ttdeci">@ Entire</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8h_source.html#l00209">Intervals.h:209</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Interval_html_ae7090a31ef19bbaaf1787b08fb76a79aace2c8aed9c2fa0cfbed56cbda4d8bf07"><div class="ttname"><a href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aace2c8aed9c2fa0cfbed56cbda4d8bf07">llzk::Interval::Type::Empty</a></div><div class="ttdeci">@ Empty</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8h_source.html#l00209">Intervals.h:209</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Interval_html_afb06a47bf4e8eebceaed94398087d34d"><div class="ttname"><a href="classllzk_1_1Interval.html#afb06a47bf4e8eebceaed94398087d34d">llzk::Interval::join</a></div><div class="ttdeci">Interval join(const Interval &amp;rhs) const</div><div class="ttdoc">Union.</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00257">Intervals.cpp:257</a></div></div>
-<div class="ttc" id="aclassllzk_1_1SourceRefAnalysis_html_a894529f40fcfa3574011e7468d16292c"><div class="ttname"><a href="classllzk_1_1SourceRefAnalysis.html#a894529f40fcfa3574011e7468d16292c">llzk::SourceRefAnalysis::getValueState</a></div><div class="ttdeci">static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &amp;solver, mlir::Value val)</div><div class="ttdef"><b>Definition</b> <a href="ConstraintDependencyGraph_8cpp_source.html#l00048">ConstraintDependencyGraph.cpp:48</a></div></div>
+<div class="ttc" id="aclassllzk_1_1SourceRefAnalysis_html_a894529f40fcfa3574011e7468d16292c"><div class="ttname"><a href="classllzk_1_1SourceRefAnalysis.html#a894529f40fcfa3574011e7468d16292c">llzk::SourceRefAnalysis::getValueState</a></div><div class="ttdeci">static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &amp;solver, mlir::Value val)</div><div class="ttdef"><b>Definition</b> <a href="ConstraintDependencyGraph_8cpp_source.html#l00049">ConstraintDependencyGraph.cpp:49</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRefIndex_html"><div class="ttname"><a href="classllzk_1_1SourceRefIndex.html">llzk::SourceRefIndex</a></div><div class="ttdoc">Defines an index into an LLZK object.</div><div class="ttdef"><b>Definition</b> <a href="SourceRef_8h_source.html#l00043">SourceRef.h:43</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRefLatticeValue_html"><div class="ttname"><a href="classllzk_1_1SourceRefLatticeValue.html">llzk::SourceRefLatticeValue</a></div><div class="ttdoc">A value at a given point of the SourceRefLattice.</div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8h_source.html#l00027">SourceRefLattice.h:28</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRefLatticeValue_html_a77853bb944b513a04261789d0040064a"><div class="ttname"><a href="classllzk_1_1SourceRefLatticeValue.html#a77853bb944b513a04261789d0040064a">llzk::SourceRefLatticeValue::referencePodRecord</a></div><div class="ttdeci">mlir::FailureOr&lt; std::pair&lt; SourceRefLatticeValue, mlir::ChangeResult &gt; &gt; referencePodRecord(mlir::StringAttr recordName) const</div><div class="ttdoc">Add the given pod recordName to the SourceRefs contained within this value.</div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00163">SourceRefLattice.cpp:163</a></div></div>
@@ -2512,10 +2511,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IntervalAnalys
 <div class="ttc" id="aclassllzk_1_1SourceRef_html_a6d3a2eebe39597a8d729892d18ba548c"><div class="ttname"><a href="classllzk_1_1SourceRef.html#a6d3a2eebe39597a8d729892d18ba548c">llzk::SourceRef::Path</a></div><div class="ttdeci">std::vector&lt; SourceRefIndex &gt; Path</div><div class="ttdef"><b>Definition</b> <a href="SourceRef_8h_source.html#l00148">SourceRef.h:148</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRef_html_a6d98d6d83de09ac058689bdc1945e2c7"><div class="ttname"><a href="classllzk_1_1SourceRef.html#a6d98d6d83de09ac058689bdc1945e2c7">llzk::SourceRef::getAllSourceRefs</a></div><div class="ttdeci">static std::vector&lt; SourceRef &gt; getAllSourceRefs(mlir::SymbolTableCollection &amp;tables, mlir::ModuleOp mod, const SourceRef &amp;root)</div><div class="ttdoc">Produce all possible SourceRefs that are present starting from the given root.</div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRef_html_af9c7c7c33bb4c85ade8ccca472476314"><div class="ttname"><a href="classllzk_1_1SourceRef.html#af9c7c7c33bb4c85ade8ccca472476314">llzk::SourceRef::getType</a></div><div class="ttdeci">mlir::Type getType() const</div><div class="ttdef"><b>Definition</b> <a href="SourceRef_8cpp_source.html#l00342">SourceRef.cpp:342</a></div></div>
-<div class="ttc" id="aclassllzk_1_1StructIntervalAnalysis_html"><div class="ttname"><a href="classllzk_1_1StructIntervalAnalysis.html">llzk::StructIntervalAnalysis</a></div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8h_source.html#l00598">IntervalAnalysis.h:598</a></div></div>
-<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a054934f1a85e494ca568ff939e9e6c8b"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a054934f1a85e494ca568ff939e9e6c8b">llzk::StructIntervals::getConstrainIntervals</a></div><div class="ttdeci">const llvm::MapVector&lt; SourceRef, Interval &gt; &amp; getConstrainIntervals() const</div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8h_source.html#l00551">IntervalAnalysis.h:551</a></div></div>
-<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a345cf4f34766463650586f389959fe77"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a345cf4f34766463650586f389959fe77">llzk::StructIntervals::getConstrainUnreducedIntervals</a></div><div class="ttdeci">const llvm::MapVector&lt; SourceRef, UnreducedInterval &gt; &amp; getConstrainUnreducedIntervals() const</div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8h_source.html#l00555">IntervalAnalysis.h:555</a></div></div>
-<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a91f41e7e5aa189f28fe908f2a481ad1b"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a91f41e7e5aa189f28fe908f2a481ad1b">llzk::StructIntervals::print</a></div><div class="ttdeci">void print(mlir::raw_ostream &amp;os, bool withConstraints=false, bool printCompute=false, bool printUnreduced=false) const</div><div class="ttdef"><b>Definition</b> <a href="#l02160">IntervalAnalysis.cpp:2160</a></div></div>
+<div class="ttc" id="aclassllzk_1_1StructIntervalAnalysis_html"><div class="ttname"><a href="classllzk_1_1StructIntervalAnalysis.html">llzk::StructIntervalAnalysis</a></div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8h_source.html#l00596">IntervalAnalysis.h:596</a></div></div>
+<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a054934f1a85e494ca568ff939e9e6c8b"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a054934f1a85e494ca568ff939e9e6c8b">llzk::StructIntervals::getConstrainIntervals</a></div><div class="ttdeci">const llvm::MapVector&lt; SourceRef, Interval &gt; &amp; getConstrainIntervals() const</div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8h_source.html#l00549">IntervalAnalysis.h:549</a></div></div>
+<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a345cf4f34766463650586f389959fe77"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a345cf4f34766463650586f389959fe77">llzk::StructIntervals::getConstrainUnreducedIntervals</a></div><div class="ttdeci">const llvm::MapVector&lt; SourceRef, UnreducedInterval &gt; &amp; getConstrainUnreducedIntervals() const</div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8h_source.html#l00553">IntervalAnalysis.h:553</a></div></div>
+<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a91f41e7e5aa189f28fe908f2a481ad1b"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a91f41e7e5aa189f28fe908f2a481ad1b">llzk::StructIntervals::print</a></div><div class="ttdeci">void print(mlir::raw_ostream &amp;os, bool withConstraints=false, bool printCompute=false, bool printUnreduced=false) const</div><div class="ttdef"><b>Definition</b> <a href="#l02159">IntervalAnalysis.cpp:2159</a></div></div>
 <div class="ttc" id="aclassllzk_1_1StructIntervals_html_af6d7895ce3ce155ebc666486832df65d"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#af6d7895ce3ce155ebc666486832df65d">llzk::StructIntervals::computeIntervals</a></div><div class="ttdeci">mlir::LogicalResult computeIntervals(mlir::DataFlowSolver &amp;solver, mlir::AnalysisManager &amp;am, const IntervalAnalysisContext &amp;ctx)</div><div class="ttdef"><b>Definition</b> <a href="#l01831">IntervalAnalysis.cpp:1831</a></div></div>
 <div class="ttc" id="aclassllzk_1_1UnreducedInterval_html"><div class="ttname"><a href="classllzk_1_1UnreducedInterval.html">llzk::UnreducedInterval</a></div><div class="ttdoc">An inclusive interval [a, b] where a and b are arbitrary integers not necessarily bound to a given fi...</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8h_source.html#l00026">Intervals.h:26</a></div></div>
 <div class="ttc" id="aclassllzk_1_1UnreducedInterval_html_a6812fca806618af19a06573ad2f9813f"><div class="ttname"><a href="classllzk_1_1UnreducedInterval.html#a6812fca806618af19a06573ad2f9813f">llzk::UnreducedInterval::computeLTPart</a></div><div class="ttdeci">UnreducedInterval computeLTPart(const UnreducedInterval &amp;rhs) const</div><div class="ttdoc">Return the part of the interval that is guaranteed to be less than the rhs&#39;s max value.</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00063">Intervals.cpp:63</a></div></div>
@@ -2565,7 +2564,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IntervalAnalys
 <div class="ttc" id="anamespacellzk_html_a2176aa1303939b2957b8385543246aea"><div class="ttname"><a href="namespacellzk.html#a2176aa1303939b2957b8385543246aea">llzk::fallbackUnaryOp</a></div><div class="ttdeci">ExpressionValue fallbackUnaryOp(const llvm::SMTSolverRef &amp;solver, Operation *op, const ExpressionValue &amp;val)</div><div class="ttdef"><b>Definition</b> <a href="#l00598">IntervalAnalysis.cpp:598</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a353b99dc283d18cdecb549edcb8d096f"><div class="ttname"><a href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">llzk::FUNC_NAME_CONSTRAIN</a></div><div class="ttdeci">constexpr char FUNC_NAME_CONSTRAIN[]</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00017">Constants.h:17</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a42c87397f5103f0624b2087fb40b1a2a"><div class="ttname"><a href="namespacellzk.html#a42c87397f5103f0624b2087fb40b1a2a">llzk::signedMod</a></div><div class="ttdeci">Interval signedMod(const Interval &amp;lhs, const Interval &amp;rhs)</div><div class="ttdoc">Computes signed integer remainder with possibly non-Degenerate divisors.</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00555">Intervals.cpp:555</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a43a1a0bc20c43606f2cd2aa67022fdac"><div class="ttname"><a href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">llzk::ensure</a></div><div class="ttdeci">void ensure(bool condition, const llvm::Twine &amp;errMsg)</div><div class="ttdef"><b>Definition</b> <a href="ErrorHelper_8h_source.html#l00159">ErrorHelper.h:159</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a43a1a0bc20c43606f2cd2aa67022fdac"><div class="ttname"><a href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">llzk::ensure</a></div><div class="ttdeci">void ensure(bool condition, const llvm::Twine &amp;errMsg)</div><div class="ttdef"><b>Definition</b> <a href="ErrorHelper_8h_source.html#l00162">ErrorHelper.h:162</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a536563485d7849982f0a5d6949cf8a4f"><div class="ttname"><a href="namespacellzk.html#a536563485d7849982f0a5d6949cf8a4f">llzk::boolXor</a></div><div class="ttdeci">ExpressionValue boolXor(const llvm::SMTSolverRef &amp;solver, const ExpressionValue &amp;lhs, const ExpressionValue &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="#l00561">IntervalAnalysis.cpp:561</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a562ddceaa4861060a3920d4427ac2909"><div class="ttname"><a href="namespacellzk.html#a562ddceaa4861060a3920d4427ac2909">llzk::cmp</a></div><div class="ttdeci">ExpressionValue cmp(const llvm::SMTSolverRef &amp;solver, CmpOp op, const ExpressionValue &amp;lhs, const ExpressionValue &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="#l00478">IntervalAnalysis.cpp:478</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a573de69c46da2c30863428ac17deeae8"><div class="ttname"><a href="namespacellzk.html#a573de69c46da2c30863428ac17deeae8">llzk::neg</a></div><div class="ttdeci">ExpressionValue neg(const llvm::SMTSolverRef &amp;solver, const ExpressionValue &amp;val)</div><div class="ttdef"><b>Definition</b> <a href="#l00572">IntervalAnalysis.cpp:572</a></div></div>

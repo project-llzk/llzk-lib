@@ -152,45 +152,53 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeCAPITestGe
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">//</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="CommonAttrOrTypeCAPITestGen_8h.html">CommonAttrOrTypeCAPITestGen.h</a>&quot;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="CommonCAPIGen_8h.html">CommonCAPIGen.h</a>&quot;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/TableGen/AttrOrTypeDef.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/TableGen/Dialect.h&gt;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/TableGen/GenInfo.h&gt;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;llvm/ADT/StringExtras.h&gt;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;llvm/Support/FormatVariadic.h&gt;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;llvm/TableGen/Record.h&gt;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;llvm/TableGen/TableGenBackend.h&gt;</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir_1_1tblgen.html">mlir::tblgen</a>;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">static</span> <span class="keywordtype">bool</span> emitTypeCAPITests(<span class="keyword">const</span> llvm::RecordKeeper &amp;records, raw_ostream &amp;os) {</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="comment">// Generate file header</span></div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  emitSourceFileHeader(<span class="stringliteral">&quot;Type C API Tests&quot;</span>, os, records);</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="comment">// Create generator with test object creation expression</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <a class="code hl_struct" href="structAttrOrTypeTestGenerator.html">AttrOrTypeTestGenerator</a> generator(<span class="stringliteral">&quot;Type&quot;</span>, os);</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="comment">// Generate test class prologue</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  generator.genTestClassPrologue();</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="comment">// Generate tests for each type</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *def : records.getAllDerivedDefinitions(<span class="stringliteral">&quot;TypeDef&quot;</span>)) {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keyword">const</span> AttrOrTypeDef type(def);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    generator.genCompleteRecord(type, <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>}</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="keyword">static</span> mlir::GenRegistration</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    genTypeCAPITests(<span class="stringliteral">&quot;gen-type-capi-tests&quot;</span>, <span class="stringliteral">&quot;Generate type C API unit tests&quot;</span>, &amp;emitTypeCAPITests);</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="CAPIGenRegistration_8h.html">CAPIGenRegistration.h</a>&quot;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="CommonAttrOrTypeCAPITestGen_8h.html">CommonAttrOrTypeCAPITestGen.h</a>&quot;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;<a class="code" href="CommonCAPIGen_8h.html">CommonCAPIGen.h</a>&quot;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/TableGen/AttrOrTypeDef.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/TableGen/Dialect.h&gt;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/TableGen/GenInfo.h&gt;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;llvm/ADT/StringExtras.h&gt;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;llvm/Support/FormatVariadic.h&gt;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;llvm/TableGen/Record.h&gt;</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;llvm/TableGen/TableGenBackend.h&gt;</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir_1_1tblgen.html">mlir::tblgen</a>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">static</span> <span class="keywordtype">bool</span> emitTypeCAPITests(<span class="keyword">const</span> llvm::RecordKeeper &amp;records, raw_ostream &amp;os) {</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="comment">// Generate file header</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  emitSourceFileHeader(<span class="stringliteral">&quot;Type C API Tests&quot;</span>, os, records);</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="comment">// Create generator with test object creation expression</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <a class="code hl_struct" href="structAttrOrTypeTestGenerator.html">AttrOrTypeTestGenerator</a> generator(<span class="stringliteral">&quot;Type&quot;</span>, os);</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="comment">// Generate test class prologue</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  generator.genTestClassPrologue();</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="comment">// Generate tests for each type</span></div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *def : records.getAllDerivedDefinitions(<span class="stringliteral">&quot;TypeDef&quot;</span>)) {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keyword">const</span> AttrOrTypeDef type(def);</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    generator.genCompleteRecord(type, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  }</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="foldopen" id="foldopen00060" data-start="{" data-end="}">
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="namespacellzk.html#a33b1b2798a60bf891181d48a402424f2">   60</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a33b1b2798a60bf891181d48a402424f2">llzk::registerTypeCAPITestGenerator</a>() {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">static</span> mlir::GenRegistration genTypeCAPITests(</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      <span class="stringliteral">&quot;gen-type-capi-tests&quot;</span>, <span class="stringliteral">&quot;Generate type C API unit tests&quot;</span>, &amp;emitTypeCAPITests</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  );</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
+</div>
+<div class="ttc" id="aCAPIGenRegistration_8h_html"><div class="ttname"><a href="CAPIGenRegistration_8h.html">CAPIGenRegistration.h</a></div></div>
 <div class="ttc" id="aCommonAttrOrTypeCAPITestGen_8h_html"><div class="ttname"><a href="CommonAttrOrTypeCAPITestGen_8h.html">CommonAttrOrTypeCAPITestGen.h</a></div><div class="ttdoc">This file provides common utilities for generating C API link tests for attributes and types.</div></div>
 <div class="ttc" id="aCommonCAPIGen_8h_html"><div class="ttname"><a href="CommonCAPIGen_8h.html">CommonCAPIGen.h</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a33b1b2798a60bf891181d48a402424f2"><div class="ttname"><a href="namespacellzk.html#a33b1b2798a60bf891181d48a402424f2">llzk::registerTypeCAPITestGenerator</a></div><div class="ttdeci">void registerTypeCAPITestGenerator()</div><div class="ttdoc">Register the type C API test generator before command-line parsing.</div><div class="ttdef"><b>Definition</b> <a href="#l00060">TypeCAPITestGen.cpp:60</a></div></div>
 <div class="ttc" id="anamespacemlir_1_1tblgen_html"><div class="ttname"><a href="namespacemlir_1_1tblgen.html">mlir::tblgen</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
 <div class="ttc" id="astructAttrOrTypeTestGenerator_html"><div class="ttname"><a href="structAttrOrTypeTestGenerator.html">AttrOrTypeTestGenerator</a></div><div class="ttdoc">Base class for attribute and type test generators.</div><div class="ttdef"><b>Definition</b> <a href="CommonAttrOrTypeCAPITestGen_8h_source.html#l00078">CommonAttrOrTypeCAPITestGen.h:78</a></div></div>

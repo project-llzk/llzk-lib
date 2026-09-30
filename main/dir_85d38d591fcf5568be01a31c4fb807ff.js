@@ -2,6 +2,7 @@ var dir_85d38d591fcf5568be01a31c4fb807ff =
 [
     [ "AttrCAPIGen.cpp", "AttrCAPIGen_8cpp.html", null ],
     [ "AttrCAPITestGen.cpp", "AttrCAPITestGen_8cpp.html", null ],
+    [ "CAPIGenRegistration.h", "CAPIGenRegistration_8h.html", "CAPIGenRegistration_8h" ],
     [ "CommonAttrOrTypeCAPIGen.h", "CommonAttrOrTypeCAPIGen_8h.html", "CommonAttrOrTypeCAPIGen_8h" ],
     [ "CommonAttrOrTypeCAPITestGen.cpp", "CommonAttrOrTypeCAPITestGen_8cpp.html", "CommonAttrOrTypeCAPITestGen_8cpp" ],
     [ "CommonAttrOrTypeCAPITestGen.h", "CommonAttrOrTypeCAPITestGen_8h.html", "CommonAttrOrTypeCAPITestGen_8h" ],

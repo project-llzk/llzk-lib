@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolLookup_8
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno"><a class="line" href="classllzk_1_1SymbolLookupResultUntyped.html#a7df297e3f170aa16f27deb799ddf09b8">  125</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1SymbolLookupResultUntyped.html#a7df297e3f170aa16f27deb799ddf09b8">SymbolLookupResultUntyped::prependNamespace</a>(llvm::ArrayRef&lt;llvm::StringRef&gt; ns) {</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  std::vector&lt;llvm::StringRef&gt; newNamespace = ns;</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  newNamespace.insert(newNamespace.end(), namespaceStack.begin(), namespaceStack.end());</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  namespaceStack = newNamespace;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  namespaceStack = std::move(newNamespace);</div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>}</div>
 </div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
