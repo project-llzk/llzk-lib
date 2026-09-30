@@ -101,6 +101,7 @@ TEST_P(WitgenFieldTests, DefaultValueFailsOnUninitializedRead) {
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rng(0);
   auto value = witgen::defaultValue(
       feltType, tables, nullptr, field->get(), witgen::UninitializedBehavior::Fail, &rng
@@ -118,7 +119,9 @@ TEST_P(WitgenFieldTests, RandomDefaultValueIsSeeded) {
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngA(1234);
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngB(1234);
   auto lhs = witgen::defaultValue(
       arrayType, tables, nullptr, field->get(), witgen::UninitializedBehavior::Random, &rngA
@@ -158,7 +161,9 @@ TEST_P(WitgenFieldTests, SharedRandomHelpersAreSeeded) {
   auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngA(1234);
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngB(1234);
 
   EXPECT_EQ(
@@ -172,6 +177,7 @@ TEST_P(WitgenFieldTests, RandomFieldHelperReturnsReducedValues) {
   auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rng(1234);
   for (size_t i = 0; i < 16; ++i) {
     auto value = witgen::randomFieldElement(rng, field->get());
@@ -298,6 +304,7 @@ TEST_P(WitgenFieldTests, NestedAggregateFailModeMaterializesMonostate) {
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rng(0);
   auto value = witgen::defaultValue(
       arrayType, tables, nullptr, field->get(), witgen::UninitializedBehavior::Fail, &rng
@@ -370,6 +377,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(2)};
@@ -410,6 +418,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesNegativeUnsignedForBounds) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(1), int64_t(2)};
@@ -444,6 +453,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenFalse) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {false};
@@ -478,6 +488,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenTrue) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {true};
@@ -490,7 +501,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenTrue) {
 
 TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
   auto field = Field::getField("goldilocks");
-  auto overflowingValue = field.reduce(llvm::APInt(64, uint64_t(1) << 63));
+  auto overflowingValue = field.reduce(llvm::APInt(64, uint64_t(1) << 63U));
 
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
@@ -510,6 +521,7 @@ TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
 
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       *module, tables, field, witgen::UninitializedBehavior::Zero, std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {overflowingValue};
@@ -547,6 +559,7 @@ TEST_P(WitgenFieldTests, InterpreterFailsDuringFinalWitnessSerialization) {
   SymbolTableCollection tables;
   witgen::Interpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Fail,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   interpreter.setOutputScope(witgen::OutputScope::Public);

@@ -107,7 +107,7 @@ TEST_F({2}{1}LinkTests, Get_{3}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
@@ -131,7 +131,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramName,
+        fmt, getFunctionPrefix(), kind, dialectNameCapitalized, className, paramName,
         paramNameCapitalized
     );
   }
@@ -151,7 +151,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}Count) {{
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramName,
+        fmt, getFunctionPrefix(), kind, dialectNameCapitalized, className, paramName,
         paramNameCapitalized
     );
   }
@@ -171,7 +171,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramName,
+        fmt, getFunctionPrefix(), kind, dialectNameCapitalized, className, paramName,
         paramNameCapitalized
     );
   }
@@ -180,26 +180,26 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
     mlir::tblgen::Dialect defDialect = def.getDialect();
 
     // Generate for the selected dialect only
-    if (defDialect.getName() != DialectName) {
+    if (defDialect.getName() != getDialectName()) {
       return;
     }
 
     this->setNamespaceAndClassName(defDialect, def.getCppClassName());
 
     // Generate IsA test
-    if (GenIsA) {
+    if (getGenIsA()) {
       this->genIsATest();
     }
 
     // Generate Get builder test
-    if (GenTypeOrAttrGet && !def.skipDefaultBuilders()) {
+    if (getGenTypeOrAttrGet() && !def.skipDefaultBuilders()) {
       std::string dummyParams = generateDummyParamsForAttrOrTypeGet(def, isType);
       std::string paramList = generateParamListForAttrOrTypeGet(def);
       this->genGetBuilderTest(dummyParams, paramList);
     }
 
     // Generate parameter getter tests
-    if (GenTypeOrAttrParamGetters) {
+    if (getGenTypeOrAttrParamGetters()) {
       for (const auto &param : def.getParameters()) {
         this->setParamName(param.getName());
         mlir::StringRef cppType = param.getCppType();
@@ -213,7 +213,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
     }
 
     // Generate extra class method tests
-    if (GenExtraClassMethods) {
+    if (getGenExtraClassMethods()) {
       std::optional<mlir::StringRef> extraDecls = def.getExtraDecls();
       if (extraDecls.has_value()) {
         this->genExtraMethods(extraDecls.value());

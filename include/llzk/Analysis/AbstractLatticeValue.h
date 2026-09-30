@@ -242,7 +242,7 @@ protected:
     if (getScalarValue() == lhs) {
       return mlir::ChangeResult::NoChange;
     }
-    getScalarValue() = lhs;
+    getScalarValue() = std::move(lhs);
     return mlir::ChangeResult::Change;
   }
 

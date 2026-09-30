@@ -41,6 +41,9 @@ private:
       }
     }
 
+    // Intentional hiding: std::visit dispatches using the concrete type,
+    // and the derived destructor explicitly calls this method.
+    // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
     void report() {
       InFlightDiagnostic::report();
       assert(false);

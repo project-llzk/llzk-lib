@@ -11,6 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CAPIGenRegistration.h"
 #include "CommonAttrOrTypeCAPIGen.h"
 #include "CommonCAPIGen.h"
 
@@ -56,9 +57,12 @@ static bool emitTypeCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os)
   return false;
 }
 
-static mlir::GenRegistration genTypeCAPIHeader(
-    "gen-type-capi-header", "Generate type C API header declarations", &emitTypeCAPIHeader
-);
+void llzk::registerTypeCAPIGenerators() {
+  static mlir::GenRegistration genTypeCAPIHeader(
+      "gen-type-capi-header", "Generate type C API header declarations", &emitTypeCAPIHeader
+  );
 
-static mlir::GenRegistration
-    genTypeCAPIImpl("gen-type-capi-impl", "Generate type C API implementations", &emitTypeCAPIImpl);
+  static mlir::GenRegistration genTypeCAPIImpl(
+      "gen-type-capi-impl", "Generate type C API implementations", &emitTypeCAPIImpl
+  );
+}
