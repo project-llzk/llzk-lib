@@ -44,6 +44,10 @@
 
 namespace llzk::smt::detail {
 
+// Keep references to the upstream SMT dialect unambiguous inside LLZK's own
+// `llzk::smt` pass namespace.
+namespace smt = mlir::smt;
+
 /// Theory-neutral primitive emitter interface used by non-native encoders.
 class NonNativeTheoryEmitter {
 public:

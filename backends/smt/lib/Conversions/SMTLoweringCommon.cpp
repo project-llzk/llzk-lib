@@ -17,8 +17,6 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
@@ -39,9 +37,9 @@ std::pair<Value, Value> SMTIntTheoryEmitter::getRangeBoundAssertions(
   auto lower = createIntConstant(builder, loc, range.getLHS());
   auto upper = createIntConstant(builder, loc, range.getRHS());
   auto lowerBound =
-      builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, value, lower.getResult());
+      smt::IntCmpOp::create(builder, loc, smt::IntPredicate::ge, value, lower.getResult());
   auto upperBound =
-      builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::le, value, upper.getResult());
+      smt::IntCmpOp::create(builder, loc, smt::IntPredicate::le, value, upper.getResult());
 
   return {lowerBound.getResult(), upperBound.getResult()};
 }
@@ -51,16 +49,16 @@ void SMTIntTheoryEmitter::emitRangeConstraint(
 ) const {
   auto [lowerBound, upperBound] = getRangeBoundAssertions(builder, loc, value, range);
   // Assert the lower bound of the canonical/unreduced interval for this symbol.
-  builder.create<smt::AssertOp>(loc, lowerBound);
+  smt::AssertOp::create(builder, loc, lowerBound);
   // Assert the upper bound of the canonical/unreduced interval for this symbol.
-  builder.create<smt::AssertOp>(loc, upperBound);
+  smt::AssertOp::create(builder, loc, upperBound);
 }
 
 Value SMTIntTheoryEmitter::emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const {
   std::string freshName = getFreshName(name);
-  return builder
-      .create<smt::DeclareFunOp>(loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName))
-      .getResult();
+  return smt::DeclareFunOp::create(
+             builder, loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
+  ).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitConstant(
@@ -70,19 +68,19 @@ Value SMTIntTheoryEmitter::emitConstant(
 }
 
 Value SMTIntTheoryEmitter::emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return builder.create<smt::IntSubOp>(loc, lhs, rhs).getResult();
+  return smt::IntSubOp::create(builder, loc, lhs, rhs).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return builder.create<smt::IntAddOp>(loc, ValueRange {lhs, rhs}).getResult();
+  return smt::IntAddOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return builder.create<smt::IntMulOp>(loc, ValueRange {lhs, rhs}).getResult();
+  return smt::IntMulOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return builder.create<smt::IntDivOp>(loc, lhs, rhs).getResult();
+  return smt::IntDivOp::create(builder, loc, lhs, rhs).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitSignedDiv(
@@ -101,7 +99,7 @@ Value SMTIntTheoryEmitter::emitSignedRem(
 
 Value SMTIntTheoryEmitter::emitModPrime(OpBuilder &builder, Location loc, Value value) const {
   auto primeConst = createPrimeConstant(builder, loc);
-  return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()}).getResult();
+  return smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()}).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const {
@@ -118,7 +116,7 @@ Value SMTIntTheoryEmitter::emitOrderedComparison(
       {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
       {boolean::FeltCmpPredicate::LT, smt::IntPredicate::lt}
   };
-  return builder.create<smt::IntCmpOp>(loc, predicateComparator[predicate], lhs, rhs).getResult();
+  return smt::IntCmpOp::create(builder, loc, predicateComparator[predicate], lhs, rhs).getResult();
 }
 
 /// |value| = if value < 0 then -value else value
@@ -127,7 +125,7 @@ Value SMTIntTheoryEmitter::emitAbsValue(OpBuilder &builder, Location loc, Value 
   Value isNegative =
       emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
   Value negated = emitSub(builder, loc, zero, value);
-  return builder.create<smt::IteOp>(loc, isNegative, negated, value).getResult();
+  return smt::IteOp::create(builder, loc, isNegative, negated, value).getResult();
 }
 
 /// absQuotient = |lhs| / |rhs|
@@ -142,9 +140,9 @@ Value SMTIntTheoryEmitter::emitTruncatingSignedDivision(
   Value rhsAbs = emitAbsValue(builder, loc, rhs);
   Value absQuotient = emitDiv(builder, loc, lhsAbs, rhsAbs);
   // we can use xor here because we are checking if the signs are different
-  Value signsDiffer = builder.create<smt::XOrOp>(loc, ValueRange {lhsNeg, rhsNeg}).getResult();
+  Value signsDiffer = smt::XOrOp::create(builder, loc, ValueRange {lhsNeg, rhsNeg}).getResult();
   Value negatedQuotient = emitSub(builder, loc, zero, absQuotient);
-  return builder.create<smt::IteOp>(loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+  return smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient).getResult();
 }
 
 std::string SMTIntTheoryEmitter::getFreshName(StringRef baseName) const {
@@ -161,13 +159,13 @@ std::string SMTIntTheoryEmitter::getFreshName(StringRef baseName) const {
 
 smt::IntConstantOp
 SMTIntTheoryEmitter::createPrimeConstant(OpBuilder &builder, Location loc) const {
-  return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, prime));
+  return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, prime));
 }
 
 smt::IntConstantOp SMTIntTheoryEmitter::createIntConstant(
     OpBuilder &builder, Location loc, const DynamicAPInt &value
 ) const {
-  return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, toAPSInt(value)));
+  return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, toAPSInt(value)));
 }
 
 FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
@@ -200,7 +198,7 @@ Value SMTIntTheoryEmitter::emitArraySelect(
     Location loc, Value array, ValueRange indices, OpBuilder &builder
 ) {
   for (auto index : indices) {
-    array = builder.create<smt::ArraySelectOp>(loc, array, index).getResult();
+    array = smt::ArraySelectOp::create(builder, loc, array, index).getResult();
   }
   return array;
 }
@@ -242,11 +240,11 @@ Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
       antecedents.push_back(hi);
     }
 
-    Value antecedent = b.create<smt::AndOp>(l, antecedents).getResult();
+    Value antecedent = smt::AndOp::create(b, l, antecedents).getResult();
     auto consequent = body(indices);
-    return b.create<smt::ImpliesOp>(l, antecedent, consequent);
+    return smt::ImpliesOp::create(b, l, antecedent, consequent);
   };
-  return builder.create<smt::ForallOp>(loc, forallTypes, elementInRange).getResult();
+  return smt::ForallOp::create(builder, loc, forallTypes, elementInRange).getResult();
 }
 
 static inline Type smtArrayOfRank(MLIRContext *ctx, int64_t rank, Type elementType) {
@@ -512,7 +510,7 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
     auto reducedSelected = emitter->emitModPrime(rewriter, op->getLoc(), selected);
     auto reducedRval = emitter->emitModPrime(rewriter, op->getLoc(), adaptor.getRvalue());
     rewriter.replaceOpWithNewOp<smt::AssertOp>(
-        op, rewriter.create<smt::EqOp>(op->getLoc(), reducedSelected, reducedRval).getResult()
+        op, smt::EqOp::create(rewriter, op->getLoc(), reducedSelected, reducedRval).getResult()
     );
     return success();
 
