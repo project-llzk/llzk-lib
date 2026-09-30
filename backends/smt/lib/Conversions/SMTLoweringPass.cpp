@@ -919,9 +919,11 @@ void OptimizedNonNativeStrategy::populatePatterns(
   patterns.add<
       BasicConverter<felt::AddFeltOp, mlir::smt::IntAddOp>,
       BasicConverter<felt::SubFeltOp, mlir::smt::IntSubOp>,
-      BasicConverter<felt::MulFeltOp, mlir::smt::IntMulOp>, FeltNegConverter,
+      BasicConverter<felt::MulFeltOp, mlir::smt::IntMulOp>,
       BasicConverter<felt::UnsignedModFeltOp, mlir::smt::IntModOp>, FeltConstConverter,
-      IndexConstConverter, ReturnConverter, SCFIfConverter, YieldConverter>(converter, context);
+      FeltNegConverter, IndexConstConverter, ReturnConverter, SCFIfConverter, YieldConverter>(
+      converter, context
+  );
   patterns.add<FunctionDefConverter>(converter, context);
   patterns.add<BoolCmpConverter>(converter, context, this);
   patterns.add<FeltDivConverter>(converter, context, this);
