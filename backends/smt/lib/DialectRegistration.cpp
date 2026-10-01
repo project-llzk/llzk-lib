@@ -15,13 +15,17 @@
 
 #include "smt/Conversions/ConversionPasses.h"
 
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.h"
+
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
 #include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/DialectRegistry.h>
 
 namespace llzk::smt {
 
-void registerDialects(mlir::DialectRegistry &registry) { registry.insert<mlir::smt::SMTDialect>(); }
+void registerDialects(mlir::DialectRegistry &registry) {
+  registry.insert<mlir::smt::SMTDialect, llzk::smt_info::SMTInfoDialect>();
+}
 
 void registerPasses(mlir::DialectRegistry &registry) {
   registerConversionPasses();

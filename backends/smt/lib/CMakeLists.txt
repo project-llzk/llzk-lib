@@ -6,7 +6,7 @@ add_library(SMT::DialectRegistration ALIAS SMTDialectRegistration)
 target_sources(SMTDialectRegistration PRIVATE DialectRegistration.cpp)
 target_link_libraries(
   SMTDialectRegistration
-  PUBLIC SMTConversions SMTDialectHeaders MLIRSMT
+  PUBLIC SMTConversions SMTDialectHeaders MLIRSMT SMTInfoDialect
   PRIVATE MLIRFuncInlinerExtension)
 llzk_target_add_mlir_link_settings(SMTDialectRegistration)
 

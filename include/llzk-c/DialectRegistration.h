@@ -41,7 +41,7 @@ MLIR_CAPI_EXPORTED void llzkRegisterR1CSDialects(MlirDialectRegistry registry);
 /// Registers R1CS passes.
 MLIR_CAPI_EXPORTED void llzkRegisterR1CSPasses(MlirDialectRegistry registry);
 
-/// Registers the MLIR smt dialect in the given registry.
+/// Registers the MLIR smt and LLZK smt_info metadata dialects in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterSMTDialects(MlirDialectRegistry registry);
 
 /// Registers SMT conversion passes.

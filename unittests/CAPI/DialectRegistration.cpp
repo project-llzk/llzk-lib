@@ -68,7 +68,9 @@ TEST(DialectRegistration, RegisterR1CSPasses) {
   checkPasses(llzkRegisterR1CSPasses, {"llzk-r1cs-lowering"});
 }
 
-TEST(DialectRegistration, RegisterSMTDialects) { checkDialects(llzkRegisterSMTDialects, {"smt"}); }
+TEST(DialectRegistration, RegisterSMTDialects) {
+  checkDialects(llzkRegisterSMTDialects, {"smt", "smt_info"});
+}
 
 TEST(DialectRegistration, RegisterSMTPasses) {
   checkPasses(

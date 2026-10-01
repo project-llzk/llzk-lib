@@ -20,7 +20,7 @@ class DialectRegistry;
 
 namespace llzk::smt {
 
-/// Register the MLIR smt dialect in \p registry.
+/// Register the MLIR smt and LLZK smt_info metadata dialects in \p registry.
 void registerDialects(mlir::DialectRegistry &registry);
 
 /// Register SMT conversion passes in the global pass registry.
