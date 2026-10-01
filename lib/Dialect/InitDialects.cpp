@@ -33,6 +33,7 @@
 #include <mlir/IR/DialectRegistry.h>
 
 namespace llzk {
+
 void registerAllDialects(mlir::DialectRegistry &registry) {
   registry.insert<
       // clang-format off
@@ -45,20 +46,21 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::felt::FeltDialect,
       llzk::function::FunctionDialect,
       llzk::global::GlobalDialect,
-      llzk::ram::RAMDialect,
       llzk::include::IncludeDialect,
-      llzk::string::StringDialect,
       llzk::pod::PODDialect,
       llzk::polymorphic::PolymorphicDialect,
-      mlir::smt::SMTDialect,
+      llzk::ram::RAMDialect,
       llzk::smt_info::SMTInfoDialect,
+      llzk::string::StringDialect,
       llzk::verif::VerifDialect,
       mlir::arith::ArithDialect,
-      mlir::scf::SCFDialect
+      mlir::scf::SCFDialect,
+      mlir::smt::SMTDialect
       // clang-format on
       >();
 
   registerInliningExtensions(registry);
   verif::registerExtensions(registry);
 }
+
 } // namespace llzk
