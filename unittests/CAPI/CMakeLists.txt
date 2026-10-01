@@ -6,6 +6,9 @@ target_link_libraries(
   LLZK_CAPI_C_Test
   PRIVATE
   LLZK::LLZKCAPI
+  R1CS::Transforms
+  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLConversion>
+  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLTransforms>
   SMTConversions
   ZKLean::Conversions
   MLIRCAPIIR

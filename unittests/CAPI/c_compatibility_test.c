@@ -12,6 +12,7 @@
  *
  *===----------------------------------------------------------------------===*/
 
+#include "llzk-c/Analysis.h"
 #include "llzk-c/Builder.h"
 #include "llzk-c/Constants.h"
 #include "llzk-c/DialectRegistration.h"
@@ -32,20 +33,145 @@
 #include "llzk-c/Dialect/LLZK.h"
 #include "llzk-c/Dialect/POD.h"
 #include "llzk-c/Dialect/Poly.h"
+#include "llzk-c/Dialect/RAM.h"
 #include "llzk-c/Dialect/String.h"
 #include "llzk-c/Dialect/Struct.h"
+#include "llzk-c/Dialect/Verif.h"
 
-/* Include generated backend conversion pass APIs from pure C. */
+#include "llzk/Config/Config.h"
+
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
-#include <mlir-c/RegisterEverything.h>
+#include <mlir-c/Pass.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Include generated backend pass APIs from pure C. */
+#include "r1cs/Transforms/TransformationPasses.capi.h.inc"
+#if LLZK_WITH_PCL
+#include "pcl/Conversion/ConversionPasses.capi.h.inc"
+#include "pcl/Transforms/TransformationPasses.capi.h.inc"
+#endif
 #include "smt/Conversions/ConversionPasses.capi.h.inc"
 #include "zklean/Conversions/ConversionPasses.capi.h.inc"
+
+/// Check every individual dialect handle independently of bulk registration.
+static int test_dialect_handles(void) {
+  MlirContext context = mlirContextCreate();
+  const MlirDialectHandle handles[] = {
+      mlirGetDialectHandle__llzk__array__(),
+      mlirGetDialectHandle__llzk__boolean__(),
+      mlirGetDialectHandle__llzk__cast__(),
+      mlirGetDialectHandle__llzk__constrain__(),
+      mlirGetDialectHandle__llzk__felt__(),
+      mlirGetDialectHandle__llzk__function__(),
+      mlirGetDialectHandle__llzk__global__(),
+      mlirGetDialectHandle__llzk__include__(),
+      mlirGetDialectHandle__llzk__(),
+      mlirGetDialectHandle__llzk__pod__(),
+      mlirGetDialectHandle__llzk__polymorphic__(),
+      mlirGetDialectHandle__llzk__ram__(),
+      mlirGetDialectHandle__llzk__string__(),
+      mlirGetDialectHandle__llzk__component__(),
+      mlirGetDialectHandle__llzk__verif__(),
+  };
+  int failed = 0;
+  for (size_t i = 0; i < sizeof(handles) / sizeof(handles[0]); ++i) {
+    MlirStringRef name = mlirDialectHandleGetNamespace(handles[i]);
+    if (mlirDialectIsNull(mlirDialectHandleLoadDialect(handles[i], context))) {
+      fprintf(stderr, "Failed to load dialect %.*s\n", (int)name.length, name.data);
+      failed = 1;
+    }
+  }
+  mlirContextDestroy(context);
+  return failed;
+}
+
+/// Check all pass group registrations, individual registrations, and constructors.
+static int test_passes(MlirContext context) {
+  mlirRegisterLLZKAnalysisPasses();
+  mlirRegisterLLZKArrayTransformationPasses();
+  mlirRegisterLLZKBoolTransformationPasses();
+  mlirRegisterLLZKGlobalTransformationPasses();
+  mlirRegisterLLZKIncludeTransformationPasses();
+  mlirRegisterLLZKPodTransformationPasses();
+  mlirRegisterLLZKPolymorphicTransformationPasses();
+  mlirRegisterLLZKStructTransformationPasses();
+  mlirRegisterLLZKTransformationPasses();
+  mlirRegisterLLZKValidationPasses();
+#if LLZK_WITH_PCL
+  mlirRegisterPCLConversionPasses();
+  mlirRegisterPCLTransformationPasses();
+#endif
+  mlirRegisterR1CSTransformationPasses();
+  mlirRegisterSMTConversionPasses();
+  mlirRegisterZKLeanConversionPasses();
+
+  /* Keep each registration and constructor paired, with its name for diagnostics. */
+  const struct {
+    const char *name;
+    void (*registerPass)(void);
+    MlirPass (*createPass)(void);
+  } passes[] = {
+#define PASS(name) {#name, mlirRegister##name, mlirCreate##name}
+      PASS(LLZKAnalysisCallGraphPrinterPass),
+      PASS(LLZKAnalysisCallGraphSCCsPrinterPass),
+      PASS(LLZKAnalysisConstraintDependencyGraphPrinterPass),
+      PASS(LLZKAnalysisIntervalAnalysisPrinterPass),
+      PASS(LLZKAnalysisPredecessorPrinterPass),
+      PASS(LLZKAnalysisSymbolDefTreePrinterPass),
+      PASS(LLZKAnalysisSymbolUseGraphPrinterPass),
+      PASS(LLZKArrayTransformationArrayToScalarPass),
+      PASS(LLZKArrayTransformationStraightLineStaticArrayPromotionPass),
+      PASS(LLZKBoolTransformationLowerBoolQuantifiersPass),
+      PASS(LLZKGlobalTransformationConstGlobalPropagationPass),
+      PASS(LLZKIncludeTransformationInlineIncludesPass),
+      PASS(LLZKPodTransformationPodToScalarPass),
+      PASS(LLZKPolymorphicTransformationEmptyTemplateRemovalPass),
+      PASS(LLZKPolymorphicTransformationFlatteningPass),
+      PASS(LLZKPolymorphicTransformationTypeVarInferencePass),
+      PASS(LLZKPolymorphicTransformationWildcardArraySpecializationPass),
+      PASS(LLZKStructTransformationInlineStructsPass),
+      PASS(LLZKTransformationComputeConstrainToProductPass),
+      PASS(LLZKTransformationEnforceNoMemberOverwritePass),
+      PASS(LLZKTransformationFuseProductControlFlowPass),
+      PASS(LLZKTransformationInlineFreeFunctionsPass),
+      PASS(LLZKTransformationPolyLoweringPass),
+      PASS(LLZKTransformationRedundantOperationEliminationPass),
+      PASS(LLZKTransformationRedundantReadAndWriteEliminationPass),
+      PASS(LLZKTransformationRemoveUnusedDiscardableAllocationsPass),
+      PASS(LLZKTransformationUnusedDeclarationEliminationPass),
+      PASS(LLZKTransformationWhileToForPass),
+      PASS(LLZKValidationMemberWriteValidatorPass),
+#if LLZK_WITH_PCL
+      PASS(PCLConversionPCLLoweringPass),
+      PASS(PCLTransformationTrimExprSizePass),
+#endif
+      PASS(R1CSTransformationR1CSLoweringPass),
+      PASS(SMTConversionSMTCFLoweringPass),
+      PASS(SMTConversionSMTLoweringPass),
+      PASS(SMTConversionSMTNaiveLoweringPass),
+      PASS(ZKLeanConversionConvertLLZKToZKLeanPass),
+      PASS(ZKLeanConversionConvertZKLeanToLLZKPass),
+#undef PASS
+  };
+  MlirPassManager manager = mlirPassManagerCreate(context);
+  int failed = 0;
+  for (size_t i = 0; i < sizeof(passes) / sizeof(passes[0]); ++i) {
+    passes[i].registerPass();
+    MlirPass pass = passes[i].createPass();
+    if (pass.ptr == NULL) {
+      fprintf(stderr, "Failed to create pass %s\n", passes[i].name);
+      failed = 1;
+    } else {
+      mlirPassManagerAddOwnedPass(manager, pass);
+    }
+  }
+  mlirPassManagerDestroy(manager);
+  return failed;
+}
 
 /*
  * Test basic C API functionality
@@ -60,7 +186,6 @@ int test_basic_api(void) {
 
   /* Register dialects */
   MlirDialectRegistry registry = mlirDialectRegistryCreate();
-  mlirRegisterAllDialects(registry);
   llzkRegisterCoreDialects(registry);
   llzkRegisterPCLDialects(registry);
   llzkRegisterR1CSDialects(registry);
@@ -73,34 +198,25 @@ int test_basic_api(void) {
   mlirContextLoadAllAvailableDialects(context);
   mlirDialectRegistryDestroy(registry);
 
-  /* Verify group registration, individual registration, and all pass constructors link. */
-  mlirRegisterSMTConversionPasses();
-  mlirRegisterSMTConversionSMTCFLoweringPass();
-  mlirRegisterSMTConversionSMTLoweringPass();
-  mlirRegisterSMTConversionSMTNaiveLoweringPass();
-  mlirRegisterZKLeanConversionPasses();
-  mlirRegisterZKLeanConversionConvertLLZKToZKLeanPass();
-  mlirRegisterZKLeanConversionConvertZKLeanToLLZKPass();
-
-  MlirPass passes[] = {
-      mlirCreateSMTConversionSMTCFLoweringPass(),
-      mlirCreateSMTConversionSMTLoweringPass(),
-      mlirCreateSMTConversionSMTNaiveLoweringPass(),
-      mlirCreateZKLeanConversionConvertLLZKToZKLeanPass(),
-      mlirCreateZKLeanConversionConvertZKLeanToLLZKPass(),
+  /* Check every dialect registered by the core and backend wrappers. */
+  const char *dialects[] = {
+      "llzk",    "array", "bool", "cast", "constrain", "felt",      "function",   "global",
+      "include", "pod",   "poly", "ram",  "smt_info",  "string",    "struct",     "verif",
+      "arith",   "scf",   "smt",  "r1cs", "ZKExpr",    "ZKBuilder", "ZKLeanLean", "func",
+#if LLZK_WITH_PCL
+      "pcl",
+#endif
   };
-  MlirPassManager manager = mlirPassManagerCreate(context);
-  int missingPass = 0;
-  for (size_t i = 0; i < sizeof(passes) / sizeof(passes[0]); ++i) {
-    if (passes[i].ptr == NULL) {
-      fprintf(stderr, "Failed to create backend conversion pass %zu\n", i);
-      missingPass = 1;
-    } else {
-      mlirPassManagerAddOwnedPass(manager, passes[i]);
+  int missingDialect = 0;
+  for (size_t i = 0; i < sizeof(dialects) / sizeof(dialects[0]); ++i) {
+    if (mlirDialectIsNull(
+            mlirContextGetOrLoadDialect(context, mlirStringRefCreateFromCString(dialects[i]))
+        )) {
+      fprintf(stderr, "Failed to register dialect %s\n", dialects[i]);
+      missingDialect = 1;
     }
   }
-  mlirPassManagerDestroy(manager);
-  if (missingPass) {
+  if (missingDialect || test_passes(context)) {
     mlirContextDestroy(context);
     return 1;
   }
@@ -129,6 +245,9 @@ int test_basic_api(void) {
 }
 
 int main(void) {
+  if (test_dialect_handles()) {
+    return 1;
+  }
   int result = test_basic_api();
   return result;
 }

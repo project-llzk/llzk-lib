@@ -2,6 +2,7 @@ add_library(LLZKCAPI)
 add_library(LLZK::LLZKCAPI ALIAS LLZKCAPI)
 
 target_sources(LLZKCAPI PRIVATE
+  Analysis.cpp
   Transforms.cpp
   Validators.cpp
   DialectRegistration.cpp
