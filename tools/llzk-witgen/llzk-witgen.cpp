@@ -28,6 +28,7 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
@@ -105,16 +106,16 @@ static int runMain(int argc, char **argv) {
 
   DialectRegistry registry;
   llzk::registerDialects(registry);
+  llzk::registerInliningExtensions(registry);
   mlir::func::registerInlinerExtension(registry);
   registry.insert<
       mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
       mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
+
   MLIRContext context;
   context.appendDialectRegistry(registry);
   context.loadAllAvailableDialects();
-  context.loadDialect<
-      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
-      mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
+
   if (failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
   }

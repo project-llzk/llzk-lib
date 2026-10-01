@@ -1,0 +1,70 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns --check-output %t/expected.json
+// RUN: test -s %t/witness.wtns
+
+// WTNS validation lowers a module clone to R1CS. Its struct inlining pass needs
+// the LLZK inlining interfaces when inlining subcomponent calls.
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Inner {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Inner> {
+      %self = struct.new : !struct.type<@Inner>
+      %c7 = felt.const 7 <"babybear">
+      struct.writem %self[@out] = %c7 : !struct.type<@Inner>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Inner>
+    }
+    function.def @constrain(%self: !struct.type<@Inner>) {
+      %out = struct.readm %self[@out] : !struct.type<@Inner>, !felt.type<"babybear">
+      %c7 = felt.const 7 <"babybear">
+      constrain.eq %out, %c7 : !felt.type<"babybear">
+      function.return
+    }
+  }
+
+  struct.def @Wrapper {
+    struct.member @inner : !struct.type<@Inner>
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Wrapper> {
+      %self = struct.new : !struct.type<@Wrapper>
+      %inner = function.call @Inner::@compute() : () -> !struct.type<@Inner>
+      struct.writem %self[@inner] = %inner : !struct.type<@Wrapper>, !struct.type<@Inner>
+      %out = struct.readm %inner[@out] : !struct.type<@Inner>, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@Wrapper>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Wrapper>
+    }
+    function.def @constrain(%self: !struct.type<@Wrapper>) {
+      %inner = struct.readm %self[@inner] : !struct.type<@Wrapper>, !struct.type<@Inner>
+      function.call @Inner::@constrain(%inner) : (!struct.type<@Inner>) -> ()
+      %innerOut = struct.readm %inner[@out] : !struct.type<@Inner>, !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@Wrapper>, !felt.type<"babybear">
+      constrain.eq %out, %innerOut : !felt.type<"babybear">
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %wrapper = function.call @Wrapper::@compute() : () -> !struct.type<@Wrapper>
+      %out = struct.readm %wrapper[@out] : !struct.type<@Wrapper>, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %c7 = felt.const 7 <"babybear">
+      constrain.eq %out, %c7 : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}
+
+//--- expected.json
+{"inputs": {}, "signals": {"out": "7"}}
