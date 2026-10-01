@@ -6,11 +6,20 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+//
+/// \file
+/// Declares dialect and pass registration functions for ZKLean backend.
+//
+//===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include <mlir/IR/DialectRegistry.h>
+namespace mlir {
+class DialectRegistry;
+} // namespace mlir
 
 namespace zklean {
+
 void registerAllDialects(mlir::DialectRegistry &registry);
+
 } // namespace zklean
