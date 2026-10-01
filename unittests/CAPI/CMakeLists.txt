@@ -2,17 +2,8 @@
 # This test is run separately in CI, not as part of the main unit tests suite
 add_executable(LLZK_CAPI_C_Test c_compatibility_test.c)
 set_target_properties(LLZK_CAPI_C_Test PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(
-  LLZK_CAPI_C_Test
-  PRIVATE
-  LLZK::LLZKCAPI
-  R1CS::Transforms
-  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLConversion>
-  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLTransforms>
-  SMTConversions
-  ZKLean::Conversions
-  MLIRCAPIIR
-  MLIRCAPIRegisterEverything)
+# Exercise the public usage requirements without direct backend dependencies.
+target_link_libraries(LLZK_CAPI_C_Test PRIVATE LLZK::LLZKCAPI)
 add_test(NAME LLZK_CAPI_C_Test COMMAND LLZK_CAPI_C_Test)
 list(APPEND LLZK_UNITTESTS LLZK_CAPI_C_Test)
 

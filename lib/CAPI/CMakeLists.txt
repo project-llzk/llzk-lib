@@ -27,7 +27,7 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/Verif.cpp
   Target/PCL.cpp)
 target_link_libraries(
-  LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS}
+  LLZKCAPI PUBLIC LLZKDialectHeaders SMTDialectHeaders ${LLZK_DEP_DIALECT_LIBS}
   MLIRIR
   MLIRParser
   LLVMHeaders
