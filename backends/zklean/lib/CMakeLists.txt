@@ -10,6 +10,7 @@ target_sources(ZKLeanDialectRegistration PRIVATE DialectRegistration.cpp)
 target_link_libraries(
   ZKLeanDialectRegistration
   PUBLIC
+    ZKLeanConversions
     ZKLeanZKExprDialect
     ZKLeanZKBuilderDialect
     ZKLeanZKLeanLeanDialect
