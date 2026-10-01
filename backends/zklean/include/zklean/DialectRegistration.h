@@ -22,4 +22,6 @@ namespace zklean {
 
 void registerDialects(mlir::DialectRegistry &registry);
 
+void registerPasses(mlir::DialectRegistry &registry);
+
 } // namespace zklean

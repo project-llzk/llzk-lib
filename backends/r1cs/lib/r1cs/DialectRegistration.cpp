@@ -15,11 +15,18 @@
 #include "r1cs/DialectRegistration.h"
 
 #include "r1cs/Dialect/IR/Dialect.h"
+#include "r1cs/Transforms/TransformationPassPipelines.h"
+#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/DialectRegistry.h>
 
 namespace r1cs {
 
 void registerDialects(mlir::DialectRegistry &registry) { registry.insert<R1CSDialect>(); }
+
+void registerPasses(mlir::DialectRegistry &) {
+  r1cs::registerTransformationPasses();
+  r1cs::registerTransformationPassPipelines();
+}
 
 } // namespace r1cs

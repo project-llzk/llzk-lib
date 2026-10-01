@@ -24,3 +24,7 @@
 void llzkRegisterAllDialects(MlirDialectRegistry registry) {
   llzk::registerDialects(*unwrap(registry));
 }
+
+void llzkRegisterCorePasses(MlirDialectRegistry registry) {
+  llzk::registerPasses(*unwrap(registry));
+}

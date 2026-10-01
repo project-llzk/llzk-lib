@@ -13,6 +13,7 @@
 
 #include "zklean/DialectRegistration.h"
 
+#include "zklean/Conversions/Passes.h"
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
 #include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.h"
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
@@ -32,5 +33,7 @@ void registerDialects(mlir::DialectRegistry &registry) {
       // clang-format on
       >();
 }
+
+void registerPasses(mlir::DialectRegistry &) { zklean::registerConversionPasses(); }
 
 } // namespace zklean

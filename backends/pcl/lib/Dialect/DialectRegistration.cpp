@@ -13,7 +13,9 @@
 
 #include "pcl/DialectRegistration.h"
 
+#include "pcl/Conversion/ConversionPasses.h"
 #include "pcl/Dialect/IR/Dialect.h"
+#include "pcl/Transforms/TransformationPasses.h"
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/DialectRegistry.h>
@@ -22,6 +24,11 @@ namespace pcl {
 
 void registerDialects(mlir::DialectRegistry &registry) {
   registry.insert<mlir::func::FuncDialect, PCLDialect>();
+}
+
+void registerPasses(mlir::DialectRegistry &) {
+  pcl::registerPCLConversionPasses();
+  pcl::registerTransformationPasses();
 }
 
 } // namespace pcl

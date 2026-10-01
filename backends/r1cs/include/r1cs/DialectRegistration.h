@@ -22,4 +22,6 @@ namespace r1cs {
 
 void registerDialects(mlir::DialectRegistry &registry);
 
-}
+void registerPasses(mlir::DialectRegistry &registry);
+
+} // namespace r1cs

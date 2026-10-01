@@ -22,4 +22,6 @@ namespace llzk {
 
 void registerDialects(mlir::DialectRegistry &registry);
 
+void registerPasses(mlir::DialectRegistry &registry);
+
 } // namespace llzk

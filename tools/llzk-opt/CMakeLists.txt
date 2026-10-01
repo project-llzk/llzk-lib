@@ -6,10 +6,10 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       SMTConversions SMTDialectHeaders
                       ZKLean::DialectRegistration ZKLeanDialectHeaders
 		                  ZKLean::Conversions
-                      MLIRFuncDialect MLIRFuncInlinerExtension
+                      MLIRFuncDialect
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialectHeaders>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialect>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConversion> 
+                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConversion>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLTransforms>
                       )
 llzk_target_add_mlir_link_settings(llzk-opt)
