@@ -117,12 +117,12 @@ static int runMain(int argc, char **argv) {
   mlir::DialectRegistry registry;
   // registers CSE, etc
   mlir_patch::registerTransformsPasses();
-  llzk::registerAllDialects(registry);
-  r1cs::registerAllDialects(registry);
-  zklean::registerAllDialects(registry);
+  llzk::registerDialects(registry);
+  r1cs::registerDialects(registry);
+  zklean::registerDialects(registry);
   mlir::func::registerInlinerExtension(registry);
 #if LLZK_WITH_PCL
-  pcl::registerAllDialects(registry);
+  pcl::registerDialects(registry);
 #endif // LLZK_WITH_PCL
 
   llzk::registerValidationPasses();

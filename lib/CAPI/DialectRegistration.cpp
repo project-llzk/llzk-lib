@@ -22,5 +22,5 @@
 #include <mlir/CAPI/Wrap.h>
 
 void llzkRegisterAllDialects(MlirDialectRegistry registry) {
-  llzk::registerAllDialects(*unwrap(registry));
+  llzk::registerDialects(*unwrap(registry));
 }

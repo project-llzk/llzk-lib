@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
   );
 
   mlir::DialectRegistry registry;
-  r1cs::registerAllDialects(registry);
+  r1cs::registerDialects(registry);
   r1cs::registerTransformationPasses();
   r1cs::registerTransformationPassPipelines();
 

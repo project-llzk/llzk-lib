@@ -20,6 +20,6 @@ class DialectRegistry;
 
 namespace pcl {
 
-void registerAllDialects(mlir::DialectRegistry &registry);
+void registerDialects(mlir::DialectRegistry &registry);
 
 } // namespace pcl

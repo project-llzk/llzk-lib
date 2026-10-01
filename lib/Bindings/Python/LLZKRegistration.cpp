@@ -21,6 +21,6 @@ PYBIND11_MODULE(_llzkRegistration, m) {
   m.doc() = "LLZK dialect registration";
 
   m.def("register_dialects", [](MlirDialectRegistry registry) {
-    llzk::registerAllDialects(*unwrap(registry));
+    llzk::registerDialects(*unwrap(registry));
   });
 }

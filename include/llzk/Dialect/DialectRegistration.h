@@ -20,6 +20,6 @@ class DialectRegistry;
 
 namespace llzk {
 
-void registerAllDialects(mlir::DialectRegistry &registry);
+void registerDialects(mlir::DialectRegistry &registry);
 
 } // namespace llzk

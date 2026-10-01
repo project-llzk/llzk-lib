@@ -20,6 +20,6 @@ class DialectRegistry;
 
 namespace r1cs {
 
-void registerAllDialects(mlir::DialectRegistry &registry);
+void registerDialects(mlir::DialectRegistry &registry);
 
 }

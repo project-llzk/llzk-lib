@@ -24,7 +24,7 @@ protected:
 
   LLZKTest() : ctx(), loc(llzk::getUnknownLoc(&ctx)) {
     mlir::DialectRegistry registry;
-    llzk::registerAllDialects(registry);
+    llzk::registerDialects(registry);
     ctx.appendDialectRegistry(registry);
     ctx.loadAllAvailableDialects();
   }

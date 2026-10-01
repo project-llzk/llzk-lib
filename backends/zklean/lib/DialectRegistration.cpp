@@ -22,7 +22,7 @@
 
 namespace zklean {
 
-void registerAllDialects(mlir::DialectRegistry &registry) {
+void registerDialects(mlir::DialectRegistry &registry) {
   registry.insert<
       // clang-format off
       llzk::zkbuilder::ZKBuilderDialect,

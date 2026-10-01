@@ -104,7 +104,7 @@ static int runMain(int argc, char **argv) {
   );
 
   DialectRegistry registry;
-  llzk::registerAllDialects(registry);
+  llzk::registerDialects(registry);
   mlir::func::registerInlinerExtension(registry);
   registry.insert<
       mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,

@@ -39,7 +39,7 @@
 
 namespace llzk {
 
-void registerAllDialects(mlir::DialectRegistry &registry) {
+void registerDialects(mlir::DialectRegistry &registry) {
   registry.insert<
       // clang-format off
       llzk::LLZKDialect,

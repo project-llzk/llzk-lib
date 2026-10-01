@@ -27,6 +27,6 @@ int main(int argc, char **argv) {
       "PLEASE submit a bug report to " BUG_REPORT_URL
       " and include the crash backtrace and inciting LLZK files.\n"
   );
-  llzk::registerAllDialects(registry);
+  llzk::registerDialects(registry);
   return mlir::failed(mlir::MlirLspServerMain(argc, argv, registry));
 }

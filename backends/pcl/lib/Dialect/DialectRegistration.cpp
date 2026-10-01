@@ -20,7 +20,7 @@
 
 namespace pcl {
 
-void registerAllDialects(mlir::DialectRegistry &registry) {
+void registerDialects(mlir::DialectRegistry &registry) {
   registry.insert<mlir::func::FuncDialect, PCLDialect>();
 }
 

@@ -20,6 +20,6 @@ class DialectRegistry;
 
 namespace zklean {
 
-void registerAllDialects(mlir::DialectRegistry &registry);
+void registerDialects(mlir::DialectRegistry &registry);
 
 } // namespace zklean

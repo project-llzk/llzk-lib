@@ -20,6 +20,6 @@
 
 namespace r1cs {
 
-void registerAllDialects(mlir::DialectRegistry &registry) { registry.insert<R1CSDialect>(); }
+void registerDialects(mlir::DialectRegistry &registry) { registry.insert<R1CSDialect>(); }
 
 } // namespace r1cs
