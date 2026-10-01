@@ -20,8 +20,13 @@ class DialectRegistry;
 
 namespace llzk {
 
+/// Register core LLZK dialects, the MLIR arith, scf, and smt dialects, and verification
+/// extensions in \p registry.
 void registerDialects(mlir::DialectRegistry &registry);
 
+/// Register LLZK analysis, validation, and transformation passes and pipelines, SMT
+/// conversion passes, and MLIR transformation passes in the global pass registry.
+/// Add LLZK and MLIR func inlining extensions to \p registry.
 void registerPasses(mlir::DialectRegistry &registry);
 
 } // namespace llzk

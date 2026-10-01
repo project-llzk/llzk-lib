@@ -20,8 +20,10 @@ class DialectRegistry;
 
 namespace r1cs {
 
+/// Register the R1CS dialect in \p registry.
 void registerDialects(mlir::DialectRegistry &registry);
 
+/// Register R1CS transformation passes and pipelines in the global pass registry.
 void registerPasses(mlir::DialectRegistry &registry);
 
 } // namespace r1cs

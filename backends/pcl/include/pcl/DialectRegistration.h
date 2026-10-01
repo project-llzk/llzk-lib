@@ -20,8 +20,10 @@ class DialectRegistry;
 
 namespace pcl {
 
+/// Register the PCL and MLIR func dialects in \p registry.
 void registerDialects(mlir::DialectRegistry &registry);
 
+/// Register PCL conversion and transformation passes in the global pass registry.
 void registerPasses(mlir::DialectRegistry &registry);
 
 } // namespace pcl
