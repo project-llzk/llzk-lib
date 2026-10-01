@@ -33,6 +33,7 @@
 #include <mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
 #include <mlir/Conversion/VectorToLLVM/ConvertVectorToLLVM.h>
+#include <mlir/Dialect/LLVMIR/Transforms/InlinerInterfaceImpl.h>
 #include <mlir/Dialect/MemRef/Transforms/Passes.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/ExecutionEngine/CRunnerUtils.h>
@@ -457,6 +458,8 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
   {
     DialectRegistry registry;
+    // WTNS lowering may run the inliner in this context after LLVM is loaded.
+    mlir::LLVM::registerInlinerInterface(registry);
     mlir::arith::registerConvertArithToLLVMInterface(registry);
     mlir::cf::registerConvertControlFlowToLLVMInterface(registry);
     mlir::registerConvertFuncToLLVMInterface(registry);

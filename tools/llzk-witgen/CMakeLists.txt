@@ -42,6 +42,7 @@ target_link_libraries(
     MLIRFuncToLLVM
     MLIRFuncInlinerExtension
     MLIRIndexToLLVM
+    MLIRLLVMIRTransforms
     MLIRLLVMToLLVMIRTranslation
     MLIRMemRefToLLVM
     MLIRMemRefTransforms

@@ -1,9 +1,13 @@
 // RUN: split-file %s %t
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns --check-output %t/expected.json
 // RUN: test -s %t/witness.wtns
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-wtns %t/jit.wtns --check-output %t/expected.json
+// RUN: cmp %t/witness.wtns %t/jit.wtns
 
 // WTNS validation lowers a module clone to R1CS. Its struct inlining pass needs
 // the LLZK inlining interfaces when inlining subcomponent calls.
+// Execution-engine mode also loads LLVM into the shared context, so its promised
+// inlining interface must be registered before WTNS lowering runs.
 
 //--- test.llzk
 
