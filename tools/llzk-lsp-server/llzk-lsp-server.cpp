@@ -13,7 +13,7 @@
 
 #include "tools/config.h"
 
-#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/DialectRegistration.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Support/LogicalResult.h>

@@ -1,4 +1,4 @@
-//===-- InitDialects.h - C API for dialect registration -----------*- C -*-===//
+//===-- DialectRegistration.h -------------------------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This header declares the registration method for
-// all LLZK dialects.
+/// \file
+/// Declares dialect and pass registration functions for core LLZK dialects.
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_C_INITDIALECTS_H
-#define LLZK_C_INITDIALECTS_H
+#ifndef LLZK_C_DIALECTREGISTRATION_H
+#define LLZK_C_DIALECTREGISTRATION_H
 
 #include <mlir-c/IR.h>
 
@@ -28,4 +28,4 @@ MLIR_CAPI_EXPORTED void llzkRegisterAllDialects(MlirDialectRegistry registry);
 }
 #endif
 
-#endif // LLZK_C_INITDIALECTS_H
+#endif // LLZK_C_DIALECTREGISTRATION_H

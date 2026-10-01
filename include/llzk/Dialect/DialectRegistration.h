@@ -1,4 +1,4 @@
-//===-- InitDialects.h - LLZK Dialect Registration --------------*- C++ -*-===//
+//===-- DialectRegistration.h -----------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file defines llzk::registerAllDialects.
+/// Declares dialect and pass registration functions for core LLZK dialects.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -19,5 +19,7 @@ class DialectRegistry;
 } // namespace mlir
 
 namespace llzk {
+
 void registerAllDialects(mlir::DialectRegistry &registry);
+
 } // namespace llzk

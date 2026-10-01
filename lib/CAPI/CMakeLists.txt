@@ -4,7 +4,7 @@ add_library(LLZK::LLZKCAPI ALIAS LLZKCAPI)
 target_sources(LLZKCAPI PRIVATE
   Transforms.cpp
   Validators.cpp
-  InitDialects.cpp
+  DialectRegistration.cpp
   Typing.cpp
   Builder.cpp
   Support.cpp

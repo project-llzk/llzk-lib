@@ -25,7 +25,7 @@ add_subdirectory(Verif)
 # Registration of dialects
 add_library(LLZKDialectRegistration)
 add_library(LLZK::DialectRegistration ALIAS LLZKDialectRegistration)
-target_sources(LLZKDialectRegistration PRIVATE InitDialects.cpp)
+target_sources(LLZKDialectRegistration PRIVATE DialectRegistration.cpp)
 target_link_libraries(
   LLZKDialectRegistration PUBLIC LLZKAllDialects ${LLZK_DEP_DIALECT_LIBS}
                                  LLZKDialectHeaders MLIRSMT SMTInfoDialect

@@ -14,7 +14,7 @@
 
 #include "llzk-c/Builder.h"
 #include "llzk-c/Constants.h"
-#include "llzk-c/InitDialects.h"
+#include "llzk-c/DialectRegistration.h"
 #include "llzk-c/Support.h"
 #include "llzk-c/Transforms.h"
 #include "llzk-c/Typing.h"

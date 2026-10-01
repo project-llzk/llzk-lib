@@ -10,7 +10,7 @@
 #pragma once
 
 #include "llzk-c/Builder.h"
-#include "llzk-c/InitDialects.h"
+#include "llzk-c/DialectRegistration.h"
 
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"

@@ -1,4 +1,4 @@
-//===-- InitDialects.cpp - C API for dialect registration -------*- C++ -*-===//
+//===-- DialectRegistration.cpp ---------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -6,10 +6,15 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+///
+/// \file
+/// Defines dialect and pass registration functions for core LLZK dialects.
+///
+//===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/DialectRegistration.h"
 
-#include "llzk-c/InitDialects.h"
+#include "llzk-c/DialectRegistration.h"
 
 #include <mlir-c/IR.h>
 

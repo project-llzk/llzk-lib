@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/DialectRegistration.h"
 
 #include <mlir/Bindings/Python/PybindAdaptors.h>
 #include <mlir/CAPI/IR.h>

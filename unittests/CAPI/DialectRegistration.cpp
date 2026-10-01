@@ -1,4 +1,4 @@
-//===-- InitDialects.cpp ----------------------------------------*- C++ -*-===//
+//===-- DialectRegistration.cpp ---------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk-c/InitDialects.h"
+#include "llzk-c/DialectRegistration.h"
 
 #include <mlir-c/IR.h>
 
 #include <gtest/gtest.h>
 
-TEST(InitDialects, RegisterDialects) {
+TEST(DialectRegistration, RegisterDialects) {
   MlirDialectRegistry registry = mlirDialectRegistryCreate();
   llzkRegisterAllDialects(registry);
   mlirDialectRegistryDestroy(registry);
