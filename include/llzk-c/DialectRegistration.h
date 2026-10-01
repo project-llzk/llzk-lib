@@ -24,27 +24,33 @@ extern "C" {
 /// Registers core LLZK dialects in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterCoreDialects(MlirDialectRegistry registry);
 
-/// Registers core LLZK passes in the given registry.
+/// Registers core LLZK passes.
 MLIR_CAPI_EXPORTED void llzkRegisterCorePasses(MlirDialectRegistry registry);
 
 /// Registers PCL dialects in the given registry.
 /// Does nothing if LLZK was compiled without the PCL backend.
 MLIR_CAPI_EXPORTED void llzkRegisterPCLDialects(MlirDialectRegistry registry);
 
-/// Registers PCL passes in the given registry.
+/// Registers PCL passes.
 /// Does nothing if LLZK was compiled without the PCL backend.
 MLIR_CAPI_EXPORTED void llzkRegisterPCLPasses(MlirDialectRegistry registry);
 
 /// Registers R1CS dialects in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterR1CSDialects(MlirDialectRegistry registry);
 
-/// Registers R1CS passes in the given registry.
+/// Registers R1CS passes.
 MLIR_CAPI_EXPORTED void llzkRegisterR1CSPasses(MlirDialectRegistry registry);
+
+/// Registers the MLIR smt dialect in the given registry.
+MLIR_CAPI_EXPORTED void llzkRegisterSMTDialects(MlirDialectRegistry registry);
+
+/// Registers SMT conversion passes.
+MLIR_CAPI_EXPORTED void llzkRegisterSMTPasses(MlirDialectRegistry registry);
 
 /// Registers ZKLean dialects in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterZKLeanDialects(MlirDialectRegistry registry);
 
-/// Registers ZKLean passes in the given registry.
+/// Registers ZKLean passes.
 MLIR_CAPI_EXPORTED void llzkRegisterZKLeanPasses(MlirDialectRegistry registry);
 
 #ifdef __cplusplus

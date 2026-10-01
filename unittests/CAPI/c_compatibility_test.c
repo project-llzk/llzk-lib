@@ -193,10 +193,12 @@ int test_basic_api(void) {
   llzkRegisterCoreDialects(registry);
   llzkRegisterPCLDialects(registry);
   llzkRegisterR1CSDialects(registry);
+  llzkRegisterSMTDialects(registry);
   llzkRegisterZKLeanDialects(registry);
   llzkRegisterCorePasses(registry);
   llzkRegisterPCLPasses(registry);
   llzkRegisterR1CSPasses(registry);
+  llzkRegisterSMTPasses(registry);
   llzkRegisterZKLeanPasses(registry);
   mlirContextAppendDialectRegistry(context, registry);
   mlirContextLoadAllAvailableDialects(context);

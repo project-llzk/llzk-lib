@@ -36,6 +36,7 @@ target_link_libraries(
   MLIRCAPIRegisterEverything
   LLZK::DialectRegistration
   R1CS::DialectRegistration
+  SMT::DialectRegistration
   ZKLean::DialectRegistration
   ZKLean::Conversions
   LLZK::LLZKTransforms

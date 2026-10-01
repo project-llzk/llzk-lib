@@ -68,6 +68,14 @@ TEST(DialectRegistration, RegisterR1CSPasses) {
   checkPasses(llzkRegisterR1CSPasses, {"llzk-r1cs-lowering"});
 }
 
+TEST(DialectRegistration, RegisterSMTDialects) { checkDialects(llzkRegisterSMTDialects, {"smt"}); }
+
+TEST(DialectRegistration, RegisterSMTPasses) {
+  checkPasses(
+      llzkRegisterSMTPasses, {"llzk-to-smt-no-cf", "llzk-to-smt-no-cf-naive", "llzk-to-smt-cf-only"}
+  );
+}
+
 TEST(DialectRegistration, RegisterZKLeanDialects) {
   checkDialects(llzkRegisterZKLeanDialects, {"ZKExpr", "ZKBuilder", "ZKLeanLean", "func"});
 }

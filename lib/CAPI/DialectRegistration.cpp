@@ -15,6 +15,7 @@
 #include "llzk/Dialect/DialectRegistration.h"
 
 #include "r1cs/DialectRegistration.h"
+#include "smt/DialectRegistration.h"
 #include "zklean/DialectRegistration.h"
 
 #include "llzk/Config/Config.h"
@@ -60,6 +61,14 @@ void llzkRegisterR1CSDialects(MlirDialectRegistry registry) {
 
 void llzkRegisterR1CSPasses(MlirDialectRegistry registry) {
   r1cs::registerPasses(*unwrap(registry));
+}
+
+void llzkRegisterSMTDialects(MlirDialectRegistry registry) {
+  llzk::smt::registerDialects(*unwrap(registry));
+}
+
+void llzkRegisterSMTPasses(MlirDialectRegistry registry) {
+  llzk::smt::registerPasses(*unwrap(registry));
 }
 
 void llzkRegisterZKLeanDialects(MlirDialectRegistry registry) {
