@@ -21,7 +21,7 @@
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Wrap.h>
 
-void llzkRegisterAllDialects(MlirDialectRegistry registry) {
+void llzkRegisterCoreDialects(MlirDialectRegistry registry) {
   llzk::registerDialects(*unwrap(registry));
 }
 

@@ -36,7 +36,7 @@ protected:
   CAPITest() : context(mlirContextCreate()) {
     auto registry = mlirDialectRegistryCreate();
     mlirRegisterAllDialects(registry);
-    llzkRegisterAllDialects(registry);
+    llzkRegisterCoreDialects(registry);
     mlirContextAppendDialectRegistry(context, registry);
     mlirContextLoadAllAvailableDialects(context);
     mlirDialectRegistryDestroy(registry);

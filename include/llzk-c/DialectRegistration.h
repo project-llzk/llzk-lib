@@ -21,8 +21,8 @@
 extern "C" {
 #endif
 
-/// Registers all LLZK dialects in the given registry.
-MLIR_CAPI_EXPORTED void llzkRegisterAllDialects(MlirDialectRegistry registry);
+/// Registers core LLZK dialects in the given registry.
+MLIR_CAPI_EXPORTED void llzkRegisterCoreDialects(MlirDialectRegistry registry);
 
 /// Registers core LLZK passes in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterCorePasses(MlirDialectRegistry registry);

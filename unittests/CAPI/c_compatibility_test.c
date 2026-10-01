@@ -57,7 +57,7 @@ int test_basic_api(void) {
   /* Register dialects */
   MlirDialectRegistry registry = mlirDialectRegistryCreate();
   mlirRegisterAllDialects(registry);
-  llzkRegisterAllDialects(registry);
+  llzkRegisterCoreDialects(registry);
   mlirContextAppendDialectRegistry(context, registry);
   mlirContextLoadAllAvailableDialects(context);
   mlirDialectRegistryDestroy(registry);

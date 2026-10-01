@@ -15,6 +15,6 @@
 
 TEST(DialectRegistration, RegisterDialects) {
   MlirDialectRegistry registry = mlirDialectRegistryCreate();
-  llzkRegisterAllDialects(registry);
+  llzkRegisterCoreDialects(registry);
   mlirDialectRegistryDestroy(registry);
 }
