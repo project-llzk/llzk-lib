@@ -6,6 +6,8 @@ target_link_libraries(
   LLZK_CAPI_C_Test
   PRIVATE
   LLZK::LLZKCAPI
+  SMTConversions
+  ZKLean::Conversions
   MLIRCAPIIR
   MLIRCAPIRegisterEverything)
 add_test(NAME LLZK_CAPI_C_Test COMMAND LLZK_CAPI_C_Test)

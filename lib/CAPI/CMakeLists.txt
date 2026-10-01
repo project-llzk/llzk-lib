@@ -34,6 +34,9 @@ target_link_libraries(
   MLIRCAPIIR
   MLIRCAPIRegisterEverything
   LLZK::DialectRegistration
+  R1CS::DialectRegistration
+  ZKLean::DialectRegistration
+  ZKLean::Conversions
   LLZK::LLZKTransforms
   LLZKArrayTransforms
   LLZK::LLZKValidators

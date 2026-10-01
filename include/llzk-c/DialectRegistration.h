@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 //
 /// \file
-/// Declares dialect and pass registration functions for core LLZK dialects.
+/// Declares dialect and pass registration functions for core LLZK dialects and backends.
 //
 //===----------------------------------------------------------------------===//
 
@@ -26,6 +26,26 @@ MLIR_CAPI_EXPORTED void llzkRegisterCoreDialects(MlirDialectRegistry registry);
 
 /// Registers core LLZK passes in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterCorePasses(MlirDialectRegistry registry);
+
+/// Registers PCL dialects in the given registry.
+/// Does nothing if LLZK was compiled without the PCL backend.
+MLIR_CAPI_EXPORTED void llzkRegisterPCLDialects(MlirDialectRegistry registry);
+
+/// Registers PCL passes in the given registry.
+/// Does nothing if LLZK was compiled without the PCL backend.
+MLIR_CAPI_EXPORTED void llzkRegisterPCLPasses(MlirDialectRegistry registry);
+
+/// Registers R1CS dialects in the given registry.
+MLIR_CAPI_EXPORTED void llzkRegisterR1CSDialects(MlirDialectRegistry registry);
+
+/// Registers R1CS passes in the given registry.
+MLIR_CAPI_EXPORTED void llzkRegisterR1CSPasses(MlirDialectRegistry registry);
+
+/// Registers ZKLean dialects in the given registry.
+MLIR_CAPI_EXPORTED void llzkRegisterZKLeanDialects(MlirDialectRegistry registry);
+
+/// Registers ZKLean passes in the given registry.
+MLIR_CAPI_EXPORTED void llzkRegisterZKLeanPasses(MlirDialectRegistry registry);
 
 #ifdef __cplusplus
 }

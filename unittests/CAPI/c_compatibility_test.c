@@ -35,6 +35,7 @@
 #include "llzk-c/Dialect/String.h"
 #include "llzk-c/Dialect/Struct.h"
 
+/* Include generated backend conversion pass APIs from pure C. */
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
@@ -42,6 +43,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "smt/Conversions/ConversionPasses.capi.h.inc"
+#include "zklean/Conversions/ConversionPasses.capi.h.inc"
 
 /*
  * Test basic C API functionality
@@ -58,9 +62,48 @@ int test_basic_api(void) {
   MlirDialectRegistry registry = mlirDialectRegistryCreate();
   mlirRegisterAllDialects(registry);
   llzkRegisterCoreDialects(registry);
+  llzkRegisterPCLDialects(registry);
+  llzkRegisterR1CSDialects(registry);
+  llzkRegisterZKLeanDialects(registry);
+  llzkRegisterCorePasses(registry);
+  llzkRegisterPCLPasses(registry);
+  llzkRegisterR1CSPasses(registry);
+  llzkRegisterZKLeanPasses(registry);
   mlirContextAppendDialectRegistry(context, registry);
   mlirContextLoadAllAvailableDialects(context);
   mlirDialectRegistryDestroy(registry);
+
+  /* Verify group registration, individual registration, and all pass constructors link. */
+  mlirRegisterSMTConversionPasses();
+  mlirRegisterSMTConversionSMTCFLoweringPass();
+  mlirRegisterSMTConversionSMTLoweringPass();
+  mlirRegisterSMTConversionSMTNaiveLoweringPass();
+  mlirRegisterZKLeanConversionPasses();
+  mlirRegisterZKLeanConversionConvertLLZKToZKLeanPass();
+  mlirRegisterZKLeanConversionConvertZKLeanToLLZKPass();
+
+  MlirPass passes[] = {
+      mlirCreateSMTConversionSMTCFLoweringPass(),
+      mlirCreateSMTConversionSMTLoweringPass(),
+      mlirCreateSMTConversionSMTNaiveLoweringPass(),
+      mlirCreateZKLeanConversionConvertLLZKToZKLeanPass(),
+      mlirCreateZKLeanConversionConvertZKLeanToLLZKPass(),
+  };
+  MlirPassManager manager = mlirPassManagerCreate(context);
+  int missingPass = 0;
+  for (size_t i = 0; i < sizeof(passes) / sizeof(passes[0]); ++i) {
+    if (passes[i].ptr == NULL) {
+      fprintf(stderr, "Failed to create backend conversion pass %zu\n", i);
+      missingPass = 1;
+    } else {
+      mlirPassManagerAddOwnedPass(manager, passes[i]);
+    }
+  }
+  mlirPassManagerDestroy(manager);
+  if (missingPass) {
+    mlirContextDestroy(context);
+    return 1;
+  }
 
   /* Test creating a simple attribute */
   MlirAttribute publicAttr = llzkLlzk_PublicAttrGet(context);

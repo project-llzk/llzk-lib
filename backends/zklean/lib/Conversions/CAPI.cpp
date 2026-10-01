@@ -2,7 +2,7 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -12,12 +12,15 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "pcl/Conversion/ConversionPasses.h" // IWYU pragma: keep
+#include "zklean/Conversions/Passes.h" // IWYU pragma: keep
 
 #include <mlir/CAPI/Pass.h>
 
-#include "pcl/Conversion/ConversionPasses.capi.h.inc"
+#include "zklean/Conversions/ConversionPasses.capi.h.inc"
 
-using namespace pcl;
+using namespace zklean;
 
-#include "pcl/Conversion/ConversionPasses.capi.cpp.inc"
+/// Adapt the C API group name to the C++ conversion pass registration function.
+static inline void registerZKLeanConversionPasses() { registerConversionPasses(); }
+
+#include "zklean/Conversions/ConversionPasses.capi.cpp.inc"
