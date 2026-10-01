@@ -114,8 +114,10 @@ static int test_passes(MlirContext context) {
     const char *name;
     void (*registerPass)(void);
     MlirPass (*createPass)(void);
+    const char *nestedOperation;
   } passes[] = {
-#define PASS(name) {#name, mlirRegister##name, mlirCreate##name}
+#define NESTED_PASS(name, operation) {#name, mlirRegister##name, mlirCreate##name, operation}
+#define PASS(name) NESTED_PASS(name, NULL)
       PASS(LLZKAnalysisCallGraphPrinterPass),
       PASS(LLZKAnalysisCallGraphSCCsPrinterPass),
       PASS(LLZKAnalysisConstraintDependencyGraphPrinterPass),
@@ -147,7 +149,7 @@ static int test_passes(MlirContext context) {
       PASS(LLZKValidationMemberWriteValidatorPass),
 #if LLZK_WITH_PCL
       PASS(PCLConversionPCLLoweringPass),
-      PASS(PCLTransformationTrimExprSizePass),
+      NESTED_PASS(PCLTransformationTrimExprSizePass, "func.func"),
 #endif
       PASS(R1CSTransformationR1CSLoweringPass),
       PASS(SMTConversionSMTCFLoweringPass),
@@ -156,6 +158,7 @@ static int test_passes(MlirContext context) {
       PASS(ZKLeanConversionConvertLLZKToZKLeanPass),
       PASS(ZKLeanConversionConvertZKLeanToLLZKPass),
 #undef PASS
+#undef NESTED_PASS
   };
   MlirPassManager manager = mlirPassManagerCreate(context);
   int failed = 0;
@@ -165,6 +168,12 @@ static int test_passes(MlirContext context) {
     if (pass.ptr == NULL) {
       fprintf(stderr, "Failed to create pass %s\n", passes[i].name);
       failed = 1;
+    } else if (passes[i].nestedOperation != NULL) {
+      /* Operation-specific passes must be added under their matching anchor. */
+      MlirOpPassManager nested = mlirPassManagerGetNestedUnder(
+          manager, mlirStringRefCreateFromCString(passes[i].nestedOperation)
+      );
+      mlirOpPassManagerAddOwnedPass(nested, pass);
     } else {
       mlirPassManagerAddOwnedPass(manager, pass);
     }
