@@ -1,0 +1,15 @@
+added:
+  - "`registerPasses` helpers for core LLZK and the PCL, R1CS, and ZKLean backends"
+  - CAPI:
+    - "`llzkRegisterCorePasses`, `llzkRegisterPCLDialects`, `llzkRegisterPCLPasses`, `llzkRegisterR1CSDialects`, `llzkRegisterR1CSPasses`, `llzkRegisterZKLeanDialects`, and `llzkRegisterZKLeanPasses`"
+    - "Analysis pass creation and registration functions in `llzk-c/Analysis.h`"
+    - "Pass creation and registration functions for PCL and R1CS transformations and SMT and ZKLean conversions"
+
+changed:
+  - "Rename `llzk/Dialect/InitDialects.h` to `llzk/Dialect/DialectRegistration.h` and `llzk-c/InitDialects.h` to `llzk-c/DialectRegistration.h`"
+  - "Rename `registerAllDialects` to `registerDialects` in the `llzk`, `pcl`, `r1cs`, and `zklean` namespaces"
+  - "Rename `llzkRegisterAllDialects` to `llzkRegisterCoreDialects`"
+  - "Move core LLZK inlining extension registration from dialect registration to pass registration"
+
+fixed:
+  - "Register missing inlining extensions for the `smt_info` and `verif` dialects"
