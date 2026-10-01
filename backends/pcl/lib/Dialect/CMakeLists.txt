@@ -7,7 +7,7 @@ target_link_libraries(
   PCLDialect PUBLIC MLIRFuncDialect PCLDialectHeaders
                      MLIRIR MLIRSupport
                      LLVMHeaders MLIRHeaders
-             PRIVATE LLZKDialectHeaders PCLConversion PCLTransforms)
+             PRIVATE LLZKDialectHeaders)
 add_dependencies(PCLDialect PCLDialectIncGen)
 llzk_target_add_mlir_link_settings(PCLDialect)
 

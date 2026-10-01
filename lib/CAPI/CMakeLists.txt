@@ -42,7 +42,7 @@ target_link_libraries(
   LLZKArrayTransforms
   LLZK::LLZKValidators
   LLZK::LLZKAnalysis
-  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLDialect>
+  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::DialectRegistration>
   $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLTarget>
 )
 llzk_target_add_mlir_link_settings(LLZKCAPI)
