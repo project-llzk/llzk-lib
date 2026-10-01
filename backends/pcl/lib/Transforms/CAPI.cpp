@@ -14,9 +14,9 @@
 
 #include "pcl/Transforms/TransformationPasses.h" // IWYU pragma: keep
 
-#include <mlir/CAPI/Pass.h>
+#include "llzk-c/Target/PCL.h"
 
-#include "pcl/Transforms/TransformationPasses.capi.h.inc"
+#include <mlir/CAPI/Pass.h>
 
 using namespace pcl;
 

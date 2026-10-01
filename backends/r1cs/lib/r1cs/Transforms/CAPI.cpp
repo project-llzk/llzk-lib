@@ -14,9 +14,9 @@
 
 #include "r1cs/Transforms/TransformationPasses.h" // IWYU pragma: keep
 
-#include <mlir/CAPI/Pass.h>
+#include "llzk-c/Target/R1CS.h"
 
-#include "r1cs/Transforms/TransformationPasses.capi.h.inc"
+#include <mlir/CAPI/Pass.h>
 
 using namespace r1cs;
 

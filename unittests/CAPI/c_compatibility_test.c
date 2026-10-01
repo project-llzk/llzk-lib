@@ -37,6 +37,10 @@
 #include "llzk-c/Dialect/String.h"
 #include "llzk-c/Dialect/Struct.h"
 #include "llzk-c/Dialect/Verif.h"
+#include "llzk-c/Target/PCL.h"
+#include "llzk-c/Target/R1CS.h"
+#include "llzk-c/Target/SMT.h"
+#include "llzk-c/Target/ZKLean.h"
 
 #include "llzk/Config/Config.h"
 
@@ -47,15 +51,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-/* Include generated backend pass APIs from pure C. */
-#include "r1cs/Transforms/TransformationPasses.capi.h.inc"
-#if LLZK_WITH_PCL
-#include "pcl/Conversion/ConversionPasses.capi.h.inc"
-#include "pcl/Transforms/TransformationPasses.capi.h.inc"
-#endif
-#include "smt/Conversions/ConversionPasses.capi.h.inc"
-#include "zklean/Conversions/ConversionPasses.capi.h.inc"
 
 /// Check every individual dialect handle independently of bulk registration.
 static int test_dialect_handles(void) {

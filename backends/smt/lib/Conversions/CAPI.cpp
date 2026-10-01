@@ -14,9 +14,9 @@
 
 #include "smt/Conversions/ConversionPasses.h" // IWYU pragma: keep
 
-#include <mlir/CAPI/Pass.h>
+#include "llzk-c/Target/SMT.h"
 
-#include "smt/Conversions/ConversionPasses.capi.h.inc"
+#include <mlir/CAPI/Pass.h>
 
 using namespace llzk::smt;
 

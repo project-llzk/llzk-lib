@@ -14,9 +14,9 @@
 
 #include "zklean/Conversions/Passes.h" // IWYU pragma: keep
 
-#include <mlir/CAPI/Pass.h>
+#include "llzk-c/Target/ZKLean.h"
 
-#include "zklean/Conversions/ConversionPasses.capi.h.inc"
+#include <mlir/CAPI/Pass.h>
 
 using namespace zklean;
 
