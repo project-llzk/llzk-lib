@@ -1,0 +1,101 @@
+// RUN: llzk-opt %s -split-input-file -llzk-monomorphize -verify-diagnostics
+// expected-error @+1 {{llzk-monomorphize requires a concrete llzk.main}}
+module attributes {llzk.lang} {}
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-note @+2 {{specialization chain:}}
+  // expected-error @+1 {{recursive specialization call cycle is unsupported}}
+  function.def @f() {
+    function.call @f() : () -> ()
+    function.return
+  }
+  struct.def @Main {
+    // expected-note @+1 {{specialization chain:}}
+    function.def @compute() -> !struct.type<@Main> {
+      function.call @f() : () -> ()
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Recursive {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    // expected-note @+2 {{specialization chain:}}
+    // expected-error @+1 {{recursive specialization is unsupported}}
+    function.def @f() {
+      function.call @Recursive::@f<[@Next]>() : () -> ()
+      function.return
+    }
+  }
+  struct.def @Main {
+    // expected-note @-1 {{specialization chain:}}
+    function.def @compute() -> !struct.type<@Main> {
+      function.call @Recursive::@f<[1]>() : () -> ()
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Recursive::@Recursive<[1]>>} {
+  poly.template @Recursive {
+    poly.param @N : index
+    struct.def @Recursive {
+      // expected-note @+2 {{specialization chain:}}
+      // expected-error @+1 {{recursive specialization call cycle is unsupported}}
+      function.def @compute() -> !struct.type<@Recursive::@Recursive<[@N]>> {
+        %n = poly.read_const @N : index
+        %nested = function.call @Recursive::@Recursive::@compute(){(%n)} : () -> !struct.type<@Recursive::@Recursive<[affine_map<(i) -> (i)>]>>
+        %s = struct.new : !struct.type<@Recursive::@Recursive<[@N]>>
+        function.return %s : !struct.type<@Recursive::@Recursive<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Recursive::@Recursive<[@N]>>) { function.return }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def private @external()
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error @+1 {{external function specialization is unsupported}}
+      function.call @external() : () -> ()
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Nested {
+    poly.param @N : index
+    poly.param @T
+    struct.def @Nested {
+      function.def @compute() -> !struct.type<@Nested::@Nested<[@N, @T]>> {
+        %s = struct.new : !struct.type<@Nested::@Nested<[@N, @T]>>
+        function.return %s : !struct.type<@Nested::@Nested<[@N, @T]>>
+      }
+      function.def @constrain(%s: !struct.type<@Nested::@Nested<[@N, @T]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error @+1 {{unsupported nested affine type-argument specialization}}
+      %n = function.call @Nested::@Nested::@compute() : () -> !struct.type<@Nested::@Nested<[1, !struct.type<@Nested::@Nested<[affine_map<(i) -> (i)>, i1]>>]>>
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
