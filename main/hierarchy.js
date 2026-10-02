@@ -1253,6 +1253,9 @@ var hierarchy =
       [ "llzk::polymorphic::TypeVarType", "classllzk_1_1polymorphic_1_1TypeVarType.html", null ],
       [ "llzk::string::StringType", "classllzk_1_1string_1_1StringType.html", null ]
     ] ],
+    [ "mlir::TypeConverter", null, [
+      [ "llzk::polymorphic::detail::TemplateTypeConverter", "classllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter.html", null ]
+    ] ],
     [ "mlir::TypeStorage", null, [
       [ "llzk::array::detail::ArrayTypeStorage", "structllzk_1_1array_1_1detail_1_1ArrayTypeStorage.html", null ],
       [ "llzk::component::detail::StructTypeStorage", "structllzk_1_1component_1_1detail_1_1StructTypeStorage.html", null ],

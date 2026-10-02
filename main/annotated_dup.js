@@ -402,6 +402,7 @@ var annotated_dup =
           [ "TemplateParamOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase" ],
           [ "TemplateSymbolBindingOpInterfaceInterfaceTraits", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits.html", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits" ],
           [ "TemplateSymbolBindingOpInterfaceTrait", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceTrait.html", null ],
+          [ "TemplateTypeConverter", "classllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter" ],
           [ "TypeVarTypeStorage", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage" ],
           [ "UnifiableCastOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase" ],
           [ "YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase" ]
