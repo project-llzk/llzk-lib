@@ -377,7 +377,7 @@ std::unique_ptr<FeltConstantOpBuildFuncHelper> FeltConstantOpBuildFuncHelper::ge
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
-      auto attr = llzk::felt::FeltConstAttr::get(unwrap(testClass.context), llvm::APInt());
+      auto attr = llzk::felt::FeltConstAttr::get(unwrap(testClass.context), llvm::DynamicAPInt());
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_FeltConstantOpBuild(builder, location, resultType, wrap(attr));
     }

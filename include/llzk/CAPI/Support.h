@@ -35,10 +35,6 @@
 // Custom wrap/unwrap functions for C API types
 //===----------------------------------------------------------------------===//
 
-static inline int64_t wrap(const llvm::APInt &cpp) { return llzk::fromAPInt(cpp); }
-
-static inline llvm::APInt unwrap(int64_t c) { return llzk::toAPInt(c); }
-
 static inline MlirNamedAttribute wrap(mlir::NamedAttribute attr) {
   return MlirNamedAttribute {wrap(attr.getName()), wrap(attr.getValue())};
 }

@@ -194,7 +194,7 @@ void FieldSpecAttr::print(AsmPrinter &odsPrinter) const {
 Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
   SMLoc odsLoc = odsParser.getCurrentLocation();
 
-  // Parse the APInt value.
+  // Parse the signed mathematical literal.
   auto valueRes = llzk::parseDynamicAPIntValue(odsParser);
   if (failed(valueRes)) {
     odsParser.emitError(
