@@ -1023,9 +1023,14 @@ static bool hasStraightLineRegionPath(Block *allocationBlock, Block *accessBlock
   return true;
 }
 
+/// A statically indexed array access collected for straight-line element promotion.
+/// Eligibility is checked per element before accesses are grouped by block for ordered rewriting.
 struct StraightLineStaticAccess {
+  /// The element-level `array.read` or `array.write` operation.
   Operation *op;
+  /// Constant index tuple identifying the element within its allocation.
   Attribute index;
+  /// Block containing the access, used to establish the element's linear access order.
   Block *block;
 };
 

@@ -3605,18 +3605,27 @@ using DeferredPodArrayBackingMap = DenseMap<Value, DeferredPodArrayBacking>;
 class PodAccessAnalysis {
   using RecordKey = std::pair<Value, StringAttr>;
 
+  /// Access facts at a `pod.read`, captured before processing that operation.
   struct ReadFacts {
+    /// Whether a preceding operation or its nested regions wrote the same POD record.
     bool hasEarlierWrite = false;
+    /// Whether a matching write remains available without an intervening forwarding barrier.
     bool hasForwardableWrite = false;
   };
 
+  /// Access history carried through a block and copied when entering nested blocks.
   struct BlockState {
+    /// Records written by preceding operations, including writes in nested regions.
     DenseSet<RecordKey> earlierWrites;
+    /// Latest write per POD value that has not been invalidated by a forwarding barrier.
     DenseMap<Value, WritePodOp> forwardableWrites;
   };
 
+  /// POD uses and record writes accumulated over an operation or block and its nested regions.
   struct OpSummary {
+    /// POD-typed operands encountered, used to invalidate forwarding across enclosing operations.
     DenseSet<Value> usedPodValues;
+    /// Records targeted by `pod.write`, used to update the enclosing block's write history.
     DenseSet<RecordKey> writtenRecords;
   };
 
