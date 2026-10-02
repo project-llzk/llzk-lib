@@ -5,7 +5,7 @@
 // RUN: llzk-opt -emit-bytecode %t.first > %t.second
 // RUN: cmp %t.first %t.second
 
-module attributes {llzk.lang} {
+module attributes {llzk.lang, test.bounds = #llzk.loopbounds<-18446744073709551617 to 18446744073709551616 step -1>} {
   function.def @signed_literals() {
     %a = felt.const -1
     %b = felt.const -18446744073709551617

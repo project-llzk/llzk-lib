@@ -118,15 +118,15 @@ TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", BuildShortTypeString::from(bldr.getIntegerType(1)));
   EXPECT_EQ("i", BuildShortTypeString::from(bldr.getIndexType()));
-  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35))));
-  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35))));
+  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::DynamicAPInt(35))));
+  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::DynamicAPInt(35))));
   EXPECT_EQ(
       "f<35:5:bn128>",
-      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35), "bn128"))
+      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::DynamicAPInt(35), "bn128"))
   );
   EXPECT_EQ(
       "f<35:5:bn128>",
-      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), "bn128"))
+      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::DynamicAPInt(35), "bn128"))
   );
   EXPECT_EQ(
       "!t<@A>", BuildShortTypeString::from(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A")))
@@ -209,9 +209,9 @@ TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
   }();
 
   auto felt = [&](uint64_t value, llvm::StringRef field) {
-    return FeltConstAttr::get(&ctx, llvm::APInt(7, value), field);
+    return FeltConstAttr::get(&ctx, llvm::DynamicAPInt(value), field);
   };
-  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, llvm::APInt(7, 37));
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(37));
 
   std::string first = BuildShortTypeString::from(
       ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldA), unspecified})

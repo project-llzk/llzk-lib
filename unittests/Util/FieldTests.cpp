@@ -106,3 +106,12 @@ TEST_P(FieldTests, ReducedToSignedInverses) {
 }
 
 INSTANTIATE_TEST_SUITE_P(FieldValSuite, FieldTests, testing::ValuesIn(FieldTests::TestingValues()));
+
+TEST(FieldBoundaryTests, TwoElementFieldEncodesItsModulus) {
+  Field::addField("dynamic-apint-test-two", DynamicAPInt(2), nullptr);
+  const auto &field = Field::getField("dynamic-apint-test-two");
+  EXPECT_EQ(field.bitWidth(), 2U);
+  EXPECT_EQ(field.half(), DynamicAPInt(1));
+  EXPECT_EQ(field.toSigned(DynamicAPInt(1)), DynamicAPInt(-1));
+  EXPECT_EQ(field.reduce(DynamicAPInt(-1)), DynamicAPInt(1));
+}

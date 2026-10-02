@@ -48,10 +48,9 @@ public:
   explicit SourceRefIndex(SymbolLookupResult<component::MemberDefOp> f) : index(f) {}
   explicit SourceRefIndex(mlir::StringAttr recordName) : index(recordName) {}
   explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
-  explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
   explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
-  SourceRefIndex(const llvm::APInt &low, const llvm::APInt &high)
-      : index(IndexRange {toDynamicAPInt(low), toDynamicAPInt(high)}) {}
+  SourceRefIndex(const llvm::DynamicAPInt &low, const llvm::DynamicAPInt &high)
+      : index(IndexRange {low, high}) {}
   explicit SourceRefIndex(IndexRange r) : index(r) {}
 
   bool isMember() const {

@@ -34,37 +34,6 @@ template <> struct mlir::FieldParser<llvm::APInt> {
 
 namespace llzk {
 
-/// Storage key for APInts whose numeric value is independent of bit width.
-/// Temporary migration storage; removed in stage 4 with WidthInsensitiveAPIntParameter.
-class APIntValue {
-public:
-  APIntValue(llvm::APInt apInt) : value(std::move(apInt)) {}
-
-  const llvm::APInt &getValue() const { return value; }
-  operator const llvm::APInt &() const { return value; }
-
-  friend bool operator==(const APIntValue &lhs, const APIntValue &rhs) {
-    return llvm::APInt::isSameValue(lhs.value, rhs.value);
-  }
-
-  friend llvm::hash_code hash_value(const APIntValue &key) {
-    unsigned activeBits = key.value.getActiveBits();
-    llvm::APInt canonical = key.value.trunc(activeBits == 0 ? 1 : activeBits);
-    return llvm::hash_value(canonical);
-  }
-
-private:
-  llvm::APInt value;
-};
-
-inline mlir::FailureOr<APIntValue> parseAPIntValue(mlir::AsmParser &parser) {
-  mlir::FailureOr<llvm::APInt> value = mlir::FieldParser<llvm::APInt>::parse(parser);
-  if (mlir::failed(value)) {
-    return mlir::failure();
-  }
-  return APIntValue(std::move(*value));
-}
-
 /// Attribute storage adapter providing numeric hashing for DynamicAPInt.
 ///
 /// This is meant as a thin adaptor for storing DynamicAPInt in attribute storage generated
@@ -104,8 +73,21 @@ inline mlir::FailureOr<DynamicAPIntValue> parseDynamicAPIntValue(mlir::AsmParser
   return DynamicAPIntValue(llvm::DynamicAPInt(*value));
 }
 
-inline llvm::APInt toAPInt(int64_t i) { return llvm::APInt(64, i); }
-inline int64_t fromAPInt(const llvm::APInt &i) { return i.getSExtValue(); }
+/// Decode an MLIR integer using its signedness; signless i1 denotes a boolean.
+/// Other signless integers and index values use signed interpretation.
+inline llvm::DynamicAPInt integerAttrToDynamicAPInt(mlir::IntegerAttr attr) {
+  auto type = llvm::dyn_cast<mlir::IntegerType>(attr.getType());
+  bool isUnsigned = type && (type.isUnsigned() || (type.isSignless() && type.getWidth() == 1));
+  return isUnsigned ? toDynamicAPInt(attr.getValue()) : llvm::DynamicAPInt(attr.getValue());
+}
+
+/// Extract a verified MLIR index value; malformed internal IR is a fatal error.
+inline int64_t fromAPInt(const llvm::APInt &i) {
+  if (!i.isSignedIntN(64)) {
+    llvm::report_fatal_error("integer is not representable as an index");
+  }
+  return i.getSExtValue();
+}
 
 inline bool isNullOrEmpty(mlir::ArrayAttr a) { return !a || a.empty(); }
 inline bool isNullOrEmpty(mlir::DenseArrayAttr a) { return !a || a.empty(); }

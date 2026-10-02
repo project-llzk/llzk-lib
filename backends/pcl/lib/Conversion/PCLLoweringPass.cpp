@@ -42,7 +42,6 @@
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
 
-#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/DenseSet.h>

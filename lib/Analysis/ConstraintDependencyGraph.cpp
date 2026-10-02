@@ -100,9 +100,9 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
           indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
         } else {
           auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
-          auto lower = APInt::getZero(64);
+          auto lower = llvm::DynamicAPInt(0);
           assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
-          APInt upper(64, arrayType.getDimSize(static_cast<unsigned>(i)));
+          llvm::DynamicAPInt upper(arrayType.getDimSize(static_cast<unsigned>(i)));
           indices.emplace_back(lower, upper);
         }
       }
@@ -307,9 +307,9 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
       indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
     } else {
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
-      auto lower = APInt::getZero(64);
+      auto lower = llvm::DynamicAPInt(0);
       assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
-      APInt upper(64, arrayType.getDimSize(static_cast<unsigned>(i)));
+      llvm::DynamicAPInt upper(arrayType.getDimSize(static_cast<unsigned>(i)));
       indices.emplace_back(lower, upper);
     }
   }

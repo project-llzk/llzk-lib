@@ -39,11 +39,11 @@ protected:
   static constexpr StringLiteral BB_FIELD = "babybear";
 
   FeltConstAttr babyBearConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val), BB_FIELD);
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val), BB_FIELD);
   }
 
   FeltConstAttr unspecifiedConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val));
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val));
   }
 
   /// Insert two `felt.const` ops into a detached block, build a binary op on
@@ -362,4 +362,14 @@ TEST_F(BabyBearFoldTest, SignedLiteralIsReducedBeforeBitwiseOperation) {
   auto result = foldBinary<AndFeltOp>(negative, babyBearConst(1));
   ASSERT_TRUE(result);
   EXPECT_EQ(result.getValue(), llvm::DynamicAPInt(0));
+}
+
+TEST_F(BabyBearFoldTest, ShlHugeCountUsesModularExponentiation) {
+  // Fermat's little theorem: 2^(p-1) mod p = 1.
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(42), babyBearConst(BB_PRIME - 1)), 42);
+}
+
+TEST_F(BabyBearFoldTest, InverseOfZeroDoesNotFold) {
+  expectNoFold(foldUnary<InvFeltOp>(babyBearConst(0)));
+  expectNoFold(foldUnary<InvFeltOp>(babyBearConst(BB_PRIME)));
 }

@@ -53,9 +53,9 @@ module attributes {llzk.lang} {
 };
 
 TEST_F(SourceRefTests, IndexHalfOpenOverlap) {
-  SourceRefIndex range(APInt(64, 2), APInt(64, 5));
-  SourceRefIndex overlappingRange(APInt(64, 4), APInt(64, 7));
-  SourceRefIndex adjacentRange(APInt(64, 5), APInt(64, 8));
+  SourceRefIndex range(llvm::DynamicAPInt(2), llvm::DynamicAPInt(5));
+  SourceRefIndex overlappingRange(llvm::DynamicAPInt(4), llvm::DynamicAPInt(7));
+  SourceRefIndex adjacentRange(llvm::DynamicAPInt(5), llvm::DynamicAPInt(8));
 
   EXPECT_FALSE(range.overlaps(SourceRefIndex(1)));
   EXPECT_TRUE(range.overlaps(SourceRefIndex(2)));
@@ -135,12 +135,14 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   SourceRefLatticeValue matrix(llvm::ArrayRef<int64_t>({2, 2}));
   EXPECT_EQ(
       matrix.write(
-          {SourceRefIndex(APInt(64, 0)), SourceRefIndex(APInt(64, 1))},
+          {SourceRefIndex(llvm::DynamicAPInt(0)), SourceRefIndex(llvm::DynamicAPInt(1))},
           SourceRefLatticeValue(computeRoot)
       ),
       ChangeResult::Change
   );
-  auto point = matrix.extract({SourceRefIndex(APInt(64, 0)), SourceRefIndex(APInt(64, 1))});
+  auto point = matrix.extract(
+      {SourceRefIndex(llvm::DynamicAPInt(0)), SourceRefIndex(llvm::DynamicAPInt(1))}
+  );
   ASSERT_TRUE(succeeded(point));
   EXPECT_EQ(point->first.getSingleValue(), computeRoot);
 
@@ -151,8 +153,8 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   EXPECT_EQ(
       row.getElemFlatIdx(1).setValue(SourceRefLatticeValue(computeRoot)), ChangeResult::Change
   );
-  EXPECT_EQ(matrix.write({SourceRefIndex(APInt(64, 1))}, row), ChangeResult::Change);
-  auto writtenRow = matrix.extract({SourceRefIndex(APInt(64, 1))});
+  EXPECT_EQ(matrix.write({SourceRefIndex(llvm::DynamicAPInt(1))}, row), ChangeResult::Change);
+  auto writtenRow = matrix.extract({SourceRefIndex(llvm::DynamicAPInt(1))});
   ASSERT_TRUE(succeeded(writtenRow));
   ASSERT_TRUE(writtenRow->first.isArray());
   EXPECT_EQ(writtenRow->first.getElemFlatIdx(0).getSingleValue(), constrainRoot);
@@ -161,12 +163,13 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   SourceRefLatticeValue vector(llvm::ArrayRef<int64_t>({3}));
   EXPECT_EQ(
       vector.write(
-          {SourceRefIndex(APInt(64, 1), APInt(64, 3))}, SourceRefLatticeValue(constrainRoot)
+          {SourceRefIndex(llvm::DynamicAPInt(1), llvm::DynamicAPInt(3))},
+          SourceRefLatticeValue(constrainRoot)
       ),
       ChangeResult::Change
   );
   for (uint64_t index = 1; index < 3; ++index) {
-    auto ranged = vector.extract({SourceRefIndex(APInt(64, index))});
+    auto ranged = vector.extract({SourceRefIndex(llvm::DynamicAPInt(index))});
     ASSERT_TRUE(succeeded(ranged));
     EXPECT_TRUE(ranged->first.getScalarValue().contains(constrainRoot));
   }
@@ -177,11 +180,13 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
       matrixSlice.getElemFlatIdx(0).setValue(SourceRefLatticeValue(computeRoot)),
       ChangeResult::Change
   );
-  EXPECT_EQ(tensor.write({SourceRefIndex(APInt(64, 1))}, matrixSlice), ChangeResult::Change);
+  EXPECT_EQ(
+      tensor.write({SourceRefIndex(llvm::DynamicAPInt(1))}, matrixSlice), ChangeResult::Change
+  );
 
   SourceRefLatticeValue transposedSlice(llvm::ArrayRef<int64_t>({3, 2}));
   EXPECT_DEATH(
-      (void)tensor.write({SourceRefIndex(APInt(64, 0))}, transposedSlice),
+      (void)tensor.write({SourceRefIndex(llvm::DynamicAPInt(0))}, transposedSlice),
       "SourceRef array write value shape does not match selected storage"
   );
 }
