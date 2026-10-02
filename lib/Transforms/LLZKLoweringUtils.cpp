@@ -12,7 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Transforms/LoweringUtils.h"
 
 #include <mlir/IR/Block.h>
@@ -23,6 +25,7 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>
@@ -61,6 +64,45 @@ Value mapValueIntoCompute(
 
 } // namespace
 
+LogicalResult captureAuxiliaryInputs(
+    ArrayRef<Value> expressions, FuncDefOp computeFunc, DenseMap<Value, Value> &captured
+) {
+  if (expressions.empty()) {
+    return success();
+  }
+  OpBuilder builder = OpBuilder::atBlockBegin(&computeFunc.getBody().front());
+  DenseSet<Value> visited;
+  SmallVector<Value> pending(expressions);
+  while (!pending.empty()) {
+    Value value = pending.pop_back_val();
+    if (!visited.insert(value).second) {
+      continue;
+    }
+    Operation *op = value.getDefiningOp();
+    if (!op) {
+      continue;
+    }
+    if (isa<MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(op)) {
+      Value root = value;
+      while (auto *read = root.getDefiningOp()) {
+        if (!isa<MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(read)) {
+          break;
+        }
+        root = read->getOperand(0);
+      }
+      auto argument = dyn_cast<BlockArgument>(root);
+      if (argument && argument.getArgNumber() != 0 && isa<FeltType>(value.getType())) {
+        if (!rebuildExprInCompute(value, computeFunc, builder, captured)) {
+          return failure();
+        }
+      }
+      continue;
+    }
+    llvm::append_range(pending, op->getOperands());
+  }
+  return success();
+}
+
 Value rebuildExprInCompute(
     Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &memo
 ) {
@@ -72,7 +114,8 @@ Value rebuildExprInCompute(
     return memo[val] = mapBlockArgumentInCompute(barg, computeFunc);
   }
 
-  if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
+  if (auto *readOp = val.getDefiningOp();
+      readOp && isa<MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(readOp)) {
     IRMapping mapper;
     for (Value operand : readOp->getOperands()) {
       Value rebuiltOperand = mapValueIntoCompute(operand, computeFunc, builder, memo);
@@ -82,7 +125,7 @@ Value rebuildExprInCompute(
       mapper.map(operand, rebuiltOperand);
     }
 
-    Operation *rebuiltOp = builder.clone(*readOp.getOperation(), mapper);
+    Operation *rebuiltOp = builder.clone(*readOp, mapper);
     assert(rebuiltOp->getNumResults() == 1 && "member reads have exactly one result");
     return memo[val] = rebuiltOp->getResult(0);
   }
@@ -296,10 +339,13 @@ unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {
     return it->second;
   }
 
+  if (isa<BlockArgument>(val)) {
+    return memo[val] = 1;
+  }
   if (isa<FeltConstantOp>(val.getDefiningOp())) {
     return memo[val] = 0;
   }
-  if (isa<NonDetOp, MemberReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
+  if (isa<NonDetOp, MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(val.getDefiningOp())) {
     return memo[val] = 1;
   }
   if (auto add = val.getDefiningOp<AddFeltOp>()) {

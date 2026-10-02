@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering=legacy=true -verify-diagnostics %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
   struct.def @ExternPayload {

@@ -14,7 +14,20 @@
 
 namespace r1cs {
 
-void buildFullR1CSLoweringPipeline(mlir::OpPassManager &);
+/// Select the input contract explicitly when assembling an R1CS pipeline.
+enum class R1CSLoweringMode { Legacy, Direct };
+
+/// Options for the existing full R1CS pipeline; direct storage lowering is the default.
+struct FullR1CSLoweringOptions : public mlir::PassPipelineOptions<FullR1CSLoweringOptions> {
+  Option<bool> legacy {
+      *this, "legacy", llvm::cl::desc("Use legacy flattened-input lowering"), llvm::cl::init(false)
+  };
+};
+
+/// Build a flat pipeline for either flattened legacy IR or evaluated storage IR.
+void buildFullR1CSLoweringPipeline(
+    mlir::OpPassManager &, R1CSLoweringMode mode = R1CSLoweringMode::Direct
+);
 
 void registerTransformationPassPipelines();
 

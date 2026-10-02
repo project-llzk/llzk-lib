@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-full-r1cs-lowering %s > %t
+// RUN: llzk-opt -llzk-full-r1cs-lowering=legacy=true %s > %t
 // RUN: FileCheck %s --check-prefixes=CHECK,INPUT-FIRST < %t 2> %t.err || FileCheck %s --check-prefixes=CHECK,OUTPUT-FIRST < %t
 
 !F = !felt.type<"bn128">

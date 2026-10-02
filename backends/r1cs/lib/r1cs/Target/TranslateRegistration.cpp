@@ -12,6 +12,8 @@
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/Target/R1CSBinary.h"
 
+#include "llzk/Dialect/DialectRegistration.h"
+
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Tools/mlir-translate/Translation.h>
 
@@ -41,6 +43,9 @@ void r1cs::registerR1CSTranslation() {
       return op->emitOpError() << "expected builtin.module as top level operation";
     }
     return exportR1CSBinary(moduleOp, output, prime, circuitName);
-  }, [](DialectRegistry &registry) { registry.insert<R1CSDialect>(); }
+  }, [](DialectRegistry &registry) {
+    llzk::registerDialects(registry);
+    registry.insert<R1CSDialect>();
+  }
   );
 }

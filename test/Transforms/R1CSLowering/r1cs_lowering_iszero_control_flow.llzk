@@ -1,6 +1,6 @@
 // Regression for project-llzk/circom#454.
-// RUN: llzk-opt -llzk-full-r1cs-lowering --verify-each %s | FileCheck %s
-// RUN: llzk-opt -llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
+// RUN: llzk-opt -llzk-full-r1cs-lowering=legacy=true --verify-each %s | FileCheck %s
+// RUN: llzk-opt -llzk-full-r1cs-lowering=legacy=true %s | r1cs-opt -o /dev/null
 
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@IsZero>} {
   struct.def @IsZero {
