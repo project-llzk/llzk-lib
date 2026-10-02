@@ -741,6 +741,9 @@ std::optional<std::string> tryCppTypeToCapiType(StringRef cppType) {
     return std::make_optional(cppType.str());
   }
 
+  if (isDynamicAPIntType(cppType)) {
+    return std::make_optional("MlirStringRef");
+  }
   // APInt type is converted via llzk::fromAPInt()
   if (isAPIntType(cppType)) {
     return std::make_optional("int64_t");

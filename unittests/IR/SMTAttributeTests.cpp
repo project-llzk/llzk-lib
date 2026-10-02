@@ -33,3 +33,22 @@ TEST_F(SMTAttributeTests, NumericAPIntStorageReusesEqualValuesAcrossWidths) {
   llvm::APInt multiword = llvm::APInt::getOneBitSet(65, 64) | llvm::APInt(65, 7);
   expectStorageReuse(multiword, multiword.zext(129));
 }
+
+TEST_F(SMTAttributeTests, DynamicIntegerStorageUsesSignedNumericIdentity) {
+  for (int64_t value : {-3, -1, 0, 1, 7}) {
+    llvm::DynamicAPInt small(value);
+    llvm::DynamicAPInt wide(llvm::APInt(256, value, true));
+    auto a = llzk::felt::FeltConstAttr::get(&ctx, small);
+    auto b = llzk::felt::FeltConstAttr::get(&ctx, wide);
+    EXPECT_EQ(a, b);
+    EXPECT_EQ(a.getValue(), small);
+    EXPECT_EQ(
+        llvm::hash_combine(llzk::DynamicAPIntValue(small)),
+        llvm::hash_combine(llzk::DynamicAPIntValue(wide))
+    );
+  }
+  auto negative = llzk::felt::FeltConstAttr::get(&ctx, llvm::DynamicAPInt(-1));
+  auto positive =
+      llzk::felt::FeltConstAttr::get(&ctx, llzk::toDynamicAPInt("18446744073709551615"));
+  EXPECT_NE(negative, positive);
+}

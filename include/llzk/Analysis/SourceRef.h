@@ -298,8 +298,7 @@ public:
   mlir::FailureOr<llvm::DynamicAPInt> getConstantFeltValue() const {
     auto feltConst = getDefiningOp<felt::FeltConstantOp>();
     if (succeeded(feltConst)) {
-      llvm::APInt i = feltConst->getValue().getValue();
-      return toDynamicAPInt(i);
+      return feltConst->getValue().getValue();
     }
     return mlir::failure();
   }

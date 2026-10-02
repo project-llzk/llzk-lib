@@ -1322,7 +1322,7 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   // clang-format off
   llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
       .Case<FeltConstantOp>([&](auto feltConst) {
-        llvm::APSInt constOpVal(feltConst.getValue().getValue());
+        auto constOpVal = feltConst.getValue().getValue();
         return field.get().reduce(constOpVal);
       })
       .Case<arith::ConstantIndexOp>([&](auto indexConst) {
@@ -1560,8 +1560,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     // We check for the constant case first.
     auto constCase = [&](FeltConstantOp constOperand, Value multiplicand) {
       auto latVal = getLatticeElement(multiplicand)->getValue().getScalarValue();
-      APInt constVal = constOperand.getValue().getValue();
-      if (constVal.isZero()) {
+      auto constVal = f.reduce(constOperand.getValue().getValue());
+      if (constVal == 0) {
         // There's no inverse for zero, so we do nothing.
         return;
       }
@@ -1797,7 +1797,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
       if (failed(handleRefValue())) {
         return failure();
       }
-      auto constInt = APSInt(c.getValue().getValue());
+      auto constInt = c.getValue().getValue();
       consts.push_back(field.get().reduce(constInt));
       continue;
     } else if (m_RefValue(&signalVal).match(v)) {
