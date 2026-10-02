@@ -121,10 +121,15 @@ def DefinitionMonomorphizationPass : LLZKPass<"llzk-monomorphize"> {
       "Specialize reachable definitions while retaining calls and loops";
   let description = [{
     Opt-in definition specialization rooted at llzk.main. A worklist and structural
-    cache share definitions by source symbol and concrete parameter tuple. Source
-    templates are retained for rolled heterogeneous references. Generated definitions
-    carry poly.specialization_id, poly.origin, and poly.arguments attributes; names
-    are not identities. Does not run any legacy flattening or scalarization pipeline.
+    cache share definitions by source symbol, concrete parameter tuple, and known scalar
+    call-argument tuple. The latter is recorded as poly.constant_arguments, aligned with
+    function inputs and using UnitAttr for dynamic positions. Constants are materialized
+    inside the clone while its signature and call operands are retained. Source templates
+    are retained for rolled heterogeneous references. Generated definitions carry
+    poly.specialization_id, poly.origin, and poly.arguments attributes; names are not
+    identities. The global specialization limit counts every unique constant-argument
+    tuple and reports an error when exceeded. Does not run any legacy flattening or
+    scalarization pipeline.
   }];
   let options = [Option<"maxSpecializations", "max-specializations", "unsigned",
                         "10000", "Bound the number of unique definitions">,

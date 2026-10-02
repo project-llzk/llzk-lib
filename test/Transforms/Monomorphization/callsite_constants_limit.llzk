@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s --llzk-monomorphize="max-specializations=2" -verify-diagnostics
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-error @+1 {{specialization limit exceeded}}
+  function.def @id(%x: index) -> index {
+    function.return %x : index
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %a = function.call @id(%one) : (index) -> index
+      %b = function.call @id(%two) : (index) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
