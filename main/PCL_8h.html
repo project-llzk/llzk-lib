@@ -132,13 +132,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('PCL_8h.html','
   <div class="headertitle"><div class="title">PCL.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Declares the C interface for Picus PCL conversion, transformation, and translation.  
+<a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;mlir-c/IR.h&quot;</code><br />
+<code>#include &quot;mlir-c/Pass.h&quot;</code><br />
 <code>#include &quot;mlir-c/Support.h&quot;</code><br />
-<code>#include &quot;pcl/Conversion/ConversionPasses.capi.h.inc&quot;</code><br />
+<code>#include &quot;<a class="el" href="Config_8h_source.html">llzk/Config/Config.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for PCL.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PCL_8h__incl.svg" width="467" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PCL_8h__incl.svg" width="547" height="131"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="PCL_8h_source.html">Go to the source code of this file.</a></p>
@@ -148,7 +152,11 @@ Functions</h2></td></tr>
 <tr class="memitem:ae1b8a56fb1c5c771bfeecfb7bc03daa5" id="r_ae1b8a56fb1c5c771bfeecfb7bc03daa5"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirLogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ae1b8a56fb1c5c771bfeecfb7bc03daa5">llzkTranslateModuleToPCL</a> (MlirOperation module, MlirStringCallback callback, void *userData)</td></tr>
 <tr class="memdesc:ae1b8a56fb1c5c771bfeecfb7bc03daa5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Translate an operation that satisfies the PCL dialect (i.e.  <br /></td></tr>
 </table>
-<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Declares the C interface for Picus PCL conversion, transformation, and translation. </p>
+
+<p class="definition">Definition in file <a class="el" href="PCL_8h_source.html">PCL.h</a>.</p>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="ae1b8a56fb1c5c771bfeecfb7bc03daa5" name="ae1b8a56fb1c5c771bfeecfb7bc03daa5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae1b8a56fb1c5c771bfeecfb7bc03daa5">&#9670;&#160;</a></span>llzkTranslateModuleToPCL()</h2>
 

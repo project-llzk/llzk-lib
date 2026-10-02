@@ -158,6 +158,8 @@ Namespaces</h2></td></tr>
 <tr class="memitem:global" id="r_global"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1global.html">global</a></td></tr>
 <tr class="memitem:impl" id="r_impl"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1impl.html">impl</a></td></tr>
 <tr class="memitem:include" id="r_include"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1include.html">include</a></td></tr>
+<tr class="memitem:mlir_5Fpatch" id="r_mlir_5Fpatch"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1mlir__patch.html">mlir_patch</a></td></tr>
+<tr class="memdesc:namespacellzk_1_1mlir__patch"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace <span class="tt">mlir::registerTransformsPasses()</span> to register a custom <span class="tt">remove-dead-values</span> pass because MLIR version 23.1.0 has a bug where the pass tracks <span class="tt">poison</span> values that it created during its current invocation only and may end up leaving behind dead <span class="tt">poison</span> values. <br /></td></tr>
 <tr class="memitem:pod" id="r_pod"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1pod.html">pod</a></td></tr>
 <tr class="memitem:polymorphic" id="r_polymorphic"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic.html">polymorphic</a></td></tr>
 <tr class="memitem:ram" id="r_ram"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1ram.html">ram</a></td></tr>
@@ -442,7 +444,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a1504341f52fe20c3dd58ddcbd91f09e7" id="r_a1504341f52fe20c3dd58ddcbd91f09e7"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1504341f52fe20c3dd58ddcbd91f09e7">createSymbolDefTreePrinterPass</a> (<a class="el" href="structllzk_1_1SymbolDefTreePrinterPassOptions.html">SymbolDefTreePrinterPassOptions</a> options)</td></tr>
 <tr class="memitem:a0f6ff8ad552f9df00e6145108f920542" id="r_a0f6ff8ad552f9df00e6145108f920542"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a0f6ff8ad552f9df00e6145108f920542">createSymbolUseGraphPrinterPass</a> ()</td></tr>
 <tr class="memitem:aa5b0aaa24fa188b6bb82954ce4843236" id="r_aa5b0aaa24fa188b6bb82954ce4843236"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa5b0aaa24fa188b6bb82954ce4843236">createSymbolUseGraphPrinterPass</a> (<a class="el" href="structllzk_1_1SymbolUseGraphPrinterPassOptions.html">SymbolUseGraphPrinterPassOptions</a> options)</td></tr>
-<tr class="memitem:a9338ef0435a6cb734c7aebea355d4a36" id="r_a9338ef0435a6cb734c7aebea355d4a36"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a9338ef0435a6cb734c7aebea355d4a36">registerAllDialects</a> (mlir::DialectRegistry &amp;registry)</td></tr>
+<tr class="memitem:a3c8e298b34d06db058cf37d676b39884" id="r_a3c8e298b34d06db058cf37d676b39884"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a3c8e298b34d06db058cf37d676b39884">registerDialects</a> (mlir::DialectRegistry &amp;registry)</td></tr>
+<tr class="memdesc:a3c8e298b34d06db058cf37d676b39884"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register core LLZK dialects, the MLIR arith, scf, and smt dialects, and verification extensions in <code class="param">registry</code>.  <br /></td></tr>
+<tr class="memitem:af5f27e67f73d1645afaf2ee0e2189a1f" id="r_af5f27e67f73d1645afaf2ee0e2189a1f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#af5f27e67f73d1645afaf2ee0e2189a1f">registerPasses</a> (mlir::DialectRegistry &amp;registry)</td></tr>
+<tr class="memdesc:af5f27e67f73d1645afaf2ee0e2189a1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register LLZK analysis, validation, and transformation passes and pipelines, SMT conversion passes, and MLIR transformation passes in the global pass registry.  <br /></td></tr>
 <tr class="memitem:a47e44fbda81e2f164ab37d3696457eff" id="r_a47e44fbda81e2f164ab37d3696457eff"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a47e44fbda81e2f164ab37d3696457eff">printAttrs</a> (AsmPrinter &amp;printer, ArrayRef&lt; Attribute &gt; attrs, const StringRef &amp;separator)</td></tr>
 <tr class="memitem:aae3bcef1a08579d6633a5534bc783aad" id="r_aae3bcef1a08579d6633a5534bc783aad"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aae3bcef1a08579d6633a5534bc783aad">getTypeFromLlzkMainAttr</a> (ModuleOp op, Attribute attr)</td></tr>
 <tr class="memitem:a6af91aaab3f72bcd8df881498175c3ac" id="r_a6af91aaab3f72bcd8df881498175c3ac"><td class="memItemLeft">OwningOpRef&lt; ModuleOp &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a6af91aaab3f72bcd8df881498175c3ac">createLLZKModule</a> (MLIRContext *, Location loc)</td></tr>
@@ -8465,25 +8470,6 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
-<a id="a9338ef0435a6cb734c7aebea355d4a36" name="a9338ef0435a6cb734c7aebea355d4a36"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9338ef0435a6cb734c7aebea355d4a36">&#9670;&#160;</a></span>registerAllDialects()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void llzk::registerAllDialects </td>
-          <td>(</td>
-          <td class="paramtype">mlir::DialectRegistry &amp;</td>          <td class="paramname"><span class="paramname"><em>registry</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00036">36</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
-
-</div>
-</div>
 <a id="af5b5ce918cd1f943f8e9c470d968b25c" name="af5b5ce918cd1f943f8e9c470d968b25c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af5b5ce918cd1f943f8e9c470d968b25c">&#9670;&#160;</a></span>registerAnalysisPasses()</h2>
 
@@ -8812,6 +8798,27 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
+<a id="a3c8e298b34d06db058cf37d676b39884" name="a3c8e298b34d06db058cf37d676b39884"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c8e298b34d06db058cf37d676b39884">&#9670;&#160;</a></span>registerDialects()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerDialects </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DialectRegistry &amp;</td>          <td class="paramname"><span class="paramname"><em>registry</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register core LLZK dialects, the MLIR arith, scf, and smt dialects, and verification extensions in <code class="param">registry</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Dialect_2DialectRegistration_8cpp_source.html#l00058">58</a> of file <a class="el" href="Dialect_2DialectRegistration_8cpp_source.html">DialectRegistration.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ae3e54e31d7ac526c7a4a85373bc8ce78" name="ae3e54e31d7ac526c7a4a85373bc8ce78"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae3e54e31d7ac526c7a4a85373bc8ce78">&#9670;&#160;</a></span>registerEnforceNoMemberOverwritePass()</h2>
 
@@ -9031,7 +9038,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKInliningExtensions_8cpp_source.html#l00101">101</a> of file <a class="el" href="LLZKInliningExtensions_8cpp_source.html">LLZKInliningExtensions.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKInliningExtensions_8cpp_source.html#l00103">103</a> of file <a class="el" href="LLZKInliningExtensions_8cpp_source.html">LLZKInliningExtensions.cpp</a>.</p>
 
 </div>
 </div>
@@ -9199,6 +9206,28 @@ template&lt;typename ConcreteOp&gt; </div>
 <p>Register the operation C API test generator before command-line parsing. </p>
 
 <p class="definition">Definition at line <a class="el" href="OpCAPITestGen_8cpp_source.html#l00572">572</a> of file <a class="el" href="OpCAPITestGen_8cpp_source.html">OpCAPITestGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="af5f27e67f73d1645afaf2ee0e2189a1f" name="af5f27e67f73d1645afaf2ee0e2189a1f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5f27e67f73d1645afaf2ee0e2189a1f">&#9670;&#160;</a></span>registerPasses()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerPasses </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DialectRegistry &amp;</td>          <td class="paramname"><span class="paramname"><em>registry</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register LLZK analysis, validation, and transformation passes and pipelines, SMT conversion passes, and MLIR transformation passes in the global pass registry. </p>
+<p>Add LLZK and MLIR func inlining extensions to <code class="param">registry</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Dialect_2DialectRegistration_8cpp_source.html#l00118">118</a> of file <a class="el" href="Dialect_2DialectRegistration_8cpp_source.html">DialectRegistration.cpp</a>.</p>
 
 </div>
 </div>

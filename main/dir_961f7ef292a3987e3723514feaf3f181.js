@@ -17,5 +17,5 @@ var dir_961f7ef292a3987e3723514feaf3f181 =
     [ "String", "dir_aeb111a66559cddca48532b3374d72a2.html", "dir_aeb111a66559cddca48532b3374d72a2" ],
     [ "Struct", "dir_3f79f5f4c17a11caedb64e36351476ed.html", "dir_3f79f5f4c17a11caedb64e36351476ed" ],
     [ "Verif", "dir_28997e874da7ccb52a024cd4ed9f7446.html", "dir_28997e874da7ccb52a024cd4ed9f7446" ],
-    [ "InitDialects.h", "llzk_2Dialect_2InitDialects_8h.html", "llzk_2Dialect_2InitDialects_8h" ]
+    [ "DialectRegistration.h", "llzk_2Dialect_2DialectRegistration_8h.html", "llzk_2Dialect_2DialectRegistration_8h" ]
 ];

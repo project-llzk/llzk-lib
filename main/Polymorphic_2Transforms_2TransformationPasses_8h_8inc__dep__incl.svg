@@ -54,8 +54,8 @@
 <g id="edge14_Node000001_Node000008" class="edge">
 <title>Node1&#45;&gt;Node8</title>
 <g id="a_edge14_Node000001_Node000008"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M1049.76,-241.4C868.7,-217.96 508.58,-169.3 205,-115.75 202.2,-115.26 199.36,-114.74 196.49,-114.22"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="1049.29,-244.87 1059.65,-242.68 1050.19,-237.93 1049.29,-244.87"/>
+<path fill="none" stroke="#63b8ff" d="M1050.03,-240.36C871.14,-215.73 517.23,-165.74 218,-115.75 210.9,-114.56 203.56,-113.3 196.18,-112.01"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="1049.41,-243.81 1059.79,-241.71 1050.36,-236.88 1049.41,-243.81"/>
 </a>
 </g>
 </g>
@@ -122,9 +122,9 @@
 <g id="Node000003" class="node">
 <title>Node3</title>
 <g id="a_Node000003"><a xlink:href="LLZKTransformationPassPipelines_8h.html" target="_top" xlink:title=" ">
-<polygon fill="white" stroke="#666666" points="404.38,-109.38 213.62,-109.38 213.62,-75.88 404.38,-75.88 404.38,-109.38"/>
-<text xml:space="preserve" text-anchor="start" x="221.62" y="-95.88" font-family="Helvetica,sans-Serif" font-size="10.00">include/llzk/Transforms</text>
-<text xml:space="preserve" text-anchor="middle" x="309" y="-83.12" font-family="Helvetica,sans-Serif" font-size="10.00">/LLZKTransformationPassPipelines.h</text>
+<polygon fill="white" stroke="#666666" points="442.38,-109.38 251.62,-109.38 251.62,-75.88 442.38,-75.88 442.38,-109.38"/>
+<text xml:space="preserve" text-anchor="start" x="259.62" y="-95.88" font-family="Helvetica,sans-Serif" font-size="10.00">include/llzk/Transforms</text>
+<text xml:space="preserve" text-anchor="middle" x="347" y="-83.12" font-family="Helvetica,sans-Serif" font-size="10.00">/LLZKTransformationPassPipelines.h</text>
 </a>
 </g>
 </g>
@@ -132,27 +132,26 @@
 <g id="edge2_Node000002_Node000003" class="edge">
 <title>Node2&#45;&gt;Node3</title>
 <g id="a_edge2_Node000002_Node000003"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M763.95,-164.52C678.16,-154.13 538.09,-136.11 418,-115.75 407.53,-113.97 396.53,-111.94 385.7,-109.84"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="763.32,-167.97 773.67,-165.69 764.16,-161.02 763.32,-167.97"/>
+<path fill="none" stroke="#63b8ff" d="M763.87,-163.52C684.29,-152.89 558.88,-135.18 451,-115.75 441.1,-113.97 430.7,-111.94 420.46,-109.85"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="763.4,-166.99 773.78,-164.84 764.33,-160.05 763.4,-166.99"/>
 </a>
 </g>
 </g>
-<!-- Node5 -->
-<g id="Node000005" class="node">
-<title>Node5</title>
-<g id="a_Node000005"><a xlink:href="llzk-opt_8cpp.html" target="_top" xlink:title="This file implements a version of the mlir&#45;opt tool configured for use on LLZK files.">
-<polygon fill="white" stroke="#666666" points="482,-33.5 382,-33.5 382,0 482,0 482,-33.5"/>
-<text xml:space="preserve" text-anchor="start" x="390" y="-20" font-family="Helvetica,sans-Serif" font-size="10.00">tools/llzk&#45;opt/llzk</text>
-<text xml:space="preserve" text-anchor="middle" x="432" y="-7.25" font-family="Helvetica,sans-Serif" font-size="10.00">&#45;opt.cpp</text>
+<!-- Node4 -->
+<g id="Node000004" class="node">
+<title>Node4</title>
+<g id="a_Node000004"><a xlink:href="Dialect_2DialectRegistration_8cpp.html" target="_top" xlink:title="Defines dialect and pass registration functions for core LLZK dialects.">
+<polygon fill="white" stroke="#666666" points="315.25,-27.12 132.75,-27.12 132.75,-6.38 315.25,-6.38 315.25,-27.12"/>
+<text xml:space="preserve" text-anchor="middle" x="224" y="-13.62" font-family="Helvetica,sans-Serif" font-size="10.00">lib/Dialect/DialectRegistration.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node2&#45;&gt;Node5 -->
-<g id="edge11_Node000002_Node000005" class="edge">
-<title>Node2&#45;&gt;Node5</title>
-<g id="a_edge11_Node000002_Node000005"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M763.97,-172.63C662.26,-169.31 494.62,-157.46 451,-115.75 428.83,-94.55 428.23,-55.82 429.98,-33.93"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="763.81,-176.12 773.92,-172.93 764.03,-169.13 763.81,-176.12"/>
+<!-- Node2&#45;&gt;Node4 -->
+<g id="edge6_Node000002_Node000004" class="edge">
+<title>Node2&#45;&gt;Node4</title>
+<g id="a_edge6_Node000002_Node000004"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M764.27,-168.69C605.21,-157.99 262.03,-133.05 243,-115.75 217.87,-92.9 220.08,-47.59 222.5,-27.61"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="763.67,-172.16 773.89,-169.33 764.14,-165.17 763.67,-172.16"/>
 </a>
 </g>
 </g>
@@ -185,45 +184,45 @@
 </g>
 </g>
 <!-- Node2&#45;&gt;Node7 -->
-<g id="edge6_Node000002_Node000007" class="edge">
+<g id="edge7_Node000002_Node000007" class="edge">
 <title>Node2&#45;&gt;Node7</title>
-<g id="a_edge6_Node000002_Node000007"><a xlink:title=" ">
+<g id="a_edge7_Node000002_Node000007"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M789.17,-146.2C765.01,-134.01 737.48,-120.11 716.79,-109.67"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="787.43,-149.24 797.94,-150.63 790.58,-142.99 787.43,-149.24"/>
 </a>
 </g>
 </g>
 <!-- Node2&#45;&gt;Node8 -->
-<g id="edge7_Node000002_Node000008" class="edge">
+<g id="edge8_Node000002_Node000008" class="edge">
 <title>Node2&#45;&gt;Node8</title>
-<g id="a_edge7_Node000002_Node000008"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M763.76,-169.5C642.34,-162.22 404.88,-145.41 205,-115.75 202.19,-115.33 199.33,-114.89 196.46,-114.42"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="763.44,-172.99 773.63,-170.08 763.85,-166 763.44,-172.99"/>
+<g id="a_edge8_Node000002_Node000008"><a xlink:title=" ">
+<path fill="none" stroke="#63b8ff" d="M763.93,-169.2C643.36,-161.57 408.18,-144.33 210,-115.75 205.49,-115.1 200.88,-114.39 196.24,-113.63"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="763.53,-172.69 773.73,-169.82 763.97,-165.7 763.53,-172.69"/>
 </a>
 </g>
 </g>
 <!-- Node2&#45;&gt;Node9 -->
-<g id="edge8_Node000002_Node000009" class="edge">
+<g id="edge9_Node000002_Node000009" class="edge">
 <title>Node2&#45;&gt;Node9</title>
-<g id="a_edge8_Node000002_Node000009"><a xlink:title=" ">
+<g id="a_edge9_Node000002_Node000009"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M923.72,-154.01C978.32,-140.4 1049.84,-122.58 1100.99,-109.83"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="923.01,-150.58 914.15,-156.39 924.7,-157.37 923.01,-150.58"/>
 </a>
 </g>
 </g>
 <!-- Node2&#45;&gt;Node10 -->
-<g id="edge9_Node000002_Node000010" class="edge">
+<g id="edge10_Node000002_Node000010" class="edge">
 <title>Node2&#45;&gt;Node10</title>
-<g id="a_edge9_Node000002_Node000010"><a xlink:title=" ">
+<g id="a_edge10_Node000002_Node000010"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M923.89,-165.2C1007.76,-155.5 1143.26,-138.18 1259,-115.75 1261.81,-115.2 1264.67,-114.63 1267.55,-114.02"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="923.7,-161.7 914.16,-166.31 924.5,-168.65 923.7,-161.7"/>
 </a>
 </g>
 </g>
 <!-- Node2&#45;&gt;Node11 -->
-<g id="edge10_Node000002_Node000011" class="edge">
+<g id="edge11_Node000002_Node000011" class="edge">
 <title>Node2&#45;&gt;Node11</title>
-<g id="a_edge10_Node000002_Node000011"><a xlink:title=" ">
+<g id="a_edge11_Node000002_Node000011"><a xlink:title=" ">
 <path fill="none" stroke="#63b8ff" d="M924.13,-168.34C1038.34,-159.93 1254.37,-142.06 1437,-115.75 1439.94,-115.33 1442.92,-114.88 1445.93,-114.41"/>
 <polygon fill="#63b8ff" stroke="#63b8ff" points="923.95,-164.84 914.24,-169.06 924.47,-171.83 923.95,-164.84"/>
 </a>
@@ -267,22 +266,22 @@
 </a>
 </g>
 </g>
-<!-- Node4 -->
-<g id="Node000004" class="node">
-<title>Node4</title>
-<g id="a_Node000004"><a xlink:href="LLZKTransformationPassPipelines_8cpp.html" target="_top" xlink:title="This file implements logic for registering several pass pipelines.">
-<polygon fill="white" stroke="#666666" points="364.38,-33.5 179.62,-33.5 179.62,0 364.38,0 364.38,-33.5"/>
-<text xml:space="preserve" text-anchor="start" x="187.62" y="-20" font-family="Helvetica,sans-Serif" font-size="10.00">lib/Transforms/LLZKTransformation</text>
-<text xml:space="preserve" text-anchor="middle" x="272" y="-7.25" font-family="Helvetica,sans-Serif" font-size="10.00">PassPipelines.cpp</text>
-</a>
-</g>
-</g>
 <!-- Node3&#45;&gt;Node4 -->
 <g id="edge3_Node000003_Node000004" class="edge">
 <title>Node3&#45;&gt;Node4</title>
 <g id="a_edge3_Node000003_Node000004"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M295.95,-65.57C290.64,-54.96 284.66,-43.04 280.01,-33.75"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="292.69,-66.87 300.29,-74.24 298.94,-63.73 292.69,-66.87"/>
+<path fill="none" stroke="#63b8ff" d="M310.43,-69.66C287.17,-55.69 258.16,-38.27 240.37,-27.58"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="308.33,-72.49 318.71,-74.63 311.94,-66.48 308.33,-72.49"/>
+</a>
+</g>
+</g>
+<!-- Node5 -->
+<g id="Node000005" class="node">
+<title>Node5</title>
+<g id="a_Node000005"><a xlink:href="LLZKTransformationPassPipelines_8cpp.html" target="_top" xlink:title="This file implements logic for registering several pass pipelines.">
+<polygon fill="white" stroke="#666666" points="518.38,-33.5 333.62,-33.5 333.62,0 518.38,0 518.38,-33.5"/>
+<text xml:space="preserve" text-anchor="start" x="341.62" y="-20" font-family="Helvetica,sans-Serif" font-size="10.00">lib/Transforms/LLZKTransformation</text>
+<text xml:space="preserve" text-anchor="middle" x="426" y="-7.25" font-family="Helvetica,sans-Serif" font-size="10.00">PassPipelines.cpp</text>
 </a>
 </g>
 </g>
@@ -290,8 +289,8 @@
 <g id="edge4_Node000003_Node000005" class="edge">
 <title>Node3&#45;&gt;Node5</title>
 <g id="a_edge4_Node000003_Node000005"><a xlink:title=" ">
-<path fill="none" stroke="#63b8ff" d="M345.84,-69.5C364.88,-58.06 387.7,-44.36 405.07,-33.92"/>
-<polygon fill="#63b8ff" stroke="#63b8ff" points="344.06,-66.48 337.29,-74.63 347.67,-72.49 344.06,-66.48"/>
+<path fill="none" stroke="#63b8ff" d="M372.4,-67.87C384.33,-56.71 398.24,-43.71 408.89,-33.75"/>
+<polygon fill="#63b8ff" stroke="#63b8ff" points="370.16,-65.17 365.25,-74.56 374.94,-70.29 370.16,-65.17"/>
 </a>
 </g>
 </g>
