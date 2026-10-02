@@ -12,7 +12,7 @@
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/Target/R1CSBinary.h"
 
-#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/DialectRegistration.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Tools/mlir-translate/Translation.h>
@@ -44,7 +44,7 @@ void r1cs::registerR1CSTranslation() {
     }
     return exportR1CSBinary(moduleOp, output, prime, circuitName);
   }, [](DialectRegistry &registry) {
-    llzk::registerAllDialects(registry);
+    llzk::registerDialects(registry);
     registry.insert<R1CSDialect>();
   }
   );
