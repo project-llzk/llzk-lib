@@ -1,0 +1,2 @@
+// RUN: %python %S/check-translation-equivalence.py llzk-opt llzk-translate %S/evaluated-scalar-interface_pass.llzk %t
+// Raw and evaluated in-memory translation must match export of lowered IR.
