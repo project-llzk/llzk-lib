@@ -38,7 +38,7 @@ public:
   /// @brief Add a new field to the set of available prime fields.
   /// Reports an error if the field is invalid or conflicts with an existing definition.
   inline static void
-  addField(llvm::StringRef fieldName, const llvm::APInt &prime, EmitErrorFn errFn) {
+  addField(llvm::StringRef fieldName, const llvm::DynamicAPInt &prime, EmitErrorFn errFn) {
     return addField(Field(prime, fieldName), errFn);
   }
   inline static void
@@ -90,6 +90,7 @@ public:
   /// @brief Returns the multiplicative inverse of `i` in prime field `p`.
   llvm::DynamicAPInt inv(const llvm::DynamicAPInt &i) const;
 
+  /// Temporary migration adapter; removed in stage 4.
   llvm::DynamicAPInt inv(const llvm::APInt &i) const;
 
   /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
@@ -97,6 +98,7 @@ public:
   /// as expected (i.e., reducing -1 will yield p-1).
   llvm::DynamicAPInt reduce(const llvm::DynamicAPInt &i) const;
   inline llvm::DynamicAPInt reduce(int64_t i) const { return reduce(llvm::DynamicAPInt(i)); }
+  /// Temporary migration adapter; removed in stage 4.
   llvm::DynamicAPInt reduce(const llvm::APInt &i) const;
 
   /// Converts a canonical field element to its signed integer representation:
@@ -128,7 +130,7 @@ public:
 
 private:
   Field(std::string_view primeStr, llvm::StringRef name);
-  Field(const llvm::APInt &primeInt, llvm::StringRef name);
+  Field(const llvm::DynamicAPInt &primeInt, llvm::StringRef name);
 
   /// Name of the prime for debugging purposes
   llvm::StringRef primeName;

@@ -81,3 +81,25 @@ During the four-stage migration, the old `toAPInt` and `toExactWidthAPInt` helpe
 remain temporary adapters for existing callers. Stage 4 removes them after all
 callers move to checked fixed-width encoding. APInt/APSInt decoding and encoding
 at LLVM/MLIR boundaries remain necessary after the migration.
+Felt constant attributes retain the exact signed literal, including when their
+field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
+modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
+compares the literal and type, so `-1` and `p - 1` need not be the same attribute.
+
+The C API accepts signed decimal `MlirStringRef` values for felt constants, field
+moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
+attribute. Numeric getters deliver the complete decimal value to an
+`MlirStringCallback`; callers must copy the callback text if they need to retain
+it. Width-taking string/limb constructors have been removed. Native `int64_t`
+felt convenience constructors remain available.
+
+Numeric bytecode payloads use new encoding tags and minimal signed two's-complement
+encodings. Old felt-constant, field-specification, and loop-bound payload tags are
+rejected rather than reinterpreted with different signedness. Regenerate bytecode
+from textual IR when moving to this representation.
+
+The APInt overloads of felt/field-specification builders, `Field::reduce` and
+`Field::inv`, and the old width-insensitive attribute parameter remain temporary
+migration adapters through stage 3. Stage 4 removes them after downstream callers
+use DynamicAPInt. `DynamicAPIntValue` is permanent owning storage for canonical
+numeric hashing, not a migration adapter.
