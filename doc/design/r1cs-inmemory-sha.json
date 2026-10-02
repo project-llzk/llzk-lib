@@ -1,0 +1,122 @@
+[
+  {
+    "name": "sha256_test448",
+    "samples": [
+      {
+        "frontend_s": 2.3553673746064305,
+        "conversion_s": 37.193148334510624,
+        "end_to_end_s": 39.548515709117055
+      },
+      {
+        "frontend_s": 2.268109166994691,
+        "conversion_s": 39.102086500264704,
+        "end_to_end_s": 41.370195667259395
+      },
+      {
+        "frontend_s": 2.3105796249583364,
+        "conversion_s": 40.15048437565565,
+        "end_to_end_s": 42.46106400061399
+      }
+    ],
+    "input_sha256": "672a8b8aed76f2b644e96a58950187d48eccc724d83210e0d6b5e20d370de076",
+    "sha256": "0f4948521988d450602ee53f1ddff4a5f8c0508941876387c55cd13332d3b88d",
+    "wires": 408465,
+    "constraints": 408640,
+    "binary_bytes": 46320496,
+    "old_control_s": 72.78808704111725,
+    "old_control_lowering_s": 37.07210670784116,
+    "old_control_export_s": 35.71598033327609,
+    "binary_identical": true,
+    "frontend_s": 2.3105796249583364,
+    "frontend_s_min": 2.268109166994691,
+    "frontend_s_max": 2.3553673746064305,
+    "conversion_s": 39.102086500264704,
+    "conversion_s_min": 37.193148334510624,
+    "conversion_s_max": 40.15048437565565,
+    "end_to_end_s": 41.370195667259395,
+    "end_to_end_s_min": 39.548515709117055,
+    "end_to_end_s_max": 42.46106400061399,
+    "previous_conversion_s": 76.73695466760546,
+    "speedup_vs_previous": 1.96247723678597
+  },
+  {
+    "name": "sha256_test512",
+    "samples": [
+      {
+        "frontend_s": 2.4255160419270396,
+        "conversion_s": 39.938452375121415,
+        "end_to_end_s": 42.363968417048454
+      },
+      {
+        "frontend_s": 2.2946716668084264,
+        "conversion_s": 39.16849454212934,
+        "end_to_end_s": 41.463166208937764
+      },
+      {
+        "frontend_s": 2.2966812076047063,
+        "conversion_s": 39.68635837454349,
+        "end_to_end_s": 41.983039582148194
+      }
+    ],
+    "input_sha256": "402241440e7b610ee623db862432783d4031b1c2503a34fc76a23a84f01a1608",
+    "sha256": "5215d957848b659bc2aba28d4b763525fdf3bc438f3aa3191bddfc249b21d3c6",
+    "wires": 408529,
+    "constraints": 408640,
+    "binary_bytes": 46323240,
+    "old_control_s": 129.03983587492257,
+    "old_control_lowering_s": 37.98000791668892,
+    "old_control_export_s": 91.05982795823365,
+    "binary_identical": true,
+    "frontend_s": 2.2966812076047063,
+    "frontend_s_min": 2.2946716668084264,
+    "frontend_s_max": 2.4255160419270396,
+    "conversion_s": 39.68635837454349,
+    "conversion_s_min": 39.16849454212934,
+    "conversion_s_max": 39.938452375121415,
+    "end_to_end_s": 41.983039582148194,
+    "end_to_end_s_min": 41.463166208937764,
+    "end_to_end_s_max": 42.363968417048454,
+    "previous_conversion_s": 95.11608862411231,
+    "speedup_vs_previous": 2.396694796898367
+  },
+  {
+    "name": "sha256_2_test",
+    "samples": [
+      {
+        "frontend_s": 1.6204574583098292,
+        "conversion_s": 18.361008084379137,
+        "end_to_end_s": 19.981465542688966
+      },
+      {
+        "frontend_s": 1.5548239992931485,
+        "conversion_s": 18.243308207951486,
+        "end_to_end_s": 19.798132207244635
+      },
+      {
+        "frontend_s": 1.557270249351859,
+        "conversion_s": 18.910000042058527,
+        "end_to_end_s": 20.467270291410387
+      }
+    ],
+    "input_sha256": "91e1c36987a65cb12a0670a7319ff3924bda82b7e5f9e1595d35c5a0fc66c83a",
+    "sha256": "645554691ee4607859f19d5027dec411baf5179803090f7a1eab3803daaa4929",
+    "wires": 204154,
+    "constraints": 204465,
+    "binary_bytes": 23216064,
+    "old_control_s": 32.26723454147577,
+    "old_control_lowering_s": 16.631218750029802,
+    "old_control_export_s": 15.63601579144597,
+    "binary_identical": true,
+    "frontend_s": 1.557270249351859,
+    "frontend_s_min": 1.5548239992931485,
+    "frontend_s_max": 1.6204574583098292,
+    "conversion_s": 18.361008084379137,
+    "conversion_s_min": 18.243308207951486,
+    "conversion_s_max": 18.910000042058527,
+    "end_to_end_s": 19.981465542688966,
+    "end_to_end_s_min": 19.798132207244635,
+    "end_to_end_s_max": 20.467270291410387,
+    "previous_conversion_s": 40.51900304108858,
+    "speedup_vs_previous": 2.2067962093846383
+  }
+]

@@ -1,0 +1,41 @@
+[
+  {
+    "name": "sha256_test448",
+    "native_samples_s": [
+      1.5719027910381556,
+      1.5552299581468105,
+      1.529627624899149
+    ],
+    "native_median_s": 1.5552299581468105,
+    "llzk_conversion_s": 39.102086500264704,
+    "llzk_end_to_end_s": 41.370195667259395,
+    "conversion_ratio": 25.142318211808487,
+    "end_to_end_ratio": 26.60069364697393
+  },
+  {
+    "name": "sha256_test512",
+    "native_samples_s": [
+      1.4754853751510382,
+      1.5404521254822612,
+      1.515279708430171
+    ],
+    "native_median_s": 1.515279708430171,
+    "llzk_conversion_s": 39.68635837454349,
+    "llzk_end_to_end_s": 41.983039582148194,
+    "conversion_ratio": 26.190780589056086,
+    "end_to_end_ratio": 27.706461947967746
+  },
+  {
+    "name": "sha256_2_test",
+    "native_samples_s": [
+      1.141296916641295,
+      1.1498915422707796,
+      1.0444813333451748
+    ],
+    "native_median_s": 1.141296916641295,
+    "llzk_conversion_s": 18.361008084379137,
+    "llzk_end_to_end_s": 19.981465542688966,
+    "conversion_ratio": 16.0878451668944,
+    "end_to_end_ratio": 17.507683803695983
+  }
+]
