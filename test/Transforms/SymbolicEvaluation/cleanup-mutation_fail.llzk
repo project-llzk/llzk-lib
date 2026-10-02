@@ -1,0 +1,24 @@
+// RUN: llzk-opt %s --llzk-monomorphize --llzk-evaluate-constraints -verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @mutate(%a: !array.type<1 x !felt.type>, %x: !felt.type, %c: i1) -> !felt.type {
+    %zero = arith.constant 0 : index
+    // expected-error @below {{dynamic conditional is not yet supported}}
+    scf.if %c {
+      array.write %a[%zero] = %x : <1 x !felt.type>, !felt.type
+    }
+    function.return %x : !felt.type
+  }
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %x: !felt.type) {
+      %z = felt.const 0
+      %c = bool.cmp eq(%x, %z) : !felt.type, !felt.type
+      %a = llzk.nondet : !array.type<1 x !felt.type>
+      %unused = function.call @mutate(%a, %x, %c) : (!array.type<1 x !felt.type>, !felt.type, i1) -> !felt.type
+      function.return
+    }
+  }
+}

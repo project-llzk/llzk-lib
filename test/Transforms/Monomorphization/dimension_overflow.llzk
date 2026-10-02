@@ -1,0 +1,16 @@
+// RUN: llzk-opt %s -llzk-monomorphize -verify-diagnostics
+// Reject a field-valued size that cannot be represented without truncation.
+module attributes {llzk.lang, llzk.main = !struct.type<@Big::@Big<[#felt<const 18446744073709551616 : <"bn128">> : !felt.type<"bn128">]>>} {
+  poly.template @Big {
+    poly.param @N : index
+    // expected-error @+1 {{specialized array dimension does not fit a nonnegative index}}
+    struct.def @Big {
+      struct.member @a : !array.type<@N x !felt.type<"bn128">>
+      function.def @compute() -> !struct.type<@Big::@Big<[@N]>> {
+        %s = struct.new : !struct.type<@Big::@Big<[@N]>>
+        function.return %s : !struct.type<@Big::@Big<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Big::@Big<[@N]>>) { function.return }
+    }
+  }
+}

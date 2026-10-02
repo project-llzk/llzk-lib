@@ -27,9 +27,12 @@ must not parse their spelling. IDs require remapping when independently processe
 are merged. A second invocation on an already-specialized main does not create more clones.
 
 Concrete type references and compute/constrain/free-function calls target the cached
-definitions. Shared private constant-substitution helpers are reused from the flattening
-implementation, but its driver and rewrite pipelines are never invoked. The separate
-`DefinitionMonomorphization.inc` contains the new worklist driver.
+definitions. `DefinitionMonomorphization.cpp` is a standalone translation unit with
+its own constant substitution and worklist driver. It does not invoke or depend on
+private helpers from the legacy flattening pass. Recursive type substitution reaches
+POD records as well as arrays and nested struct parameters. Field-valued dimensions
+are converted to representable index attributes, and constant-expression evaluation
+handles the index/field casts emitted by Circom without rewriting source templates.
 
 Affine component families retain their original rolled types and call references:
 
@@ -179,3 +182,90 @@ fixtures were removed after summarization and are not committed.
 Its checks passed all 1,340 unit/C API tests and the same 453-test lit suite
 (448 passed, four unsupported, one expected failure). The standalone CMake
 `check-lit` target also passed. No historical performance-branch changes were imported.
+
+### Additional templated corpus sweep (2026-09-26)
+
+Ran 21 existing Circom corpus inputs with frontend revision `bf3b28ea`, LLZK
+revision `52a7466b5`, Release tools, one job, and temporary plaintext input.
+Ten inputs passed frontend translation, monomorphization, and output verification.
+These are single samples; pass time excludes frontend translation and process startup.
+
+| Input | Specialized definitions | Pass ms |
+| --- | ---: | ---: |
+| isequal | 2 | 0.110 |
+| mux1_1 | 5 | 0.487 |
+| mux2_1 | 5 | 0.692 |
+| mux3_1 | 5 | 0.949 |
+| mux4_1 | 5 | 1.440 |
+| binsub_test | 4 | 0.593 |
+| babyadd_tester | 1 | 0.088 |
+| babycheck_test | 1 | 0.049 |
+| num2bits | 1 | 0.366 |
+| bits2num | 1 | 0.217 |
+
+BinSub is the strongest successful example in this sweep: its wrapper instantiates
+`Num2Bits(16)` twice, `BinSub(16)`, and `Bits2Num(16)`. Inspection confirmed one
+`Num2Bits` specialization with `poly.arguments = [16 : index]`, shared constructor
+call targets, concrete array dimensions, and retained `scf.while` loops. The four
+specialized definitions include the wrapper. This exercises actual template
+specialization and reuse, unlike the earlier concrete Poseidon samples.
+
+Eight further inputs translated and passed a separate parse/verification-only run,
+but failed when monomorphization was enabled:
+
+- LessThan: a `felt.const` attribute was used where an array dimension attribute was required.
+- LessEqThan, GreaterEqThan, AliasCheck, MiMCSponge hash, and Multiplexer:
+  unsupported non-concrete specialization arguments.
+- MiMC7 and MiMC sponge: output verification failed on unresolved array-dimension symbols.
+
+These are monomorphization-path gaps, not frontend translation failures. SHA256,
+EscalarMul, and MultiAND failed in the frontend (missing `hin`, `Num2Bits`, and `AND`,
+respectively). No PoseidonEx input was run. Successful compilation is structural
+validation only; this sweep does not establish witness or constraint equivalence.
+
+Raw summaries and transient IR were removed after recording these results.
+
+### Templated corpus fixes
+
+The standalone C++ implementation resolves the eight monomorphization-path failures
+from the preceding sweep. Recursive substitution now reaches struct arguments inside
+POD records; field constants used as array dimensions become checked index attributes;
+and the expression evaluator handles Circom's index/field casts. Expression folding
+uses temporary operation copies, preserving source templates for subsequent tuples.
+Original definitions, rolled loops, and calls remain in the output.
+
+With the updated Release tool and the same Circom frontend, all 15 inputs that
+translate in the expanded small manifest pass monomorphization and verification.
+BinSum still fails in frontend translation. The manifest now includes the eight
+previously failing inputs plus BinSub and Mux4 for repeatable coverage.
+
+| Previously failing input | Specialized definitions |
+| --- | ---: |
+| lessthan | 2 |
+| lesseqthan | 3 |
+| greatereqthan | 3 |
+| aliascheck_test | 3 |
+| mimc_test | 1 |
+| mimc_sponge_test | 1 |
+| mimc_sponge_hash_test | 2 |
+| multiplexer | 3 |
+
+Final validation: `nix build -L` succeeded, including 450 passing lit tests
+(four unsupported and one expected failure) and all 1,340 unit/C API tests.
+The packaged Release binary reran the expanded small manifest: all 15 translated
+inputs passed; only BinSum remained blocked in frontend translation. The new
+`frontend_types.llzk` regression checks nested POD substitution, shared child
+definitions, and both scalar-to-dimension cases. `dimension_overflow.llzk` checks
+that oversized field-valued dimensions are diagnosed without truncation.
+
+### Runnable array-family examples
+
+See [arrays of differently specialized structs](../examples/monomorphization/README.md)
+for a four-element `Lane<2*i+1>` field and a two-dimensional `Tile<i+1,j+2>` field.
+Both examples include rolled constructor loops and verify successfully with the pass.
+
+### Symbolic evaluation continuation
+
+The next opt-in phase now interprets these rolled specialized definitions; see
+[symbolic constraint evaluation](symbolic-constraint-evaluation.md) for its output
+contract, limitations, semantic checks, and Poseidon3/Poseidon6 measurements.

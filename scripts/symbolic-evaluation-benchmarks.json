@@ -1,0 +1,147 @@
+[
+  {
+    "name": "isequal",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/isequal.circom"
+  },
+  {
+    "name": "greaterthan",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/greaterthan.circom"
+  },
+  {
+    "name": "mux1_1",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux1_1.circom"
+  },
+  {
+    "name": "mux2_1",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux2_1.circom"
+  },
+  {
+    "name": "mux3_1",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux3_1.circom"
+  },
+  {
+    "name": "babyadd_tester",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/babyadd_tester.circom"
+  },
+  {
+    "name": "babycheck_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/babycheck_test.circom"
+  },
+  {
+    "name": "edwards2montgomery",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/edwards2montgomery.circom"
+  },
+  {
+    "name": "montgomery2edwards",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/montgomery2edwards.circom"
+  },
+  {
+    "name": "montgomeryadd",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/montgomeryadd.circom"
+  },
+  {
+    "name": "montgomerydouble",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/montgomerydouble.circom"
+  },
+  {
+    "name": "sum_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sum_test.circom"
+  },
+  {
+    "name": "sign_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sign_test.circom"
+  },
+  {
+    "name": "constants_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/constants_test.circom"
+  },
+  {
+    "name": "pointbits_loopback",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/pointbits_loopback.circom"
+  },
+  {
+    "name": "babypbk_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/babypbk_test.circom"
+  },
+  {
+    "name": "escalarmul_min_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/escalarmul_min_test.circom"
+  },
+  {
+    "name": "escalarmulany_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/escalarmulany_test.circom"
+  },
+  {
+    "name": "escalarmulfix_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/escalarmulfix_test.circom"
+  },
+  {
+    "name": "pedersen_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/pedersen_test.circom"
+  },
+  {
+    "name": "pedersen2_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/pedersen2_test.circom"
+  },
+  {
+    "name": "sha256_test448",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sha256_test448.circom"
+  },
+  {
+    "name": "sha256_test512",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sha256_test512.circom"
+  },
+  {
+    "name": "sha256_2_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sha256_2_test.circom"
+  },
+  {
+    "name": "eddsa_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/eddsa_test.circom"
+  },
+  {
+    "name": "eddsamimc_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/eddsamimc_test.circom"
+  },
+  {
+    "name": "eddsaposeidon_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/eddsaposeidon_test.circom"
+  },
+  {
+    "name": "smtverifier10_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/smtverifier10_test.circom"
+  },
+  {
+    "name": "smtprocessor10_test",
+    "tier": "expanded",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/smtprocessor10_test.circom"
+  }
+]
