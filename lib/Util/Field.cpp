@@ -50,7 +50,7 @@ Field::Field(std::string_view primeStr, StringRef name) : Field(toDynamicAPInt(p
 Field::Field(const llvm::DynamicAPInt &prime, StringRef name) : primeName(name) {
   primeMod = prime;
   halfPrime = (primeMod + 1) / 2;
-  bitwidth = std::max(1U, toAPSInt(prime - 1).getActiveBits());
+  bitwidth = std::max(1U, toAPSInt(prime).getActiveBits());
 }
 
 FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fieldName) {
@@ -83,7 +83,29 @@ const Field &Field::getField(StringRef fieldName, EmitErrorFn errFn) {
   llvm::report_fatal_error(msg.c_str());
 }
 
+void Field::addField(StringRef fieldName, StringRef primeStr, EmitErrorFn errFn) {
+  auto prime = parseDynamicAPInt(primeStr);
+  if (!prime) {
+    std::string message = llvm::toString(prime.takeError());
+    if (errFn) {
+      errFn().append(message).report();
+    } else {
+      llvm::report_fatal_error(message.c_str());
+    }
+    return;
+  }
+  addField(fieldName, *prime, errFn);
+}
+
 void Field::addField(Field &&f, EmitErrorFn errFn) {
+  if (f.prime() < 2) {
+    if (errFn) {
+      errFn().append("field modulus must be at least 2").report();
+    } else {
+      llvm::report_fatal_error("field modulus must be at least 2");
+    }
+    return;
+  }
   // Use `tryGetField()` to ensure knownFields is initialized before checking for conflicts.
   auto existing = Field::tryGetField(f.name());
   if (succeeded(existing)) {
@@ -136,19 +158,13 @@ DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
   return m;
 }
 
-DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(i)); }
-
 DynamicAPInt Field::toSigned(const DynamicAPInt &i) const { return i < half() ? i : i - prime(); }
 
 DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i, prime()); }
 
-DynamicAPInt Field::inv(const APInt &i) const {
-  return modInversePrime(toDynamicAPInt(i), prime());
-}
-
 IntegerAttr Field::getPrimeAttr(MLIRContext *context, unsigned bitWidth) const {
   return IntegerAttr::get(
-      IntegerType::get(context, bitWidth), toExactWidthAPInt(prime(), bitWidth)
+      IntegerType::get(context, bitWidth), llvm::cantFail(checkedToAPInt(prime(), bitWidth, false))
   );
 }
 

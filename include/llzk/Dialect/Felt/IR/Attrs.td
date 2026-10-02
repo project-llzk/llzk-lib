@@ -41,17 +41,7 @@ def LLZK_FeltConstAttr
        AttrBuilder<
            (ins "const ::llvm::DynamicAPInt &":$value,
                "::llvm::StringRef":$fieldName),
-           [{ return get(context, value, FeltType::get(context, fieldName)); }]>,
-       // Temporary migration adapters; removed in stage 4 after migrating C++
-       // callers.
-       AttrBuilder<
-           (ins "::llvm::APInt":$value, "FeltType":$ty),
-           [{ return get(context, ::llzk::toDynamicAPInt(value), ty); }]>,
-       AttrBuilder<(ins "::llvm::APInt":$value),
-                   [{ return get(context, ::llzk::toDynamicAPInt(value)); }]>,
-       AttrBuilder<
-           (ins "::llvm::APInt":$value, "::llvm::StringRef":$fieldName),
-           [{ return get(context, ::llzk::toDynamicAPInt(value), fieldName); }]>];
+           [{ return get(context, value, FeltType::get(context, fieldName)); }]>];
 
   let extraClassDeclaration = [{
     /// Returns the field name from the stored FeltType, or a null StringAttr
@@ -88,15 +78,10 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
   // to enable caching of the Field object definition.
   let hasCustomAssemblyFormat = 1;
 
-  let builders =
-      [AttrBuilder<
-           (ins "::mlir::StringAttr":$fieldName,
-               "const ::llvm::DynamicAPInt &":$prime),
-           [{ return $_get(context, fieldName, ::llzk::DynamicAPIntValue(prime)); }]>,
-       // Temporary migration adapter; removed in stage 4.
-       AttrBuilder<
-           (ins "::mlir::StringAttr":$fieldName, "::llvm::APInt":$prime),
-           [{ return get(context, fieldName, ::llzk::toDynamicAPInt(prime)); }]>];
+  let builders = [AttrBuilder<
+      (ins "::mlir::StringAttr":$fieldName,
+          "const ::llvm::DynamicAPInt &":$prime),
+      [{ return $_get(context, fieldName, ::llzk::DynamicAPIntValue(prime)); }]>];
   let genVerifyDecl = 1;
 }
 

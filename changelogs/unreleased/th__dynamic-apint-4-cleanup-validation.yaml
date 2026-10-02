@@ -1,0 +1,9 @@
+removed:
+  - Temporary APInt-based mathematical-integer builders, width-insensitive attribute storage, and unchecked width conversion helpers; C++ callers now provide DynamicAPInt values.
+fixed:
+  - Fixed-width witness and R1CS encodings reject negative or oversized values instead of silently truncating them.
+  - Compiled witness generation reduces negative felt constants to canonical field representatives, matching the interpreter.
+  - Felt constant folding handles very large left shifts with modular exponentiation and leaves inversion of zero unfolded.
+  - Integer-to-felt conversions preserve explicit unsigned integers and boolean values.
+  - Very large arithmetic right shifts saturate to zero or minus one without allocating an integer proportional to the shift count.
+  - Template instantiation preserves negative, arbitrary-precision, unsigned, and boolean integer bindings when materializing felt constants or evaluating template expressions.

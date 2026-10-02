@@ -181,17 +181,29 @@ serializeWtns(ArrayRef<llvm::DynamicAPInt> witness, const Field &field) {
   if (witness.size() > std::numeric_limits<uint32_t>::max()) {
     return makeError("witness length does not fit in the .wtns header");
   }
-  uint32_t fieldSize = ((field.bitWidth() + WTNS_FIELD_LIMB_BITS - 1) / WTNS_FIELD_LIMB_BITS) *
-                       WTNS_FIELD_LIMB_BYTES;
+  uint64_t fieldSizeWide = ((static_cast<uint64_t>(field.bitWidth()) + WTNS_FIELD_LIMB_BITS - 1) /
+                            WTNS_FIELD_LIMB_BITS) *
+                           WTNS_FIELD_LIMB_BYTES;
+  if (fieldSizeWide > std::numeric_limits<uint32_t>::max()) {
+    return makeError("field encoding size overflows the .wtns header");
+  }
+  uint32_t fieldSize = static_cast<uint32_t>(fieldSizeWide);
 
   BinaryBuffer header;
   header.writeU32(fieldSize);
-  header.writeFieldElement(fieldSize, field.prime());
+  if (auto error = header.writeFieldElement(fieldSize, field.prime())) {
+    return error;
+  }
   header.writeU32(static_cast<uint32_t>(witness.size()));
 
   BinaryBuffer values;
   for (const llvm::DynamicAPInt &value : witness) {
-    values.writeFieldElement(fieldSize, value);
+    if (value < 0 || value >= field.prime()) {
+      return makeError("witness field element is not a canonical representative");
+    }
+    if (auto error = values.writeFieldElement(fieldSize, value)) {
+      return error;
+    }
   }
 
   BinaryBuffer file;

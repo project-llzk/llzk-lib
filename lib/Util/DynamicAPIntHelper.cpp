@@ -20,17 +20,6 @@
 using namespace llvm;
 using namespace std;
 
-static DynamicAPInt po2(const DynamicAPInt &e) {
-  // APInt/APSInt bitwidth is limited to max unsigned bits, so must be strictly
-  // less than the max to accommodate for the sign bit
-  assert(e >= 0);
-  assert(e < std::numeric_limits<unsigned>::max());
-  unsigned shiftAmt = llzk::toAPSInt(e).getZExtValue();
-  APSInt p(shiftAmt + 1, /* isUnsigned */ true);
-  p.setBit(shiftAmt);
-  return llzk::toDynamicAPInt(p);
-}
-
 /// Apply a bitwise operation after extending both signed operands to a common width.
 static DynamicAPInt binaryBitOp(
     const DynamicAPInt &lhs, const DynamicAPInt &rhs,
@@ -100,26 +89,31 @@ DynamicAPInt operator^(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   return binaryBitOp(lhs, rhs, [](const APInt &a, const APInt &b) { return a ^ b; });
 }
 
-DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) { return lhs * po2(rhs); }
+DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
+  APSInt bits = toAPSInt(lhs);
+  unsigned width = bits.getSignificantBits();
+  if (rhs < 0 || rhs > DynamicAPInt(std::numeric_limits<unsigned>::max() - width)) {
+    llvm::report_fatal_error("invalid or unrepresentable left shift");
+  }
+  if (lhs == 0) {
+    return DynamicAPInt(0);
+  }
+  unsigned amount = static_cast<unsigned>(int64_t(rhs));
+  return DynamicAPInt(bits.sextOrTrunc(width + amount).shl(amount));
+}
 
 DynamicAPInt operator>>(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
-  if (lhs >= 0) {
-    return lhs / po2(rhs);
-  } else {
-    // round towards negative infinity
-    DynamicAPInt divisor = po2(rhs);
-    if (lhs % divisor == 0) {
-      return lhs / divisor;
-    } else {
-      return (lhs - (divisor - 1)) / divisor;
-    }
+  if (rhs < 0) {
+    llvm::report_fatal_error("negative right shift");
   }
+  APSInt bits = toAPSInt(lhs);
+  if (rhs >= DynamicAPInt(bits.getSignificantBits())) {
+    return DynamicAPInt(lhs < 0 ? -1 : 0);
+  }
+  return DynamicAPInt(bits.ashr(static_cast<unsigned>(int64_t(rhs))));
 }
 
-DynamicAPInt toDynamicAPInt(StringRef str) {
-  APSInt parsedInt(str);
-  return toDynamicAPInt(parsedInt);
-}
+DynamicAPInt toDynamicAPInt(StringRef str) { return llvm::cantFail(parseDynamicAPInt(str)); }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
   // DynamicAPInt interprets APInt (implicit cast from APSInt for the constructor below) as
@@ -160,21 +154,14 @@ APSInt toAPSInt(const DynamicAPInt &i) {
   return res;
 }
 
-APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
-  SmallString<64> str;
-  raw_svector_ostream(str) << val;
-  return APInt(bitWidth + 1, str, 10);
-}
-
-APInt toExactWidthAPInt(const DynamicAPInt &val, unsigned bitWidth) {
-  SmallString<64> str;
-  raw_svector_ostream(str) << val;
-  return APInt(bitWidth, str, 10);
-}
-
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
-  DynamicAPInt result(1);
-  DynamicAPInt b = base;
+  if (exp < 0 || mod <= 0) {
+    llvm::report_fatal_error(
+        "modular exponentiation requires a nonnegative exponent and positive modulus"
+    );
+  }
+  DynamicAPInt result = llvm::mod(DynamicAPInt(1), mod);
+  DynamicAPInt b = llvm::mod(base, mod);
   DynamicAPInt e = exp;
   DynamicAPInt one(1);
 

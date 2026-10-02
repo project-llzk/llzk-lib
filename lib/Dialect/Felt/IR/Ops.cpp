@@ -275,7 +275,11 @@ OpFoldResult ShlFeltOp::fold(FoldAdaptor adaptor) {
     return {};
   }
   return buildFoldResult(
-      getContext(), data->field->reduce(data->lhsVal << data->rhsVal), *data->field, data->fieldName
+      getContext(),
+      data->field->reduce(
+          data->lhsVal * modExp(DynamicAPInt(2), data->rhsVal, data->field->prime())
+      ),
+      *data->field, data->fieldName
   );
 }
 
