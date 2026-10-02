@@ -61,4 +61,4 @@ module attributes {llzk.lang, llzk.main = !struct.type<@TEdwards2Montgomery::@Ed
   }
 }
 
-// CHECK: error: SMT lowering currently only supports felt-valued struct.writem
+// CHECK: error: SMT lowering currently only supports felt- or array-of-felt-valued struct.writem
