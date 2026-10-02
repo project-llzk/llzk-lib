@@ -57,3 +57,6 @@ Evaluation may grant `llzk.pub` access to nested members so generated straightli
 constraints can read them. Circuit visibility remains in `poly.original_public`;
 public witness serialization uses that original visibility. `poly.evaluated_main`
 is the authoritative module-state marker; function markers record provenance.
+
+The interpreter uses copy-on-write aggregate storage. Value copies share contents
+until mutation, while SSA aliases refer to the same aggregate wrapper.
