@@ -1,0 +1,1349 @@
+{
+  "metadata": {
+    "platform": "macOS-14.4-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "frontend": "/nix/store/6r86m4r79l33axagb1dq6b9m5caxlncv-circom-to-llzk-0.1.0/bin/circom",
+    "binaries": "/nix/store/z59lbb7jagi0czpj0fspgxwnsky665kn-llzk-release-3.0.0/bin",
+    "repetitions": 3,
+    "parallel_jobs": 1,
+    "timeout_per_process_s": 300,
+    "frontend_mode": "concrete",
+    "start_time": "2026-09-27T08:32:31-0700"
+  },
+  "results": [
+    {
+      "name": "isequal",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/isequal.circom",
+      "samples": [
+        {
+          "frontend_s": 0.18117795791476965,
+          "lowering_s": 0.03537237551063299,
+          "export_s": 0.6338978745043278,
+          "conversion_s": 0.6692702500149608,
+          "end_to_end_s": 0.8504482079297304
+        },
+        {
+          "frontend_s": 0.030193124897778034,
+          "lowering_s": 0.013680333271622658,
+          "export_s": 0.012457750737667084,
+          "conversion_s": 0.02613808400928974,
+          "end_to_end_s": 0.056331208907067776
+        },
+        {
+          "frontend_s": 0.02221099939197302,
+          "lowering_s": 0.013029291294515133,
+          "export_s": 0.011399374343454838,
+          "conversion_s": 0.02442866563796997,
+          "end_to_end_s": 0.04663966502994299
+        }
+      ],
+      "wires": 7,
+      "constraints": 4,
+      "binary_bytes": 612,
+      "status": "ok",
+      "frontend_s": 0.030193124897778034,
+      "frontend_s_min": 0.02221099939197302,
+      "frontend_s_max": 0.18117795791476965,
+      "lowering_s": 0.013680333271622658,
+      "lowering_s_min": 0.013029291294515133,
+      "lowering_s_max": 0.03537237551063299,
+      "export_s": 0.012457750737667084,
+      "export_s_min": 0.011399374343454838,
+      "export_s_max": 0.6338978745043278,
+      "conversion_s": 0.02613808400928974,
+      "conversion_s_min": 0.02442866563796997,
+      "conversion_s_max": 0.6692702500149608,
+      "end_to_end_s": 0.056331208907067776,
+      "end_to_end_s_min": 0.04663966502994299,
+      "end_to_end_s_max": 0.8504482079297304
+    },
+    {
+      "name": "greaterthan",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/greaterthan.circom",
+      "samples": [
+        {
+          "frontend_s": 0.02338641695678234,
+          "lowering_s": 0.01478341594338417,
+          "export_s": 0.013506417162716389,
+          "conversion_s": 0.02828983310610056,
+          "end_to_end_s": 0.0516762500628829
+        },
+        {
+          "frontend_s": 0.04827099945396185,
+          "lowering_s": 0.015442291274666786,
+          "export_s": 0.014143125154078007,
+          "conversion_s": 0.029585416428744793,
+          "end_to_end_s": 0.07785641588270664
+        },
+        {
+          "frontend_s": 0.021623208187520504,
+          "lowering_s": 0.014418666251003742,
+          "export_s": 0.013702957890927792,
+          "conversion_s": 0.028121624141931534,
+          "end_to_end_s": 0.04974483232945204
+        }
+      ],
+      "wires": 41,
+      "constraints": 39,
+      "binary_bytes": 6164,
+      "status": "ok",
+      "frontend_s": 0.02338641695678234,
+      "frontend_s_min": 0.021623208187520504,
+      "frontend_s_max": 0.04827099945396185,
+      "lowering_s": 0.01478341594338417,
+      "lowering_s_min": 0.014418666251003742,
+      "lowering_s_max": 0.015442291274666786,
+      "export_s": 0.013702957890927792,
+      "export_s_min": 0.013506417162716389,
+      "export_s_max": 0.014143125154078007,
+      "conversion_s": 0.02828983310610056,
+      "conversion_s_min": 0.028121624141931534,
+      "conversion_s_max": 0.029585416428744793,
+      "end_to_end_s": 0.0516762500628829,
+      "end_to_end_s_min": 0.04974483232945204,
+      "end_to_end_s_max": 0.07785641588270664
+    },
+    {
+      "name": "mux1_1",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux1_1.circom",
+      "samples": [
+        {
+          "frontend_s": 0.023808791302144527,
+          "lowering_s": 0.014444083906710148,
+          "export_s": 0.012987333349883556,
+          "conversion_s": 0.027431417256593704,
+          "end_to_end_s": 0.05124020855873823
+        },
+        {
+          "frontend_s": 0.02469891682267189,
+          "lowering_s": 0.014755167067050934,
+          "export_s": 0.01329920906573534,
+          "conversion_s": 0.028054376132786274,
+          "end_to_end_s": 0.052753292955458164
+        },
+        {
+          "frontend_s": 0.024656333029270172,
+          "lowering_s": 0.015082958154380322,
+          "export_s": 0.013616708107292652,
+          "conversion_s": 0.028699666261672974,
+          "end_to_end_s": 0.053355999290943146
+        }
+      ],
+      "wires": 15,
+      "constraints": 14,
+      "binary_bytes": 1552,
+      "status": "ok",
+      "frontend_s": 0.024656333029270172,
+      "frontend_s_min": 0.023808791302144527,
+      "frontend_s_max": 0.02469891682267189,
+      "lowering_s": 0.014755167067050934,
+      "lowering_s_min": 0.014444083906710148,
+      "lowering_s_max": 0.015082958154380322,
+      "export_s": 0.01329920906573534,
+      "export_s_min": 0.012987333349883556,
+      "export_s_max": 0.013616708107292652,
+      "conversion_s": 0.028054376132786274,
+      "conversion_s_min": 0.027431417256593704,
+      "conversion_s_max": 0.028699666261672974,
+      "end_to_end_s": 0.052753292955458164,
+      "end_to_end_s_min": 0.05124020855873823,
+      "end_to_end_s_max": 0.053355999290943146
+    },
+    {
+      "name": "mux2_1",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux2_1.circom",
+      "samples": [
+        {
+          "frontend_s": 0.02617054246366024,
+          "lowering_s": 0.017142374999821186,
+          "export_s": 0.014171666465699673,
+          "conversion_s": 0.03131404146552086,
+          "end_to_end_s": 0.0574845839291811
+        },
+        {
+          "frontend_s": 0.025986957363784313,
+          "lowering_s": 0.016810541041195393,
+          "export_s": 0.014473875053226948,
+          "conversion_s": 0.03128441609442234,
+          "end_to_end_s": 0.057271373458206654
+        },
+        {
+          "frontend_s": 0.02553474996238947,
+          "lowering_s": 0.016898750327527523,
+          "export_s": 0.014198457822203636,
+          "conversion_s": 0.03109720814973116,
+          "end_to_end_s": 0.05663195811212063
+        }
+      ],
+      "wires": 29,
+      "constraints": 28,
+      "binary_bytes": 3236,
+      "status": "ok",
+      "frontend_s": 0.025986957363784313,
+      "frontend_s_min": 0.02553474996238947,
+      "frontend_s_max": 0.02617054246366024,
+      "lowering_s": 0.016898750327527523,
+      "lowering_s_min": 0.016810541041195393,
+      "lowering_s_max": 0.017142374999821186,
+      "export_s": 0.014198457822203636,
+      "export_s_min": 0.014171666465699673,
+      "export_s_max": 0.014473875053226948,
+      "conversion_s": 0.03128441609442234,
+      "conversion_s_min": 0.03109720814973116,
+      "conversion_s_max": 0.03131404146552086,
+      "end_to_end_s": 0.057271373458206654,
+      "end_to_end_s_min": 0.05663195811212063,
+      "end_to_end_s_max": 0.0574845839291811
+    },
+    {
+      "name": "mux3_1",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/mux3_1.circom",
+      "samples": [
+        {
+          "frontend_s": 0.027483667246997356,
+          "lowering_s": 0.018788374960422516,
+          "export_s": 0.01509991567581892,
+          "conversion_s": 0.033888290636241436,
+          "end_to_end_s": 0.06137195788323879
+        },
+        {
+          "frontend_s": 0.026864582672715187,
+          "lowering_s": 0.01839729119092226,
+          "export_s": 0.01492099929600954,
+          "conversion_s": 0.0333182904869318,
+          "end_to_end_s": 0.06018287315964699
+        },
+        {
+          "frontend_s": 0.026900874450802803,
+          "lowering_s": 0.01844133250415325,
+          "export_s": 0.01551491767168045,
+          "conversion_s": 0.0339562501758337,
+          "end_to_end_s": 0.060857124626636505
+        }
+      ],
+      "wires": 48,
+      "constraints": 47,
+      "binary_bytes": 5848,
+      "status": "ok",
+      "frontend_s": 0.026900874450802803,
+      "frontend_s_min": 0.026864582672715187,
+      "frontend_s_max": 0.027483667246997356,
+      "lowering_s": 0.01844133250415325,
+      "lowering_s_min": 0.01839729119092226,
+      "lowering_s_max": 0.018788374960422516,
+      "export_s": 0.01509991567581892,
+      "export_s_min": 0.01492099929600954,
+      "export_s_max": 0.01551491767168045,
+      "conversion_s": 0.033888290636241436,
+      "conversion_s_min": 0.0333182904869318,
+      "conversion_s_max": 0.0339562501758337,
+      "end_to_end_s": 0.060857124626636505,
+      "end_to_end_s_min": 0.06018287315964699,
+      "end_to_end_s_max": 0.06137195788323879
+    },
+    {
+      "name": "babyadd_tester",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/babyadd_tester.circom",
+      "samples": [
+        {
+          "frontend_s": 0.030015374533832073,
+          "lowering_s": 0.011178000830113888,
+          "export_s": 0.011569125577807426,
+          "conversion_s": 0.022747126407921314,
+          "end_to_end_s": 0.05276250094175339
+        },
+        {
+          "frontend_s": 0.02898287493735552,
+          "lowering_s": 0.011239166371524334,
+          "export_s": 0.011984915472567081,
+          "conversion_s": 0.023224081844091415,
+          "end_to_end_s": 0.052206956781446934
+        },
+        {
+          "frontend_s": 0.02880866639316082,
+          "lowering_s": 0.011701415292918682,
+          "export_s": 0.01142541691660881,
+          "conversion_s": 0.023126832209527493,
+          "end_to_end_s": 0.05193549860268831
+        }
+      ],
+      "wires": 11,
+      "constraints": 6,
+      "binary_bytes": 1172,
+      "status": "ok",
+      "frontend_s": 0.02898287493735552,
+      "frontend_s_min": 0.02880866639316082,
+      "frontend_s_max": 0.030015374533832073,
+      "lowering_s": 0.011239166371524334,
+      "lowering_s_min": 0.011178000830113888,
+      "lowering_s_max": 0.011701415292918682,
+      "export_s": 0.011569125577807426,
+      "export_s_min": 0.01142541691660881,
+      "export_s_max": 0.011984915472567081,
+      "conversion_s": 0.023126832209527493,
+      "conversion_s_min": 0.022747126407921314,
+      "conversion_s_max": 0.023224081844091415,
+      "end_to_end_s": 0.052206956781446934,
+      "end_to_end_s_min": 0.05193549860268831,
+      "end_to_end_s_max": 0.05276250094175339
+    },
+    {
+      "name": "babycheck_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/babycheck_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.029355375096201897,
+          "lowering_s": 0.010271958075463772,
+          "export_s": 0.011239167302846909,
+          "conversion_s": 0.02151112537831068,
+          "end_to_end_s": 0.05086650047451258
+        },
+        {
+          "frontend_s": 0.028811916708946228,
+          "lowering_s": 0.010688249953091145,
+          "export_s": 0.011290707625448704,
+          "conversion_s": 0.02197895757853985,
+          "end_to_end_s": 0.050790874287486076
+        },
+        {
+          "frontend_s": 0.02925320714712143,
+          "lowering_s": 0.012558333575725555,
+          "export_s": 0.012236667796969414,
+          "conversion_s": 0.02479500137269497,
+          "end_to_end_s": 0.0540482085198164
+        }
+      ],
+      "wires": 5,
+      "constraints": 3,
+      "binary_bytes": 584,
+      "status": "ok",
+      "frontend_s": 0.02925320714712143,
+      "frontend_s_min": 0.028811916708946228,
+      "frontend_s_max": 0.029355375096201897,
+      "lowering_s": 0.010688249953091145,
+      "lowering_s_min": 0.010271958075463772,
+      "lowering_s_max": 0.012558333575725555,
+      "export_s": 0.011290707625448704,
+      "export_s_min": 0.011239167302846909,
+      "export_s_max": 0.012236667796969414,
+      "conversion_s": 0.02197895757853985,
+      "conversion_s_min": 0.02151112537831068,
+      "conversion_s_max": 0.02479500137269497,
+      "end_to_end_s": 0.05086650047451258,
+      "end_to_end_s_min": 0.050790874287486076,
+      "end_to_end_s_max": 0.0540482085198164
+    },
+    {
+      "name": "edwards2montgomery",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/edwards2montgomery.circom",
+      "samples": [
+        {
+          "frontend_s": 0.015737958252429962,
+          "lowering_s": 0.010878583416342735,
+          "export_s": 0.011220625601708889,
+          "conversion_s": 0.022099209018051624,
+          "end_to_end_s": 0.037837167270481586
+        },
+        {
+          "frontend_s": 0.014231458306312561,
+          "lowering_s": 0.01043691672384739,
+          "export_s": 0.011115167289972305,
+          "conversion_s": 0.021552084013819695,
+          "end_to_end_s": 0.035783542320132256
+        },
+        {
+          "frontend_s": 0.013922499492764473,
+          "lowering_s": 0.010601957328617573,
+          "export_s": 0.0110230827704072,
+          "conversion_s": 0.021625040099024773,
+          "end_to_end_s": 0.035547539591789246
+        }
+      ],
+      "wires": 5,
+      "constraints": 2,
+      "binary_bytes": 464,
+      "status": "ok",
+      "frontend_s": 0.014231458306312561,
+      "frontend_s_min": 0.013922499492764473,
+      "frontend_s_max": 0.015737958252429962,
+      "lowering_s": 0.010601957328617573,
+      "lowering_s_min": 0.01043691672384739,
+      "lowering_s_max": 0.010878583416342735,
+      "export_s": 0.011115167289972305,
+      "export_s_min": 0.0110230827704072,
+      "export_s_max": 0.011220625601708889,
+      "conversion_s": 0.021625040099024773,
+      "conversion_s_min": 0.021552084013819695,
+      "conversion_s_max": 0.022099209018051624,
+      "end_to_end_s": 0.035783542320132256,
+      "end_to_end_s_min": 0.035547539591789246,
+      "end_to_end_s_max": 0.037837167270481586
+    },
+    {
+      "name": "montgomery2edwards",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/montgomery2edwards.circom",
+      "samples": [
+        {
+          "frontend_s": 0.014119332656264305,
+          "lowering_s": 0.01063074916601181,
+          "export_s": 0.010775541886687279,
+          "conversion_s": 0.02140629105269909,
+          "end_to_end_s": 0.035525623708963394
+        },
+        {
+          "frontend_s": 0.014074040576815605,
+          "lowering_s": 0.010581792332231998,
+          "export_s": 0.011298540979623795,
+          "conversion_s": 0.021880333311855793,
+          "end_to_end_s": 0.0359543738886714
+        },
+        {
+          "frontend_s": 0.014056582935154438,
+          "lowering_s": 0.010652124881744385,
+          "export_s": 0.011162875220179558,
+          "conversion_s": 0.021815000101923943,
+          "end_to_end_s": 0.03587158303707838
+        }
+      ],
+      "wires": 5,
+      "constraints": 2,
+      "binary_bytes": 464,
+      "status": "ok",
+      "frontend_s": 0.014074040576815605,
+      "frontend_s_min": 0.014056582935154438,
+      "frontend_s_max": 0.014119332656264305,
+      "lowering_s": 0.01063074916601181,
+      "lowering_s_min": 0.010581792332231998,
+      "lowering_s_max": 0.010652124881744385,
+      "export_s": 0.011162875220179558,
+      "export_s_min": 0.010775541886687279,
+      "export_s_max": 0.011298540979623795,
+      "conversion_s": 0.021815000101923943,
+      "conversion_s_min": 0.02140629105269909,
+      "conversion_s_max": 0.021880333311855793,
+      "end_to_end_s": 0.03587158303707838,
+      "end_to_end_s_min": 0.035525623708963394,
+      "end_to_end_s_max": 0.0359543738886714
+    },
+    {
+      "name": "montgomeryadd",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/montgomeryadd.circom",
+      "samples": [
+        {
+          "frontend_s": 0.014841791242361069,
+          "lowering_s": 0.01097608357667923,
+          "export_s": 0.013067374937236309,
+          "conversion_s": 0.02404345851391554,
+          "end_to_end_s": 0.03888524975627661
+        },
+        {
+          "frontend_s": 0.01501595787703991,
+          "lowering_s": 0.011359082534909248,
+          "export_s": 0.011401625350117683,
+          "conversion_s": 0.022760707885026932,
+          "end_to_end_s": 0.03777666576206684
+        },
+        {
+          "frontend_s": 0.014549333602190018,
+          "lowering_s": 0.01133833359926939,
+          "export_s": 0.011542041786015034,
+          "conversion_s": 0.022880375385284424,
+          "end_to_end_s": 0.03742970898747444
+        }
+      ],
+      "wires": 8,
+      "constraints": 3,
+      "binary_bytes": 788,
+      "status": "ok",
+      "frontend_s": 0.014841791242361069,
+      "frontend_s_min": 0.014549333602190018,
+      "frontend_s_max": 0.01501595787703991,
+      "lowering_s": 0.01133833359926939,
+      "lowering_s_min": 0.01097608357667923,
+      "lowering_s_max": 0.011359082534909248,
+      "export_s": 0.011542041786015034,
+      "export_s_min": 0.011401625350117683,
+      "export_s_max": 0.013067374937236309,
+      "conversion_s": 0.022880375385284424,
+      "conversion_s_min": 0.022760707885026932,
+      "conversion_s_max": 0.02404345851391554,
+      "end_to_end_s": 0.03777666576206684,
+      "end_to_end_s_min": 0.03742970898747444,
+      "end_to_end_s_max": 0.03888524975627661
+    },
+    {
+      "name": "montgomerydouble",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/montgomerydouble.circom",
+      "samples": [
+        {
+          "frontend_s": 0.014754917472600937,
+          "lowering_s": 0.01100966613739729,
+          "export_s": 0.011508166790008545,
+          "conversion_s": 0.022517832927405834,
+          "end_to_end_s": 0.03727275040000677
+        },
+        {
+          "frontend_s": 0.014643375761806965,
+          "lowering_s": 0.011415124870836735,
+          "export_s": 0.011069166474044323,
+          "conversion_s": 0.022484291344881058,
+          "end_to_end_s": 0.03712766710668802
+        },
+        {
+          "frontend_s": 0.01670654211193323,
+          "lowering_s": 0.012412209063768387,
+          "export_s": 0.011334125883877277,
+          "conversion_s": 0.023746334947645664,
+          "end_to_end_s": 0.040452877059578896
+        }
+      ],
+      "wires": 7,
+      "constraints": 4,
+      "binary_bytes": 864,
+      "status": "ok",
+      "frontend_s": 0.014754917472600937,
+      "frontend_s_min": 0.014643375761806965,
+      "frontend_s_max": 0.01670654211193323,
+      "lowering_s": 0.011415124870836735,
+      "lowering_s_min": 0.01100966613739729,
+      "lowering_s_max": 0.012412209063768387,
+      "export_s": 0.011334125883877277,
+      "export_s_min": 0.011069166474044323,
+      "export_s_max": 0.011508166790008545,
+      "conversion_s": 0.022517832927405834,
+      "conversion_s_min": 0.022484291344881058,
+      "conversion_s_max": 0.023746334947645664,
+      "end_to_end_s": 0.03727275040000677,
+      "end_to_end_s_min": 0.03712766710668802,
+      "end_to_end_s_max": 0.040452877059578896
+    },
+    {
+      "name": "sum_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sum_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.0315604992210865,
+          "lowering_s": 0.022739999927580357,
+          "export_s": 0.02446354180574417,
+          "conversion_s": 0.04720354173332453,
+          "end_to_end_s": 0.07876404095441103
+        },
+        {
+          "frontend_s": 0.02872083429247141,
+          "lowering_s": 0.02345450036227703,
+          "export_s": 0.02487754262983799,
+          "conversion_s": 0.04833204299211502,
+          "end_to_end_s": 0.07705287728458643
+        },
+        {
+          "frontend_s": 0.02961958386003971,
+          "lowering_s": 0.022698082961142063,
+          "export_s": 0.02463424950838089,
+          "conversion_s": 0.04733233246952295,
+          "end_to_end_s": 0.07695191632956266
+        }
+      ],
+      "wires": 200,
+      "constraints": 200,
+      "binary_bytes": 28772,
+      "status": "ok",
+      "frontend_s": 0.02961958386003971,
+      "frontend_s_min": 0.02872083429247141,
+      "frontend_s_max": 0.0315604992210865,
+      "lowering_s": 0.022739999927580357,
+      "lowering_s_min": 0.022698082961142063,
+      "lowering_s_max": 0.02345450036227703,
+      "export_s": 0.02463424950838089,
+      "export_s_min": 0.02446354180574417,
+      "export_s_max": 0.02487754262983799,
+      "conversion_s": 0.04733233246952295,
+      "conversion_s_min": 0.04720354173332453,
+      "conversion_s_max": 0.04833204299211502,
+      "end_to_end_s": 0.07705287728458643,
+      "end_to_end_s_min": 0.07695191632956266,
+      "end_to_end_s_max": 0.07876404095441103
+    },
+    {
+      "name": "sign_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sign_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.04430125001817942,
+          "lowering_s": 0.15710841678082943,
+          "export_s": 0.07424774952232838,
+          "conversion_s": 0.2313561663031578,
+          "end_to_end_s": 0.2756574163213372
+        },
+        {
+          "frontend_s": 0.04503683280199766,
+          "lowering_s": 0.15142616536468267,
+          "export_s": 0.08731100056320429,
+          "conversion_s": 0.23873716592788696,
+          "end_to_end_s": 0.2837739987298846
+        },
+        {
+          "frontend_s": 0.045914582908153534,
+          "lowering_s": 0.1569632077589631,
+          "export_s": 0.0732030002400279,
+          "conversion_s": 0.230166207998991,
+          "end_to_end_s": 0.27608079090714455
+        }
+      ],
+      "wires": 775,
+      "constraints": 521,
+      "binary_bytes": 77832,
+      "status": "ok",
+      "frontend_s": 0.04503683280199766,
+      "frontend_s_min": 0.04430125001817942,
+      "frontend_s_max": 0.045914582908153534,
+      "lowering_s": 0.1569632077589631,
+      "lowering_s_min": 0.15142616536468267,
+      "lowering_s_max": 0.15710841678082943,
+      "export_s": 0.07424774952232838,
+      "export_s_min": 0.0732030002400279,
+      "export_s_max": 0.08731100056320429,
+      "conversion_s": 0.2313561663031578,
+      "conversion_s_min": 0.230166207998991,
+      "conversion_s_max": 0.23873716592788696,
+      "end_to_end_s": 0.27608079090714455,
+      "end_to_end_s_min": 0.2756574163213372,
+      "end_to_end_s_max": 0.2837739987298846
+    },
+    {
+      "name": "constants_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/constants_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.016497459262609482,
+          "lowering_s": 0.012969374656677246,
+          "export_s": 0.013282000087201595,
+          "conversion_s": 0.02625137474387884,
+          "end_to_end_s": 0.04274883400648832
+        },
+        {
+          "frontend_s": 0.015664000064134598,
+          "lowering_s": 0.013225083239376545,
+          "export_s": 0.013245792128145695,
+          "conversion_s": 0.02647087536752224,
+          "end_to_end_s": 0.04213487543165684
+        },
+        {
+          "frontend_s": 0.016005834564566612,
+          "lowering_s": 0.013041083700954914,
+          "export_s": 0.013138375245034695,
+          "conversion_s": 0.02617945894598961,
+          "end_to_end_s": 0.04218529351055622
+        }
+      ],
+      "wires": 34,
+      "constraints": 33,
+      "binary_bytes": 3624,
+      "status": "ok",
+      "frontend_s": 0.016005834564566612,
+      "frontend_s_min": 0.015664000064134598,
+      "frontend_s_max": 0.016497459262609482,
+      "lowering_s": 0.013041083700954914,
+      "lowering_s_min": 0.012969374656677246,
+      "lowering_s_max": 0.013225083239376545,
+      "export_s": 0.013245792128145695,
+      "export_s_min": 0.013138375245034695,
+      "export_s_max": 0.013282000087201595,
+      "conversion_s": 0.02625137474387884,
+      "conversion_s_min": 0.02617945894598961,
+      "conversion_s_max": 0.02647087536752224,
+      "end_to_end_s": 0.04218529351055622,
+      "end_to_end_s_min": 0.04213487543165684,
+      "end_to_end_s_max": 0.04274883400648832
+    },
+    {
+      "name": "pointbits_loopback",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/pointbits_loopback.circom",
+      "samples": [
+        {
+          "frontend_s": 0.15877883322536945,
+          "lowering_s": 0.9927510833367705,
+          "export_s": 0.6338184168562293,
+          "conversion_s": 1.6265695001929998,
+          "end_to_end_s": 1.7853483334183693
+        },
+        {
+          "frontend_s": 0.16085341572761536,
+          "lowering_s": 0.9983222493901849,
+          "export_s": 0.613782917149365,
+          "conversion_s": 1.6121051665395498,
+          "end_to_end_s": 1.7729585822671652
+        },
+        {
+          "frontend_s": 0.16233479231595993,
+          "lowering_s": 1.026169791817665,
+          "export_s": 0.6294244164600968,
+          "conversion_s": 1.655594208277762,
+          "end_to_end_s": 1.8179290005937219
+        }
+      ],
+      "wires": 5673,
+      "constraints": 5687,
+      "binary_bytes": 755872,
+      "status": "ok",
+      "frontend_s": 0.16085341572761536,
+      "frontend_s_min": 0.15877883322536945,
+      "frontend_s_max": 0.16233479231595993,
+      "lowering_s": 0.9983222493901849,
+      "lowering_s_min": 0.9927510833367705,
+      "lowering_s_max": 1.026169791817665,
+      "export_s": 0.6294244164600968,
+      "export_s_min": 0.613782917149365,
+      "export_s_max": 0.6338184168562293,
+      "conversion_s": 1.6265695001929998,
+      "conversion_s_min": 1.6121051665395498,
+      "conversion_s_max": 1.655594208277762,
+      "end_to_end_s": 1.7853483334183693,
+      "end_to_end_s_min": 1.7729585822671652,
+      "end_to_end_s_max": 1.8179290005937219
+    },
+    {
+      "name": "babypbk_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/babypbk_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.15376479178667068,
+          "lowering_s": 0.6047844998538494,
+          "export_s": 0.44425037410110235,
+          "conversion_s": 1.0490348739549518,
+          "end_to_end_s": 1.2027996657416224
+        },
+        {
+          "frontend_s": 0.1517158756032586,
+          "lowering_s": 0.6439238330349326,
+          "export_s": 0.4531651670113206,
+          "conversion_s": 1.0970890000462532,
+          "end_to_end_s": 1.2488048756495118
+        },
+        {
+          "frontend_s": 0.1532734576612711,
+          "lowering_s": 0.6082978751510382,
+          "export_s": 0.5932698752731085,
+          "conversion_s": 1.2015677504241467,
+          "end_to_end_s": 1.3548412080854177
+        }
+      ],
+      "wires": 10115,
+      "constraints": 10114,
+      "binary_bytes": 1432268,
+      "status": "ok",
+      "frontend_s": 0.1532734576612711,
+      "frontend_s_min": 0.1517158756032586,
+      "frontend_s_max": 0.15376479178667068,
+      "lowering_s": 0.6082978751510382,
+      "lowering_s_min": 0.6047844998538494,
+      "lowering_s_max": 0.6439238330349326,
+      "export_s": 0.4531651670113206,
+      "export_s_min": 0.44425037410110235,
+      "export_s_max": 0.5932698752731085,
+      "conversion_s": 1.0970890000462532,
+      "conversion_s_min": 1.0490348739549518,
+      "conversion_s_max": 1.2015677504241467,
+      "end_to_end_s": 1.2488048756495118,
+      "end_to_end_s_min": 1.2027996657416224,
+      "end_to_end_s_max": 1.3548412080854177
+    },
+    {
+      "name": "escalarmul_min_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/escalarmul_min_test.circom",
+      "samples": [
+        {
+          "frontend_s": 1.7407964998856187,
+          "lowering_s": 2.066117958165705,
+          "export_s": 1.22694387473166,
+          "conversion_s": 3.293061832897365,
+          "end_to_end_s": 5.033858332782984
+        },
+        {
+          "frontend_s": 1.72281904052943,
+          "lowering_s": 1.8571307491511106,
+          "export_s": 1.2473953748121858,
+          "conversion_s": 3.1045261239632964,
+          "end_to_end_s": 4.827345164492726
+        },
+        {
+          "frontend_s": 1.6942825419828296,
+          "lowering_s": 1.8347474578768015,
+          "export_s": 1.253958374261856,
+          "conversion_s": 3.0887058321386576,
+          "end_to_end_s": 4.782988374121487
+        }
+      ],
+      "wires": 6407,
+      "constraints": 6150,
+      "binary_bytes": 1042556,
+      "status": "ok",
+      "frontend_s": 1.72281904052943,
+      "frontend_s_min": 1.6942825419828296,
+      "frontend_s_max": 1.7407964998856187,
+      "lowering_s": 1.8571307491511106,
+      "lowering_s_min": 1.8347474578768015,
+      "lowering_s_max": 2.066117958165705,
+      "export_s": 1.2473953748121858,
+      "export_s_min": 1.22694387473166,
+      "export_s_max": 1.253958374261856,
+      "conversion_s": 3.1045261239632964,
+      "conversion_s_min": 3.0887058321386576,
+      "conversion_s_max": 3.293061832897365,
+      "end_to_end_s": 4.827345164492726,
+      "end_to_end_s_min": 4.782988374121487,
+      "end_to_end_s_max": 5.033858332782984
+    },
+    {
+      "name": "escalarmulany_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/escalarmulany_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.13295762427151203,
+          "lowering_s": 0.4055317919701338,
+          "export_s": 0.31320999935269356,
+          "conversion_s": 0.7187417913228273,
+          "end_to_end_s": 0.8516994155943394
+        },
+        {
+          "frontend_s": 0.12883062567561865,
+          "lowering_s": 0.4095393754541874,
+          "export_s": 0.3428282905369997,
+          "conversion_s": 0.7523676659911871,
+          "end_to_end_s": 0.8811982916668057
+        },
+        {
+          "frontend_s": 0.1275645848363638,
+          "lowering_s": 0.46632775012403727,
+          "export_s": 0.3294839169830084,
+          "conversion_s": 0.7958116671070457,
+          "end_to_end_s": 0.9233762519434094
+        }
+      ],
+      "wires": 8134,
+      "constraints": 8131,
+      "binary_bytes": 1004688,
+      "status": "ok",
+      "frontend_s": 0.12883062567561865,
+      "frontend_s_min": 0.1275645848363638,
+      "frontend_s_max": 0.13295762427151203,
+      "lowering_s": 0.4095393754541874,
+      "lowering_s_min": 0.4055317919701338,
+      "lowering_s_max": 0.46632775012403727,
+      "export_s": 0.3294839169830084,
+      "export_s_min": 0.31320999935269356,
+      "export_s_max": 0.3428282905369997,
+      "conversion_s": 0.7523676659911871,
+      "conversion_s_min": 0.7187417913228273,
+      "conversion_s_max": 0.7958116671070457,
+      "end_to_end_s": 0.8811982916668057,
+      "end_to_end_s_min": 0.8516994155943394,
+      "end_to_end_s_max": 0.9233762519434094
+    },
+    {
+      "name": "escalarmulfix_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/escalarmulfix_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.15642229188233614,
+          "lowering_s": 0.571314875036478,
+          "export_s": 0.4347876673564315,
+          "conversion_s": 1.0061025423929095,
+          "end_to_end_s": 1.1625248342752457
+        },
+        {
+          "frontend_s": 0.15362037532031536,
+          "lowering_s": 0.5427540000528097,
+          "export_s": 0.41081858426332474,
+          "conversion_s": 0.9535725843161345,
+          "end_to_end_s": 1.1071929596364498
+        },
+        {
+          "frontend_s": 0.14962787553668022,
+          "lowering_s": 0.5872128745540977,
+          "export_s": 0.4547020401805639,
+          "conversion_s": 1.0419149147346616,
+          "end_to_end_s": 1.1915427902713418
+        }
+      ],
+      "wires": 10115,
+      "constraints": 10114,
+      "binary_bytes": 1432268,
+      "status": "ok",
+      "frontend_s": 0.15362037532031536,
+      "frontend_s_min": 0.14962787553668022,
+      "frontend_s_max": 0.15642229188233614,
+      "lowering_s": 0.571314875036478,
+      "lowering_s_min": 0.5427540000528097,
+      "lowering_s_max": 0.5872128745540977,
+      "export_s": 0.4347876673564315,
+      "export_s_min": 0.41081858426332474,
+      "export_s_max": 0.4547020401805639,
+      "conversion_s": 1.0061025423929095,
+      "conversion_s_min": 0.9535725843161345,
+      "conversion_s_max": 1.0419149147346616,
+      "end_to_end_s": 1.1625248342752457,
+      "end_to_end_s_min": 1.1071929596364498,
+      "end_to_end_s_max": 1.1915427902713418
+    },
+    {
+      "name": "pedersen_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/pedersen_test.circom",
+      "samples": [
+        {
+          "frontend_s": 4.554513999260962,
+          "lowering_s": 4.099596875719726,
+          "export_s": 2.8130022920668125,
+          "conversion_s": 6.912599167786539,
+          "end_to_end_s": 11.4671131670475
+        },
+        {
+          "frontend_s": 4.598353000357747,
+          "lowering_s": 4.209685083478689,
+          "export_s": 2.9184406250715256,
+          "conversion_s": 7.128125708550215,
+          "end_to_end_s": 11.726478708907962
+        },
+        {
+          "frontend_s": 4.658161874860525,
+          "lowering_s": 4.161160125397146,
+          "export_s": 2.840025749988854,
+          "conversion_s": 7.001185875386,
+          "end_to_end_s": 11.659347750246525
+        }
+      ],
+      "wires": 13109,
+      "constraints": 13108,
+      "binary_bytes": 2176220,
+      "status": "ok",
+      "frontend_s": 4.598353000357747,
+      "frontend_s_min": 4.554513999260962,
+      "frontend_s_max": 4.658161874860525,
+      "lowering_s": 4.161160125397146,
+      "lowering_s_min": 4.099596875719726,
+      "lowering_s_max": 4.209685083478689,
+      "export_s": 2.840025749988854,
+      "export_s_min": 2.8130022920668125,
+      "export_s_max": 2.9184406250715256,
+      "conversion_s": 7.001185875386,
+      "conversion_s_min": 6.912599167786539,
+      "conversion_s_max": 7.128125708550215,
+      "end_to_end_s": 11.659347750246525,
+      "end_to_end_s_min": 11.4671131670475,
+      "end_to_end_s_max": 11.726478708907962
+    },
+    {
+      "name": "pedersen2_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/pedersen2_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.14525120798498392,
+          "lowering_s": 0.453125,
+          "export_s": 0.37239949963986874,
+          "conversion_s": 0.8255244996398687,
+          "end_to_end_s": 0.9707757076248527
+        },
+        {
+          "frontend_s": 0.1524807084351778,
+          "lowering_s": 0.4591471254825592,
+          "export_s": 0.40128666535019875,
+          "conversion_s": 0.860433790832758,
+          "end_to_end_s": 1.0129144992679358
+        },
+        {
+          "frontend_s": 0.13835725001990795,
+          "lowering_s": 0.464307333342731,
+          "export_s": 0.3555901665240526,
+          "conversion_s": 0.8198974998667836,
+          "end_to_end_s": 0.9582547498866916
+        }
+      ],
+      "wires": 8128,
+      "constraints": 8127,
+      "binary_bytes": 1154136,
+      "status": "ok",
+      "frontend_s": 0.14525120798498392,
+      "frontend_s_min": 0.13835725001990795,
+      "frontend_s_max": 0.1524807084351778,
+      "lowering_s": 0.4591471254825592,
+      "lowering_s_min": 0.453125,
+      "lowering_s_max": 0.464307333342731,
+      "export_s": 0.37239949963986874,
+      "export_s_min": 0.3555901665240526,
+      "export_s_max": 0.40128666535019875,
+      "conversion_s": 0.8255244996398687,
+      "conversion_s_min": 0.8198974998667836,
+      "conversion_s_max": 0.860433790832758,
+      "end_to_end_s": 0.9707757076248527,
+      "end_to_end_s_min": 0.9582547498866916,
+      "end_to_end_s_max": 1.0129144992679358
+    },
+    {
+      "name": "sha256_test448",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sha256_test448.circom",
+      "samples": [
+        {
+          "frontend_s": 2.279918665997684,
+          "lowering_s": 41.89464437495917,
+          "export_s": 34.84231029264629,
+          "conversion_s": 76.73695466760546,
+          "end_to_end_s": 79.01687333360314
+        },
+        {
+          "frontend_s": 2.3980399165302515,
+          "lowering_s": 37.46476066671312,
+          "export_s": 80.96679116785526,
+          "conversion_s": 118.43155183456838,
+          "end_to_end_s": 120.82959175109863
+        },
+        {
+          "frontend_s": 2.3983311662450433,
+          "lowering_s": 36.95965641643852,
+          "export_s": 31.958086375147104,
+          "conversion_s": 68.91774279158562,
+          "end_to_end_s": 71.31607395783067
+        }
+      ],
+      "wires": 408465,
+      "constraints": 408640,
+      "binary_bytes": 46320496,
+      "status": "ok",
+      "frontend_s": 2.3980399165302515,
+      "frontend_s_min": 2.279918665997684,
+      "frontend_s_max": 2.3983311662450433,
+      "lowering_s": 37.46476066671312,
+      "lowering_s_min": 36.95965641643852,
+      "lowering_s_max": 41.89464437495917,
+      "export_s": 34.84231029264629,
+      "export_s_min": 31.958086375147104,
+      "export_s_max": 80.96679116785526,
+      "conversion_s": 76.73695466760546,
+      "conversion_s_min": 68.91774279158562,
+      "conversion_s_max": 118.43155183456838,
+      "end_to_end_s": 79.01687333360314,
+      "end_to_end_s_min": 71.31607395783067,
+      "end_to_end_s_max": 120.82959175109863
+    },
+    {
+      "name": "sha256_test512",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sha256_test512.circom",
+      "samples": [
+        {
+          "frontend_s": 2.367296458221972,
+          "lowering_s": 41.083571958355606,
+          "export_s": 54.0325166657567,
+          "conversion_s": 95.11608862411231,
+          "end_to_end_s": 97.48338508233428
+        },
+        {
+          "frontend_s": 2.5382109163329005,
+          "lowering_s": 37.801721999421716,
+          "export_s": 97.80172358360142,
+          "conversion_s": 135.60344558302313,
+          "end_to_end_s": 138.14165649935603
+        },
+        {
+          "frontend_s": 2.354663667269051,
+          "lowering_s": 50.26959358341992,
+          "export_s": 32.44430541712791,
+          "conversion_s": 82.71389900054783,
+          "end_to_end_s": 85.06856266781688
+        }
+      ],
+      "wires": 408529,
+      "constraints": 408640,
+      "binary_bytes": 46323240,
+      "status": "ok",
+      "frontend_s": 2.367296458221972,
+      "frontend_s_min": 2.354663667269051,
+      "frontend_s_max": 2.5382109163329005,
+      "lowering_s": 41.083571958355606,
+      "lowering_s_min": 37.801721999421716,
+      "lowering_s_max": 50.26959358341992,
+      "export_s": 54.0325166657567,
+      "export_s_min": 32.44430541712791,
+      "export_s_max": 97.80172358360142,
+      "conversion_s": 95.11608862411231,
+      "conversion_s_min": 82.71389900054783,
+      "conversion_s_max": 135.60344558302313,
+      "end_to_end_s": 97.48338508233428,
+      "end_to_end_s_min": 85.06856266781688,
+      "end_to_end_s_max": 138.14165649935603
+    },
+    {
+      "name": "sha256_2_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/sha256_2_test.circom",
+      "samples": [
+        {
+          "frontend_s": 1.5790769578889012,
+          "lowering_s": 17.198038291186094,
+          "export_s": 16.988369749858975,
+          "conversion_s": 34.18640804104507,
+          "end_to_end_s": 35.76548499893397
+        },
+        {
+          "frontend_s": 1.5819256249815226,
+          "lowering_s": 16.73277987446636,
+          "export_s": 23.78622316662222,
+          "conversion_s": 40.51900304108858,
+          "end_to_end_s": 42.100928666070104
+        },
+        {
+          "frontend_s": 1.613761750049889,
+          "lowering_s": 16.061079625040293,
+          "export_s": 39.4327651662752,
+          "conversion_s": 55.493844791315496,
+          "end_to_end_s": 57.107606541365385
+        }
+      ],
+      "wires": 204154,
+      "constraints": 204465,
+      "binary_bytes": 23216064,
+      "status": "ok",
+      "frontend_s": 1.5819256249815226,
+      "frontend_s_min": 1.5790769578889012,
+      "frontend_s_max": 1.613761750049889,
+      "lowering_s": 16.73277987446636,
+      "lowering_s_min": 16.061079625040293,
+      "lowering_s_max": 17.198038291186094,
+      "export_s": 23.78622316662222,
+      "export_s_min": 16.988369749858975,
+      "export_s_max": 39.4327651662752,
+      "conversion_s": 40.51900304108858,
+      "conversion_s_min": 34.18640804104507,
+      "conversion_s_max": 55.493844791315496,
+      "end_to_end_s": 42.100928666070104,
+      "end_to_end_s_min": 35.76548499893397,
+      "end_to_end_s_max": 57.107606541365385
+    },
+    {
+      "name": "eddsa_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/eddsa_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.580376916565001,
+          "lowering_s": 4.517460332252085,
+          "export_s": 3.6210003346204758,
+          "conversion_s": 8.138460666872561,
+          "end_to_end_s": 8.718837583437562
+        },
+        {
+          "frontend_s": 0.5267994171008468,
+          "lowering_s": 4.376866666600108,
+          "export_s": 2.6511123329401016,
+          "conversion_s": 7.02797899954021,
+          "end_to_end_s": 7.5547784166410565
+        },
+        {
+          "frontend_s": 0.5307537503540516,
+          "lowering_s": 4.331526417285204,
+          "export_s": 3.0629967926070094,
+          "conversion_s": 7.394523209892213,
+          "end_to_end_s": 7.925276960246265
+        }
+      ],
+      "wires": 46078,
+      "constraints": 45259,
+      "binary_bytes": 6173748,
+      "status": "ok",
+      "frontend_s": 0.5307537503540516,
+      "frontend_s_min": 0.5267994171008468,
+      "frontend_s_max": 0.580376916565001,
+      "lowering_s": 4.376866666600108,
+      "lowering_s_min": 4.331526417285204,
+      "lowering_s_max": 4.517460332252085,
+      "export_s": 3.0629967926070094,
+      "export_s_min": 2.6511123329401016,
+      "export_s_max": 3.6210003346204758,
+      "conversion_s": 7.394523209892213,
+      "conversion_s_min": 7.02797899954021,
+      "conversion_s_max": 8.138460666872561,
+      "end_to_end_s": 7.925276960246265,
+      "end_to_end_s_min": 7.5547784166410565,
+      "end_to_end_s_max": 8.718837583437562
+    },
+    {
+      "name": "eddsamimc_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/eddsamimc_test.circom",
+      "samples": [
+        {
+          "frontend_s": 0.3407568344846368,
+          "lowering_s": 1.7231708327308297,
+          "export_s": 1.1144890831783414,
+          "conversion_s": 2.837659915909171,
+          "end_to_end_s": 3.178416750393808
+        },
+        {
+          "frontend_s": 0.3374252924695611,
+          "lowering_s": 1.6962645826861262,
+          "export_s": 1.2543457904830575,
+          "conversion_s": 2.9506103731691837,
+          "end_to_end_s": 3.288035665638745
+        },
+        {
+          "frontend_s": 0.33777020778506994,
+          "lowering_s": 1.7955740001052618,
+          "export_s": 1.0607930840924382,
+          "conversion_s": 2.8563670841977,
+          "end_to_end_s": 3.19413729198277
+        }
+      ],
+      "wires": 21736,
+      "constraints": 21737,
+      "binary_bytes": 2980944,
+      "status": "ok",
+      "frontend_s": 0.33777020778506994,
+      "frontend_s_min": 0.3374252924695611,
+      "frontend_s_max": 0.3407568344846368,
+      "lowering_s": 1.7231708327308297,
+      "lowering_s_min": 1.6962645826861262,
+      "lowering_s_max": 1.7955740001052618,
+      "export_s": 1.1144890831783414,
+      "export_s_min": 1.0607930840924382,
+      "export_s_max": 1.2543457904830575,
+      "conversion_s": 2.8563670841977,
+      "conversion_s_min": 2.837659915909171,
+      "conversion_s_max": 2.9506103731691837,
+      "end_to_end_s": 3.19413729198277,
+      "end_to_end_s_min": 3.178416750393808,
+      "end_to_end_s_max": 3.288035665638745
+    },
+    {
+      "name": "eddsaposeidon_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/eddsaposeidon_test.circom",
+      "samples": [
+        {
+          "frontend_s": 1.336609834805131,
+          "lowering_s": 2.741831624880433,
+          "export_s": 1.7135841250419617,
+          "conversion_s": 4.455415749922395,
+          "end_to_end_s": 5.792025584727526
+        },
+        {
+          "frontend_s": 1.3751312904059887,
+          "lowering_s": 2.9313542507588863,
+          "export_s": 1.8089239578694105,
+          "conversion_s": 4.740278208628297,
+          "end_to_end_s": 6.1154094990342855
+        },
+        {
+          "frontend_s": 1.5082712918519974,
+          "lowering_s": 3.164687542244792,
+          "export_s": 2.1190207498148084,
+          "conversion_s": 5.2837082920596,
+          "end_to_end_s": 6.791979583911598
+        }
+      ],
+      "wires": 21245,
+      "constraints": 21246,
+      "binary_bytes": 2816936,
+      "status": "ok",
+      "frontend_s": 1.3751312904059887,
+      "frontend_s_min": 1.336609834805131,
+      "frontend_s_max": 1.5082712918519974,
+      "lowering_s": 2.9313542507588863,
+      "lowering_s_min": 2.741831624880433,
+      "lowering_s_max": 3.164687542244792,
+      "export_s": 1.8089239578694105,
+      "export_s_min": 1.7135841250419617,
+      "export_s_max": 2.1190207498148084,
+      "conversion_s": 4.740278208628297,
+      "conversion_s_min": 4.455415749922395,
+      "conversion_s_max": 5.2837082920596,
+      "end_to_end_s": 6.1154094990342855,
+      "end_to_end_s_min": 5.792025584727526,
+      "end_to_end_s_max": 6.791979583911598
+    },
+    {
+      "name": "smtverifier10_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/smtverifier10_test.circom",
+      "samples": [
+        {
+          "frontend_s": 2.0698466673493385,
+          "lowering_s": 3.6420609587803483,
+          "export_s": 2.404717542231083,
+          "conversion_s": 6.046778501011431,
+          "end_to_end_s": 8.11662516836077
+        },
+        {
+          "frontend_s": 1.9951539998874068,
+          "lowering_s": 3.331638541072607,
+          "export_s": 2.454539665952325,
+          "conversion_s": 5.786178207024932,
+          "end_to_end_s": 7.781332206912339
+        },
+        {
+          "frontend_s": 2.033497125841677,
+          "lowering_s": 3.9041948756203055,
+          "export_s": 2.337296082638204,
+          "conversion_s": 6.24149095825851,
+          "end_to_end_s": 8.274988084100187
+        }
+      ],
+      "wires": 12591,
+      "constraints": 12582,
+      "binary_bytes": 1529932,
+      "status": "ok",
+      "frontend_s": 2.033497125841677,
+      "frontend_s_min": 1.9951539998874068,
+      "frontend_s_max": 2.0698466673493385,
+      "lowering_s": 3.6420609587803483,
+      "lowering_s_min": 3.331638541072607,
+      "lowering_s_max": 3.9041948756203055,
+      "export_s": 2.404717542231083,
+      "export_s_min": 2.337296082638204,
+      "export_s_max": 2.454539665952325,
+      "conversion_s": 6.046778501011431,
+      "conversion_s_min": 5.786178207024932,
+      "conversion_s_max": 6.24149095825851,
+      "end_to_end_s": 8.11662516836077,
+      "end_to_end_s_min": 7.781332206912339,
+      "end_to_end_s_max": 8.274988084100187
+    },
+    {
+      "name": "smtprocessor10_test",
+      "source": "tests/libs/zksolid-libs/circomlib/test/circuits/smtprocessor10_test.circom",
+      "samples": [
+        {
+          "frontend_s": 2.037785208784044,
+          "lowering_s": 5.265732832252979,
+          "export_s": 3.6714420421049,
+          "conversion_s": 8.93717487435788,
+          "end_to_end_s": 10.974960083141923
+        },
+        {
+          "frontend_s": 2.0084494994953275,
+          "lowering_s": 5.056896916590631,
+          "export_s": 3.537515625357628,
+          "conversion_s": 8.594412541948259,
+          "end_to_end_s": 10.602862041443586
+        },
+        {
+          "frontend_s": 1.9666473334655166,
+          "lowering_s": 5.507859499193728,
+          "export_s": 3.9751123329624534,
+          "conversion_s": 9.482971832156181,
+          "end_to_end_s": 11.449619165621698
+        }
+      ],
+      "wires": 20474,
+      "constraints": 20465,
+      "binary_bytes": 2478692,
+      "status": "ok",
+      "frontend_s": 2.0084494994953275,
+      "frontend_s_min": 1.9666473334655166,
+      "frontend_s_max": 2.037785208784044,
+      "lowering_s": 5.265732832252979,
+      "lowering_s_min": 5.056896916590631,
+      "lowering_s_max": 5.507859499193728,
+      "export_s": 3.6714420421049,
+      "export_s_min": 3.537515625357628,
+      "export_s_max": 3.9751123329624534,
+      "conversion_s": 8.93717487435788,
+      "conversion_s_min": 8.594412541948259,
+      "conversion_s_max": 9.482971832156181,
+      "end_to_end_s": 10.974960083141923,
+      "end_to_end_s_min": 10.602862041443586,
+      "end_to_end_s_max": 11.449619165621698
+    }
+  ]
+}
