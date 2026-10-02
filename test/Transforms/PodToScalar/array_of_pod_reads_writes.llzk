@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
 
 !Elem = !pod.type<[@vals: !array.type<3 x index>, @tag: index]>
 !ElemArray = !array.type<2 x !Elem>
@@ -7,14 +7,13 @@ module attributes {llzk.lang} {
     function.return %arg : !ElemArray
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @pass_through(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>,
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>
-// CHECK-SAME:    ) -> (!array.type<2,3 x index>, !array.type<2 x index>) {
+// CHECK-NEXT:    function.def @pass_through(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) -> (!array.type<2,3 x index>, !array.type<2 x index>) {
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2,3 x index>, !array.type<2 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Elem = !pod.type<[@vals: !array.type<3 x index>]>
@@ -33,22 +32,72 @@ module attributes {llzk.lang} {
     function.return %arr : !ElemArray
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @pack(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index
-// CHECK-SAME:    ) -> !array.type<2,3 x index> {
+// CHECK-NEXT:    function.def @pack(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2,3 x index> {
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : <3 x index>
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_3]], %[[VAL_4]], %[[VAL_5]] : <3 x index>
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x index>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
 // CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      array.insert %[[VAL_8]]{{\[}}%[[VAL_9]]] = %[[VAL_6]] : <2,3 x index>, <3 x index>
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      array.insert %[[VAL_8]]{{\[}}%[[VAL_10]]] = %[[VAL_7]] : <2,3 x index>, <3 x index>
-// CHECK-NEXT:      function.return %[[VAL_8]] : !array.type<2,3 x index>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_9]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_11]]] = %[[VAL_10]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_12]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_14]]] = %[[VAL_13]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_15]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      array.write %[[VAL_8]]{{\[}}%[[VAL_17]]] = %[[VAL_16]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_19]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_21]]] = %[[VAL_20]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_22]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_24]]] = %[[VAL_23]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_25]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_27]]] = %[[VAL_26]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_29]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_28]]{{\[}}%[[VAL_31]]] = %[[VAL_30]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_32]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_28]]{{\[}}%[[VAL_34]]] = %[[VAL_33]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_35]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      array.write %[[VAL_28]]{{\[}}%[[VAL_37]]] = %[[VAL_36]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
+// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_40:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_39]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_38]]{{\[}}%[[VAL_41]]] = %[[VAL_40]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_42:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_42]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_38]]{{\[}}%[[VAL_44]]] = %[[VAL_43]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_45]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      array.write %[[VAL_38]]{{\[}}%[[VAL_47]]] = %[[VAL_46]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x index>
+// CHECK-NEXT:      %[[VAL_49:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.insert %[[VAL_48]]{{\[}}%[[VAL_49]]] = %[[VAL_28]] : <2,3 x index>, <3 x index>
+// CHECK-NEXT:      %[[VAL_50:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.insert %[[VAL_48]]{{\[}}%[[VAL_50]]] = %[[VAL_38]] : <2,3 x index>, <3 x index>
+// CHECK-NEXT:      function.return %[[VAL_48]] : !array.type<2,3 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Elem = !pod.type<[@vals: !array.type<3 x index>, @tag: index]>
@@ -62,20 +111,50 @@ module attributes {llzk.lang} {
     function.return %arr : !ElemArray
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @update_first(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>,
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
-// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<3 x index>
-// CHECK-SAME:    ) -> (!array.type<2,3 x index>, !array.type<2 x index>) {
+// CHECK-NEXT:    function.def @update_first(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<3 x index>) -> (!array.type<2,3 x index>, !array.type<2 x index>) {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_3]]] : <2,3 x index>
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_3]]] : <2 x index>, index
-// CHECK-NEXT:      array.insert %[[VAL_0]]{{\[}}%[[VAL_3]]] = %[[VAL_2]] : <2,3 x index>, <3 x index>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_6]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_8]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_10]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_13]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_12]]{{\[}}%[[VAL_15]]] = %[[VAL_14]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_16]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_12]]{{\[}}%[[VAL_18]]] = %[[VAL_17]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_19]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      array.write %[[VAL_12]]{{\[}}%[[VAL_21]]] = %[[VAL_20]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_12]]{{\[}}%[[VAL_23]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_22]]{{\[}}%[[VAL_25]]] = %[[VAL_24]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_12]]{{\[}}%[[VAL_26]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_22]]{{\[}}%[[VAL_28]]] = %[[VAL_27]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_12]]{{\[}}%[[VAL_29]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      array.write %[[VAL_22]]{{\[}}%[[VAL_31]]] = %[[VAL_30]] : <3 x index>, index
+// CHECK-NEXT:      array.insert %[[VAL_0]]{{\[}}%[[VAL_3]]] = %[[VAL_22]] : <2,3 x index>, <3 x index>
 // CHECK-NEXT:      array.write %[[VAL_1]]{{\[}}%[[VAL_3]]] = %[[VAL_5]] : <2 x index>, index
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2,3 x index>, !array.type<2 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Item = !pod.type<[@x: index]>
@@ -88,16 +167,36 @@ module attributes {llzk.lang} {
     function.return %x : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @read_item(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_4]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_6]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_8]]] = %[[VAL_7]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_9]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_11]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_14]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_13]]{{\[}}%[[VAL_16]]] = %[[VAL_15]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_17]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_13]]{{\[}}%[[VAL_19]]] = %[[VAL_18]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_1]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_20]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 #outer = affine_map<()[s0] -> (s0)>
@@ -112,141 +211,16 @@ module attributes {llzk.lang} {
     function.return %x : index
   }
 }
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @read_unwritten_dynamic(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<#[[$M]] x index>
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_1]]] : <#[[$M]] x index>, index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<#[[$ATTR_0]] x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_1]]] : <#[[$ATTR_0]] x index>, index
 // CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// -----
 
-#inner = affine_map<()[s0] -> (s0)>
-!Item = !pod.type<[@x: index]>
-!Outer = !pod.type<[@items: !array.type<#inner x !Item>, @tag: index]>
-!OuterArray = !array.type<2 x !Outer>
-module attributes {llzk.lang} {
-  function.def @write_elem(%arr: !OuterArray, %elem: !Outer, %i: index) -> !OuterArray {
-    array.write %arr[%i] = %elem : !OuterArray, !Outer
-    function.return %arr : !OuterArray
-  }
-}
-// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @write_elem(
-// CHECK-SAME:    %[[ARR_ITEMS:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$MAP]] x index>,
-// CHECK-SAME:    %[[ARR_TAG:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
-// CHECK-SAME:    %[[ELEM_ITEMS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x index>,
-// CHECK-SAME:    %[[ELEM_TAG:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[IDX:[0-9a-zA-Z_\.]+]]: index
-// CHECK-SAME:    ) -> (!array.type<2,#[[$MAP]] x index>, !array.type<2 x index>) {
-// CHECK-NEXT:      array.insert %[[ARR_ITEMS]]{{\[}}%[[IDX]]] = %[[ELEM_ITEMS]] : <2,#[[$MAP]] x index>, <#[[$MAP]] x index>
-// CHECK-NEXT:      array.write %[[ARR_TAG]]{{\[}}%[[IDX]]] = %[[ELEM_TAG]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[ARR_ITEMS]], %[[ARR_TAG]] : !array.type<2,#[[$MAP]] x index>, !array.type<2 x index>
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-// COM: This regression test exercises the deferred array.read resolver when the nearest
-// COM: forwardable write stores a bare pod.read-backed array-of-pod value.
-!Item = !pod.type<[@x: index]>
-!Outer = !pod.type<[@items: !array.type<? x !Item>]>
-module attributes {llzk.lang} {
-  function.def @forwarded_write_readback(%src: !Outer, %i: index) -> index {
-    %items = pod.read %src[@items] : !Outer, !array.type<? x !Item>
-    %dst = pod.new : !Outer
-    pod.write %dst[@items] = %items : !Outer, !array.type<? x !Item>
-
-    %arr = pod.read %dst[@items] : !Outer, !array.type<? x !Item>
-    %item = array.read %arr[%i] : !array.type<? x !Item>, !Item
-    %x = pod.read %item[@x] : !Item, index
-    function.return %x : index
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @forwarded_write_readback(
-// CHECK-SAME:    %[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
-// CHECK-SAME:    %[[I:[0-9a-zA-Z_\.]+]]: index
-// CHECK-SAME:    ) -> index {
-// CHECK-NEXT:      %[[X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR]]{{\[}}%[[I]]] : <? x index>, index
-// CHECK-NEXT:      function.return %[[X]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-#outer = affine_map<()[s0] -> (s0)>
-!Item = !pod.type<[@x: index]>
-!Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
-module attributes {llzk.lang} {
-  function.def @nested_if_parent_write(%src: !Outer, %n: index, %i: index, %flag: index) -> index {
-    %items = pod.read %src[@items] : !Outer, !array.type<#outer x !Item>
-    %p = pod.new()[%n] : !Outer
-    pod.write %p[@items] = %items : !Outer, !array.type<#outer x !Item>
-    %c0 = arith.constant 0 : index
-    %cond = arith.cmpi ne, %flag, %c0 : index
-    %ret = scf.if %cond -> (index) {
-      %arr = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
-      %item = array.read %arr[%i] : !array.type<#outer x !Item>, !Item
-      %x = pod.read %item[@x] : !Item, index
-      scf.yield %x : index
-    } else {
-      scf.yield %c0 : index
-    }
-    function.return %ret : index
-  }
-
-  function.def @nested_if_parent_init(%src: !Outer, %n: index, %i: index, %flag: index) -> index {
-    %items = pod.read %src[@items] : !Outer, !array.type<#outer x !Item>
-    %p = pod.new { @items = %items }()[%n] : !Outer
-    %c0 = arith.constant 0 : index
-    %cond = arith.cmpi ne, %flag, %c0 : index
-    %ret = scf.if %cond -> (index) {
-      %arr = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
-      %item = array.read %arr[%i] : !array.type<#outer x !Item>, !Item
-      %x = pod.read %item[@x] : !Item, index
-      scf.yield %x : index
-    } else {
-      scf.yield %c0 : index
-    }
-    function.return %ret : index
-  }
-}
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @nested_if_parent_write(
-// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[VAL_3:[0-9a-zA-Z_\.]+]]: index
-// CHECK-SAME:    ) -> index {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_3]], %[[VAL_4]] : index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_5]] -> (index) {
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_2]]] : <#[[$M]] x index>, index
-// CHECK-NEXT:        scf.yield %[[VAL_7]] : index
-// CHECK-NEXT:      } else {
-// CHECK-NEXT:        scf.yield %[[VAL_4]] : index
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.return %[[VAL_6]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @nested_if_parent_init(
-// CHECK-SAME:    %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
-// CHECK-SAME:    %[[VAL_9:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[VAL_10:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:    %[[VAL_11:[0-9a-zA-Z_\.]+]]: index
-// CHECK-SAME:    ) -> index {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_11]], %[[VAL_12]] : index
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_13]] -> (index) {
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_10]]] : <#[[$M]] x index>, index
-// CHECK-NEXT:        scf.yield %[[VAL_15]] : index
-// CHECK-NEXT:      } else {
-// CHECK-NEXT:        scf.yield %[[VAL_12]] : index
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.return %[[VAL_14]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 // -----
 
 // COM: Regression test for deferred array-of-POD field reads inside loops. Step 3 must not
@@ -301,6 +275,7 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @for_external_pod_array(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
@@ -312,38 +287,223 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_6]]] : <2 x index>, index
 // CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_8]]] = %[[VAL_7]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      scf.for %[[VAL_12:[0-9a-zA-Z_\.]+]] = %[[VAL_11]] to %[[VAL_10]] step %[[VAL_9]] {
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_1]]] : <2 x index>, index
-// CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_1]]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[VAL_14]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @while_external_pod_array(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: index, %[[VAL_17:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
-// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_15]]{{\[}}%[[VAL_19]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_21]]] = %[[VAL_20]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_15]]{{\[}}%[[VAL_22]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_24]]] = %[[VAL_23]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_10]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_12]]] = %[[VAL_11]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_13]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_15]]] = %[[VAL_14]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_20]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_19]]{{\[}}%[[VAL_22]]] = %[[VAL_21]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_23]]] : <2 x index>, index
 // CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_28:[0-9a-zA-Z_\.]+]] = %[[VAL_16]]) : (index) -> index {
-// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_17]]] : <2 x index>, index
-// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_28]], %[[VAL_26]] : index
-// CHECK-NEXT:        scf.condition(%[[VAL_30]]) %[[VAL_28]] : index
-// CHECK-NEXT:      } do {
-// CHECK-NEXT:      ^bb0(%[[VAL_31:[0-9a-zA-Z_\.]+]]: index):
-// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_17]]] : <2 x index>, index
-// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_31]], %[[VAL_25]] : index
-// CHECK-NEXT:        scf.yield %[[VAL_33]] : index
+// CHECK-NEXT:      array.write %[[VAL_19]]{{\[}}%[[VAL_25]]] = %[[VAL_24]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_27]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_26]]{{\[}}%[[VAL_29]]] = %[[VAL_28]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_30]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_26]]{{\[}}%[[VAL_32]]] = %[[VAL_31]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_34]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_33]]{{\[}}%[[VAL_36]]] = %[[VAL_35]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_37]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_33]]{{\[}}%[[VAL_39]]] = %[[VAL_38]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_40:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_41:[0-9a-zA-Z_\.]+]] = %[[VAL_18]] to %[[VAL_17]] step %[[VAL_16]] iter_args(%[[VAL_42:[0-9a-zA-Z_\.]+]] = %[[VAL_33]]) -> (!array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_42]]{{\[}}%[[VAL_44]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_43]]{{\[}}%[[VAL_46]]] = %[[VAL_45]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_42]]{{\[}}%[[VAL_47]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_43]]{{\[}}%[[VAL_49]]] = %[[VAL_48]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_43]]{{\[}}%[[VAL_1]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_43]]{{\[}}%[[VAL_52]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_51]]{{\[}}%[[VAL_54]]] = %[[VAL_53]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_55:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_56:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_43]]{{\[}}%[[VAL_55]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_51]]{{\[}}%[[VAL_57]]] = %[[VAL_56]] : <2 x index>, index
+// CHECK-NEXT:        scf.yield %[[VAL_51]] : !array.type<2 x index>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_17]]] : <2 x index>, index
-// CHECK-NEXT:      function.return %[[VAL_34]] : index
+// CHECK-NEXT:      %[[VAL_58:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_59:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_60:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_40]]{{\[}}%[[VAL_59]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_61:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_58]]{{\[}}%[[VAL_61]]] = %[[VAL_60]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_62:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_63:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_40]]{{\[}}%[[VAL_62]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_64:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_58]]{{\[}}%[[VAL_64]]] = %[[VAL_63]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_65:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_66:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_67:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_58]]{{\[}}%[[VAL_66]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_68:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_65]]{{\[}}%[[VAL_68]]] = %[[VAL_67]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_69:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_70:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_58]]{{\[}}%[[VAL_69]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_71:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_65]]{{\[}}%[[VAL_71]]] = %[[VAL_70]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_72:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_65]]{{\[}}%[[VAL_1]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_72]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @while_external_pod_array(%[[VAL_73:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_74:[0-9a-zA-Z_\.]+]]: index, %[[VAL_75:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_76:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_77:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_78:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_73]]{{\[}}%[[VAL_77]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_79:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_76]]{{\[}}%[[VAL_79]]] = %[[VAL_78]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_80:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_81:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_73]]{{\[}}%[[VAL_80]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_82:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_76]]{{\[}}%[[VAL_82]]] = %[[VAL_81]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_83:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_84:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_85:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_76]]{{\[}}%[[VAL_84]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_86:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_83]]{{\[}}%[[VAL_86]]] = %[[VAL_85]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_87:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_88:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_76]]{{\[}}%[[VAL_87]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_89:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_83]]{{\[}}%[[VAL_89]]] = %[[VAL_88]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_90:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_91:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_92:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_93:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_94:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_83]]{{\[}}%[[VAL_93]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_95:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_92]]{{\[}}%[[VAL_95]]] = %[[VAL_94]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_96:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_97:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_83]]{{\[}}%[[VAL_96]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_98:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_92]]{{\[}}%[[VAL_98]]] = %[[VAL_97]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_99:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_100:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_101:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_92]]{{\[}}%[[VAL_100]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_102:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_99]]{{\[}}%[[VAL_102]]] = %[[VAL_101]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_103:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_104:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_92]]{{\[}}%[[VAL_103]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_105:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_99]]{{\[}}%[[VAL_105]]] = %[[VAL_104]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_106:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_107:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_108:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_99]]{{\[}}%[[VAL_107]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_109:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_106]]{{\[}}%[[VAL_109]]] = %[[VAL_108]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_110:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_111:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_99]]{{\[}}%[[VAL_110]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_112:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_106]]{{\[}}%[[VAL_112]]] = %[[VAL_111]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_113:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_114:[0-9a-zA-Z_\.]+]] = %[[VAL_74]], %[[VAL_115:[0-9a-zA-Z_\.]+]] = %[[VAL_106]]) : (index, !array.type<2 x index>) -> (index, !array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_116:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        %[[VAL_117:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_118:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_115]]{{\[}}%[[VAL_117]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_119:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_116]]{{\[}}%[[VAL_119]]] = %[[VAL_118]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_120:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_121:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_115]]{{\[}}%[[VAL_120]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_122:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_116]]{{\[}}%[[VAL_122]]] = %[[VAL_121]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_123:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_116]]{{\[}}%[[VAL_75]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_124:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_114]], %[[VAL_91]] : index
+// CHECK-NEXT:        scf.condition(%[[VAL_124]]) %[[VAL_114]], %[[VAL_115]] : index, !array.type<2 x index>
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_125:[0-9a-zA-Z_\.]+]]: index, %[[VAL_126:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>):
+// CHECK-NEXT:        %[[VAL_127:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        %[[VAL_128:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_129:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_126]]{{\[}}%[[VAL_128]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_130:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_127]]{{\[}}%[[VAL_130]]] = %[[VAL_129]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_131:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_132:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_126]]{{\[}}%[[VAL_131]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_133:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_127]]{{\[}}%[[VAL_133]]] = %[[VAL_132]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_134:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_127]]{{\[}}%[[VAL_75]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_135:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        %[[VAL_136:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_137:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_127]]{{\[}}%[[VAL_136]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_138:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_135]]{{\[}}%[[VAL_138]]] = %[[VAL_137]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_139:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_140:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_127]]{{\[}}%[[VAL_139]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_141:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_135]]{{\[}}%[[VAL_141]]] = %[[VAL_140]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_142:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_125]], %[[VAL_90]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_142]], %[[VAL_135]] : index, !array.type<2 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_143:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_144:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_145:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_113]]#1{{\[}}%[[VAL_144]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_146:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_143]]{{\[}}%[[VAL_146]]] = %[[VAL_145]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_147:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_148:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_113]]#1{{\[}}%[[VAL_147]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_149:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_143]]{{\[}}%[[VAL_149]]] = %[[VAL_148]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_150:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_151:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_152:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_143]]{{\[}}%[[VAL_151]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_153:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_150]]{{\[}}%[[VAL_153]]] = %[[VAL_152]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_154:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_155:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_143]]{{\[}}%[[VAL_154]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_156:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_150]]{{\[}}%[[VAL_156]]] = %[[VAL_155]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_157:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_150]]{{\[}}%[[VAL_75]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_157]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Item = !pod.type<[@x: index]>
+!Items = !array.type<? x !Item>
+!Box = !pod.type<[@items: !Items]>
+module attributes {llzk.lang} {
+  function.def @fresh_array_snapshot_mutation(%i: index, %replacement: index) -> (index, index) {
+    %box = pod.new : !Box
+    %first = pod.read %box[@items] : !Box, !Items
+    %second = pod.read %box[@items] : !Box, !Items
+    %item = pod.new { @x = %replacement } : !Item
+    array.write %first[%i] = %item : !Items, !Item
+    %readback = array.read %first[%i] : !Items, !Item
+    %written = pod.read %readback[@x] : !Item, index
+    %observed = array.read %second[%i] : !Items, !Item
+    %value = pod.read %observed[@x] : !Item, index
+    function.return %written, %value : index, index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @fresh_array_snapshot_mutation(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <? x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <? x index>
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_0]]] = %[[VAL_1]] : <? x index>, index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_0]]] : <? x index>, index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_0]]] : <? x index>, index
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]] : index, index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

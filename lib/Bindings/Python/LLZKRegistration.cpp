@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/DialectRegistration.h"
 
 #include <mlir/Bindings/Python/PybindAdaptors.h>
 #include <mlir/CAPI/IR.h>
@@ -21,6 +21,6 @@ PYBIND11_MODULE(_llzkRegistration, m) {
   m.doc() = "LLZK dialect registration";
 
   m.def("register_dialects", [](MlirDialectRegistry registry) {
-    llzk::registerAllDialects(*unwrap(registry));
+    llzk::registerDialects(*unwrap(registry));
   });
 }

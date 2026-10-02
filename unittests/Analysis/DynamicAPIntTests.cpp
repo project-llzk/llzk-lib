@@ -17,9 +17,19 @@ using namespace llvm;
 using namespace llzk;
 using namespace std;
 
-static DynamicAPInt goldilocks = toDynamicAPInt("18446744069414584321");
-static DynamicAPInt bn254 =
-    toDynamicAPInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+/// Return the Goldilocks prime, initialized when first needed by a test.
+static const DynamicAPInt &getGoldilocks() {
+  static const DynamicAPInt prime = toDynamicAPInt("18446744069414584321");
+  return prime;
+}
+
+/// Return the BN254 prime, initialized when first needed by a test.
+static const DynamicAPInt &getBN254() {
+  static const DynamicAPInt prime = toDynamicAPInt(
+      "21888242871839275222246405745257275088548364400416034343698204186575808495617"
+  );
+  return prime;
+}
 
 static void extendAPSInts(APSInt &a, APSInt &b) {
   unsigned maxBitwidth = max(a.getBitWidth(), b.getBitWidth());
@@ -43,10 +53,10 @@ struct DynamicAPIntUnaryTest : public testing::TestWithParam<DynamicAPInt> {
         DynamicAPInt(2013265921), // babybear
         DynamicAPInt(2147483647), // mersenne31
         DynamicAPInt(2130706433), // koalabear
-        goldilocks,
-        -1 * goldilocks,
-        bn254,
-        -1 * bn254,
+        getGoldilocks(),
+        -1 * getGoldilocks(),
+        getBN254(),
+        -1 * getBN254(),
     };
     return vals;
   }
@@ -130,7 +140,7 @@ struct DynamicAPIntBinaryTest
   static const std::vector<std::pair<DynamicAPInt, DynamicAPInt>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, DynamicAPInt>> vals = {
         {DynamicAPInt(-1), DynamicAPInt(0)},
-        {DynamicAPInt(-1), bn254},
+        {DynamicAPInt(-1), getBN254()},
         {DynamicAPInt(0xcafe), DynamicAPInt(0xdeadbeef)}
     };
     return vals;
@@ -179,8 +189,8 @@ INSTANTIATE_TEST_SUITE_P(
 struct DynamicAPIntShiftTest : public testing::TestWithParam<std::pair<DynamicAPInt, unsigned>> {
   static const std::vector<std::pair<DynamicAPInt, unsigned>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, unsigned>> vals = {
-        {DynamicAPInt(-1), 0},    {bn254, 0}, {bn254, 32}, {bn254, 100}, {DynamicAPInt(100), 32},
-        {DynamicAPInt(100), 100},
+        {DynamicAPInt(-1), 0}, {getBN254(), 0},         {getBN254(), 32},
+        {getBN254(), 100},     {DynamicAPInt(100), 32}, {DynamicAPInt(100), 100},
     };
     return vals;
   }

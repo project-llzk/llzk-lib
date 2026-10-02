@@ -124,7 +124,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
-    auto ctx = op->getContext();
+    auto *ctx = op->getContext();
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
     auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
 

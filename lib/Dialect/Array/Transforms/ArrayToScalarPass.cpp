@@ -42,16 +42,16 @@
 /// 3. Replace branch-local reads (in `scf.if`) with the value written by a same-index write op that
 ///    dominates the parent `scf.if` (because the passes below cannot handle that case).
 ///
-/// 4. Promote straight-line static arrays in one walk per block.
+/// 4. Fold read-only, constant-index accesses to constant global arrays without expanding them.
 ///
-/// 5. Run MLIR "sroa" pass to split each remaining array with linear size `N` into `N` arrays of
-/// size 1
-///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
+/// 5. Promote straight-line static arrays in one walk per block.
 ///
-/// 6. Run MLIR "mem2reg" as a fallback for allocations with control flow or unsupported
-///    uses. This pass also runs several standard optimizations so the final result is condensed.
+/// 6. Run restricted "sroa" pass to split each remaining array with linear size `N` into `N` size-1
+///    arrays (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
 ///
-/// 7. Remove array allocations that become unread after memory promotion, then canonicalize local
+/// 7. Run restricted "mem2reg" as a fallback for allocations with control flow or unsupported uses.
+///
+/// 8. Remove array allocations that become unread after memory promotion, then canonicalize local
 ///    SSA values made dead by that cleanup.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
@@ -73,8 +73,10 @@
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -83,13 +85,16 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
+#include "llzk/Util/Walk.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -935,6 +940,75 @@ static void step3(ModuleOp modOp) {
   }
 }
 
+/// Fold constant-index scalar reads from independent copies of constant global arrays.
+/// Validate every use before rewriting: writes, escapes, and dynamic indices leave the entire
+/// copy unchanged. Only accessed elements are materialized, never the full initializer.
+static void foldConstantGlobalArrayReads(ModuleOp module) {
+  SymbolTableCollection tables;
+  // Rewriting erases later array-read operations, so finish walking before mutating the IR.
+  auto foldRead = [&tables](global::GlobalReadOp globalRead) {
+    auto arrayType = llvm::dyn_cast<ArrayType>(globalRead.getType());
+    if (!arrayType || !arrayType.hasStaticShape()) {
+      return;
+    }
+    auto definition =
+        llvm::cast<global::GlobalRefOpInterface>(globalRead.getOperation()).getGlobalDefOp(tables);
+    if (failed(definition) || !definition->get().isConstant()) {
+      return;
+    }
+    auto initializer =
+        llvm::dyn_cast_if_present<ArrayAttr>(definition->get().getInitialValueAttr());
+    if (!initializer) {
+      return;
+    }
+
+    SmallVector<std::pair<ReadArrayOp, Attribute>> reads;
+    auto indexGen = ArrayIndexGen::from(arrayType);
+    for (Operation *user : globalRead.getResult().getUsers()) {
+      auto read = llvm::dyn_cast<ReadArrayOp>(user);
+      if (!read || read.getArrRef() != globalRead.getResult()) {
+        return;
+      }
+      ArrayAttr indices = getIndexAsAttr(read);
+      if (!indices) {
+        return;
+      }
+      std::optional<int64_t> index = indexGen.linearize(indices.getValue());
+      if (!index || *index < 0 || checkedCast<size_t>(*index) >= initializer.size()) {
+        return;
+      }
+      Attribute element = initializer[*index];
+      auto typed = llvm::dyn_cast<TypedAttr>(element);
+      if (!typed || typed.getType() != read.getType() ||
+          !llvm::isa<IntegerAttr, felt::FeltConstAttr, StringAttr>(element)) {
+        return;
+      }
+      reads.emplace_back(read, element);
+    }
+
+    for (auto [read, element] : reads) {
+      OpBuilder builder(read);
+      Value constant;
+      if (auto integer = llvm::dyn_cast<IntegerAttr>(element)) {
+        constant = arith::ConstantOp::create(builder, read.getLoc(), integer);
+      } else if (auto felt = llvm::dyn_cast<felt::FeltConstAttr>(element)) {
+        constant = felt::FeltConstantOp::create(builder, read.getLoc(), felt);
+      } else {
+        constant = string::LitStringOp::create(
+            builder, read.getLoc(), read.getType(), llvm::cast<StringAttr>(element)
+        );
+      }
+      read.getResult().replaceAllUsesWith(constant);
+      read.erase();
+    }
+    // The declaration proves immutability even if this read omits its optional `const` marker.
+    globalRead.erase();
+  };
+  for (global::GlobalReadOp read : walkCollect<global::GlobalReadOp>(module)) {
+    foldRead(read);
+  }
+}
+
 /// Return whether \p accessBlock is reached from \p allocationBlock only through nested,
 /// single-block `scf.execute_region` operations.
 static bool hasStraightLineRegionPath(Block *allocationBlock, Block *accessBlock) {
@@ -949,12 +1023,24 @@ static bool hasStraightLineRegionPath(Block *allocationBlock, Block *accessBlock
   return true;
 }
 
+/// A statically indexed array access collected for straight-line element promotion.
+/// Eligibility is checked per element before accesses are grouped by block for ordered rewriting.
+struct StraightLineStaticAccess {
+  /// The element-level `array.read` or `array.write` operation.
+  Operation *op;
+  /// Constant index tuple identifying the element within its allocation.
+  Attribute index;
+  /// Block containing the access, used to establish the element's linear access order.
+  Block *block;
+};
+
 /// Collect statically indexed elements of \p alloc whose accesses all have a single linear order
 /// within one block (possibly a loop body) or nested single-block regions. Return false if the
 /// allocation has any escaping or unsupported use, since that could alias an otherwise eligible
 /// element.
 static bool collectStraightLineStaticElements(
-    CreateArrayOp alloc, DenseMap<Attribute, Block *> &elementBlocks
+    CreateArrayOp alloc, DenseMap<Attribute, Block *> &elementBlocks,
+    SmallVectorImpl<StraightLineStaticAccess> &accesses
 ) {
   ArrayType type = alloc.getType();
   if (!type.hasStaticShape() || !alloc.getElements().empty()) {
@@ -984,6 +1070,7 @@ static bool collectStraightLineStaticElements(
     }
 
     Block *accessBlock = owner->getBlock();
+    accesses.push_back({owner, index, accessBlock});
     auto [it, inserted] = elementBlocks.try_emplace(index, accessBlock);
     if ((!inserted && it->second != accessBlock) ||
         !hasStraightLineRegionPath(alloc->getBlock(), accessBlock)) {
@@ -1000,18 +1087,22 @@ static bool collectStraightLineStaticElements(
 /// generic mem2reg remain responsible for arrays involving branches, loops, dynamic indices,
 /// nested regions, or escaping values.
 static void promoteStraightLineStaticArrays(ModuleOp module) {
-  DenseMap<Block *, DenseMap<Value, DenseSet<Attribute>>> elementsByBlock;
+  using ElementKey = std::pair<Value, Attribute>;
+  DenseMap<Block *, DenseMap<Operation *, ElementKey>> accessesByBlock;
   SmallVector<CreateArrayOp> allocations;
   size_t eligibleElementCount = 0;
   module.walk([&](CreateArrayOp alloc) {
     DenseMap<Attribute, Block *> elementBlocks;
-    if (!collectStraightLineStaticElements(alloc, elementBlocks)) {
+    SmallVector<StraightLineStaticAccess> accesses;
+    if (!collectStraightLineStaticElements(alloc, elementBlocks, accesses)) {
       return;
     }
     allocations.push_back(alloc);
     eligibleElementCount += elementBlocks.size();
-    for (auto [index, block] : elementBlocks) {
-      elementsByBlock[block][alloc.getResult()].insert(index);
+    for (const StraightLineStaticAccess &access : accesses) {
+      if (elementBlocks.contains(access.index)) {
+        accessesByBlock[access.block].try_emplace(access.op, alloc.getResult(), access.index);
+      }
     }
   });
   LLVM_DEBUG(
@@ -1019,18 +1110,18 @@ static void promoteStraightLineStaticArrays(ModuleOp module) {
                    << " elements eligible\n";
   );
 
-  for (auto &[block, eligibleElements] : elementsByBlock) {
-    DenseMap<Value, DenseMap<Attribute, Value>> latestValues;
+  for (auto &[block, eligibleAccesses] : accessesByBlock) {
+    DenseMap<ElementKey, Value> latestValues;
 
     for (Operation &op : llvm::make_early_inc_range(*block)) {
+      auto accessIt = eligibleAccesses.find(&op);
+      if (accessIt == eligibleAccesses.end()) {
+        continue;
+      }
+      auto [array, index] = accessIt->second;
+
       if (auto read = dyn_cast<ReadArrayOp>(&op)) {
-        Value array = read.getArrRef();
-        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
-        auto arrayIt = eligibleElements.find(array);
-        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
-          continue;
-        }
-        Value &latest = latestValues[array][index];
+        Value &latest = latestValues[{array, index}];
         if (!latest) {
           OpBuilder builder(read);
           latest = llzk::NonDetOp::create(builder, read.getLoc(), read.getType());
@@ -1041,13 +1132,7 @@ static void promoteStraightLineStaticArrays(ModuleOp module) {
       }
 
       if (auto write = dyn_cast<WriteArrayOp>(&op)) {
-        Value array = write.getArrRef();
-        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
-        auto arrayIt = eligibleElements.find(array);
-        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
-          continue;
-        }
-        latestValues[array][index] = write.getRvalue();
+        latestValues[{array, index}] = write.getRvalue();
         write.erase();
       }
     }
@@ -1144,6 +1229,8 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
       llvm::dbgs() << "After step 3:\n";
       module.dump();
     });
+
+    foldConstantGlobalArrayReads(module);
 
     OpPassManager nestedPM = createPostScalarizationPipeline();
     if (failed(runPipeline(nestedPM, module))) {

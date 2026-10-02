@@ -75,11 +75,11 @@ inline bool defaultLegalityCheck(const mlir::TypeConverter &tyConv, mlir::Operat
 }
 
 /// Lists all LLZK op classes that may contain a StructType in their results or attributes.
-static struct OpClassesWithStructTypes {
+struct OpClassesWithStructTypes {
 
   /// Ops in this subset define the general builder function:
   /// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
-  const std::tuple<
+  using WithGeneralBuilder = std::tuple<
       // clang-format off
       array::ArrayLengthOp,
       array::ReadArrayOp,
@@ -103,17 +103,15 @@ static struct OpClassesWithStructTypes {
       polymorphic::UnifiableCastOp,
       polymorphic::ConstReadOp
       // clang-format on
-      >
-      WithGeneralBuilder {};
+      >;
 
   /// Ops in this subset do NOT define the general builder function (see above), so they cannot use
   /// `GeneralTypeReplacePattern`. A custom `OpConversionPattern` is needed to convert these ops.
   ///
   /// The `newGeneralRewritePatternSet()` function provides a default `OpConversionPattern` for
   /// each of these with benefit 0, allowing more specific higher-benefit patterns to override.
-  const std::tuple<function::CallOp, array::CreateArrayOp, pod::NewPodOp> NoGeneralBuilder {};
-
-} OpClassesWithStructTypes;
+  using NoGeneralBuilder = std::tuple<function::CallOp, array::CreateArrayOp, pod::NewPodOp>;
+};
 
 namespace {
 
@@ -306,7 +304,7 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   auto inserter = [&](auto... opClasses) {
     patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
   };
-  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
+  std::apply(inserter, OpClassesWithStructTypes::WithGeneralBuilder {});
   applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   // Special cases for ops where GeneralTypeReplacePattern doesn't work
   patterns.add<

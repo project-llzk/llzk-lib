@@ -1,0 +1,37 @@
+// RUN: llzk-opt -I %input_dir -verify-diagnostics %s
+
+// An explicit argument cannot make a caller-local struct match the same raw path in an included
+// contract signature; the included definition is qualified by the alias namespace.
+module attributes {llzk.lang} {
+  include.from "Inputs/template_signature_namespace.llzk" as @Lib
+
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Target::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Target::@Box<[@T]>>
+        function.return %self : !struct.type<@Target::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Box<[@T]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @reject_local_box(%value: !struct.type<@Target::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @RejectLocalBox for @Caller::@reject_local_box (
+        %value: !struct.type<@Target::@Box<[@T]>>
+    ) {
+      // expected-error@+1 {{'verif.include' op operand type mismatch: expected type '!struct.type<@Target::@Box<[@T]>>' from included target "@Lib::@Target::@Base", but found '!struct.type<@Target::@Box<[@T]>>' for operand number 0}}
+      verif.include @Lib::@Target::@Base<[@T]>(%value) :
+          (!struct.type<@Target::@Box<[@T]>>) -> ()
+    }
+  }
+}

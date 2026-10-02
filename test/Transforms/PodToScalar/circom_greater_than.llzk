@@ -58,6 +58,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
 // CHECK-NEXT:    struct.def @LessThan_1 {
 // CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
@@ -83,25 +84,89 @@ module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
 // CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@GreaterThan_2>
 // CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_10]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_7]]{{\[}}%[[VAL_9]]] = %[[VAL_13]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_11]], %[[VAL_10]] : index
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_14]], %[[VAL_9]] : index
-// CHECK-NEXT:        scf.if %[[VAL_15]] {
-// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_7]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_15]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_14]]{{\[}}%[[VAL_17]]] = %[[VAL_16]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_18]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_14]]{{\[}}%[[VAL_20]]] = %[[VAL_19]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_14]]{{\[}}%[[VAL_9]]] = %[[VAL_13]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_14]]{{\[}}%[[VAL_22]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_21]]{{\[}}%[[VAL_24]]] = %[[VAL_23]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_14]]{{\[}}%[[VAL_25]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_21]]{{\[}}%[[VAL_27]]] = %[[VAL_26]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_11]], %[[VAL_10]] : index
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_28]], %[[VAL_9]] : index
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_31]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_30]]{{\[}}%[[VAL_33]]] = %[[VAL_32]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_35:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_34]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_30]]{{\[}}%[[VAL_36]]] = %[[VAL_35]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        scf.if %[[VAL_29]] {
+// CHECK-NEXT:          %[[VAL_37:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_38:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_37]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_9]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        array.write %[[VAL_7]]{{\[}}%[[VAL_10]]] = %[[VAL_17]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_14]], %[[VAL_10]] : index
-// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_18]], %[[VAL_9]] : index
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_19]] -> (!struct.type<@LessThan_1>) {
-// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_7]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
-// CHECK-NEXT:          scf.yield %[[VAL_21]] : !struct.type<@LessThan_1>
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_9]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_41]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_40]]{{\[}}%[[VAL_43]]] = %[[VAL_42]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_44]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_40]]{{\[}}%[[VAL_46]]] = %[[VAL_45]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_40]]{{\[}}%[[VAL_10]]] = %[[VAL_39]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_40]]{{\[}}%[[VAL_48]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_47]]{{\[}}%[[VAL_50]]] = %[[VAL_49]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_40]]{{\[}}%[[VAL_51]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_47]]{{\[}}%[[VAL_53]]] = %[[VAL_52]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_28]], %[[VAL_10]] : index
+// CHECK-NEXT:        %[[VAL_55:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_54]], %[[VAL_9]] : index
+// CHECK-NEXT:        %[[VAL_56:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_47]]{{\[}}%[[VAL_57]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_56]]{{\[}}%[[VAL_59]]] = %[[VAL_58]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_60:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_61:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_47]]{{\[}}%[[VAL_60]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_62:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        array.write %[[VAL_56]]{{\[}}%[[VAL_62]]] = %[[VAL_61]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_63:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_55]] -> (!struct.type<@LessThan_1>) {
+// CHECK-NEXT:          %[[VAL_64:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_65:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_66:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_56]]{{\[}}%[[VAL_65]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_67:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          array.write %[[VAL_64]]{{\[}}%[[VAL_67]]] = %[[VAL_66]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_68:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_69:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_56]]{{\[}}%[[VAL_68]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_70:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          array.write %[[VAL_64]]{{\[}}%[[VAL_70]]] = %[[VAL_69]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_71:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_64]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
+// CHECK-NEXT:          scf.yield %[[VAL_71]] : !struct.type<@LessThan_1>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@LessThan_1>
-// CHECK-NEXT:          scf.yield %[[VAL_22]] : !struct.type<@LessThan_1>
+// CHECK-NEXT:          %[[VAL_72:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@LessThan_1>
+// CHECK-NEXT:          scf.yield %[[VAL_72]] : !struct.type<@LessThan_1>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_20]][@out] : <@LessThan_1>, !felt.type<"bn128">
-// CHECK-NEXT:        struct.writem %[[VAL_12]][@out] = %[[VAL_23]] : <@GreaterThan_2>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_73:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_63]][@out] : <@LessThan_1>, !felt.type<"bn128">
+// CHECK-NEXT:        struct.writem %[[VAL_12]][@out] = %[[VAL_73]] : <@GreaterThan_2>, !felt.type<"bn128">
 // CHECK-NEXT:        function.return %[[VAL_12]] : !struct.type<@GreaterThan_2>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

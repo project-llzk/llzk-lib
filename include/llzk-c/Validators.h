@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This header declares the registration and creation method for
-// validation passes.
+/// \file
+/// Declares the registration and creation method for validation passes.
 //
 //===----------------------------------------------------------------------===//
 

@@ -791,7 +791,7 @@ protected:
 struct KnownTargetVerifier : public IncludeOpVerifier {
   KnownTargetVerifier(IncludeOp *c, SymbolLookupResult<ContractOp> &&tgtRes)
       : IncludeOpVerifier(c), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        includeSymNames(tgtRes.getNamespace()) {}
+        targetNamespace(tgtRes.getNamespace()), targetViaInclude(tgtRes.viaInclude()) {}
 
   LogicalResult verifyInputs() override {
     return verifyTypesMatch(includeOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
@@ -854,7 +854,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
       FailureOr<UnificationMap> unifyResult =
-          includeOp->unifyTypeSignatureWithNamespace(tgtType, includeSymNames);
+          includeOp->unifyTypeSignatureWithNamespace(tgtType, targetNamespace);
       // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
       // even if `verifyInputs()` fails for error aggregation, so we still need to return
       // early here.
@@ -879,11 +879,13 @@ private:
           .append("callee defined here");
     }
     for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
-      if (!typesUnify(includeOpTypes[i], tgtTypes[i], includeSymNames)) {
-        return includeOp->emitOpError().append(
-            aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ",
-            includeOpTypes[i], " for ", aspect, " number ", i
-        );
+      if (!typesUnify(includeOpTypes[i], tgtTypes[i], targetNamespace)) {
+        auto diag =
+            includeOp->emitOpError().append(aspect, " type mismatch: expected type ", tgtTypes[i]);
+        if (targetViaInclude) {
+          diag.append(" from included target \"", includeOp->getCalleeAttr(), '"');
+        }
+        return diag.append(", but found ", includeOpTypes[i], " for ", aspect, " number ", i);
       }
     }
     return success();
@@ -891,7 +893,8 @@ private:
 
   ContractOp tgt;
   FunctionType tgtType;
-  std::vector<llvm::StringRef> includeSymNames;
+  std::vector<llvm::StringRef> targetNamespace;
+  bool targetViaInclude;
 };
 
 } // namespace

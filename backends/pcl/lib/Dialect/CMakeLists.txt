@@ -6,7 +6,8 @@ target_sources(PCLDialect PRIVATE ${PCLDialect_SOURCES})
 target_link_libraries(
   PCLDialect PUBLIC MLIRFuncDialect PCLDialectHeaders
                      MLIRIR MLIRSupport
-                     LLVMHeaders MLIRHeaders)
+                     LLVMHeaders MLIRHeaders
+             PRIVATE LLZKDialectHeaders)
 add_dependencies(PCLDialect PCLDialectIncGen)
 llzk_target_add_mlir_link_settings(PCLDialect)
 

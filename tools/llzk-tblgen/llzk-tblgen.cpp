@@ -16,6 +16,32 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "CAPIGenRegistration.h"
+
 #include <mlir/Tools/mlir-tblgen/MlirTblgenMain.h>
 
-int main(int argc, char **argv) { return mlir::MlirTblgenMain(argc, argv); }
+#include <llvm/Support/raw_ostream.h>
+
+#include <cstdlib>
+#include <exception>
+
+int main(int argc, char **argv) noexcept {
+  try {
+    llzk::registerCAPIOptions();
+    llzk::registerAttrCAPIGenerators();
+    llzk::registerAttrCAPITestGenerator();
+    llzk::registerTypeCAPIGenerators();
+    llzk::registerTypeCAPITestGenerator();
+    llzk::registerEnumCAPIGenerators();
+    llzk::registerEnumCAPITestGenerator();
+    llzk::registerOpCAPIGenerators();
+    llzk::registerOpCAPITestGenerator();
+    llzk::registerDialectCAPITestGenerator();
+    return mlir::MlirTblgenMain(argc, argv);
+  } catch (const std::exception &ex) {
+    llvm::errs() << "llzk-tblgen: unhandled exception: " << ex.what() << '\n';
+  } catch (...) {
+    llvm::errs() << "llzk-tblgen: unhandled non-standard exception\n";
+  }
+  return EXIT_FAILURE;
+}

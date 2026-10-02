@@ -51,23 +51,44 @@ namespace mlir::tblgen {
 class Operator;
 } // namespace mlir::tblgen
 
-// Shared command-line options used by all CAPI generators
-extern llvm::cl::OptionCategory OpGenCat;
-extern llvm::cl::opt<std::string> DialectName;
-extern llvm::cl::opt<std::string> FunctionPrefix;
+/// Return the DialectName option, registering it on first access.
+llvm::cl::opt<std::string> &getDialectName();
 
-// Shared flags for controlling code generation
-extern llvm::cl::opt<bool> GenIsA;
-extern llvm::cl::opt<bool> GenOpBuild;
-extern llvm::cl::opt<bool> GenOpOperandGetters;
-extern llvm::cl::opt<bool> GenOpOperandSetters;
-extern llvm::cl::opt<bool> GenOpAttributeGetters;
-extern llvm::cl::opt<bool> GenOpAttributeSetters;
-extern llvm::cl::opt<bool> GenOpRegionGetters;
-extern llvm::cl::opt<bool> GenOpResultGetters;
-extern llvm::cl::opt<bool> GenTypeOrAttrGet;
-extern llvm::cl::opt<bool> GenTypeOrAttrParamGetters;
-extern llvm::cl::opt<bool> GenExtraClassMethods;
+/// Return the FunctionPrefix option, registering it on first access.
+llvm::cl::opt<std::string> &getFunctionPrefix();
+
+/// Return the GenIsA option, registering it on first access.
+llvm::cl::opt<bool> &getGenIsA();
+
+/// Return the GenOpBuild option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpBuild();
+
+/// Return the GenOpOperandGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpOperandGetters();
+
+/// Return the GenOpOperandSetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpOperandSetters();
+
+/// Return the GenOpAttributeGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpAttributeGetters();
+
+/// Return the GenOpAttributeSetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpAttributeSetters();
+
+/// Return the GenOpRegionGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpRegionGetters();
+
+/// Return the GenOpResultGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpResultGetters();
+
+/// Return the GenTypeOrAttrGet option, registering it on first access.
+llvm::cl::opt<bool> &getGenTypeOrAttrGet();
+
+/// Return the GenTypeOrAttrParamGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenTypeOrAttrParamGetters();
+
+/// Return the GenExtraClassMethods option, registering it on first access.
+llvm::cl::opt<bool> &getGenExtraClassMethods();
 
 /// @brief Convert names separated by underscore or colon to PascalCase.
 /// @param str The input string to convert (may contain underscores or colons)
@@ -346,7 +367,8 @@ std::optional<std::string> mapCapiTypeToBasicCppType(mlir::StringRef capiType);
 /// @brief Base class for C API generators
 struct Generator {
   Generator(std::string_view recordKind, llvm::raw_ostream &outputStream)
-      : kind(recordKind), os(outputStream), dialectNameCapitalized(toPascalCase(DialectName)) {}
+      : kind(recordKind), os(outputStream), dialectNameCapitalized(toPascalCase(getDialectName())) {
+  }
   virtual ~Generator() = default;
 
   /// @brief Set the dialect and class name for code generation
@@ -413,7 +435,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
     assert(!dialectNamespace.empty() && "Dialect must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
@@ -455,7 +477,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
     os << llvm::formatv(
         "MLIR_CAPI_EXPORTED {0} {1}{2}_{3}{4}({5});\n",
         capiReturnType,                  // {0}
-        FunctionPrefix,                  // {1}
+        getFunctionPrefix(),             // {1}
         dialectNameCapitalized,          // {2}
         className,                       // {3}
         toPascalCase(method.methodName), // {4}
@@ -478,7 +500,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
 }
 )";
     assert(!className.empty() && "className must be set");
-    os << llvm::formatv(fmt, FunctionPrefix, kind, dialectNameCapitalized, className);
+    os << llvm::formatv(fmt, getFunctionPrefix(), kind, dialectNameCapitalized, className);
   }
 
   /// @brief Generate implementation for an extra method from an `extraClassDeclaration`
@@ -565,7 +587,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
     os << llvm::formatv(
         "{0} {1}{2}_{3}{4}({5}) {{\n",
         capiReturnType,                  // {0}
-        FunctionPrefix,                  // {1}
+        getFunctionPrefix(),             // {1}
         dialectNameCapitalized,          // {2}
         className,                       // {3}
         toPascalCase(method.methodName), // {4}
@@ -610,7 +632,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
@@ -680,7 +702,7 @@ TEST_F({2}{1}LinkTests, {0}_{3}_{4}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,                  // {0}
+        getFunctionPrefix(),             // {0}
         kind,                            // {1}
         dialectNameCapitalized,          // {2}
         className,                       // {3}

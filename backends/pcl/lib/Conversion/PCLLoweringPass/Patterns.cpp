@@ -83,8 +83,8 @@ template <typename Op> static std::string flatFullyQualifiedName(Op op) {
 /// Copies the body of a function.
 template <typename Op>
 static LogicalResult copyBody(
-    Op op, FuncDefOp srcFuncOp, ConversionPatternRewriter &rewriter, SmallVector<Type> outputs,
-    ModuleOp root, unsigned baseOffset = 0
+    Op op, FuncDefOp srcFuncOp, ConversionPatternRewriter &rewriter,
+    const SmallVector<Type> &outputs, ModuleOp root, unsigned baseOffset = 0
 ) {
 
   SmallVector<Type> inputs(

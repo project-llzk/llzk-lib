@@ -1,7 +1,7 @@
 add_library(PCLTransforms)
 add_library(LLZK::PCLTransforms ALIAS PCLTransforms)
 
-target_sources(PCLTransforms PRIVATE TrimExprSizePass.cpp)
+target_sources(PCLTransforms PRIVATE CAPI.cpp TrimExprSizePass.cpp)
 target_link_libraries(
   PCLTransforms
   PUBLIC

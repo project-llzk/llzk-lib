@@ -166,8 +166,9 @@ protected:
   /// Get the lattice element for a value.
   StateT *getLatticeElement(mlir::Value value) override { return getOrCreate<StateT>(value); }
 
-  /// Get the lattice element for a value and create a dependency on the provided
-  /// program point.
+  /// Get the lattice element for a value and create a dependency on the provided program point.
+  /// Intentionally hide the nonvirtual base method to return the concrete lattice type.
+  // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
   const StateT *getLatticeElementFor(mlir::ProgramPoint *point, mlir::Value value) {
     return static_cast<const StateT *>(
         mlir::dataflow::AbstractSparseForwardDataFlowAnalysis::getLatticeElementFor(point, value)
