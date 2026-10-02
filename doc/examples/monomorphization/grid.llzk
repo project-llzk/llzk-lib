@@ -1,0 +1,38 @@
+// Every position in a 2-by-3 field selects a different pair of parameters:
+// tiles[i,j] : Tile<i+1, j+2>.
+// This illustrates definition discovery, not witness computation or field initialization.
+#rows = affine_map<(i, j) -> (i + 1)>
+#cols = affine_map<(i, j) -> (j + 2)>
+module attributes {llzk.lang, llzk.main = !struct.type<@Board>} {
+  poly.template @Tile {
+    poly.param @Rows : index
+    poly.param @Cols : index
+    struct.def @Tile {
+      struct.member @cells : !array.type<@Rows, @Cols x !felt.type>
+      function.def @compute() -> !struct.type<@Tile::@Tile<[@Rows, @Cols]>> {
+        %tile = struct.new : !struct.type<@Tile::@Tile<[@Rows, @Cols]>>
+        function.return %tile : !struct.type<@Tile::@Tile<[@Rows, @Cols]>>
+      }
+      function.def @constrain(%tile: !struct.type<@Tile::@Tile<[@Rows, @Cols]>>) {
+        function.return
+      }
+    }
+  }
+  struct.def @Board {
+    struct.member @tiles : !array.type<2, 3 x !struct.type<@Tile::@Tile<[#rows, #cols]>>>
+    function.def @compute() -> !struct.type<@Board> {
+      %board = struct.new : !struct.type<@Board>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %three = arith.constant 3 : index
+      scf.for %i = %zero to %two step %one {
+        scf.for %j = %zero to %three step %one {
+          %tile = function.call @Tile::@Tile::@compute() {(%i, %j), (%i, %j)} : () -> !struct.type<@Tile::@Tile<[#rows, #cols]>>
+        }
+      }
+      function.return %board : !struct.type<@Board>
+    }
+    function.def @constrain(%board: !struct.type<@Board>) { function.return }
+  }
+}
