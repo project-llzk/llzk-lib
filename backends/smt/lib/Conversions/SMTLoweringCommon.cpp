@@ -9,6 +9,7 @@
 
 #include "SMTLoweringCommon.h"
 
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -21,8 +22,13 @@
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/ValueRange.h>
+#include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <utility>
@@ -481,10 +487,29 @@ LogicalResult FeltConstConverter::matchAndRewrite(
   return success();
 }
 
+IndexConstConverter::IndexConstConverter(
+    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<arith::ConstantIndexOp>(converter, context, /*benefit=*/2),
+      emitter {theoryEmitter} {}
+
 LogicalResult IndexConstConverter::matchAndRewrite(
     arith::ConstantIndexOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
-  rewriter.replaceOpWithNewOp<smt::IntConstantOp>(op, dyn_cast<IntegerAttr>(op.getValue()));
+  auto smtIndexOp =
+      smt::IntConstantOp::create(rewriter, op.getLoc(), dyn_cast<IntegerAttr>(op.getValue()));
+
+  // Constrain the index to be between 0 and 2^64 - 1
+  emitter->emitRangeConstraint(
+      rewriter, op.getLoc(), smtIndexOp.getResult(),
+      UnreducedInterval {
+          // Have to do this because the other constructor for UnreducedInterval only accepts
+          // int64_t
+          llvm::DynamicAPInt {llvm::APInt {64, 0}},
+          llvm::DynamicAPInt {llvm::APInt {64, std::numeric_limits<uint64_t>::max()}}
+      }
+  );
+  rewriter.replaceOp(op, smtIndexOp);
   return success();
 }
 

@@ -35,6 +35,7 @@
 #include <mlir/Dialect/SMT/IR/SMTOps.h>
 #include <mlir/Dialect/SMT/IR/SMTTypes.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/MLIRContext.h>
 #include <mlir/Transforms/DialectConversion.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -329,7 +330,12 @@ public:
 class IndexConstConverter : public mlir::OpConversionPattern<mlir::arith::ConstantIndexOp> {
   using mlir::OpConversionPattern<mlir::arith::ConstantIndexOp>::OpConversionPattern;
 
+  SMTIntTheoryEmitter *emitter;
+
 public:
+  IndexConstConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+  );
   mlir::LogicalResult matchAndRewrite(
       mlir::arith::ConstantIndexOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
