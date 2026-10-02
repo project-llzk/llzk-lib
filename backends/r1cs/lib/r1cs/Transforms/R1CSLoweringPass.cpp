@@ -60,6 +60,30 @@ using namespace llzk::constrain;
 
 namespace {
 
+/// Order storage paths by numeric root, then by numeric indices or member names.
+/// Numeric segments precede string segments; a prefix precedes its extensions.
+/// Integer attribute types and MLIR's printed spelling do not affect this order.
+static bool storagePathLess(ArrayAttr lhs, ArrayAttr rhs) {
+  for (auto [left, right] : llvm::zip(lhs, rhs)) {
+    auto leftIndex = dyn_cast<IntegerAttr>(left);
+    auto rightIndex = dyn_cast<IntegerAttr>(right);
+    if (leftIndex && rightIndex) {
+      if (leftIndex.getInt() != rightIndex.getInt()) {
+        return leftIndex.getInt() < rightIndex.getInt();
+      }
+    } else if (leftIndex || rightIndex) {
+      return static_cast<bool>(leftIndex);
+    } else {
+      auto leftName = cast<StringAttr>(left).getValue();
+      auto rightName = cast<StringAttr>(right).getValue();
+      if (leftName != rightName) {
+        return leftName < rightName;
+      }
+    }
+  }
+  return lhs.size() < rhs.size();
+}
+
 /// A LinearCombination is a map from a Value (like a variable or MemberRead) to a felt constant.
 struct LinearCombination {
   DenseMap<Value, DynamicAPInt> terms; // variable -> coeff
@@ -579,6 +603,7 @@ public:
       ArrayAttr path;
       bool isPublic;
       bool input;
+      uint64_t layoutId = 0;
       SmallVector<Value> values;
     };
     SmallVector<Signal> signals;
@@ -586,7 +611,7 @@ public:
     auto add = [&positions, &signals](ArrayAttr path, bool pub, Value value = {}) {
       auto [it, inserted] = positions.try_emplace(path, signals.size());
       if (inserted) {
-        signals.push_back({path, pub, cast<IntegerAttr>(path[0]).getInt() != 0, {}});
+        signals.push_back({path, pub, cast<IntegerAttr>(path[0]).getInt() != 0, 0, {}});
       }
       assert(signals[it->second].isPublic == pub && "inconsistent visibility for storage path");
       if (value) {
@@ -752,6 +777,23 @@ public:
     if (reads.wasInterrupted()) {
       return failure();
     }
+    // Logical ids are part of the exported layout-map contract.  Derive them
+    // from a stable ordering of complete storage paths, never walk order.
+    SmallVector<Signal *> orderedSignals;
+    for (auto &signal : signals) {
+      orderedSignals.push_back(&signal);
+    }
+    llvm::sort(orderedSignals, [](const Signal *lhs, const Signal *rhs) {
+      return storagePathLess(lhs->path, rhs->path);
+    });
+    SmallVector<Attribute> layoutSignals;
+    for (auto [id, signal] : llvm::enumerate(orderedSignals)) {
+      signal->layoutId = id;
+      NamedAttrList layout;
+      layout.set("id", top.getI64IntegerAttr(id));
+      layout.set("path", signal->path);
+      layoutSignals.push_back(layout.getDictionary(top.getContext()));
+    }
     NamedAttrList inputAttrs;
     unsigned inputCount = 0;
     for (auto &signal : signals) {
@@ -764,7 +806,16 @@ public:
         top, def.getLoc(), (def.getSymName() + "__r1cs").str(),
         inputAttrs.getDictionary(top.getContext())
     );
+    circuit->setAttr(r1cs::LAYOUT_SIGNALS_ATTR_NAME, top.getArrayAttr(layoutSignals));
+    NamedAttrList rootNames;
+    for (unsigned index = 1; index < function.getNumArguments(); ++index) {
+      if (auto name = function.getArgNameAttr(index)) {
+        rootNames.set(std::to_string(index), *name);
+      }
+    }
+    circuit->setAttr(r1cs::LAYOUT_ROOT_NAMES_ATTR_NAME, rootNames.getDictionary(top.getContext()));
     OpBuilder body = OpBuilder::atBlockEnd(circuit.addEntryBlock());
+    SmallVector<Attribute> argumentLayoutSignals;
     IRMapping values;
     DenseMap<StringRef, Value> unused;
     uint32_t label = 1;
@@ -773,6 +824,7 @@ public:
       if (signal.input) {
         wire =
             circuit.getBody().front().addArgument(body.getType<r1cs::SignalType>(), def.getLoc());
+        argumentLayoutSignals.push_back(body.getI64IntegerAttr(signal.layoutId));
       } else {
         wire = r1cs::SignalDefOp::create(
                    body, def.getLoc(), body.getType<r1cs::SignalType>(),
@@ -780,11 +832,17 @@ public:
                    signal.isPublic ? body.getAttr<r1cs::PublicAttr>() : r1cs::PublicAttr()
         )
                    .getOut();
+        wire.getDefiningOp()->setAttr(
+            r1cs::LAYOUT_SIGNAL_ATTR_NAME, body.getI64IntegerAttr(signal.layoutId)
+        );
       }
       for (auto value : signal.values) {
         values.map(value, wire);
       }
     }
+    circuit->setAttr(
+        r1cs::LAYOUT_ARGUMENT_SIGNALS_ATTR_NAME, body.getArrayAttr(argumentLayoutSignals)
+    );
     SmallVector<Attribute> wireBindings;
     for (auto [input, pub] :
          {std::pair {false, true}, {true, true}, {true, false}, {false, false}}) {
@@ -795,6 +853,7 @@ public:
         NamedAttrList binding;
         binding.set("path", signal.path);
         binding.set("public", body.getBoolAttr(pub));
+        binding.set("signal", body.getI64IntegerAttr(signal.layoutId));
         binding.set("wire", body.getI64IntegerAttr(wireBindings.size() + 1));
         wireBindings.push_back(binding.getDictionary(body.getContext()));
       }

@@ -10,10 +10,10 @@
 
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@__llzk_spec_0>, poly.evaluated_main = @__llzk_spec_0, r1cs.main = @__llzk_spec_0__r1cs} {
-// CHECK-NEXT:    r1cs.circuit @__llzk_spec_0__r1cs inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}) attributes {poly.wire_bindings = [{path = [0, "out"], public = true, wire = 1 : i64}, {path = [1, 0 : index], public = true, wire = 2 : i64}, {path = [1, 1 : index], public = true, wire = 3 : i64}, {path = [0, "children", 0 : index, "out"], public = false, wire = 4 : i64}, {path = [0, "children", 1 : index, "out"], public = false, wire = 5 : i64}]} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
+// CHECK-NEXT:    r1cs.circuit @__llzk_spec_0__r1cs inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}) attributes {poly.layout_argument_signals = [3, 4], poly.layout_root_names = {}, poly.layout_signals = [{id = 0 : i64, path = [0, "children", 0 : index, "out"]}, {id = 1 : i64, path = [0, "children", 1 : index, "out"]}, {id = 2 : i64, path = [0, "out"]}, {id = 3 : i64, path = [1, 0 : index]}, {id = 4 : i64, path = [1, 1 : index]}], poly.wire_bindings = [{path = [0, "out"], public = true, signal = 2 : i64, wire = 1 : i64}, {path = [1, 0 : index], public = true, signal = 3 : i64, wire = 2 : i64}, {path = [1, 1 : index], public = true, signal = 4 : i64, wire = 3 : i64}, {path = [0, "children", 0 : index, "out"], public = false, signal = 0 : i64, wire = 4 : i64}, {path = [0, "children", 1 : index, "out"], public = false, signal = 1 : i64, wire = 5 : i64}]} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {poly.layout_signal = 2 : i64, pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {poly.layout_signal = 0 : i64}
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal {poly.layout_signal = 1 : i64}
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
 // CHECK-NEXT:      r1cs.constrain %[[VAL_5]], %[[VAL_5]], %[[VAL_6]] : !r1cs.linear

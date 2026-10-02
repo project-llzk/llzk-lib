@@ -22,14 +22,58 @@
 #include <mlir/Tools/mlir-translate/Translation.h>
 
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
 
 namespace {
 
+/// Export the optional sidecar only after the binary R1CS stream was produced.
+LogicalResult exportLayoutMap(ModuleOp module, StringRef selectedCircuit, StringRef layoutMapFile) {
+  if (layoutMapFile.empty()) {
+    return success();
+  }
+
+  std::string buffer;
+  llvm::raw_string_ostream layout(buffer);
+  if (failed(r1cs::exportLLZKLayoutMap(module, layout, selectedCircuit))) {
+    return failure();
+  }
+  layout.flush();
+
+  std::error_code error;
+  auto layoutFile =
+      std::make_unique<llvm::ToolOutputFile>(layoutMapFile, error, llvm::sys::fs::OF_None);
+  if (error) {
+    return module.emitError() << "could not open layout map '" << layoutMapFile
+                              << "': " << error.message();
+  }
+  layoutFile->os() << buffer;
+  layoutFile->os().flush();
+  if (layoutFile->os().has_error()) {
+    return module.emitError() << "could not write layout map '" << layoutMapFile << "'";
+  }
+  layoutFile->keep();
+  return success();
+}
+
+/// Serialize the binary circuit and its optional layout using the selected options.
+LogicalResult exportBinaryAndLayoutMap(
+    ModuleOp module, llvm::raw_ostream &output, StringRef prime, StringRef circuitName,
+    StringRef layoutMapFile
+) {
+  if (failed(r1cs::exportR1CSBinary(module, output, prime, circuitName))) {
+    return failure();
+  }
+  return exportLayoutMap(module, circuitName, layoutMapFile);
+}
+
 /// Evaluate and lower LLZK, then serialize the same module without a text round-trip.
 LogicalResult lowerAndExportR1CS(
-    Operation *op, llvm::raw_ostream &output, StringRef prime, StringRef circuitName
+    Operation *op, llvm::raw_ostream &output, StringRef prime, StringRef circuitName,
+    StringRef layoutMapFile
 ) {
   auto module = dyn_cast<ModuleOp>(op);
   if (!module) {
@@ -44,7 +88,7 @@ LogicalResult lowerAndExportR1CS(
   if (failed(pm.run(module))) {
     return failure();
   }
-  return r1cs::exportR1CSBinary(module, output, prime, circuitName);
+  return exportBinaryAndLayoutMap(module, output, prime, circuitName, layoutMapFile);
 }
 
 } // namespace
@@ -53,8 +97,9 @@ void r1cs::registerR1CSTranslation() {
   static llvm::cl::OptionCategory r1csTranslationOptions("R1CS translation options");
 
   static llvm::cl::opt<std::string> prime(
-      "r1cs-prime", llvm::cl::desc("Prime modulus as a base-10 integer"), llvm::cl::init(""),
-      llvm::cl::cat(r1csTranslationOptions)
+      "r1cs-prime",
+      llvm::cl::desc("Prime modulus as a base-10 integer (default: infer the unique LLZK field)"),
+      llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
   );
 
   static llvm::cl::opt<std::string> circuitName(
@@ -63,10 +108,16 @@ void r1cs::registerR1CSTranslation() {
       llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
   );
 
+  static llvm::cl::opt<std::string> layoutMapFile(
+      "llzk-layout-map",
+      llvm::cl::desc("Write the LLZK signal layout and R1CS wire relation to this file"),
+      llvm::cl::init(""), llvm::cl::cat(r1csTranslationOptions)
+  );
+
   TranslateFromMLIRRegistration direct(
       "llzk-to-r1cs", "evaluate and lower LLZK directly to binary R1CS in memory",
       [](Operation *op, llvm::raw_ostream &output) {
-    return lowerAndExportR1CS(op, output, prime, circuitName);
+    return lowerAndExportR1CS(op, output, prime, circuitName, layoutMapFile);
   }, [](DialectRegistry &registry) {
     llzk::registerDialects(registry);
     registry.insert<R1CSDialect>();
@@ -79,7 +130,7 @@ void r1cs::registerR1CSTranslation() {
     if (!moduleOp) {
       return op->emitOpError() << "expected builtin.module as top level operation";
     }
-    return exportR1CSBinary(moduleOp, output, prime, circuitName);
+    return exportBinaryAndLayoutMap(moduleOp, output, prime, circuitName, layoutMapFile);
   }, [](DialectRegistry &registry) {
     llzk::registerDialects(registry);
     registry.insert<R1CSDialect>();

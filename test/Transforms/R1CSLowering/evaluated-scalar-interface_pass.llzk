@@ -27,8 +27,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@__llzk_spec_0>, poly.evaluated_main = @__llzk_spec_0, r1cs.main = @__llzk_spec_0__r1cs} {
-// CHECK-NEXT:    r1cs.circuit @__llzk_spec_0__r1cs inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}) attributes {poly.wire_bindings = [{path = [0, "out"], public = true, wire = 1 : i64}, {path = [2], public = true, wire = 2 : i64}, {path = [1], public = false, wire = 3 : i64}]} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:    r1cs.circuit @__llzk_spec_0__r1cs inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}) attributes {poly.layout_argument_signals = [1, 2], poly.layout_root_names = {}, poly.layout_signals = [{id = 0 : i64, path = [0, "out"]}, {id = 1 : i64, path = [1]}, {id = 2 : i64, path = [2]}], poly.wire_bindings = [{path = [0, "out"], public = true, signal = 0 : i64, wire = 1 : i64}, {path = [2], public = true, signal = 2 : i64, wire = 2 : i64}, {path = [1], public = false, signal = 1 : i64, wire = 3 : i64}]} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {poly.layout_signal = 0 : i64, pub = #r1cs.pub}
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear

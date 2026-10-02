@@ -23,7 +23,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_ma
 
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>, poly.evaluated_main = @Main, r1cs.main = @Main__r1cs} {
-// CHECK-NEXT:    r1cs.circuit @Main__r1cs attributes {poly.wire_bindings = []} {
+// CHECK-NEXT:    r1cs.circuit @Main__r1cs attributes {poly.layout_argument_signals = [], poly.layout_root_names = {}, poly.layout_signals = [], poly.wire_bindings = []} {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : i64 : !r1cs.linear
 // CHECK-NEXT:      r1cs.constrain %[[VAL_0]], %[[VAL_0]], %[[VAL_0]] : !r1cs.linear
 // CHECK-NEXT:    }
