@@ -22,7 +22,9 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DynamicAPInt.h>
+#include <llvm/ADT/Hashing.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Error.h>
 
 #include <climits>
 #include <cstddef>
@@ -30,6 +32,23 @@
 
 namespace llzk {
 
+/// Parse a signed decimal integer, rejecting malformed input without asserting.
+llvm::Expected<llvm::DynamicAPInt> parseDynamicAPInt(llvm::StringRef str);
+
+/// Hash the signed numeric value, independent of its width or arithmetic history.
+llvm::hash_code hashDynamicAPInt(const llvm::DynamicAPInt &value);
+
+/// Encode a signed or unsigned integer at exactly `bitWidth`, rejecting overflow.
+llvm::Expected<llvm::APInt>
+checkedToAPInt(const llvm::DynamicAPInt &value, unsigned bitWidth, bool isSigned);
+
+/// Convert to a native signed integer, rejecting values outside its range.
+llvm::Expected<int64_t> checkedToInt64(const llvm::DynamicAPInt &value);
+
+/// Convert to a native unsigned integer, rejecting negative values and overflow.
+llvm::Expected<uint64_t> checkedToUInt64(const llvm::DynamicAPInt &value);
+
+/// Bitwise operations use infinite two's-complement sign extension.
 llvm::DynamicAPInt operator&(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator|(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator^(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
@@ -50,11 +69,13 @@ inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
 
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
+/// Temporary migration adapter, removed in stage 4; use checkedToAPInt instead.
 /// Converts a DynamicAPInt that is non-negative and fits in `bitWidth` bits into an APInt.
 /// Uses `bitWidth+1` so that all field values in `[0, p)` — which satisfy
 /// `val < 2^bitWidth` — have a clear sign bit and print as positive decimals.
 llvm::APInt toAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
 
+/// Temporary migration adapter, removed in stage 4; use checkedToAPInt instead.
 /// Converts a DynamicAPInt to an APInt with exactly the requested bit width.
 llvm::APInt toExactWidthAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
 

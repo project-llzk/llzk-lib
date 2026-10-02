@@ -131,7 +131,11 @@ static llvm::Expected<int64_t> jsonToInt(const llvm::json::Value *json) {
 static llvm::Expected<llvm::DynamicAPInt>
 jsonToFelt(const llvm::json::Value *json, const Field &field) {
   if (std::optional<llvm::StringRef> str = json->getAsString()) {
-    return field.reduce(toDynamicAPInt(*str));
+    auto value = parseDynamicAPInt(*str);
+    if (!value) {
+      return value.takeError();
+    }
+    return field.reduce(*value);
   }
   if (std::optional<int64_t> integer = json->getAsInteger()) {
     return field.reduce(*integer);
