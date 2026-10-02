@@ -726,7 +726,7 @@ protected:
 struct KnownTargetVerifier : public CallOpVerifier {
   KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncDefOp> &&tgtRes)
       : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        includeSymNames(tgtRes.getNamespace()) {}
+        targetNamespace(tgtRes.getNamespace()), targetViaInclude(tgtRes.viaInclude()) {}
 
   LogicalResult verifyTargetAttributes() override {
     return CallOpVerifier::verifyTargetAttributesMatch(tgt);
@@ -802,7 +802,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
       FailureOr<UnificationMap> unifyResult =
-          callOp->unifyTypeSignatureWithNamespace(tgtType, includeSymNames);
+          callOp->unifyTypeSignatureWithNamespace(tgtType, targetNamespace);
       if (failed(unifyResult)) {
         return failure();
       }
@@ -852,11 +852,13 @@ private:
           .append("callee defined here");
     }
     for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
-      if (!typesUnify(callOpTypes[i], tgtTypes[i], includeSymNames)) {
-        return callOp->emitOpError().append(
-            aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ", callOpTypes[i],
-            " for ", aspect, " number ", i
-        );
+      if (!typesUnify(callOpTypes[i], tgtTypes[i], targetNamespace)) {
+        auto diag =
+            callOp->emitOpError().append(aspect, " type mismatch: expected type ", tgtTypes[i]);
+        if (targetViaInclude) {
+          diag.append(" from included target \"", callOp->getCalleeAttr(), '"');
+        }
+        return diag.append(", but found ", callOpTypes[i], " for ", aspect, " number ", i);
       }
     }
     return success();
@@ -864,7 +866,8 @@ private:
 
   FuncDefOp tgt;
   FunctionType tgtType;
-  std::vector<llvm::StringRef> includeSymNames;
+  std::vector<llvm::StringRef> targetNamespace;
+  bool targetViaInclude;
 };
 
 /// Version of checkSelfType() that performs the subset of verification checks that can be done when

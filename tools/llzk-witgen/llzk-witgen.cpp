@@ -16,18 +16,19 @@
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
+#include "llzk/Dialect/DialectRegistration.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
-#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
@@ -104,17 +105,17 @@ static int runMain(int argc, char **argv) {
   );
 
   DialectRegistry registry;
-  llzk::registerAllDialects(registry);
+  llzk::registerDialects(registry);
+  llzk::registerInliningExtensions(registry);
   mlir::func::registerInlinerExtension(registry);
   registry.insert<
       mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
       mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
+
   MLIRContext context;
   context.appendDialectRegistry(registry);
   context.loadAllAvailableDialects();
-  context.loadDialect<
-      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
-      mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
+
   if (failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
   }

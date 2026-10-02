@@ -9,14 +9,11 @@
 
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
-#include "r1cs/Transforms/TransformationPassPipelines.h"
-#include "r1cs/Transforms/TransformationPasses.h"
 #include "tools/config.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/InitAllDialects.h>
-#include <mlir/InitAllPasses.h>
 #include <mlir/Tools/mlir-opt/MlirOptMain.h>
 
 #include <llvm/Support/PrettyStackTrace.h>
@@ -31,9 +28,8 @@ int main(int argc, char **argv) {
   );
 
   mlir::DialectRegistry registry;
-  r1cs::registerAllDialects(registry);
-  r1cs::registerTransformationPasses();
-  r1cs::registerTransformationPassPipelines();
+  r1cs::registerDialects(registry);
+  r1cs::registerPasses(registry);
 
   return mlir::asMainReturnCode(mlir::MlirOptMain(argc, argv, "R1CS Optimizer\n", registry));
 }
