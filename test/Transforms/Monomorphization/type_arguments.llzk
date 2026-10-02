@@ -63,10 +63,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [], poly.origin = @Main, poly.specialization_id = 0 : i64}
-// CHECK-NEXT:    function.def @__llzk_spec_1(%[[VAL_15:[0-9a-zA-Z_\.]+]]: index) -> index attributes {poly.arguments = [index], poly.origin = @Identity::@id, poly.specialization_id = 1 : i64} {
-// CHECK-NEXT:      function.return %[[VAL_15]] : index
+// CHECK-NEXT:    function.def @__llzk_spec_1(%[[VAL_15:[0-9a-zA-Z_\.]+]]: index) -> index attributes {poly.arguments = [index], poly.constant_arguments = [1 : index], poly.origin = @Identity::@id, poly.specialization_id = 1 : i64} {
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_17]] : index
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @__llzk_spec_2(%[[VAL_16:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {poly.arguments = [i1], poly.origin = @Identity::@id, poly.specialization_id = 2 : i64} {
-// CHECK-NEXT:      function.return %[[VAL_16]] : i1
+// CHECK-NEXT:    function.def @__llzk_spec_2(%[[VAL_16:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {poly.arguments = [i1], poly.constant_arguments = [true], poly.origin = @Identity::@id, poly.specialization_id = 2 : i64} {
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      function.return %[[VAL_18]] : i1
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
