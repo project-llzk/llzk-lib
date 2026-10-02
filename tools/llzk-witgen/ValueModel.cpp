@@ -137,13 +137,13 @@ llvm::Expected<WitnessVal> defaultValue(
       .Case([&](array::ArrayType arrayType) -> llvm::Expected<WitnessVal> {
     auto arrayValue = std::make_shared<ArrayValue>();
     arrayValue->type = arrayType;
-    arrayValue->elements.reserve(arrayType.getNumElements());
+    arrayValue->elements.write().reserve(arrayType.getNumElements());
     for (int64_t i = 0; i < arrayType.getNumElements(); ++i) {
       auto elem = defaultValue(arrayType.getElementType(), tables, origin, field, behavior, rng);
       if (!elem) {
         return elem.takeError();
       }
-      arrayValue->elements.push_back(*elem);
+      arrayValue->elements.write().push_back(*elem);
     }
     return arrayValue;
   })
@@ -155,7 +155,7 @@ llvm::Expected<WitnessVal> defaultValue(
       if (!recordValue) {
         return recordValue.takeError();
       }
-      podValue->records[record.getName().getValue()] = *recordValue;
+      podValue->records.write()[record.getName().getValue()] = *recordValue;
     }
     return podValue;
   })
@@ -171,7 +171,7 @@ llvm::Expected<WitnessVal> defaultValue(
       if (!memberValue) {
         return memberValue.takeError();
       }
-      structValue->members[member.getSymName()] = *memberValue;
+      structValue->members.write()[member.getSymName()] = *memberValue;
     }
     return structValue;
   }).Default([&](Type) -> llvm::Expected<WitnessVal> {
