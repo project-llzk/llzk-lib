@@ -14,13 +14,14 @@ class DefinitionRegistry {
     Operation *source;
     Operation *definition;
     ArrayAttr arguments;
+    ArrayAttr constantArguments;
     std::optional<unsigned> parent;
   };
   ModuleOp root;
   unsigned limit;
   ConversionTracker tracker;
   std::unique_ptr<SymbolTableCollection> tables = std::make_unique<SymbolTableCollection>();
-  DenseMap<std::pair<Operation *, ArrayAttr>, unsigned> cache;
+  DenseMap<std::pair<std::pair<Operation *, ArrayAttr>, ArrayAttr>, unsigned> cache;
   SmallVector<Entry> entries;
   std::optional<unsigned> current;
   bool invalid = false;
@@ -308,24 +309,116 @@ class DefinitionRegistry {
 
   ArrayAttr emptyArgs() { return ArrayAttr::get(root.getContext(), {}); }
 
+  /// Return a scalar constant for `value`, folding only regionless producers.
+  /// This deliberately leaves control flow, calls, aggregates, and unsupported
+  /// conversions dynamic.
+  std::optional<Attribute> getScalarConstant(
+      Value value, DenseMap<Value, std::optional<Attribute>> &memo, DenseSet<Value> &visiting
+  ) {
+    if (auto it = memo.find(value); it != memo.end()) {
+      return it->second;
+    }
+    if (!visiting.insert(value).second) {
+      return std::nullopt;
+    }
+    auto finish = [&](std::optional<Attribute> result) {
+      visiting.erase(value);
+      memo[value] = result;
+      return result;
+    };
+    Operation *def = value.getDefiningOp();
+    if (!def) {
+      return finish(std::nullopt);
+    }
+    if (auto constant = dyn_cast<FeltConstantOp>(def)) {
+      return finish(constant.getValueAttr());
+    }
+    if (auto constant = dyn_cast<arith::ConstantOp>(def)) {
+      if (auto attr = dyn_cast<IntegerAttr>(constant.getValue())) {
+        return finish(attr);
+      }
+      return finish(std::nullopt);
+    }
+    if (def->getNumRegions() != 0 || def->getNumResults() != 1) {
+      return finish(std::nullopt);
+    }
+    SmallVector<Attribute> operands;
+    for (Value operand : def->getOperands()) {
+      auto attr = getScalarConstant(operand, memo, visiting);
+      if (!attr) {
+        return finish(std::nullopt);
+      }
+      operands.push_back(*attr);
+    }
+    Operation *copy = def->clone();
+    SmallVector<OpFoldResult> results;
+    auto folded = copy->fold(operands, results);
+    copy->destroy();
+    if (failed(folded) || results.size() != 1) {
+      return finish(std::nullopt);
+    }
+    if (auto attr = dyn_cast<Attribute>(results.front())) {
+      return finish(attr);
+    }
+    if (auto forwarded = dyn_cast<Value>(results.front())) {
+      return finish(getScalarConstant(forwarded, memo, visiting));
+    }
+    return finish(std::nullopt);
+  }
+
+  /// Materialize scalar specializations at the clone entry and replace uses of
+  /// their retained signature arguments. `UnitAttr` denotes a dynamic argument.
+  LogicalResult substituteConstantArguments(FuncDefOp clone, ArrayAttr constants) {
+    if (!constants || constants.empty()) {
+      return success();
+    }
+    Block &entry = clone.getBody().front();
+    OpBuilder builder(&entry, entry.begin());
+    for (auto [index, attr] : llvm::enumerate(constants)) {
+      if (isa<UnitAttr>(attr)) {
+        continue;
+      }
+      Value argument = clone.getArgument(index);
+      Value replacement;
+      if (auto felt = dyn_cast<FeltConstAttr>(attr)) {
+        if (felt.getType() != argument.getType()) {
+          return clone.emitError("constant specialization type mismatch");
+        }
+        replacement = FeltConstantOp::create(builder, clone.getLoc(), felt);
+      } else if (auto integer = dyn_cast<IntegerAttr>(attr)) {
+        if (integer.getType() != argument.getType()) {
+          return clone.emitError("constant specialization type mismatch");
+        }
+        replacement = arith::ConstantOp::create(builder, clone.getLoc(), integer);
+      } else {
+        return clone.emitError("unsupported constant specialization argument");
+      }
+      argument.replaceAllUsesWith(replacement);
+    }
+    return success();
+  }
+
   /// Reserve an identity before cloning, so repeated requests share a work item.
-  FailureOr<unsigned> reserve(Operation *source, ArrayAttr args) {
+  FailureOr<unsigned> reserve(Operation *source, ArrayAttr args, ArrayAttr constantArgs = {}) {
     if (!args) {
       args = emptyArgs();
     }
-    auto key = std::make_pair(source, args);
+    if (!constantArgs) {
+      constantArgs = emptyArgs();
+    }
+    auto key = std::make_pair(std::make_pair(source, args), constantArgs);
     if (auto it = cache.find(key); it != cache.end()) {
       return it->second;
     }
     for (auto ancestor = current; ancestor; ancestor = entries[*ancestor].parent) {
       if (entries[*ancestor].source == source) {
         auto diag = source->emitError("recursive specialization is unsupported");
-        diag << ": requested " << args;
+        diag << ": requested " << args << " constants " << constantArgs;
         for (auto p = current; p; p = entries[*p].parent) {
           diag.attachNote(entries[*p].source->getLoc())
               << "specialization chain: "
               << getFullyQualifiedName(llvm::cast<SymbolOpInterface>(entries[*p].source))
-              << entries[*p].arguments;
+              << entries[*p].arguments << " constants " << entries[*p].constantArguments;
         }
         return failure();
       }
@@ -336,7 +429,7 @@ class DefinitionRegistry {
     }
     unsigned id = entries.size();
     cache[key] = id;
-    entries.push_back({source, nullptr, args, current});
+    entries.push_back({source, nullptr, args, constantArgs, current});
     return id;
   }
 
@@ -348,6 +441,9 @@ class DefinitionRegistry {
         "poly.origin", getFullyQualifiedName(llvm::cast<SymbolOpInterface>(entries[id].source))
     );
     definition->setAttr("poly.arguments", entries[id].arguments);
+    if (!entries[id].constantArguments.empty()) {
+      definition->setAttr("poly.constant_arguments", entries[id].constantArguments);
+    }
   }
 
   FailureOr<StructType> specialize(StructType type) {
@@ -478,23 +574,56 @@ class DefinitionRegistry {
         bindings[name] = value;
       }
     }
-    auto id = reserve(source, ArrayAttr::get(root.getContext(), args));
+    DenseMap<Value, std::optional<Attribute>> constantsMemo;
+    DenseSet<Value> visiting;
+    SmallVector<Attribute> constants;
+    bool hasConstant = false;
+    for (Value operand : call.getArgOperands()) {
+      auto value = getScalarConstant(operand, constantsMemo, visiting);
+      if (value) {
+        if (auto felt = dyn_cast<FeltConstAttr>(*value);
+            felt && felt.getType() == operand.getType()) {
+          constants.push_back(felt);
+          hasConstant = true;
+          continue;
+        }
+        if (auto integer = dyn_cast<IntegerAttr>(*value);
+            integer && integer.getType() == operand.getType() &&
+            (operand.getType().isIndex() || isa<IntegerType>(operand.getType()))) {
+          constants.push_back(integer);
+          hasConstant = true;
+          continue;
+        }
+      }
+      constants.push_back(UnitAttr::get(root.getContext()));
+    }
+    ArrayAttr constantArgs =
+        hasConstant ? ArrayAttr::get(root.getContext(), constants) : emptyArgs();
+    auto id = reserve(source, ArrayAttr::get(root.getContext(), args), constantArgs);
     if (failed(id)) {
       return failure();
     }
     if (!entries[*id].definition) {
-      auto clone = source.clone();
+      OwningOpRef<FuncDefOp> ownedClone(source.clone());
+      auto clone = ownedClone.get();
       clone.setSymName(("__llzk_spec_" + Twine(*id)).str());
       Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
+      // Body conversion resolves nested calls through the enclosing module.
       tables->getSymbolTable(parent).insert(clone);
       if (templ) {
         evaluateTemplateExprs(templ, bindings);
         convertCalleesInPlace(clone, bindings);
         substituteCallArguments(clone, bindings);
         if (failed(Step2_InstantiateFunctions::applyBodyConversions(call, clone, bindings))) {
+          tables->invalidateSymbolTable(parent);
           return failure();
         }
       }
+      if (failed(substituteConstantArguments(clone, constantArgs))) {
+        tables->invalidateSymbolTable(parent);
+        return failure();
+      }
+      ownedClone.release();
       publish(*id, clone);
     }
     call.setCalleeAttr(
@@ -532,9 +661,13 @@ public:
       // Provenance is immutable input metadata, not a live type reference.
       auto origin = definition->removeAttr("poly.origin");
       auto args = definition->removeAttr("poly.arguments");
+      auto constantArgs = definition->removeAttr("poly.constant_arguments");
       types.recursivelyReplaceElementsIn(definition, true, false, true);
       definition->setAttr("poly.origin", origin);
       definition->setAttr("poly.arguments", args);
+      if (constantArgs) {
+        definition->setAttr("poly.constant_arguments", constantArgs);
+      }
       if (invalid) {
         return failure();
       }

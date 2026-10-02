@@ -1,0 +1,55 @@
+// RUN: llzk-opt %s --llzk-monomorphize | FileCheck %s
+// RUN: llzk-opt %s --pass-pipeline="builtin.module(llzk-monomorphize,llzk-monomorphize)" | FileCheck %s
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @increment(%x: index) -> index {
+    %one = arith.constant 1 : index
+    %next = arith.addi %x, %one : index
+    function.return %next : index
+  }
+  function.def @pair(%x: index, %y: i1) -> index {
+    %wide = arith.index_cast %y : i1 to index
+    %next = function.call @increment(%x) : (index) -> index
+    %sum = arith.addi %next, %wide : index
+    function.return %sum : index
+  }
+  function.def @identity(%x: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+    function.return %x : !felt.type<"bn128">
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %two = arith.constant 2 : index
+      %three = arith.constant 3 : index
+      %true = arith.constant true
+      %false = arith.constant false
+      %folded = arith.xori %true, %false : i1
+      %a = function.call @pair(%two, %folded) : (index, i1) -> index
+      %same = function.call @pair(%two, %folded) : (index, i1) -> index
+      %b = function.call @pair(%three, %false) : (index, i1) -> index
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      scf.for %dynamic = %zero to %one step %one {
+        %c = function.call @pair(%dynamic, %folded) : (index, i1) -> index
+      }
+      %felt = felt.const 3 : !felt.type<"bn128">
+      %f = function.call @identity(%felt) : (!felt.type<"bn128">) -> !felt.type<"bn128">
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK: function.call @__llzk_spec_1(%{{.*}}, %{{.*}}) : (index, i1) -> index
+// CHECK: function.call @__llzk_spec_1(%{{.*}}, %{{.*}}) : (index, i1) -> index
+// CHECK: function.call @__llzk_spec_2(%{{.*}}, %{{.*}}) : (index, i1) -> index
+// CHECK: function.call @__llzk_spec_3(%{{.*}}, %{{.*}}) : (index, i1) -> index
+// CHECK: function.def @__llzk_spec_1(%[[X:.*]]: index, %[[Y:.*]]: i1) -> index attributes {poly.arguments = [], poly.constant_arguments = [2 : index, true], poly.origin = @pair, poly.specialization_id = 1 : i64} {
+// CHECK: %[[C3:.*]] = arith.constant true
+// CHECK: function.call @__llzk_spec_5(%{{.*}}) : (index) -> index
+// CHECK: arith.addi %{{.*}}, %{{.*}} : index
+// CHECK: function.def @__llzk_spec_2(%{{.*}}: index, %{{.*}}: i1) -> index attributes {poly.arguments = [], poly.constant_arguments = [3 : index, false], poly.origin = @pair, poly.specialization_id = 2 : i64}
+// CHECK: function.def @__llzk_spec_3(%{{.*}}: index, %{{.*}}: i1) -> index attributes {poly.arguments = [], poly.constant_arguments = [unit, true], poly.origin = @pair, poly.specialization_id = 3 : i64}
+// CHECK: function.def @__llzk_spec_4(%{{.*}}: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {poly.arguments = [], poly.constant_arguments = [#felt<const 3 : <"bn128">> : !felt.type<"bn128">], poly.origin = @identity, poly.specialization_id = 4 : i64} {
+// CHECK-NEXT: %{{.*}} = felt.const  3 : <"bn128">
+// CHECK: function.def @__llzk_spec_5(%{{.*}}: index) -> index attributes {poly.arguments = [], poly.constant_arguments = [2 : index], poly.origin = @increment, poly.specialization_id = 5 : i64}
+// CHECK: function.def @__llzk_spec_6(%{{.*}}: index) -> index attributes {poly.arguments = [], poly.constant_arguments = [3 : index], poly.origin = @increment, poly.specialization_id = 6 : i64}
