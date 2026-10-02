@@ -448,7 +448,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         R1CSConstraint inner = constraintMap[op->getOperand(0)];
         constraintMap[v] = inner.negated();
       } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
-        R1CSConstraint c(toDynamicAPInt(cst.getValue().getValue()));
+        R1CSConstraint c(cst.getValue().getValue());
         constraintMap[v] = c;
       } else {
         llvm::errs() << "Unhandled op in R1CS lowering: " << *op << '\n';
