@@ -1,0 +1,18 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' %s > %t.signed
+// RUN: sed 's/felt.const -1/felt.const 2013265920/g' %s | llzk-opt --llzk-to-smt-no-cf='field=babybear' > %t.canonical
+// RUN: diff %t.signed %t.canonical
+// RUN: llzk-opt --llzk-to-smt-no-cf-naive='field=babybear' %s > %t.naive-signed
+// RUN: sed 's/felt.const -1/felt.const 2013265920/g' %s | llzk-opt --llzk-to-smt-no-cf-naive='field=babybear' > %t.naive-canonical
+// RUN: diff %t.naive-signed %t.naive-canonical
+
+module attributes {llzk.lang} {
+  struct.def @Signed {
+    struct.member @out : !felt.type
+    function.def @product() -> !struct.type<@Signed> {
+      %self = struct.new : <@Signed>
+      %minus_one = felt.const -1
+      struct.writem %self[@out] = %minus_one : <@Signed>, !felt.type
+      function.return %self : !struct.type<@Signed>
+    }
+  }
+}

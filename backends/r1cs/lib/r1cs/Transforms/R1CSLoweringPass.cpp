@@ -525,7 +525,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     // Start with the constant, if present
     if (lc.constant != 0) {
       result = r1cs::ConstOp::create(
-          builder, loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
+          builder, loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), lc.constant)
       );
     }
 
@@ -541,7 +541,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       Value scaled = coeff == 1 ? lin
                                 : r1cs::MulConstOp::create(
                                       builder, loc, linearTy, lin,
-                                      r1cs::FeltAttr::get(builder.getContext(), toAPSInt(coeff))
+                                      r1cs::FeltAttr::get(builder.getContext(), coeff)
                                   );
 
       // Accumulate via r1cs.add
@@ -556,7 +556,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       // Entire linear combination was zero
       result = r1cs::ConstOp::create(
           builder, loc, r1cs::LinearType::get(builder.getContext()),
-          r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
+          r1cs::FeltAttr::get(builder.getContext(), lc.constant)
       );
     }
 

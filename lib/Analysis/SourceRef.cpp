@@ -154,17 +154,10 @@ std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) cons
 
 size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   if (c.isIndex()) {
-    // We don't hash the index directly, because the built-in LLVM hash includes
-    // the bitwidth of the APInt in the hash, which is undesirable for this application.
-    // i.e., We want a N-bit version of x to hash to the same value as an M-bit version of X,
-    // because our equality checks would consider them equal regardless of bitwidth.
-    APSInt idx = toAPSInt(c.getIndex());
-    unsigned requiredBits = idx.getSignificantBits();
-    auto hash = llvm::hash_value(idx.trunc(requiredBits));
-    return hash;
+    return hashDynamicAPInt(c.getIndex());
   } else if (c.isIndexRange()) {
     auto r = c.getIndexRange();
-    return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
+    return llvm::hash_combine(hashDynamicAPInt(std::get<0>(r)), hashDynamicAPInt(std::get<1>(r)));
   } else if (c.isPodRecord()) {
     return llvm::hash_value(c.getPodRecordName());
   } else {
@@ -672,7 +665,7 @@ std::strong_ordering SourceRef::operator<=>(const SourceRef &rhs) const {
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
   if (val.isConstantInt()) {
-    return llvm::hash_combine(val.getType(), *val.getConstantValue());
+    return llvm::hash_combine(val.getType(), hashDynamicAPInt(*val.getConstantValue()));
   } else if (val.isTemplateConstant()) {
     return llvm::hash_value(val.getAsOpaquePointer());
   } else {

@@ -1208,3 +1208,14 @@ TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackUnreducedIntervals) {
       readExpr.getUnreducedInterval()
   );
 }
+
+TEST_F(IntervalTests, HashIgnoresIntegerRepresentation) {
+  DynamicAPInt narrow(7), wide(llvm::APInt(256, 7));
+  UnreducedInterval a(narrow, narrow + 1), b(wide, wide + 1);
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(UnreducedInterval::Hash {}(a), UnreducedInterval::Hash {}(b));
+  auto x = Interval::Degenerate(f, narrow);
+  auto y = Interval::Degenerate(f, wide);
+  EXPECT_EQ(x, y);
+  EXPECT_EQ(Interval::Hash {}(x), Interval::Hash {}(y));
+}

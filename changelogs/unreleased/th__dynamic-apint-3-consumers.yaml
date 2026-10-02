@@ -1,0 +1,6 @@
+changed:
+  - PCL field constants and prime attributes now use signed arbitrary-precision integers; arithmetic no longer depends on manually chosen widths.
+  - R1CS coefficient syntax no longer includes an MLIR integer width, and binary export accepts arbitrary-precision decimal moduli without a caller-supplied width.
+  - SMT lowering reduces signed felt literals using the field selected by the pass, including when source types do not name a field.
+fixed:
+  - Analysis interval and reference keys hash equal mathematical integers identically regardless of representation or arithmetic history.

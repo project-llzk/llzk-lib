@@ -83,7 +83,7 @@ LogicalResult prologue(ModuleOp mod, pcl::Sexps &S) {
   if (!prime) {
     return mod.emitError() << "missing '" << PCL_PRIME_ATTR_NAME << '\'';
   }
-  S.push({S.atom("prime-number"), S.atom(prime.getValue())});
+  S.push({S.atom("prime-number"), S.atom(llzk::toAPSInt(prime.getValue()))});
   return success();
 }
 
@@ -302,7 +302,9 @@ class ModuleEmitter {
                .Case<pcl::NegOp>([this, &S](auto op) { return emitUnaryExpr("-", op, S); })
                .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op.getValue(), S); })
                .Case<pcl::VarOp>([this, &S](auto op) { return S.atom(ns.get(op)); })
-               .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getValueAPInt()); })
+               .Case<pcl::ConstOp>([&S](auto op) {
+      return S.atom(llzk::toAPSInt(op.getIntegerValue()));
+    })
                .Case<func::CallOp>([this, &S, v](auto) {
       // If we encounter a call we need to emit the value as a variable,
       // since we preload all the call outputs into the environment.

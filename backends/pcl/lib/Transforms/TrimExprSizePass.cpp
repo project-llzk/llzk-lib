@@ -104,7 +104,7 @@ class PassImpl : public pcl::impl::TrimExprSizePassBase<PassImpl> {
       auto varOp = pcl::VarOp::create(builder, loc, name, false);
 
       if (isa<pcl::BoolType>(cutOpResult.getType())) {
-        auto value = pcl::FeltAttr::get(&getContext(), llvm::APInt::getZero(2));
+        auto value = pcl::FeltAttr::get(&getContext(), llvm::DynamicAPInt(0));
         auto zeroOp = pcl::ConstOp::create(builder, loc, value);
         auto cmpEqOp = pcl::CmpEqOp::create(builder, loc, varOp, zeroOp);
         auto notOp = pcl::NotOp::create(builder, loc, cmpEqOp);
