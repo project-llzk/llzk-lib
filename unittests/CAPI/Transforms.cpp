@@ -69,7 +69,7 @@ static polymorphic::TemplateExprOp buildPolyExpr(MLIRContext *ctx, bool includeD
   bldr.setInsertionPointToStart(&expr.getInitializerRegion().emplaceBlock());
 
   auto feltTy = felt::FeltType::get(ctx, bldr.getStringAttr("bn128"));
-  auto const12 = felt::FeltConstAttr::get(ctx, APInt(64, 12), feltTy);
+  auto const12 = felt::FeltConstAttr::get(ctx, llvm::DynamicAPInt(12), feltTy);
   if (includeDeadValue) {
     // Create a dead value that should be eliminated by the DVE pass.
     // Suppress `clang-tidy` since it's intentional.

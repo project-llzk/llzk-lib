@@ -253,7 +253,7 @@ TEST_F(OpTests, testMapOpInit_WrongTypeForMapOperands) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.type<#m x index>
 
-  FeltConstAttr a = bldr.getAttr<FeltConstAttr>(APInt::getZero(64));
+  FeltConstAttr a = bldr.getAttr<FeltConstAttr>(llvm::DynamicAPInt(0));
   auto v1 = FeltConstantOp::create(bldr, loc, a);
   CreateArrayOp op =
       CreateArrayOp::create(bldr, loc, arrTy, ArrayRef {ValueRange {v1}}, ArrayRef<int32_t> {1});

@@ -9,6 +9,8 @@
 
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Util/BinaryBuffer.h"
+
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
@@ -115,15 +117,6 @@ TEST(DynamicAPIntSizeTTest, SizeMax1) {
 
 TEST(DynamicAPIntSizeTTest, SizeMax2) {
   APSInt a = toAPSInt(toDynamicAPInt(SIZE_MAX));
-
-  std::string buffer;
-  llvm::raw_string_ostream(buffer) << a;
-
-  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
-}
-
-TEST(DynamicAPIntSizeTTest, SizeMax3) {
-  APInt a = toAPInt(toDynamicAPInt(SIZE_MAX), sizeof(size_t) * CHAR_BIT);
 
   std::string buffer;
   llvm::raw_string_ostream(buffer) << a;
@@ -278,4 +271,34 @@ TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   ASSERT_TRUE(byte);
   EXPECT_EQ(byte->getBitWidth(), 8U);
   EXPECT_EQ(byte->getZExtValue(), 255U);
+}
+
+TEST(DynamicAPIntSafetyTest, HugeRightShiftAndSignedLeftShift) {
+  auto huge = toDynamicAPInt("184467440737095516160000");
+  EXPECT_EQ(DynamicAPInt(42) >> huge, DynamicAPInt(0));
+  EXPECT_EQ(DynamicAPInt(-42) >> huge, DynamicAPInt(-1));
+  EXPECT_EQ(DynamicAPInt(-3) << DynamicAPInt(100), -3 * (DynamicAPInt(1) << DynamicAPInt(100)));
+  EXPECT_EQ(DynamicAPInt(-3) >> DynamicAPInt(1), DynamicAPInt(-2));
+}
+
+TEST(DynamicAPIntSafetyTest, ModularExponentiationNormalizesInputs) {
+  EXPECT_EQ(modExp(DynamicAPInt(-3), DynamicAPInt(3), DynamicAPInt(17)), DynamicAPInt(7));
+  EXPECT_EQ(modExp(DynamicAPInt(3), DynamicAPInt(0), DynamicAPInt(1)), DynamicAPInt(0));
+}
+
+TEST(DynamicAPIntSafetyTest, FieldEncodingRejectsInvalidValuesWithoutAppending) {
+  BinaryBuffer buffer;
+  ASSERT_FALSE(buffer.writeFieldElement(2, DynamicAPInt(0x1234)));
+  EXPECT_EQ(buffer.bytes(), (llvm::ArrayRef<char> {'\x34', '\x12'}));
+  for (auto [size, value] : std::vector<std::pair<uint32_t, DynamicAPInt>> {
+           {0, DynamicAPInt(0)},
+           {1, DynamicAPInt(-1)},
+           {1, DynamicAPInt(256)},
+           {UINT32_MAX, DynamicAPInt(0)}
+       }) {
+    auto error = buffer.writeFieldElement(size, value);
+    EXPECT_TRUE(static_cast<bool>(error));
+    consumeError(std::move(error));
+    EXPECT_EQ(buffer.size(), 2U);
+  }
 }

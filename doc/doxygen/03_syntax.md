@@ -77,10 +77,6 @@ specify the signed interpretation and check that the value fits. C++ clients can
 use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
 to report invalid input and overflow without depending on assertions.
 
-During the four-stage migration, the old `toAPInt` and `toExactWidthAPInt` helpers
-remain temporary adapters for existing callers. Stage 4 removes them after all
-callers move to checked fixed-width encoding. APInt/APSInt decoding and encoding
-at LLVM/MLIR boundaries remain necessary after the migration.
 Felt constant attributes retain the exact signed literal, including when their
 field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
 modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
@@ -98,8 +94,16 @@ encodings. Old felt-constant, field-specification, and loop-bound payload tags a
 rejected rather than reinterpreted with different signedness. Regenerate bytecode
 from textual IR when moving to this representation.
 
-The APInt overloads of felt/field-specification builders, `Field::reduce` and
-`Field::inv`, and the old width-insensitive attribute parameter remain temporary
-migration adapters through stage 3. Stage 4 removes them after downstream callers
-use DynamicAPInt. `DynamicAPIntValue` is permanent owning storage for canonical
-numeric hashing, not a migration adapter.
+C++ mathematical-integer builders accept `DynamicAPInt`; the migration-only
+`APInt` overloads and width-insensitive parameter have been removed. The owning
+`DynamicAPIntValue` storage adapter is permanent: it supplies canonical numeric
+hashing to MLIR while public accessors return `DynamicAPInt` directly. Remaining
+`APInt`/`APSInt` uses implement MLIR, LLVM bitvector, parser, and binary encoding
+boundaries. Boolean and explicitly unsigned MLIR integers decode as nonnegative;
+other signless integers and index values use signed interpretation.
+
+Arithmetic right shift uses sign extension and handles arbitrarily large counts.
+Exact left shift rejects negative or unrepresentable counts; allocation remains
+proportional to the result size. Felt left shifts compute a modular power of two,
+so their memory usage does not scale with the numeric shift count. Binary field
+encoders require nonnegative, fitting values and return errors on overflow.

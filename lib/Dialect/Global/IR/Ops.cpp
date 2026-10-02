@@ -63,7 +63,8 @@ normalizeGlobalInitializer(IndexType expectedType, Attribute value, EmitErrorFn 
 static inline FailureOr<NormalizedGlobalInitializer>
 normalizeGlobalInitializer(FeltType expectedType, Attribute value, EmitErrorFn) {
   if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-    value = FeltConstAttr::get(value.getContext(), intValue.getValue(), expectedType);
+    value =
+        FeltConstAttr::get(value.getContext(), integerAttrToDynamicAPInt(intValue), expectedType);
   } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
     FeltType valueType = feltValue.getType();
     if (!expectedType.hasField() && valueType.hasField()) {

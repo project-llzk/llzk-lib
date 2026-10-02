@@ -20,11 +20,14 @@ TEST_F(SMTAttributeTests, NumericAPIntStorageReusesEqualValuesAcrossWidths) {
   auto expectStorageReuse = [&](const llvm::APInt &narrow, const llvm::APInt &wide) {
     ASSERT_TRUE(llvm::APInt::isSameValue(narrow, wide));
     EXPECT_EQ(
-        llvm::hash_combine(llzk::APIntValue(narrow)), llvm::hash_combine(llzk::APIntValue(wide))
+        llvm::hash_combine(llzk::DynamicAPIntValue(llzk::toDynamicAPInt(narrow))),
+        llvm::hash_combine(llzk::DynamicAPIntValue(llzk::toDynamicAPInt(wide)))
     );
 
-    llzk::felt::FeltConstAttr narrowAttr = llzk::felt::FeltConstAttr::get(&ctx, narrow);
-    llzk::felt::FeltConstAttr wideAttr = llzk::felt::FeltConstAttr::get(&ctx, wide);
+    llzk::felt::FeltConstAttr narrowAttr =
+        llzk::felt::FeltConstAttr::get(&ctx, llzk::toDynamicAPInt(narrow));
+    llzk::felt::FeltConstAttr wideAttr =
+        llzk::felt::FeltConstAttr::get(&ctx, llzk::toDynamicAPInt(wide));
     EXPECT_EQ(narrowAttr, wideAttr);
   };
 
@@ -51,4 +54,19 @@ TEST_F(SMTAttributeTests, DynamicIntegerStorageUsesSignedNumericIdentity) {
   auto positive =
       llzk::felt::FeltConstAttr::get(&ctx, llzk::toDynamicAPInt("18446744073709551615"));
   EXPECT_NE(negative, positive);
+}
+
+TEST_F(SMTAttributeTests, BuiltinIntegerConversionPreservesSignedness) {
+  auto decode = [&](mlir::IntegerType type, uint64_t bits) {
+    return llzk::integerAttrToDynamicAPInt(mlir::IntegerAttr::get(type, bits));
+  };
+  EXPECT_EQ(
+      decode(mlir::IntegerType::get(&ctx, 8, mlir::IntegerType::Unsigned), 255),
+      llvm::DynamicAPInt(255)
+  );
+  EXPECT_EQ(decode(mlir::IntegerType::get(&ctx, 8), 255), llvm::DynamicAPInt(-1));
+  EXPECT_EQ(decode(mlir::IntegerType::get(&ctx, 1), 1), llvm::DynamicAPInt(1));
+  EXPECT_EQ(
+      decode(mlir::IntegerType::get(&ctx, 1, mlir::IntegerType::Signed), 1), llvm::DynamicAPInt(-1)
+  );
 }

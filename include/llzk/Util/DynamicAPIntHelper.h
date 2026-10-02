@@ -52,9 +52,13 @@ llvm::Expected<uint64_t> checkedToUInt64(const llvm::DynamicAPInt &value);
 llvm::DynamicAPInt operator&(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator|(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator^(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
+/// Exact left shift; negative or unrepresentable counts are fatal programming errors.
 llvm::DynamicAPInt operator<<(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
+/// Arithmetic right shift; arbitrarily large nonnegative counts saturate to 0 or -1.
 llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 
+/// Parse trusted decimal text; invalid text is a fatal programming error.
+/// Use parseDynamicAPInt for external input.
 llvm::DynamicAPInt toDynamicAPInt(llvm::StringRef str);
 
 llvm::DynamicAPInt toDynamicAPInt(const llvm::APSInt &i);
@@ -69,16 +73,7 @@ inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
 
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
-/// Temporary migration adapter, removed in stage 4; use checkedToAPInt instead.
-/// Converts a DynamicAPInt that is non-negative and fits in `bitWidth` bits into an APInt.
-/// Uses `bitWidth+1` so that all field values in `[0, p)` — which satisfy
-/// `val < 2^bitWidth` — have a clear sign bit and print as positive decimals.
-llvm::APInt toAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
-
-/// Temporary migration adapter, removed in stage 4; use checkedToAPInt instead.
-/// Converts a DynamicAPInt to an APInt with exactly the requested bit width.
-llvm::APInt toExactWidthAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
-
+/// Modular exponentiation for a nonnegative exponent and positive modulus.
 llvm::DynamicAPInt modExp(
     const llvm::DynamicAPInt &base, const llvm::DynamicAPInt &exp, const llvm::DynamicAPInt &mod
 );

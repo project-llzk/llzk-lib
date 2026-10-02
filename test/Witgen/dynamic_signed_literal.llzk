@@ -1,0 +1,25 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json > %t.interpreter
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine > %t.compiled
+// RUN: diff %t.interpreter %t.compiled
+// RUN: %python -c "import json; assert json.load(open('%t.compiled'))['out'] == '21888242871839275222246405745257275088548364400416034343698204186575808495616'"
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn128"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c0 = felt.const -1 <"bn128">
+      struct.writem %self[@out] = %c0 : !struct.type<@Main>, !felt.type<"bn128">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}

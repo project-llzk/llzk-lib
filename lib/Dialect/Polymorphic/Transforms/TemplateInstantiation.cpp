@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -120,7 +121,7 @@ public:
 
     if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
       replaceOpWithNewOp<FeltConstantOp>(
-          rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)
+          rewriter, op, FeltConstAttr::get(getContext(), integerAttrToDynamicAPInt(a), ty)
       );
       return success();
     }
@@ -373,7 +374,7 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
       Attribute val = it->second;
       if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
         if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
-          val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
+          val = FeltConstAttr::get(bodyOp.getContext(), integerAttrToDynamicAPInt(intAttr), feltTy);
         }
       }
       valueMap[constReadOp.getResult()] = val;
