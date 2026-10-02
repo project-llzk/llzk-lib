@@ -1,0 +1,27 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | %python -c "import json,sys; assert json.load(sys.stdin) == {'out': '3'}"
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  global.def const @units : !array.type<1 x !felt.type<"babybear">> = [3]
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %i = arith.constant 0 : index
+      %zero = felt.const 0 : !felt.type<"babybear">
+      %copy = global.read @units : !array.type<1 x !felt.type<"babybear">>
+      array.write %copy[%i] = %zero : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %original = global.read @units : !array.type<1 x !felt.type<"babybear">>
+      %value = array.read %original[%i] : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      struct.writem %self[@out] = %value : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+[]
