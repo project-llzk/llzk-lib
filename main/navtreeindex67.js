@@ -1,5 +1,17 @@
 var NAVTREEINDEX67 =
 {
+"dialects.html#polytemplate-llzkpolymorphictemplateop":[7,10,0,4],
+"dialects.html#polyunifiable_cast-llzkpolymorphicunifiablecastop":[7,10,0,5],
+"dialects.html#polyyield-llzkpolymorphicyieldop":[7,10,0,6],
+"dialects.html#publicattr":[7,8,1,1],
+"dialects.html#recordattr":[7,9,1,0],
+"dialects.html#results":[7,0,0,0,1],
+"dialects.html#results-1":[7,0,0,2,1],
+"dialects.html#results-10":[7,1,0,7,1],
+"dialects.html#results-11":[7,2,0,0,2],
+"dialects.html#results-12":[7,2,0,1,2],
+"dialects.html#results-13":[7,4,0,0,1],
+"dialects.html#results-14":[7,4,0,1,1],
 "dialects.html#results-15":[7,4,0,2,1],
 "dialects.html#results-16":[7,4,0,3,1],
 "dialects.html#results-17":[7,4,0,4,1],
@@ -237,17 +249,5 @@ var NAVTREEINDEX67 =
 "functions_func_e.html":[13,3,1,4],
 "functions_func_f.html":[13,3,1,5],
 "functions_func_g.html":[13,3,1,6],
-"functions_func_h.html":[13,3,1,7],
-"functions_func_i.html":[13,3,1,8],
-"functions_func_j.html":[13,3,1,9],
-"functions_func_l.html":[13,3,1,10],
-"functions_func_m.html":[13,3,1,11],
-"functions_func_n.html":[13,3,1,12],
-"functions_func_o.html":[13,3,1,13],
-"functions_func_p.html":[13,3,1,14],
-"functions_func_r.html":[13,3,1,15],
-"functions_func_s.html":[13,3,1,16],
-"functions_func_t.html":[13,3,1,17],
-"functions_func_u.html":[13,3,1,18],
-"functions_func_v.html":[13,3,1,19]
+"functions_func_h.html":[13,3,1,7]
 };

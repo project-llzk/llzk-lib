@@ -8,5 +8,6 @@ var dir_b9e6121c35254505209e91f4816784f6 =
     [ "OpHelpers.h", "OpHelpers_8h.html", "OpHelpers_8h" ],
     [ "OpsBase.td", "OpsBase_8td.html", null ],
     [ "OpTraits.td", "Shared_2OpTraits_8td.html", null ],
-    [ "Types.td", "Shared_2Types_8td.html", null ]
+    [ "Types.td", "Shared_2Types_8td.html", null ],
+    [ "ValueCopy.h", "ValueCopy_8h.html", "ValueCopy_8h" ]
 ];

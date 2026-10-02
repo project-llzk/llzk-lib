@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('POD_2IR_2Ops_8
 <code>#include &quot;<a class="el" href="LLZK_2IR_2Ops_8h_source.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Versioning_8h_source.html">llzk/Dialect/LLZK/IR/Versioning.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="POD_2IR_2Types_8h_source.html">llzk/Dialect/POD/IR/Types.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="ValueCopy_8h_source.html">llzk/Dialect/Shared/ValueCopy.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Types_8h_source.html">llzk/Dialect/Struct/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
@@ -161,7 +162,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('POD_2IR_2Ops_8
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Ops.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="POD_2IR_2Ops_8cpp__incl.svg" width="6408" height="502"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="POD_2IR_2Ops_8cpp__incl.svg" width="4862" height="502"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="POD_2IR_2Ops_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -182,6 +183,7 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a6a6280c35a679e93e0dc884f434f5422" id="r_a6a6280c35a679e93e0dc884f434f5422"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1pod.html#a6a6280c35a679e93e0dc884f434f5422">llzk::pod::collectPodMapAttrs</a> (Type type, SmallVector&lt; AffineMapAttr &gt; &amp;mapAttrs)</td></tr>
 <tr class="memitem:aa6edda63769f7ef2a7fd425862a5989c" id="r_aa6edda63769f7ef2a7fd425862a5989c"><td class="memItemLeft">ParseResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1pod.html#aa6edda63769f7ef2a7fd425862a5989c">llzk::pod::parseRecordInitialization</a> (OpAsmParser &amp;parser, StringAttr &amp;name, <a class="el" href="namespacellzk_1_1pod.html#a4f636b3d6a0fe7f7072906e4e240a7a8">UnresolvedOp</a> &amp;operand)</td></tr>
 <tr class="memitem:ab92aa32aadfe5364bc75ddb90128801b" id="r_ab92aa32aadfe5364bc75ddb90128801b"><td class="memItemLeft">SmallVector&lt; <a class="el" href="structllzk_1_1pod_1_1RecordValue.html">RecordValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1pod.html#ab92aa32aadfe5364bc75ddb90128801b">llzk::pod::getInitializedRecordValues</a> (ValueRange initialValues, ArrayAttr initializedRecords)</td></tr>
 <tr class="memitem:af0194f68a5327cf4bf984394626233d4" id="r_af0194f68a5327cf4bf984394626233d4"><td class="memItemLeft">ParseResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1pod.html#af0194f68a5327cf4bf984394626233d4">llzk::pod::parseRecordName</a> (AsmParser &amp;parser, StringAttr &amp;name)</td></tr>
@@ -206,7 +208,7 @@ Functions</h2></td></tr>
 <div class="line">  failed = failed || mlir::failed(x);                                                            \</div>
 <div class="line">}</div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00286">286</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00369">369</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -222,7 +224,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00040">40</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00041">41</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

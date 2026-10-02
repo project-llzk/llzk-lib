@@ -318,6 +318,8 @@ Classes</h2></td></tr>
 <tr class="memitem:UnreducedInterval" id="r_UnreducedInterval"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1UnreducedInterval.html">UnreducedInterval</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An inclusive interval [a, b] where a and b are arbitrary integers not necessarily bound to a given field.  <a href="classllzk_1_1UnreducedInterval.html#details">More...</a><br /></td></tr>
 <tr class="memitem:UnusedDeclarationEliminationPassOptions" id="r_UnusedDeclarationEliminationPassOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1UnusedDeclarationEliminationPassOptions.html">UnusedDeclarationEliminationPassOptions</a></td></tr>
+<tr class="memitem:ValueCopyDialectInterface" id="r_ValueCopyDialectInterface"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1ValueCopyDialectInterface.html">ValueCopyDialectInterface</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dialect hook for materializing independent storage for mutable value types.  <a href="classllzk_1_1ValueCopyDialectInterface.html#details">More...</a><br /></td></tr>
 <tr class="memitem:VerifySizesForMultiAffineOps" id="r_VerifySizesForMultiAffineOps"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1VerifySizesForMultiAffineOps.html">VerifySizesForMultiAffineOps</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Produces errors if there is an inconsistency in the various attributes/values that are used to support affine map instantiation in the Op marked with this Trait.  <a href="structllzk_1_1VerifySizesForMultiAffineOps.html#details">More...</a><br /></td></tr>
 <tr class="memitem:Within" id="r_Within"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1Within.html">Within</a></td></tr>
@@ -452,6 +454,10 @@ Functions</h2></td></tr>
 <tr class="memitem:aae3bcef1a08579d6633a5534bc783aad" id="r_aae3bcef1a08579d6633a5534bc783aad"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aae3bcef1a08579d6633a5534bc783aad">getTypeFromLlzkMainAttr</a> (ModuleOp op, Attribute attr)</td></tr>
 <tr class="memitem:a6af91aaab3f72bcd8df881498175c3ac" id="r_a6af91aaab3f72bcd8df881498175c3ac"><td class="memItemLeft">OwningOpRef&lt; ModuleOp &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a6af91aaab3f72bcd8df881498175c3ac">createLLZKModule</a> (MLIRContext *, Location loc)</td></tr>
 <tr class="memitem:ad8079cba340b7e8ca05e0fd88b364334" id="r_ad8079cba340b7e8ca05e0fd88b364334"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ad8079cba340b7e8ca05e0fd88b364334">addLangAttrForLLZKDialect</a> (ModuleOp mod)</td></tr>
+<tr class="memitem:aa9989941b0c6516588ecd307df1f9236" id="r_aa9989941b0c6516588ecd307df1f9236"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aa9989941b0c6516588ecd307df1f9236">requiresValueCopy</a> (Type type)</td></tr>
+<tr class="memitem:af26b945b6c421b78cc0696060673b986" id="r_af26b945b6c421b78cc0696060673b986"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#af26b945b6c421b78cc0696060673b986">canMaterializeValueCopy</a> (Type type)</td></tr>
+<tr class="memitem:a5ebff325b4ee6b7537929d85d2cc5f2f" id="r_a5ebff325b4ee6b7537929d85d2cc5f2f"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#a5ebff325b4ee6b7537929d85d2cc5f2f">getValueCopyFailureReason</a> (Type type)</td></tr>
+<tr class="memitem:a784af22c9b3177c330c3370cd6241886" id="r_a784af22c9b3177c330c3370cd6241886"><td class="memItemLeft">FailureOr&lt; Value &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a784af22c9b3177c330c3370cd6241886">materializeValueCopy</a> (OpBuilder &amp;builder, Location loc, Value source)</td></tr>
 <tr class="memitem:ab130fee87d124e2a3037fde5697dd96e" id="r_ab130fee87d124e2a3037fde5697dd96e"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab130fee87d124e2a3037fde5697dd96e">createComputeConstrainToProductPass</a> ()</td></tr>
 <tr class="memitem:a5e6ca4e7b1f2b0c39f1e3b77f15d5539" id="r_a5e6ca4e7b1f2b0c39f1e3b77f15d5539"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5e6ca4e7b1f2b0c39f1e3b77f15d5539">createComputeConstrainToProductPass</a> (<a class="el" href="structllzk_1_1ComputeConstrainToProductPassOptions.html">ComputeConstrainToProductPassOptions</a> options)</td></tr>
 <tr class="memitem:a78d1137f9044c06529a0c3f43d7649a5" id="r_a78d1137f9044c06529a0c3f43d7649a5"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a78d1137f9044c06529a0c3f43d7649a5">createEnforceNoMemberOverwritePass</a> ()</td></tr>
@@ -659,6 +665,16 @@ Functions</h2></td></tr>
 <tr class="memitem:ac26809b0165de690450423f29240339b" id="r_ac26809b0165de690450423f29240339b"><td class="memItemLeft">mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#ac26809b0165de690450423f29240339b">parseTemplateParams</a> (mlir::AsmParser &amp;parser, mlir::ArrayAttr &amp;value)</td></tr>
 <tr class="memitem:a28bea81a49cf839e3359ecd4980bc375" id="r_a28bea81a49cf839e3359ecd4980bc375"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a28bea81a49cf839e3359ecd4980bc375">printTemplateParams</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayAttr value)</td></tr>
 <tr class="memitem:a1b94afdbbfc3d9cbb416cae2df62e1f0" id="r_a1b94afdbbfc3d9cbb416cae2df62e1f0"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a1b94afdbbfc3d9cbb416cae2df62e1f0">printTemplateParams</a> (mlir::AsmPrinter &amp;printer, void *, mlir::ArrayAttr value)</td></tr>
+<tr class="memitem:a5a4adf1200306cc78dd5bd1047948e81" id="r_a5a4adf1200306cc78dd5bd1047948e81"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a5a4adf1200306cc78dd5bd1047948e81">requiresValueCopy</a> (mlir::Type type)</td></tr>
+<tr class="memdesc:a5a4adf1200306cc78dd5bd1047948e81"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return whether copying <span class="tt">type</span> requires the checked materialization path.  <br /></td></tr>
+<tr class="memitem:a89d6c05d7c7a63ab9bbe8cff2da541d1" id="r_a89d6c05d7c7a63ab9bbe8cff2da541d1"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a89d6c05d7c7a63ab9bbe8cff2da541d1">canMaterializeValueCopy</a> (mlir::Type type)</td></tr>
+<tr class="memdesc:a89d6c05d7c7a63ab9bbe8cff2da541d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return whether <span class="tt">type</span> has supported value-copy semantics.  <br /></td></tr>
+<tr class="memitem:a6cc548a6f1e74060fb2e02880fb8cbab" id="r_a6cc548a6f1e74060fb2e02880fb8cbab"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a6cc548a6f1e74060fb2e02880fb8cbab">requiresUnsupportedValueCopy</a> (mlir::Type type)</td></tr>
+<tr class="memdesc:a6cc548a6f1e74060fb2e02880fb8cbab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return whether <span class="tt">type</span> requires a value copy that cannot currently be materialized.  <br /></td></tr>
+<tr class="memitem:a5a68fd1df91a4c431a8c61789647857e" id="r_a5a68fd1df91a4c431a8c61789647857e"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#a5a68fd1df91a4c431a8c61789647857e">getValueCopyFailureReason</a> (mlir::Type type)</td></tr>
+<tr class="memdesc:a5a68fd1df91a4c431a8c61789647857e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explain the unsupported type or recursive copy requirement.  <br /></td></tr>
+<tr class="memitem:ae03621b913afbfa15062499f88fd70f8" id="r_ae03621b913afbfa15062499f88fd70f8"><td class="memItemLeft">mlir::FailureOr&lt; mlir::Value &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ae03621b913afbfa15062499f88fd70f8">materializeValueCopy</a> (mlir::OpBuilder &amp;builder, mlir::Location loc, mlir::Value source)</td></tr>
+<tr class="memdesc:ae03621b913afbfa15062499f88fd70f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt"><a class="el" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a></span> for immutable scalar values, identity-bearing handles, and aggregates without mutable payload, or materialize recursively independent storage for a supported mutable aggregate.  <br /></td></tr>
 <tr class="memitem:a77841fb10c7b3448d90a0b3098262a15" id="r_a77841fb10c7b3448d90a0b3098262a15"><td class="memTemplParams" colspan="2">template&lt;typename OpTy&gt; </td></tr>
 <tr class="memitem:a77841fb10c7b3448d90a0b3098262a15 template"><td class="memItemLeft">OpTy&#160;</td><td class="memItemRight"><a class="el" href="#a77841fb10c7b3448d90a0b3098262a15">preserveDiscardableAttrs</a> (mlir::Operation *src, OpTy dst)</td></tr>
 <tr class="memdesc:a77841fb10c7b3448d90a0b3098262a15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy discardable attributes from <span class="tt">src</span> to <span class="tt">dst</span>.  <br /></td></tr>
@@ -2436,6 +2452,45 @@ template&lt;typename T, typename... Args&gt; </div>
 <p>Generate a string by calling <span class="tt">base.print(llvm::raw_ostream &amp;)</span> on a stream backed by the returned string. </p>
 
 <p class="definition">Definition at line <a class="el" href="StreamHelper_8h_source.html#l00052">52</a> of file <a class="el" href="StreamHelper_8h_source.html">StreamHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a89d6c05d7c7a63ab9bbe8cff2da541d1" name="a89d6c05d7c7a63ab9bbe8cff2da541d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89d6c05d7c7a63ab9bbe8cff2da541d1">&#9670;&#160;</a></span>canMaterializeValueCopy() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::canMaterializeValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return whether <span class="tt">type</span> has supported value-copy semantics. </p>
+<p>A successful copy may reuse the same SSA value only for immutable values, identity-bearing handles, or aggregates without mutable payload. </p>
+
+</div>
+</div>
+<a id="af26b945b6c421b78cc0696060673b986" name="af26b945b6c421b78cc0696060673b986"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af26b945b6c421b78cc0696060673b986">&#9670;&#160;</a></span>canMaterializeValueCopy() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::canMaterializeValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ValueCopy_8cpp_source.html#l00040">40</a> of file <a class="el" href="ValueCopy_8cpp_source.html">ValueCopy.cpp</a>.</p>
 
 </div>
 </div>
@@ -5721,6 +5776,45 @@ template&lt;typename OpClass&gt; </div>
 
 </div>
 </div>
+<a id="a5a68fd1df91a4c431a8c61789647857e" name="a5a68fd1df91a4c431a8c61789647857e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a68fd1df91a4c431a8c61789647857e">&#9670;&#160;</a></span>getValueCopyFailureReason() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llzk::getValueCopyFailureReason </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Explain the unsupported type or recursive copy requirement. </p>
+<p>Return an empty string for a supported type, and reserve shape-resolution advice for unsupported non-static array payloads. </p>
+
+</div>
+</div>
+<a id="a5ebff325b4ee6b7537929d85d2cc5f2f" name="a5ebff325b4ee6b7537929d85d2cc5f2f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ebff325b4ee6b7537929d85d2cc5f2f">&#9670;&#160;</a></span>getValueCopyFailureReason() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llzk::getValueCopyFailureReason </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ValueCopy_8cpp_source.html#l00056">56</a> of file <a class="el" href="ValueCopy_8cpp_source.html">ValueCopy.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a21a0759043e8fb39b7ccae07f0d788da" name="a21a0759043e8fb39b7ccae07f0d788da"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a21a0759043e8fb39b7ccae07f0d788da">&#9670;&#160;</a></span>hasAffineMapAttr() <span class="overload">[1/2]</span></h2>
 
@@ -6879,6 +6973,63 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Matchers_8h_source.html#l00071">71</a> of file <a class="el" href="Matchers_8h_source.html">Matchers.h</a>.</p>
+
+</div>
+</div>
+<a id="ae03621b913afbfa15062499f88fd70f8" name="ae03621b913afbfa15062499f88fd70f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae03621b913afbfa15062499f88fd70f8">&#9670;&#160;</a></span>materializeValueCopy() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; mlir::Value &gt; llzk::materializeValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Location</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Value</td>          <td class="paramname"><span class="paramname"><em>source</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt"><a class="el" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a></span> for immutable scalar values, identity-bearing handles, and aggregates without mutable payload, or materialize recursively independent storage for a supported mutable aggregate. </p>
+<p>Return failure rather than aliasing <span class="tt"><a class="el" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a></span> when an independent copy is required but unsupported. The caller must set the desired insertion point first. </p>
+
+</div>
+</div>
+<a id="a784af22c9b3177c330c3370cd6241886" name="a784af22c9b3177c330c3370cd6241886"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a784af22c9b3177c330c3370cd6241886">&#9670;&#160;</a></span>materializeValueCopy() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">FailureOr&lt; Value &gt; llzk::materializeValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Location</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Value</td>          <td class="paramname"><span class="paramname"><em>source</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ValueCopy_8cpp_source.html#l00068">68</a> of file <a class="el" href="ValueCopy_8cpp_source.html">ValueCopy.cpp</a>.</p>
 
 </div>
 </div>
@@ -10126,6 +10277,74 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
 <p>Expand function arg/result attribute arrays to match a split signature, rewriting name attrs with the provided suffixes where available. </p>
 
 <p class="definition">Definition at line <a class="el" href="ConversionUtils_8h_source.html#l00162">162</a> of file <a class="el" href="ConversionUtils_8h_source.html">ConversionUtils.h</a>.</p>
+
+</div>
+</div>
+<a id="a6cc548a6f1e74060fb2e02880fb8cbab" name="a6cc548a6f1e74060fb2e02880fb8cbab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6cc548a6f1e74060fb2e02880fb8cbab">&#9670;&#160;</a></span>requiresUnsupportedValueCopy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::requiresUnsupportedValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return whether <span class="tt">type</span> requires a value copy that cannot currently be materialized. </p>
+
+<p class="definition">Definition at line <a class="el" href="ValueCopy_8h_source.html#l00058">58</a> of file <a class="el" href="ValueCopy_8h_source.html">ValueCopy.h</a>.</p>
+
+</div>
+</div>
+<a id="a5a4adf1200306cc78dd5bd1047948e81" name="a5a4adf1200306cc78dd5bd1047948e81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a4adf1200306cc78dd5bd1047948e81">&#9670;&#160;</a></span>requiresValueCopy() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::requiresValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return whether copying <span class="tt">type</span> requires the checked materialization path. </p>
+<p>Only explicitly supported immutable scalars and identity-bearing handles may bypass it; unknown types must not silently acquire identity semantics. </p>
+
+</div>
+</div>
+<a id="aa9989941b0c6516588ecd307df1f9236" name="aa9989941b0c6516588ecd307df1f9236"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9989941b0c6516588ecd307df1f9236">&#9670;&#160;</a></span>requiresValueCopy() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::requiresValueCopy </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ValueCopy_8cpp_source.html#l00038">38</a> of file <a class="el" href="ValueCopy_8cpp_source.html">ValueCopy.cpp</a>.</p>
 
 </div>
 </div>

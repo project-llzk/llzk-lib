@@ -183,12 +183,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aecfbec05b5dc47471ccfad57db0a08a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
 <tr class="memitem:ac4862fc622feb634ad29124feda65ecc" id="r_ac4862fc622feb634ad29124feda65ecc"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ac4862fc622feb634ad29124feda65ecc">storesTo</a> (const ::mlir::MemorySlot &amp;slot)</td></tr>
 <tr class="memdesc:ac4862fc622feb634ad29124feda65ecc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
-<tr class="memitem:a1246c7d65c7709171cfd1d80873ea354" id="r_a1246c7d65c7709171cfd1d80873ea354"><td class="memItemLeft">::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#a1246c7d65c7709171cfd1d80873ea354">getStored</a> (const ::mlir::MemorySlot &amp;slot, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDef, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
-<tr class="memdesc:a1246c7d65c7709171cfd1d80873ea354"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableAllocationOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a7f4dae57dd88a1bc9d5b12724e172b24" id="r_a7f4dae57dd88a1bc9d5b12724e172b24"><td class="memItemLeft">::mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#a7f4dae57dd88a1bc9d5b12724e172b24">getStored</a> (const ::mlir::MemorySlot &amp;slot, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDef, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:a7f4dae57dd88a1bc9d5b12724e172b24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
 <tr class="memitem:a02a6f96139946421fd890599656abf26" id="r_a02a6f96139946421fd890599656abf26"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a02a6f96139946421fd890599656abf26">canUsesBeRemoved</a> (const ::mlir::MemorySlot &amp;slot, const ::llvm::SmallPtrSetImpl&lt;::mlir::OpOperand * &gt; &amp;blockingUses, ::llvm::SmallVectorImpl&lt;::mlir::OpOperand * &gt; &amp;newBlockingUses, const ::mlir::DataLayout &amp;datalayout)</td></tr>
 <tr class="memdesc:a02a6f96139946421fd890599656abf26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
-<tr class="memitem:aab8ac542c6ed7e63cfb114465852912c" id="r_aab8ac542c6ed7e63cfb114465852912c"><td class="memItemLeft">::mlir::DeletionKind&#160;</td><td class="memItemRight"><a class="el" href="#aab8ac542c6ed7e63cfb114465852912c">removeBlockingUses</a> (const ::mlir::MemorySlot &amp;slot, const ::llvm::SmallPtrSetImpl&lt; mlir::OpOperand * &gt; &amp;blockingUses, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDefinition, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
-<tr class="memdesc:aab8ac542c6ed7e63cfb114465852912c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a7ddfd620732370014d81e8478a76b168" id="r_a7ddfd620732370014d81e8478a76b168"><td class="memItemLeft">::mlir::DeletionKind&#160;</td><td class="memItemRight"><a class="el" href="#a7ddfd620732370014d81e8478a76b168">removeBlockingUses</a> (const ::mlir::MemorySlot &amp;slot, const ::llvm::SmallPtrSetImpl&lt; mlir::OpOperand * &gt; &amp;blockingUses, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDefinition, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:a7ddfd620732370014d81e8478a76b168"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
 <tr class="memitem:a41cb461d2b273a78cd850e42753e3370" id="r_a41cb461d2b273a78cd850e42753e3370"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a41cb461d2b273a78cd850e42753e3370">loadsFromDiscardableAllocation</a> (::mlir::Value ptr)</td></tr>
 <tr class="memdesc:a41cb461d2b273a78cd850e42753e3370"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup.  <br /></td></tr>
 <tr class="memitem:ae834c3cac4fe8d7143318622cc5eaee3" id="r_ae834c3cac4fe8d7143318622cc5eaee3"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ae834c3cac4fe8d7143318622cc5eaee3">storesToDiscardableAllocation</a> (::mlir::Value ptr)</td></tr>
@@ -240,7 +240,7 @@ Static Public Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00786">786</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00796">796</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ac09c4fde4b41e0b114776d6aa427d063" name="ac09c4fde4b41e0b114776d6aa427d063"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac09c4fde4b41e0b114776d6aa427d063">&#9670;&#160;</a></span>Adaptor</h2>
@@ -254,7 +254,7 @@ Static Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00790">790</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00800">800</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -270,7 +270,7 @@ Static Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00793">793</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00803">803</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -288,7 +288,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00792">792</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00802">802</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -304,7 +304,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00796">796</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00806">806</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -351,7 +351,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01284">1284</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01256">1256</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -402,7 +402,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01314">1314</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01286">1286</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -453,7 +453,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01264">1264</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01236">1236</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -504,7 +504,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01226">1226</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01198">1198</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -550,7 +550,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01246">1246</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01218">1218</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -596,7 +596,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01208">1208</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01180">1180</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -621,7 +621,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01533">1533</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01477">1477</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -656,7 +656,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01463">1463</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01435">1435</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -691,7 +691,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01496">1496</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00210">210</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -718,7 +718,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01167">1167</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01139">1139</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -764,7 +764,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01280">1280</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01252">1252</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -810,7 +810,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01242">1242</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01214">1214</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -851,7 +851,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01310">1310</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01282">1282</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -897,7 +897,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01331">1331</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01303">1303</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -938,7 +938,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01260">1260</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01232">1232</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -979,7 +979,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01222">1222</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01194">1194</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1030,7 +1030,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01272">1272</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01244">1244</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1081,7 +1081,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01234">1234</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01206">1206</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1127,7 +1127,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01302">1302</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01274">1274</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1178,7 +1178,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01323">1323</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01295">1295</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1224,7 +1224,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01252">1252</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01224">1224</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1270,7 +1270,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01214">1214</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01186">1186</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1297,7 +1297,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00797">797</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00807">807</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1333,7 +1333,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01173">1173</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01145">1145</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1360,7 +1360,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00814">814</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00824">824</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1387,7 +1387,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00818">818</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00828">828</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1414,7 +1414,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00842">842</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00852">852</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1441,7 +1441,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00846">846</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00856">856</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1468,7 +1468,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00810">810</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00820">820</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1495,7 +1495,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00824">824</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00834">834</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1522,7 +1522,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00832">832</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00842">842</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1551,7 +1551,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Gets the type of the referenced pod. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00920">920</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00930">930</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1582,7 +1582,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01151">1151</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01123">1123</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1601,7 +1601,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01199">1199</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01171">1171</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1628,7 +1628,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00861">861</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00871">871</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1655,7 +1655,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00802">802</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00812">812</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1682,18 +1682,18 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00806">806</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00816">816</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="a1246c7d65c7709171cfd1d80873ea354" name="a1246c7d65c7709171cfd1d80873ea354"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1246c7d65c7709171cfd1d80873ea354">&#9670;&#160;</a></span>getStored()</h2>
+<a id="a7f4dae57dd88a1bc9d5b12724e172b24" name="a7f4dae57dd88a1bc9d5b12724e172b24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f4dae57dd88a1bc9d5b12724e172b24">&#9670;&#160;</a></span>getStored()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mlir::Value llzk::pod::WritePodOp::getStored </td>
+          <td class="memname">Value llzk::pod::WritePodOp::getStored </td>
           <td>(</td>
           <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
         </tr>
@@ -1715,9 +1715,9 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Required by PromotableAllocationOpInterface / mem2reg pass. </p>
+<p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01490">1490</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00205">205</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1744,7 +1744,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00828">828</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00838">838</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1771,7 +1771,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00837">837</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00847">847</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1792,7 +1792,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01518">1518</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01462">1462</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1813,7 +1813,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01480">1480</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01452">1452</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1834,7 +1834,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01523">1523</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01467">1467</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1865,7 +1865,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01365">1365</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01337">1337</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1901,7 +1901,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01186">1186</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01158">1158</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1920,7 +1920,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01430">1430</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01402">1402</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1951,18 +1951,18 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00562">562</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00645">645</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
-<a id="aab8ac542c6ed7e63cfb114465852912c" name="aab8ac542c6ed7e63cfb114465852912c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aab8ac542c6ed7e63cfb114465852912c">&#9670;&#160;</a></span>removeBlockingUses()</h2>
+<a id="a7ddfd620732370014d81e8478a76b168" name="a7ddfd620732370014d81e8478a76b168"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ddfd620732370014d81e8478a76b168">&#9670;&#160;</a></span>removeBlockingUses()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mlir::DeletionKind llzk::pod::WritePodOp::removeBlockingUses </td>
+          <td class="memname">DeletionKind llzk::pod::WritePodOp::removeBlockingUses </td>
           <td>(</td>
           <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
         </tr>
@@ -1991,7 +1991,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01510">1510</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00219">219</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2026,7 +2026,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01472">1472</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01444">1444</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2062,7 +2062,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01179">1179</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01151">1151</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2098,7 +2098,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01128">1128</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01100">1100</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2117,7 +2117,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01204">1204</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01176">1176</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2144,7 +2144,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00866">866</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00876">876</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2165,7 +2165,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01485">1485</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01457">1457</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2186,7 +2186,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01528">1528</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01472">1472</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2205,7 +2205,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00571">571</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00654">654</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2241,7 +2241,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01190">1190</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01162">1162</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2260,7 +2260,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01359">1359</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01331">1331</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2279,7 +2279,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01335">1335</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01307">1307</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2298,7 +2298,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00567">567</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00650">650</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2323,7 +2323,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00794">794</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00804">804</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2347,7 +2347,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00795">795</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00805">805</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

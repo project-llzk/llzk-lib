@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('PodToScalarPas
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="RAM_2IR_2Dialect_8h_source.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="ValueCopy_8h_source.html">llzk/Dialect/Shared/ValueCopy.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="String_2IR_2Dialect_8h_source.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="ConversionUtils_8h_source.html">llzk/Transforms/ConversionUtils.h</a>&quot;</code><br />
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('PodToScalarPas
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for PodToScalarPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PodToScalarPass_8cpp__incl.svg" width="6379" height="671"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PodToScalarPass_8cpp__incl.svg" width="6554" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="PodToScalarPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -236,6 +237,7 @@ Functions</h2></td></tr>
 <li>Remove POD allocations that become unread after memory promotion, then remove SSA values made dead by that cleanup.</li>
 </ol>
 <p>Steps 5-7 are rerun while nested POD types are still being exposed, until a fixpoint.</p>
+<p>Copy boundaries: POD writes snapshot mutable inputs at the write, and POD reads snapshot stored mutable values at the read. The shared ValueCopy interface owns type classification, including immutable values and aliased struct handles. Promotion owns copies for materialized POD storage; virtual storage and control-flow lifting invoke the same interface at the original access point. Forwarding is restricted to values that do not require copies. Unsupported payload copies must be rejected rather than bypassed by projections or internal decomposition tags.</p>
 <p>Note: This transformation imposes a "last write wins" semantics on pod records. If different/configurable semantics are added in the future, some additional transformation would be necessary before/during this pass so that multiple writes to the same record can be handled properly while they still exist.</p>
 <p>Note: This transformation will introduce a <span class="tt">nondet</span> op when there exists a read from a pod record that was not earlier written to.</p>
 <p>Terminology: A "virtual POD" is a POD-typed placeholder whose contents are represented by SSA values for each flattened leaf record rather than by explicit <span class="tt">pod.write</span> operations on an aggregate POD object. The pass uses virtual PODs to keep propagating scalar leaves through rewrites for as long as possible because that avoids re-introducing aggregate POD storage that later stages would need to split or promote again. Concrete POD storage is materialized only when some remaining use cannot be resolved from those leaf values directly. </p>
@@ -254,7 +256,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00139">139</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00147">147</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -270,7 +272,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00127">127</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00135">135</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>

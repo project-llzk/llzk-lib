@@ -677,6 +677,7 @@ var annotated_dup =
       [ "TemplateBuilder", "classllzk_1_1TemplateBuilder.html", "classllzk_1_1TemplateBuilder" ],
       [ "UnreducedInterval", "classllzk_1_1UnreducedInterval.html", "classllzk_1_1UnreducedInterval" ],
       [ "UnusedDeclarationEliminationPassOptions", "structllzk_1_1UnusedDeclarationEliminationPassOptions.html", "structllzk_1_1UnusedDeclarationEliminationPassOptions" ],
+      [ "ValueCopyDialectInterface", "classllzk_1_1ValueCopyDialectInterface.html", "classllzk_1_1ValueCopyDialectInterface" ],
       [ "VerifySizesForMultiAffineOps", "structllzk_1_1VerifySizesForMultiAffineOps.html", "structllzk_1_1VerifySizesForMultiAffineOps" ],
       [ "Within", "classllzk_1_1Within.html", "classllzk_1_1Within" ]
     ] ],

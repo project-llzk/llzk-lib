@@ -169,6 +169,7 @@ Typedefs</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:a6904125f3b7db8832469ff421fbeb393" id="r_a6904125f3b7db8832469ff421fbeb393"><td class="memItemLeft">ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a6904125f3b7db8832469ff421fbeb393">parseRecord</a> (AsmParser &amp;parser, StringAttr &amp;name, Type &amp;type)</td></tr>
 <tr class="memitem:a4ded04c8ac23c71cf0da5baaf8d5ac95" id="r_a4ded04c8ac23c71cf0da5baaf8d5ac95"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a4ded04c8ac23c71cf0da5baaf8d5ac95">printRecord</a> (AsmPrinter &amp;printer, StringAttr name, Type type)</td></tr>
+<tr class="memitem:a6a6280c35a679e93e0dc884f434f5422" id="r_a6a6280c35a679e93e0dc884f434f5422"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a6a6280c35a679e93e0dc884f434f5422">collectPodMapAttrs</a> (Type type, SmallVector&lt; AffineMapAttr &gt; &amp;mapAttrs)</td></tr>
 <tr class="memitem:aa6edda63769f7ef2a7fd425862a5989c" id="r_aa6edda63769f7ef2a7fd425862a5989c"><td class="memItemLeft">ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#aa6edda63769f7ef2a7fd425862a5989c">parseRecordInitialization</a> (OpAsmParser &amp;parser, StringAttr &amp;name, <a class="el" href="#a4f636b3d6a0fe7f7072906e4e240a7a8">UnresolvedOp</a> &amp;operand)</td></tr>
 <tr class="memitem:ab92aa32aadfe5364bc75ddb90128801b" id="r_ab92aa32aadfe5364bc75ddb90128801b"><td class="memItemLeft">SmallVector&lt; <a class="el" href="structllzk_1_1pod_1_1RecordValue.html">RecordValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab92aa32aadfe5364bc75ddb90128801b">getInitializedRecordValues</a> (ValueRange initialValues, ArrayAttr initializedRecords)</td></tr>
 <tr class="memitem:af0194f68a5327cf4bf984394626233d4" id="r_af0194f68a5327cf4bf984394626233d4"><td class="memItemLeft">ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#af0194f68a5327cf4bf984394626233d4">parseRecordName</a> (AsmParser &amp;parser, StringAttr &amp;name)</td></tr>
@@ -183,6 +184,8 @@ Functions</h2></td></tr>
 <tr class="memitem:ae82b1794e38c9bf3e11798e9abe9b3bc" id="r_ae82b1794e38c9bf3e11798e9abe9b3bc"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ae82b1794e38c9bf3e11798e9abe9b3bc">printRecordName</a> (mlir::AsmPrinter &amp;printer, mlir::Operation *, mlir::StringAttr name)</td></tr>
 <tr class="memitem:a0745bd01602f938e292b4e8090425e54" id="r_a0745bd01602f938e292b4e8090425e54"><td class="memItemLeft">mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#a0745bd01602f938e292b4e8090425e54">parsePodType</a> (mlir::AsmParser &amp;parser, mlir::SmallVector&lt; RecordAttr &gt; &amp;)</td></tr>
 <tr class="memitem:a9678c1dad3ae46e70e68a69ccbe896fc" id="r_a9678c1dad3ae46e70e68a69ccbe896fc"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a9678c1dad3ae46e70e68a69ccbe896fc">printPodType</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayRef&lt; RecordAttr &gt;)</td></tr>
+<tr class="memitem:a573ddd550dd13e4c56c3ac8974354679" id="r_a573ddd550dd13e4c56c3ac8974354679"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a573ddd550dd13e4c56c3ac8974354679">collectPodMapAttrs</a> (mlir::Type type, mlir::SmallVector&lt; mlir::AffineMapAttr &gt; &amp;mapAttrs)</td></tr>
+<tr class="memdesc:a573ddd550dd13e4c56c3ac8974354679"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collect affine maps requiring operand groups when allocating this POD or one of its records.  <br /></td></tr>
 <tr class="memitem:a25f356eb31fa5349f0fd65df9d0474cc" id="r_a25f356eb31fa5349f0fd65df9d0474cc"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a25f356eb31fa5349f0fd65df9d0474cc">registerPodToScalarPass</a> ()</td></tr>
 <tr class="memitem:a2eab0ac33ecf46e7f87c2921fdc485c4" id="r_a2eab0ac33ecf46e7f87c2921fdc485c4"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a2eab0ac33ecf46e7f87c2921fdc485c4">registerPodToScalarPassPass</a> ()</td></tr>
 <tr class="memitem:a6627a4c34331c99a8e47d2c1e0c40c89" id="r_a6627a4c34331c99a8e47d2c1e0c40c89"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a6627a4c34331c99a8e47d2c1e0c40c89">registerTransformationPasses</a> ()</td></tr>
@@ -216,11 +219,58 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00308">308</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00391">391</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a573ddd550dd13e4c56c3ac8974354679" name="a573ddd550dd13e4c56c3ac8974354679"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a573ddd550dd13e4c56c3ac8974354679">&#9670;&#160;</a></span>collectPodMapAttrs() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::pod::collectPodMapAttrs </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::SmallVector&lt; mlir::AffineMapAttr &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>mapAttrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Collect affine maps requiring operand groups when allocating this POD or one of its records. </p>
+<p>Recurse through POD records, but only inspect the shape of array records. </p>
+
+</div>
+</div>
+<a id="a6a6280c35a679e93e0dc884f434f5422" name="a6a6280c35a679e93e0dc884f434f5422"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a6280c35a679e93e0dc884f434f5422">&#9670;&#160;</a></span>collectPodMapAttrs() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::pod::collectPodMapAttrs </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SmallVector&lt; AffineMapAttr &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>mapAttrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00279">279</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ab25c802e1f0d853138922fd9b3e746ba" name="ab25c802e1f0d853138922fd9b3e746ba"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab25c802e1f0d853138922fd9b3e746ba">&#9670;&#160;</a></span>createPodToScalarPass()</h2>
 
@@ -280,7 +330,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00450">450</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00533">533</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -406,7 +456,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00311">311</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00394">394</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -429,7 +479,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00595">595</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00678">678</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -576,7 +626,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00604">604</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00687">687</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

@@ -82,6 +82,9 @@ var hierarchy =
       [ "llzk::verif::AssumeDetOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1AssumeDetOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::AuxAssignment", "structllzk_1_1AuxAssignment.html", null ],
+    [ "mlir::DialectInterface::Base", null, [
+      [ "llzk::ValueCopyDialectInterface", "classllzk_1_1ValueCopyDialectInterface.html", null ]
+    ] ],
     [ "mlir::SideEffects::Resource::Base", null, [
       [ "llzk::DiscardableAllocationResource", "structllzk_1_1DiscardableAllocationResource.html", null ],
       [ "llzk::global::GlobalMemoryResource", "structllzk_1_1global_1_1GlobalMemoryResource.html", null ]
