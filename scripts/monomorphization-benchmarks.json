@@ -1,0 +1,42 @@
+[
+  {
+    "name": "and",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/AND@gates.circom"
+  },
+  {
+    "name": "iszero",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/IsZero@comparators.circom"
+  },
+  {
+    "name": "num2bits",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/Num2Bits@bitify.circom"
+  },
+  {
+    "name": "binsum",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/BinSum@binsum.circom"
+  },
+  {
+    "name": "switcher",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/Switcher@switcher.circom"
+  },
+  {
+    "name": "sigma",
+    "tier": "small",
+    "source": "tests/vulnerabilities/misc/circomlib/src/Sigma@poseidon.circom"
+  },
+  {
+    "name": "poseidon3",
+    "tier": "scale",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/poseidon3_test.circom"
+  },
+  {
+    "name": "poseidon6",
+    "tier": "scale",
+    "source": "tests/libs/zksolid-libs/circomlib/test/circuits/poseidon6_test.circom"
+  }
+]
