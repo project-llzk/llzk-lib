@@ -13,13 +13,13 @@ module attributes {llzk.lang = "r1cs"} {
     %3 = r1cs.to_linear %arg1 : !r1cs.signal to !r1cs.linear
     %4 = r1cs.to_linear %0 : !r1cs.signal to !r1cs.linear
     %5 = r1cs.to_linear %1 : !r1cs.signal to !r1cs.linear
-    %6 = r1cs.const 3 : i64 : !r1cs.linear
+    %6 = r1cs.const 3 : !r1cs.linear
 
     %7 = r1cs.add %5, %2 : !r1cs.linear
     %8 = r1cs.add %4, %6 : !r1cs.linear
     r1cs.constrain %7, %3, %8 : !r1cs.linear
 
-    %9 = r1cs.mul_const %2, -1 : i64 : !r1cs.linear
+    %9 = r1cs.mul_const %2, -1 : !r1cs.linear
     %10 = r1cs.add %2, %9 : !r1cs.linear
     r1cs.constrain %10, %4, %4 : !r1cs.linear
   }

@@ -65,18 +65,18 @@ public:
     if (auto constVal = dyn_cast_if_present<FeltConstantOp>(v.getDefiningOp())) {
       identifier = constVal.getValue();
     } else if (auto constIdxVal = dyn_cast_if_present<arith::ConstantIndexOp>(v.getDefiningOp())) {
-      identifier = llvm::cast<IntegerAttr>(constIdxVal.getValue()).getValue();
+      identifier = llvm::DynamicAPInt(constIdxVal.value());
     } else {
       identifier = v;
     }
   }
   explicit ReferenceID(Attribute attr) : identifier(attr) {}
-  explicit ReferenceID(const APInt &i) : identifier(i) {}
-  explicit ReferenceID(unsigned i) : identifier(APInt(64, i)) {}
+  explicit ReferenceID(const llvm::DynamicAPInt &i) : identifier(i) {}
+  explicit ReferenceID(unsigned i) : identifier(llvm::DynamicAPInt(i)) {}
 
   bool isValue() const { return std::holds_alternative<Value>(identifier); }
   bool isAttribute() const { return std::holds_alternative<Attribute>(identifier); }
-  bool isConst() const { return std::holds_alternative<APInt>(identifier); }
+  bool isConst() const { return std::holds_alternative<llvm::DynamicAPInt>(identifier); }
 
   Value getValue() const {
     ensure(isValue(), "does not hold Value");
@@ -88,9 +88,9 @@ public:
     return std::get<Attribute>(identifier);
   }
 
-  APInt getConst() const {
+  llvm::DynamicAPInt getConst() const {
     ensure(isConst(), "does not hold const");
-    return std::get<APInt>(identifier);
+    return std::get<llvm::DynamicAPInt>(identifier);
   }
 
   void print(raw_ostream &os) const {
@@ -103,7 +103,7 @@ public:
     } else if (const auto *attr = std::get_if<Attribute>(&identifier)) {
       os << *attr;
     } else {
-      os << std::get<APInt>(identifier);
+      os << std::get<llvm::DynamicAPInt>(identifier);
     }
   }
 
@@ -119,9 +119,9 @@ public:
 private:
   /// @brief Three cases:
   /// Attribute: identifier refers to a named member or other access metadata
-  /// APInt: identifier refers to a constant index in an array
+  /// DynamicAPInt: identifier refers to a constant index in an array
   /// Value: identifier refers to a dynamic index or access operand
-  std::variant<Attribute, APInt, Value> identifier;
+  std::variant<Attribute, llvm::DynamicAPInt, Value> identifier;
 };
 
 } // namespace
@@ -136,7 +136,7 @@ template <> struct DenseMapInfo<ReferenceID> {
     } else if (r.isAttribute()) {
       return hash_value(r.getAttribute());
     }
-    return hash_value(r.getConst());
+    return llzk::hashDynamicAPInt(r.getConst());
   }
   static bool isEqual(const ReferenceID &lhs, const ReferenceID &rhs) { return lhs == rhs; }
 };
