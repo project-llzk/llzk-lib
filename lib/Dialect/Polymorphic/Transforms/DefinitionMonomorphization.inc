@@ -465,8 +465,7 @@ class DefinitionRegistry {
             explicitArgs && !explicitArgs.empty()) {
           value = explicitArgs[n];
         } else {
-          value =
-              Step2_InstantiateFunctions::inferUnifiedParam(*unified, name).value_or(Attribute());
+          value = inferUnifiedParam(*unified, name).value_or(Attribute());
         }
         ++n;
         if (!value || !isConcreteAttr<false>(value)) {
