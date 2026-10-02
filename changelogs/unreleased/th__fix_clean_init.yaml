@@ -1,15 +1,23 @@
 added:
-  - "`registerPasses` helpers for core LLZK and the PCL, R1CS, and ZKLean backends"
+  - "`registerPasses` helpers for core LLZK and the PCL, R1CS, SMT, and ZKLean backends"
+  - "`llzk::smt::registerDialects` to register both `smt` and `smt_info`"
   - CAPI:
-    - "`llzkRegisterCorePasses`, `llzkRegisterPCLDialects`, `llzkRegisterPCLPasses`, `llzkRegisterR1CSDialects`, `llzkRegisterR1CSPasses`, `llzkRegisterZKLeanDialects`, and `llzkRegisterZKLeanPasses`"
+    - "`llzkRegisterCorePasses`"
+    - "`llzkRegisterPCLDialects` and `llzkRegisterPCLPasses`"
+    - "`llzkRegisterR1CSDialects` and `llzkRegisterR1CSPasses`"
+    - "`llzkRegisterSMTDialects` and `llzkRegisterSMTPasses`"
+    - "`llzkRegisterZKLeanDialects` and `llzkRegisterZKLeanPasses`"
     - "Analysis pass creation and registration functions in `llzk-c/Analysis.h`"
-    - "Pass creation and registration functions for PCL and R1CS transformations and SMT and ZKLean conversions"
+    - "Pass creation and registration functions for PCL and R1CS transformations and SMT and ZKLean conversions, exposed through `llzk-c/Target/{PCL,R1CS,SMT,ZKLean}.h`"
 
 changed:
   - "Rename `llzk/Dialect/InitDialects.h` to `llzk/Dialect/DialectRegistration.h` and `llzk-c/InitDialects.h` to `llzk-c/DialectRegistration.h`"
   - "Rename `registerAllDialects` to `registerDialects` in the `llzk`, `pcl`, `r1cs`, and `zklean` namespaces"
   - "Rename `llzkRegisterAllDialects` to `llzkRegisterCoreDialects`"
   - "Move core LLZK inlining extension registration from dialect registration to pass registration"
+  - "Use distinct `SMTConversion` and `ZKLeanConversion` prefixes for generated SMT and ZKLean C pass APIs"
 
 fixed:
   - "Register missing inlining extensions for the `smt_info` and `verif` dialects"
+  - "Register LLZK and LLVM inlining extensions needed by `llzk-witgen --output-wtns` for struct inlining with the interpreter and execution-engine backends"
+  - "Install SMT backend headers and propagate their include paths through `LLZK::LLZKCAPI`, allowing consumers to use the public C API without linking backend targets explicitly"
