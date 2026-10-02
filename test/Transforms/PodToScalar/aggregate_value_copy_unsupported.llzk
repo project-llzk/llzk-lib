@@ -55,6 +55,22 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Cached access analysis must also reject an uncopyable leaf of a nested virtual POD.
+#len = affine_map<()[s0] -> (s0)>
+!Values = !array.type<#len x index>
+!Box = !pod.type<[@values: !Values]>
+!Outer = !pod.type<[@box: !Box]>
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @unsupported_nested_virtual_pod_read(%outer: !Outer) -> !Box {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'box': POD record 'values': dynamic or symbolic payload arrays cannot be copied independently}}
+    %box = pod.read %outer[@box] : !Outer, !Box
+    function.return %box : !Box
+  }
+}
+
+// -----
+
 // Split leaf arrays for a symbolic array-of-POD must not be forwarded as mutable backing storage.
 #len = affine_map<()[s0] -> (s0)>
 !Item = !pod.type<[@x: index]>

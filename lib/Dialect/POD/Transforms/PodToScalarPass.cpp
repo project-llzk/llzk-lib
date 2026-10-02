@@ -1948,10 +1948,11 @@ inline static bool isInsideSupportedScfRegion(Operation *op) {
   return op->getParentOfType<scf::IfOp, scf::ForOp, scf::WhileOp>();
 }
 
-/// Return `true` iff a read from a virtual POD can be resolved without materializing it.
+/// Return whether a virtual POD read supports independent value copies of its leaves.
+/// Access ordering is checked separately by the cached POD access analysis.
 static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
   const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
-  if (!leafValues || hasEarlierWrite(op) || findNearestForwardableWrite(op)) {
+  if (!leafValues) {
     return false;
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
@@ -5509,13 +5510,11 @@ void Step3Resolver::addPostConversionPatterns(RewritePatternSet &patterns) {
 }
 
 bool Step3Resolver::canResolveVirtualPodReadFromAnalysis(ReadPodOp op) const {
-  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || !podAccesses ||
-      !podAccesses->hasFacts(op) || podAccesses->hasEarlierWrite(op) ||
+  if (!podAccesses || !podAccesses->hasFacts(op) || podAccesses->hasEarlierWrite(op) ||
       podAccesses->hasForwardableWrite(op)) {
     return false;
   }
-  Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
-  return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
+  return canResolveVirtualPodRead(op, virtualPods);
 }
 
 void Step3Resolver::configureLateVirtualPodLegality(ConversionTarget &target) const {
