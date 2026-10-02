@@ -114,9 +114,8 @@ static FeltConstAttr buildFoldResult(
 //===------------------------------------------------------------------===//
 
 void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  SmallString<32> buf;
-  llvm::raw_svector_ostream(buf) << "felt_const_";
-  getValueAPInt().toStringUnsigned(buf);
+  std::string buf;
+  llvm::raw_string_ostream(buf) << "felt_const_" << getValue().getValue();
   setNameFn(getResult(), buf);
 }
 
