@@ -105,7 +105,7 @@ public:
   /* Utility for hashing unreduced intervals */
   struct Hash {
     unsigned operator()(const UnreducedInterval &ui) const {
-      return llvm::hash_value(ui.a) ^ llvm::hash_value(ui.b);
+      return llvm::hash_combine(hashDynamicAPInt(ui.a), hashDynamicAPInt(ui.b));
     }
   };
 
@@ -342,8 +342,8 @@ public:
   /* Utility */
   struct Hash {
     unsigned operator()(const Interval &i) const {
-      return std::hash<const Field *> {}(&i.field.get()) ^ std::hash<Type> {}(i.ty) ^
-             llvm::hash_value(i.a) ^ llvm::hash_value(i.b);
+      return std::hash<Type> {}(i.ty) ^
+             llvm::hash_combine(hashDynamicAPInt(i.a), hashDynamicAPInt(i.b));
     }
   };
 

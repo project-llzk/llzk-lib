@@ -474,14 +474,13 @@ void NaiveNonNativeStrategy::populatePatterns(
     RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
     const SignalSymbols &signalSymbols
 ) const {
+  patterns.add<FeltConstConverter>(converter, context, toDynamicAPInt(prime));
   patterns.add<
       BasicConverter<felt::AddFeltOp, mlir::smt::IntAddOp>,
       BasicConverter<felt::SubFeltOp, mlir::smt::IntSubOp>,
       BasicConverter<felt::MulFeltOp, mlir::smt::IntMulOp>, FeltNegConverter,
-      BasicConverter<felt::UnsignedModFeltOp, mlir::smt::IntModOp>, FeltConstConverter,
-      FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter, NaiveBoolCmpConverter>(
-      converter, context
-  );
+      BasicConverter<felt::UnsignedModFeltOp, mlir::smt::IntModOp>, FunctionDefConverter,
+      ReturnConverter, SCFIfConverter, YieldConverter, NaiveBoolCmpConverter>(converter, context);
   patterns.add<NaiveFeltDivConverter>(converter, context, this);
   patterns.add<NaiveFeltInvConverter>(converter, context, this);
   patterns.add<NaiveSignedIntDivConverter>(converter, context, this);
