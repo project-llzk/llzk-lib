@@ -178,7 +178,7 @@ static std::string formatOperationCall(Operation &op, llvm::DenseMap<Value, std:
 static std::string formatFeltConstant(llzk::felt::FeltConstantOp constOp) {
   auto value = constOp.getValueAttr().getValue();
   llvm::SmallString<32> buffer;
-  value.toString(buffer, 10, false, false, false, false);
+  llvm::raw_svector_ostream(buffer) << value;
   return std::string(buffer);
 }
 

@@ -1,0 +1,8 @@
+changed:
+  - Felt literals, field specifications, and loop bounds store signed arbitrary-precision integers independent of bit width.
+  - Felt constant folding reduces signed literals before field operations and comparisons.
+  - The C API takes decimal strings and prints numeric values through callbacks, replacing width-taking string and limb constructors and 64-bit numeric getters.
+  - Numeric bytecode uses new signed encoding tags; regenerate old numeric bytecode from textual IR.
+fixed:
+  - Negative and positive integer literals cannot alias through width-insensitive unsigned attribute keys.
+  - Field specifications reject moduli below two.

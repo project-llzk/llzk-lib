@@ -318,7 +318,7 @@ template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
-  APInt getValue(FeltConstantOp op) const { return op.getValue().getValue(); }
+  APInt getValue(FeltConstantOp op) const { return llzk::toAPSInt(op.getValue().getValue()); }
 };
 
 template <> class ConstantOpValue<arith::ConstantOp> {

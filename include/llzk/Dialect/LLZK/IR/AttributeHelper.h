@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/StreamHelper.h"
 
 #include <mlir/IR/DialectImplementation.h>
@@ -34,6 +35,7 @@ template <> struct mlir::FieldParser<llvm::APInt> {
 namespace llzk {
 
 /// Storage key for APInts whose numeric value is independent of bit width.
+/// Temporary migration storage; removed in stage 4 with WidthInsensitiveAPIntParameter.
 class APIntValue {
 public:
   APIntValue(llvm::APInt apInt) : value(std::move(apInt)) {}
@@ -61,6 +63,32 @@ inline mlir::FailureOr<APIntValue> parseAPIntValue(mlir::AsmParser &parser) {
     return mlir::failure();
   }
   return APIntValue(std::move(*value));
+}
+
+/// Attribute storage adapter providing numeric hashing for DynamicAPInt.
+/// Public accessors expose the integer directly; the adapter owns its value.
+class DynamicAPIntValue {
+public:
+  DynamicAPIntValue(const llvm::DynamicAPInt &integer) : value(integer) {}
+  operator const llvm::DynamicAPInt &() const { return value; }
+  friend bool operator==(const DynamicAPIntValue &a, const DynamicAPIntValue &b) {
+    return a.value == b.value;
+  }
+  friend llvm::hash_code hash_value(const DynamicAPIntValue &key) {
+    return hashDynamicAPInt(key.value);
+  }
+
+private:
+  llvm::DynamicAPInt value;
+};
+
+/// Parse MLIR's signed integer literal and discard its encoding width.
+inline mlir::FailureOr<DynamicAPIntValue> parseDynamicAPIntValue(mlir::AsmParser &parser) {
+  auto value = mlir::FieldParser<llvm::APInt>::parse(parser);
+  if (mlir::failed(value)) {
+    return mlir::failure();
+  }
+  return DynamicAPIntValue(llvm::DynamicAPInt(*value));
 }
 
 inline llvm::APInt toAPInt(int64_t i) { return llvm::APInt(64, i); }

@@ -155,7 +155,7 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     ia.getValue().print(ss, !isUnsigned);
   } else if (auto fa = llvm::dyn_cast<FeltConstAttr>(a)) {
     ss << "f<";
-    fa.getValue().print(ss, false);
+    fa.getValue().print(ss);
     if (StringAttr fieldName = fa.getFieldName()) {
       // The byte length prevents field delimiters from colliding with adjacent parameters. For
       // example, `a>_f<36:b` followed by 37 and `a` followed by `b>_f<37` would otherwise render

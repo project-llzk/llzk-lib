@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Bool/IR/Utils.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -119,20 +120,21 @@ OpFoldResult NotBoolOp::fold(FoldAdaptor adaptor) {
 // CmpOp
 //===------------------------------------------------------------------===//
 
-inline static bool eval(FeltCmpPredicate pred, const llvm::APInt &lval, const llvm::APInt &rval) {
+inline static bool
+eval(FeltCmpPredicate pred, const llvm::DynamicAPInt &lval, const llvm::DynamicAPInt &rval) {
   switch (pred) {
   case FeltCmpPredicate::EQ:
     return lval == rval;
   case FeltCmpPredicate::NE:
     return lval != rval;
   case FeltCmpPredicate::LT:
-    return lval.ult(rval);
+    return lval < rval;
   case FeltCmpPredicate::LE:
-    return lval.ule(rval);
+    return lval <= rval;
   case FeltCmpPredicate::GT:
-    return lval.ugt(rval);
+    return lval > rval;
   case FeltCmpPredicate::GE:
-    return lval.uge(rval);
+    return lval >= rval;
   }
   llvm_unreachable("invalid FeltCmpPredicate");
 }
@@ -144,16 +146,16 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
     return {};
   }
 
-  // Normalize to a common bit width for unsigned comparison.
-  llvm::APInt lval = lhsAttr.getValue();
-  llvm::APInt rval = rhsAttr.getValue();
-  unsigned w = std::max(lval.getBitWidth(), rval.getBitWidth());
-  if (lval.getBitWidth() < w) {
-    lval = lval.zext(w);
+  auto fieldName = lhsAttr.getFieldName();
+  if (!fieldName || fieldName != rhsAttr.getFieldName()) {
+    return {};
   }
-  if (rval.getBitWidth() < w) {
-    rval = rval.zext(w);
+  auto field = Field::tryGetField(fieldName.getValue());
+  if (failed(field)) {
+    return {};
   }
+  auto lval = field->get().reduce(lhsAttr.getValue());
+  auto rval = field->get().reduce(rhsAttr.getValue());
   return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
 }
 

@@ -86,7 +86,7 @@ protected:
   /// Assert that fold produced the expected unsigned integer value in babybear.
   void expectValue(FeltConstAttr result, uint64_t expected) {
     ASSERT_TRUE(result) << "expected fold to succeed";
-    EXPECT_EQ(result.getValue().getZExtValue(), expected);
+    EXPECT_EQ(result.getValue(), toDynamicAPInt(expected));
     EXPECT_EQ(result.getFieldName(), StringAttr::get(&ctx, BB_FIELD));
   }
 
@@ -335,8 +335,8 @@ TEST_F(BabyBearFoldTest, Shr) {
 }
 
 TEST_F(BabyBearFoldTest, Shr30) {
-  // BB_PRIME >> 30 = 1 (only highest bit remains, all others shifted out)
-  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(30)), 1);
+  // A literal equal to the modulus represents zero before shifting.
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(30)), 0);
 }
 
 TEST_F(BabyBearFoldTest, Shr31) {
@@ -355,4 +355,11 @@ TEST_F(BabyBearFoldTest, BitNotZero) {
 
 TEST_F(BabyBearFoldTest, BitNotNoFoldUnspecified) {
   expectNoFold(foldUnary<NotFeltOp>(unspecifiedConst(0)));
+}
+
+TEST_F(BabyBearFoldTest, SignedLiteralIsReducedBeforeBitwiseOperation) {
+  auto negative = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(-1), BB_FIELD);
+  auto result = foldBinary<AndFeltOp>(negative, babyBearConst(1));
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result.getValue(), llvm::DynamicAPInt(0));
 }

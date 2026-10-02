@@ -73,8 +73,8 @@ static std::optional<BinaryFoldData> tryGetBinaryFoldData(Attribute lhsAttr, Att
   }
 
   return BinaryFoldData {
-      toDynamicAPInt(lhs.getValue()), toDynamicAPInt(rhs.getValue()), lhsFieldName.getValue(),
-      &fieldRes.value().get()
+      fieldRes->get().reduce(lhs.getValue()), fieldRes->get().reduce(rhs.getValue()),
+      lhsFieldName.getValue(), &fieldRes.value().get()
   };
 }
 
@@ -96,7 +96,7 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
   }
 
   return UnaryFoldData {
-      toDynamicAPInt(operand.getValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
+      fieldRes->get().reduce(operand.getValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
   };
 }
 
@@ -104,7 +104,7 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
 static FeltConstAttr buildFoldResult(
     MLIRContext *ctx, const DynamicAPInt &val, const Field &field, StringRef fieldName
 ) {
-  return FeltConstAttr::get(ctx, toAPInt(val, field.bitWidth()), fieldName);
+  return FeltConstAttr::get(ctx, field.reduce(val), fieldName);
 }
 
 } // namespace
