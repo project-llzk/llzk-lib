@@ -1,0 +1,40 @@
+// RUN: %python %S/check-direct-pipeline.py llzk-opt llzk-witgen llzk-translate %s %t
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Child {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%x: !felt.type<"babybear">) -> !struct.type<@Child> {
+      %s = struct.new : <@Child>
+      %v = felt.mul %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %s[@out] = %v : !struct.type<@Child>, !felt.type<"babybear">
+      function.return %s : !struct.type<@Child>
+    }
+    function.def @constrain(%s: !struct.type<@Child>, %x: !felt.type<"babybear">) {
+      %v = struct.readm %s[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %square = felt.mul %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %v, %square : !felt.type<"babybear">
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.member @child : !struct.type<@Child>
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%x: !felt.type<"babybear"> {llzk.pub}) -> !struct.type<@Main> {
+      %s = struct.new : <@Main>
+      %c = function.call @Child::@compute(%x) : (!felt.type<"babybear">) -> !struct.type<@Child>
+      struct.writem %s[@child] = %c : !struct.type<@Main>, !struct.type<@Child>
+      %v = struct.readm %c[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %out = felt.mul %v, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %s[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %x: !felt.type<"babybear"> {llzk.pub}) {
+      %c = struct.readm %s[@child] : !struct.type<@Main>, !struct.type<@Child>
+      function.call @Child::@constrain(%c, %x) : (!struct.type<@Child>, !felt.type<"babybear">) -> ()
+      %v = struct.readm %c[@out] : !struct.type<@Child>, !felt.type<"babybear">
+      %sum = felt.mul %v, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = struct.readm %s[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %sum : !felt.type<"babybear">
+      function.return
+    }
+  }
+}

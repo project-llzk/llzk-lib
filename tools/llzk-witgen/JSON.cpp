@@ -15,6 +15,7 @@
 
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/Polymorphic/Transforms/ConstraintEvaluation.h"
 #include "llzk/Util/Compare.h"
 
 #include <mlir/IR/Operation.h>
@@ -34,7 +35,7 @@ static std::string renderJSON(const llvm::json::Value &value) {
   return llvm::formatv("{0:2}", value).str();
 }
 
-static llvm::StringRef jsonKind(const llvm::json::Value &value) {
+static StringRef jsonKind(const llvm::json::Value &value) {
   if (value.getAsNull()) {
     return "null";
   }
@@ -56,29 +57,28 @@ static llvm::StringRef jsonKind(const llvm::json::Value &value) {
   return "unknown";
 }
 
-static std::string appendObjectPath(llvm::StringRef path, llvm::StringRef key) {
+static std::string appendObjectPath(StringRef path, StringRef key) {
   llvm::SmallString<64> out(path);
   out += '.';
   out += key;
   return std::string(out);
 }
 
-static std::string appendIndexPath(llvm::StringRef path, size_t index) {
+static std::string appendIndexPath(StringRef path, size_t index) {
   llvm::SmallString<64> out(path);
   llvm::raw_svector_ostream os(out);
   os << '[' << index << ']';
   return std::string(out);
 }
 
-static void pushMismatch(
-    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path, const llvm::Twine &message
-) {
+static void
+pushMismatch(SmallVectorImpl<JSONMismatch> &out, StringRef path, const llvm::Twine &message) {
   out.push_back(JSONMismatch {path.str(), message.str()});
 }
 
 static void diffObjects(
     const llvm::json::Object &expected, const llvm::json::Object &actual,
-    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path
+    SmallVectorImpl<JSONMismatch> &out, StringRef path
 ) {
   for (const auto &kv : expected) {
     if (const llvm::json::Value *actualValue = actual.get(kv.first)) {
@@ -96,7 +96,7 @@ static void diffObjects(
 
 static void diffArrays(
     const llvm::json::Array &expected, const llvm::json::Array &actual,
-    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path
+    SmallVectorImpl<JSONMismatch> &out, StringRef path
 ) {
   if (expected.size() != actual.size()) {
     pushMismatch(
@@ -118,7 +118,7 @@ static llvm::Expected<int64_t> jsonToInt(const llvm::json::Value *json) {
   if (std::optional<int64_t> integer = json->getAsInteger()) {
     return *integer;
   }
-  if (std::optional<llvm::StringRef> str = json->getAsString()) {
+  if (std::optional<StringRef> str = json->getAsString()) {
     int64_t value = 0;
     if (!str->getAsInteger(10, value)) {
       return value;
@@ -130,7 +130,7 @@ static llvm::Expected<int64_t> jsonToInt(const llvm::json::Value *json) {
 /// Parse a JSON field element encoded as an integer or decimal string.
 static llvm::Expected<llvm::DynamicAPInt>
 jsonToFelt(const llvm::json::Value *json, const Field &field) {
-  if (std::optional<llvm::StringRef> str = json->getAsString()) {
+  if (std::optional<StringRef> str = json->getAsString()) {
     return field.reduce(toDynamicAPInt(*str));
   }
   if (std::optional<int64_t> integer = json->getAsInteger()) {
@@ -149,7 +149,7 @@ static llvm::Expected<WitnessVal> parseJSONArray(
     return makeError("expected JSON array");
   }
 
-  llvm::ArrayRef<int64_t> shape = type.getShape();
+  ArrayRef<int64_t> shape = type.getShape();
   if (dimIndex >= shape.size()) {
     return makeError("invalid array shape");
   }
@@ -206,7 +206,7 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
     Operation *origin, SerializationMode mode, size_t dimIndex = 0, size_t flatOffset = 0
 ) {
   llvm::json::Array jsonArray;
-  llvm::ArrayRef<int64_t> shape = type.getShape();
+  ArrayRef<int64_t> shape = type.getShape();
   auto dimSize = checkedShapeDimToSize(shape[dimIndex], "JSON array output");
   if (!dimSize) {
     return dimSize.takeError();
@@ -262,24 +262,26 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
 llvm::Expected<WitnessVal>
 parseJSONValue(const llvm::json::Value *json, Type type, const Field &field, Operation *origin) {
   return llvm::TypeSwitch<Type, llvm::Expected<WitnessVal>>(type)
-      .Case([&](felt::FeltType) -> llvm::Expected<WitnessVal> { return jsonToFelt(json, field); })
-      .Case([&](array::ArrayType arrayType) -> llvm::Expected<WitnessVal> {
+      .Case([json, &field](felt::FeltType) -> llvm::Expected<WitnessVal> {
+    return jsonToFelt(json, field);
+  })
+      .Case([json, &field, origin](array::ArrayType arrayType) -> llvm::Expected<WitnessVal> {
     return parseJSONArray(json, arrayType, field, origin);
   })
-      .Case([&](pod::PodType) -> llvm::Expected<WitnessVal> {
+      .Case([](pod::PodType) -> llvm::Expected<WitnessVal> {
     return makeError("pod JSON inputs are not supported in llzk-witgen v1");
   })
-      .Case([&](component::StructType) -> llvm::Expected<WitnessVal> {
+      .Case([](component::StructType) -> llvm::Expected<WitnessVal> {
     return makeError("struct JSON inputs are not supported in llzk-witgen v1");
   })
-      .Case([&](IndexType) -> llvm::Expected<WitnessVal> {
+      .Case([json](IndexType) -> llvm::Expected<WitnessVal> {
     auto integer = jsonToInt(json);
     if (!integer) {
       return integer.takeError();
     }
     return *integer;
   })
-      .Case([&](IntegerType intType) -> llvm::Expected<WitnessVal> {
+      .Case([json](IntegerType intType) -> llvm::Expected<WitnessVal> {
     if (intType.getWidth() == 1) {
       if (std::optional<bool> boolValue = json->getAsBoolean()) {
         return *boolValue;
@@ -291,7 +293,7 @@ parseJSONValue(const llvm::json::Value *json, Type type, const Field &field, Ope
       return *integer != 0;
     }
     return makeError("only i1 integer JSON inputs are supported");
-  }).Default([&](Type) -> llvm::Expected<WitnessVal> {
+  }).Default([](Type) -> llvm::Expected<WitnessVal> {
     return makeError("unsupported input type in llzk-witgen");
   });
 }
@@ -302,21 +304,26 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     SerializationMode mode
 ) {
   return llvm::TypeSwitch<Type, llvm::Expected<llvm::json::Value>>(type)
-      .Case([&](felt::FeltType) -> llvm::Expected<llvm::json::Value> {
+      .Case([&value](felt::FeltType) -> llvm::Expected<llvm::json::Value> {
     auto feltValue = asFelt(value);
     if (!feltValue) {
       return feltValue.takeError();
     }
     return feltToJSON(*feltValue);
   })
-      .Case([&](array::ArrayType arrayType) -> llvm::Expected<llvm::json::Value> {
+      .Case(
+          [&value, &tables, origin,
+           mode](array::ArrayType arrayType) -> llvm::Expected<llvm::json::Value> {
     auto arrayValue = asArray(value);
     if (!arrayValue) {
       return arrayValue.takeError();
     }
     return serializeJSONArray(*arrayValue, arrayType, tables, origin, mode);
-  })
-      .Case([&](pod::PodType podType) -> llvm::Expected<llvm::json::Value> {
+  }
+      )
+      .Case(
+          [&value, &tables, origin,
+           mode](pod::PodType podType) -> llvm::Expected<llvm::json::Value> {
     auto podValue = asPod(value);
     if (!podValue) {
       return podValue.takeError();
@@ -334,8 +341,11 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
       result[record.getName().getValue()] = *serialized;
     }
     return llvm::json::Value(std::move(result));
-  })
-      .Case([&](component::StructType structType) -> llvm::Expected<llvm::json::Value> {
+  }
+      )
+      .Case(
+          [&value, &tables, origin,
+           mode](component::StructType structType) -> llvm::Expected<llvm::json::Value> {
     auto structValue = asStruct(value);
     if (!structValue) {
       return structValue.takeError();
@@ -352,10 +362,10 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
       }
 
       if (mode == SerializationMode::PublicOutputsOnly) {
-        if (!member.hasPublicAttr()) {
+        if (!polymorphic::isOriginallyPublic(member)) {
           continue;
         }
-      } else {
+      } else if (mode == SerializationMode::AllSignals) {
         if (!memberIsSignal(defLookup->get(), member) &&
             !isa<component::StructType>(member.getType())) {
           continue;
@@ -375,15 +385,16 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
       result[member.getSymName()] = *serialized;
     }
     return llvm::json::Value(std::move(result));
-  })
-      .Case([&](IndexType) -> llvm::Expected<llvm::json::Value> {
+  }
+      )
+      .Case([&value](IndexType) -> llvm::Expected<llvm::json::Value> {
     auto indexValue = asIndex(value);
     if (!indexValue) {
       return indexValue.takeError();
     }
     return llvm::json::Value(*indexValue);
   })
-      .Case([&](IntegerType intType) -> llvm::Expected<llvm::json::Value> {
+      .Case([&value](IntegerType intType) -> llvm::Expected<llvm::json::Value> {
     if (intType.getWidth() != 1) {
       return makeError("only i1 integer JSON serialization is supported");
     }
@@ -392,7 +403,7 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
       return boolValue.takeError();
     }
     return llvm::json::Value(*boolValue);
-  }).Default([&](Type) -> llvm::Expected<llvm::json::Value> {
+  }).Default([](Type) -> llvm::Expected<llvm::json::Value> {
     return makeError("unsupported output type in llzk-witgen");
   });
 }
@@ -472,7 +483,7 @@ llvm::Expected<WitnessVal> extractValueAtPath(
 
 void diffJSON(
     const llvm::json::Value &expected, const llvm::json::Value &actual,
-    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path
+    SmallVectorImpl<JSONMismatch> &out, StringRef path
 ) {
   if (expected.kind() != actual.kind()) {
     pushMismatch(
@@ -501,7 +512,7 @@ void diffJSON(
   );
 }
 
-void printJSONMismatches(llvm::raw_ostream &os, llvm::ArrayRef<JSONMismatch> mismatches) {
+void printJSONMismatches(llvm::raw_ostream &os, ArrayRef<JSONMismatch> mismatches) {
   for (const JSONMismatch &mismatch : mismatches) {
     os << mismatch.path << ": " << mismatch.message << '\n';
   }

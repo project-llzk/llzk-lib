@@ -41,8 +41,19 @@ Input visibility comes from the corresponding arguments of `@constrain`, as it
 does in the R1CS lowering pass. The first `@constrain` argument is `self` and is
 not an R1CS input.
 
-The current WTNS writer supports scalar felt inputs and main members. It also
-cross-checks its witness length against an R1CS-lowered clone of the module.
-Circuits that require synthesized R1CS auxiliary wires are rejected until
-witgen can materialize those auxiliary values. Unsupported aggregates and wire
-count mismatches are therefore diagnosed rather than silently serialized.
+For evaluated modules (`poly.evaluated_main`), lowering produces a
+`poly.wire_bindings` map from physical wires to input or nested component
+storage paths. The interpreter materializes degree-lowering and R1CS auxiliary
+members and the WTNS writer follows that map, including array and POD leaves.
+Input-rooted auxiliary reads capture entry values before compute mutates local
+storage; function calls preserve aggregate argument value semantics.
+
+The legacy, non-evaluated path supports scalar felt inputs and main members.
+It cross-checks witness length against an R1CS-lowered module clone and rejects
+aggregates or auxiliary wires it cannot materialize. The evaluated path checks
+binding order and diagnoses missing storage values before serialization.
+
+Evaluation may grant `llzk.pub` access to nested members so generated straightline
+constraints can read them. Circuit visibility remains in `poly.original_public`;
+public witness serialization uses that original visibility. `poly.evaluated_main`
+is the authoritative module-state marker; function markers record provenance.

@@ -14,6 +14,9 @@
 
 namespace r1cs {
 
+/// Marks normalized constraints whose R1CS auxiliary witness assignments exist.
+constexpr char PREPARED_ATTR_NAME[] = "r1cs.prepared";
+
 #define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "r1cs/Transforms/TransformationPasses.h.inc"

@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
+// RUN: llzk-opt -llzk-full-r1cs-lowering=legacy=true %s | FileCheck %s
 
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Add>} {
   struct.def @Add {

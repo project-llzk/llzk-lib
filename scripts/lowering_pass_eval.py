@@ -76,7 +76,7 @@ class TaskResult:
 def get_pass_args(lvl: int) -> List[str]:
     """Return llzk-opt pass arguments for the selected lowering level."""
     pass_by_level = {
-        6: ["-llzk-full-r1cs-lowering"],
+        6: ["-llzk-full-r1cs-lowering=legacy=true"],
         5: ["-llzk-full-poly-lowering"],
         4: ["-llzk-full-struct-inlining"],
         3: ["--pass-pipeline=builtin.module(llzk-flatten,llzk-pod-to-scalar,llzk-array-to-scalar)"],
