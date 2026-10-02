@@ -19,8 +19,10 @@
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
@@ -99,20 +101,22 @@ struct FullyLegalForInlining
 namespace llzk {
 
 void registerInliningExtensions(DialectRegistry &registry) {
-  registry.addExtension(FuncInlinerInterface::registrationHook);
+  registry.addExtension(FullyLegalForInlining<array::ArrayDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<boolean::BoolDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<cast::CastDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<component::StructDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<constrain::ConstrainDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<string::StringDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<polymorphic::PolymorphicDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<ram::RAMDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<felt::FeltDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<global::GlobalDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<boolean::BoolDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<array::ArrayDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<cast::CastDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<include::IncludeDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<llzk::LLZKDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<pod::PODDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<polymorphic::PolymorphicDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<ram::RAMDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<smt_info::SMTInfoDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<string::StringDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<verif::VerifDialect>::registrationHook);
+  registry.addExtension(FuncInlinerInterface::registrationHook);
 }
 
 } // namespace llzk

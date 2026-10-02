@@ -729,6 +729,21 @@ struct UnifierImpl {
 
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
+      // Equal syntax in an included signature still refers to the included namespace.
+      if (!rhsRevPrefix.empty()) {
+        if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
+          return structTypesUnify(lhsStruct, llvm::cast<StructType>(rhs));
+        }
+        if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhs)) {
+          return arrayTypesUnify(lhsArray, llvm::cast<ArrayType>(rhs));
+        }
+        if (auto lhsPod = llvm::dyn_cast<PodType>(lhs)) {
+          return podTypesUnify(lhsPod, llvm::cast<PodType>(rhs));
+        }
+        if (auto lhsFunction = llvm::dyn_cast<FunctionType>(lhs)) {
+          return functionTypesUnify(lhsFunction, llvm::cast<FunctionType>(rhs));
+        }
+      }
       return true;
     }
     if (overrideSuccess && overrideSuccess(lhs, rhs)) {
@@ -821,6 +836,11 @@ private:
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
     if (lhsAttr == rhsAttr) {
+      if (!rhsRevPrefix.empty()) {
+        if (auto lhsType = llvm::dyn_cast<TypeAttr>(lhsAttr)) {
+          return typesUnify(lhsType.getValue(), llvm::cast<TypeAttr>(rhsAttr).getValue());
+        }
+      }
       return true;
     }
     // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter

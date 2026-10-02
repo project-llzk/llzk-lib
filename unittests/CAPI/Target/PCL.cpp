@@ -47,7 +47,7 @@ TEST_F(CAPITest, exportPclModule) {
   llvm::raw_string_ostream ss(output_text);
   auto *ctx = unwrap(context);
   mlir::DialectRegistry registry;
-  pcl::registerAllDialects(registry);
+  pcl::registerDialects(registry);
   ctx->appendDialectRegistry(registry);
   ctx->loadAllAvailableDialects();
 

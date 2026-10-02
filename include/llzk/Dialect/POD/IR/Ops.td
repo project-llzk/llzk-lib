@@ -71,39 +71,6 @@ class ScalarPODAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
       return }]#!if(isRead, "false", "getPodRef() == slot.ptr")#[{;
     }
 
-    /// Required by PromotableAllocationOpInterface / mem2reg pass
-    ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::OpBuilder &,
-                                       ::mlir::Value, const ::mlir::DataLayout &) {
-      }]#!if(
-      isRead,
-      "llvm_unreachable(\"getStored() should not be called on $cppClass\")",
-      "return getValue()")#[{;
-    }
-
-    /// Required by PromotableMemOpInterface / mem2reg pass
-    bool $cppClass::canUsesBeRemoved(
-        const ::mlir::MemorySlot &slot,
-        const ::llvm::SmallPtrSetImpl<::mlir::OpOperand *> &blockingUses,
-        ::llvm::SmallVectorImpl<::mlir::OpOperand *> & /*newBlockingUses*/,
-        const ::mlir::DataLayout & /*datalayout*/) {
-      if (blockingUses.size() != 1) {
-        return false;
-      }
-      ::mlir::Value blockingUse = (*blockingUses.begin())->get();
-      return blockingUse == slot.ptr && getPodRef() == slot.ptr &&
-      }]#!if(isRead, "getResult().getType() == slot.elemType",
-             "getValue() != slot.ptr && getValue().getType() == slot.elemType")#[{;
-    }
-
-    /// Required by PromotableMemOpInterface / mem2reg pass
-    ::mlir::DeletionKind $cppClass::removeBlockingUses(
-        const ::mlir::MemorySlot &, const ::llvm::SmallPtrSetImpl<::mlir::OpOperand *> &,
-        ::mlir::OpBuilder &, ::mlir::Value reachingDefinition, const ::mlir::DataLayout &) {
-      }]#!if(isRead, "getResult().replaceAllUsesWith(reachingDefinition)",
-             "")#[{;
-      return ::mlir::DeletionKind::Delete;
-    }
-
     /// Return `true` if the op is a read, `false` if it's a write.
     bool $cppClass::isRead() {
       return }]#!if(isRead, "true", "false")#[{;
@@ -228,7 +195,12 @@ def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
   let description = [{
     Copies the current value of a named record from a pod instance. The result is a
     value copy, not a pointer or alias to the record's storage. Returns one value of
-    the type of the record.
+    the type of the record. For an identity-bearing `struct.type` record, the copied
+    value is a handle to the same component instance; it does not duplicate the
+    component's members, signals, or tables. Immutable scalars and shape-only arrays
+    may likewise reuse their SSA representation because they have no independently
+    mutable payload. Lowering must reject a mutable aggregate when it cannot
+    materialize independent storage for the copy.
 
     The name of the record must be a valid record name for the pod type and the result
     type must match the type of the record.
@@ -253,8 +225,13 @@ def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
   let summary = "writes content into a plain-old-data struct record";
   let description = [{
     Copies a value into a named record of a pod instance. It does not create a pointer
-    or alias between the source value and the record's storage. This operation has no
-    result values.
+    or alias between the source value and the record's storage. For an identity-bearing
+    `struct.type` source, the stored value is a handle to the same component instance;
+    it does not duplicate the component's members, signals, or tables. This operation
+    has no result values. Immutable scalars and shape-only arrays may reuse their SSA
+    representation because they have no independently mutable payload. Lowering must
+    reject a mutable aggregate when it cannot materialize independent storage for the
+    copy.
 
     The name of the record must be a valid record name for the pod type and the source
     value type must match the type of the record.
