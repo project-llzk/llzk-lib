@@ -42,28 +42,17 @@ namespace llzk::witgen {
 
 namespace {
 
-/// Copy a runtime value across a value-semantic boundary, including nested storage.
+/// Copy an aggregate wrapper in constant time, sharing immutable contents until
+/// a write detaches them. SSA aliases still share the same wrapper.
 static WitnessVal copyValue(const WitnessVal &value) {
   if (auto array = std::get_if<ArrayValueRef>(&value)) {
-    auto copy = std::make_shared<ArrayValue>(**array);
-    for (auto &element : copy->elements) {
-      element = copyValue(element);
-    }
-    return copy;
+    return std::make_shared<ArrayValue>(**array);
   }
   if (auto pod = std::get_if<PodValueRef>(&value)) {
-    auto copy = std::make_shared<PodValue>(**pod);
-    for (auto &entry : copy->records) {
-      entry.second = copyValue(entry.second);
-    }
-    return copy;
+    return std::make_shared<PodValue>(**pod);
   }
   if (auto component = std::get_if<StructValueRef>(&value)) {
-    auto copy = std::make_shared<StructValue>(**component);
-    for (auto &entry : copy->members) {
-      entry.second = copyValue(entry.second);
-    }
-    return copy;
+    return std::make_shared<StructValue>(**component);
   }
   return value;
 }
@@ -97,13 +86,13 @@ llvm::Expected<WitnessVal> constantGlobalValue(Attribute attr, Type type, const 
     }
     auto value = std::make_shared<ArrayValue>();
     value->type = arrayType;
-    value->elements.reserve(*count);
+    value->elements.write().reserve(*count);
     for (Attribute element : elements) {
       auto scalar = constantGlobalValue(element, arrayType.getElementType(), field);
       if (!scalar) {
         return scalar.takeError();
       }
-      value->elements.push_back(std::move(*scalar));
+      value->elements.write().push_back(std::move(*scalar));
     }
     return WitnessVal(value);
   }
@@ -720,8 +709,8 @@ private:
       if (!structValue) {
         return structValue.takeError();
       }
-      auto it = (*structValue)->members.find(readMemberOp.getMemberName());
-      if (it == (*structValue)->members.end()) {
+      auto it = (*structValue)->members.read().find(readMemberOp.getMemberName());
+      if (it == (*structValue)->members.read().end()) {
         return makeError("missing struct member");
       }
       return bind({copyValue(it->second)});
@@ -739,7 +728,7 @@ private:
       if (!structValue) {
         return structValue.takeError();
       }
-      (*structValue)->members[writeMemberOp.getMemberName()] = copyValue(*memberValue);
+      (*structValue)->members.write()[writeMemberOp.getMemberName()] = copyValue(*memberValue);
       return BlockResult {};
     }
 
@@ -760,7 +749,7 @@ private:
         if (!value) {
           return value.takeError();
         }
-        (*podRef)->records[init.name] = copyValue(*value);
+        (*podRef)->records.write()[init.name] = copyValue(*value);
       }
       return bind({*podRef});
     }
@@ -773,8 +762,8 @@ private:
       if (!podRef) {
         return podRef.takeError();
       }
-      auto it = (*podRef)->records.find(readPodOp.getRecordName());
-      if (it == (*podRef)->records.end()) {
+      auto it = (*podRef)->records.read().find(readPodOp.getRecordName());
+      if (it == (*podRef)->records.read().end()) {
         return makeError("missing pod record");
       }
       return bind({copyValue(it->second)});
@@ -792,7 +781,7 @@ private:
       if (!podRef) {
         return podRef.takeError();
       }
-      (*podRef)->records[writePodOp.getRecordName()] = copyValue(*recordValue);
+      (*podRef)->records.write()[writePodOp.getRecordName()] = copyValue(*recordValue);
       return BlockResult {};
     }
 
@@ -805,7 +794,7 @@ private:
         if (!elementCount) {
           return elementCount.takeError();
         }
-        arrayValue->elements.reserve(*elementCount);
+        arrayValue->elements.write().reserve(*elementCount);
         for (size_t i = 0; i < *elementCount; ++i) {
           auto elem = defaultValue(
               arrayValue->type.getElementType(), tables, arrayNewOp.getOperation(), field,
@@ -814,16 +803,16 @@ private:
           if (!elem) {
             return elem.takeError();
           }
-          arrayValue->elements.push_back(*elem);
+          arrayValue->elements.write().push_back(*elem);
         }
       } else {
         auto values = collectOperands(arrayNewOp.getElements(), scope);
         if (!values) {
           return values.takeError();
         }
-        arrayValue->elements.reserve(values->size());
+        arrayValue->elements.write().reserve(values->size());
         for (const auto &value : *values) {
-          arrayValue->elements.push_back(copyValue(value));
+          arrayValue->elements.write().push_back(copyValue(value));
         }
       }
       return bind({arrayValue});
@@ -854,7 +843,7 @@ private:
       if (!offset) {
         return offset.takeError();
       }
-      return bind({copyValue((*arrayRef)->elements[*offset])});
+      return bind({copyValue((*arrayRef)->elements.read()[*offset])});
     }
     if (auto writeArrayOp = dyn_cast<array::WriteArrayOp>(op)) {
       auto arrayValue = lookup(writeArrayOp.getArrRef(), scope);
@@ -886,7 +875,7 @@ private:
       if (!offset) {
         return offset.takeError();
       }
-      (*arrayRef)->elements[*offset] = copyValue(*rvalue);
+      (*arrayRef)->elements.write()[*offset] = copyValue(*rvalue);
       return BlockResult {};
     }
     if (auto extractArrayOp = dyn_cast<array::ExtractArrayOp>(op)) {
@@ -931,14 +920,16 @@ private:
       }
       auto subArray = std::make_shared<ArrayValue>();
       subArray->type = extractArrayOp.getType();
-      subArray->elements.reserve(*subArraySize);
+      subArray->elements.write().reserve(*subArraySize);
       for (size_t i = 0; i < *subArraySize; ++i) {
         bool overflow = false;
         size_t elementOffset = llvm::SaturatingAdd(base, i, &overflow);
         if (overflow) {
           return makeError("array.extract element offset would overflow size_t");
         }
-        subArray->elements.push_back(copyValue((*arrayRef)->elements[elementOffset]));
+        subArray->elements.write().push_back(
+            copyValue((*arrayRef)->elements.read()[elementOffset])
+        );
       }
       return bind({subArray});
     }
@@ -972,7 +963,7 @@ private:
         indices.push_back(*index);
       }
       ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
-      size_t subArraySize = (*subArrayRef)->elements.size();
+      size_t subArraySize = (*subArrayRef)->elements.read().size();
       auto prefixOffset =
           checkedLinearize(shape.take_front(indices.size()), indices, "array index out of bounds");
       if (!prefixOffset) {
@@ -989,7 +980,8 @@ private:
         if (overflow) {
           return makeError("array.insert element offset would overflow size_t");
         }
-        (*arrayRef)->elements[elementOffset] = copyValue((*subArrayRef)->elements[i]);
+        (*arrayRef)->elements.write()[elementOffset] =
+            copyValue((*subArrayRef)->elements.read()[i]);
       }
       return BlockResult {};
     }

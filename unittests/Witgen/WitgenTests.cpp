@@ -48,7 +48,7 @@ static std::string substituteFieldName(llvm::StringRef source, llvm::StringRef f
 
 static function::FuncDefOp getUniqueFuncByName(ModuleOp module, StringRef name) {
   function::FuncDefOp result;
-  module.walk([&](function::FuncDefOp funcOp) {
+  module.walk([&result, name](function::FuncDefOp funcOp) {
     if (funcOp.getSymName() == name) {
       result = funcOp;
     }
@@ -69,10 +69,10 @@ TEST_P(WitgenFieldTests, ParseJSONArrayInput) {
   ASSERT_TRUE(static_cast<bool>(value)) << llvm::toString(value.takeError());
 
   auto arrayValue = std::get<witgen::ArrayValueRef>(*value);
-  ASSERT_EQ(arrayValue->elements.size(), 3u);
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[0]), field->get().reduce(1));
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[1]), field->get().reduce(2));
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[2]), field->get().reduce(3));
+  ASSERT_EQ(arrayValue->elements.read().size(), 3u);
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[0]), field->get().reduce(1));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[1]), field->get().reduce(2));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[2]), field->get().reduce(3));
 }
 
 TEST_P(WitgenFieldTests, ParseJSONArrayNestedInput) {
@@ -88,11 +88,11 @@ TEST_P(WitgenFieldTests, ParseJSONArrayNestedInput) {
   ASSERT_TRUE(static_cast<bool>(value)) << llvm::toString(value.takeError());
 
   auto arrayValue = std::get<witgen::ArrayValueRef>(*value);
-  ASSERT_EQ(arrayValue->elements.size(), 4u);
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[0]), field->get().reduce(1));
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[1]), field->get().reduce(2));
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[2]), field->get().reduce(3));
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[3]), field->get().reduce(4));
+  ASSERT_EQ(arrayValue->elements.read().size(), 4u);
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[0]), field->get().reduce(1));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[1]), field->get().reduce(2));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[2]), field->get().reduce(3));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements.read()[3]), field->get().reduce(4));
 }
 
 TEST_P(WitgenFieldTests, DefaultValueFailsOnUninitializedRead) {
@@ -134,15 +134,15 @@ TEST_P(WitgenFieldTests, RandomDefaultValueIsSeeded) {
 
   auto lhsArray = std::get<witgen::ArrayValueRef>(*lhs);
   auto rhsArray = std::get<witgen::ArrayValueRef>(*rhs);
-  ASSERT_EQ(lhsArray->elements.size(), rhsArray->elements.size());
-  ASSERT_EQ(lhsArray->elements.size(), 2u);
+  ASSERT_EQ(lhsArray->elements.read().size(), rhsArray->elements.read().size());
+  ASSERT_EQ(lhsArray->elements.read().size(), 2u);
   EXPECT_EQ(
-      std::get<llvm::DynamicAPInt>(lhsArray->elements[0]),
-      std::get<llvm::DynamicAPInt>(rhsArray->elements[0])
+      std::get<llvm::DynamicAPInt>(lhsArray->elements.read()[0]),
+      std::get<llvm::DynamicAPInt>(rhsArray->elements.read()[0])
   );
   EXPECT_EQ(
-      std::get<llvm::DynamicAPInt>(lhsArray->elements[1]),
-      std::get<llvm::DynamicAPInt>(rhsArray->elements[1])
+      std::get<llvm::DynamicAPInt>(lhsArray->elements.read()[1]),
+      std::get<llvm::DynamicAPInt>(rhsArray->elements.read()[1])
   );
 }
 
@@ -207,7 +207,7 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayRejectsDynamicShape) {
 
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
-  arrayValue->elements.push_back(Field::getField(GetParam()).reduce(1));
+  arrayValue->elements.write().push_back(Field::getField(GetParam()).reduce(1));
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -222,10 +222,10 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
   auto field = Field::getField(GetParam());
-  arrayValue->elements.push_back(field.reduce(1));
-  arrayValue->elements.push_back(field.reduce(2));
-  arrayValue->elements.push_back(field.reduce(3));
-  arrayValue->elements.push_back(field.reduce(4));
+  arrayValue->elements.write().push_back(field.reduce(1));
+  arrayValue->elements.write().push_back(field.reduce(2));
+  arrayValue->elements.write().push_back(field.reduce(3));
+  arrayValue->elements.write().push_back(field.reduce(4));
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -311,9 +311,9 @@ TEST_P(WitgenFieldTests, NestedAggregateFailModeMaterializesMonostate) {
   );
   ASSERT_TRUE(static_cast<bool>(value));
   auto arrayValue = std::get<witgen::ArrayValueRef>(*value);
-  ASSERT_EQ(arrayValue->elements.size(), 2u);
-  EXPECT_TRUE(std::holds_alternative<std::monostate>(arrayValue->elements[0]));
-  EXPECT_TRUE(std::holds_alternative<std::monostate>(arrayValue->elements[1]));
+  ASSERT_EQ(arrayValue->elements.read().size(), 2u);
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(arrayValue->elements.read()[0]));
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(arrayValue->elements.read()[1]));
 }
 
 TEST_P(WitgenFieldTests, SerializeStructOnlyEmitsPublicMembers) {
@@ -346,8 +346,8 @@ TEST_P(WitgenFieldTests, SerializeStructOnlyEmitsPublicMembers) {
 
   auto structValue = std::make_shared<witgen::StructValue>();
   structValue->type = *mainType;
-  structValue->members["out"] = Field::getField(GetParam()).reduce(7);
-  structValue->members["tmp"] = Field::getField(GetParam()).reduce(9);
+  structValue->members.write()["out"] = Field::getField(GetParam()).reduce(7);
+  structValue->members.write()["tmp"] = Field::getField(GetParam()).reduce(9);
 
   auto json = witgen::serializeJSONValue(structValue, *mainType, tables, module->getOperation());
   ASSERT_TRUE(static_cast<bool>(json)) << llvm::toString(json.takeError());
@@ -573,3 +573,14 @@ INSTANTIATE_TEST_SUITE_P(
     // Test small, medium, and large prime fields to cover different code paths.
     ::testing::Values("babybear", "goldilocks", "bn254")
 );
+
+TEST_F(WitgenTests, AggregateCopySharesContentsUntilWritten) {
+  witgen::ArrayValue original;
+  original.elements.write().push_back(int64_t(3));
+  witgen::ArrayValue copy = original;
+  EXPECT_EQ(&original.elements.read(), &copy.elements.read());
+  copy.elements.write()[0] = int64_t(9);
+  EXPECT_NE(&original.elements.read(), &copy.elements.read());
+  EXPECT_EQ(std::get<int64_t>(original.elements.read()[0]), 3);
+  EXPECT_EQ(std::get<int64_t>(copy.elements.read()[0]), 9);
+}

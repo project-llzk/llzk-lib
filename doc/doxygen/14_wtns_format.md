@@ -46,3 +46,6 @@ cross-checks its witness length against an R1CS-lowered clone of the module.
 Circuits that require synthesized R1CS auxiliary wires are rejected until
 witgen can materialize those auxiliary values. Unsupported aggregates and wire
 count mismatches are therefore diagnosed rather than silently serialized.
+
+The interpreter uses copy-on-write aggregate storage. Value copies share contents
+until mutation, while SSA aliases refer to the same aggregate wrapper.

@@ -164,18 +164,18 @@ static llvm::Expected<WitnessVal> parseJSONArray(
   auto arrayValue = std::make_shared<ArrayValue>();
   arrayValue->type = type;
   if (dimIndex == shape.size() - 1) {
-    arrayValue->elements.reserve(jsonArray->size());
+    arrayValue->elements.write().reserve(jsonArray->size());
     for (const llvm::json::Value &elem : *jsonArray) {
       auto parsed = parseJSONValue(&elem, type.getElementType(), field, origin);
       if (!parsed) {
         return parsed.takeError();
       }
-      arrayValue->elements.push_back(*parsed);
+      arrayValue->elements.write().push_back(*parsed);
     }
     return arrayValue;
   }
 
-  arrayValue->elements.reserve(jsonArray->size());
+  arrayValue->elements.write().reserve(jsonArray->size());
   for (const llvm::json::Value &elem : *jsonArray) {
     auto parsed = parseJSONArray(&elem, type, field, origin, dimIndex + 1);
     if (!parsed) {
@@ -185,8 +185,8 @@ static llvm::Expected<WitnessVal> parseJSONArray(
     if (!subArray) {
       return subArray.takeError();
     }
-    for (const WitnessVal &subElem : (*subArray)->elements) {
-      arrayValue->elements.push_back(subElem);
+    for (const WitnessVal &subElem : (*subArray)->elements.read()) {
+      arrayValue->elements.write().push_back(subElem);
     }
   }
   return arrayValue;
@@ -219,7 +219,7 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
         return makeError("JSON array output flat index would overflow size_t");
       }
       auto elem = serializeJSONValue(
-          arrayValue->elements[elementOffset], type.getElementType(), tables, origin, mode
+          arrayValue->elements.read()[elementOffset], type.getElementType(), tables, origin, mode
       );
       if (!elem) {
         return elem.takeError();
@@ -323,8 +323,8 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     }
     llvm::json::Object result;
     for (pod::RecordAttr record : podType.getRecords()) {
-      auto it = (*podValue)->records.find(record.getName().getValue());
-      if (it == (*podValue)->records.end()) {
+      auto it = (*podValue)->records.read().find(record.getName().getValue());
+      if (it == (*podValue)->records.read().end()) {
         return makeError("missing POD record during JSON serialization");
       }
       auto serialized = serializeJSONValue(it->second, record.getType(), tables, origin, mode);
@@ -346,8 +346,8 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     }
     llvm::json::Object result;
     for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
-      auto it = (*structValue)->members.find(member.getSymName());
-      if (it == (*structValue)->members.end()) {
+      auto it = (*structValue)->members.read().find(member.getSymName());
+      if (it == (*structValue)->members.read().end()) {
         return makeError("missing struct member during JSON serialization");
       }
 
@@ -440,8 +440,8 @@ llvm::Expected<WitnessVal> extractValueAtPath(
       if (member.getSymName() != path.front()) {
         continue;
       }
-      auto it = (*structValue)->members.find(member.getSymName());
-      if (it == (*structValue)->members.end()) {
+      auto it = (*structValue)->members.read().find(member.getSymName());
+      if (it == (*structValue)->members.read().end()) {
         return makeError("missing struct member while extracting witness value");
       }
       return extractValueAtPath(it->second, member.getType(), path.drop_front(), tables, origin);
@@ -458,8 +458,8 @@ llvm::Expected<WitnessVal> extractValueAtPath(
       if (record.getName().getValue() != path.front()) {
         continue;
       }
-      auto it = (*podValue)->records.find(record.getName().getValue());
-      if (it == (*podValue)->records.end()) {
+      auto it = (*podValue)->records.read().find(record.getName().getValue());
+      if (it == (*podValue)->records.read().end()) {
         return makeError("missing POD record while extracting witness value");
       }
       return extractValueAtPath(it->second, record.getType(), path.drop_front(), tables, origin);
