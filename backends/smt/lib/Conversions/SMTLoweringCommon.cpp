@@ -58,7 +58,8 @@ Value SMTIntTheoryEmitter::emitFreshSymbol(OpBuilder &builder, Location loc, Str
   std::string freshName = getFreshName(name);
   return smt::DeclareFunOp::create(
              builder, loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
-  ).getResult();
+  )
+      .getResult();
 }
 
 Value SMTIntTheoryEmitter::emitConstant(
@@ -99,7 +100,8 @@ Value SMTIntTheoryEmitter::emitSignedRem(
 
 Value SMTIntTheoryEmitter::emitModPrime(OpBuilder &builder, Location loc, Value value) const {
   auto primeConst = createPrimeConstant(builder, loc);
-  return smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()}).getResult();
+  return smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
+      .getResult();
 }
 
 Value SMTIntTheoryEmitter::emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const {
