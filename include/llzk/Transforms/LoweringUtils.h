@@ -43,6 +43,14 @@ mlir::Value rebuildExprInCompute(
     llvm::DenseMap<mlir::Value, mlir::Value> &memo
 );
 
+/// Capture input-rooted scalar reads at compute entry before local input mutations.
+/// Seed each return's rebuild memo with these values; output reads must still use
+/// the component returned on that path.
+mlir::LogicalResult captureAuxiliaryInputs(
+    llvm::ArrayRef<mlir::Value> expressions, function::FuncDefOp computeFunc,
+    llvm::DenseMap<mlir::Value, mlir::Value> &captured
+);
+
 mlir::LogicalResult
 checkForAuxMemberConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
 

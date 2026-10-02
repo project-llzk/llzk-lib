@@ -21,6 +21,8 @@ namespace llzk::witgen {
 enum class SerializationMode : std::uint8_t {
   PublicOutputsOnly,
   AllSignals,
+  /// Include private nested storage used by the evaluated R1CS wire map.
+  AllStorage,
 };
 
 /// One structured JSON mismatch between expected and actual witgen output.
@@ -31,8 +33,7 @@ struct JSONMismatch {
 
 /// Parse one JSON value into the tool's runtime representation.
 llvm::Expected<WitnessVal> parseJSONValue(
-    const llvm::json::Value *json, mlir::Type type, const llzk::Field &field,
-    mlir::Operation *origin
+    const llvm::json::Value *json, mlir::Type type, const Field &field, mlir::Operation *origin
 );
 
 /// Serialize one runtime value into the user-facing JSON output format.

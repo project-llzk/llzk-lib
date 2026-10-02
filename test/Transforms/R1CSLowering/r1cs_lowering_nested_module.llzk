@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-r1cs-lowering %s | FileCheck %s
+// RUN: llzk-opt -llzk-r1cs-lowering=legacy=true %s | FileCheck %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main::@Main>} {
   module @Main {

@@ -1,0 +1,3 @@
+// RUN: llzk-opt %S/prepare_only_legacy_pass.llzk --llzk-r1cs-prepare -o %t
+// RUN: llzk-opt %t --llzk-r1cs-prepare -o %t.again
+// RUN: diff %t %t.again
