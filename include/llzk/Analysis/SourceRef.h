@@ -193,6 +193,9 @@ private:
   Path &getPathMut() { return path; }
   const void *getAsOpaquePointer() const { return value.getAsOpaquePointer(); }
   SortCategory getSortCategory() const;
+  /// Numeric identity key: field representatives for specified fields, raw storage otherwise.
+  /// Only valid for constant felt or index references; not a fieldless semantic evaluation.
+  llvm::DynamicAPInt getConstantIdentityValue() const;
   llvm::StringRef getTemplateConstantName() const;
   std::strong_ordering compareWithinCategory(const SourceRef &rhs, SortCategory category) const;
 
@@ -295,11 +298,13 @@ public:
   bool isCallResult() const { return succeeded(getCallOp()); }
   mlir::FailureOr<function::CallOp> getCallOp() const { return getDefiningOp<function::CallOp>(); }
 
+  /// Return the field representative, or failure for a nonconstant or unspecified field.
   mlir::FailureOr<llvm::DynamicAPInt> getConstantFeltValue() const {
     auto feltConst = getDefiningOp<felt::FeltConstantOp>();
     if (succeeded(feltConst)) {
-      llvm::APInt i = feltConst->getValue();
-      return toDynamicAPInt(i);
+      if (auto reduced = feltConst->getValue().getReducedValue()) {
+        return *reduced;
+      }
     }
     return mlir::failure();
   }
@@ -310,6 +315,11 @@ public:
     }
     return mlir::failure();
   }
+  /// Evaluate a numeric constant using the supplied field when its type is fieldless. Felt
+  /// values are reduced into the supplied analysis field; indices retain integer semantics.
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantValue(const Field &field) const;
+
+  /// Return a known numeric value, failing for fieldless felt constants.
   mlir::FailureOr<llvm::DynamicAPInt> getConstantValue() const {
     auto feltVal = getConstantFeltValue();
     if (succeeded(feltVal)) {

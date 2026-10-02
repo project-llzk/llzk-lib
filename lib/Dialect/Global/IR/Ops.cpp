@@ -69,7 +69,7 @@ normalizeGlobalInitializer(FeltType expectedType, Attribute value, EmitErrorFn) 
     if (!expectedType.hasField() && valueType.hasField()) {
       expectedType = valueType;
     } else if (expectedType.hasField() && !valueType.hasField()) {
-      value = FeltConstAttr::get(value.getContext(), feltValue.getValue(), expectedType);
+      value = FeltConstAttr::get(value.getContext(), feltValue.getRawValue(), expectedType);
     }
   }
   return NormalizedGlobalInitializer {expectedType, value};

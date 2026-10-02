@@ -318,14 +318,14 @@ template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
-  APInt getValue(FeltConstantOp op) const { return op.getValue().getValue(); }
+  APInt getValue(FeltConstantOp op) const { return toAPSInt(op.getValue().getReducedValueOrRaw()); }
 };
 
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
   APInt getValue(arith::ConstantOp op) const {
     // Extend width by 1 bit to avoid sign issues.
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    APInt value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
     return value.zext(value.getBitWidth() + 1);
   }
 };

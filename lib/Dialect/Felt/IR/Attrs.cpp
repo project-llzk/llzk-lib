@@ -9,13 +9,31 @@
 
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 
+#include "llzk/Util/DynamicAPIntHelper.h"
+
 using namespace mlir;
 
 namespace llzk::felt {
 
 StringAttr FeltConstAttr::getFieldName() const {
-  auto ft = getType();
+  FeltType ft = getType();
   return ft ? ft.getFieldName() : StringAttr();
+}
+
+std::optional<llvm::DynamicAPInt> FeltConstAttr::getReducedValue() const {
+  FeltType type = getType();
+  if (!type || !type.hasField()) {
+    return std::nullopt;
+  }
+  const Field &field = type.getField();
+  return field.reduce(getRawValue());
+}
+
+llvm::DynamicAPInt FeltConstAttr::getReducedValueOrRaw() const {
+  if (auto reduced = getReducedValue()) {
+    return *reduced;
+  }
+  return toDynamicAPInt(getRawValue());
 }
 
 } // namespace llzk::felt

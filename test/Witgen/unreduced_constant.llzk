@@ -1,0 +1,32 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json > %t/actual.json
+// RUN: diff -w %t/expected.json %t/actual.json
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine > %t/actual.json
+// RUN: diff -w %t/expected.json %t/actual.json
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %constant = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %constant : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %seven = felt.const 7 : !felt.type<"babybear">
+      constrain.eq %out, %seven : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}
+
+//--- expected.json
+{
+  "out": "7"
+}

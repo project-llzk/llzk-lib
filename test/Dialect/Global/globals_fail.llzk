@@ -103,7 +103,7 @@ module attributes {llzk.lang} {
 // TEST: 'felt' type global initialized with unparsable attribute
 module attributes {llzk.lang} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
-  // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
+  // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'rawValue' which is to be a `::llvm::APInt`}}
   global.def const @g : !felt.type = unparseable
 }
 
@@ -120,7 +120,7 @@ module attributes {llzk.lang} {
 // TEST: 'felt' type global initialized with incorrect attribute kind
 module attributes {llzk.lang} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
-  // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
+  // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'rawValue' which is to be a `::llvm::APInt`}}
   global.def const @g : !felt.type = "Hello"
 }
 
@@ -290,7 +290,7 @@ module attributes {llzk.lang} {
 // TEST: 'felt' type global initialized with incorrect attribute kind
 module attributes {llzk.lang} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
-  // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
+  // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'rawValue' which is to be a `::llvm::APInt`}}
   global.def const @g : !felt.type = "Hello"
 }
 

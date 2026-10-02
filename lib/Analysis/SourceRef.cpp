@@ -257,7 +257,7 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
   case SortCategory::ConstantIndex:
     return compareDynamicAPInt(*getConstantIndexValue(), *rhs.getConstantIndexValue());
   case SortCategory::ConstantFelt:
-    return compareDynamicAPInt(*getConstantFeltValue(), *rhs.getConstantFeltValue());
+    return compareDynamicAPInt(getConstantIdentityValue(), rhs.getConstantIdentityValue());
   }
 
   llvm_unreachable("unhandled SourceRef category compare");
@@ -593,7 +593,7 @@ static bool shouldPrintNamedCallResult(
 
 void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
-    os << "<felt.const: " << *getConstantFeltValue() << '>';
+    os << "<felt.const: " << getConstantIdentityValue() << '>';
   } else if (isConstantIndex()) {
     os << "<index: " << *getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
@@ -651,10 +651,26 @@ void SourceRef::print(raw_ostream &os) const {
   }
 }
 
+FailureOr<DynamicAPInt> SourceRef::getConstantValue(const Field &field) const {
+  if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
+    return field.reduce(feltConst->getValue().getReducedValueOrRaw());
+  }
+  return getConstantIndexValue();
+}
+
+DynamicAPInt SourceRef::getConstantIdentityValue() const {
+  if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
+    return feltConst->getValue().getReducedValueOrRaw();
+  }
+  auto index = getConstantIndexValue();
+  ensure(succeeded(index), "expected a numeric constant reference");
+  return *index;
+}
+
 bool SourceRef::operator==(const SourceRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
-    DynamicAPInt lhsVal = *getConstantValue(), rhsVal = *rhs.getConstantValue();
+    DynamicAPInt lhsVal = getConstantIdentityValue(), rhsVal = rhs.getConstantIdentityValue();
     return getType() == rhs.getType() && lhsVal == rhsVal;
   }
   return constant == rhs.constant && value == rhs.value && llvm::equal(getPath(), rhs.getPath());
@@ -672,7 +688,7 @@ std::strong_ordering SourceRef::operator<=>(const SourceRef &rhs) const {
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
   if (val.isConstantInt()) {
-    return llvm::hash_combine(val.getType(), *val.getConstantValue());
+    return llvm::hash_combine(val.getType(), val.getConstantIdentityValue());
   } else if (val.isTemplateConstant()) {
     return llvm::hash_value(val.getAsOpaquePointer());
   } else {

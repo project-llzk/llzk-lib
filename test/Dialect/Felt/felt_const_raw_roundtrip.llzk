@@ -1,0 +1,14 @@
+// RUN: llzk-opt %s | FileCheck %s
+// RUN: llzk-opt --emit-bytecode %s | llzk-opt | FileCheck %s
+
+// Printing and bytecode preserve raw storage even though the value denotes 7.
+function.def @raw_roundtrip() -> !felt.type<"babybear"> {
+  %c = felt.const 2013265928 : !felt.type<"babybear">
+  function.return %c : !felt.type<"babybear">
+}
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @raw_roundtrip() -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  2013265928 : <"babybear">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

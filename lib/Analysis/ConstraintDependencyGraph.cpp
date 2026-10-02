@@ -96,8 +96,10 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
         const auto &idxVals = idxIt->second;
 
-        if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-          indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+        auto constantIndex = idxVals.isSingleValue() ? idxVals.getSingleValue().getConstantValue()
+                                                     : FailureOr<DynamicAPInt>();
+        if (succeeded(constantIndex)) {
+          indices.emplace_back(*constantIndex);
         } else {
           auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
           auto lower = APInt::getZero(64);
@@ -303,8 +305,10 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     const auto &idxVals = idxIt->second->getValue();
 
-    if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+    auto constantIndex = idxVals.isSingleValue() ? idxVals.getSingleValue().getConstantValue()
+                                                 : FailureOr<DynamicAPInt>();
+    if (succeeded(constantIndex)) {
+      indices.emplace_back(*constantIndex);
     } else {
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
       auto lower = APInt::getZero(64);

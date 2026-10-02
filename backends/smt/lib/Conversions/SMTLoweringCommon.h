@@ -132,13 +132,20 @@ public:
   ) const override;
 };
 
+/// Lower constants to canonical integers using the selected field for fieldless types.
 class FeltConstConverter : public mlir::OpConversionPattern<felt::FeltConstantOp> {
-  using mlir::OpConversionPattern<felt::FeltConstantOp>::OpConversionPattern;
-
 public:
+  FeltConstConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, llvm::APSInt selectedPrime
+  )
+      : OpConversionPattern(converter, context), prime(std::move(selectedPrime)) {}
+
   mlir::LogicalResult matchAndRewrite(
       felt::FeltConstantOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
+
+private:
+  llvm::APSInt prime;
 };
 
 /// Lower felt negation to upstream SMT subtraction from an explicit zero.

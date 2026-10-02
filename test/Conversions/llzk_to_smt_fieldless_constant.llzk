@@ -1,0 +1,69 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=ReducedConstant' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck %s --check-prefix=OPT
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=ReducedConstant' --llzk-to-smt-no-cf-naive='field=babybear' %s | FileCheck %s --check-prefix=NAIVE
+
+// No canonicalization: the consumer must interpret N modulo its field prime.
+module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
+  struct.def @ReducedConstant {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@ReducedConstant> {
+      %self = struct.new : !struct.type<@ReducedConstant>
+      %c = felt.const 2013265928 : !felt.type
+      struct.writem %self[@out] = %c : !struct.type<@ReducedConstant>, !felt.type
+      function.return %self : !struct.type<@ReducedConstant>
+    }
+    function.def @constrain(%self: !struct.type<@ReducedConstant>) {
+      %out = struct.readm %self[@out] : !struct.type<@ReducedConstant>, !felt.type
+      %c = felt.const 2013265928 : !felt.type
+      constrain.eq %out, %c : !felt.type
+      function.return
+    }
+  }
+}
+
+// OPT-LABEL: module attributes {llzk.lang} {
+// OPT-NEXT:    func.func @smt_ReducedConstant() {
+// OPT-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
+// OPT-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_0]], %[[VAL_2]]
+// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_0]], %[[VAL_3]]
+// OPT-NEXT:      smt.assert %[[VAL_4]]
+// OPT-NEXT:      smt.assert %[[VAL_5]]
+// OPT-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// OPT-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// OPT-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_1]], %[[VAL_6]]
+// OPT-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_1]], %[[VAL_7]]
+// OPT-NEXT:      smt.assert %[[VAL_8]]
+// OPT-NEXT:      smt.assert %[[VAL_9]]
+// OPT-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// OPT-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_1]], %[[VAL_10]] : !smt.int
+// OPT-NEXT:      smt.assert %[[VAL_11]]
+// OPT-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// OPT-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_0]], %[[VAL_12]] : !smt.int
+// OPT-NEXT:      smt.assert %[[VAL_13]]
+// OPT-NEXT:      return
+// OPT-NEXT:    }
+// OPT-NEXT:  }
+
+// NAIVE-LABEL: module attributes {llzk.lang} {
+// NAIVE-NEXT:    func.func @smt_ReducedConstant() {
+// NAIVE-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
+// NAIVE-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// NAIVE-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// NAIVE-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// NAIVE-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_1]], %[[VAL_3]]
+// NAIVE-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// NAIVE-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_2]], %[[VAL_5]]
+// NAIVE-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_4]], %[[VAL_6]] : !smt.int
+// NAIVE-NEXT:      smt.assert %[[VAL_7]]
+// NAIVE-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// NAIVE-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// NAIVE-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_0]], %[[VAL_9]]
+// NAIVE-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// NAIVE-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_8]], %[[VAL_11]]
+// NAIVE-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_10]], %[[VAL_12]] : !smt.int
+// NAIVE-NEXT:      smt.assert %[[VAL_13]]
+// NAIVE-NEXT:      return
+// NAIVE-NEXT:    }
+// NAIVE-NEXT:  }

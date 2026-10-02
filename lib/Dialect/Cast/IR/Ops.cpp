@@ -22,6 +22,8 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 
+#include <limits>
+
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
@@ -107,15 +109,13 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    auto value = constOp.getValue().getValue();
-    // Require a nonnegative APInt representation that fits in the signed 64-bit index builder.
-    // The sign check also protects programmatically constructed attributes whose APInt width was
-    // not normalized by the textual IR parser.
-    if (!value.isNegative() && value.getActiveBits() <= 63) {
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(
-          op, static_cast<int64_t>(value.getZExtValue())
-      );
-      return success();
+    if (auto reduced = constOp.getValue().getReducedValue()) {
+      const DynamicAPInt &val = *reduced;
+      // The index builder requires a value that fits in a signed 64-bit integer.
+      if (val >= 0 && val <= std::numeric_limits<int64_t>::max()) {
+        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, static_cast<int64_t>(val));
+        return success();
+      }
     }
   }
   return failure();

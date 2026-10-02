@@ -9,10 +9,12 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -20,6 +22,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/SmallVector.h>
 
+#include <array>
 #include <gtest/gtest.h>
 
 using namespace mlir;
@@ -86,13 +89,48 @@ protected:
   /// Assert that fold produced the expected unsigned integer value in babybear.
   void expectValue(FeltConstAttr result, uint64_t expected) {
     ASSERT_TRUE(result) << "expected fold to succeed";
-    EXPECT_EQ(result.getValue().getZExtValue(), expected);
+    EXPECT_EQ(result.getRawValue().getZExtValue(), expected);
     EXPECT_EQ(result.getFieldName(), StringAttr::get(&ctx, BB_FIELD));
   }
 
   /// Assert that no fold occurred (fold returned null/empty).
   void expectNoFold(FeltConstAttr result) { EXPECT_FALSE(result) << "expected fold to be skipped"; }
 };
+
+TEST_F(BabyBearFoldTest, ReducedConstantBoundaries) {
+  for (uint64_t value :
+       std::array<uint64_t, 6> {0, 1, BB_PRIME - 1, BB_PRIME, BB_PRIME + 1, 2 * BB_PRIME}) {
+    auto attr = babyBearConst(value);
+    ASSERT_TRUE(attr.getReducedValue());
+    EXPECT_EQ(*attr.getReducedValue(), value % BB_PRIME);
+    EXPECT_EQ(attr.getReducedValueOrRaw(), value % BB_PRIME);
+    EXPECT_EQ(attr.getRawValue().getZExtValue(), value);
+  }
+}
+
+TEST_F(BabyBearFoldTest, ReducedConstantUsesUnsignedValue) {
+  auto attr = FeltConstAttr::get(&ctx, APInt(8, 255), BB_FIELD);
+  ASSERT_TRUE(attr.getReducedValue());
+  EXPECT_EQ(*attr.getReducedValue(), 255U);
+}
+
+TEST_F(BabyBearFoldTest, ReducedConstantHandlesWideValues) {
+  APInt prime(256, BB_PRIME);
+  APInt raw = prime * APInt::getOneBitSet(256, 128) + APInt(256, 17);
+  auto attr = FeltConstAttr::get(&ctx, raw, BB_FIELD);
+  ASSERT_TRUE(attr.getReducedValue());
+  EXPECT_EQ(*attr.getReducedValue(), 17U);
+  EXPECT_EQ(attr.getRawValue(), raw);
+}
+
+TEST_F(BabyBearFoldTest, ReducedConstantWithoutFieldIsAbsent) {
+  APInt raw = APInt::getAllOnes(256);
+  auto attr = FeltConstAttr::get(&ctx, raw);
+  EXPECT_FALSE(attr.getReducedValue());
+  EXPECT_EQ(attr.getReducedValueOrRaw(), toDynamicAPInt(raw));
+  EXPECT_GT(attr.getReducedValueOrRaw(), 0);
+  EXPECT_EQ(attr.getRawValue(), raw);
+}
 
 //===------------------------------------------------------------------===//
 // felt.add
@@ -335,13 +373,13 @@ TEST_F(BabyBearFoldTest, Shr) {
 }
 
 TEST_F(BabyBearFoldTest, Shr30) {
-  // BB_PRIME >> 30 = 1 (only highest bit remains, all others shifted out)
-  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(30)), 1);
+  // (BB_PRIME - 1) >> 30 = 1 (only the highest bit remains).
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME - 1), babyBearConst(30)), 1);
 }
 
 TEST_F(BabyBearFoldTest, Shr31) {
-  // BB_PRIME >> 31 = 0 (shifts all bits out since BB_PRIME is 31 bits)
-  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(31)), 0);
+  // (BB_PRIME - 1) >> 31 = 0 (all 31 bits are shifted out).
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME - 1), babyBearConst(31)), 0);
 }
 
 //===------------------------------------------------------------------===//
@@ -355,4 +393,48 @@ TEST_F(BabyBearFoldTest, BitNotZero) {
 
 TEST_F(BabyBearFoldTest, BitNotNoFoldUnspecified) {
   expectNoFold(foldUnary<NotFeltOp>(unspecifiedConst(0)));
+}
+
+TEST_F(BabyBearFoldTest, FoldsReduceUncanonicalizedOperands) {
+  auto one = babyBearConst(BB_PRIME + 1);
+  auto two = babyBearConst(2);
+  auto zero = babyBearConst(BB_PRIME);
+  expectValue(foldBinary<ShrFeltOp>(zero, babyBearConst(30)), 0);
+  expectValue(foldBinary<UnsignedIntDivFeltOp>(one, two), 0);
+  expectValue(foldBinary<UnsignedModFeltOp>(one, two), 1);
+  expectValue(foldBinary<SignedIntDivFeltOp>(one, two), 0);
+  expectValue(foldBinary<SignedModFeltOp>(one, two), 1);
+  expectValue(foldBinary<AndFeltOp>(one, two), 0);
+  expectValue(foldBinary<OrFeltOp>(one, two), 3);
+  expectValue(foldBinary<PowFeltOp>(two, one), 2);
+  expectNoFold(foldBinary<DivFeltOp>(two, zero));
+  expectNoFold(foldBinary<UnsignedIntDivFeltOp>(two, zero));
+  expectNoFold(foldBinary<UnsignedModFeltOp>(two, zero));
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexReducesWithoutCanonicalizingConstant) {
+  Block block;
+  PatternRewriter rewriter(&ctx);
+  rewriter.setInsertionPointToEnd(&block);
+  auto constant = FeltConstantOp::create(rewriter, loc, babyBearConst(BB_PRIME + 7));
+  ASSERT_TRUE(constant.getValue().getReducedValue());
+  EXPECT_EQ(*constant.getValue().getReducedValue(), 7U);
+  auto cast = llzk::cast::FeltToIndexOp::create(rewriter, loc, constant.getResult());
+  ASSERT_TRUE(succeeded(llzk::cast::FeltToIndexOp::canonicalize(cast, rewriter)));
+  auto index = dyn_cast<arith::ConstantIndexOp>(block.back());
+  ASSERT_TRUE(index);
+  EXPECT_EQ(index.value(), 7);
+  EXPECT_EQ(constant.getValue().getRawValue().getZExtValue(), BB_PRIME + 7);
+}
+
+// Exercise the fold hook directly so constant canonicalization cannot mask regressions.
+TEST_F(BabyBearFoldTest, UnaryFoldsReduceUncanonicalizedOperands) {
+  auto zero = babyBearConst(BB_PRIME);
+  auto one = babyBearConst(BB_PRIME + 1);
+  expectNoFold(foldUnary<InvFeltOp>(zero));
+  expectValue(foldUnary<InvFeltOp>(one), 1);
+  expectValue(foldUnary<NegFeltOp>(zero), 0);
+  expectValue(foldUnary<NegFeltOp>(one), BB_PRIME - 1);
+  expectValue(foldUnary<NotFeltOp>(zero), 134217726);
+  expectValue(foldUnary<NotFeltOp>(one), 134217725);
 }
