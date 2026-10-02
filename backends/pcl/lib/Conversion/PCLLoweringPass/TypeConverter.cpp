@@ -86,7 +86,7 @@ PCLTypeConverter::PCLTypeConverter() {
       return nullptr;
     }
 
-    llvm::APInt zeroValue;
+    llvm::DynamicAPInt zeroValue;
     auto zero = ConstOp::create(builder, location, FeltAttr::get(builder.getContext(), zeroValue));
     auto eqOp = CmpEqOp::create(builder, location, values[0], zero);
     return NotOp::create(builder, location, eqOp);

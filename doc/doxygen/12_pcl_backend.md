@@ -10,3 +10,10 @@
 Allows LLZK to be lowered to PCL (Picus Constraint Language) for use with the [Picus](https://docs.audithub.dev/picus-v2/) verifier
 
 \include{doc} build/doc/mlir/dialect/PCLDialect.md
+
+## Integer values
+
+PCL felt constants and prime moduli use signed arbitrary-precision integers.
+Arithmetic intermediates grow as needed and are reduced modulo the module's
+prime. Literal storage widths have no semantic meaning. A module prime must be
+at least two; producers remain responsible for choosing a prime modulus.

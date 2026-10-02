@@ -132,13 +132,20 @@ public:
   ) const override;
 };
 
+/// Lower a felt literal using the field selected by the enclosing SMT pass.
 class FeltConstConverter : public mlir::OpConversionPattern<felt::FeltConstantOp> {
-  using mlir::OpConversionPattern<felt::FeltConstantOp>::OpConversionPattern;
-
 public:
+  FeltConstConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, const llvm::DynamicAPInt &modulus
+  )
+      : OpConversionPattern(converter, context), prime(modulus) {}
+
   mlir::LogicalResult matchAndRewrite(
       felt::FeltConstantOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
+
+private:
+  llvm::DynamicAPInt prime;
 };
 
 /// Lower felt negation to upstream SMT subtraction from an explicit zero.

@@ -390,3 +390,14 @@ module attributes {llzk.lang} {
   SourceRef afterArg(whileOp.getAfter().front().getArgument(0));
   EXPECT_EQ(buildStringViaPrint(afterArg), "%arg0");
 }
+
+TEST_F(SourceRefTests, NumericKeyHashIgnoresIntegerRepresentation) {
+  DynamicAPInt narrow(7), wide(llvm::APInt(256, 7));
+  SourceRefIndex a(narrow), b(wide);
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(SourceRefIndex::Hash {}(a), SourceRefIndex::Hash {}(b));
+  SourceRefIndex x(std::pair {narrow, narrow + 3});
+  SourceRefIndex y(std::pair {wide, wide + 3});
+  EXPECT_EQ(x, y);
+  EXPECT_EQ(SourceRefIndex::Hash {}(x), SourceRefIndex::Hash {}(y));
+}
