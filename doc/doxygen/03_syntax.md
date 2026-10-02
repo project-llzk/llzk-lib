@@ -63,3 +63,21 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 - All references to functions and types must use fully-qualified paths.
 
 [circomlib-and-gate]: https://github.com/iden3/circomlib/blob/master/circuits/gates.circom#L29-L35
+
+### Mathematical integers and fixed-width encodings
+
+LLZK's arbitrary-precision arithmetic uses signed mathematical integers. Bitwise
+AND, OR, and XOR use infinite two's-complement sign extension. Field reduction
+maps an integer into `[0, p)`; signed field operations interpret that representative
+using the field's signed threshold. A storage width is not part of an integer's
+numeric identity.
+
+Conversions to machine integers, MLIR integer values, and binary encodings must
+specify the signed interpretation and check that the value fits. C++ clients can
+use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
+to report invalid input and overflow without depending on assertions.
+
+During the four-stage migration, the old `toAPInt` and `toExactWidthAPInt` helpers
+remain temporary adapters for existing callers. Stage 4 removes them after all
+callers move to checked fixed-width encoding. APInt/APSInt decoding and encoding
+at LLVM/MLIR boundaries remain necessary after the migration.
