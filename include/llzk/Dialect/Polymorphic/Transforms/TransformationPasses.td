@@ -98,12 +98,12 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     Reachable free-function calls are diagnosed until function support is added.
     Includes must be inlined before running this pass.
   }];
-  let options = [
-    Option<"specializationLimit", "max-specializations", "unsigned", "1000",
-           "Maximum number of concrete struct definitions">,
-    Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
-           "Maximum steps shared by template expressions and methods in one discovery run">
-  ];
+  let options =
+      [Option<"specializationLimit", "max-specializations", "unsigned", "1000",
+              "Maximum number of concrete struct definitions">,
+       Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
+              "Maximum steps shared by template expressions and methods in one "
+              "discovery run">];
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
