@@ -37,7 +37,8 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
-/// Use the declared parameter type for specialization identity and substitution.
+/// Canonicalize equivalent typed arguments while preserving integers whose
+/// original value may be forwarded to another template parameter.
 /// Untyped parameters retain their supplied attributes.
 FailureOr<ArrayAttr>
 normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site) {
@@ -56,6 +57,21 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
           if (number.getActiveBits() <= 63) {
             value = IntegerAttr::get(indexType, number.getZExtValue());
           }
+        } else if (
+            auto integer = dyn_cast<IntegerAttr>(argument);
+            integer && integer.getType().isSignlessInteger(1)
+        ) {
+          value = IntegerAttr::get(indexType, integer.getValue().getZExtValue());
+        }
+      } else if (
+          auto integerType = dyn_cast<IntegerType>(*expected);
+          integerType && integerType.isSignlessInteger(1)
+      ) {
+        if (auto integer = dyn_cast<IntegerAttr>(argument);
+            integer && isa<IndexType>(integer.getType()) &&
+            (integer.getValue().isZero() || integer.getValue().isOne())) {
+          const APInt &number = integer.getValue();
+          value = IntegerAttr::get(integerType, number.isOne() ? 1 : 0);
         }
       } else if (auto feltType = dyn_cast<FeltType>(*expected)) {
         if (auto integer = dyn_cast<IntegerAttr>(argument);
@@ -70,6 +86,11 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
         matches = isa<TypeAttr>(value);
       } else if (auto typed = dyn_cast<TypedAttr>(value)) {
         matches = typed.getType() == *expected;
+      }
+      if (auto integer = dyn_cast<IntegerAttr>(value); !matches && integer &&
+                                                       isa<IndexType>(integer.getType()) &&
+                                                       expected->isSignlessInteger(1)) {
+        matches = true;
       }
       if (!matches) {
         site->emitError("struct argument ") << argument << " does not match parameter @"

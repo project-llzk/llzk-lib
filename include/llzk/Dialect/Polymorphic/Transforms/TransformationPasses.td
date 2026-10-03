@@ -85,9 +85,12 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     definition is outside that root is diagnosed at the instantiation site.
     Arguments to typed `poly.param` declarations are converted to the declared
     type when their values are preserved, before forming a cache key. An
-    unconvertible argument is diagnosed. Untyped parameters retain their input
+    incompatible argument is diagnosed. Untyped parameters retain their input
     attributes, so differently spelled numeric values can create distinct
-    specializations.
+    specializations. For an `i1` parameter, index zero and one match boolean
+    false and true. Other index values remain distinct: an `i1` read interprets
+    any nonzero value as true, but forwarding the parameter to an index-typed
+    template can still use its original integer value.
 
     Methods must be defined and single-block. Supported regions are `scf.if`,
     signed `scf.for` with known bounds and positive steps, and `scf.while` with

@@ -1,6 +1,6 @@
-// Typed numeric arguments select one specialization regardless of their input spelling.
-// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
-// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+// Equivalent typed numeric arguments select one specialization.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s --enable-var-scope
 
 // A felt constant and an index constant both request Child<3>.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "felt_to_index"} {
@@ -34,6 +34,131 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK: arith.constant 3 : index
 // CHECK:        } {poly.arguments = [3 : index], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
 // CHECK-NOT:    struct.def @Child__spec_2
+
+// -----
+
+// An index argument uses the declared i1 parameter's zero/nonzero semantics.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "index_to_i1"} {
+  poly.template @ChildTemplate {
+    poly.param @N : i1
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-warning@+1 {{Interpreting non-zero value 98 as true}}
+        %n = poly.read_const @N : i1
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @a : !struct.type<@ChildTemplate::@Child<[true]>>
+    // expected-note@+1 {{when instantiating 'struct.def' parameter "@N" for this specialization}}
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[98]>>
+    struct.member @c : !struct.type<@ChildTemplate::@Child<[false]>>
+    struct.member @d : !struct.type<@ChildTemplate::@Child<[0]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "index_to_i1"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK-NEXT:     struct.member @a : !struct.type<@Child__spec_1>
+// CHECK-NEXT:     struct.member @b : !struct.type<@Child__spec_2>
+// CHECK-NEXT:     struct.member @c : !struct.type<@Child__spec_3>
+// CHECK-NEXT:     struct.member @d : !struct.type<@Child__spec_3>
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK:          arith.constant true
+// CHECK:        } {poly.arguments = [true], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
+// CHECK:        struct.def @Child__spec_2 {
+// CHECK:          arith.constant true
+// CHECK:        } {poly.arguments = [98 : index], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 2 : i64}
+// CHECK:        struct.def @Child__spec_3 {
+// CHECK:          arith.constant false
+// CHECK:        } {poly.arguments = [false], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 3 : i64}
+// CHECK-NOT:    struct.def @Child__spec_4
+
+// -----
+
+// An i1 argument becomes index zero or one before choosing a specialization.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "i1_to_index"} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %n = poly.read_const @N : index
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @a : !struct.type<@ChildTemplate::@Child<[1]>>
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[true]>>
+    struct.member @c : !struct.type<@ChildTemplate::@Child<[0]>>
+    struct.member @d : !struct.type<@ChildTemplate::@Child<[false]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "i1_to_index"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK-NEXT:     struct.member @a : !struct.type<@Child__spec_1>
+// CHECK-NEXT:     struct.member @b : !struct.type<@Child__spec_1>
+// CHECK-NEXT:     struct.member @c : !struct.type<@Child__spec_2>
+// CHECK-NEXT:     struct.member @d : !struct.type<@Child__spec_2>
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK:          arith.constant 1 : index
+// CHECK:        } {poly.arguments = [1 : index], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
+// CHECK:        struct.def @Child__spec_2 {
+// CHECK:          arith.constant 0 : index
+// CHECK:        } {poly.arguments = [0 : index], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 2 : i64}
+// CHECK-NOT:    struct.def @Child__spec_3
+
+// -----
+
+// A noncanonical i1 argument retains its integer value when passed to an index parameter.
+module attributes {llzk.lang, llzk.main = !struct.type<@TOuter::@Outer<[98]>>, test.scenario = "i1_forwarded_to_index"} {
+  poly.template @TChild {
+    poly.param @M : index
+    struct.def @Child {
+      struct.member @arr : !array.type<@M x i1>
+      function.def @compute() -> !struct.type<@TChild::@Child<[@M]>> {
+        %self = struct.new : !struct.type<@TChild::@Child<[@M]>>
+        function.return %self : !struct.type<@TChild::@Child<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TChild::@Child<[@M]>>) { function.return }
+    }
+  }
+  poly.template @TOuter {
+    poly.param @N : i1
+    struct.def @Outer {
+      struct.member @child : !struct.type<@TChild::@Child<[@N]>>
+      function.def @compute() -> !struct.type<@TOuter::@Outer<[@N]>> {
+        %self = struct.new : !struct.type<@TOuter::@Outer<[@N]>>
+        function.return %self : !struct.type<@TOuter::@Outer<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TOuter::@Outer<[@N]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Outer__spec_0>, test.scenario = "i1_forwarded_to_index"} {
+// CHECK:        struct.def @Outer__spec_0 {
+// CHECK:          struct.member @child : !struct.type<@Child__spec_1>
+// CHECK:        } {poly.arguments = [98 : index], poly.origin = @TOuter::@Outer, poly.specialization_id = 0 : i64}
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK-NEXT:     struct.member @arr : !array.type<98 x i1>
+// CHECK:        } {poly.arguments = [98 : index], poly.origin = @TChild::@Child, poly.specialization_id = 1 : i64}
 
 // -----
 
