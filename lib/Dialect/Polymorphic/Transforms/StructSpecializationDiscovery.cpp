@@ -565,31 +565,35 @@ class DiscoveryRun {
       visitedOperations->push_back(&op);
     }
     if (auto branch = dyn_cast<scf::IfOp>(op)) {
-      return evaluateIf(branch, env, results);
-    }
-    if (auto loop = dyn_cast<scf::ForOp>(op)) {
-      return evaluateFor(loop, env, results);
-    }
-    if (auto loop = dyn_cast<scf::WhileOp>(op)) {
-      return evaluateWhile(loop, env, results);
-    }
-    if (op.getNumRegions()) {
+      if (failed(evaluateIf(branch, env, results))) {
+        return failure();
+      }
+    } else if (auto forLoop = dyn_cast<scf::ForOp>(op)) {
+      if (failed(evaluateFor(forLoop, env, results))) {
+        return failure();
+      }
+    } else if (auto whileLoop = dyn_cast<scf::WhileOp>(op)) {
+      if (failed(evaluateWhile(whileLoop, env, results))) {
+        return failure();
+      }
+    } else if (op.getNumRegions()) {
       return op.emitError("unsupported control flow in struct specialization discovery");
-    }
-    // The environment tracks scalar constants produced by template reads and
-    // folding. Resolving global reads requires looking up global initializers;
-    // resolving POD, array and struct-member reads requires tracking stored values
-    // and writes. Those reads currently produce unknown values, including constant
-    // global reads, which have no fold hook. Type uses are still collected below.
-    // Unknown values are diagnosed when needed for a loop bound or specialization
-    // argument; unknown if conditions cause both branches to be explored.
-    if (auto read = dyn_cast<ConstReadOp>(op)) {
-      results[0] = evaluateConstRead(read);
-    } else if (isMemoryEffectFree(&op)) {
-      evaluateFoldableOp(op, env, results);
-    }
-    if (auto call = dyn_cast<function::CallOp>(op)) {
-      return discoverCallTypes(call, env);
+    } else {
+      // The environment tracks scalar constants produced by template reads and
+      // folding. Resolving global reads requires looking up global initializers;
+      // resolving POD, array and struct-member reads requires tracking stored values
+      // and writes. Those reads currently produce unknown values, including constant
+      // global reads, which have no fold hook. Type uses are still collected below.
+      // Unknown values are diagnosed when needed for a loop bound or specialization
+      // argument; unknown if conditions cause both branches to be explored.
+      if (auto read = dyn_cast<ConstReadOp>(op)) {
+        results[0] = evaluateConstRead(read);
+      } else if (isMemoryEffectFree(&op)) {
+        evaluateFoldableOp(op, env, results);
+      }
+      if (auto call = dyn_cast<function::CallOp>(op)) {
+        return discoverCallTypes(call, env);
+      }
     }
     for (Type type : op.getResultTypes()) {
       if (failed(collectTypes(&op, type))) {

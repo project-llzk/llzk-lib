@@ -85,6 +85,64 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 
 // -----
 
+// SCF operations returning family arrays carry the same candidates as their array producers.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "scf_result_arrays"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %true = arith.constant true
+      %items = scf.if %true -> (!array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>) {
+        %a = array.new : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+        scf.yield %a : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+      } else {
+        %b = array.new : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+        scf.yield %b : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+      }
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %for_result = scf.for %i = %zero to %one step %one iter_args(%carried = %items) -> !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {
+        scf.yield %carried : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+      }
+      %false = arith.constant false
+      %while_result = scf.while (%carried = %for_result) : (!array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>) -> !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {
+        scf.condition(%false) %carried : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+      } do {
+      ^bb0(%next: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>):
+        scf.yield %next : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+      }
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "scf_result_arrays"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK:          scf.if
+// CHECK:        } {poly.family = [{indices = [0 : index], specialization = 1 : i64
+// CHECK-SAME:   {indices = [1 : index], specialization = 2 : i64
+// CHECK:          scf.for
+// CHECK:        } {poly.family = [{indices = [0 : index], specialization = 1 : i64
+// CHECK-SAME:   {indices = [1 : index], specialization = 2 : i64
+// CHECK:          scf.while
+// CHECK:        } attributes {poly.family = [{indices = [0 : index], specialization = 1 : i64
+// CHECK-SAME:   {indices = [1 : index], specialization = 2 : i64
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK:        struct.def @Child__spec_2 {
+// CHECK-NOT:    struct.def @Child__spec_3
+
+// -----
+
 // A nested type argument is a dependency, not a rolled-call target.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "nested_call_argument"} {
   poly.template @P {
