@@ -1,0 +1,43 @@
+// An omitted and an explicit empty parameter list name the same self type.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+
+// A plain struct declares @Main but uses @Main<[]> in its methods.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main<[]>>, test.scenario = "plain"} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main<[]>> {
+      %s = struct.new : !struct.type<@Main<[]>>
+      function.return %s : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%s: !struct.type<@Main<[]>>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "plain"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Main__spec_0>
+// CHECK:        } {poly.arguments = [], poly.origin = @Main, poly.specialization_id = 0 : i64}
+
+// -----
+
+// A zero-parameter template declares @Main<[]> but uses @Main in its methods.
+module attributes {llzk.lang, llzk.main = !struct.type<@MainTemplate::@Main>, test.scenario = "template"} {
+  poly.template @MainTemplate {
+    struct.def @Main {
+      function.def @compute() -> !struct.type<@MainTemplate::@Main> {
+        %s = struct.new : !struct.type<@MainTemplate::@Main>
+        function.return %s : !struct.type<@MainTemplate::@Main>
+      }
+      function.def @constrain(%s: !struct.type<@MainTemplate::@Main>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "template"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Main__spec_0>
+// CHECK:        } {poly.arguments = [], poly.origin = @MainTemplate::@Main, poly.specialization_id = 0 : i64}

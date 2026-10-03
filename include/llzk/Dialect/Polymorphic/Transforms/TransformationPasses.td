@@ -52,6 +52,63 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
   }];
 }
 
+def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
+  let summary = "Specialize structs reachable from llzk.main";
+  let description = [{
+    Starting with a concrete `llzk.main`, discover and instantiate struct
+    dependencies until every requested specialization has been processed. Reuse
+    definitions by source symbol and concrete argument list, including reachable
+    structs with no template parameters. Preserve source
+    templates and control flow, and update direct type uses and method calls to
+    their concrete definitions.
+
+    Affine calls and array values retain their parameterized types. Their
+    `poly.family_specializations` and `poly.family` attributes identify the
+    concrete definitions needed by later elaboration; definitions carry
+    `poly.specialization_id`, `poly.origin` and `poly.arguments` attributes.
+    `poly.family` appears on members and operations producing an array value,
+    including `struct.readm` and `array.new`. Each entry names the rolled struct
+    type, the enclosing array's index tuple, and the matching specialization.
+    The type distinguishes affine struct fields within a POD element; concrete
+    sibling fields have no family entry.
+    On a rolled call, `poly.family_specializations` lists candidates collected
+    from all matching arrays and affine calls in the source instance. The list
+    may be empty only when a known array has an empty dimension. A consumer
+    selects a target by evaluating the argument type's affine map using the
+    value's affine inputs, often an array element's indices, and matching the
+    resulting arguments to `poly.arguments`.
+    `poly.origin` and every struct name nested in `poly.arguments` are relative
+    to the outermost `llzk.lang` root, which is also the lookup anchor when
+    reloading this metadata. Cache keys use the same argument spelling, so
+    requests from different roots reuse the same specialization. Substitution
+    re-spells type arguments relative to the clone's root; an argument whose
+    definition is outside that root is diagnosed at the instantiation site.
+    Arguments to typed `poly.param` declarations are converted to the declared
+    type when their values are preserved, before forming a cache key. An
+    incompatible argument is diagnosed. Untyped parameters retain their input
+    attributes, so differently spelled numeric values can create distinct
+    specializations. For an `i1` parameter, index zero and one match boolean
+    false and true. Other index values remain distinct: an `i1` read interprets
+    any nonzero value as true, but forwarding the parameter to an index-typed
+    template can still use its original integer value.
+
+    Methods must be defined and single-block. Supported regions are `scf.if`,
+    signed `scf.for` with known bounds and positive steps, and `scf.while` with
+    a known condition at every check. Unstructured branches are diagnosed.
+    Constant evaluation
+    uses template bindings and fold hooks; global and aggregate reads and call
+    results remain unknown. Required specialization arguments must resolve.
+    Reachable free-function calls are diagnosed until function support is added.
+    Includes must be inlined before running this pass.
+  }];
+  let options =
+      [Option<"specializationLimit", "max-specializations", "unsigned", "1000",
+              "Maximum number of concrete struct definitions">,
+       Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
+              "Maximum steps shared by template expressions and methods in one "
+              "discovery run">];
+}
+
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
   let summary = "Flatten structs and unroll loops";
   let description = [{

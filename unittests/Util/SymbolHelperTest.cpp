@@ -11,10 +11,13 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
 
@@ -108,4 +111,109 @@ TEST_F(SymbolHelperTests, test_appendLeaf) {
 TEST_F(SymbolHelperTests, test_appendLeafName) {
   SymbolRefAttr attr = appendLeafName(newExample(2), "_suffix");
   ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2_suffix");
+}
+
+TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_nestedRoots) {
+  auto module = parseSourceString<ModuleOp>(
+      R"mlir(
+    module @Wrapper {
+      module @Top attributes {llzk.lang} {
+        module @Bar attributes {llzk.lang} {
+          poly.template @TFoo {
+            poly.param @N : index
+            struct.def @Foo {
+              function.def @compute() -> !struct.type<@TFoo::@Foo<[@N]>> {
+                %s = struct.new : !struct.type<@TFoo::@Foo<[@N]>>
+                function.return %s : !struct.type<@TFoo::@Foo<[@N]>>
+              }
+              function.def @constrain(%s: !struct.type<@TFoo::@Foo<[@N]>>) {
+                function.return
+              }
+            }
+          }
+        }
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  auto top = module->lookupSymbol<ModuleOp>("Top");
+  auto bar = top.lookupSymbol<ModuleOp>("Bar");
+  auto templ = bar.lookupSymbol<polymorphic::TemplateOp>("TFoo");
+  auto foo = cast<component::StructDefOp>(SymbolTable::lookupSymbolIn(templ, "Foo"));
+
+  auto fromTop = getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), top);
+  ASSERT_TRUE(succeeded(fromTop));
+  EXPECT_EQ(debug::toStringOne(*fromTop), "@Bar::@TFoo::@Foo");
+  EXPECT_EQ(SymbolTable::lookupSymbolIn(top, *fromTop), foo.getOperation());
+
+  auto fromBar = getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), bar);
+  ASSERT_TRUE(succeeded(fromBar));
+  EXPECT_EQ(debug::toStringOne(*fromBar), "@TFoo::@Foo");
+  EXPECT_EQ(SymbolTable::lookupSymbolIn(bar, *fromBar), foo.getOperation());
+}
+
+TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedRoot) {
+  auto module = parseSourceString<ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      struct.def @Foo {
+        function.def @compute() -> !struct.type<@Foo> {
+          %s = struct.new : !struct.type<@Foo>
+          function.return %s : !struct.type<@Foo>
+        }
+        function.def @constrain(%s: !struct.type<@Foo>) { function.return }
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  auto foo = module->lookupSymbol<component::StructDefOp>("Foo");
+  auto path = getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), *module);
+  ASSERT_TRUE(succeeded(path));
+  EXPECT_EQ(debug::toStringOne(*path), "@Foo");
+  EXPECT_EQ(SymbolTable::lookupSymbolIn(*module, *path), foo.getOperation());
+}
+
+TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_inaccessibleSymbols) {
+  auto module = parseSourceString<ModuleOp>(
+      R"mlir(
+    module @Top attributes {llzk.lang} {
+      module @Left attributes {llzk.lang} {}
+      module @Right attributes {llzk.lang} {
+        module @Foo {}
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  auto left = module->lookupSymbol<ModuleOp>("Left");
+  auto right = module->lookupSymbol<ModuleOp>("Right");
+  auto foo = right.lookupSymbol<ModuleOp>("Foo");
+
+  EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), left)));
+  EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(module->getOperation()), left)));
+  EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(left.getOperation()), left)));
+}
+
+TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedIntermediateModule) {
+  auto module = parseSourceString<ModuleOp>(
+      R"mlir(
+    module @Top attributes {llzk.lang} {
+      module {
+        module @Hidden {}
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  auto unnamed = cast<ModuleOp>(module->getBody()->front());
+  auto hidden = unnamed.lookupSymbol<ModuleOp>("Hidden");
+  EXPECT_TRUE(
+      failed(getPathRelativeToRoot(cast<SymbolOpInterface>(hidden.getOperation()), *module))
+  );
 }

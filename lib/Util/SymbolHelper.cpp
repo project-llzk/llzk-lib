@@ -33,6 +33,8 @@
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 
+#include <algorithm>
+
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
 using namespace mlir;
@@ -84,21 +86,18 @@ public:
   RootPathBuilder(RootSelector whichRoot, Operation *origin, ModuleOp *foundRoot)
       : _whichRoot(whichRoot), _origin(origin), _foundRoot(foundRoot) {}
 
-  /// Traverse ModuleOp ancestors of `from` and add their names to `path` until the (closest or
-  /// furthest, based on RootSelector argument) ModuleOp with the `LANG_ATTR_NAME` attribute is
-  /// reached. If a ModuleOp without a name is reached or a ModuleOp with the `LANG_ATTR_NAME`
-  /// attribute is never found, produce an error (referencing the `origin` Operation). The name
-  /// of the root module itself is not added to the path.
-  ///
-  /// Returns the module containing the LANG_ATTR_NAME attribute.
+  /// Collect module and template names while finding an llzk.lang root. CLOSEST
+  /// stops before adding that root's name. FURTHEST traverses all ancestors and
+  /// includes named roots and named modules above them, returning the outermost
+  /// llzk.lang module. An unnamed module before finding a root, or the absence of
+  /// any root, produces an error at the origin operation.
   FailureOr<ModuleOp> collectPathToRoot(Operation *from, std::vector<FlatSymbolRefAttr> &path) {
     Operation *check = from;
     ModuleOp currRoot = nullptr;
     do {
       if (ModuleOp m = llvm::dyn_cast_if_present<ModuleOp>(check)) {
-        // We need this attribute restriction because some stages of parsing have
-        //  an extra module wrapping the top-level module from the input file.
-        // This module, even if it has a name, does not contribute to path names.
+        // Parsing may wrap the input in an extra module; llzk.lang identifies
+        // the program's lookup root independently of that wrapper.
         if (m->hasAttr(LANG_ATTR_NAME)) {
           if (_whichRoot == RootSelector::CLOSEST) {
             return m;
@@ -316,6 +315,26 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
         getFlatSymbolRefAttr(orig.getContext(), origTail.back().getValue() + newLeafSuffix)
     );
   }
+}
+
+FailureOr<SymbolRefAttr> getPathRelativeToRoot(SymbolOpInterface symbol, ModuleOp root) {
+  Operation *definition = symbol.getOperation();
+  if (definition == root || !root->isAncestor(definition)) {
+    return failure();
+  }
+  SmallVector<FlatSymbolRefAttr> path;
+  for (Operation *current = definition; current != root; current = current->getParentOp()) {
+    if (current != definition && !current->hasTrait<OpTrait::SymbolTable>()) {
+      continue;
+    }
+    auto name = llzk::getSymbolName(current);
+    if (!name) {
+      return failure();
+    }
+    path.push_back(FlatSymbolRefAttr::get(name));
+  }
+  std::reverse(path.begin(), path.end());
+  return asSymbolRefAttr(path);
 }
 
 FailureOr<ModuleOp> getRootModule(Operation *from) {

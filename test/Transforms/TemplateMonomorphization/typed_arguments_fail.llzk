@@ -1,0 +1,34 @@
+// Typed numeric arguments must convert exactly to their declared parameter type.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// A field element above the signed index range cannot become an index.
+// expected-error@+1 {{struct argument #felt<const 9223372036854775808> : !felt.type does not match parameter @N of type 'index'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 9223372036854775808>]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Babybear's modulus cannot be represented as a felt value in that field.
+// expected-error@+1 {{struct argument 2013265921 : index does not match parameter @N of type '!felt.type<"babybear">'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[2013265921]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : !felt.type<"babybear">
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}

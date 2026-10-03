@@ -22,8 +22,10 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/AttrTypeSubElements.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -145,7 +147,7 @@ public:
         }
         diag.attachNote(UnknownLoc::get(getContext()))
             << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \"" << sym
-            << "\" for this call";
+            << "\" for this specialization";
         diagnostics.push_back(std::move(diag));
       }
       replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
@@ -410,6 +412,74 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
 } // namespace
 
 namespace llzk::polymorphic::detail {
+
+void reportDelayedDiagnostics(Operation *site, SmallVector<Diagnostic> &&diagnostics) {
+  DiagnosticEngine &engine = site->getContext()->getDiagEngine();
+  for (Diagnostic &diagnostic : diagnostics) {
+    for (Diagnostic &note : diagnostic.getNotes()) {
+      assert(note.getNotes().empty() && "notes cannot have notes attached");
+      if (isa<UnknownLoc>(note.getLocation())) {
+        note = std::move(Diagnostic(site->getLoc(), note.getSeverity()).append(note.str()));
+      }
+    }
+    engine.emit(std::move(diagnostic));
+  }
+}
+
+FailureOr<ArrayAttr> rebaseTemplateParams(
+    SymbolTableCollection &tables, ArrayAttr templateParams, Operation *lookupFrom,
+    ModuleOp destinationRoot, Operation *requestSite
+) {
+  if (!templateParams) {
+    return ArrayAttr::get(requestSite->getContext(), {});
+  }
+  bool invalid = false;
+  AttrTypeReplacer rebaser;
+  Operation *destinationRootOp = destinationRoot.getOperation();
+  rebaser.addReplacement(
+      [&tables, lookupFrom, destinationRoot, destinationRootOp, requestSite,
+       &invalid](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
+    auto found = type.getDefinition(tables, lookupFrom);
+    if (failed(found)) {
+      invalid = true;
+      return std::make_pair(Type(type), WalkResult::skip());
+    }
+    if (found->viaInclude()) {
+      requestSite->emitError("inline includes before rebasing template parameters");
+      invalid = true;
+      return std::make_pair(Type(type), WalkResult::skip());
+    }
+    auto name = getPathRelativeToRoot(found->get(), destinationRoot);
+    if (failed(name)) {
+      auto diagnostic = requestSite->emitError("struct type argument ");
+      diagnostic << type;
+      auto rootName = llzk::getSymbolName(destinationRootOp);
+      StringRef moduleName = rootName ? rootName.getValue() : "<unnamed llzk.lang module>";
+      if (!destinationRoot->isAncestor(found->get().getOperation())) {
+        diagnostic << " is not visible from the template's module \"" << moduleName << '"';
+      } else {
+        diagnostic << " cannot be named relative to the template's module \"" << moduleName
+                   << "\" because an intervening symbol table is unnamed";
+      }
+      invalid = true;
+      return std::make_pair(Type(type), WalkResult::skip());
+    }
+    auto nested =
+        rebaseTemplateParams(tables, type.getParams(), lookupFrom, destinationRoot, requestSite);
+    if (failed(nested)) {
+      invalid = true;
+      return std::make_pair(Type(type), WalkResult::skip());
+    }
+    auto rebased = getStructTypeWithParams(*name, type.getParams() ? *nested : ArrayAttr());
+    return std::make_pair(Type(rebased), WalkResult::skip());
+  }
+  );
+  auto result = cast<ArrayAttr>(rebaser.replace(templateParams));
+  if (invalid) {
+    return failure();
+  }
+  return result;
+}
 
 Attribute TemplateTypeConverter::convertIfPossible(Attribute attr) const {
   auto it = paramNameToValue.find(attr);
