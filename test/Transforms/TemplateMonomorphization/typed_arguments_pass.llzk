@@ -1,0 +1,71 @@
+// Typed numeric arguments select one specialization regardless of their input spelling.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+
+// A felt constant and an index constant both request Child<3>.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "felt_to_index"} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %n = poly.read_const @N : index
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @a : !struct.type<@ChildTemplate::@Child<[3]>>
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "felt_to_index"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @a : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @b : !struct.type<@Child__spec_1>
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK: arith.constant 3 : index
+// CHECK:        } {poly.arguments = [3 : index], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NOT:    struct.def @Child__spec_2
+
+// -----
+
+// An index constant and a felt constant both request Child<3> in babybear.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "index_to_felt"} {
+  poly.template @ChildTemplate {
+    poly.param @N : !felt.type<"babybear">
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %n = poly.read_const @N : !felt.type<"babybear">
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @a : !struct.type<@ChildTemplate::@Child<[3]>>
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "index_to_felt"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @a : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @b : !struct.type<@Child__spec_1>
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK: felt.const  3 : <"babybear">
+// CHECK:        } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NOT:    struct.def @Child__spec_2

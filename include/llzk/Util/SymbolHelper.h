@@ -107,6 +107,15 @@ getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr)
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
+/// Return the symbol's path relative to the supplied ancestor module, rather than
+/// selecting the nearest llzk.lang module as getPathFromRoot does. The path excludes
+/// root's own name; nested symbol tables contribute their names, including llzk.lang
+/// modules. For LLZK type resolution, root must be the llzk.lang module where lookup
+/// starts. Fails without a diagnostic if the symbol is not a strict descendant or an
+/// intervening symbol table is unnamed.
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathRelativeToRoot(mlir::SymbolOpInterface symbol, mlir::ModuleOp root);
+
 /// Return the full name for this symbol from the root module, including any surrounding symbol
 /// table names. If `requireParent` is false and the symbol is not nested in any operation, return
 /// its flat symbol name directly.
