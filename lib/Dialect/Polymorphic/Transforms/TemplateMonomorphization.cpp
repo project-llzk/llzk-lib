@@ -90,6 +90,7 @@ class StructInstantiationWorklist {
     StructDefOp source;
     StructDefOp clone;
     SmallVector<Operation *> visited;
+    uint64_t remainingSteps;
   };
 
   using SpecializationKey = std::pair<Operation *, ArrayAttr>;
@@ -222,7 +223,7 @@ class StructInstantiationWorklist {
         return clone.emitError("duplicate struct specialization identity");
       }
       cloneToId[clone.getOperation()] = entries.size();
-      entries.push_back({cast<StructDefOp>((*key)->first), clone, {}});
+      entries.push_back({cast<StructDefOp>((*key)->first), clone, {}, evaluationLimit});
     }
     return success();
   }
@@ -274,9 +275,10 @@ class StructInstantiationWorklist {
       }
     }
     auto templ = source->getParentOfType<TemplateOp>();
+    uint64_t remainingSteps = evaluationLimit;
     if (templ) {
-      auto evaluated =
-          StructSpecializationDiscovery(evaluationLimit).evaluateBindings(source, bindings);
+      auto evaluated = StructSpecializationDiscovery(evaluationLimit)
+                           .evaluateBindings(source, bindings, &remainingSteps);
       if (failed(evaluated)) {
         return failure();
       }
@@ -289,7 +291,7 @@ class StructInstantiationWorklist {
     unsigned id = entries.size();
     cache[key] = id;
     cloneToId[clone.getOperation()] = id;
-    entries.push_back({source, clone, {}});
+    entries.push_back({source, clone, {}, remainingSteps});
     convertCalleesInPlace(clone, bindings);
     TemplateTypeConverter parameterConverter(bindings);
     clone.walk([&parameterConverter](function::CallOp call) {
@@ -499,7 +501,7 @@ public:
       SmallVector<Operation *> visited;
       StructSpecializationDiscovery::CallTargets rolledCalls;
       auto requests =
-          StructSpecializationDiscovery(evaluationLimit)
+          StructSpecializationDiscovery(entries[i].remainingSteps)
               .discover(clone, StructSpecializationDiscovery::Bindings(), &visited, &rolledCalls);
       if (failed(requests)) {
         return failure();

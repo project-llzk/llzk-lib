@@ -98,3 +98,53 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// -----
+
+// Template expressions and methods each fit, but together exceed 20 steps.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @TChild {
+    poly.param @N : index
+    poly.expr @E {
+      %e0 = arith.constant 0 : index
+      %e1 = arith.constant 1 : index
+      %e2 = arith.constant 2 : index
+      %e3 = arith.constant 3 : index
+      %e4 = arith.constant 4 : index
+      %e5 = arith.constant 5 : index
+      %e6 = arith.constant 6 : index
+      %e7 = arith.constant 7 : index
+      %e8 = arith.constant 8 : index
+      %e9 = arith.constant 9 : index
+      poly.yield %e0 : index
+    }
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@TChild::@Child<[@N]>> {
+        %m0 = arith.constant 0 : index
+        %m1 = arith.constant 1 : index
+        %m2 = arith.constant 2 : index
+        %m3 = arith.constant 3 : index
+        %m4 = arith.constant 4 : index
+        %m5 = arith.constant 5 : index
+        %m6 = arith.constant 6 : index
+        %m7 = arith.constant 7 : index
+        %m8 = arith.constant 8 : index
+        // expected-error@+1 {{step limit exceeded}}
+        %m9 = arith.constant 9 : index
+        %self = struct.new : !struct.type<@TChild::@Child<[@N]>>
+        function.return %self : !struct.type<@TChild::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TChild::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  struct.def @Main {
+    struct.member @child : !struct.type<@TChild::@Child<[0 : index]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}

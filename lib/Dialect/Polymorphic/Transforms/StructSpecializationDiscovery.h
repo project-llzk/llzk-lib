@@ -125,8 +125,10 @@ public:
 
   /// Evaluate enclosing template expressions in declaration order and return an
   /// extended copy of bindings for substitution into a concrete struct clone.
-  mlir::FailureOr<Bindings>
-  evaluateBindings(component::StructDefOp source, const Bindings &bindings) const;
+  /// If requested, return the steps left for discovering that clone's methods.
+  mlir::FailureOr<Bindings> evaluateBindings(
+      component::StructDefOp source, const Bindings &bindings, uint64_t *remainingSteps = nullptr
+  ) const;
 
   /// Return ordered, deduplicated requests, or diagnose an unresolved dependency.
   /// Self references are omitted; the caller already owns the source instance.

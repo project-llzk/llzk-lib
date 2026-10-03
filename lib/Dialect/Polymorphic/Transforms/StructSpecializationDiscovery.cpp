@@ -647,6 +647,8 @@ public:
       : source(structure), bindings(parameters), typeResolver(bindings), remaining(limit),
         visitedOperations(visited), callTargets(targets) {}
 
+  uint64_t getRemainingSteps() const { return remaining; }
+
   /// Extend the parameter environment with known template-expression results.
   FailureOr<StructSpecializationDiscovery::Bindings> evaluateBindings() {
     if (auto templ = source->getParentOfType<TemplateOp>()) {
@@ -722,9 +724,14 @@ public:
 } // namespace
 
 FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(
-    StructDefOp source, const Bindings &bindings
+    StructDefOp source, const Bindings &bindings, uint64_t *remainingSteps
 ) const {
-  return DiscoveryRun(source, bindings, limit, nullptr).evaluateBindings();
+  DiscoveryRun run(source, bindings, limit, nullptr);
+  auto evaluated = run.evaluateBindings();
+  if (succeeded(evaluated) && remainingSteps) {
+    *remainingSteps = run.getRemainingSteps();
+  }
+  return evaluated;
 }
 
 FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discover(
