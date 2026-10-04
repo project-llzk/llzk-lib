@@ -30,6 +30,192 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// A constant global's declared field must satisfy the struct parameter restriction.
+module attributes {llzk.lang} {
+  // expected-note@+1 {{argument symbol defined here}}
+  global.def const @WrongField : !felt.type<"goldilocks"> = 35
+
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{'struct.member' op instantiation value '@WrongField' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+    struct.member @value : !struct.type<@T::@S<[@WrongField]>>
+
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
+
+// -----
+
+// A symbol without a known field cannot establish a fielded restriction.
+module attributes {llzk.lang} {
+  // expected-note@+1 {{argument symbol defined here}}
+  global.def const @Unspecified : !felt.type = 35
+
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{'struct.member' op instantiation value '@Unspecified' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+    struct.member @value : !struct.type<@T::@S<[@Unspecified]>>
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
+
+// -----
+
+// A forward template expression reference must not inspect an empty body before verification.
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    struct.def @Use {
+      struct.member @value : !struct.type<@T::@S<[@E]>>
+      function.def @compute() -> !struct.type<@Caller::@Use> {
+        %self = struct.new : !struct.type<@Caller::@Use>
+        function.return %self : !struct.type<@Caller::@Use>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use>) { function.return }
+    }
+    // expected-error@+1 {{'poly.expr' op expects a non-empty block}}
+    poly.expr @E {}
+  }
+}
+
+// -----
+
+// A forward template expression reference must not inspect a missing terminator.
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    struct.def @Use {
+      struct.member @value : !struct.type<@T::@S<[@E]>>
+      function.def @compute() -> !struct.type<@Caller::@Use> {
+        %self = struct.new : !struct.type<@Caller::@Use>
+        function.return %self : !struct.type<@Caller::@Use>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use>) { function.return }
+    }
+    poly.expr @E {
+      // expected-error@+1 {{block with no terminator}}
+      %v = arith.constant 42 : index
+    }
+  }
+}
+
+// -----
+
+// Forward type extraction must leave a zero-operand yield to the normal verifier.
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    struct.def @Use {
+      struct.member @value : !struct.type<@T::@S<[@E]>>
+      function.def @compute() -> !struct.type<@Caller::@Use> {
+        %self = struct.new : !struct.type<@Caller::@Use>
+        function.return %self : !struct.type<@Caller::@Use>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use>) { function.return }
+    }
+    poly.expr @E {
+      // expected-error@+1 {{'poly.yield' op requires a single operand}}
+      "poly.yield"() : () -> ()
+    }
+  }
+}
+
+// -----
+
+// Typed enclosing template parameters must satisfy the struct parameter restriction.
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.param @WrongField : !felt.type<"goldilocks">
+
+    struct.def @Use {
+      // expected-error@+1 {{'struct.member' op instantiation value '@WrongField' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+      struct.member @value : !struct.type<@T::@S<[@WrongField]>>
+
+      function.def @compute() -> !struct.type<@Caller::@Use<[@WrongField]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@WrongField]>>
+        function.return %self : !struct.type<@Caller::@Use<[@WrongField]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@WrongField]>>) {
+        function.return
+      }
+    }
+  }
+}
 // -----
 module attributes {llzk.lang} {
   poly.template @TComponentB1 {
@@ -673,5 +859,266 @@ module attributes {llzk.lang} {
         function.return
       }
     }
+  }
+}
+
+// -----
+
+// A concrete felt value must satisfy the declared field restriction even if the parameter is not
+// read by the instantiated body.
+// expected-error@+1 {{instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// A TypeAttr cannot instantiate a felt value parameter.
+// expected-error@+1 {{instantiation value 'index' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[index]>>} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// An IntegerAttr cannot instantiate a type-variable parameter.
+// expected-error@+1 {{instantiation value '35 : index' is not compatible with parameter "@Ty" type restriction '!poly.tvar<@Ty>'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[35]>>} {
+  poly.template @T {
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@T::@S<[@Ty]>>
+        function.return %self : !struct.type<@T::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@Ty]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A constant global is a value, even when passed by symbol to a type-only parameter.
+module attributes {llzk.lang} {
+  module @globals {
+    // expected-note@+1 {{argument symbol defined here}}
+    global.def const @Value : index = 35
+  }
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@T::@S<[@Ty]>>
+        function.return %self : !struct.type<@T::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@Ty]>>) { function.return }
+    }
+  }
+  struct.def @Use {
+    // expected-error@+1 {{instantiation value '@globals::@Value' is not compatible with parameter "@Ty" type restriction '!poly.tvar<@Ty>'}}
+    struct.member @value : !struct.type<@T::@S<[@globals::@Value]>>
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
+
+// -----
+
+// A value-valued template binding cannot instantiate a type-only parameter.
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@T::@S<[@Ty]>>
+        function.return %self : !struct.type<@T::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.param @Value : index
+    struct.def @Use {
+      // expected-error@+1 {{instantiation value '@Value' is not compatible with parameter "@Ty" type restriction '!poly.tvar<@Ty>'}}
+      struct.member @value : !struct.type<@T::@S<[@Value]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@Value]>>
+        function.return %self : !struct.type<@Caller::@Use<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@Value]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A template expression is a value even when its result has a type-variable type.
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@T::@S<[@Ty]>>
+        function.return %self : !struct.type<@T::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @Unknown
+    poly.param @Ty : !poly.tvar<@Ty>
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.expr @Value {
+      %value = poly.read_const @Unknown : !poly.tvar<@Ty>
+      poly.yield %value : !poly.tvar<@Ty>
+    }
+    struct.def @Use {
+      // expected-error@+1 {{instantiation value '@Value' is not compatible with parameter "@Ty" type restriction '!poly.tvar<@Ty>'}}
+      struct.member @value : !struct.type<@T::@S<[@Value]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@Unknown, @Ty]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@Unknown, @Ty]>>
+        function.return %self : !struct.type<@Caller::@Use<[@Unknown, @Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@Unknown, @Ty]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// A type-valued template binding cannot instantiate a felt value parameter.
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Use {
+      // expected-error@+1 {{instantiation value '@Ty' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+      struct.member @value : !struct.type<@T::@S<[@Ty]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@Ty]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@Ty]>>
+        function.return %self : !struct.type<@Caller::@Use<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@Ty]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A TypeAttr cannot instantiate an index parameter.
+// expected-error@+1 {{instantiation value '!felt.type' is not compatible with parameter "@N" type restriction 'index'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[!felt.type]>>} {
+  poly.template @T {
+    poly.param @N : index
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// An affine map cannot instantiate a type-valued parameter.
+#map = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !poly.tvar<@N>
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{instantiation value 'affine_map<(d0) -> (d0)>' is not compatible with parameter "@N" type restriction '!poly.tvar<@N>'}}
+    struct.member @value : !struct.type<@T::@S<[#map]>>
+
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
+
+// -----
+
+// A felt-restricted parameter cannot defer an affine map.
+#map = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{instantiation value 'affine_map<(d0) -> (d0)>' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+    struct.member @value : !struct.type<@T::@S<[#map]>>
+
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
   }
 }
