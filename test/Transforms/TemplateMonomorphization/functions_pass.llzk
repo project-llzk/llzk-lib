@@ -43,6 +43,79 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 
 // -----
 
+// Infer a parameter through a struct type spelled relative to the callee's nested root.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "namespaced_inference"} {
+  module @Bar attributes {llzk.lang} {
+    poly.template @BoxTemplate {
+      poly.param @N : index
+      struct.def @Box {
+        function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@N]>> {
+          %self = struct.new : !struct.type<@BoxTemplate::@Box<[@N]>>
+          function.return %self : !struct.type<@BoxTemplate::@Box<[@N]>>
+        }
+        function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@N]>>) { function.return }
+      }
+    }
+    poly.template @Use {
+      poly.param @N : index
+      function.def @size(%box: !struct.type<@BoxTemplate::@Box<[@N]>>) -> index {
+        %n = poly.read_const @N : index
+        function.return %n : index
+      }
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %box = function.call @Bar::@BoxTemplate::@Box::@compute() : () -> !struct.type<@Bar::@BoxTemplate::@Box<[2]>>
+      %size = function.call @Bar::@Use::@size(%box) : (!struct.type<@Bar::@BoxTemplate::@Box<[2]>>) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "namespaced_inference"} {
+// CHECK:      module @Bar attributes {llzk.lang} {
+// CHECK:        struct.def @Box__spec_1 {
+// CHECK:        function.def @size__spec_0(%{{[0-9a-zA-Z_\.]+}}: !struct.type<@Box__spec_1>) -> index attributes {poly.arguments = [2 : index], poly.origin = @Bar::@Use::@size} {
+// CHECK:          arith.constant 2 : index
+// CHECK:      struct.def @Main__spec_0 {
+// CHECK:        function.call @Bar::@size__spec_0(
+// CHECK-NOT:  function.def @size__spec_1
+
+// -----
+
+// Infer an explicit wildcard from the call signature while preserving the other parameter.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "signature_wildcard"} {
+  poly.template @Pick {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @Tag : index
+    function.def @id(%value: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %value : !poly.tvar<@T>
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %value = arith.constant 4 : index
+      %a = function.call @Pick::@id<[?, 7]>(%value) : (index) -> index
+      %b = function.call @Pick::@id<[index, 7]>(%value) : (index) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "signature_wildcard"} {
+// CHECK:      struct.def @Main__spec_0 {
+// CHECK:          function.call @id__spec_0(
+// CHECK:          function.call @id__spec_0(
+// CHECK:      function.def @id__spec_0(%{{[0-9a-zA-Z_\.]+}}: index) -> index attributes {poly.arguments = [index, 7 : index], poly.origin = @Pick::@id} {
+// CHECK-NOT:  function.def @id__spec_1
+
+// -----
+
 // Recursive calls stop when the template condition becomes false.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "bounded_recursion"} {
   poly.template @Rec {

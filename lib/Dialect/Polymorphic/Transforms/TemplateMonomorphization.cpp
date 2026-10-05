@@ -329,7 +329,9 @@ class TemplateInstantiationWorklist {
   }
 
   /// Resolve explicit or signature-inferred template arguments at a free call.
-  FailureOr<SpecializationKey> getFunctionKey(function::CallOp call, function::FuncDefOp source) {
+  FailureOr<SpecializationKey> getFunctionKey(
+      function::CallOp call, function::FuncDefOp source, ArrayRef<StringRef> targetNamespace
+  ) {
     auto templ = source->getParentOfType<TemplateOp>();
     SmallVector<Attribute> arguments;
     if (templ) {
@@ -340,19 +342,24 @@ class TemplateInstantiationWorklist {
         return failure();
       }
       std::optional<UnificationMap> unified;
-      if (!explicitArguments) {
-        auto result = call.unifyTypeSignature(source.getFunctionType());
+      bool needsInference =
+          !explicitArguments || llvm::any_of(explicitArguments, [](Attribute arg) {
+        return classifyAttrConcreteness(arg) == AttrConcreteness::Wildcard;
+      });
+      if (needsInference) {
+        auto result =
+            call.unifyTypeSignatureWithNamespace(source.getFunctionType(), targetNamespace);
         if (failed(result)) {
           return call.emitError("cannot infer concrete function specialization");
         }
         unified = *result;
       }
       for (auto [index, parameter] : llvm::enumerate(parameters)) {
-        Attribute value =
-            explicitArguments
-                ? explicitArguments[index]
-                : inferUnifiedParam(*unified, FlatSymbolRefAttr::get(parameter.getSymNameAttr()))
+        Attribute value = explicitArguments ? explicitArguments[index] : Attribute();
+        if (!value || classifyAttrConcreteness(value) == AttrConcreteness::Wildcard) {
+          value = inferUnifiedParam(*unified, FlatSymbolRefAttr::get(parameter.getSymNameAttr()))
                       .value_or(Attribute());
+        }
         if (!value || !isConcreteStructParamAttr(value)) {
           call.emitError("cannot resolve free-function template parameter @")
               << parameter.getSymName();
@@ -508,7 +515,7 @@ class TemplateInstantiationWorklist {
     if (source.isExternal()) {
       return success();
     }
-    auto key = getFunctionKey(call, source);
+    auto key = getFunctionKey(call, source, target->getNamespace());
     if (failed(key)) {
       return failure();
     }

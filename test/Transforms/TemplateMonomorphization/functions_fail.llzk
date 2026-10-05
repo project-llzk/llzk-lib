@@ -144,3 +144,22 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@Main>) { function.return }
   }
 }
+
+// -----
+
+// A wildcard absent from the call signature still needs a concrete binding.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Hidden {
+    poly.param @T : !poly.tvar<@T>
+    function.def @f() { function.return }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{cannot resolve free-function template parameter @T}}
+      function.call @Hidden::@f<[?]>() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
