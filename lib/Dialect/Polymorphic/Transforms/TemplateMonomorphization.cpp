@@ -22,9 +22,11 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/AttrTypeSubElements.h>
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/Diagnostics.h>
 #include <mlir/Interfaces/ControlFlowInterfaces.h>
 
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/STLFunctionalExtras.h>
 
 #include <cstdint>
 
@@ -156,6 +158,8 @@ class TemplateInstantiationWorklist {
     uint64_t remainingSteps;
     bool active;
     bool discovered;
+    /// The call that requested this clone, if created during this pass run.
+    std::optional<Location> request;
   };
 
   using SpecializationKey = std::pair<Operation *, ArrayAttr>;
@@ -319,7 +323,7 @@ class TemplateInstantiationWorklist {
         return clone.emitError("duplicate function specialization identity");
       }
       functionCloneToId[clone.getOperation()] = functions.size();
-      functions.push_back({source, clone, {}, evaluationLimit, false, false});
+      functions.push_back({source, clone, {}, evaluationLimit, false, false, std::nullopt});
     }
     return success();
   }
@@ -392,6 +396,69 @@ class TemplateInstantiationWorklist {
     });
   }
 
+  /// Bind concrete template parameters and evaluate the source's template
+  /// expressions before substituting the clone body.
+  FailureOr<StructSpecializationDiscovery::Bindings> bindArguments(
+      Operation *source, ArrayRef<Attribute> names, ArrayAttr arguments, uint64_t &remainingSteps
+  ) {
+    StructSpecializationDiscovery::Bindings bindings;
+    for (auto [name, argument] : llvm::zip_equal(names, arguments)) {
+      bindings[name] = argument;
+    }
+    remainingSteps = evaluationLimit;
+    if (!source->getParentOfType<TemplateOp>()) {
+      return bindings;
+    }
+    return StructSpecializationDiscovery(evaluationLimit)
+        .evaluateBindings(source, bindings, &remainingSteps);
+  }
+
+  /// Report a template read left after substitution at the specialization
+  /// request site, distinguishing an unknown expression from a missing binding.
+  static LogicalResult diagnoseUnresolvedBinding(
+      Operation *clone, TemplateOp templ, Operation *site,
+      llvm::function_ref<void(InFlightDiagnostic &)> describe
+  ) {
+    ConstReadOp unresolved;
+    clone->walk([&unresolved](ConstReadOp read) {
+      if (!unresolved) {
+        unresolved = read;
+      }
+    });
+    if (!unresolved) {
+      return success();
+    }
+    if (templ && templ.getConstNamed<TemplateExprOp>(unresolved.getConstNameAttr())) {
+      auto diagnostic = site->emitError("template expression ");
+      diagnostic << unresolved.getConstNameAttr() << " could not be evaluated for ";
+      describe(diagnostic);
+      return diagnostic;
+    }
+    auto diagnostic = site->emitError("unresolved template binding ");
+    diagnostic << unresolved.getConstNameAttr() << " while specializing ";
+    describe(diagnostic);
+    return diagnostic;
+  }
+
+  /// Reject unstructured branches before cloning a definition, including
+  /// branches in regions that discovery would not explore.
+  static LogicalResult verifyStructuredControlFlow(Operation *source) {
+    Operation *branch = nullptr;
+    source->walk([&branch](Operation *op) {
+      if (isa<BranchOpInterface>(op)) {
+        branch = op;
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    });
+    if (branch) {
+      return branch->emitError(
+          "unstructured control flow is unsupported in template monomorphization"
+      );
+    }
+    return success();
+  }
+
   /// A retained call needs a concrete callee when type rewriting will change
   /// one of its operand or result types to a struct specialization.
   FailureOr<bool> hasSpecializedSignature(function::CallOp call) {
@@ -439,9 +506,6 @@ class TemplateInstantiationWorklist {
       return success();
     }
     if (source.isExternal()) {
-      if (source->getParentOfType<TemplateOp>()) {
-        return call.emitError("external function specialization is unsupported");
-      }
       return success();
     }
     auto key = getFunctionKey(call, source);
@@ -456,8 +520,8 @@ class TemplateInstantiationWorklist {
       if (entries.size() + functions.size() >= limit) {
         return call.emitError("template monomorphization specialization limit exceeded");
       }
-      if (!source.getBody().hasOneBlock()) {
-        return source.emitError("free-function specialization requires a single-block body");
+      if (failed(verifyStructuredControlFlow(source))) {
+        return failure();
       }
       auto destination = getRootModule(source);
       if (failed(destination)) {
@@ -467,23 +531,23 @@ class TemplateInstantiationWorklist {
       if (failed(localArguments)) {
         return failure();
       }
-      StructSpecializationDiscovery::Bindings bindings;
+      auto origin = getPathRelativeToRoot(source, topRoot);
+      if (failed(origin)) {
+        return failure();
+      }
       auto templ = source->getParentOfType<TemplateOp>();
+      SmallVector<Attribute> names;
       if (templ) {
-        for (auto [parameter, argument] :
-             llvm::zip_equal(templ.getConstOps<TemplateParamOp>(), *localArguments)) {
-          bindings[FlatSymbolRefAttr::get(parameter.getSymNameAttr())] = argument;
+        for (auto parameter : templ.getConstOps<TemplateParamOp>()) {
+          names.push_back(FlatSymbolRefAttr::get(parameter.getSymNameAttr()));
         }
       }
-      uint64_t remainingSteps = evaluationLimit;
-      if (templ) {
-        auto evaluated = StructSpecializationDiscovery(evaluationLimit)
-                             .evaluateFunctionBindings(source, bindings, &remainingSteps);
-        if (failed(evaluated)) {
-          return failure();
-        }
-        bindings = std::move(*evaluated);
+      uint64_t remainingSteps;
+      auto evaluated = bindArguments(source, names, *localArguments, remainingSteps);
+      if (failed(evaluated)) {
+        return failure();
       }
+      auto bindings = std::move(*evaluated);
       auto clone = source.clone();
       clone.setSymName((source.getSymName() + "__spec_" + Twine(functions.size())).str());
       Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
@@ -491,36 +555,22 @@ class TemplateInstantiationWorklist {
       id = functions.size();
       functionCache[*key] = id;
       functionCloneToId[clone.getOperation()] = id;
-      functions.push_back({source, clone, {}, remainingSteps, active, false});
+      functions.push_back({source, clone, {}, remainingSteps, active, false, call.getLoc()});
       convertCalleesInPlace(clone, bindings);
       convertCallArguments(clone, bindings);
       SmallVector<Diagnostic> diagnostics;
       if (failed(substituteFunctionBody(clone, bindings, diagnostics))) {
         return failure();
       }
-      ConstReadOp unresolved;
-      clone.walk([&unresolved](ConstReadOp read) {
-        if (!unresolved) {
-          unresolved = read;
-        }
-      });
-      if (unresolved) {
-        if (templ && templ.getConstNamed<TemplateExprOp>(unresolved.getConstNameAttr())) {
-          call.emitError("template expression ")
-              << unresolved.getConstNameAttr() << " could not be evaluated for function @"
-              << source.getSymName() << " with arguments " << key->second;
-        } else {
-          call.emitError("unresolved template binding ")
-              << unresolved.getConstNameAttr() << " while specializing function @"
-              << source.getSymName();
-        }
+      if (failed(diagnoseUnresolvedBinding(
+              clone, templ, call,
+              [name = *origin, arguments = key->second](InFlightDiagnostic &diagnostic) {
+        diagnostic << "free function " << name << " with arguments " << arguments;
+      }
+          ))) {
         return failure();
       }
       reportDelayedDiagnostics(call, std::move(diagnostics));
-      auto origin = getPathRelativeToRoot(source, topRoot);
-      if (failed(origin)) {
-        return failure();
-      }
       clone->setAttr(SPECIALIZATION_ORIGIN_ATTR, *origin);
       clone->setAttr(SPECIALIZATION_ARGUMENTS_ATTR, key->second);
     }
@@ -564,28 +614,18 @@ class TemplateInstantiationWorklist {
     if (entries.size() + functions.size() >= limit) {
       return site->emitError("template monomorphization specialization limit exceeded");
     }
-    auto branches = source.walk([](BranchOpInterface op) -> WalkResult {
-      return op.emitError("unstructured control flow is unsupported in template monomorphization");
-    });
-    if (branches.wasInterrupted()) {
+    if (failed(verifyStructuredControlFlow(source))) {
       return failure();
     }
-    StructSpecializationDiscovery::Bindings bindings;
-    if (names) {
-      for (auto [name, value] : llvm::zip_equal(names, *localArguments)) {
-        bindings[name] = value;
-      }
-    }
     auto templ = source->getParentOfType<TemplateOp>();
-    uint64_t remainingSteps = evaluationLimit;
-    if (templ) {
-      auto evaluated = StructSpecializationDiscovery(evaluationLimit)
-                           .evaluateBindings(source, bindings, &remainingSteps);
-      if (failed(evaluated)) {
-        return failure();
-      }
-      bindings = std::move(*evaluated);
+    uint64_t remainingSteps;
+    auto evaluated = bindArguments(
+        source, names ? names.getValue() : ArrayRef<Attribute>(), *localArguments, remainingSteps
+    );
+    if (failed(evaluated)) {
+      return failure();
     }
+    auto bindings = std::move(*evaluated);
     TemplateTypeConverter parameterConverter(bindings);
     auto reads = source.walk([&bindings, &parameterConverter](ConstReadOp read) -> WalkResult {
       return WalkResult(resolveConstReadBinding(
@@ -658,15 +698,9 @@ class TemplateInstantiationWorklist {
     if (failed(substituteStructBody(clone, source.getType(), bindings, diagnostics))) {
       return failure();
     }
-    auto unresolved = clone.walk([site, &templ, type](ConstReadOp read) -> WalkResult {
-      if (templ && templ.getConstNamed<TemplateExprOp>(read.getConstNameAttr())) {
-        return site->emitError("template expression ")
-               << read.getConstNameAttr() << " could not be evaluated for " << type;
-      }
-      return site->emitError("unresolved template binding ")
-             << read.getConstNameAttr() << " while specializing " << type;
-    });
-    if (unresolved.wasInterrupted()) {
+    if (failed(diagnoseUnresolvedBinding(
+            clone, templ, site, [type](InFlightDiagnostic &diagnostic) { diagnostic << type; }
+        ))) {
       return failure();
     }
     reportDelayedDiagnostics(site, std::move(diagnostics));
@@ -802,6 +836,45 @@ class TemplateInstantiationWorklist {
     return success();
   }
 
+  /// External free functions retain their original signatures. Diagnose calls
+  /// whose struct types would change during the final type rewrite.
+  LogicalResult verifyExternalCalls() {
+    auto check = [this](Operation *clone) {
+      return clone->walk([this](function::CallOp call) {
+        auto target = call.getCalleeTarget(tables);
+        if (failed(target)) {
+          return WalkResult::interrupt();
+        }
+        if (target->get()->getParentOfType<StructDefOp>() || !target->get().isExternal()) {
+          return WalkResult::advance();
+        }
+        auto required = hasSpecializedSignature(call);
+        if (failed(required)) {
+          return WalkResult::interrupt();
+        }
+        if (*required) {
+          call.emitError("external function ")
+              << call.getCalleeAttr()
+              << " cannot be called with specialized struct types; external declarations are "
+                 "not specialized";
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+    };
+    for (Entry &entry : entries) {
+      if (check(entry.clone).wasInterrupted()) {
+        return failure();
+      }
+    }
+    for (FunctionEntry &entry : functions) {
+      if (check(entry.clone).wasInterrupted()) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
 public:
   TemplateInstantiationWorklist(ModuleOp module, unsigned maximum, uint64_t steps)
       : root(module), limit(maximum), evaluationLimit(steps) {}
@@ -846,17 +919,24 @@ public:
       SmallVector<Operation *> visited;
       uint64_t steps =
           isStruct ? entries[structIndex].remainingSteps : functions[functionIndex].remainingSteps;
+      std::optional<ScopedDiagnosticHandler> requestNote;
+      if (!isStruct && functions[functionIndex].request) {
+        Location request = *functions[functionIndex].request;
+        Attribute origin = clone->getAttr(SPECIALIZATION_ORIGIN_ATTR);
+        Attribute arguments = clone->getAttr(SPECIALIZATION_ARGUMENTS_ATTR);
+        requestNote.emplace(clone->getContext(), [request, origin, arguments](Diagnostic &diag) {
+          if (diag.getSeverity() == DiagnosticSeverity::Error) {
+            diag.attachNote(request)
+                << "while specializing free function " << origin << " with arguments " << arguments;
+          }
+          return failure();
+        });
+      }
       StructSpecializationDiscovery::CallTargets rolledCalls;
       StructSpecializationDiscovery discovery(steps);
-      auto requests = isStruct
-                          ? discovery.discover(
-                                cast<StructDefOp>(clone), StructSpecializationDiscovery::Bindings(),
-                                &visited, &rolledCalls
-                            )
-                          : discovery.discoverFunction(
-                                cast<function::FuncDefOp>(clone),
-                                StructSpecializationDiscovery::Bindings(), &visited, &rolledCalls
-                            );
+      auto requests = discovery.discover(
+          clone, StructSpecializationDiscovery::Bindings(), &visited, &rolledCalls
+      );
       if (failed(requests)) {
         return failure();
       }
@@ -932,6 +1012,9 @@ public:
       } else {
         ++functionIndex;
       }
+    }
+    if (failed(verifyExternalCalls())) {
+      return failure();
     }
     // Each replacer resolves input names in one root. The cache identifies the
     // definition independently of its spelling, including uses in preserved paths

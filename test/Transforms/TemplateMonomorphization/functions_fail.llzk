@@ -17,7 +17,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      // expected-error@+1 {{template expression @E could not be evaluated for function @f with arguments [3 : index]}}
+      // expected-error@+1 {{template expression @E could not be evaluated for free function @T::@f with arguments [3 : index]}}
       %value = function.call @T::@f<[3]>() : () -> index
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -30,8 +30,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // Discovery cannot execute a function with unstructured control flow.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-  // expected-error@+1 {{free-function specialization requires a single-block body}}
   function.def @f() {
+    // expected-error@+1 {{unstructured control flow is unsupported in template monomorphization}}
     cf.br ^bb1
   ^bb1:
     function.return
@@ -39,6 +39,105 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
       function.call @f() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// An external declaration cannot accept a plain struct after type rewriting.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Payload {
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : !struct.type<@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) { function.return }
+  }
+  function.def private @ext(%payload: !struct.type<@Payload>) -> index attributes {extern}
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %payload = function.call @Payload::@compute() : () -> !struct.type<@Payload>
+      // expected-error@+1 {{external function @ext cannot be called with specialized struct types; external declarations are not specialized}}
+      %value = function.call @ext(%payload) : (!struct.type<@Payload>) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// An external declaration also cannot accept a parameterized struct instance.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %self : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  function.def private @ext(%child: !struct.type<@ChildTemplate::@Child<[2]>>) -> index attributes {extern}
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %child = function.call @ChildTemplate::@Child::@compute() : () -> !struct.type<@ChildTemplate::@Child<[2]>>
+      // expected-error@+1 {{external function @ext cannot be called with specialized struct types; external declarations are not specialized}}
+      %value = function.call @ext(%child) : (!struct.type<@ChildTemplate::@Child<[2]>>) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// An external declaration cannot return a struct whose type is rewritten.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Payload {
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : !struct.type<@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) { function.return }
+  }
+  function.def private @ext() -> !struct.type<@Payload> attributes {extern}
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{external function @ext cannot be called with specialized struct types; external declarations are not specialized}}
+      %payload = function.call @ext() : () -> !struct.type<@Payload>
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Discovery errors in a live function identify the call that requested it.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @loop(%n: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    // expected-error@+1 {{specialization discovery requires known signed for bounds and a positive step}}
+    scf.for %i = %zero to %n step %one {
+      scf.yield
+    }
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %five = arith.constant 5 : index
+      // expected-note@+1 {{while specializing free function @loop with arguments []}}
+      function.call @loop(%five) : (index) -> ()
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }

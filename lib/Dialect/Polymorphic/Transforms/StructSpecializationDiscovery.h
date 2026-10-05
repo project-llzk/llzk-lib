@@ -50,17 +50,18 @@ struct RolledCallTargets {
   llvm::SmallVector<component::StructType> candidates;
 };
 
-/// Determine which concrete struct definitions are needed when instantiating
-/// source with the supplied template arguments. For example, Parent<N> may
-/// contain an array of Child<i> instances for 0 <= i < N. Evaluating that range
-/// with N = 3 tells the caller to instantiate Child<0>, Child<1>, and Child<2>
-/// while leaving the original loop intact.
+/// Determine which concrete struct definitions are needed when instantiating a
+/// struct or free function with the supplied template arguments. For example,
+/// Parent<N> may contain an array of Child<i> instances for 0 <= i < N.
+/// Evaluating that range with N = 3 tells the caller to instantiate Child<0>,
+/// Child<1>, and Child<2> while leaving the original loop intact.
 ///
-/// Template parameters and expressions supply constants shared by the struct's
-/// methods. Method arguments without known values remain unknown; intermediate
-/// SSA values are computed separately for each method and loop iteration because
-/// their values depend on that execution's inputs. Template-expression results
-/// are stored in a private copy of bindings so the caller's inputs stay unchanged.
+/// Template parameters and expressions supply constants to the discovered
+/// methods or free-function body. Function arguments without known values remain
+/// unknown; intermediate SSA values are computed separately for each function
+/// and loop iteration because their values depend on that execution's inputs.
+/// Template-expression results are stored in a private copy of bindings so the
+/// caller's inputs stay unchanged.
 ///
 /// Supported input structure (assuming verified LLZK IR):
 /// - Every method must have a defined, single-block body. Discovery visits every
@@ -133,34 +134,23 @@ public:
   explicit StructSpecializationDiscovery(uint64_t maxSteps = 1000000) : limit(maxSteps) {}
 
   /// Evaluate enclosing template expressions in declaration order and return an
-  /// extended copy of bindings for substitution into a concrete struct clone.
+  /// extended copy of bindings for substitution into a concrete clone. Source
+  /// must be a struct definition or free-function definition.
   /// If requested, return the steps left for discovering that clone's methods.
   mlir::FailureOr<Bindings> evaluateBindings(
-      component::StructDefOp source, const Bindings &bindings, uint64_t *remainingSteps = nullptr
+      mlir::Operation *source, const Bindings &bindings, uint64_t *remainingSteps = nullptr
   ) const;
 
-  /// Return ordered, deduplicated requests, or diagnose an unresolved dependency.
+  /// Return ordered, deduplicated requests for a struct or free-function source,
+  /// or diagnose an unresolved dependency.
   /// Self references are omitted; the caller already owns the source instance.
   /// When supplied, visitedOperations receives explored operations so callers can
   /// retarget uses without inspecting branches excluded by constant conditions.
   /// callTargets receives the candidate sets for rolled method arguments.
   mlir::FailureOr<Requests> discover(
-      component::StructDefOp source, const Bindings &bindings,
+      mlir::Operation *source, const Bindings &bindings,
       llvm::SmallVectorImpl<mlir::Operation *> *visitedOperations = nullptr,
       CallTargets *callTargets = nullptr
-  ) const;
-
-  /// Discover concrete struct dependencies and explored calls in one free
-  /// function body, using the same evaluator and step budget as struct methods.
-  mlir::FailureOr<Requests> discoverFunction(
-      function::FuncDefOp source, const Bindings &bindings,
-      llvm::SmallVectorImpl<mlir::Operation *> *visitedOperations = nullptr,
-      CallTargets *callTargets = nullptr
-  ) const;
-
-  /// Evaluate the enclosing template's expressions for a free function.
-  mlir::FailureOr<Bindings> evaluateFunctionBindings(
-      function::FuncDefOp source, const Bindings &bindings, uint64_t *remainingSteps = nullptr
   ) const;
 
 private:

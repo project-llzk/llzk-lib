@@ -153,8 +153,7 @@ public:
 /// This object owns the requests and evaluation budget for a single discover()
 /// call so a later call with different template arguments starts from fresh state.
 class DiscoveryRun {
-  StructDefOp source;
-  function::FuncDefOp functionSource;
+  Operation *source;
   StructSpecializationDiscovery::Bindings bindings;
   SpecializationTypeResolver typeResolver;
   SymbolTableCollection tables;
@@ -201,7 +200,9 @@ class DiscoveryRun {
         }
       }
     }
-    if (source && type == llvm::cast<StructType>(typeResolver.resolveType(source.getType()))) {
+    if (auto structure = dyn_cast<StructDefOp>(source);
+        structure &&
+        type == llvm::cast<StructType>(typeResolver.resolveType(structure.getType()))) {
       return success();
     }
     SmallVector<Attribute> indexAttrs;
@@ -637,30 +638,21 @@ class DiscoveryRun {
   }
 
 public:
-  MLIRContext *context() { return source ? source.getContext() : functionSource.getContext(); }
+  MLIRContext *context() { return source->getContext(); }
 
   DiscoveryRun(
-      StructDefOp structure, const StructSpecializationDiscovery::Bindings &parameters,
+      Operation *definition, const StructSpecializationDiscovery::Bindings &parameters,
       uint64_t limit, SmallVectorImpl<Operation *> *visited,
       StructSpecializationDiscovery::CallTargets *targets = nullptr
   )
-      : source(structure), bindings(parameters), typeResolver(bindings), remaining(limit),
-        visitedOperations(visited), callTargets(targets) {}
-
-  DiscoveryRun(
-      function::FuncDefOp function, const StructSpecializationDiscovery::Bindings &parameters,
-      uint64_t limit, SmallVectorImpl<Operation *> *visited,
-      StructSpecializationDiscovery::CallTargets *targets = nullptr
-  )
-      : functionSource(function), bindings(parameters), typeResolver(bindings), remaining(limit),
+      : source(definition), bindings(parameters), typeResolver(bindings), remaining(limit),
         visitedOperations(visited), callTargets(targets) {}
 
   uint64_t getRemainingSteps() const { return remaining; }
 
   /// Extend the parameter environment with known template-expression results.
   FailureOr<StructSpecializationDiscovery::Bindings> evaluateBindings() {
-    Operation *definition = source ? source.getOperation() : functionSource.getOperation();
-    if (auto templ = definition->getParentOfType<TemplateOp>()) {
+    if (auto templ = source->getParentOfType<TemplateOp>()) {
       for (auto expr : templ.getConstOps<TemplateExprOp>()) {
         SmallVector<Attribute> values;
         if (failed(evaluateBlock(expr.getInitializerRegion().front(), Environment(), values))) {
@@ -680,18 +672,18 @@ public:
     if (failed(evaluateBindings())) {
       return failure();
     }
-    if (source) {
-      for (auto member : source.getOps<MemberDefOp>()) {
+    if (auto structure = dyn_cast<StructDefOp>(source)) {
+      for (auto member : structure.getOps<MemberDefOp>()) {
         if (failed(collectTypes(member, member.getType()))) {
           return failure();
         }
       }
     }
     SmallVector<function::FuncDefOp> functions;
-    if (source) {
-      llvm::append_range(functions, source.getOps<function::FuncDefOp>());
+    if (auto structure = dyn_cast<StructDefOp>(source)) {
+      llvm::append_range(functions, structure.getOps<function::FuncDefOp>());
     } else {
-      functions.push_back(functionSource);
+      functions.push_back(cast<function::FuncDefOp>(source));
     }
     for (auto function : functions) {
       if (!function.getBody().hasOneBlock()) {
@@ -802,7 +794,7 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
 }
 
 FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(
-    StructDefOp source, const Bindings &bindings, uint64_t *remainingSteps
+    Operation *source, const Bindings &bindings, uint64_t *remainingSteps
 ) const {
   DiscoveryRun run(source, bindings, limit, nullptr);
   auto evaluated = run.evaluateBindings();
@@ -813,27 +805,8 @@ FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery
 }
 
 FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discover(
-    StructDefOp source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
+    Operation *source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
     CallTargets *callTargets
-) const {
-  return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();
-}
-
-FailureOr<StructSpecializationDiscovery::Bindings>
-StructSpecializationDiscovery::evaluateFunctionBindings(
-    function::FuncDefOp source, const Bindings &bindings, uint64_t *remainingSteps
-) const {
-  DiscoveryRun run(source, bindings, limit, nullptr);
-  auto evaluated = run.evaluateBindings();
-  if (succeeded(evaluated) && remainingSteps) {
-    *remainingSteps = run.getRemainingSteps();
-  }
-  return evaluated;
-}
-
-FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discoverFunction(
-    function::FuncDefOp source, const Bindings &bindings,
-    SmallVectorImpl<Operation *> *visitedOperations, CallTargets *callTargets
 ) const {
   return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();
 }
