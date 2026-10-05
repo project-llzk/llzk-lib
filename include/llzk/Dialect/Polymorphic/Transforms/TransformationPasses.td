@@ -53,7 +53,8 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
 }
 
 def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
-  let summary = "Specialize structs and free functions reachable from llzk.main";
+  let summary =
+      "Specialize structs and free functions reachable from llzk.main";
   let description = [{
     Starting with a concrete `llzk.main`, discover and instantiate struct and
     free-function dependencies until every requested specialization has been
@@ -134,8 +135,9 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     Includes must be inlined before running this pass.
   }];
   let options =
-      [Option<"specializationLimit", "max-specializations", "unsigned", "1000",
-              "Maximum number of concrete struct and free-function definitions">,
+      [Option<
+           "specializationLimit", "max-specializations", "unsigned", "1000",
+           "Maximum number of concrete struct and free-function definitions">,
        Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
               "Maximum steps shared by template expressions and methods in one "
               "discovery run">];
