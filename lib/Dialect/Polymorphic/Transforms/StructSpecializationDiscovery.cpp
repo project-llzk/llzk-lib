@@ -173,7 +173,7 @@ class DiscoveryRun {
   /// Charge work before evaluating it, including empty loop bodies' terminators.
   LogicalResult consumeStep(Operation *site) {
     if (!remaining) {
-      return site->emitError("struct specialization discovery step limit exceeded");
+      return site->emitError("specialization discovery step limit exceeded");
     }
     --remaining;
     return success();
@@ -460,7 +460,7 @@ class DiscoveryRun {
     auto stride = getKnownInteger(env.lookup(loop.getStep()));
     if (!lower || !upper || !stride || *stride <= 0 || loop.getUnsignedCmp()) {
       return loop.emitError(
-          "struct discovery requires known signed for bounds and a positive step"
+          "specialization discovery requires known signed for bounds and a positive step"
       );
     }
     results.clear();
@@ -476,7 +476,7 @@ class DiscoveryRun {
         return failure();
       }
       if (i > std::numeric_limits<int64_t>::max() - *stride) {
-        return loop.emitError("struct discovery loop induction overflow");
+        return loop.emitError("specialization discovery loop induction overflow");
       }
       i += *stride;
     }
@@ -503,7 +503,7 @@ class DiscoveryRun {
       }
       auto known = dyn_cast_or_null<IntegerAttr>(condition);
       if (!known || !known.getType().isInteger(1)) {
-        return loop.emitError("struct discovery requires a known while condition");
+        return loop.emitError("specialization discovery requires a known while condition");
       }
       if (known.getValue().isZero()) {
         results = std::move(forwarded);
@@ -567,7 +567,7 @@ class DiscoveryRun {
         return failure();
       }
     } else if (op.getNumRegions()) {
-      return op.emitError("unsupported control flow in struct specialization discovery");
+      return op.emitError("unsupported control flow in specialization discovery");
     } else {
       // The environment tracks scalar constants produced by template reads and
       // folding. Resolving global reads requires looking up global initializers;
@@ -625,7 +625,7 @@ class DiscoveryRun {
         return success();
       }
       if (op.hasTrait<OpTrait::IsTerminator>()) {
-        return op.emitError("unsupported control flow in struct specialization discovery");
+        return op.emitError("unsupported control flow in specialization discovery");
       }
       SmallVector<Attribute> results(op.getNumResults());
       if (failed(evaluateOperation(op, env, results))) {

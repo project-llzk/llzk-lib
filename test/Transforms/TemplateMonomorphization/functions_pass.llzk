@@ -43,6 +43,87 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 
 // -----
 
+// Recursive calls stop when the template condition becomes false.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "bounded_recursion"} {
+  poly.template @Rec {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    function.def @f() -> index {
+      %n = poly.read_const @N : index
+      %limit = arith.constant 3 : index
+      %continue = arith.cmpi ult, %n, %limit : index
+      %result = scf.if %continue -> (index) {
+        %next = function.call @Rec::@f<[@Next]>() : () -> index
+        scf.yield %next : index
+      } else {
+        scf.yield %n : index
+      }
+      function.return %result : index
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %value = function.call @Rec::@f<[0]>() : () -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "bounded_recursion"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK:          function.call @f__spec_0() : () -> index
+// CHECK:        function.def @f__spec_0() -> index attributes {poly.arguments = [0 : index], poly.origin = @Rec::@f} {
+// CHECK:          function.call @f__spec_1() : () -> index
+// CHECK:        function.def @f__spec_1() -> index attributes {poly.arguments = [1 : index], poly.origin = @Rec::@f} {
+// CHECK:          function.call @f__spec_2() : () -> index
+// CHECK:        function.def @f__spec_2() -> index attributes {poly.arguments = [2 : index], poly.origin = @Rec::@f} {
+// CHECK:          function.call @f__spec_3() : () -> index
+// CHECK:        function.def @f__spec_3() -> index attributes {poly.arguments = [3 : index], poly.origin = @Rec::@f} {
+// CHECK:          function.call @Rec::@f<[4]>() : () -> index
+// CHECK-NOT:    function.def @f__spec_4
+
+// -----
+
+// A dead call does not require evaluating the callee's unknown loop bound.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "dead_function"} {
+  function.def @loop(%n: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    scf.for %i = %zero to %n step %one {
+      scf.yield
+    }
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %false = arith.constant false
+      %five = arith.constant 5 : index
+      scf.if %false {
+        function.call @loop(%five) : (index) -> ()
+        scf.yield
+      }
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "dead_function"} {
+// CHECK:        function.def @loop(%{{[0-9a-zA-Z_\.]+}}: index) {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK:          function.call @loop(
+// CHECK-NOT:    function.def @loop__spec_0
+
+// -----
+
 // The call signature infers a parameter and a nested free call inherits it.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "inferred"} {
   poly.template @Inner {
@@ -118,7 +199,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 
 // -----
 
-// A retained call in an unselected branch still needs a matching concrete callee.
+// A retained call needs a matching concrete callee without evaluating its unknown loop.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "retained_branch"} {
   poly.template @ChildTemplate {
     poly.param @N : index
@@ -132,7 +213,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
   }
   poly.template @Functions {
     poly.param @N : index
-    function.def @make() -> !struct.type<@ChildTemplate::@Child<[@N]>> attributes {function.allow_witness} {
+    function.def @make(%bound: index) -> !struct.type<@ChildTemplate::@Child<[@N]>> attributes {function.allow_witness} {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      scf.for %i = %zero to %bound step %one {
+        scf.yield
+      }
       %child = function.call @ChildTemplate::@Child::@compute() : () -> !struct.type<@ChildTemplate::@Child<[@N]>>
       function.return %child : !struct.type<@ChildTemplate::@Child<[@N]>>
     }
@@ -141,8 +227,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
     struct.member @child : !struct.type<@ChildTemplate::@Child<[2]>>
     function.def @compute() -> !struct.type<@Main> {
       %false = arith.constant false
+      %bound = arith.constant 5 : index
       scf.if %false {
-        %unused = function.call @Functions::@make<[2]>() : () -> !struct.type<@ChildTemplate::@Child<[2]>>
+        %unused = function.call @Functions::@make<[2]>(%bound) : (index) -> !struct.type<@ChildTemplate::@Child<[2]>>
         scf.yield
       }
       %self = struct.new : !struct.type<@Main>
@@ -155,6 +242,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "retained_branch"} {
 // CHECK:        struct.def @Main__spec_0 {
 // CHECK:          scf.if
-// CHECK:            function.call @make__spec_0() : () -> !struct.type<@Child__spec_1>
-// CHECK:        function.def @make__spec_0() -> !struct.type<@Child__spec_1> attributes {function.allow_witness, poly.arguments = [2 : index], poly.origin = @Functions::@make} {
+// CHECK:            function.call @make__spec_0({{.*}}) : (index) -> !struct.type<@Child__spec_1>
+// CHECK:        function.def @make__spec_0(%{{[0-9a-zA-Z_\.]+}}: index) -> !struct.type<@Child__spec_1> attributes {function.allow_witness, poly.arguments = [2 : index], poly.origin = @Functions::@make} {
+// CHECK:          scf.for
+// CHECK:          function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
 // CHECK-NOT:    function.def @make__spec_1

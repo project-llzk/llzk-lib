@@ -154,6 +154,8 @@ class TemplateInstantiationWorklist {
     function::FuncDefOp clone;
     SmallVector<Operation *> visited;
     uint64_t remainingSteps;
+    bool active;
+    bool discovered;
   };
 
   using SpecializationKey = std::pair<Operation *, ArrayAttr>;
@@ -317,7 +319,7 @@ class TemplateInstantiationWorklist {
         return clone.emitError("duplicate function specialization identity");
       }
       functionCloneToId[clone.getOperation()] = functions.size();
-      functions.push_back({source, clone, {}, evaluationLimit});
+      functions.push_back({source, clone, {}, evaluationLimit, false, false});
     }
     return success();
   }
@@ -390,8 +392,39 @@ class TemplateInstantiationWorklist {
     });
   }
 
+  /// A retained call needs a concrete callee when type rewriting will change
+  /// one of its operand or result types to a struct specialization.
+  FailureOr<bool> hasSpecializedSignature(function::CallOp call) {
+    bool required = false;
+    bool invalid = false;
+    auto inspect = [this, call, &required, &invalid](Type type) {
+      type.walk([this, call, &required, &invalid](StructType structure) {
+        auto key = getSpecializationKey(structure, call, call, KeyMode::Optional);
+        if (failed(key)) {
+          invalid = true;
+          return WalkResult::interrupt();
+        }
+        if (*key && cache.contains(**key)) {
+          required = true;
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+    };
+    for (Type type : call.getResultTypes()) {
+      inspect(type);
+    }
+    for (Type type : call.getArgOperands().getTypes()) {
+      inspect(type);
+    }
+    if (invalid) {
+      return failure();
+    }
+    return required;
+  }
+
   /// Clone a reachable free function and retarget its call to that clone.
-  LogicalResult instantiateFunction(function::CallOp call) {
+  LogicalResult instantiateFunction(function::CallOp call, bool active = true) {
     auto target = call.getCalleeTarget(tables);
     if (failed(target)) {
       return failure();
@@ -400,7 +433,9 @@ class TemplateInstantiationWorklist {
       return call.emitError("inline includes before template monomorphization");
     }
     auto source = target->get();
-    if (functionCloneToId.contains(source.getOperation())) {
+    if (auto clone = functionCloneToId.find(source.getOperation());
+        clone != functionCloneToId.end()) {
+      functions[clone->second].active |= active;
       return success();
     }
     if (source.isExternal()) {
@@ -416,6 +451,7 @@ class TemplateInstantiationWorklist {
     unsigned id;
     if (auto found = functionCache.find(*key); found != functionCache.end()) {
       id = found->second;
+      functions[id].active |= active;
     } else {
       if (entries.size() + functions.size() >= limit) {
         return call.emitError("template monomorphization specialization limit exceeded");
@@ -455,7 +491,7 @@ class TemplateInstantiationWorklist {
       id = functions.size();
       functionCache[*key] = id;
       functionCloneToId[clone.getOperation()] = id;
-      functions.push_back({source, clone, {}, remainingSteps});
+      functions.push_back({source, clone, {}, remainingSteps, active, false});
       convertCalleesInPlace(clone, bindings);
       convertCallArguments(clone, bindings);
       SmallVector<Diagnostic> diagnostics;
@@ -469,7 +505,16 @@ class TemplateInstantiationWorklist {
         }
       });
       if (unresolved) {
-        return call.emitError("unresolved template binding in free-function specialization");
+        if (templ && templ.getConstNamed<TemplateExprOp>(unresolved.getConstNameAttr())) {
+          call.emitError("template expression ")
+              << unresolved.getConstNameAttr() << " could not be evaluated for function @"
+              << source.getSymName() << " with arguments " << key->second;
+        } else {
+          call.emitError("unresolved template binding ")
+              << unresolved.getConstNameAttr() << " while specializing function @"
+              << source.getSymName();
+        }
+        return failure();
       }
       reportDelayedDiagnostics(call, std::move(diagnostics));
       auto origin = getPathRelativeToRoot(source, topRoot);
@@ -784,9 +829,18 @@ public:
       return failure();
     }
     // Discovery appends to these worklists. Indices remain valid as they grow.
-    for (unsigned structIndex = 0, functionIndex = 0;
-         structIndex < entries.size() || functionIndex < functions.size();) {
+    for (unsigned structIndex = 0;;) {
       bool isStruct = structIndex < entries.size();
+      unsigned functionIndex = 0;
+      if (!isStruct) {
+        while (functionIndex < functions.size() &&
+               (!functions[functionIndex].active || functions[functionIndex].discovered)) {
+          ++functionIndex;
+        }
+        if (functionIndex == functions.size()) {
+          break;
+        }
+      }
       Operation *clone = isStruct ? entries[structIndex].clone.getOperation()
                                   : functions[functionIndex].clone.getOperation();
       SmallVector<Operation *> visited;
@@ -806,11 +860,7 @@ public:
       if (failed(requests)) {
         return failure();
       }
-      if (isStruct) {
-        entries[structIndex].visited = visited;
-      } else {
-        functions[functionIndex].visited = visited;
-      }
+      DenseSet<Operation *> visitedSet(visited.begin(), visited.end());
       for (const auto &request : *requests) {
         auto id = instantiate(request.type, request.site);
         if (failed(id)) {
@@ -823,12 +873,53 @@ public:
           return failure();
         }
       }
-      auto calls = clone->walk([this](function::CallOp call) {
+      auto calls = clone->walk([this, &visitedSet](function::CallOp call) {
+        if (!visitedSet.contains(call)) {
+          return WalkResult::advance();
+        }
         auto target = call.getCalleeTarget(tables);
         if (failed(target)) {
           return WalkResult::interrupt();
         }
         if (!target->get()->getParentOfType<StructDefOp>() && failed(instantiateFunction(call))) {
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+      if (calls.wasInterrupted()) {
+        return failure();
+      }
+      if (isStruct) {
+        entries[structIndex].visited = std::move(visited);
+        ++structIndex;
+      } else {
+        functions[functionIndex].visited = std::move(visited);
+        functions[functionIndex].discovered = true;
+      }
+    }
+    // A call in an unselected branch is not a dependency to explore. Retain
+    // its template callee unless a known struct specialization changes its
+    // signature; in that case a concrete callee is needed for valid IR.
+    for (unsigned structIndex = 0, functionIndex = 0;
+         structIndex < entries.size() || functionIndex < functions.size();) {
+      bool isStruct = structIndex < entries.size();
+      Operation *clone = isStruct ? entries[structIndex].clone.getOperation()
+                                  : functions[functionIndex].clone.getOperation();
+      auto &visited = isStruct ? entries[structIndex].visited : functions[functionIndex].visited;
+      DenseSet<Operation *> visitedSet(visited.begin(), visited.end());
+      auto calls = clone->walk([this, &visitedSet](function::CallOp call) {
+        if (visitedSet.contains(call)) {
+          return WalkResult::advance();
+        }
+        auto target = call.getCalleeTarget(tables);
+        if (failed(target)) {
+          return WalkResult::interrupt();
+        }
+        if (target->get()->getParentOfType<StructDefOp>()) {
+          return WalkResult::advance();
+        }
+        auto required = hasSpecializedSignature(call);
+        if (failed(required) || (*required && failed(instantiateFunction(call, false)))) {
           return WalkResult::interrupt();
         }
         return WalkResult::advance();

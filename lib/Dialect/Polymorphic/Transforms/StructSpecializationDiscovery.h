@@ -86,7 +86,7 @@ struct RolledCallTargets {
 ///
 /// Values available for specialization:
 /// - poly.read_const reads the supplied bindings and known template-expression
-///   results. Method arguments start unknown.
+///   results. Method and free-function arguments start unknown.
 /// - A region-free, memory-effect-free operation produces known values when all
 ///   operands are known and its fold hook returns attributes or known SSA values.
 ///   This includes foldable constants and arithmetic; purity alone is insufficient.

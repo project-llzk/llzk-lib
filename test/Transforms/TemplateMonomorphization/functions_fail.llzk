@@ -1,0 +1,47 @@
+// Unsupported free-function specializations report the requesting call or definition.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// A template expression read from a global cannot be evaluated yet.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  global.def const @G : index = 4
+  poly.template @T {
+    poly.param @N : index
+    poly.expr @E {
+      %g = global.read const @G : index
+      poly.yield %g : index
+    }
+    function.def @f() -> index {
+      %e = poly.read_const @E : index
+      function.return %e : index
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{template expression @E could not be evaluated for function @f with arguments [3 : index]}}
+      %value = function.call @T::@f<[3]>() : () -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Discovery cannot execute a function with unstructured control flow.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-error@+1 {{free-function specialization requires a single-block body}}
+  function.def @f() {
+    cf.br ^bb1
+  ^bb1:
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      function.call @f() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}

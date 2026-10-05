@@ -62,9 +62,9 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     including reachable definitions with no template parameters. Free-function
     arguments may be explicit on a call or inferred from its type signature.
     Preserve source templates and control flow, and update direct type uses and
-    calls to their concrete definitions. Free-function calls retained in
-    unselected branches are also specialized so their rewritten types match
-    the callee signature.
+    calls to their concrete definitions. A free-function call retained in an
+    unselected branch receives a concrete callee only when struct type rewriting
+    changes its signature.
 
     Loops remain in the IR rather than being unrolled; discovery evaluates their
     iterations to identify specializations without expanding the loop bodies.
@@ -130,7 +130,8 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     a known condition at every check. Unstructured branches are diagnosed.
     Constant evaluation
     uses template bindings and fold hooks; global and aggregate reads and call
-    results remain unknown. Required specialization arguments must resolve.
+    results remain unknown. Function arguments also begin unknown, even when a
+    caller passes a constant. Required specialization arguments must resolve.
     External free-function templates are unsupported.
     Includes must be inlined before running this pass.
   }];
