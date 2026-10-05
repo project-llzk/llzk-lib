@@ -47,8 +47,9 @@ namespace {
 /// An i1 binding accepts only boolean values or index zero/one; subsequent reads
 /// and forwarding use the normalized boolean value.
 /// Untyped parameters retain their supplied attributes.
-FailureOr<ArrayAttr>
-normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site) {
+FailureOr<ArrayAttr> normalizeTypedArguments(
+    Operation *source, ArrayAttr arguments, Operation *site, StringRef kind = "struct"
+) {
   auto templ = source->getParentOfType<TemplateOp>();
   if (!templ) {
     return arguments;
@@ -99,7 +100,7 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
             const Field &field = feltType.getField();
             auto reduced = field.reduce(llvm::DynamicAPInt(integer.getValue()));
             value = FeltConstAttr::get(
-                source.getContext(), toAPInt(reduced, field.bitWidth()), feltType
+                source->getContext(), toAPInt(reduced, field.bitWidth()), feltType
             );
           } else {
             if (integer.getValue().isNegative()) {
@@ -107,7 +108,7 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
                      << argument << " cannot be converted to felt parameter @"
                      << parameter.getSymName() << ": negative values require a known field modulus";
             }
-            value = FeltConstAttr::get(source.getContext(), integer.getValue(), feltType);
+            value = FeltConstAttr::get(source->getContext(), integer.getValue(), feltType);
           }
         } else if (
             auto felt = dyn_cast<FeltConstAttr>(argument);
@@ -118,7 +119,7 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
             const Field &field = feltType.getField();
             number = toAPInt(field.reduce(number), field.bitWidth());
           }
-          value = FeltConstAttr::get(source.getContext(), number, feltType);
+          value = FeltConstAttr::get(source->getContext(), number, feltType);
         }
       }
       bool matches = false;
@@ -128,23 +129,29 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
         matches = typed.getType() == *expected;
       }
       if (!matches) {
-        return site->emitError("struct argument ")
-               << argument << " does not match parameter @" << parameter.getSymName() << " of type "
-               << *expected;
+        return site->emitError() << kind << " argument " << argument << " does not match parameter @"
+                                 << parameter.getSymName() << " of type " << *expected;
       }
     }
     normalized.push_back(value);
   }
-  return ArrayAttr::get(source.getContext(), normalized);
+  return ArrayAttr::get(source->getContext(), normalized);
 }
 
 /// Instantiate the dependency closure of llzk.main. Reserving each source/argument
 /// pair before exploring its body makes repeated and cyclic requests share a clone.
-class StructInstantiationWorklist {
+class TemplateInstantiationWorklist {
   /// Keep source identity for call retargeting and the explored paths of its clone.
   struct Entry {
     StructDefOp source;
     StructDefOp clone;
+    SmallVector<Operation *> visited;
+    uint64_t remainingSteps;
+  };
+
+  struct FunctionEntry {
+    function::FuncDefOp source;
+    function::FuncDefOp clone;
     SmallVector<Operation *> visited;
     uint64_t remainingSteps;
   };
@@ -158,8 +165,11 @@ class StructInstantiationWorklist {
   uint64_t evaluationLimit;
   SymbolTableCollection tables;
   SmallVector<Entry> entries;
+  SmallVector<FunctionEntry> functions;
   DenseMap<SpecializationKey, unsigned> cache;
+  DenseMap<SpecializationKey, unsigned> functionCache;
   DenseMap<Operation *, unsigned> cloneToId;
+  DenseMap<Operation *, unsigned> functionCloneToId;
 
   /// Restore source identity when a rewritten body carries a previously
   /// specialized struct as a nested type argument.
@@ -230,7 +240,7 @@ class StructInstantiationWorklist {
       }
       return site->emitError("struct specialization argument count mismatch");
     }
-    auto normalized = normalizeTypedArguments(found->get(), *sourceArguments, site);
+    auto normalized = normalizeTypedArguments(found->get().getOperation(), *sourceArguments, site);
     if (failed(normalized)) {
       return failure();
     }
@@ -276,6 +286,212 @@ class StructInstantiationWorklist {
     return success();
   }
 
+  /// Recover function clones so a second pass run reuses their definitions.
+  LogicalResult loadExistingFunctions() {
+    SmallVector<function::FuncDefOp> existing;
+    root.walk([&existing](function::FuncDefOp function) {
+      if (function->hasAttr(SPECIALIZATION_ORIGIN_ATTR)) {
+        existing.push_back(function);
+      }
+    });
+    for (auto clone : existing) {
+      auto origin = clone->getAttrOfType<SymbolRefAttr>(SPECIALIZATION_ORIGIN_ATTR);
+      auto arguments = clone->getAttrOfType<ArrayAttr>(SPECIALIZATION_ARGUMENTS_ATTR);
+      if (!origin || !arguments) {
+        return clone.emitError("invalid function specialization metadata");
+      }
+      auto source = tables.lookupSymbolIn<function::FuncDefOp>(topRoot, origin);
+      if (!source) {
+        return clone.emitError("cannot resolve function specialization origin");
+      }
+      auto templ = source->getParentOfType<TemplateOp>();
+      if (arguments.size() !=
+              (templ ? llvm::range_size(templ.getConstOps<TemplateParamOp>()) : 0) ||
+          !llvm::all_of(arguments, [](Attribute argument) {
+        return isConcreteStructParamAttr(argument);
+      })) {
+        return clone.emitError("invalid function specialization arguments");
+      }
+      auto key = SpecializationKey(source.getOperation(), arguments);
+      if (!functionCache.try_emplace(key, functions.size()).second) {
+        return clone.emitError("duplicate function specialization identity");
+      }
+      functionCloneToId[clone.getOperation()] = functions.size();
+      functions.push_back({source, clone, {}, evaluationLimit});
+    }
+    return success();
+  }
+
+  /// Resolve explicit or signature-inferred template arguments at a free call.
+  FailureOr<SpecializationKey> getFunctionKey(function::CallOp call, function::FuncDefOp source) {
+    auto templ = source->getParentOfType<TemplateOp>();
+    SmallVector<Attribute> arguments;
+    if (templ) {
+      auto parameters = templ.getConstOps<TemplateParamOp>();
+      auto explicitArguments = call.getTemplateParamsAttr();
+      if (explicitArguments && explicitArguments.size() != llvm::range_size(parameters)) {
+        call.emitError("function specialization argument count mismatch");
+        return failure();
+      }
+      std::optional<UnificationMap> unified;
+      if (!explicitArguments) {
+        auto result = call.unifyTypeSignature(source.getFunctionType());
+        if (failed(result)) {
+          return call.emitError("cannot infer concrete function specialization");
+        }
+        unified = *result;
+      }
+      for (auto [index, parameter] : llvm::enumerate(parameters)) {
+        Attribute value =
+            explicitArguments
+                ? explicitArguments[index]
+                : inferUnifiedParam(*unified, FlatSymbolRefAttr::get(parameter.getSymNameAttr()))
+                      .value_or(Attribute());
+        if (!value || !isConcreteStructParamAttr(value)) {
+          call.emitError("cannot resolve free-function template parameter @")
+              << parameter.getSymName();
+          return failure();
+        }
+        if (failed(call.verifyTemplateParamValueCompatibility(value, parameter))) {
+          return failure();
+        }
+        arguments.push_back(value);
+      }
+    }
+    auto canonical = rebaseTemplateParams(
+        tables, ArrayAttr::get(root.getContext(), arguments), call, topRoot, call
+    );
+    if (failed(canonical)) {
+      return failure();
+    }
+    auto sourceArguments = canonicalizeCloneArguments(*canonical, call);
+    if (failed(sourceArguments)) {
+      return failure();
+    }
+    auto normalized = normalizeTypedArguments(source, *sourceArguments, call, "function");
+    if (failed(normalized)) {
+      return failure();
+    }
+    return SpecializationKey(source.getOperation(), *normalized);
+  }
+
+  /// Substitute explicit arguments on nested calls before discovering their targets.
+  static void
+  convertCallArguments(Operation *clone, const StructSpecializationDiscovery::Bindings &bindings) {
+    TemplateTypeConverter converter(bindings);
+    clone->walk([&converter](function::CallOp call) {
+      if (auto parameters = call.getTemplateParamsAttr()) {
+        SmallVector<Attribute> values;
+        for (Attribute parameter : parameters) {
+          values.push_back(converter.convertAttr(parameter));
+        }
+        call.setTemplateParamsAttr(ArrayAttr::get(call.getContext(), values));
+      }
+    });
+  }
+
+  /// Clone a reachable free function and retarget its call to that clone.
+  LogicalResult instantiateFunction(function::CallOp call) {
+    auto target = call.getCalleeTarget(tables);
+    if (failed(target)) {
+      return failure();
+    }
+    if (target->viaInclude()) {
+      return call.emitError("inline includes before template monomorphization");
+    }
+    auto source = target->get();
+    if (functionCloneToId.contains(source.getOperation())) {
+      return success();
+    }
+    if (source.isExternal()) {
+      if (source->getParentOfType<TemplateOp>()) {
+        return call.emitError("external function specialization is unsupported");
+      }
+      return success();
+    }
+    auto key = getFunctionKey(call, source);
+    if (failed(key)) {
+      return failure();
+    }
+    unsigned id;
+    if (auto found = functionCache.find(*key); found != functionCache.end()) {
+      id = found->second;
+    } else {
+      if (entries.size() + functions.size() >= limit) {
+        return call.emitError("template monomorphization specialization limit exceeded");
+      }
+      if (!source.getBody().hasOneBlock()) {
+        return source.emitError("free-function specialization requires a single-block body");
+      }
+      auto destination = getRootModule(source);
+      if (failed(destination)) {
+        return failure();
+      }
+      auto localArguments = rebaseTemplateParams(tables, key->second, topRoot, *destination, call);
+      if (failed(localArguments)) {
+        return failure();
+      }
+      StructSpecializationDiscovery::Bindings bindings;
+      auto templ = source->getParentOfType<TemplateOp>();
+      if (templ) {
+        for (auto [parameter, argument] :
+             llvm::zip_equal(templ.getConstOps<TemplateParamOp>(), *localArguments)) {
+          bindings[FlatSymbolRefAttr::get(parameter.getSymNameAttr())] = argument;
+        }
+      }
+      uint64_t remainingSteps = evaluationLimit;
+      if (templ) {
+        auto evaluated = StructSpecializationDiscovery(evaluationLimit)
+                             .evaluateFunctionBindings(source, bindings, &remainingSteps);
+        if (failed(evaluated)) {
+          return failure();
+        }
+        bindings = std::move(*evaluated);
+      }
+      auto clone = source.clone();
+      clone.setSymName((source.getSymName() + "__spec_" + Twine(functions.size())).str());
+      Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
+      tables.getSymbolTable(parent).insert(clone);
+      id = functions.size();
+      functionCache[*key] = id;
+      functionCloneToId[clone.getOperation()] = id;
+      functions.push_back({source, clone, {}, remainingSteps});
+      convertCalleesInPlace(clone, bindings);
+      convertCallArguments(clone, bindings);
+      SmallVector<Diagnostic> diagnostics;
+      if (failed(substituteFunctionBody(clone, bindings, diagnostics))) {
+        return failure();
+      }
+      ConstReadOp unresolved;
+      clone.walk([&unresolved](ConstReadOp read) {
+        if (!unresolved) {
+          unresolved = read;
+        }
+      });
+      if (unresolved) {
+        return call.emitError("unresolved template binding in free-function specialization");
+      }
+      reportDelayedDiagnostics(call, std::move(diagnostics));
+      auto origin = getPathRelativeToRoot(source, topRoot);
+      if (failed(origin)) {
+        return failure();
+      }
+      clone->setAttr(SPECIALIZATION_ORIGIN_ATTR, *origin);
+      clone->setAttr(SPECIALIZATION_ARGUMENTS_ATTR, key->second);
+    }
+    auto lookupRoot = getRootModule(call);
+    if (failed(lookupRoot)) {
+      return failure();
+    }
+    auto name = getPathRelativeToRoot(functions[id].clone, *lookupRoot);
+    if (failed(name)) {
+      return call.emitError("cannot form a symbol path to the specialized free function");
+    }
+    call.setCalleeAttr(*name);
+    call.removeTemplateParamsAttr();
+    return success();
+  }
+
   /// Resolve source identity before forming the cache key, so symbol aliases do
   /// not create duplicate definitions. The limit bounds growing recursive families.
   FailureOr<unsigned> instantiate(StructType type, Operation *site) {
@@ -300,7 +516,7 @@ class StructInstantiationWorklist {
     if (auto existing = cache.find(key); existing != cache.end()) {
       return existing->second;
     }
-    if (entries.size() >= limit) {
+    if (entries.size() + functions.size() >= limit) {
       return site->emitError("template monomorphization specialization limit exceeded");
     }
     auto branches = source.walk([](BranchOpInterface op) -> WalkResult {
@@ -496,7 +712,7 @@ class StructInstantiationWorklist {
 
   /// Choose a method's owner from the concrete struct carried by the call. Rolled
   /// affine calls keep their original callee and use family metadata for dispatch.
-  LogicalResult retargetCall(function::CallOp call, const Entry &caller, bool visited) {
+  LogicalResult retargetCall(function::CallOp call, const Entry *caller, bool visited) {
     auto target = call.getCalleeTarget(tables);
     if (failed(target)) {
       return failure();
@@ -506,11 +722,6 @@ class StructInstantiationWorklist {
     }
     auto owner = target->get()->getParentOfType<StructDefOp>();
     if (!owner) {
-      if (visited) {
-        return call.emitError(
-            "free-function calls are not yet supported by template monomorphization"
-        );
-      }
       return success();
     }
     if (call->hasAttr(FAMILY_SPECIALIZATIONS_ATTR)) {
@@ -537,8 +748,8 @@ class StructInstantiationWorklist {
         return success();
       }
     }
-    if (owner == caller.source) {
-      return setSpecializedCallee(call, caller.clone, target->get().getSymNameAttr());
+    if (caller && owner == caller->source) {
+      return setSpecializedCallee(call, caller->clone, target->get().getSymNameAttr());
     }
     if (visited) {
       return call.emitError("cannot determine concrete struct owner for method call");
@@ -547,7 +758,7 @@ class StructInstantiationWorklist {
   }
 
 public:
-  StructInstantiationWorklist(ModuleOp module, unsigned maximum, uint64_t steps)
+  TemplateInstantiationWorklist(ModuleOp module, unsigned maximum, uint64_t steps)
       : root(module), limit(maximum), evaluationLimit(steps) {}
 
   /// Discover each appended clone once, then rewrite uses after all identities
@@ -561,6 +772,9 @@ public:
     if (failed(loadExistingSpecializations())) {
       return failure();
     }
+    if (failed(loadExistingFunctions())) {
+      return failure();
+    }
     auto main = getMainInstanceType(root);
     if (failed(main) || !*main) {
       return root.emitError("template monomorphization requires a concrete llzk.main");
@@ -569,19 +783,34 @@ public:
     if (failed(mainId)) {
       return failure();
     }
-    // Discovery appends to entries while processing dependencies. Indexing both
-    // visits those new entries and avoids retaining iterators across reallocation.
-    for (unsigned i = 0; i < entries.size(); ++i) {
-      auto clone = entries[i].clone;
+    // Discovery appends to these worklists. Indices remain valid as they grow.
+    for (unsigned structIndex = 0, functionIndex = 0;
+         structIndex < entries.size() || functionIndex < functions.size();) {
+      bool isStruct = structIndex < entries.size();
+      Operation *clone = isStruct ? entries[structIndex].clone.getOperation()
+                                  : functions[functionIndex].clone.getOperation();
       SmallVector<Operation *> visited;
+      uint64_t steps =
+          isStruct ? entries[structIndex].remainingSteps : functions[functionIndex].remainingSteps;
       StructSpecializationDiscovery::CallTargets rolledCalls;
-      auto requests =
-          StructSpecializationDiscovery(entries[i].remainingSteps)
-              .discover(clone, StructSpecializationDiscovery::Bindings(), &visited, &rolledCalls);
+      StructSpecializationDiscovery discovery(steps);
+      auto requests = isStruct
+                          ? discovery.discover(
+                                cast<StructDefOp>(clone), StructSpecializationDiscovery::Bindings(),
+                                &visited, &rolledCalls
+                            )
+                          : discovery.discoverFunction(
+                                cast<function::FuncDefOp>(clone),
+                                StructSpecializationDiscovery::Bindings(), &visited, &rolledCalls
+                            );
       if (failed(requests)) {
         return failure();
       }
-      entries[i].visited = std::move(visited);
+      if (isStruct) {
+        entries[structIndex].visited = visited;
+      } else {
+        functions[functionIndex].visited = visited;
+      }
       for (const auto &request : *requests) {
         auto id = instantiate(request.type, request.site);
         if (failed(id)) {
@@ -594,12 +823,37 @@ public:
           return failure();
         }
       }
+      auto calls = clone->walk([this](function::CallOp call) {
+        auto target = call.getCalleeTarget(tables);
+        if (failed(target)) {
+          return WalkResult::interrupt();
+        }
+        if (!target->get()->getParentOfType<StructDefOp>() && failed(instantiateFunction(call))) {
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+      if (calls.wasInterrupted()) {
+        return failure();
+      }
+      if (isStruct) {
+        ++structIndex;
+      } else {
+        ++functionIndex;
+      }
     }
     // Each replacer resolves input names in one root. The cache identifies the
     // definition independently of its spelling, including uses in preserved paths
     // that discovery did not execute.
-    llvm::MapVector<Operation *, SmallVector<StructDefOp>> clonesByRoot;
+    llvm::MapVector<Operation *, SmallVector<Operation *>> clonesByRoot;
     for (Entry &entry : entries) {
+      auto lookupRoot = getRootModule(entry.clone);
+      if (failed(lookupRoot)) {
+        return failure();
+      }
+      clonesByRoot[lookupRoot->getOperation()].push_back(entry.clone);
+    }
+    for (FunctionEntry &entry : functions) {
       auto lookupRoot = getRootModule(entry.clone);
       if (failed(lookupRoot)) {
         return failure();
@@ -656,7 +910,16 @@ public:
     for (Entry &entry : entries) {
       DenseSet<Operation *> visited(entry.visited.begin(), entry.visited.end());
       auto result = entry.clone.walk([this, &entry, &visited](function::CallOp call) {
-        return WalkResult(retargetCall(call, entry, visited.contains(call)));
+        return WalkResult(retargetCall(call, &entry, visited.contains(call)));
+      });
+      if (result.wasInterrupted()) {
+        return failure();
+      }
+    }
+    for (FunctionEntry &entry : functions) {
+      DenseSet<Operation *> visited(entry.visited.begin(), entry.visited.end());
+      auto result = entry.clone.walk([this, &visited](function::CallOp call) {
+        return WalkResult(retargetCall(call, nullptr, visited.contains(call)));
       });
       if (result.wasInterrupted()) {
         return failure();
@@ -677,7 +940,7 @@ public:
   }
 };
 
-/// Materialize the concrete struct definitions required by the module entry point.
+/// Materialize the concrete definitions required by the module entry point.
 class TemplateMonomorphizationPass
     : public llzk::polymorphic::impl::TemplateMonomorphizationPassBase<
           TemplateMonomorphizationPass> {
@@ -687,9 +950,8 @@ public:
 
 private:
   void runOnOperation() override {
-    if (failed(
-            StructInstantiationWorklist(getOperation(), specializationLimit, evaluationLimit).run()
-        )) {
+    if (failed(TemplateInstantiationWorklist(getOperation(), specializationLimit, evaluationLimit)
+                   .run())) {
       signalPassFailure();
     }
   }

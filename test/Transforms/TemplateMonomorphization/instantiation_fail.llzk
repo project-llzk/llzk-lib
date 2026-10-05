@@ -1,42 +1,9 @@
-// Monomorphization diagnoses unsupported entry points, calls, and type-argument scopes.
+// Monomorphization diagnoses unsupported entry points and type-argument scopes.
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
 
 // A module without llzk.main cannot select an entry specialization.
 // expected-error@+1 {{template monomorphization requires a concrete llzk.main}}
 module attributes {llzk.lang} {}
-
-// -----
-
-// A reachable free-function call is explicitly unsupported.
-module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-  poly.template @Child {
-    poly.param @N : index
-    struct.def @Child {
-      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
-        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
-        function.return %s : !struct.type<@Child::@Child<[@N]>>
-      }
-      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
-        function.return
-      }
-    }
-  }
-  poly.template @Unsupported {
-    poly.param @N : index
-    function.def @f() { function.return }
-  }
-  struct.def @Main {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Main> {
-      // expected-error@+1 {{free-function calls are not yet supported by template monomorphization}}
-      function.call @Unsupported::@f<[3]>() : () -> ()
-      %s = struct.new : !struct.type<@Main>
-      function.return %s : !struct.type<@Main>
-    }
-    function.def @constrain(%s: !struct.type<@Main>, %input: !felt.type) {
-      function.return
-    }
-  }
-}
 
 // -----
 

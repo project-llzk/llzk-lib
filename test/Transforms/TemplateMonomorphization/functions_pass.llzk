@@ -1,0 +1,160 @@
+// Reachable free-function templates use concrete arguments and share their clones.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+
+// An explicit function parameter reaches a nested struct and repeated calls reuse one clone.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "explicit"} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %self : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Functions {
+    poly.param @N : index
+    function.def @make() -> !struct.type<@ChildTemplate::@Child<[@N]>> attributes {function.allow_witness} {
+      %child = function.call @ChildTemplate::@Child::@compute() : () -> !struct.type<@ChildTemplate::@Child<[@N]>>
+      function.return %child : !struct.type<@ChildTemplate::@Child<[@N]>>
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %a = function.call @Functions::@make<[2]>() : () -> !struct.type<@ChildTemplate::@Child<[2]>>
+      %b = function.call @Functions::@make<[2]>() : () -> !struct.type<@ChildTemplate::@Child<[2]>>
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "explicit"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK:          function.call @make__spec_0() : () -> !struct.type<@Child__spec_1>
+// CHECK:          function.call @make__spec_0() : () -> !struct.type<@Child__spec_1>
+// CHECK:        struct.def @Child__spec_1 {
+// CHECK:        function.def @make__spec_0() -> !struct.type<@Child__spec_1> attributes {function.allow_witness, poly.arguments = [2 : index], poly.origin = @Functions::@make} {
+// CHECK:          function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NOT:    function.def @make__spec_1
+
+// -----
+
+// The call signature infers a parameter and a nested free call inherits it.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "inferred"} {
+  poly.template @Inner {
+    poly.param @N : index
+    function.def @size() -> index {
+      %size = poly.read_const @N : index
+      function.return %size : index
+    }
+  }
+  poly.template @Outer {
+    poly.param @N : index
+    function.def @size(%values: !array.type<@N x !felt.type>) -> index {
+      %size = function.call @Inner::@size<[@N]>() : () -> index
+      function.return %size : index
+    }
+  }
+  struct.def @Main {
+    function.def @compute(%values: !array.type<3 x !felt.type>) -> !struct.type<@Main> {
+      %size = function.call @Outer::@size(%values) : (!array.type<3 x !felt.type>) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %values: !array.type<3 x !felt.type>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "inferred"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK:          function.call @size__spec_0(
+// CHECK:        function.def @size__spec_0(%{{[0-9a-zA-Z_\.]+}}: !array.type<3 x !felt.type>) -> index attributes {poly.arguments = [3 : index], poly.origin = @Outer::@size} {
+// CHECK:          function.call @size__spec_1() : () -> index
+// CHECK:        function.def @size__spec_1() -> index attributes {poly.arguments = [3 : index], poly.origin = @Inner::@size} {
+// CHECK:          arith.constant 3 : index
+// CHECK-NOT:    function.def @size__spec_2
+
+// -----
+
+// A type argument is re-spelled for a free-function clone in a nested root.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "namespaced_type"} {
+  module @Bar attributes {llzk.lang} {
+    struct.def @Foo {
+      function.def @compute() -> !struct.type<@Foo> {
+        %self = struct.new : !struct.type<@Foo>
+        function.return %self : !struct.type<@Foo>
+      }
+      function.def @constrain(%self: !struct.type<@Foo>) { function.return }
+    }
+    poly.template @Identity {
+      poly.param @T : !poly.tvar<@T>
+      function.def @id(%value: !poly.tvar<@T>) -> !poly.tvar<@T> {
+        function.return %value : !poly.tvar<@T>
+      }
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %foo = function.call @Bar::@Foo::@compute() : () -> !struct.type<@Bar::@Foo>
+      %value = function.call @Bar::@Identity::@id<[!struct.type<@Bar::@Foo>]>(%foo) : (!struct.type<@Bar::@Foo>) -> !struct.type<@Bar::@Foo>
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "namespaced_type"} {
+// CHECK:      module @Bar attributes {llzk.lang} {
+// CHECK:        struct.def @Foo__spec_1 {
+// CHECK:        function.def @id__spec_0(%{{[0-9a-zA-Z_\.]+}}: !struct.type<@Foo__spec_1>) -> !struct.type<@Foo__spec_1> attributes {poly.arguments = [!struct.type<@Bar::@Foo>], poly.origin = @Bar::@Identity::@id} {
+// CHECK:      struct.def @Main__spec_0 {
+// CHECK:        function.call @Bar::@id__spec_0(
+// CHECK-NOT:  function.def @id__spec_1
+
+// -----
+
+// A retained call in an unselected branch still needs a matching concrete callee.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "retained_branch"} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %self : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Functions {
+    poly.param @N : index
+    function.def @make() -> !struct.type<@ChildTemplate::@Child<[@N]>> attributes {function.allow_witness} {
+      %child = function.call @ChildTemplate::@Child::@compute() : () -> !struct.type<@ChildTemplate::@Child<[@N]>>
+      function.return %child : !struct.type<@ChildTemplate::@Child<[@N]>>
+    }
+  }
+  struct.def @Main {
+    struct.member @child : !struct.type<@ChildTemplate::@Child<[2]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %false = arith.constant false
+      scf.if %false {
+        %unused = function.call @Functions::@make<[2]>() : () -> !struct.type<@ChildTemplate::@Child<[2]>>
+        scf.yield
+      }
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "retained_branch"} {
+// CHECK:        struct.def @Main__spec_0 {
+// CHECK:          scf.if
+// CHECK:            function.call @make__spec_0() : () -> !struct.type<@Child__spec_1>
+// CHECK:        function.def @make__spec_0() -> !struct.type<@Child__spec_1> attributes {function.allow_witness, poly.arguments = [2 : index], poly.origin = @Functions::@make} {
+// CHECK-NOT:    function.def @make__spec_1

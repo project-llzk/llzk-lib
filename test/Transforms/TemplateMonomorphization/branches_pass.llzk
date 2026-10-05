@@ -2,7 +2,7 @@
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
 
-// An unknown condition discovers Child<2> and Child<4>; a dead free-function call is skipped.
+// An unknown condition discovers Child<2> and Child<4>; a retained dead branch's call is specialized.
 module attributes {test.scenario = "branches", llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @Child {
     poly.param @N : index
@@ -87,7 +87,7 @@ module attributes {test.scenario = "branches", llzk.lang, llzk.main = !struct.ty
 // CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_11]], %[[VAL_12]]) : !felt.type, !felt.type
 // CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:        scf.if %[[VAL_14]] {
-// CHECK-NEXT:          function.call @Unsupported::@f<[3]>() : () -> ()
+// CHECK-NEXT:          function.call @f__spec_0() : () -> ()
 // CHECK-NEXT:        }
 // CHECK-NEXT:        scf.if %[[VAL_13]] {
 // CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
@@ -119,6 +119,9 @@ module attributes {test.scenario = "branches", llzk.lang, llzk.main = !struct.ty
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @Child::@Child, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:    function.def @f__spec_0() attributes {poly.arguments = [3 : index], poly.origin = @Unsupported::@f} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
 // -----

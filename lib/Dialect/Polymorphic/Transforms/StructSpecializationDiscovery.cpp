@@ -154,6 +154,7 @@ public:
 /// call so a later call with different template arguments starts from fresh state.
 class DiscoveryRun {
   StructDefOp source;
+  function::FuncDefOp functionSource;
   StructSpecializationDiscovery::Bindings bindings;
   SpecializationTypeResolver typeResolver;
   SymbolTableCollection tables;
@@ -200,15 +201,15 @@ class DiscoveryRun {
         }
       }
     }
-    if (type == llvm::cast<StructType>(typeResolver.resolveType(source.getType()))) {
+    if (source && type == llvm::cast<StructType>(typeResolver.resolveType(source.getType()))) {
       return success();
     }
     SmallVector<Attribute> indexAttrs;
     for (int64_t index : indices) {
-      indexAttrs.push_back(IntegerAttr::get(IndexType::get(source.getContext()), index));
+      indexAttrs.push_back(IntegerAttr::get(IndexType::get(context()), index));
     }
     auto requestKey = std::make_tuple(
-        site, Type(type), ArrayAttr::get(source.getContext(), indexAttrs), Type(familyType),
+        site, Type(type), ArrayAttr::get(context(), indexAttrs), Type(familyType),
         static_cast<unsigned>(kind)
     );
     if (!seen.insert(requestKey).second) {
@@ -271,7 +272,7 @@ class DiscoveryRun {
       }
       SmallVector<Attribute> operands;
       for (int64_t index : indices) {
-        operands.push_back(IntegerAttr::get(IndexType::get(source.getContext()), index));
+        operands.push_back(IntegerAttr::get(IndexType::get(context()), index));
       }
       auto concrete = typeResolver.resolveAffineStructArguments(
           structure, [this, site, &operands](AffineMapAttr map) -> Attribute {
@@ -636,6 +637,8 @@ class DiscoveryRun {
   }
 
 public:
+  MLIRContext *context() { return source ? source.getContext() : functionSource.getContext(); }
+
   DiscoveryRun(
       StructDefOp structure, const StructSpecializationDiscovery::Bindings &parameters,
       uint64_t limit, SmallVectorImpl<Operation *> *visited,
@@ -644,11 +647,20 @@ public:
       : source(structure), bindings(parameters), typeResolver(bindings), remaining(limit),
         visitedOperations(visited), callTargets(targets) {}
 
+  DiscoveryRun(
+      function::FuncDefOp function, const StructSpecializationDiscovery::Bindings &parameters,
+      uint64_t limit, SmallVectorImpl<Operation *> *visited,
+      StructSpecializationDiscovery::CallTargets *targets = nullptr
+  )
+      : functionSource(function), bindings(parameters), typeResolver(bindings), remaining(limit),
+        visitedOperations(visited), callTargets(targets) {}
+
   uint64_t getRemainingSteps() const { return remaining; }
 
   /// Extend the parameter environment with known template-expression results.
   FailureOr<StructSpecializationDiscovery::Bindings> evaluateBindings() {
-    if (auto templ = source->getParentOfType<TemplateOp>()) {
+    Operation *definition = source ? source.getOperation() : functionSource.getOperation();
+    if (auto templ = definition->getParentOfType<TemplateOp>()) {
       for (auto expr : templ.getConstOps<TemplateExprOp>()) {
         SmallVector<Attribute> values;
         if (failed(evaluateBlock(expr.getInitializerRegion().front(), Environment(), values))) {
@@ -662,20 +674,29 @@ public:
     return bindings;
   }
 
-  /// Evaluate template expressions, then discover members and each method.
+  /// Evaluate template expressions, then inspect the struct's methods or the
+  /// free function's body.
   FailureOr<StructSpecializationDiscovery::Requests> run() {
     if (failed(evaluateBindings())) {
       return failure();
     }
-    for (auto member : source.getOps<MemberDefOp>()) {
-      if (failed(collectTypes(member, member.getType()))) {
-        return failure();
+    if (source) {
+      for (auto member : source.getOps<MemberDefOp>()) {
+        if (failed(collectTypes(member, member.getType()))) {
+          return failure();
+        }
       }
     }
-    for (auto function : source.getOps<function::FuncDefOp>()) {
+    SmallVector<function::FuncDefOp> functions;
+    if (source) {
+      llvm::append_range(functions, source.getOps<function::FuncDefOp>());
+    } else {
+      functions.push_back(functionSource);
+    }
+    for (auto function : functions) {
       if (!function.getBody().hasOneBlock()) {
         return function.emitError(
-            "struct discovery requires a defined single-block method; unstructured control flow "
+            "specialization discovery requires a defined single-block function; unstructured control flow "
             "is unsupported"
         );
       }
@@ -794,6 +815,25 @@ FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery
 FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discover(
     StructDefOp source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
     CallTargets *callTargets
+) const {
+  return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();
+}
+
+FailureOr<StructSpecializationDiscovery::Bindings>
+StructSpecializationDiscovery::evaluateFunctionBindings(
+    function::FuncDefOp source, const Bindings &bindings, uint64_t *remainingSteps
+) const {
+  DiscoveryRun run(source, bindings, limit, nullptr);
+  auto evaluated = run.evaluateBindings();
+  if (succeeded(evaluated) && remainingSteps) {
+    *remainingSteps = run.getRemainingSteps();
+  }
+  return evaluated;
+}
+
+FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discoverFunction(
+    function::FuncDefOp source, const Bindings &bindings,
+    SmallVectorImpl<Operation *> *visitedOperations, CallTargets *callTargets
 ) const {
   return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();
 }

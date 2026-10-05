@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
@@ -147,6 +148,19 @@ public:
       component::StructDefOp source, const Bindings &bindings,
       llvm::SmallVectorImpl<mlir::Operation *> *visitedOperations = nullptr,
       CallTargets *callTargets = nullptr
+  ) const;
+
+  /// Discover concrete struct dependencies and explored calls in one free
+  /// function body, using the same evaluator and step budget as struct methods.
+  mlir::FailureOr<Requests> discoverFunction(
+      function::FuncDefOp source, const Bindings &bindings,
+      llvm::SmallVectorImpl<mlir::Operation *> *visitedOperations = nullptr,
+      CallTargets *callTargets = nullptr
+  ) const;
+
+  /// Evaluate the enclosing template's expressions for a free function.
+  mlir::FailureOr<Bindings> evaluateFunctionBindings(
+      function::FuncDefOp source, const Bindings &bindings, uint64_t *remainingSteps = nullptr
   ) const;
 
 private:
