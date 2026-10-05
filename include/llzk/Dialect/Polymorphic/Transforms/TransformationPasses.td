@@ -125,13 +125,12 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     Reads whose type is a type variable use its concrete binding.
 
     Discovered methods and free functions must be defined and single-block.
-    Supported regions are `scf.if`,
-    signed `scf.for` with known bounds and positive steps, and `scf.while` with
-    a known condition at every check. Unstructured branches are diagnosed.
-    Constant evaluation
-    uses template bindings and fold hooks; global and aggregate reads and call
-    results remain unknown. Function arguments also begin unknown, even when a
-    caller passes a constant. Required specialization arguments must resolve.
+    Supported regions are `scf.if`, signed `scf.for` with known bounds and
+    positive steps, and `scf.while` with a known condition at every check.
+    Unstructured branches are diagnosed. Constant evaluation uses template
+    bindings and fold hooks; global and aggregate reads and call results remain
+    unknown. Function arguments also begin unknown, even when a caller passes
+    a constant. Required specialization arguments must resolve.
     External free functions cannot use struct types that this pass specializes.
     Includes must be inlined before running this pass.
   }];
