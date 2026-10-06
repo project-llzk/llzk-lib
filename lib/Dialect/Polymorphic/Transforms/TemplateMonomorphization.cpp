@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/Walk.h"
@@ -225,7 +226,7 @@ class StructInstantiationWorklist {
       auto arguments = clone->getAttrOfType<ArrayAttr>(SPECIALIZATION_ARGUMENTS_ATTR);
       if (!origin || !arguments ||
           clone->getAttrOfType<IntegerAttr>(SPECIALIZATION_ID_ATTR).getInt() !=
-              static_cast<int64_t>(entries.size())) {
+              checkedCast<int64_t>(entries.size())) {
         return clone.emitError("invalid struct specialization metadata");
       }
       auto key = getSpecializationKey(
