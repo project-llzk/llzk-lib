@@ -1,10 +1,5 @@
 var NAVTREEINDEX76 =
 {
-"structllzk_1_1OpClassesWithStructTypes.html":[11,0,3,83],
-"structllzk_1_1OpClassesWithStructTypes.html":[13,0,1,79],
-"structllzk_1_1OpClassesWithStructTypes.html#a2a83becf616fbbe447c02651c1786b27":[11,0,3,83,0],
-"structllzk_1_1OpClassesWithStructTypes.html#a2a83becf616fbbe447c02651c1786b27":[13,0,1,79,0],
-"structllzk_1_1OpClassesWithStructTypes.html#a3e5def1e437afcb12c2a1dea7397cec6":[11,0,3,83,1],
 "structllzk_1_1OpClassesWithStructTypes.html#a3e5def1e437afcb12c2a1dea7397cec6":[13,0,1,79,1],
 "structllzk_1_1OpHash.html":[11,0,3,84],
 "structllzk_1_1OpHash.html":[13,0,1,80],
@@ -249,5 +244,10 @@ var NAVTREEINDEX76 =
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a0267edac4d2e0100907c42772198e3f2":[11,0,3,5,0,1,0,10],
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a0267edac4d2e0100907c42772198e3f2":[13,0,1,3,0,1,0,10],
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a0ace0cbdccfd0b00bd986516630fac3c":[11,0,3,5,0,1,0,6],
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a0ace0cbdccfd0b00bd986516630fac3c":[13,0,1,3,0,1,0,6]
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a0ace0cbdccfd0b00bd986516630fac3c":[13,0,1,3,0,1,0,6],
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a16673202118efbf0bde522faa82e592e":[11,0,3,5,0,1,0,12],
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a16673202118efbf0bde522faa82e592e":[13,0,1,3,0,1,0,12],
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a1793f8c820e46e412e73734067c9c711":[11,0,3,5,0,1,0,13],
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a1793f8c820e46e412e73734067c9c711":[13,0,1,3,0,1,0,13],
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a20646904f704d03a723fda71c6051f42":[11,0,3,5,0,1,0,16]
 };

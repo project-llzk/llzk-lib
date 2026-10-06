@@ -1,10 +1,5 @@
 var NAVTREEINDEX75 =
 {
-"structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html":[11,0,2,23],
-"structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html":[13,0,0,23],
-"structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html#a8f82895bd8d0b00af219bd707fe0a1ac":[11,0,2,23,1],
-"structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html#a8f82895bd8d0b00af219bd707fe0a1ac":[13,0,0,23,1],
-"structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html#a9ce64ac8886c6a1ddbf5e4e03c77fa4d":[11,0,2,23,0],
 "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html#a9ce64ac8886c6a1ddbf5e4e03c77fa4d":[13,0,0,23,0],
 "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4_01_4.html":[11,0,2,22],
 "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4_01_4.html":[13,0,0,22],
@@ -249,5 +244,10 @@ var NAVTREEINDEX75 =
 "structllzk_1_1NestedPipelineOptions.html#a299caa6f22ac44799db6b8f8eb59a38f":[11,0,3,78,0],
 "structllzk_1_1NestedPipelineOptions.html#a299caa6f22ac44799db6b8f8eb59a38f":[13,0,1,74,0],
 "structllzk_1_1NoContext.html":[11,0,3,79],
-"structllzk_1_1NoContext.html":[13,0,1,75]
+"structllzk_1_1NoContext.html":[13,0,1,75],
+"structllzk_1_1OpClassesWithStructTypes.html":[11,0,3,83],
+"structllzk_1_1OpClassesWithStructTypes.html":[13,0,1,79],
+"structllzk_1_1OpClassesWithStructTypes.html#a2a83becf616fbbe447c02651c1786b27":[11,0,3,83,0],
+"structllzk_1_1OpClassesWithStructTypes.html#a2a83becf616fbbe447c02651c1786b27":[13,0,1,79,0],
+"structllzk_1_1OpClassesWithStructTypes.html#a3e5def1e437afcb12c2a1dea7397cec6":[11,0,3,83,1]
 };

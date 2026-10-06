@@ -1,8 +1,5 @@
 var NAVTREEINDEX32 =
 {
-"classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#a893b27f60448894ae17244db898689b3":[11,0,3,5,9,1],
-"classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#a893b27f60448894ae17244db898689b3":[13,0,1,3,9,1],
-"classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#abe11c06a0569518b672b9e636a40b5d6":[11,0,3,5,9,2],
 "classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#abe11c06a0569518b672b9e636a40b5d6":[13,0,1,3,9,2],
 "classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#ae782c55c962578519a5bd80ad1a0e4fc":[11,0,3,5,9,6],
 "classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#ae782c55c962578519a5bd80ad1a0e4fc":[13,0,1,3,9,6],
@@ -249,5 +246,8 @@ var NAVTREEINDEX32 =
 "classllzk_1_1component_1_1MemberWriteOpGenericAdaptor.html#ad6115c5613ed228ffd7759a4f5a8f3c2":[11,0,3,5,16,9],
 "classllzk_1_1component_1_1MemberWriteOpGenericAdaptor.html#ad6115c5613ed228ffd7759a4f5a8f3c2":[13,0,1,3,16,9],
 "classllzk_1_1component_1_1SetFuncAllowAttrs.html":[11,0,3,5,17],
-"classllzk_1_1component_1_1SetFuncAllowAttrs.html":[13,0,1,3,17]
+"classllzk_1_1component_1_1SetFuncAllowAttrs.html":[13,0,1,3,17],
+"classllzk_1_1component_1_1SetFuncAllowAttrs.html#ac7dba7455af935039f2201c0eb02a4b8":[11,0,3,5,17,0],
+"classllzk_1_1component_1_1SetFuncAllowAttrs.html#ac7dba7455af935039f2201c0eb02a4b8":[13,0,1,3,17,0],
+"classllzk_1_1component_1_1StructDefOp.html":[11,0,3,5,18]
 };

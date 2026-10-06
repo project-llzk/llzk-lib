@@ -1,10 +1,5 @@
 var NAVTREEINDEX67 =
 {
-"dialects.html#parameters-5":[7,4,2,0,0],
-"dialects.html#parameters-6":[7,8,1,0,0],
-"dialects.html#parameters-7":[7,9,1,0,0],
-"dialects.html#parameters-8":[7,9,2,0,0],
-"dialects.html#parameters-9":[7,10,1,0,0],
 "dialects.html#pod-dialect":[7,9],
 "dialects.html#podnew-llzkpodnewpodop":[7,9,0,0],
 "dialects.html#podread-llzkpodreadpodop":[7,9,0,1],
@@ -249,5 +244,10 @@ var NAVTREEINDEX67 =
 "files.html":[14,0],
 "functions.html":[13,3,0],
 "functions.html":[13,3,0,0],
-"functions_a.html":[13,3,0,1]
+"functions_a.html":[13,3,0,1],
+"functions_b.html":[13,3,0,2],
+"functions_c.html":[13,3,0,3],
+"functions_d.html":[13,3,0,4],
+"functions_e.html":[13,3,0,5],
+"functions_enum.html":[13,3,4]
 };

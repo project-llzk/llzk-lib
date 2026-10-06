@@ -1,10 +1,5 @@
 var NAVTREEINDEX68 =
 {
-"functions_b.html":[13,3,0,2],
-"functions_c.html":[13,3,0,3],
-"functions_d.html":[13,3,0,4],
-"functions_e.html":[13,3,0,5],
-"functions_enum.html":[13,3,4],
 "functions_f.html":[13,3,0,6],
 "functions_func.html":[13,3,1],
 "functions_func.html":[13,3,1,0],
@@ -249,5 +244,10 @@ var NAVTREEINDEX68 =
 "maintanence.html#create-the-release":[6,1,2],
 "maintanence.html#creating-the-release-candidate":[6,1,1],
 "maintanence.html#patches":[6,0,1],
-"maintanence.html#preparing-a-new-release":[6,1,0]
+"maintanence.html#preparing-a-new-release":[6,1,0],
+"maintanence.html#release-version":[6,0,0],
+"maintanence.html#releasing-a-new-version":[6,1],
+"maintanence.html#tracking-a-new-version":[6,0],
+"md_doc_2doxygen_214__wtns__format.html":[9],
+"md_doc_2doxygen_214__wtns__format.html#file-schema":[9,0]
 };

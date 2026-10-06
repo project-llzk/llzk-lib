@@ -14,7 +14,6 @@ var classllzk_1_1felt_1_1FeltConstantOp =
     [ "getODSResults", "classllzk_1_1felt_1_1FeltConstantOp.html#aa0f097503858bcfd3fb9fbab7ce99274", null ],
     [ "getResult", "classllzk_1_1felt_1_1FeltConstantOp.html#a78a9d6f2e3cd5199638232c0e6a4998e", null ],
     [ "getValue", "classllzk_1_1felt_1_1FeltConstantOp.html#af08d5faefacf1bd55250ea6ad1f3a849", null ],
-    [ "getValueAPInt", "classllzk_1_1felt_1_1FeltConstantOp.html#a13ca590093bf43c35f14b6fe1eaea1d3", null ],
     [ "getValueAttr", "classllzk_1_1felt_1_1FeltConstantOp.html#a72e8df3452bf530c1b27d256e05bc4aa", null ],
     [ "getValueAttrName", "classllzk_1_1felt_1_1FeltConstantOp.html#aaec4939ca45993f9b41bb0bcc106dc3e", null ],
     [ "print", "classllzk_1_1felt_1_1FeltConstantOp.html#a273dfb53fcc22228e4e8e963fc3ab5db", null ],

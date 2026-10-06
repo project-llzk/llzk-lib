@@ -1,10 +1,5 @@
 var NAVTREEINDEX72 =
 {
-"namespacellzk_1_1polymorphic.html#aa2967e64982a04611c249dd98ce6a986":[11,0,3,17,42],
-"namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562":[11,0,3,17,38],
-"namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b":[11,0,3,17,31],
-"namespacellzk_1_1polymorphic.html#abad4e40d06d8eaa25861af6730fdcd0d":[11,0,3,17,52],
-"namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed":[11,0,3,17,37],
 "namespacellzk_1_1polymorphic.html#ac756baa8d3f96f499ebf79ef4c91d018":[11,0,3,17,43],
 "namespacellzk_1_1polymorphic.html#acbd04ca89ed16b1ed06964eccc3ac071":[11,0,3,17,53],
 "namespacellzk_1_1polymorphic.html#acc78f558f10c87ee61ca2699793ebbb1":[11,0,3,17,55],
@@ -249,5 +244,10 @@ var NAVTREEINDEX72 =
 "pcl-backend.html#pclimplies-pclimpliesop":[8,2,0,0,12],
 "pcl-backend.html#pclle-pclcmpleop":[8,2,0,0,13],
 "pcl-backend.html#pcllt-pclcmpltop":[8,2,0,0,14],
-"pcl-backend.html#pclmul-pclmulop":[8,2,0,0,15]
+"pcl-backend.html#pclmul-pclmulop":[8,2,0,0,15],
+"pcl-backend.html#pclneg-pclnegop":[8,2,0,0,16],
+"pcl-backend.html#pclnot-pclnotop":[8,2,0,0,17],
+"pcl-backend.html#pclor-pclorop":[8,2,0,0,18],
+"pcl-backend.html#pclpost_cond-pclpostop":[8,2,0,0,19],
+"pcl-backend.html#pclsub-pclsubop":[8,2,0,0,20]
 };

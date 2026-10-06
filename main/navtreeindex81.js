@@ -1,10 +1,5 @@
 var NAVTREEINDEX81 =
 {
-"structllzk_1_1witgen_1_1InputBinding.html":[11,0,3,22,2],
-"structllzk_1_1witgen_1_1InputBinding.html":[13,0,1,18,2],
-"structllzk_1_1witgen_1_1InputBinding.html#a26454477728be652a0614f34bb250a9d":[11,0,3,22,2,0],
-"structllzk_1_1witgen_1_1InputBinding.html#a26454477728be652a0614f34bb250a9d":[13,0,1,18,2,0],
-"structllzk_1_1witgen_1_1InputBinding.html#ae6054a7c99c7fbca991a74344f5ef47a":[11,0,3,22,2,1],
 "structllzk_1_1witgen_1_1InputBinding.html#ae6054a7c99c7fbca991a74344f5ef47a":[13,0,1,18,2,1],
 "structllzk_1_1witgen_1_1InputBinding.html#afd125c416ad9b5a7332baf0a3abc8877":[11,0,3,22,2,2],
 "structllzk_1_1witgen_1_1InputBinding.html#afd125c416ad9b5a7332baf0a3abc8877":[13,0,1,18,2,2],
