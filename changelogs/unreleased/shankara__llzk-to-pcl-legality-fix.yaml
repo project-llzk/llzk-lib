@@ -1,0 +1,4 @@
+fixed:
+  - >-
+    Avoid repeatedly scanning struct symbols when checking operation legality during
+    PCL lowering, improving performance on large flattened structs.
