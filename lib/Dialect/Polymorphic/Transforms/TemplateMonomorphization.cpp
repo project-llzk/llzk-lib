@@ -129,15 +129,13 @@ class StructInstantiationWorklist {
   /// Restore source identity when a rewritten body carries a previously
   /// specialized struct as a nested type argument.
   FailureOr<ArrayAttr> canonicalizeCloneArguments(ArrayAttr arguments, Operation *site) {
-    bool invalid = false;
     AttrTypeReplacer replacer;
     replacer.addReplacement(
-        [this, site, &invalid](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
+        [this, site](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
       auto found = type.getDefinition(tables, topRoot);
       if (failed(found)) {
         site->emitError("cannot resolve struct type argument ") << type;
-        invalid = true;
-        return std::make_pair(Type(type), WalkResult::skip());
+        return std::make_pair(Type(type), WalkResult::interrupt());
       }
       if (!cloneToId.contains(found->get().getOperation())) {
         return std::nullopt;
@@ -146,14 +144,13 @@ class StructInstantiationWorklist {
       auto parameters = found->get()->getAttrOfType<ArrayAttr>(SPECIALIZATION_ARGUMENTS_ATTR);
       if (!origin || !parameters) {
         site->emitError("invalid struct specialization metadata for type argument ") << type;
-        invalid = true;
-        return std::make_pair(Type(type), WalkResult::skip());
+        return std::make_pair(Type(type), WalkResult::interrupt());
       }
       return std::make_pair(Type(getStructTypeWithParams(origin, parameters)), WalkResult::skip());
     }
     );
-    auto result = cast<ArrayAttr>(replacer.replace(arguments));
-    if (invalid) {
+    auto result = dyn_cast_if_present<ArrayAttr>(replacer.replace(arguments));
+    if (!result) {
       return failure();
     }
     return result;
@@ -556,6 +553,8 @@ public:
     }
     for (auto &[rootOp, clones] : clonesByRoot) {
       auto lookupRoot = cast<ModuleOp>(rootOp);
+      // recursivelyReplaceElementsIn returns void and suppresses null replacements,
+      // so the callback must retain a failure flag for this operation-level rewrite.
       bool invalid = false;
       // These checks validate names after substitution and clone insertion. The
       // callback receives only a type, so failures are reported at its lookup root.

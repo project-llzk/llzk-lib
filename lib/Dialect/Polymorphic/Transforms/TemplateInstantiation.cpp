@@ -433,20 +433,17 @@ FailureOr<ArrayAttr> rebaseTemplateParams(
   if (!templateParams) {
     return ArrayAttr::get(requestSite->getContext(), {});
   }
-  bool invalid = false;
   AttrTypeReplacer rebaser;
   rebaser.addReplacement(
-      [&tables, lookupFrom, destinationRoot, requestSite,
-       &invalid](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
+      [&tables, lookupFrom, destinationRoot,
+       requestSite](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
     auto found = type.getDefinition(tables, lookupFrom);
     if (failed(found)) {
-      invalid = true;
-      return std::make_pair(Type(type), WalkResult::skip());
+      return std::make_pair(Type(type), WalkResult::interrupt());
     }
     if (found->viaInclude()) {
       requestSite->emitError("inline includes before rebasing template parameters");
-      invalid = true;
-      return std::make_pair(Type(type), WalkResult::skip());
+      return std::make_pair(Type(type), WalkResult::interrupt());
     }
     auto name = getPathRelativeToAncestor(found->get(), destinationRoot, [requestSite, type] {
       auto diagnostic = requestSite->emitError("struct type argument ");
@@ -454,21 +451,19 @@ FailureOr<ArrayAttr> rebaseTemplateParams(
       return diagnostic;
     });
     if (failed(name)) {
-      invalid = true;
-      return std::make_pair(Type(type), WalkResult::skip());
+      return std::make_pair(Type(type), WalkResult::interrupt());
     }
     auto nested =
         rebaseTemplateParams(tables, type.getParams(), lookupFrom, destinationRoot, requestSite);
     if (failed(nested)) {
-      invalid = true;
-      return std::make_pair(Type(type), WalkResult::skip());
+      return std::make_pair(Type(type), WalkResult::interrupt());
     }
     auto rebased = getStructTypeWithParams(*name, type.getParams() ? *nested : ArrayAttr());
     return std::make_pair(Type(rebased), WalkResult::skip());
   }
   );
-  auto result = cast<ArrayAttr>(rebaser.replace(templateParams));
-  if (invalid) {
+  auto result = dyn_cast_if_present<ArrayAttr>(rebaser.replace(templateParams));
+  if (!result) {
     return failure();
   }
   return result;
