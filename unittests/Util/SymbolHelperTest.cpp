@@ -114,7 +114,7 @@ TEST_F(SymbolHelperTests, test_appendLeafName) {
   ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2_suffix");
 }
 
-TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_nestedRoots) {
+TEST_F(SymbolHelperTests, test_getPathRelativeToAncestor_nestedAncestors) {
   auto module = parseSourceString<ModuleOp>(
       R"mlir(
     module @Wrapper {
@@ -144,18 +144,18 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_nestedRoots) {
   auto templ = bar.lookupSymbol<polymorphic::TemplateOp>("TFoo");
   auto foo = cast<component::StructDefOp>(SymbolTable::lookupSymbolIn(templ, "Foo"));
 
-  auto fromTop = getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), top);
+  auto fromTop = getPathRelativeToAncestor(cast<SymbolOpInterface>(foo.getOperation()), top);
   ASSERT_TRUE(succeeded(fromTop));
   EXPECT_EQ(debug::toStringOne(*fromTop), "@Bar::@TFoo::@Foo");
   EXPECT_EQ(SymbolTable::lookupSymbolIn(top, *fromTop), foo.getOperation());
 
-  auto fromBar = getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), bar);
+  auto fromBar = getPathRelativeToAncestor(cast<SymbolOpInterface>(foo.getOperation()), bar);
   ASSERT_TRUE(succeeded(fromBar));
   EXPECT_EQ(debug::toStringOne(*fromBar), "@TFoo::@Foo");
   EXPECT_EQ(SymbolTable::lookupSymbolIn(bar, *fromBar), foo.getOperation());
 }
 
-TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedRoot) {
+TEST_F(SymbolHelperTests, test_getPathRelativeToAncestor_unnamedAncestor) {
   auto module = parseSourceString<ModuleOp>(
       R"mlir(
     module attributes {llzk.lang} {
@@ -172,13 +172,13 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedRoot) {
   );
   ASSERT_TRUE(module);
   auto foo = module->lookupSymbol<component::StructDefOp>("Foo");
-  auto path = getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), *module);
+  auto path = getPathRelativeToAncestor(cast<SymbolOpInterface>(foo.getOperation()), *module);
   ASSERT_TRUE(succeeded(path));
   EXPECT_EQ(debug::toStringOne(*path), "@Foo");
   EXPECT_EQ(SymbolTable::lookupSymbolIn(*module, *path), foo.getOperation());
 }
 
-TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_inaccessibleSymbols) {
+TEST_F(SymbolHelperTests, test_getPathRelativeToAncestor_inaccessibleSymbols) {
   auto module = parseSourceString<ModuleOp>(
       R"mlir(
     module @Top attributes {llzk.lang} {
@@ -203,19 +203,19 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_inaccessibleSymbols) {
     return success();
   });
   // Callers that do not request diagnostics retain the silent-failure behavior.
-  EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), left)));
+  EXPECT_TRUE(failed(getPathRelativeToAncestor(cast<SymbolOpInterface>(foo.getOperation()), left)));
   EXPECT_TRUE(diagnostics.empty());
 
   auto emitError = [left] { return left->emitError("requested symbol"); };
-  EXPECT_TRUE(
-      failed(getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), left, emitError))
-  );
   EXPECT_TRUE(failed(
-      getPathRelativeToRoot(cast<SymbolOpInterface>(module->getOperation()), left, emitError)
+      getPathRelativeToAncestor(cast<SymbolOpInterface>(foo.getOperation()), left, emitError)
   ));
-  EXPECT_TRUE(
-      failed(getPathRelativeToRoot(cast<SymbolOpInterface>(left.getOperation()), left, emitError))
-  );
+  EXPECT_TRUE(failed(
+      getPathRelativeToAncestor(cast<SymbolOpInterface>(module->getOperation()), left, emitError)
+  ));
+  EXPECT_TRUE(failed(
+      getPathRelativeToAncestor(cast<SymbolOpInterface>(left.getOperation()), left, emitError)
+  ));
   ASSERT_EQ(diagnostics.size(), 3);
   for (const auto &diagnostic : diagnostics) {
     EXPECT_EQ(diagnostic.getLocation(), left.getLoc());
@@ -238,7 +238,7 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_inaccessibleSymbols) {
   EXPECT_EQ(selfNotes.begin()->getLocation(), left.getLoc());
 }
 
-TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedIntermediateModule) {
+TEST_F(SymbolHelperTests, test_getPathRelativeToAncestor_unnamedIntermediateModule) {
   auto module = parseSourceString<ModuleOp>(
       R"mlir(
     module @Top attributes {llzk.lang} {
@@ -259,9 +259,9 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedIntermediateModule) 
     diagnostics.push_back(std::move(diagnostic));
     return success();
   });
-  auto emitError = [root = *module] { return root->emitError("requested symbol"); };
+  auto emitError = [ancestor = *module] { return ancestor->emitError("requested symbol"); };
   EXPECT_TRUE(failed(
-      getPathRelativeToRoot(cast<SymbolOpInterface>(hidden.getOperation()), *module, emitError)
+      getPathRelativeToAncestor(cast<SymbolOpInterface>(hidden.getOperation()), *module, emitError)
   ));
   ASSERT_EQ(diagnostics.size(), 1);
   EXPECT_EQ(diagnostics[0].getLocation(), module->getLoc());

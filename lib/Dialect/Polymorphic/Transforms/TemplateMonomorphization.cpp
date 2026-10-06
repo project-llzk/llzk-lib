@@ -361,7 +361,7 @@ class StructInstantiationWorklist {
     reportDelayedDiagnostics(site, std::move(diagnostics));
     Builder builder(root.getContext());
     clone->setAttr(SPECIALIZATION_ID_ATTR, builder.getI64IntegerAttr(id));
-    auto origin = getPathRelativeToRoot(source, topRoot, [source] {
+    auto origin = getPathRelativeToAncestor(source, topRoot, [source] {
       return source->emitError("specialization origin");
     });
     if (failed(origin)) {
@@ -434,7 +434,7 @@ class StructInstantiationWorklist {
     if (failed(lookupRoot)) {
       return failure();
     }
-    auto name = getPathRelativeToRoot(clone, *lookupRoot, [call] {
+    auto name = getPathRelativeToAncestor(clone, *lookupRoot, [call] {
       return call->emitError("specialized method owner");
     });
     if (failed(name)) {
@@ -577,7 +577,7 @@ public:
           return std::nullopt;
         }
         auto name =
-            getPathRelativeToRoot(entries[existing->second].clone, lookupRoot, [lookupRoot] {
+            getPathRelativeToAncestor(entries[existing->second].clone, lookupRoot, [lookupRoot] {
           return lookupRoot->emitError("specialized struct");
         });
         if (failed(name)) {
@@ -612,7 +612,7 @@ public:
     if (failed(mainRoot)) {
       return failure();
     }
-    auto mainName = getPathRelativeToRoot(entries[*mainId].clone, *mainRoot, [this] {
+    auto mainName = getPathRelativeToAncestor(entries[*mainId].clone, *mainRoot, [this] {
       return root.emitError("specialized main");
     });
     if (failed(mainName)) {

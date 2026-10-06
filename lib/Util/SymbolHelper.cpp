@@ -317,28 +317,29 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   }
 }
 
-FailureOr<SymbolRefAttr> getPathRelativeToRoot(
-    SymbolOpInterface symbol, ModuleOp root, llvm::function_ref<InFlightDiagnostic()> emitError
+FailureOr<SymbolRefAttr> getPathRelativeToAncestor(
+    SymbolOpInterface symbol, ModuleOp ancestor, llvm::function_ref<InFlightDiagnostic()> emitError
 ) {
   Operation *definition = symbol.getOperation();
-  if (definition == root || !root->isAncestor(definition)) {
+  if (definition == ancestor || !ancestor->isAncestor(definition)) {
     if (emitError) {
       auto diagnostic = emitError();
-      if (definition == root) {
+      if (definition == ancestor) {
         diagnostic << " cannot be named relative to itself; a strict descendant is required";
-        diagnostic.attachNote(root.getLoc()) << "symbol and supplied module are the same operation";
+        diagnostic.attachNote(ancestor.getLoc())
+            << "symbol and supplied module are the same operation";
       } else {
-        diagnostic << " is not visible from module \"" << root.getSymName().value_or("<unnamed>")
-                   << '\"';
+        diagnostic << " is not visible from module \""
+                   << ancestor.getSymName().value_or("<unnamed>") << '\"';
         diagnostic.attachNote(definition->getLoc())
             << "symbol is defined outside the supplied module";
-        diagnostic.attachNote(root.getLoc()) << "symbol path must start from this module";
+        diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
       }
     }
     return failure();
   }
   SmallVector<FlatSymbolRefAttr> path;
-  for (Operation *current = definition; current != root; current = current->getParentOp()) {
+  for (Operation *current = definition; current != ancestor; current = current->getParentOp()) {
     if (current != definition && !current->hasTrait<OpTrait::SymbolTable>()) {
       continue;
     }
@@ -347,11 +348,11 @@ FailureOr<SymbolRefAttr> getPathRelativeToRoot(
       if (emitError) {
         auto diagnostic = emitError();
         diagnostic << " cannot be named relative to module \""
-                   << root.getSymName().value_or("<unnamed>")
+                   << ancestor.getSymName().value_or("<unnamed>")
                    << "\" because an intervening symbol table is unnamed";
         diagnostic.attachNote(current->getLoc())
             << "unnamed symbol table prevents forming a symbol path";
-        diagnostic.attachNote(root.getLoc()) << "symbol path must start from this module";
+        diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
       }
       return failure();
     }

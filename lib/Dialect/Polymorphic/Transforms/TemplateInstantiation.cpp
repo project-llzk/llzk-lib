@@ -448,7 +448,7 @@ FailureOr<ArrayAttr> rebaseTemplateParams(
       invalid = true;
       return std::make_pair(Type(type), WalkResult::skip());
     }
-    auto name = getPathRelativeToRoot(found->get(), destinationRoot, [requestSite, type] {
+    auto name = getPathRelativeToAncestor(found->get(), destinationRoot, [requestSite, type] {
       auto diagnostic = requestSite->emitError("struct type argument ");
       diagnostic << type;
       return diagnostic;
