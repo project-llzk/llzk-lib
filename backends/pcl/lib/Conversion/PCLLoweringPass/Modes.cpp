@@ -50,7 +50,11 @@ bool BaseMode::isStep1LegalOp(Operation *op) {
     // Legal if either:
     //  - Not within a function definition.
     //  - The containing function definition is not the struct's constrain function.
-    return !funcDefOp || structDefOp.getConstrainFuncOp() != funcDefOp;
+    // Check the parent and name directly because the previous getConstrainFuncOp()
+    // lookup linearly scanned the struct's symbols for every operation, making
+    // legality checks expensive on large structs.
+    return !funcDefOp || funcDefOp->getParentOp() != structDefOp.getOperation() ||
+           !funcDefOp.nameIsConstrain();
   }
 
   auto funcDefOp = op->getParentOfType<FuncDefOp>();
