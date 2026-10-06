@@ -361,7 +361,9 @@ class StructInstantiationWorklist {
     reportDelayedDiagnostics(site, std::move(diagnostics));
     Builder builder(root.getContext());
     clone->setAttr(SPECIALIZATION_ID_ATTR, builder.getI64IntegerAttr(id));
-    auto origin = getPathRelativeToRoot(source, topRoot);
+    auto origin = getPathRelativeToRoot(source, topRoot, [source] {
+      return source->emitError("specialization origin");
+    });
     if (failed(origin)) {
       return failure();
     }
@@ -432,11 +434,11 @@ class StructInstantiationWorklist {
     if (failed(lookupRoot)) {
       return failure();
     }
-    auto name = getPathRelativeToRoot(clone, *lookupRoot);
+    auto name = getPathRelativeToRoot(clone, *lookupRoot, [call] {
+      return call->emitError("specialized method owner");
+    });
     if (failed(name)) {
-      return call.emitError(
-          "cannot form a symbol path to the specialized method from the caller's module"
-      );
+      return failure();
     }
     call.setCalleeAttr(appendLeaf(*name, method));
     return success();
@@ -574,11 +576,11 @@ public:
         if (existing == cache.end()) {
           return std::nullopt;
         }
-        auto name = getPathRelativeToRoot(entries[existing->second].clone, lookupRoot);
+        auto name =
+            getPathRelativeToRoot(entries[existing->second].clone, lookupRoot, [lookupRoot] {
+          return lookupRoot->emitError("specialized struct");
+        });
         if (failed(name)) {
-          lookupRoot->emitError(
-              "cannot form a symbol path to the specialized struct from the use's module"
-          );
           invalid = true;
           return std::make_pair(Type(type), WalkResult::skip());
         }
@@ -610,11 +612,11 @@ public:
     if (failed(mainRoot)) {
       return failure();
     }
-    auto mainName = getPathRelativeToRoot(entries[*mainId].clone, *mainRoot);
+    auto mainName = getPathRelativeToRoot(entries[*mainId].clone, *mainRoot, [this] {
+      return root.emitError("specialized main");
+    });
     if (failed(mainName)) {
-      return root.emitError(
-          "cannot form a symbol path to the specialized main from the entry module"
-      );
+      return failure();
     }
     root->setAttr(MAIN_ATTR_NAME, TypeAttr::get(StructType::get(*mainName)));
     return success();

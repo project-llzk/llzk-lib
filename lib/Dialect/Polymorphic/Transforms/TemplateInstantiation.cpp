@@ -435,9 +435,8 @@ FailureOr<ArrayAttr> rebaseTemplateParams(
   }
   bool invalid = false;
   AttrTypeReplacer rebaser;
-  Operation *destinationRootOp = destinationRoot.getOperation();
   rebaser.addReplacement(
-      [&tables, lookupFrom, destinationRoot, destinationRootOp, requestSite,
+      [&tables, lookupFrom, destinationRoot, requestSite,
        &invalid](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
     auto found = type.getDefinition(tables, lookupFrom);
     if (failed(found)) {
@@ -449,18 +448,12 @@ FailureOr<ArrayAttr> rebaseTemplateParams(
       invalid = true;
       return std::make_pair(Type(type), WalkResult::skip());
     }
-    auto name = getPathRelativeToRoot(found->get(), destinationRoot);
-    if (failed(name)) {
+    auto name = getPathRelativeToRoot(found->get(), destinationRoot, [requestSite, type] {
       auto diagnostic = requestSite->emitError("struct type argument ");
       diagnostic << type;
-      auto rootName = llzk::getSymbolName(destinationRootOp);
-      StringRef moduleName = rootName ? rootName.getValue() : "<unnamed llzk.lang module>";
-      if (!destinationRoot->isAncestor(found->get().getOperation())) {
-        diagnostic << " is not visible from the template's module \"" << moduleName << '"';
-      } else {
-        diagnostic << " cannot be named relative to the template's module \"" << moduleName
-                   << "\" because an intervening symbol table is unnamed";
-      }
+      return diagnostic;
+    });
+    if (failed(name)) {
       invalid = true;
       return std::make_pair(Type(type), WalkResult::skip());
     }

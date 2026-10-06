@@ -42,6 +42,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // A template inside Bar cannot use an outer-root struct argument; diagnose the requesting member.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-note@+1 {{symbol is defined outside the supplied module}}
   struct.def @Outer {
     function.def @compute() -> !struct.type<@Outer> {
       %s = struct.new : !struct.type<@Outer>
@@ -49,6 +50,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
     function.def @constrain(%s: !struct.type<@Outer>) { function.return }
   }
+  // expected-note@+1 {{symbol path must start from this module}}
   module @Bar attributes {llzk.lang} {
     poly.template @TBox {
       poly.param @T : !poly.tvar<@T>
@@ -63,7 +65,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
   struct.def @Main {
-    // expected-error@+1 {{struct type argument '!struct.type<@Outer>' is not visible from the template's module "Bar"}}
+    // expected-error@+1 {{struct type argument '!struct.type<@Outer>' is not visible from module "Bar"}}
     struct.member @box : !struct.type<@Bar::@TBox::@Box<[!struct.type<@Outer>]>>
     function.def @compute() -> !struct.type<@Main> {
       %s = struct.new : !struct.type<@Main>

@@ -20,6 +20,7 @@
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
+#include <iterator>
 
 using namespace llzk;
 using namespace mlir;
@@ -194,9 +195,47 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_inaccessibleSymbols) {
   auto right = module->lookupSymbol<ModuleOp>("Right");
   auto foo = right.lookupSymbol<ModuleOp>("Foo");
 
+  // Check the helper's location notes without automatic operation dumps.
+  ctx.printOpOnDiagnostic(false);
+  SmallVector<Diagnostic> diagnostics;
+  ScopedDiagnosticHandler handler(&ctx, [&diagnostics](Diagnostic &diagnostic) {
+    diagnostics.push_back(std::move(diagnostic));
+    return success();
+  });
+  // Callers that do not request diagnostics retain the silent-failure behavior.
   EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), left)));
-  EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(module->getOperation()), left)));
-  EXPECT_TRUE(failed(getPathRelativeToRoot(cast<SymbolOpInterface>(left.getOperation()), left)));
+  EXPECT_TRUE(diagnostics.empty());
+
+  auto emitError = [left] { return left->emitError("requested symbol"); };
+  EXPECT_TRUE(
+      failed(getPathRelativeToRoot(cast<SymbolOpInterface>(foo.getOperation()), left, emitError))
+  );
+  EXPECT_TRUE(failed(
+      getPathRelativeToRoot(cast<SymbolOpInterface>(module->getOperation()), left, emitError)
+  ));
+  EXPECT_TRUE(
+      failed(getPathRelativeToRoot(cast<SymbolOpInterface>(left.getOperation()), left, emitError))
+  );
+  ASSERT_EQ(diagnostics.size(), 3);
+  for (const auto &diagnostic : diagnostics) {
+    EXPECT_EQ(diagnostic.getLocation(), left.getLoc());
+  }
+  EXPECT_EQ(diagnostics[0].str(), "requested symbol is not visible from module \"Left\"");
+  auto notes = diagnostics[0].getNotes();
+  ASSERT_EQ(std::distance(notes.begin(), notes.end()), 2);
+  EXPECT_EQ(notes.begin()->getLocation(), foo.getLoc());
+  EXPECT_EQ(std::next(notes.begin())->getLocation(), left.getLoc());
+  auto ancestorNotes = diagnostics[1].getNotes();
+  ASSERT_EQ(std::distance(ancestorNotes.begin(), ancestorNotes.end()), 2);
+  EXPECT_EQ(ancestorNotes.begin()->getLocation(), module->getLoc());
+  EXPECT_EQ(std::next(ancestorNotes.begin())->getLocation(), left.getLoc());
+  EXPECT_EQ(
+      diagnostics[2].str(),
+      "requested symbol cannot be named relative to itself; a strict descendant is required"
+  );
+  auto selfNotes = diagnostics[2].getNotes();
+  ASSERT_EQ(std::distance(selfNotes.begin(), selfNotes.end()), 1);
+  EXPECT_EQ(selfNotes.begin()->getLocation(), left.getLoc());
 }
 
 TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedIntermediateModule) {
@@ -213,7 +252,25 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToRoot_unnamedIntermediateModule) 
   ASSERT_TRUE(module);
   auto unnamed = cast<ModuleOp>(module->getBody()->front());
   auto hidden = unnamed.lookupSymbol<ModuleOp>("Hidden");
-  EXPECT_TRUE(
-      failed(getPathRelativeToRoot(cast<SymbolOpInterface>(hidden.getOperation()), *module))
+  // Check the helper's location notes without automatic operation dumps.
+  ctx.printOpOnDiagnostic(false);
+  SmallVector<Diagnostic> diagnostics;
+  ScopedDiagnosticHandler handler(&ctx, [&diagnostics](Diagnostic &diagnostic) {
+    diagnostics.push_back(std::move(diagnostic));
+    return success();
+  });
+  auto emitError = [root = *module] { return root->emitError("requested symbol"); };
+  EXPECT_TRUE(failed(
+      getPathRelativeToRoot(cast<SymbolOpInterface>(hidden.getOperation()), *module, emitError)
+  ));
+  ASSERT_EQ(diagnostics.size(), 1);
+  EXPECT_EQ(diagnostics[0].getLocation(), module->getLoc());
+  EXPECT_EQ(
+      diagnostics[0].str(), "requested symbol cannot be named relative to module \"Top\" because "
+                            "an intervening symbol table is unnamed"
   );
+  auto notes = diagnostics[0].getNotes();
+  ASSERT_EQ(std::distance(notes.begin(), notes.end()), 2);
+  EXPECT_EQ(notes.begin()->getLocation(), unnamed.getLoc());
+  EXPECT_EQ(std::next(notes.begin())->getLocation(), module->getLoc());
 }

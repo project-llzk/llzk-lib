@@ -317,9 +317,24 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   }
 }
 
-FailureOr<SymbolRefAttr> getPathRelativeToRoot(SymbolOpInterface symbol, ModuleOp root) {
+FailureOr<SymbolRefAttr> getPathRelativeToRoot(
+    SymbolOpInterface symbol, ModuleOp root, llvm::function_ref<InFlightDiagnostic()> emitError
+) {
   Operation *definition = symbol.getOperation();
   if (definition == root || !root->isAncestor(definition)) {
+    if (emitError) {
+      auto diagnostic = emitError();
+      if (definition == root) {
+        diagnostic << " cannot be named relative to itself; a strict descendant is required";
+        diagnostic.attachNote(root.getLoc()) << "symbol and supplied module are the same operation";
+      } else {
+        diagnostic << " is not visible from module \"" << root.getSymName().value_or("<unnamed>")
+                   << '\"';
+        diagnostic.attachNote(definition->getLoc())
+            << "symbol is defined outside the supplied module";
+        diagnostic.attachNote(root.getLoc()) << "symbol path must start from this module";
+      }
+    }
     return failure();
   }
   SmallVector<FlatSymbolRefAttr> path;
@@ -329,6 +344,15 @@ FailureOr<SymbolRefAttr> getPathRelativeToRoot(SymbolOpInterface symbol, ModuleO
     }
     auto name = llzk::getSymbolName(current);
     if (!name) {
+      if (emitError) {
+        auto diagnostic = emitError();
+        diagnostic << " cannot be named relative to module \""
+                   << root.getSymName().value_or("<unnamed>")
+                   << "\" because an intervening symbol table is unnamed";
+        diagnostic.attachNote(current->getLoc())
+            << "unnamed symbol table prevents forming a symbol path";
+        diagnostic.attachNote(root.getLoc()) << "symbol path must start from this module";
+      }
       return failure();
     }
     path.push_back(FlatSymbolRefAttr::get(name));
