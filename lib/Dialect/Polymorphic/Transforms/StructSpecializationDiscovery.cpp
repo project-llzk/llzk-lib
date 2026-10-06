@@ -348,13 +348,9 @@ class DiscoveryRun {
       }
       return success();
     }
-    bool invalid = false;
-    type.walk([this, site, indices, inArray, &invalid](Type nested) {
-      if (auto structure = dyn_cast<StructType>(nested)) {
-        invalid |= failed(collectTypes(site, structure, indices, inArray));
-      }
-    });
-    return failure(invalid);
+    return failure(type.walk([this, site, indices, inArray](StructType structure) -> WalkResult {
+      return collectTypes(site, structure, indices, inArray);
+    }).wasInterrupted());
   }
 
   /// Calls supply separate SSA operand groups for affine type arguments.

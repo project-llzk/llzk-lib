@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/IR/AttrTypeSubElements.h>
 #include <mlir/IR/Builders.h>
@@ -207,11 +208,8 @@ class StructInstantiationWorklist {
   /// Reuse previously published identities when the pass is run again. Metadata
   /// IDs are dense worklist indices, including those referenced by rolled uses.
   LogicalResult loadExistingSpecializations() {
-    SmallVector<StructDefOp> existing;
-    root.walk([&existing](StructDefOp structure) {
-      if (structure->hasAttr(SPECIALIZATION_ID_ATTR)) {
-        existing.push_back(structure);
-      }
+    auto existing = walkCollect<StructDefOp>(root, [](StructDefOp structure) {
+      return structure->hasAttr(SPECIALIZATION_ID_ATTR);
     });
     for (auto structure : existing) {
       if (!structure->getAttrOfType<IntegerAttr>(SPECIALIZATION_ID_ATTR)) {
@@ -274,16 +272,10 @@ class StructInstantiationWorklist {
       site->emitError("template monomorphization specialization limit exceeded");
       return failure();
     }
-    Operation *branch = nullptr;
-    source.walk([&branch](Operation *op) {
-      if (isa<BranchOpInterface>(op)) {
-        branch = op;
-        return WalkResult::interrupt();
-      }
-      return WalkResult::advance();
+    auto branches = source.walk([](BranchOpInterface op) -> WalkResult {
+      return op.emitError("unstructured control flow is unsupported in template monomorphization");
     });
-    if (branch) {
-      branch->emitError("unstructured control flow is unsupported in template monomorphization");
+    if (branches.wasInterrupted()) {
       return failure();
     }
     StructSpecializationDiscovery::Bindings bindings;
@@ -339,20 +331,15 @@ class StructInstantiationWorklist {
     if (failed(substituteStructBody(clone, source.getType(), bindings, diagnostics))) {
       return failure();
     }
-    ConstReadOp unresolved;
-    clone.walk([&unresolved](ConstReadOp read) {
-      if (!unresolved) {
-        unresolved = read;
+    auto unresolved = clone.walk([site, &templ, type](ConstReadOp read) -> WalkResult {
+      if (templ && templ.getConstNamed<TemplateExprOp>(read.getConstNameAttr())) {
+        return site->emitError("template expression ")
+               << read.getConstNameAttr() << " could not be evaluated for " << type;
       }
+      return site->emitError("unresolved template binding ")
+             << read.getConstNameAttr() << " while specializing " << type;
     });
-    if (unresolved) {
-      if (templ && templ.getConstNamed<TemplateExprOp>(unresolved.getConstNameAttr())) {
-        site->emitError("template expression ")
-            << unresolved.getConstNameAttr() << " could not be evaluated for " << type;
-      } else {
-        site->emitError("unresolved template binding ")
-            << unresolved.getConstNameAttr() << " while specializing " << type;
-      }
+    if (unresolved.wasInterrupted()) {
       return failure();
     }
     reportDelayedDiagnostics(site, std::move(diagnostics));
@@ -516,6 +503,8 @@ public:
     if (failed(mainId)) {
       return failure();
     }
+    // Discovery appends to entries while processing dependencies. Indexing both
+    // visits those new entries and avoids retaining iterators across reallocation.
     for (unsigned i = 0; i < entries.size(); ++i) {
       auto clone = entries[i].clone;
       SmallVector<Operation *> visited;
