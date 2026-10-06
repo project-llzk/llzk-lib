@@ -643,6 +643,10 @@ struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
 
 /// Converts `struct.readm` ops that read members of felt type from the struct into `pcl.var` ops.
 struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> {
+  // Step 1 preserves symbol definitions. Keep the cache in this pattern so each
+  // analysis/conversion has its own collection, discarded before step 2.
+  mutable SymbolTableCollection tables;
+
   using OpConversionPattern<MemberReadOp>::OpConversionPattern;
 
   LogicalResult
@@ -651,12 +655,12 @@ struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> 
     if (!parent || op.getComponent() != parent.getArgument(0)) {
       return failure();
     }
-    SymbolTableCollection tables;
-    auto defOp = op.getMemberDefOp(tables);
-    if (failed(defOp)) {
+    // Only lower member reads with a felt result type.
+    if (!llvm::isa<FeltType>(op.getType())) {
       return failure();
     }
-    if (!llvm::isa<FeltType>(defOp->get().getType())) {
+    auto defOp = op.getMemberDefOp(tables);
+    if (failed(defOp)) {
       return failure();
     }
 
@@ -681,13 +685,7 @@ struct ConvertSelfMemberReadOpOfSubcmp : public OpConversionPattern<MemberReadOp
     if (!parent || op.getComponent() != parent.getArgument(0)) {
       return failure();
     }
-    SymbolTableCollection tables;
-    auto defOp = op.getMemberDefOp(tables);
-    if (failed(defOp)) {
-      return failure();
-    }
-
-    if (!llvm::isa<StructType>(defOp->get().getType())) {
+    if (!llvm::isa<StructType>(op.getType())) {
       return failure();
     }
     rewriter.eraseOp(op);
@@ -740,14 +738,8 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
     if (!parent || subcmp.getComponent() != parent.getArgument(0)) {
       return failure();
     }
-    SymbolTableCollection tables;
-    auto defOp = op.getMemberDefOp(tables);
-    if (failed(defOp)) {
-      return failure();
-    }
-
     llvm::SmallString<256> sto;
-    auto name = (Twine(subcmp.getMemberName()) + "." + defOp->get().getName()).toStringRef(sto);
+    auto name = (Twine(subcmp.getMemberName()) + "." + op.getMemberName()).toStringRef(sto);
     rewriter.replaceOpWithNewOp<pcl::VarOp>(op, rewriter.getStringAttr(name), /*public=*/false);
     return success();
   }
