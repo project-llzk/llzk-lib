@@ -63,26 +63,26 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
       poly.yield %next : index
     }
     struct.def @Parent {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %felt_zero = felt.const 0
-      %condition = bool.cmp eq(%input, %felt_zero)
-      %two = arith.constant 2 : index
-      %three = arith.constant 3 : index
-      %value = scf.if %condition -> index {
-        scf.yield %two : index
-      } else {
-        scf.yield %three : index
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %felt_zero = felt.const 0
+        %condition = bool.cmp eq(%input, %felt_zero)
+        %two = arith.constant 2 : index
+        %three = arith.constant 3 : index
+        %value = scf.if %condition -> index {
+          scf.yield %two : index
+        } else {
+          scf.yield %three : index
+        }
+        // expected-error@+1 {{cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
       }
-      // expected-error@+1 {{cannot resolve affine struct specialization argument}}
-      %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
     }
   }
-}
 }
 
 // -----
@@ -154,32 +154,32 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
       poly.yield %next : index
     }
     struct.def @Parent {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %felt_zero = felt.const 0
-      %condition = bool.cmp eq(%input, %felt_zero)
-      %unknown_zero = arith.constant 0 : index
-      %unknown_one = arith.constant 1 : index
-      %unknown = scf.if %condition -> index {
-        scf.yield %unknown_zero : index
-      } else {
-        scf.yield %unknown_one : index
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %felt_zero = felt.const 0
+        %condition = bool.cmp eq(%input, %felt_zero)
+        %unknown_zero = arith.constant 0 : index
+        %unknown_one = arith.constant 1 : index
+        %unknown = scf.if %condition -> index {
+          scf.yield %unknown_zero : index
+        } else {
+          scf.yield %unknown_one : index
+        }
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %value = scf.for %i = %zero to %two step %one iter_args(%v = %one) -> index {
+          // expected-error@+1 {{cannot resolve affine struct specialization argument}}
+          %child = function.call @Child::@Child::@compute(){(%v)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+          scf.yield %unknown : index
+        }
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
       }
-      %zero = arith.constant 0 : index
-      %one = arith.constant 1 : index
-      %two = arith.constant 2 : index
-      %value = scf.for %i = %zero to %two step %one iter_args(%v = %one) -> index {
-      // expected-error@+1 {{cannot resolve affine struct specialization argument}}
-        %child = function.call @Child::@Child::@compute(){(%v)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-        scf.yield %unknown : index
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
       }
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
     }
   }
-}
 }
 
 // -----

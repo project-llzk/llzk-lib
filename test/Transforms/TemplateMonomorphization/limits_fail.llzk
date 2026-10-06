@@ -46,22 +46,22 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
       poly.yield %next : index
     }
     struct.def @Parent {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %zero = arith.constant 0 : index
-      %one = arith.constant 1 : index
-      %many = arith.constant 100 : index
-      scf.for %i = %zero to %many step %one {
-      // expected-error@+1 {{step limit exceeded}}
-        %child = function.call @Child::@Child::@compute(){(%i)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %many = arith.constant 100 : index
+        scf.for %i = %zero to %many step %one {
+          // expected-error@+1 {{step limit exceeded}}
+          %child = function.call @Child::@Child::@compute(){(%i)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        }
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
       }
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
     }
   }
-}
 }
 
 // -----

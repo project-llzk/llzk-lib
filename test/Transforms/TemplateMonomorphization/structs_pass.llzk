@@ -446,21 +446,21 @@ module attributes {test.scenario = "discovery_separate_bindings", llzk.lang, llz
       poly.yield %next : index
     }
     struct.def @Parent {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %zero = arith.constant 0 : index
-      %one = arith.constant 1 : index
-      %n = poly.read_const @N : index
-      scf.for %i = %zero to %n step %one {
-        %child = function.call @Child::@Child::@compute(){(%n)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %n = poly.read_const @N : index
+        scf.for %i = %zero to %n step %one {
+          %child = function.call @Child::@Child::@compute(){(%n)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        }
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
       }
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
     }
   }
-}
   struct.def @Root {
     struct.member @two : !struct.type<@Parent::@Parent<[2]>>
     struct.member @four : !struct.type<@Parent::@Parent<[4]>>

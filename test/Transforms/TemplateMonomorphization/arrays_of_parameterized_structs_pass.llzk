@@ -134,16 +134,16 @@ module attributes {test.scenario = "discovery_multidimensional_family", llzk.lan
       poly.yield %next : index
     }
     struct.def @Parent {
-    struct.member @children : !array.type<@N, 2 x !struct.type<@Child::@Child<[affine_map<(i,j) -> (2*i+j)>]>>>
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
+      struct.member @children : !array.type<@N, 2 x !struct.type<@Child::@Child<[affine_map<(i,j) -> (2*i+j)>]>>>
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
     }
   }
-}
 }
 
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0, d1) -> (d0 * 2 + d1)>
@@ -252,16 +252,16 @@ module attributes {test.scenario = "discovery_empty_family", llzk.lang, llzk.mai
       poly.yield %next : index
     }
     struct.def @Parent {
-    struct.member @children : !array.type<1000000000, 0 x !struct.type<@Child::@Child<[affine_map<(i,j) -> (i+j)>]>>>
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
+      struct.member @children : !array.type<1000000000, 0 x !struct.type<@Child::@Child<[affine_map<(i,j) -> (i+j)>]>>>
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
     }
   }
-}
 }
 
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0, d1) -> (d0 + d1)>

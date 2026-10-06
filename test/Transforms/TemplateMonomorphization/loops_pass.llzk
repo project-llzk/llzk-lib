@@ -114,39 +114,39 @@ module attributes {test.scenario = "discovery_loop_results", llzk.lang, llzk.mai
       poly.yield %next : index
     }
     struct.def @Parent {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %felt_zero = felt.const 0
-      %condition = bool.cmp eq(%input, %felt_zero)
-      %unknown_zero = arith.constant 0 : index
-      %unknown_one = arith.constant 1 : index
-      %unknown = scf.if %condition -> index {
-        scf.yield %unknown_zero : index
-      } else {
-        scf.yield %unknown_one : index
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %felt_zero = felt.const 0
+        %condition = bool.cmp eq(%input, %felt_zero)
+        %unknown_zero = arith.constant 0 : index
+        %unknown_one = arith.constant 1 : index
+        %unknown = scf.if %condition -> index {
+          scf.yield %unknown_zero : index
+        } else {
+          scf.yield %unknown_one : index
+        }
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %n = poly.read_const @N : index
+        %next = poly.read_const @Next : index
+        %out = scf.for %i = %zero to %n step %one iter_args(%v = %one) -> index {
+          %child = function.call @Child::@Child::@compute(){(%v)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+          %incr = arith.addi %v, %one : index
+          scf.yield %incr : index
+        }
+        %same = arith.cmpi eq, %out, %next : index
+        scf.if %same {
+          %child = function.call @Child::@Child::@compute(){(%out)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        } else {
+          %child = function.call @Child::@Child::@compute(){(%unknown)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        }
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
       }
-      %zero = arith.constant 0 : index
-      %one = arith.constant 1 : index
-      %n = poly.read_const @N : index
-      %next = poly.read_const @Next : index
-      %out = scf.for %i = %zero to %n step %one iter_args(%v = %one) -> index {
-        %child = function.call @Child::@Child::@compute(){(%v)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-        %incr = arith.addi %v, %one : index
-        scf.yield %incr : index
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
       }
-      %same = arith.cmpi eq, %out, %next : index
-      scf.if %same {
-        %child = function.call @Child::@Child::@compute(){(%out)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-      } else {
-        %child = function.call @Child::@Child::@compute(){(%unknown)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-      }
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
     }
   }
-}
 }
 
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
@@ -301,31 +301,31 @@ module attributes {test.scenario = "discovery_empty_loop", llzk.lang, llzk.main 
       poly.yield %next : index
     }
     struct.def @Parent {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
-      %felt_zero = felt.const 0
-      %condition = bool.cmp eq(%input, %felt_zero)
-      %unknown_zero = arith.constant 0 : index
-      %unknown_one = arith.constant 1 : index
-      %unknown = scf.if %condition -> index {
-        scf.yield %unknown_zero : index
-      } else {
-        scf.yield %unknown_one : index
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %felt_zero = felt.const 0
+        %condition = bool.cmp eq(%input, %felt_zero)
+        %unknown_zero = arith.constant 0 : index
+        %unknown_one = arith.constant 1 : index
+        %unknown = scf.if %condition -> index {
+          scf.yield %unknown_zero : index
+        } else {
+          scf.yield %unknown_one : index
+        }
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %value = scf.for %i = %zero to %zero step %one iter_args(%v = %one) -> index {
+          %child = function.call @Child::@Child::@compute(){(%unknown)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+          scf.yield %unknown : index
+        }
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
       }
-      %zero = arith.constant 0 : index
-      %one = arith.constant 1 : index
-      %value = scf.for %i = %zero to %zero step %one iter_args(%v = %one) -> index {
-        %child = function.call @Child::@Child::@compute(){(%unknown)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-        scf.yield %unknown : index
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
       }
-      %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
-      %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
-      function.return %self : !struct.type<@Parent::@Parent<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
-      function.return
     }
   }
-}
 }
 
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
