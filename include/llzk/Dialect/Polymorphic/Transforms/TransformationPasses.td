@@ -62,6 +62,11 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     templates and control flow, and update direct type uses and method calls to
     their concrete definitions.
 
+    Loops remain in the IR rather than being unrolled; discovery evaluates their
+    iterations to identify specializations without expanding the loop bodies.
+    "Rolled" calls and struct types below retain affine parameters that depend on
+    those iterations or on array element indices.
+
     Affine calls and array values retain their parameterized types. Their
     `poly.family_specializations` and `poly.family` attributes identify the
     concrete definitions needed by later elaboration; definitions carry

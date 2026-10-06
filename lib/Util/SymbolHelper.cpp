@@ -86,11 +86,12 @@ public:
   RootPathBuilder(RootSelector whichRoot, Operation *origin, ModuleOp *foundRoot)
       : _whichRoot(whichRoot), _origin(origin), _foundRoot(foundRoot) {}
 
-  /// Collect module and template names while finding an llzk.lang root. CLOSEST
-  /// stops before adding that root's name. FURTHEST traverses all ancestors and
-  /// includes named roots and named modules above them, returning the outermost
-  /// llzk.lang module. An unnamed module before finding a root, or the absence of
-  /// any root, produces an error at the origin operation.
+  /// Collect module and template names into \p path while finding a module with
+  /// the LANG_ATTR_NAME attribute starting at \p from. CLOSEST stops before adding
+  /// that root's name. FURTHEST traverses all ancestors and includes named roots
+  /// and named modules above them, returning the outermost module with the
+  /// LANG_ATTR_NAME attribute. An unnamed module before finding a root, or the
+  /// absence of any root, produces an error at the origin operation.
   FailureOr<ModuleOp> collectPathToRoot(Operation *from, std::vector<FlatSymbolRefAttr> &path) {
     Operation *check = from;
     ModuleOp currRoot = nullptr;

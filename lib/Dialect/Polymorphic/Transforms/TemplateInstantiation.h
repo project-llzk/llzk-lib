@@ -52,10 +52,10 @@ public:
   }
 };
 
-/// Re-spell struct types nested in templateParams for destinationRoot, resolving
-/// their current names from lookupFrom. Numeric and other value parameters are
+/// Re-spell struct types nested in \p templateParams for \p destinationRoot, resolving
+/// their current names from \p lookupFrom. Numeric and other value parameters are
 /// preserved. A null list becomes an empty list. Reports inaccessible type
-/// parameters and unsupported includes at requestSite, where instantiation was
+/// parameters and unsupported includes at \p requestSite, where instantiation was
 /// requested, so moving bindings does not move their diagnostics into a clone.
 mlir::FailureOr<mlir::ArrayAttr> rebaseTemplateParams(
     mlir::SymbolTableCollection &tables, mlir::ArrayAttr templateParams,
