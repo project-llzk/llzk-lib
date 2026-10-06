@@ -74,8 +74,12 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     `poly.family` appears on members and operations producing an array value,
     including `struct.readm` and `array.new`. Each entry names the rolled struct
     type, the enclosing array's index tuple, and the matching specialization.
-    The type distinguishes affine struct fields within a POD element; concrete
-    sibling fields have no family entry.
+    The `type` entry retains the original affine-parameterized family type; it
+    identifies which struct field is being specialized within a POD element.
+    `specialization` identifies the concrete clone through its
+    `poly.specialization_id`. For example, an element at index 2 of a Child<i>
+    family retains Child<i> in `type` and names the clone whose `poly.arguments`
+    are [2]. Concrete sibling fields have no family entry.
     On a rolled call, `poly.family_specializations` lists candidates collected
     from all matching arrays and affine calls in the source instance. The list
     may be empty only when a known array has an empty dimension. A consumer

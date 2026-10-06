@@ -41,6 +41,8 @@ inline constexpr llvm::StringLiteral FAMILY_ATTR = "poly.family";
 inline constexpr llvm::StringLiteral FAMILY_SPECIALIZATIONS_ATTR = "poly.family_specializations";
 inline constexpr llvm::StringLiteral FAMILY_INDICES_KEY = "indices";
 inline constexpr llvm::StringLiteral FAMILY_SPECIALIZATION_KEY = "specialization";
+/// The original affine-parameterized struct family, paired with element indices
+/// and a concrete specialization ID in each poly.family record.
 inline constexpr llvm::StringLiteral FAMILY_TYPE_KEY = "type";
 
 template <typename OpT>
