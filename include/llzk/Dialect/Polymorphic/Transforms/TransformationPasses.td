@@ -93,16 +93,18 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     re-spells type arguments relative to the clone's root; an argument whose
     definition is outside that root is diagnosed at the instantiation site.
     Arguments to typed `poly.param` declarations are converted to the declared
-    type when their values are preserved, before forming a cache key. An
+    type using the conversions below, before forming a cache key. An
     incompatible argument is diagnosed. Felt-to-index conversion requires a
     value in the nonnegative signed 64-bit index range. Index-to-felt conversion
     requires a nonnegative value below the field modulus when a field is known;
     it does not reduce values modulo that modulus. Untyped parameters retain their input
     attributes, so differently spelled numeric values can create distinct
-    specializations. For an `i1` parameter, index zero and one match boolean
-    false and true. Other index values remain distinct: an `i1` read interprets
-    any nonzero value as true, but forwarding the parameter to an index-typed
-    template can still use its original integer value.
+    specializations. An `i1` parameter accepts only boolean arguments or index
+    zero and one, which become false and true. Other index values fail type
+    conversion at the instantiation site. The normalized boolean binding
+    determines specialization identity and is used for every read and forwarded
+    argument.
+    Forwarding that value to an index parameter produces zero or one.
 
     Methods must be defined and single-block. Supported regions are `scf.if`,
     signed `scf.for` with known bounds and positive steps, and `scf.while` with

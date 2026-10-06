@@ -32,3 +32,32 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[2
     }
   }
 }
+
+// -----
+
+// Fail instantiation when an index argument is incompatible with an i1 parameter.
+// expected-error@+1 {{index argument 98 : index cannot be converted to i1 parameter @N: expected zero or one}}
+module attributes {llzk.lang, llzk.main = !struct.type<@TOuter::@Outer<[98]>>, test.scenario = "i1_forwarded_to_index"} {
+  poly.template @TChild {
+    poly.param @M : index
+    struct.def @Child {
+      struct.member @arr : !array.type<@M x i1>
+      function.def @compute() -> !struct.type<@TChild::@Child<[@M]>> {
+        %self = struct.new : !struct.type<@TChild::@Child<[@M]>>
+        function.return %self : !struct.type<@TChild::@Child<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TChild::@Child<[@M]>>) { function.return }
+    }
+  }
+  poly.template @TOuter {
+    poly.param @N : i1
+    struct.def @Outer {
+      struct.member @child : !struct.type<@TChild::@Child<[@N]>>
+      function.def @compute() -> !struct.type<@TOuter::@Outer<[@N]>> {
+        %self = struct.new : !struct.type<@TOuter::@Outer<[@N]>>
+        function.return %self : !struct.type<@TOuter::@Outer<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TOuter::@Outer<[@N]>>) { function.return }
+    }
+  }
+}
