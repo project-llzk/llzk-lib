@@ -94,7 +94,10 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     definition is outside that root is diagnosed at the instantiation site.
     Arguments to typed `poly.param` declarations are converted to the declared
     type when their values are preserved, before forming a cache key. An
-    incompatible argument is diagnosed. Untyped parameters retain their input
+    incompatible argument is diagnosed. Felt-to-index conversion requires a
+    value in the nonnegative signed 64-bit index range. Index-to-felt conversion
+    requires a nonnegative value below the field modulus when a field is known;
+    it does not reduce values modulo that modulus. Untyped parameters retain their input
     attributes, so differently spelled numeric values can create distinct
     specializations. For an `i1` parameter, index zero and one match boolean
     false and true. Other index values remain distinct: an `i1` read interprets

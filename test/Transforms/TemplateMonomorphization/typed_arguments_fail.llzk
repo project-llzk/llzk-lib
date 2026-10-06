@@ -1,8 +1,8 @@
-// Typed numeric arguments must convert exactly to their declared parameter type.
+// Typed numeric argument conversion rejects out-of-range values.
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
 
 // A field element above the signed index range cannot become an index.
-// expected-error@+1 {{struct argument #felt<const 9223372036854775808> : !felt.type does not match parameter @N of type 'index'}}
+// expected-error@+1 {{field element #felt<const 9223372036854775808> : !felt.type cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
 module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 9223372036854775808>]>>} {
   poly.template @ChildTemplate {
     poly.param @N : index
@@ -18,8 +18,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#
 
 // -----
 
-// Babybear's modulus cannot be represented as a felt value in that field.
-// expected-error@+1 {{struct argument 2013265921 : index does not match parameter @N of type '!felt.type<"babybear">'}}
+// Index-to-felt conversion requires a value below the modulus and does not reduce it.
+// expected-error@+1 {{index argument 2013265921 : index cannot be converted to felt parameter @N of type '!felt.type<"babybear">': value must be less than the field modulus; modular reduction is not performed}}
 module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[2013265921]>>} {
   poly.template @ChildTemplate {
     poly.param @N : !felt.type<"babybear">

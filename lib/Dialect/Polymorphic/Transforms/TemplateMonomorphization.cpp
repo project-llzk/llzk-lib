@@ -58,9 +58,13 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
       if (auto indexType = dyn_cast<IndexType>(*expected)) {
         if (auto felt = dyn_cast<FeltConstAttr>(argument)) {
           const APInt &number = felt.getValue();
-          if (number.getActiveBits() <= 63) {
-            value = IntegerAttr::get(indexType, number.getZExtValue());
+          if (number.getActiveBits() > 63) {
+            return site->emitError("field element ")
+                   << argument << " cannot be converted to index parameter @"
+                   << parameter.getSymName()
+                   << ": value exceeds the nonnegative signed 64-bit index range";
           }
+          value = IntegerAttr::get(indexType, number.getZExtValue());
         } else if (
             auto integer = dyn_cast<IntegerAttr>(argument);
             integer && integer.getType().isSignlessInteger(1)
@@ -79,9 +83,20 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
         }
       } else if (auto feltType = dyn_cast<FeltType>(*expected)) {
         if (auto integer = dyn_cast<IntegerAttr>(argument);
-            integer && isa<IndexType>(integer.getType()) && !integer.getValue().isNegative() &&
-            (!feltType.hasField() ||
-             toDynamicAPInt(integer.getValue()) < feltType.getField().prime())) {
+            integer && isa<IndexType>(integer.getType())) {
+          if (integer.getValue().isNegative()) {
+            return site->emitError("index argument ")
+                   << argument << " cannot be converted to felt parameter @"
+                   << parameter.getSymName() << ": negative values are not supported";
+          }
+          if (feltType.hasField() &&
+              toDynamicAPInt(integer.getValue()) >= feltType.getField().prime()) {
+            return site->emitError("index argument ")
+                   << argument << " cannot be converted to felt parameter @"
+                   << parameter.getSymName() << " of type " << feltType
+                   << ": value must be less than the field modulus; modular reduction is not "
+                      "performed";
+          }
           value = FeltConstAttr::get(source.getContext(), integer.getValue(), feltType);
         }
       }
