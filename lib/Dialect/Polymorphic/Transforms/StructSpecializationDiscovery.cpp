@@ -540,13 +540,14 @@ class DiscoveryRun {
     for (Value operand : op.getOperands()) {
       operands.push_back(env.lookup(operand));
     }
-    if (llvm::all_of(operands, [](Attribute attr) { return bool(attr); })) {
+    if (llvm::all_of(operands, [](Attribute attr) { return attr != nullptr; })) {
       SmallVector<OpFoldResult> folded;
       if (succeeded(op.fold(operands, folded)) && folded.size() == results.size()) {
         for (auto [index, value] : llvm::enumerate(folded)) {
-          results[index] = dyn_cast<Attribute>(value);
-          if (!results[index]) {
-            results[index] = env.lookup(llvm::cast<Value>(value));
+          if (auto attr = dyn_cast<Attribute>(value)) {
+            results[index] = attr;
+          } else {
+            results[index] = env.lookup(cast<Value>(value));
           }
         }
       }
@@ -677,11 +678,10 @@ public:
     }
     for (auto function : source.getOps<function::FuncDefOp>()) {
       if (!function.getBody().hasOneBlock()) {
-        function.emitError(
+        return function.emitError(
             "struct discovery requires a defined single-block method; unstructured control flow "
             "is unsupported"
         );
-        return failure();
       }
       for (Type type : function.getFunctionType().getInputs()) {
         if (failed(collectTypes(function, type))) {
@@ -704,8 +704,7 @@ public:
         return failure();
       }
       if (!knownFamilies.contains(*key)) {
-        call.emitError("no known source for affine struct call argument ") << family;
-        return failure();
+        return call.emitError("no known source for affine struct call argument ") << family;
       }
       auto candidates = familyCandidates.lookup(*key);
       for (StructType candidate : candidates) {

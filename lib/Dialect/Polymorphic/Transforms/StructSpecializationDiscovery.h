@@ -25,7 +25,7 @@ namespace llzk::polymorphic::detail {
 /// that call. For an array element, familyType is the rolled struct type and
 /// arrayIndices identifies the element requiring this specialization.
 struct StructSpecializationRequest {
-  enum class Kind { Plain, ArrayElement, RolledCallResult };
+  enum class Kind : std::uint8_t { Plain, ArrayElement, RolledCallResult };
 
   mlir::Operation *site;
   component::StructType type;

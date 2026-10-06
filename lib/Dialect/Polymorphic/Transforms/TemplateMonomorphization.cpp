@@ -25,6 +25,8 @@
 
 #include <llvm/ADT/MapVector.h>
 
+#include <cstdint>
+
 namespace llzk::polymorphic {
 #define GEN_PASS_DEF_TEMPLATEMONOMORPHIZATIONPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
@@ -95,9 +97,9 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
         matches = true;
       }
       if (!matches) {
-        site->emitError("struct argument ") << argument << " does not match parameter @"
-                                            << parameter.getSymName() << " of type " << *expected;
-        return failure();
+        return site->emitError("struct argument ")
+               << argument << " does not match parameter @" << parameter.getSymName() << " of type "
+               << *expected;
       }
     }
     normalized.push_back(value);
@@ -117,7 +119,7 @@ class StructInstantiationWorklist {
   };
 
   using SpecializationKey = std::pair<Operation *, ArrayAttr>;
-  enum class KeyMode { Required, Optional };
+  enum class KeyMode : std::uint8_t { Required, Optional };
 
   ModuleOp root;
   ModuleOp topRoot;
@@ -167,8 +169,7 @@ class StructInstantiationWorklist {
       return failure();
     }
     if (found->viaInclude()) {
-      site->emitError("inline includes before template monomorphization");
-      return failure();
+      return site->emitError("inline includes before template monomorphization");
     }
     ArrayAttr arguments = type.getParams();
     if (!arguments) {
@@ -180,8 +181,8 @@ class StructInstantiationWorklist {
       if (mode == KeyMode::Optional) {
         return std::optional<SpecializationKey>();
       }
-      site->emitError("template monomorphization requires concrete struct arguments") << type;
-      return failure();
+      return site->emitError("template monomorphization requires concrete struct arguments")
+             << type;
     }
     auto canonical = rebaseTemplateParams(tables, arguments, lookupFrom, topRoot, site);
     if (failed(canonical)) {
@@ -196,8 +197,7 @@ class StructInstantiationWorklist {
       if (mode == KeyMode::Optional) {
         return std::optional<SpecializationKey>();
       }
-      site->emitError("struct specialization argument count mismatch");
-      return failure();
+      return site->emitError("struct specialization argument count mismatch");
     }
     auto normalized = normalizeTypedArguments(found->get(), *sourceArguments, site);
     if (failed(normalized)) {
@@ -270,8 +270,7 @@ class StructInstantiationWorklist {
       return existing->second;
     }
     if (entries.size() >= limit) {
-      site->emitError("template monomorphization specialization limit exceeded");
-      return failure();
+      return site->emitError("template monomorphization specialization limit exceeded");
     }
     auto branches = source.walk([](BranchOpInterface op) -> WalkResult {
       return op.emitError("unstructured control flow is unsupported in template monomorphization");
