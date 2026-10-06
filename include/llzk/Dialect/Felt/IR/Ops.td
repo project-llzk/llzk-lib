@@ -107,10 +107,6 @@ def LLZK_FeltConstantOp
   let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
-  let extraClassDeclaration = [{
-    /// Returns the constant value as an arbitrary-precision integer.
-    ::llvm::APInt getValueAPInt() { return getValue().getValue(); }
-  }];
 }
 
 //===------------------------------------------------------------------===//
