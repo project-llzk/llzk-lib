@@ -141,3 +141,31 @@ module attributes {llzk.lang} {
 // CHECK: %[[DIV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIV]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
 // CHECK: %[[ITE:[0-9a-zA-Z_\.]+]] = smt.ite %[[COND]], %[[DIV_ZERO]], %[[CONGR]] : !smt.bool
 // CHECK: smt.assert %[[ITE]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayArgumentRange {
+    function.def @product(%input: !array.type<2 x !felt.type>)
+        -> !struct.type<@ArrayArgumentRange> {
+      %self = struct.new : <@ArrayArgumentRange>
+      %i0 = arith.constant 0 : index
+      %value = array.read %input[%i0] : !array.type<2 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return %self : !struct.type<@ArrayArgumentRange>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_ArrayArgumentRange(
+// CHECK-SAME:      %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.array
+// CHECK-NEXT:    %[[RANGE:[0-9a-zA-Z_\.]+]] = smt.forall {
+// CHECK-NEXT:    ^bb0(%[[INDEX:[0-9a-zA-Z_\.]+]]: !smt.int):
+// CHECK:           %[[ARG_ELEM:[0-9a-zA-Z_\.]+]] = smt.array.select %[[ARG]]{{\[}}%[[INDEX]]]
+// CHECK:           %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK-NEXT:      %[[MAX:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
+// CHECK-NEXT:      %[[GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[ARG_ELEM]], %[[ZERO]]
+// CHECK-NEXT:      %[[LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[ARG_ELEM]], %[[MAX]]
+// CHECK:           smt.yield
+// CHECK:         smt.assert %[[RANGE]]

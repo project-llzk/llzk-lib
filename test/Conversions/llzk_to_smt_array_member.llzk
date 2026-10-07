@@ -28,6 +28,23 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    func.func @smt_Sum(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.array<[!smt.int -> !smt.int]>) {
+// CHECK-NEXT:      %[[ARG_RANGE:[0-9a-zA-Z_\.]+]] = smt.forall {
+// CHECK-NEXT:      ^bb0(%[[ARG_INDEX:[0-9a-zA-Z_\.]+]]: !smt.int):
+// CHECK-NEXT:        %[[ARG_INDEX_LO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK-NEXT:        %[[ARG_INDEX_HI:[0-9a-zA-Z_\.]+]] = smt.int.constant 7
+// CHECK-NEXT:        %[[ARG_INDEX_GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[ARG_INDEX]], %[[ARG_INDEX_LO]]
+// CHECK-NEXT:        %[[ARG_INDEX_LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[ARG_INDEX]], %[[ARG_INDEX_HI]]
+// CHECK-NEXT:        %[[ARG_INDEX_IN_RANGE:[0-9a-zA-Z_\.]+]] = smt.and %[[ARG_INDEX_GE]], %[[ARG_INDEX_LE]]
+// CHECK-NEXT:        %[[ARG_ELEM:[0-9a-zA-Z_\.]+]] = smt.array.select %[[VAL_0]]{{\[}}%[[ARG_INDEX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NEXT:        %[[ARG_ELEM_LO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK-NEXT:        %[[ARG_ELEM_HI:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
+// CHECK-NEXT:        %[[ARG_ELEM_GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[ARG_ELEM]], %[[ARG_ELEM_LO]]
+// CHECK-NEXT:        %[[ARG_ELEM_LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[ARG_ELEM]], %[[ARG_ELEM_HI]]
+// CHECK-NEXT:        %[[ARG_ELEM_IN_RANGE:[0-9a-zA-Z_\.]+]] = smt.and %[[ARG_ELEM_GE]], %[[ARG_ELEM_LE]]
+// CHECK-NEXT:        %[[ARG_IMPLIES:[0-9a-zA-Z_\.]+]] = smt.implies %[[ARG_INDEX_IN_RANGE]], %[[ARG_ELEM_IN_RANGE]]
+// CHECK-NEXT:        smt.yield %[[ARG_IMPLIES]] : !smt.bool
+// CHECK-NEXT:      }
+// CHECK-NEXT:      smt.assert %[[ARG_RANGE]]
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_c" : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.declare_fun "arr_w" : !smt.array<[!smt.int -> !smt.int]>
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.forall {
