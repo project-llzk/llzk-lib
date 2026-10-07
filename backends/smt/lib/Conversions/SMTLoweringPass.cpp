@@ -1018,13 +1018,28 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
           &getContext(), selectedField->get(), mia.getSolver(), intervals
       };
       SmallVector<std::optional<UnreducedInterval>> productArgRanges;
+      SmallVector<std::optional<SmallVector<size_t>>> productArgArrayExtents;
       productArgRanges.reserve(productFunc.getNumArguments());
+      productArgArrayExtents.reserve(productFunc.getNumArguments());
       for (auto [arg, type] :
            llvm::zip(productFunc.getArguments(), productFunc.getArgumentTypes())) {
         if (isa<felt::FeltType>(type)) {
           productArgRanges.emplace_back(strategy.getScalarValueRange(arg));
+          productArgArrayExtents.emplace_back(std::nullopt);
+        } else if (auto arrType = dyn_cast<array::ArrayType>(type);
+                   arrType && isa<felt::FeltType>(arrType.getElementType())) {
+          auto extents = getExtents(arrType);
+          if (failed(extents)) {
+            productFunc.emitError(
+                "SMT lowering does not support dynamically-shaped array arguments"
+            );
+            return signalPassFailure();
+          }
+          productArgRanges.emplace_back(strategy.getDefaultFeltRange());
+          productArgArrayExtents.emplace_back(std::move(*extents));
         } else {
           productArgRanges.emplace_back(std::nullopt);
+          productArgArrayExtents.emplace_back(std::nullopt);
         }
       }
 
@@ -1097,9 +1112,15 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
         if (!maybeRange.has_value()) {
           continue;
         }
-        strategy.emitRangeConstraint(
-            argRewriter, smtFunc.getLoc(), smtFunc.getArgument(idx), *maybeRange
-        );
+        if (const auto &maybeExtents = productArgArrayExtents[idx]; maybeExtents.has_value()) {
+          strategy.emitArrayRangeConstraint(
+              argRewriter, smtFunc.getLoc(), smtFunc.getArgument(idx), *maybeExtents, *maybeRange
+          );
+        } else {
+          strategy.emitRangeConstraint(
+              argRewriter, smtFunc.getLoc(), smtFunc.getArgument(idx), *maybeRange
+          );
+        }
       }
     }
 
