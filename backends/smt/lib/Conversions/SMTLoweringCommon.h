@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -41,6 +42,167 @@
 #include <utility>
 
 namespace llzk::smt::detail {
+
+/// Theory-neutral primitive emitter interface used by non-native encoders.
+class NonNativeTheoryEmitter {
+public:
+  virtual ~NonNativeTheoryEmitter() = default;
+
+  virtual std::pair<mlir::Value, mlir::Value> getRangeBoundAssertions(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value,
+      const UnreducedInterval &range
+  ) const = 0;
+
+  virtual void emitRangeConstraint(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value,
+      const UnreducedInterval &range
+  ) const = 0;
+
+  virtual mlir::Value
+  emitFreshSymbol(mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name) const = 0;
+
+  virtual mlir::Value emitConstant(
+      mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
+  ) const = 0;
+
+  virtual mlir::Value
+  emitSub(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
+  virtual mlir::Value
+  emitAdd(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
+  virtual mlir::Value
+  emitMul(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
+  virtual mlir::Value
+  emitDiv(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs) const = 0;
+
+  virtual mlir::Value emitSignedDiv(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const = 0;
+
+  virtual mlir::Value emitSignedRem(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const = 0;
+
+  virtual mlir::Value
+  emitModPrime(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value) const = 0;
+
+  virtual mlir::Value
+  emitPrimeMultiple(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value factor) const = 0;
+
+  virtual mlir::Value emitOrderedComparison(
+      mlir::OpBuilder &builder, mlir::Location loc, boolean::FeltCmpPredicate predicate,
+      mlir::Value lhs, mlir::Value rhs
+  ) const = 0;
+};
+
+/// Emit primitive integer-theory terms for the optimized non-native encoding.
+///
+/// This layer only builds integer-sorted values and
+/// arithmetic fragments. Higher-level non-native encoding structure lives above
+/// this emitter.
+class SMTIntTheoryEmitter : public NonNativeTheoryEmitter {
+private:
+  mlir::MLIRContext *ctx;
+  llvm::APSInt prime;
+  // `freshSymbolCounts` is a map to improve readability. We could just have a counter.
+  mutable llvm::StringMap<unsigned> freshSymbolCounts;
+
+public:
+  SMTIntTheoryEmitter(mlir::MLIRContext *context, const llvm::APSInt &smtPrime)
+      : ctx(context), prime(smtPrime) {}
+
+  std::pair<mlir::Value, mlir::Value> getRangeBoundAssertions(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value,
+      const UnreducedInterval &range
+  ) const override;
+
+  void emitRangeConstraint(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value,
+      const UnreducedInterval &range
+  ) const override;
+
+  mlir::Value emitFreshSymbol(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name
+  ) const override;
+
+  mlir::Value emitConstant(
+      mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
+  ) const override;
+
+  mlir::Value emitSub(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  mlir::Value emitAdd(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  mlir::Value emitMul(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  mlir::Value emitDiv(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  mlir::Value emitSignedDiv(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  mlir::Value emitSignedRem(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  mlir::Value
+  emitModPrime(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value) const override;
+  mlir::Value emitPrimeMultiple(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value factor
+  ) const override;
+
+  mlir::Value emitOrderedComparison(
+      mlir::OpBuilder &builder, mlir::Location loc, boolean::FeltCmpPredicate predicate,
+      mlir::Value lhs, mlir::Value rhs
+  ) const override;
+
+  // arr[i, j, k] => (select (select (select arr i) j) k)
+  mlir::Value emitArraySelect(
+      mlir::Location loc, mlir::Value array, mlir::ValueRange indices, mlir::OpBuilder &builder
+  );
+
+  // forall x, inbounds(x, arr) => phi(x)
+  mlir::Value emitQuantifiedAssertion(
+      mlir::Location loc, mlir::ArrayRef<size_t> extents,
+      llvm::function_ref<mlir::Value(mlir::ValueRange)> body, mlir::OpBuilder &builder
+  );
+
+private:
+  /// |value| = if value < 0 then -value else value
+  mlir::Value emitAbsValue(mlir::OpBuilder &builder, mlir::Location loc, mlir::Value value) const;
+
+  /// absQuotient = |lhs| / |rhs|
+  /// quotient = if sign(lhs) != sign(rhs) then -absQuotient else absQuotient
+  mlir::Value emitTruncatingSignedDivision(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::Value lhs, mlir::Value rhs
+  ) const;
+
+  std::string getFreshName(mlir::StringRef baseName) const;
+
+  smt::IntConstantOp createPrimeConstant(mlir::OpBuilder &builder, mlir::Location loc) const;
+
+  smt::IntConstantOp createIntConstant(
+      mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
+  ) const;
+};
+
+bool isFeltOrArrayOfFelt(mlir::Type type);
+llvm::FailureOr<llvm::SmallVector<size_t>> getExtents(array::ArrayType type);
+
+enum class ArrayWriteMode : std::uint8_t {
+  Overwrite, /* Multiple writes to the same index clobber the previous value */
+  WriteOnce  /* Assume each array index can only be written to once */
+};
 
 using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mlir::Value>>;
 
