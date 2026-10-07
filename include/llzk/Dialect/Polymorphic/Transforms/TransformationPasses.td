@@ -131,7 +131,9 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     bindings and fold hooks; global and aggregate reads and call results remain
     unknown. Function arguments also begin unknown, even when a caller passes
     a constant. Required specialization arguments must resolve.
-    External free functions cannot use struct types that this pass specializes.
+    External free functions retain their declared signatures. Calls with struct
+    types rewritten to distinct clone types are diagnosed, including plain
+    structs, because the declaration would otherwise have a mismatched type.
     Includes must be inlined before running this pass.
   }];
   let options =

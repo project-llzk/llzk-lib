@@ -131,8 +131,9 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
         matches = typed.getType() == *expected;
       }
       if (!matches) {
-        return site->emitError() << kind << " argument " << argument << " does not match parameter @"
-                                 << parameter.getSymName() << " of type " << *expected;
+        return site->emitError() << kind << " argument " << argument
+                                 << " does not match parameter @" << parameter.getSymName()
+                                 << " of type " << *expected;
       }
     }
     normalized.push_back(value);
@@ -294,11 +295,8 @@ class TemplateInstantiationWorklist {
 
   /// Recover function clones so a second pass run reuses their definitions.
   LogicalResult loadExistingFunctions() {
-    SmallVector<function::FuncDefOp> existing;
-    root.walk([&existing](function::FuncDefOp function) {
-      if (function->hasAttr(SPECIALIZATION_ORIGIN_ATTR)) {
-        existing.push_back(function);
-      }
+    auto existing = walkCollect<function::FuncDefOp>(root, [](function::FuncDefOp function) {
+      return function->hasAttr(SPECIALIZATION_ORIGIN_ATTR);
     });
     for (auto clone : existing) {
       auto origin = clone->getAttrOfType<SymbolRefAttr>(SPECIALIZATION_ORIGIN_ATTR);
@@ -338,8 +336,7 @@ class TemplateInstantiationWorklist {
       auto parameters = templ.getConstOps<TemplateParamOp>();
       auto explicitArguments = call.getTemplateParamsAttr();
       if (explicitArguments && explicitArguments.size() != llvm::range_size(parameters)) {
-        call.emitError("function specialization argument count mismatch");
-        return failure();
+        return call.emitError("function specialization argument count mismatch");
       }
       std::optional<UnificationMap> unified;
       bool needsInference =
@@ -361,9 +358,8 @@ class TemplateInstantiationWorklist {
                       .value_or(Attribute());
         }
         if (!value || !isConcreteStructParamAttr(value)) {
-          call.emitError("cannot resolve free-function template parameter @")
-              << parameter.getSymName();
-          return failure();
+          return call.emitError("cannot resolve free-function template parameter @")
+                 << parameter.getSymName();
         }
         if (failed(call.verifyTemplateParamValueCompatibility(value, parameter))) {
           return failure();
@@ -538,7 +534,9 @@ class TemplateInstantiationWorklist {
       if (failed(localArguments)) {
         return failure();
       }
-      auto origin = getPathRelativeToRoot(source, topRoot);
+      auto origin = getPathRelativeToAncestor(source, topRoot, [call] {
+        return call->emitError("free-function specialization origin");
+      });
       if (failed(origin)) {
         return failure();
       }
@@ -585,9 +583,11 @@ class TemplateInstantiationWorklist {
     if (failed(lookupRoot)) {
       return failure();
     }
-    auto name = getPathRelativeToRoot(functions[id].clone, *lookupRoot);
+    auto name = getPathRelativeToAncestor(functions[id].clone, *lookupRoot, [call] {
+      return call->emitError("specialized free-function callee");
+    });
     if (failed(name)) {
-      return call.emitError("cannot form a symbol path to the specialized free function");
+      return failure();
     }
     call.setCalleeAttr(*name);
     call.removeTemplateParamsAttr();

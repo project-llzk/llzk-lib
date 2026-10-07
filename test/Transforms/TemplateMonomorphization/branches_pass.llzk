@@ -2,7 +2,7 @@
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
 
-// An unknown condition discovers Child<2> and Child<4>; a dead free call remains generic.
+// An unknown condition discovers Child<2> and Child<4>; a dead free-function call remains generic.
 module attributes {test.scenario = "branches", llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @Child {
     poly.param @N : index

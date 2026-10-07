@@ -461,7 +461,7 @@ class DiscoveryRun {
     auto stride = getKnownInteger(env.lookup(loop.getStep()));
     if (!lower || !upper || !stride || *stride <= 0 || loop.getUnsignedCmp()) {
       return loop.emitError(
-          "specialization discovery requires known signed for bounds and a positive step"
+          "specialization discovery requires known signed 'for' bounds and a positive step"
       );
     }
     results.clear();
@@ -688,8 +688,8 @@ public:
     for (auto function : functions) {
       if (!function.getBody().hasOneBlock()) {
         return function.emitError(
-            "specialization discovery requires a defined single-block function; unstructured control flow "
-            "is unsupported"
+            "specialization discovery requires a defined single-block function; "
+            "unstructured control flow is unsupported"
         );
       }
       for (Type type : function.getFunctionType().getInputs()) {

@@ -117,7 +117,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       } else {
         scf.yield %three : index
       }
-      // expected-error@+1 {{specialization discovery requires known signed for bounds and a positive step}}
+      // expected-error@+1 {{specialization discovery requires known signed 'for' bounds and a positive step}}
       scf.for %i = %zero_index to %bound step %one {
       }
       %s = struct.new : !struct.type<@Main>
