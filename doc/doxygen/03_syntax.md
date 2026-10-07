@@ -87,7 +87,7 @@ below two is invalid: `FieldSpecAttr::get` requires a valid modulus, while
 `FieldSpecAttr::getChecked` emits a diagnostic and returns a null attribute for
 an invalid modulus.
 
-Felt constant attributes retain the exact signed literal, including when their
+Felt constant attributes store the exact signed literal, including when their
 field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
 modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
 compares the literal and type, so `-1` and `p - 1` need not be the same attribute.
@@ -95,16 +95,16 @@ compares the literal and type, so `-1` and `p - 1` need not be the same attribut
 The C API accepts signed decimal `MlirStringRef` values for felt constants, field
 moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
 attribute. Numeric getters deliver the complete decimal value to an
-`MlirStringCallback`; callers must copy the callback text if they need to retain it.
+`MlirStringCallback`; callers must copy the callback text if they need to retain
+it. Native `int64_t` felt convenience constructors are also available.
 
 Numeric bytecode payloads for felt constants, field specifications, and loop bounds
 use minimal signed two's-complement encodings. Only payload tags corresponding to
 these signed encodings are accepted.
 
-C++ mathematical-integer builders accept `DynamicAPInt`; the migration-only
-`APInt` overloads and width-insensitive parameter have been removed. The owning
-`DynamicAPIntValue` storage adapter is permanent: it supplies canonical numeric
-hashing to MLIR while public accessors return `DynamicAPInt` directly. Remaining
+C++ mathematical-integer builders accept `DynamicAPInt`. The owning
+`DynamicAPIntValue` storage adapter supplies canonical numeric hashing to MLIR
+while public accessors return `DynamicAPInt` directly.
 `APInt`/`APSInt` uses implement MLIR, LLVM bitvector, parser, and binary encoding
 boundaries. Boolean and explicitly unsigned MLIR integers decode as nonnegative;
 other signless integers and index values use signed interpretation.

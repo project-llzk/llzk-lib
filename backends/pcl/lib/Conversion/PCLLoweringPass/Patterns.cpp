@@ -357,7 +357,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
   LogicalResult matchAndRewrite(
       arith::ConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    auto intAttr = llvm::cast<IntegerAttr>(op.getValue());
+    const APInt &value = intAttr.getValue();
     if (op.getType().isInteger(1)) {
       if (value.isOne()) {
         rewriter.replaceOpWithNewOp<pcl::TrueOp>(op);
@@ -366,13 +367,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
       }
       return success();
     }
-
-    // Boolean constants are handled above; preserve the declared integer signedness.
     rewriter.replaceOpWithNewOp<pcl::ConstOp>(
-        op, pcl::FeltAttr::get(
-                rewriter.getContext(),
-                llzk::integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(op.getValue()))
-            )
+        op, pcl::FeltAttr::get(rewriter.getContext(), llzk::integerAttrToDynamicAPInt(intAttr))
     );
     return success();
   }

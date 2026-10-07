@@ -194,7 +194,7 @@ serializeWtns(ArrayRef<llvm::DynamicAPInt> witness, const Field &field) {
   if (auto error = header.writeFieldElement(fieldSize, field.prime())) {
     return error;
   }
-  header.writeU32(static_cast<uint32_t>(witness.size()));
+  header.writeU32(checkedCast<uint32_t>(witness.size()));
 
   BinaryBuffer values;
   for (const llvm::DynamicAPInt &value : witness) {

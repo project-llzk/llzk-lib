@@ -534,7 +534,7 @@ static LogicalResult serializeLinearCombination(
 
     buffer.writeU32(term.wireId);
     if (auto error = buffer.writeFieldElement(fieldSizeBytes, term.coefficient)) {
-      return circuit.emitOpError() << llvm::toString(std::move(error));
+      return circuit.emitOpError(llvm::toString(std::move(error)));
     }
     previousWireId = term.wireId;
     sawAnyTerm = true;
@@ -563,7 +563,7 @@ static FailureOr<BinaryBuffer> serializeExportedCircuit(
   BinaryBuffer headerSection;
   headerSection.writeU32(*fieldSizeBytes);
   if (auto error = headerSection.writeFieldElement(*fieldSizeBytes, prime)) {
-    return circuit.emitOpError() << llvm::toString(std::move(error));
+    return circuit.emitOpError(llvm::toString(std::move(error)));
   }
   headerSection.writeU32(model.numWires);
   headerSection.writeU32(model.numPublicOutputs);
