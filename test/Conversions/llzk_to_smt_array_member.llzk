@@ -81,7 +81,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[I0:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
 // CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[I0]] : !smt.int to index
 // CHECK-NEXT:      %[[I0_LO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
-// CHECK-NEXT:      %[[I0_HI:[0-9a-zA-Z_\.-]+]] = smt.int.constant -1
+// CHECK-NEXT:      %[[I0_HI:[0-9a-zA-Z_\.-]+]] = smt.int.constant 9223372036854775807
 // CHECK-NEXT:      %[[I0_GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[I0]], %[[I0_LO]]
 // CHECK-NEXT:      %[[I0_LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[I0]], %[[I0_HI]]
 // CHECK-NEXT:      smt.assert %[[I0_GE]]
@@ -89,7 +89,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[I1:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
 // CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[I1]] : !smt.int to index
 // CHECK-NEXT:      %[[I1_LO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
-// CHECK-NEXT:      %[[I1_HI:[0-9a-zA-Z_\.-]+]] = smt.int.constant -1
+// CHECK-NEXT:      %[[I1_HI:[0-9a-zA-Z_\.-]+]] = smt.int.constant 9223372036854775807
 // CHECK-NEXT:      %[[I1_GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[I1]], %[[I1_LO]]
 // CHECK-NEXT:      %[[I1_LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[I1]], %[[I1_HI]]
 // CHECK-NEXT:      smt.assert %[[I1_GE]]
@@ -97,7 +97,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[I8:[0-9a-zA-Z_\.]+]] = smt.int.constant 8
 // CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[I8]] : !smt.int to index
 // CHECK-NEXT:      %[[I8_LO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
-// CHECK-NEXT:      %[[I8_HI:[0-9a-zA-Z_\.-]+]] = smt.int.constant -1
+// CHECK-NEXT:      %[[I8_HI:[0-9a-zA-Z_\.-]+]] = smt.int.constant 9223372036854775807
 // CHECK-NEXT:      %[[I8_GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[I8]], %[[I8_LO]]
 // CHECK-NEXT:      %[[I8_LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[I8]], %[[I8_HI]]
 // CHECK-NEXT:      smt.assert %[[I8_GE]]

@@ -505,8 +505,8 @@ LogicalResult IndexConstConverter::matchAndRewrite(
       UnreducedInterval {
           // Have to do this because the other constructor for UnreducedInterval only accepts
           // int64_t
-          llvm::DynamicAPInt {llvm::APInt {64, 0}},
-          llvm::DynamicAPInt {llvm::APInt {64, std::numeric_limits<uint64_t>::max()}}
+          llvm::DynamicAPInt {llvm::APSInt {64, 0}},
+          llvm::DynamicAPInt {llvm::APInt::getSignedMaxValue(64)}
       }
   );
   rewriter.replaceOp(op, smtIndexOp);
