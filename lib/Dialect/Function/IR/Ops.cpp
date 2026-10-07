@@ -19,6 +19,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/Shared/KnownTargetVerifier.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
@@ -725,88 +726,31 @@ protected:
 
 struct KnownTargetVerifier : public CallOpVerifier {
   KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncDefOp> &&tgtRes)
-      : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        targetNamespace(tgtRes.getNamespace()), targetViaInclude(tgtRes.viaInclude()) {}
+      : CallOpVerifier(c, tgtRes.get().getSymName()), shared(c, tgtRes) {}
 
   LogicalResult verifyTargetAttributes() override {
-    return CallOpVerifier::verifyTargetAttributesMatch(tgt);
+    return CallOpVerifier::verifyTargetAttributesMatch(shared.getTarget());
   }
 
   LogicalResult verifyInputs() override {
-    return verifyTypesMatch(callOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
+    return shared.verifyTypesMatch(
+        callOp->getArgOperands().getTypes(), shared.getTargetType().getInputs(), "operand"
+    );
   }
 
   LogicalResult verifyOutputs() override {
-    return verifyTypesMatch(callOp->getResultTypes(), tgtType.getResults(), "result");
+    return shared.verifyTypesMatch(
+        callOp->getResultTypes(), shared.getTargetType().getResults(), "result"
+    );
   }
 
   LogicalResult verifyTemplateParams() override {
-    Operation *tgtOp = tgt.getOperation();
+    Operation *tgtOp = shared.getTarget().getOperation();
     if (isInStruct(tgtOp)) {
       // Struct function calls cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();
     } else if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
-      // When the target function is a free function within a TemplateOp, the CallOp may have
-      // template parameter instantiations that must be checked against the template parameters.
-      // - If the function type signature references all template parameters, then the parameter
-      //   instantiation list on the CallOp is optional, otherwise it's required.
-      // - If present, the instantiation list must provide a value for every template parameter
-      //   and the value must be type-compatible with the parameter's declared type (if any).
-      // - If present, the instantiation list must result in a function type signature that can
-      //   be unified with the CallOp's operand and result types.
-      auto realParams = tgtOpParent.getConstOps<TemplateParamOp>();
-      ArrayAttr callParams = callOp->getTemplateParamsAttr();
-
-      // When there is no instantiation list, just ensure that it's not required.
-      if (isNullOrEmpty(callParams)) {
-        llvm::SmallDenseSet<SymbolRefAttr> referencedInSignature;
-        llzk::getSymbolsUsedIn(tgtType.getInputs(), referencedInSignature);
-        llzk::getSymbolsUsedIn(tgtType.getResults(), referencedInSignature);
-
-        bool allParamsReferenced = llvm::all_of(realParams, [&](TemplateParamOp p) {
-          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
-        });
-        if (allParamsReferenced) {
-          return success();
-        }
-        // Tested in call_with_template_params_fail.llzk
-        return callOp->emitOpError().append(
-            "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
-            "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
-            "\" appear in the function type signature"
-        );
-      }
-
-      // Ensure `forceIntAttrTypes()` was successful on the CallOp's template parameters.
-      if (failed(llzk::forceIntAttrTypes(callParams.getValue(), [this] {
-        return llzk::InFlightDiagnosticWrapper(this->callOp->emitOpError());
-      }))) {
-        return failure();
-      }
-
-      // The instantiation list is present. Check it has exactly one entry per template param.
-      size_t numTemplateParams = llvm::range_size(realParams);
-      if (callParams.size() != numTemplateParams) {
-        // Tested in call_with_template_params_fail.llzk
-        return callOp->emitOpError().append(
-            "template instantiation has ", callParams.size(), " parameter(s) but \"@",
-            tgtOpParent.getSymName(), "\" expects ", numTemplateParams, " template parameter(s)"
-        );
-      }
-
-      // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(callOp->verifyTemplateParamValuesCompatibility(realParams))) {
-        return failure();
-      }
-
-      // Check that the provided instantiation values are consistent with what type unification
-      // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult =
-          callOp->unifyTypeSignatureWithNamespace(tgtType, targetNamespace);
-      if (failed(unifyResult)) {
-        return failure();
-      }
-      return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
+      return shared.verifyTemplateInstantiation(tgtOpParent);
     } else {
       // Non-template functions cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();
@@ -815,7 +759,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
 
   LogicalResult verifyAffineMapParams() override {
     if ((FunctionKind::StructCompute == tgtKind || FunctionKind::StructProduct == tgtKind) &&
-        isInStruct(tgt.getOperation())) {
+        isInStruct(shared.getTarget().getOperation())) {
       // Return type should be a single StructType. If that is not the case here, just bail without
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
@@ -842,32 +786,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
   }
 
 private:
-  template <typename T>
-  LogicalResult
-  verifyTypesMatch(ValueTypeRange<T> callOpTypes, ArrayRef<Type> tgtTypes, const char *aspect) {
-    if (tgtTypes.size() != callOpTypes.size()) {
-      return callOp->emitOpError()
-          .append("incorrect number of ", aspect, "s for callee, expected ", tgtTypes.size())
-          .attachNote(tgt.getLoc())
-          .append("callee defined here");
-    }
-    for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
-      if (!typesUnify(callOpTypes[i], tgtTypes[i], targetNamespace)) {
-        auto diag =
-            callOp->emitOpError().append(aspect, " type mismatch: expected type ", tgtTypes[i]);
-        if (targetViaInclude) {
-          diag.append(" from included target \"", callOp->getCalleeAttr(), '"');
-        }
-        return diag.append(", but found ", callOpTypes[i], " for ", aspect, " number ", i);
-      }
-    }
-    return success();
-  }
-
-  FuncDefOp tgt;
-  FunctionType tgtType;
-  std::vector<llvm::StringRef> targetNamespace;
-  bool targetViaInclude;
+  llzk::KnownTargetVerifier<CallOp, FuncDefOp> shared;
 };
 
 /// Version of checkSelfType() that performs the subset of verification checks that can be done when
