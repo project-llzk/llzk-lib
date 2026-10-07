@@ -90,20 +90,29 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
       } else if (auto feltType = dyn_cast<FeltType>(*expected)) {
         if (auto integer = dyn_cast<IntegerAttr>(argument);
             integer && isa<IndexType>(integer.getType())) {
-          if (integer.getValue().isNegative()) {
-            return site->emitError("index argument ")
-                   << argument << " cannot be converted to felt parameter @"
-                   << parameter.getSymName() << ": negative values are not supported";
+          if (feltType.hasField()) {
+            const Field &field = feltType.getField();
+            auto reduced = field.reduce(llvm::DynamicAPInt(integer.getValue()));
+            value = FeltConstAttr::get(
+                source.getContext(), toAPInt(reduced, field.bitWidth()), feltType
+            );
+          } else {
+            if (integer.getValue().isNegative()) {
+              return site->emitError("index argument ")
+                     << argument << " cannot be converted to felt parameter @"
+                     << parameter.getSymName() << ": negative values require a known field modulus";
+            }
+            value = FeltConstAttr::get(source.getContext(), integer.getValue(), feltType);
           }
-          if (feltType.hasField() &&
-              toDynamicAPInt(integer.getValue()) >= feltType.getField().prime()) {
-            return site->emitError("index argument ")
-                   << argument << " cannot be converted to felt parameter @"
-                   << parameter.getSymName() << " of type " << feltType
-                   << ": value must be less than the field modulus; modular reduction is not "
-                      "performed";
-          }
-          value = FeltConstAttr::get(source.getContext(), integer.getValue(), feltType);
+        } else if (
+            auto felt = dyn_cast<FeltConstAttr>(argument);
+            felt && felt.getType() == feltType && feltType.hasField()
+        ) {
+          const Field &field = feltType.getField();
+          value = FeltConstAttr::get(
+              source.getContext(), toAPInt(field.reduce(felt.getValue()), field.bitWidth()),
+              feltType
+          );
         }
       }
       bool matches = false;

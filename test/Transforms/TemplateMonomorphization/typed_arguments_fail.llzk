@@ -18,11 +18,11 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#
 
 // -----
 
-// Index-to-felt conversion requires a value below the modulus and does not reduce it.
-// expected-error@+1 {{index argument 2013265921 : index cannot be converted to felt parameter @N of type '!felt.type<"babybear">': value must be less than the field modulus; modular reduction is not performed}}
-module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[2013265921]>>} {
+// A negative index argument requires a known field for modular conversion.
+// expected-error@+1 {{index argument -1 : index cannot be converted to felt parameter @N: negative values require a known field modulus}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[-1]>>} {
   poly.template @ChildTemplate {
-    poly.param @N : !felt.type<"babybear">
+    poly.param @N : !felt.type
     struct.def @Child {
       function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
         %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>

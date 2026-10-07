@@ -119,7 +119,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 
 // -----
 
-// An index constant and a felt constant both request Child<3> in babybear.
+// Equivalent index and felt arguments share a specialization modulo babybear.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "index_to_felt"} {
   poly.template @ChildTemplate {
     poly.param @N : !felt.type<"babybear">
@@ -135,6 +135,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
   struct.def @Main {
     struct.member @a : !struct.type<@ChildTemplate::@Child<[3]>>
     struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
+    struct.member @c : !struct.type<@ChildTemplate::@Child<[2013265924]>>
+    struct.member @d : !struct.type<@ChildTemplate::@Child<[#felt<const 2013265924 : !felt.type<"babybear">>]>>
+    struct.member @e : !struct.type<@ChildTemplate::@Child<[0]>>
+    struct.member @f : !struct.type<@ChildTemplate::@Child<[2013265921]>>
+    struct.member @g : !struct.type<@ChildTemplate::@Child<[-1]>>
+    struct.member @h : !struct.type<@ChildTemplate::@Child<[2013265920]>>
     function.def @compute() -> !struct.type<@Main> {
       %s = struct.new : !struct.type<@Main>
       function.return %s : !struct.type<@Main>
@@ -144,10 +150,22 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 }
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "index_to_felt"} {
-// CHECK:        struct.def @Main__spec_0 {
+// CHECK:    struct.def @Main__spec_0 {
 // CHECK-NEXT:      struct.member @a : !struct.type<@Child__spec_1>
 // CHECK-NEXT:      struct.member @b : !struct.type<@Child__spec_1>
-// CHECK:        struct.def @Child__spec_1 {
+// CHECK-NEXT:      struct.member @c : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @d : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @e : !struct.type<@Child__spec_2>
+// CHECK-NEXT:      struct.member @f : !struct.type<@Child__spec_2>
+// CHECK-NEXT:      struct.member @g : !struct.type<@Child__spec_3>
+// CHECK-NEXT:      struct.member @h : !struct.type<@Child__spec_3>
+// CHECK:    struct.def @Child__spec_1 {
 // CHECK: felt.const  3 : <"babybear">
-// CHECK:        } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
-// CHECK-NOT:    struct.def @Child__spec_2
+// CHECK:    } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
+// CHECK:    struct.def @Child__spec_2 {
+// CHECK: felt.const  0 : <"babybear">
+// CHECK:    } {poly.arguments = [#felt<const 0 : <"babybear">> : !felt.type<"babybear">], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 2 : i64}
+// CHECK:    struct.def @Child__spec_3 {
+// CHECK: felt.const  2013265920 : <"babybear">
+// CHECK:    } {poly.arguments = [#felt<const 2013265920 : <"babybear">> : !felt.type<"babybear">], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 3 : i64}
+// CHECK-NOT:    struct.def @Child__spec_4
