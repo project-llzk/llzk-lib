@@ -154,10 +154,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/TypeSwitch.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Debug.h&gt;</code><br />
+<code>#include &lt;algorithm&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SymbolHelper.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8cpp__incl.svg" width="4930" height="763"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8cpp__incl.svg" width="4823" height="763"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="SymbolHelper_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -178,6 +179,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a6233c90d2afb42113aa36eddeebd8f76" id="r_a6233c90d2afb42113aa36eddeebd8f76"><td class="memItemLeft">SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a6233c90d2afb42113aa36eddeebd8f76">llzk::replaceLeaf</a> (SymbolRefAttr orig, FlatSymbolRefAttr newLeaf)</td></tr>
 <tr class="memitem:a5a8f8e48ae6b42bbfbccc3b9a58e642d" id="r_a5a8f8e48ae6b42bbfbccc3b9a58e642d"><td class="memItemLeft">SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">llzk::appendLeaf</a> (SymbolRefAttr orig, FlatSymbolRefAttr newLeaf)</td></tr>
 <tr class="memitem:a1834ce0bbea39a5089abc81e496ea685" id="r_a1834ce0bbea39a5089abc81e496ea685"><td class="memItemLeft">SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a1834ce0bbea39a5089abc81e496ea685">llzk::appendLeafName</a> (SymbolRefAttr orig, const Twine &amp;newLeafSuffix)</td></tr>
+<tr class="memitem:acbba3e4d36321d28df3b55ba06166375" id="r_acbba3e4d36321d28df3b55ba06166375"><td class="memItemLeft">FailureOr&lt; SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#acbba3e4d36321d28df3b55ba06166375">llzk::getPathRelativeToAncestor</a> (SymbolOpInterface symbol, ModuleOp ancestor, llvm::function_ref&lt; InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a44fd8ecd88f8e6b80079bf6c1328412a" id="r_a44fd8ecd88f8e6b80079bf6c1328412a"><td class="memItemLeft">FailureOr&lt; ModuleOp &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a44fd8ecd88f8e6b80079bf6c1328412a">llzk::getRootModule</a> (Operation *from)</td></tr>
 <tr class="memitem:af1d48798fe72bc519795c232aba3a40f" id="r_af1d48798fe72bc519795c232aba3a40f"><td class="memItemLeft">FailureOr&lt; SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#af1d48798fe72bc519795c232aba3a40f">llzk::getPathFromRoot</a> (SymbolOpInterface to, ModuleOp *foundRoot)</td></tr>
 <tr class="memitem:a3b33104e7b08786daf6ddb9b44120ae0" id="r_a3b33104e7b08786daf6ddb9b44120ae0"><td class="memItemLeft">FailureOr&lt; SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a3b33104e7b08786daf6ddb9b44120ae0">llzk::getPathFromRoot</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &amp;to, ModuleOp *foundRoot)</td></tr>
@@ -219,7 +221,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00036">36</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00038">38</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>

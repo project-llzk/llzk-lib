@@ -1,7 +1,7 @@
 var searchData=
 [
   ['template_20_3a_3allzk_3a_3apolymorphic_3a_3atemplateop_0',['&lt;span class=&quot;tt&quot;&gt;poly.template&lt;/span&gt; (llzk::polymorphic::TemplateOp)',['../dialects.html#polytemplate-llzkpolymorphictemplateop',1,'']]],
-  ['templates_1',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
+  ['templates_1',['templates',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-monomorphize-templates',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-monomorphize-templates&lt;/span&gt;']]],
   ['temporary_20ban_2',['3. Temporary Ban',['../code-of-conduct.html#autotoc_md3-temporary-ban',1,'']]],
   ['the_20release_3',['Create the Release',['../maintanence.html#create-the-release',1,'']]],
   ['the_20release_20candidate_4',['Creating the Release Candidate',['../maintanence.html#creating-the-release-candidate',1,'']]],

@@ -397,6 +397,9 @@ var annotated_dup =
           [ "FromEraseSet", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet" ],
           [ "InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout" ],
           [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
+          [ "RolledCallTargets", "structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets.html", "structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets" ],
+          [ "StructSpecializationDiscovery", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery" ],
+          [ "StructSpecializationRequest", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest" ],
           [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
           [ "TemplateOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase" ],
           [ "TemplateParamOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase" ],
@@ -410,6 +413,7 @@ var annotated_dup =
         [ "impl", "namespacellzk_1_1polymorphic_1_1impl.html", [
           [ "EmptyTemplateRemovalPassBase", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase" ],
           [ "FlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase" ],
+          [ "TemplateMonomorphizationPassBase", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase" ],
           [ "TypeVarInferencePassBase", "classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase" ],
           [ "WildcardArraySpecializationPassBase", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase" ]
         ] ],
@@ -424,6 +428,7 @@ var annotated_dup =
         [ "TemplateExprOp", "classllzk_1_1polymorphic_1_1TemplateExprOp.html", "classllzk_1_1polymorphic_1_1TemplateExprOp" ],
         [ "TemplateExprOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor" ],
         [ "TemplateExprOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor" ],
+        [ "TemplateMonomorphizationPassOptions", "structllzk_1_1polymorphic_1_1TemplateMonomorphizationPassOptions.html", "structllzk_1_1polymorphic_1_1TemplateMonomorphizationPassOptions" ],
         [ "TemplateOp", "classllzk_1_1polymorphic_1_1TemplateOp.html", "classllzk_1_1polymorphic_1_1TemplateOp" ],
         [ "TemplateOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateOpAdaptor" ],
         [ "TemplateOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor" ],

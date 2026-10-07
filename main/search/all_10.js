@@ -5,7 +5,8 @@ var searchData=
   ['keyty_2',['keyTy',['../structllzk_1_1smt__info_1_1detail_1_1SMTInfoSetOpGenericAdaptorBase_1_1Properties.html#a4554d1ab3e020d5c4ba43bc022eba1ab',1,'llzk::smt_info::detail::SMTInfoSetOpGenericAdaptorBase::Properties']]],
   ['keywordattr_3',['KeywordAttr',['../smt-backend.html#keywordattr',1,'']]],
   ['kind_4',['KIND',['../LICENSE_8txt.html#aa00504fa42933d47d305596973b56921',1,'LICENSE.txt']]],
-  ['kind_5',['kind',['../structGenerator.html#ae08ac0d490ed19be36ac349a90eae656',1,'Generator']]],
-  ['knowntargetverifier_6',['KnownTargetVerifier',['../classllzk_1_1KnownTargetVerifier.html',1,'llzk::KnownTargetVerifier&lt; OriginOp, TargetOp &gt;'],['../classllzk_1_1KnownTargetVerifier.html#aeadd3babb549447b070c725dde3587ee',1,'llzk::KnownTargetVerifier::KnownTargetVerifier()']]],
-  ['knowntargetverifier_2eh_7',['KnownTargetVerifier.h',['../KnownTargetVerifier_8h.html',1,'']]]
+  ['kind_5',['Kind',['../structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71',1,'llzk::polymorphic::detail::StructSpecializationRequest']]],
+  ['kind_6',['kind',['../structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#acf0796e5aba26d5c3c87cb397ee95256',1,'llzk::polymorphic::detail::StructSpecializationRequest::kind'],['../structGenerator.html#ae08ac0d490ed19be36ac349a90eae656',1,'Generator::kind']]],
+  ['knowntargetverifier_7',['KnownTargetVerifier',['../classllzk_1_1KnownTargetVerifier.html',1,'llzk::KnownTargetVerifier&lt; OriginOp, TargetOp &gt;'],['../classllzk_1_1KnownTargetVerifier.html#aeadd3babb549447b070c725dde3587ee',1,'llzk::KnownTargetVerifier::KnownTargetVerifier()']]],
+  ['knowntargetverifier_2eh_8',['KnownTargetVerifier.h',['../KnownTargetVerifier_8h.html',1,'']]]
 ];

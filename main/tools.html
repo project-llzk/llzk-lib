@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-infer-tvar"><span class="tt">-llzk-infer-tvar</span> </a>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
+                <a href="#autotoc_md-llzk-monomorphize-templates"><span class="tt">-llzk-monomorphize-templates</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-13">Options </a>
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
+                <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-14">Options </a>
@@ -317,10 +317,18 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-to-pcl"><span class="tt">-llzk-to-pcl</span> </a>
+                <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-15">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-to-pcl"><span class="tt">-llzk-to-pcl</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-16">Options </a>
                   </li>
                 </ul>
               </li>
@@ -353,7 +361,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-full-struct-inlining"><span class="tt">-llzk-full-struct-inlining</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-16">Options </a>
+                    <a href="#options-17">Options </a>
                   </li>
                 </ul>
               </li>
@@ -364,7 +372,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-full-poly-lowering"><span class="tt">-llzk-full-poly-lowering</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-17">Options </a>
+                    <a href="#options-18">Options </a>
                   </li>
                 </ul>
               </li>
@@ -674,73 +682,125 @@ Options</h5>
 <p>Infers concrete replacements for <span class="tt">!poly.tvar</span> template parameters from operations in <span class="tt">function.def</span> or <span class="tt">poly.expr</span> bodies, such as <span class="tt">poly.unifiable_cast</span> between a type variable and a more concrete type (which means for maximum effect you should run it before other optimization passes that can remove <span class="tt">poly.unifiable_cast</span>). Rewrites affected function signatures and body types, removes redundant casts, drops resolved <span class="tt">poly.param</span> declarations, and updates call-site template parameter lists.</p>
 <p>The pass also creates template-local instantiated versions of functions for each type-variable replacement. The <span class="tt">llzk-flatten</span> pass performs similar instantiation of type variables but only as part of its more extensive lowering and flattening, all of which may not be desired in some cases (hence the utility of this pass).</p>
 <p>This pass may result in <span class="tt">poly.template</span> containing no <span class="tt">poly.param</span> or <span class="tt">poly.expr</span>. Run <span class="tt">llzk-drop-empty-templates</span> after this pass to simplify these templates.</p>
-<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-specialize-wildcard-arrays"></a>
-<span class="tt">-llzk-specialize-wildcard-arrays</span></h4>
-<p><em>Refine wildcard array casts and specialize concrete call targets</em></p>
-<p>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</p>
-<p>This pass is intended to run after <span class="tt">llzk-flatten</span>. It iterates to a fixpoint so newly-refined cast result types can enable further callable specialization in later iterations.</p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-monomorphize-templates"></a>
+<span class="tt">-llzk-monomorphize-templates</span></h4>
+<p><em>Specialize structs reachable from llzk.main</em></p>
+<p>Starting with a concrete <span class="tt">llzk.main</span>, discover and instantiate struct dependencies until every requested specialization has been processed. Reuse definitions by source symbol and concrete argument list, including reachable structs with no template parameters. Preserve source templates and control flow, and update direct type uses and method calls to their concrete definitions.</p>
+<p>Loops remain in the IR rather than being unrolled; discovery evaluates their iterations to identify specializations without expanding the loop bodies. "Rolled" calls and struct types below retain affine parameters that depend on those iterations or on array element indices.</p>
+<p>Affine calls and array values retain their parameterized types. Their <span class="tt">poly.family_specializations</span> and <span class="tt">poly.family</span> attributes identify the concrete definitions needed by later elaboration; definitions carry <span class="tt">poly.specialization_id</span>, <span class="tt">poly.origin</span> and <span class="tt">poly.arguments</span> attributes. <span class="tt">poly.family</span> appears on members and operations producing an array value, including <span class="tt">struct.readm</span> and <span class="tt">array.new</span>. Each entry names the rolled struct type, the enclosing array's index tuple, and the matching specialization. The <span class="tt">type</span> entry retains the original affine-parameterized family type; it identifies which struct field is being specialized within a POD element. <span class="tt">specialization</span> identifies the concrete clone through its <span class="tt">poly.specialization_id</span>. For example, an element at index 2 of a Child<em> family retains Child<em> in <span class="tt">type</span> and names the clone whose <span class="tt">poly.arguments</span> are [2]. Concrete sibling fields have no family entry. On a rolled call, <span class="tt">poly.family_specializations</span> lists candidates collected from all matching arrays and affine calls in the source instance. The list may be empty only when a known array has an empty dimension. A consumer selects a target by evaluating the argument type's affine map using the value's affine inputs, often an array element's indices, and matching the resulting arguments to <span class="tt">poly.arguments</span>. <span class="tt">poly.origin</span> and every struct name nested in <span class="tt">poly.arguments</span> are relative to the outermost <span class="tt">llzk.lang</span> root, which is also the lookup anchor when reloading this metadata. Cache keys use the same argument spelling, so requests from different roots reuse the same specialization. Substitution re-spells type arguments relative to the clone's root; an argument whose definition is outside that root is diagnosed at the instantiation site. Arguments to typed <span class="tt">poly.param</span> declarations are converted to the declared type using the conversions below, before forming a cache key. An incompatible argument is diagnosed. Felt-to-index conversion requires a value in the nonnegative signed 64-bit index range. Arguments to felt parameters with a known field are reduced modulo its prime before forming the cache key and substituting uses. A felt literal with no specified field acquires the parameter's declared field; a different explicit field is rejected. Equivalent field values therefore share a specialization. With no known field, index-to-felt conversion requires a nonnegative value and preserves it. Untyped parameters retain their input attributes, so differently spelled numeric values can create distinct specializations. An <span class="tt">i1</span> parameter accepts only boolean arguments or index zero and one, which become false and true. Other index values fail type conversion at the instantiation site. The normalized boolean binding determines specialization identity and is used for every read and forwarded argument. Forwarding that value to an index parameter produces zero or one. A felt binding must be read with its exact felt type, including its field, even for untyped parameters. Mismatched felt types are diagnosed at <span class="tt">poly.read_const</span>. Reading it as index or i1 is diagnosed at <span class="tt">poly.read_const</span>; use an explicit cast after a felt read for numeric conversion. Integer bindings read as i1 must be zero or one. Integer-to-felt reads use the same modular conversion as typed arguments, and negative values require a known field modulus. Reads whose type is a type variable use its concrete binding.</em></em></p>
+<p><em><em>Methods must be defined and single-block. Supported regions are <span class="tt">scf.if</span>, signed <span class="tt">scf.for</span> with known bounds and positive steps, and <span class="tt">scf.while</span> with a known condition at every check. Unstructured branches are diagnosed. Constant evaluation uses template bindings and fold hooks; global and aggregate reads and call results remain unknown. Required specialization arguments must resolve. Reachable free-function calls are diagnosed until function support is added. Includes must be inlined before running this pass.</em></em></p>
+<p><em><em></em></em></p>
 <h5 class="doxsection"><a class="anchor" id="options-13"></a>
-Options</h5>
-<div class="fragment"><div class="line">-max-iter : Maximum number of iterations before the pass gives up reaching a fixpoint.</div>
-</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-structs"></a>
-<span class="tt">-llzk-inline-structs</span></h4>
-<p><em>Inlines nested structs (i.e., subcomponents).</em></p>
-<p>This pass inlines nested structs (i.e., subcomponents) at struct-type members and at calls to the subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of "constrain" functions.</p>
-<p>The <span class="tt">max-merge-complexity</span> parameter can be used to limit the complexity of the resulting structs such that a potential inlining will not take place if doing so would push the sum of constraint and multiplications in the combined struct over the limit. The default value <span class="tt">0</span> indicates no limits which means all structs will be inlined into the Main struct.</p>
-<p>This pass should be run after <span class="tt">llzk-flatten</span> to ensure structs do not have template parameters because structs with template parameters cannot (currently) be inlined. Inlining is also not (currently) supported for subcomponent structs stored in an array-type member.</p>
-<p>This pass also assumes that all subcomponents that are created by calling a struct "@compute" function are ultimately written to exactly one member within the current struct.</p>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">-max-specializations  : Maximum number of concrete struct definitions</div>
+<div class="line">-max-evaluation-steps : Maximum steps shared by template expressions and methods in one discovery run</div>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-specialize-wildcard-arrays"></a>
+<em><em><span class="tt">-llzk-specialize-wildcard-arrays</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Refine wildcard array casts and specialize concrete call targets</em></em></em></p>
+<p><em><em>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</em></em></p>
+<p><em><em>This pass is intended to run after <span class="tt">llzk-flatten</span>. It iterates to a fixpoint so newly-refined cast result types can enable further callable specialization in later iterations.</em></em></p>
+<p><em><em></em></em></p>
 <h5 class="doxsection"><a class="anchor" id="options-14"></a>
-Options</h5>
-<div class="fragment"><div class="line">-max-merge-complexity : Maximum allowed constraint+multiplications in merged @constrain functions</div>
-</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-to-pcl"></a>
-<span class="tt">-llzk-to-pcl</span></h4>
-<p><em>Rewrite constraints to be compatible with PCL constraints used by Picus</em></p>
-<p>Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect. This pass currently expects the flattening and inlining passes to be run prior to its use.</p>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">-max-iter : Maximum number of iterations before the pass gives up reaching a fixpoint.</div>
+</div><!-- fragment --><p>  </em></em></p>
+<p><em><em>  </em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-structs"></a>
+<em><em><span class="tt">-llzk-inline-structs</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Inlines nested structs (i.e., subcomponents).</em></em></em></p>
+<p><em><em>This pass inlines nested structs (i.e., subcomponents) at struct-type members and at calls to the subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of "constrain" functions.</em></em></p>
+<p><em><em>The <span class="tt">max-merge-complexity</span> parameter can be used to limit the complexity of the resulting structs such that a potential inlining will not take place if doing so would push the sum of constraint and multiplications in the combined struct over the limit. The default value <span class="tt">0</span> indicates no limits which means all structs will be inlined into the Main struct.</em></em></p>
+<p><em><em>This pass should be run after <span class="tt">llzk-flatten</span> to ensure structs do not have template parameters because structs with template parameters cannot (currently) be inlined. Inlining is also not (currently) supported for subcomponent structs stored in an array-type member.</em></em></p>
+<p><em><em>This pass also assumes that all subcomponents that are created by calling a struct "@compute" function are ultimately written to exactly one member within the current struct.</em></em></p>
+<p><em><em></em></em></p>
 <h5 class="doxsection"><a class="anchor" id="options-15"></a>
-Options</h5>
-<div class="fragment"><div class="line">-mode : Lowering mode (full or stubbed)</div>
-</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-r1cs-lowering"></a>
-<span class="tt">-llzk-r1cs-lowering</span></h4>
-<p><em>Rewrite constraints to be compatible with R1CS constraints, i.e a*b - c = 0</em></p>
-<p>Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect. The pass expects already-flattened, straight-line <span class="tt">constrain</span> bodies. Run <span class="tt">llzk-flatten</span> or another control-flow lowering pass before this pass; nested-region, successor-bearing, or multi-block constraints are rejected before R1CS normalization. This pass is best used on already-flattened input as part of the <span class="tt">-llzk-full-r1cs-lowering</span> pipeline which includes a degree lowering pass and clean up passes to ensure correctness and performance.  </p>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">-max-merge-complexity : Maximum allowed constraint+multiplications in merged @constrain functions</div>
+</div><!-- fragment --><p>  </em></em></p>
+<p><em><em>  </em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-to-pcl"></a>
+<em><em><span class="tt">-llzk-to-pcl</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Rewrite constraints to be compatible with PCL constraints used by Picus</em></em></em></p>
+<p><em><em>Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect. This pass currently expects the flattening and inlining passes to be run prior to its use.</em></em></p>
+<p><em><em></em></em></p>
+<h5 class="doxsection"><a class="anchor" id="options-16"></a>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">-mode : Lowering mode (full or stubbed)</div>
+</div><!-- fragment --><p>  </em></em></p>
+<p><em><em>  </em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-r1cs-lowering"></a>
+<em><em><span class="tt">-llzk-r1cs-lowering</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Rewrite constraints to be compatible with R1CS constraints, i.e a*b - c = 0</em></em></em></p>
+<p><em><em>Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect. The pass expects already-flattened, straight-line <span class="tt">constrain</span> bodies. Run <span class="tt">llzk-flatten</span> or another control-flow lowering pass before this pass; nested-region, successor-bearing, or multi-block constraints are rejected before R1CS normalization. This pass is best used on already-flattened input as part of the <span class="tt">-llzk-full-r1cs-lowering</span> pipeline which includes a degree lowering pass and clean up passes to ensure correctness and performance.  </em></em></p>
+<p><em><em></em></em></p>
 <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
-Validation Passes</h3>
+<em><em>Validation Passes</em></em></h3>
+<p><em><em></em></em></p>
+<p><em><em>  </em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-validate-member-writes"></a>
-<span class="tt">-llzk-validate-member-writes</span></h4>
-<p><em>Detect multiple and missing writes to the same member of a component.</em></p>
-<p>Detect multiple and missing writes to the same member of a component.</p>
-<p>Note that this is overapproximate (i.e., some writes may erroneously be flagged as overwrites, and some members may erroneously be marked unwritten).  </p>
+<em><em><span class="tt">-llzk-validate-member-writes</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Detect multiple and missing writes to the same member of a component.</em></em></em></p>
+<p><em><em>Detect multiple and missing writes to the same member of a component.</em></em></p>
+<p><em><em>Note that this is overapproximate (i.e., some writes may erroneously be flagged as overwrites, and some members may erroneously be marked unwritten).  </em></em></p>
+<p><em><em></em></em></p>
 <h3 class="doxsection"><a class="anchor" id="predefined-pipelines"></a>
-Predefined Pipelines</h3>
+<em><em>Predefined Pipelines</em></em></h3>
+<p><em><em></em></em></p>
+<p><em><em>   </em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unnecessary-ops"></a>
-<span class="tt">-llzk-remove-unnecessary-ops</span></h4>
-<p><em>Remove unnecessary operations, such as redundant reads or repeated constraints.</em></p>
-<p>Runs the following cleanup passes in order:</p>
-<ol type="1">
+<em><em><span class="tt">-llzk-remove-unnecessary-ops</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Remove unnecessary operations, such as redundant reads or repeated constraints.</em></em></em></p>
+<p><em><em>Runs the following cleanup passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
 <li><span class="tt">-llzk-duplicate-read-write-elim</span></li>
 <li><span class="tt">-llzk-duplicate-op-elim</span></li>
 </ol>
+<p></em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unnecessary-ops-and-defs"></a>
-<span class="tt">-llzk-remove-unnecessary-ops-and-defs</span></h4>
-<p><em>Remove unnecessary operations and member definitions.</em></p>
-<p>Runs <span class="tt">-llzk-remove-unnecessary-ops</span>, followed by:</p>
-<ol type="1">
+<em><em><span class="tt">-llzk-remove-unnecessary-ops-and-defs</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Remove unnecessary operations and member definitions.</em></em></em></p>
+<p><em><em>Runs <span class="tt">-llzk-remove-unnecessary-ops</span>, followed by:</em></em></p>
+<p><em><em></p><ol type="1">
 <li><span class="tt">-llzk-unused-declaration-elim</span></li>
 </ol>
-<p>The unused-declaration pass uses its default options, so it removes unused members but does not remove struct definitions.</p>
+<p></em></em></p>
+<p><em><em>The unused-declaration pass uses its default options, so it removes unused members but does not remove struct definitions.</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-product-program"></a>
-<span class="tt">-llzk-product-program</span></h4>
-<p>_Convert <span class="tt">@compute</span>/<span class="tt">@constrain</span> functions to an <span class="tt">@product</span> function and perform alignment._</p>
-<p>Runs the following passes in order:</p>
-<ol type="1">
+<em><em><span class="tt">-llzk-product-program</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em>_Convert <span class="tt">@compute</span>/<span class="tt">@constrain</span> functions to an <span class="tt">@product</span> function and perform alignment._</em></em></p>
+<p><em><em>Runs the following passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
 <li><span class="tt">-llzk-compute-constrain-to-product</span></li>
 <li><span class="tt">-llzk-fuse-product-control-flow</span></li>
 </ol>
+<p></em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-struct-inlining"></a>
-<span class="tt">-llzk-full-struct-inlining</span></h4>
-<p><em>Flatten and inline all struct definitions into the main struct.</em></p>
-<p>Runs the following passes in order:</p>
-<ol type="1">
+<em><em><span class="tt">-llzk-full-struct-inlining</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Flatten and inline all struct definitions into the main struct.</em></em></em></p>
+<p><em><em>Runs the following passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
 <li><span class="tt">-llzk-flatten</span></li>
 <li><span class="tt">-llzk-pod-to-scalar</span>, when <span class="tt">pod-to-scalar</span> is enabled</li>
 <li><span class="tt">-llzk-array-to-scalar</span>, when <span class="tt">array-to-scalar</span> is enabled</li>
@@ -748,65 +808,93 @@ Predefined Pipelines</h3>
 <li><span class="tt">-llzk-inline-structs</span></li>
 <li><span class="tt">-llzk-unused-declaration-elim</span> with <span class="tt">remove-structs=true</span></li>
 </ol>
-<p>POD scalarization precedes array scalarization because it can split <span class="tt">pod.type</span> array elements into parallel arrays. The pipeline defaults flattening cleanup to <span class="tt">main-as-root</span>; using another cleanup mode is not recommended because parameterized templates may survive flattening and cause <span class="tt">-llzk-inline-structs</span> to fail.</p>
-<h5 class="doxsection"><a class="anchor" id="options-16"></a>
-Options</h5>
-<ul>
+<p></em></em></p>
+<p><em><em>POD scalarization precedes array scalarization because it can split <span class="tt">pod.type</span> array elements into parallel arrays. The pipeline defaults flattening cleanup to <span class="tt">main-as-root</span>; using another cleanup mode is not recommended because parameterized templates may survive flattening and cause <span class="tt">-llzk-inline-structs</span> to fail.</em></em></p>
+<p><em><em></em></em></p>
+<h5 class="doxsection"><a class="anchor" id="options-17"></a>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><ul>
 <li><span class="tt">flattening={max-iter=&lt;n&gt;}</span> sets the maximum number of flattening iterations (default: <span class="tt">1000</span>).</li>
 <li><span class="tt">flattening={cleanup=&lt;mode&gt;}</span> selects the flattening cleanup mode (default: <span class="tt">main-as-root</span> for this pipeline).</li>
 <li><span class="tt">array-to-scalar</span> controls whether <span class="tt">-llzk-array-to-scalar</span> runs (default: <span class="tt">true</span>).</li>
 <li><span class="tt">pod-to-scalar</span> controls whether <span class="tt">-llzk-pod-to-scalar</span> runs (default: <span class="tt">true</span>).</li>
 <li><span class="tt">inlining={max-merge-complexity=&lt;n&gt;}</span> limits the complexity of merged structs (default: <span class="tt">0</span>, meaning no limit).</li>
 </ul>
+<p></em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-inlining"></a>
-<span class="tt">-llzk-full-inlining</span></h4>
-<p><em>Inline free functions, then flatten and inline struct definitions.</em></p>
-<p>This is the recommended pipeline before a downstream pass that does not support <span class="tt">function.call</span>. It first runs <span class="tt">-llzk-inline-free-functions</span>, then runs the same sequence and accepts the same options as <span class="tt">-llzk-full-struct-inlining</span>.</p>
+<em><em><span class="tt">-llzk-full-inlining</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Inline free functions, then flatten and inline struct definitions.</em></em></em></p>
+<p><em><em>This is the recommended pipeline before a downstream pass that does not support <span class="tt">function.call</span>. It first runs <span class="tt">-llzk-inline-free-functions</span>, then runs the same sequence and accepts the same options as <span class="tt">-llzk-full-struct-inlining</span>.</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-poly-lowering"></a>
-<span class="tt">-llzk-full-poly-lowering</span></h4>
-<p><em>Flatten and inline structs, lower polynomial constraints, then remove unused IR.</em></p>
-<p>Runs the following passes in order:</p>
-<ol type="1">
+<em><em><span class="tt">-llzk-full-poly-lowering</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Flatten and inline structs, lower polynomial constraints, then remove unused IR.</em></em></em></p>
+<p><em><em>Runs the following passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
 <li>The complete <span class="tt">-llzk-full-struct-inlining</span> sequence</li>
 <li><span class="tt">-llzk-poly-lowering-pass</span></li>
 <li>The complete <span class="tt">-llzk-remove-unnecessary-ops-and-defs</span> sequence</li>
 </ol>
-<p>The nested struct-inlining stage uses <span class="tt">main-as-root</span> cleanup by default for the same reason as <span class="tt">-llzk-full-struct-inlining</span>.</p>
-<h5 class="doxsection"><a class="anchor" id="options-17"></a>
-Options</h5>
-<ul>
+<p></em></em></p>
+<p><em><em>The nested struct-inlining stage uses <span class="tt">main-as-root</span> cleanup by default for the same reason as <span class="tt">-llzk-full-struct-inlining</span>.</em></em></p>
+<p><em><em></em></em></p>
+<h5 class="doxsection"><a class="anchor" id="options-18"></a>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><ul>
 <li><span class="tt">flatten-inline</span> configures the nested struct-inlining stage. Its nested <span class="tt">flattening</span>, <span class="tt">array-to-scalar</span>, <span class="tt">pod-to-scalar</span>, and <span class="tt">inlining</span> options have the same meaning and defaults as the corresponding <span class="tt">-llzk-full-struct-inlining</span> options.</li>
 <li><span class="tt">lowering={max-degree=&lt;n&gt;}</span> sets the maximum polynomial degree accepted by <span class="tt">-llzk-poly-lowering-pass</span> (default: <span class="tt">2</span>; minimum: <span class="tt">2</span>).</li>
 </ul>
+<p></em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-r1cs-lowering"></a>
-<span class="tt">-llzk-full-r1cs-lowering</span></h4>
-<p><em>Lower polynomial constraints to R1CS.</em></p>
-<p>Runs the following passes in order:</p>
-<ol type="1">
+<em><em><span class="tt">-llzk-full-r1cs-lowering</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Lower polynomial constraints to R1CS.</em></em></em></p>
+<p><em><em>Runs the following passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
 <li><span class="tt">-llzk-full-poly-lowering</span> with <span class="tt">lowering={max-degree=2}</span></li>
 <li><span class="tt">-llzk-r1cs-lowering</span></li>
 <li>MLIR's <span class="tt">-cse</span></li>
 </ol>
-<p>The polynomial-lowering stage prepares flattened, degree-two constraints for R1CS conversion. CSE then removes redundant <span class="tt">r1cs.to_linear</span> operations.  </p>
+<p></em></em></p>
+<p><em><em>The polynomial-lowering stage prepares flattened, degree-two constraints for R1CS conversion. CSE then removes redundant <span class="tt">r1cs.to_linear</span> operations.  </em></em></p>
+<p><em><em></em></em></p>
 <h1 class="doxsection"><a class="anchor" id="llzk-translate"></a>
-llzk-translate</h1>
-<p><span class="tt">llzk-translate</span> is a version of the <span class="tt">mlir-translate</span> tool. Includes translations for backends specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++). <span class="tt">llzk-translate -h</span> will show a list of all available flags and options.</p>
-<p>The tool expects that the IR has already been converted to the backend's dialect IR. For example:</p>
-<div class="fragment"><div class="line">llzk-opt &lt;input.llzk&gt; --llzk-to-pcl | llzk-translate --pcl-to-lisp</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="llzk-specific-options-1"></a>
-LLZK-Specific Options</h4>
-<div class="fragment"><div class="line">--pcl-to-lisp           Translates from PCL IR to PCL lisp</div>
+<em><em>llzk-translate</em></em></h1>
+<p><em><em></em></em></p>
+<p><em><em><span class="tt">llzk-translate</span> is a version of the <span class="tt">mlir-translate</span> tool. Includes translations for backends specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++). <span class="tt">llzk-translate -h</span> will show a list of all available flags and options.</em></em></p>
+<p><em><em>The tool expects that the IR has already been converted to the backend's dialect IR. For example:</em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">llzk-opt &lt;input.llzk&gt; --llzk-to-pcl | llzk-translate --pcl-to-lisp</div>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="llzk-specific-options-1"></a>
+<em><em>LLZK-Specific Options</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">--pcl-to-lisp           Translates from PCL IR to PCL lisp</div>
 <div class="line">--smt-to-smtlib         Translates from SMT to SMTLIB</div>
 <div class="line">--zklean-to-lean        Translates from zkLean dialects IR to Lean code</div>
-</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="llzk-witgen"></a>
-llzk-witgen</h1>
-<p><span class="tt">llzk-witgen</span> executes LLZK witness-generation logic for the concrete main component declared by <span class="tt">llzk.main</span>. It evaluates <span class="tt">compute()</span> and prints JSON for either the public outputs of the main component or the full generated witness signal set.</p>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em></em></em></p>
+<h1 class="doxsection"><a class="anchor" id="llzk-witgen"></a>
+<em><em>llzk-witgen</em></em></h1>
+<p><em><em></em></em></p>
+<p><em><em><span class="tt">llzk-witgen</span> executes LLZK witness-generation logic for the concrete main component declared by <span class="tt">llzk.main</span>. It evaluates <span class="tt">compute()</span> and prints JSON for either the public outputs of the main component or the full generated witness signal set.</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="basic-usage"></a>
-Basic Usage</h4>
-<div class="fragment"><div class="line">llzk-witgen &lt;input.llzk&gt; --inputs &lt;input.json&gt;</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="llzk-specific-options-2"></a>
-LLZK-Specific Options</h4>
-<div class="fragment"><div class="line">--inputs &lt;file&gt;              JSON file containing main compute inputs</div>
+<em><em>Basic Usage</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">llzk-witgen &lt;input.llzk&gt; --inputs &lt;input.json&gt;</div>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="llzk-specific-options-2"></a>
+<em><em>LLZK-Specific Options</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">--inputs &lt;file&gt;              JSON file containing main compute inputs</div>
 <div class="line">-I &lt;directory&gt;               Directory of include files</div>
 <div class="line">--backend=&lt;name&gt;             Execution backend: interpreter or execution-engine</div>
 <div class="line">--output-scope=&lt;name&gt;        Output scope: public or full-witness</div>
@@ -814,18 +902,24 @@ LLZK-Specific Options</h4>
 <div class="line">--dump-jit-llvm              Print the post-LLVM JIT module</div>
 <div class="line">--uninitialized-behavior     Control default handling of uninitialized witness values</div>
 <div class="line">--uninitialized-seed         Seed used for randomized uninitialized witness values</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="input-format"></a>
-Input Format</h4>
-<p>The <span class="tt">--inputs</span> file must contain a top-level JSON object or JSON array.</p>
-<ul>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="input-format"></a>
+<em><em>Input Format</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em>The <span class="tt">--inputs</span> file must contain a top-level JSON object or JSON array.</em></em></p>
+<p><em><em></p><ul>
 <li>A JSON object is keyed by <span class="tt">function.arg_name</span> attributes on the main <span class="tt">compute()</span> function arguments.</li>
 <li>A JSON array is interpreted positionally in declared argument order.</li>
 </ul>
-<p>At the main boundary, <span class="tt">llzk-witgen</span> only supports <span class="tt">felt</span> and <span class="tt">array&lt;... x felt&gt;</span> inputs, due to the restrictions posed on <span class="tt">llzk.main</span> components. Field element values are accepted in the same JSON form used by the witgen tests, namely JSON integers or decimal strings.</p>
+<p></em></em></p>
+<p><em><em>At the main boundary, <span class="tt">llzk-witgen</span> only supports <span class="tt">felt</span> and <span class="tt">array&lt;... x felt&gt;</span> inputs, due to the restrictions posed on <span class="tt">llzk.main</span> components. Field element values are accepted in the same JSON form used by the witgen tests, namely JSON integers or decimal strings.</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="output-format"></a>
-Output Format</h4>
-<p><span class="tt">llzk-witgen</span> writes one JSON object to stdout. The exact shape depends on <span class="tt">--output-scope</span>.</p>
-<ul>
+<em><em>Output Format</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><span class="tt">llzk-witgen</span> writes one JSON object to stdout. The exact shape depends on <span class="tt">--output-scope</span>.</em></em></p>
+<p><em><em></p><ul>
 <li><span class="tt">--output-scope=public</span> is the default.<ul>
 <li>The output JSON contains only the public outputs of the main component.</li>
 <li>Public struct members become JSON object fields.</li>
@@ -842,44 +936,62 @@ Output Format</h4>
 </ul>
 </li>
 </ul>
+<p></em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="backends-1"></a>
-Backends</h4>
-<p><span class="tt">llzk-witgen</span> currently supports two execution backends:</p>
-<ul>
+<em><em>Backends</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><span class="tt">llzk-witgen</span> currently supports two execution backends:</em></em></p>
+<p><em><em></p><ul>
 <li><span class="tt">--backend=interpreter</span> Executes LLZK <span class="tt">@compute</span> logic directly over the preprocessed MLIR.</li>
 <li><span class="tt">--backend=execution-engine</span> Lowers preprocessed LLZK <span class="tt">@compute</span> IR to built-in MLIR dialects that can be natively converted to LLVM IR, then executes it with <span class="tt">mlir::ExecutionEngine</span>.</li>
 </ul>
-<p>The default backend is <span class="tt">interpreter</span>, as the <span class="tt">execution-engine</span> does not currently support all LLZK features due to existing lowering limitations (e.g., in the <span class="tt">-llzk-flattening</span> pass).</p>
+<p></em></em></p>
+<p><em><em>The default backend is <span class="tt">interpreter</span>, as the <span class="tt">execution-engine</span> does not currently support all LLZK features due to existing lowering limitations (e.g., in the <span class="tt">-llzk-flattening</span> pass).</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="preprocessing"></a>
-Preprocessing</h4>
-<p>Before execution, <span class="tt">llzk-witgen</span> performs the preprocessing needed to make witness generation concrete and executable:</p>
-<ul>
+<em><em>Preprocessing</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em>Before execution, <span class="tt">llzk-witgen</span> performs the preprocessing needed to make witness generation concrete and executable:</em></em></p>
+<p><em><em></p><ul>
 <li><span class="tt">include</span> inlining</li>
 <li>flattening rooted at <span class="tt">llzk.main</span> when required</li>
 <li>affine lowering for execution-engine mode</li>
 <li>subcomponent inlining for execution-engine mode</li>
 </ul>
-<p>Template parameters and affine instantiations are therefore supported only when they can be fully resolved by the preprocessing pipeline before execution.</p>
+<p></em></em></p>
+<p><em><em>Template parameters and affine instantiations are therefore supported only when they can be fully resolved by the preprocessing pipeline before execution.</em></em></p>
+<p><em><em></em></em></p>
 <h1 class="doxsection"><a class="anchor" id="llzk-smt-check"></a>
-llzk-smt-check</h1>
-<p><span class="tt">llzk-smt-check</span> runs an external SMT solver on an SMT-LIB 2 script and reports the result of each <span class="tt">check-sat</span> stage. It is intended to consume the staged SMT-LIB emitted by <span class="tt">llzk-opt --smt-to-smtlib</span>, including explicit metadata produced from <span class="tt">smt_info.set</span> ops such as <span class="tt">(set-info :llzk-stage "pre")</span> and <span class="tt">(set-info :status unsat)</span>.</p>
+<em><em>llzk-smt-check</em></em></h1>
+<p><em><em></em></em></p>
+<p><em><em><span class="tt">llzk-smt-check</span> runs an external SMT solver on an SMT-LIB 2 script and reports the result of each <span class="tt">check-sat</span> stage. It is intended to consume the staged SMT-LIB emitted by <span class="tt">llzk-opt --smt-to-smtlib</span>, including explicit metadata produced from <span class="tt">smt_info.set</span> ops such as <span class="tt">(set-info :llzk-stage "pre")</span> and <span class="tt">(set-info :status unsat)</span>.</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="basic-usage-1"></a>
-Basic Usage</h4>
-<div class="fragment"><div class="line">llzk-smt-check input.smt2</div>
+<em><em>Basic Usage</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">llzk-smt-check input.smt2</div>
 <div class="line">llzk-opt --smt-to-smtlib -o /dev/null input.llzk | llzk-smt-check -</div>
-</div><!-- fragment --><p><span class="tt">--smt-to-smtlib</span> exports the unique top-level <span class="tt">smt.solver</span> directly contained in the root <span class="tt">builtin.module</span>. Module-scope <span class="tt">func.func</span> definitions are treated as helpers that may be called from within that solver body. Exported scripts preserve any <span class="tt">smt.set_logic</span> operation in that solver and otherwise begin with the conservative fallback <span class="tt">(set-logic ALL)</span>. Any staged metadata consumed by <span class="tt">llzk-smt-check</span> must be introduced explicitly in the SMT dialect IR using <span class="tt">smt_info.set</span>, for example:</p>
-<div class="fragment"><div class="line">smt_info.set &quot;:llzk-root&quot; &quot;CheckGate&quot;</div>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em><span class="tt">--smt-to-smtlib</span> exports the unique top-level <span class="tt">smt.solver</span> directly contained in the root <span class="tt">builtin.module</span>. Module-scope <span class="tt">func.func</span> definitions are treated as helpers that may be called from within that solver body. Exported scripts preserve any <span class="tt">smt.set_logic</span> operation in that solver and otherwise begin with the conservative fallback <span class="tt">(set-logic ALL)</span>. Any staged metadata consumed by <span class="tt">llzk-smt-check</span> must be introduced explicitly in the SMT dialect IR using <span class="tt">smt_info.set</span>, for example:</em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">smt_info.set &quot;:llzk-root&quot; &quot;CheckGate&quot;</div>
 <div class="line">smt_info.set &quot;:llzk-stage&quot; &quot;pre&quot;</div>
 <div class="line">smt_info.set &quot;:status&quot; unsat</div>
-</div><!-- fragment --><p><span class="tt">smt.check</span> lowers only to a bare <span class="tt">(check-sat)</span>. Because SMT-LIB scripts cannot branch on <span class="tt">check-sat</span> results internally, <span class="tt">--smt-to-smtlib</span> accepts only <span class="tt">smt.check</span> operations whose <span class="tt">sat</span>, <span class="tt">unknown</span>, and <span class="tt">unsat</span> regions are empty. Result-dependent script behavior would need a higher-level driver format outside SMT-LIB.</p>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em><span class="tt">smt.check</span> lowers only to a bare <span class="tt">(check-sat)</span>. Because SMT-LIB scripts cannot branch on <span class="tt">check-sat</span> results internally, <span class="tt">--smt-to-smtlib</span> accepts only <span class="tt">smt.check</span> operations whose <span class="tt">sat</span>, <span class="tt">unknown</span>, and <span class="tt">unsat</span> regions are empty. Result-dependent script behavior would need a higher-level driver format outside SMT-LIB.</em></em></p>
+<p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="llzk-specific-options-3"></a>
-LLZK-Specific Options</h4>
-<div class="fragment"><div class="line">--solver-binary=&lt;path&gt;      SMT solver executable to run (default: z3)</div>
+<em><em>LLZK-Specific Options</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">--solver-binary=&lt;path&gt;      SMT solver executable to run (default: z3)</div>
 <div class="line">--quiet                     Suppress per-stage summaries and rely on exit status</div>
 <div class="line">--dump-raw-output           Print raw solver stdout after the stage summaries</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="behavior"></a>
-Behavior</h4>
-<ul>
+</div><!-- fragment --><p></em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="behavior"></a>
+<em><em>Behavior</em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em></p><ul>
 <li>The tool reads SMT-LIB from a file or stdin.</li>
 <li><span class="tt">set-info :status &lt;sat|unsat|unknown&gt;</span> provides the expected result for the subsequent <span class="tt">check-sat</span>.</li>
 <li><span class="tt">set-info :llzk-stage "&lt;name&gt;"</span> and <span class="tt">set-info :llzk-root "&lt;name&gt;"</span> provide LLZK-specific stage and root labels for the subsequent summaries.</li>
@@ -887,16 +999,20 @@ Behavior</h4>
 <li>Without annotations, the tool still executes the script and labels checks as <span class="tt"><a class="el" href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a>[0]</span>, <span class="tt"><a class="el" href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a>[1]</span>, and so on.</li>
 <li>Any solver launch failure, malformed output, result-count mismatch, or stage mismatch causes a non-zero exit status.</li>
 </ul>
+<p></em></em></p>
+<p><em><em></em></em></p>
 <h1 class="doxsection"><a class="anchor" id="llzk-lsp-server"></a>
-llzk-lsp-server</h1>
-<p><span class="tt">cmake --build &lt;build dir&gt; --target llzk-lsp-server</span> will produce an LLZK-specific LSP server that can be used in an IDE to provide language information for LLZK. Refer to the <a href="https://mlir.llvm.org/docs/Tools/MLIRLSP/">MLIR LSP documentation</a> for a more detailed explanation of the MLIR LSP tools and how to set them up in your IDE.</p>
-<div class="section_buttons"> <table class="markdownTable">
+<em><em>llzk-lsp-server</em></em></h1>
+<p><em><em></em></em></p>
+<p><em><em><span class="tt">cmake --build &lt;build dir&gt; --target llzk-lsp-server</span> will produce an LLZK-specific LSP server that can be used in an IDE to provide language information for LLZK. Refer to the <a href="https://mlir.llvm.org/docs/Tools/MLIRLSP/">MLIR LSP documentation</a> for a more detailed explanation of the MLIR LSP tools and how to set them up in your IDE.</em></em></p>
+<p><em><em></p><div class="section_buttons"> <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadLeft">Previous  </th><th class="markdownTableHeadRight">Next  </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyLeft"><a class="el" href="setup.html" title="Setup">Setup</a>  </td><td class="markdownTableBodyRight"><a class="el" href="contribution-guide.html" title="Contribution Guide">Contribution Guide</a>  </td></tr>
 </table>
-</div> </div></div><!-- contents -->
+</div><p> </em></em></p>
+</div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 </div><!-- container -->

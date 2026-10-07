@@ -22,6 +22,7 @@ var SymbolHelper_8h =
     [ "llzk::getPathFromTopRoot", "namespacellzk.html#a0babfe2462421672a9ef4492f7a3761a", null ],
     [ "llzk::getPathFromTopRoot", "namespacellzk.html#ab00783f710c785c334cedbc30c828819", null ],
     [ "llzk::getPathFromTopRoot", "namespacellzk.html#a25f6edaf11599fca47b52450508f0453", null ],
+    [ "llzk::getPathRelativeToAncestor", "namespacellzk.html#afb6ce96420e0d7f6cd9da6a95ae38760", null ],
     [ "llzk::getPieces", "namespacellzk.html#a2e5122183c36be89ee3a9b8df87b5223", null ],
     [ "llzk::getPrefixAsSymbolRefAttr", "namespacellzk.html#a0cc045d4128ed47c170ca4c017bf02f0", null ],
     [ "llzk::getRootModule", "namespacellzk.html#a6c6b23d251765a4ab382acebfd6138fd", null ],

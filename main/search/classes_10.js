@@ -44,5 +44,6 @@ var searchData=
   ['returnopgenericadaptor_41',['ReturnOpGenericAdaptor',['../classllzk_1_1function_1_1ReturnOpGenericAdaptor.html',1,'llzk::function']]],
   ['returnopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_42',['ReturnOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1function_1_1ReturnOpGenericAdaptor.html',1,'llzk::function']]],
   ['returnopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_43',['ReturnOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1function_1_1ReturnOpGenericAdaptor.html',1,'llzk::function']]],
-  ['returnopgenericadaptorbase_44',['ReturnOpGenericAdaptorBase',['../classllzk_1_1function_1_1detail_1_1ReturnOpGenericAdaptorBase.html',1,'llzk::function::detail']]]
+  ['returnopgenericadaptorbase_44',['ReturnOpGenericAdaptorBase',['../classllzk_1_1function_1_1detail_1_1ReturnOpGenericAdaptorBase.html',1,'llzk::function::detail']]],
+  ['rolledcalltargets_45',['RolledCallTargets',['../structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets.html',1,'llzk::polymorphic::detail']]]
 ];

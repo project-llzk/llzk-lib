@@ -135,19 +135,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="SymbolLookup_8h_source.html">llzk/Util/SymbolLookup.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
+<code>#include &lt;mlir/IR/Diagnostics.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/CallInterfaces.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/STLFunctionalExtras.h&gt;</code><br />
 <code>#include &lt;cassert&gt;</code><br />
 <code>#include &lt;optional&gt;</code><br />
 <code>#include &lt;ranges&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SymbolHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8h__incl.svg" width="2470" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8h__incl.svg" width="2642" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8h__dep__incl.svg" width="8882" height="663"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8h__dep__incl.svg" width="8998" height="663"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="SymbolHelper_8h_source.html">Go to the source code of this file.</a></p>
@@ -193,6 +195,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a3d5f5cb52ce07e8385c8ed43ebfcb393" id="r_a3d5f5cb52ce07e8385c8ed43ebfcb393"><td class="memItemLeft">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a3d5f5cb52ce07e8385c8ed43ebfcb393">llzk::getPathFromRoot</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> &amp;to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
 <tr class="memitem:adb644c6ee4397684491d5b7e3519fe40" id="r_adb644c6ee4397684491d5b7e3519fe40"><td class="memItemLeft">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#adb644c6ee4397684491d5b7e3519fe40">llzk::getPathFromRoot</a> (<a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a> &amp;to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
 <tr class="memitem:a7855026c509864d9196b4a40802774f5" id="r_a7855026c509864d9196b4a40802774f5"><td class="memItemLeft">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a7855026c509864d9196b4a40802774f5">llzk::getPathFromRoot</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> &amp;to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
+<tr class="memitem:afb6ce96420e0d7f6cd9da6a95ae38760" id="r_afb6ce96420e0d7f6cd9da6a95ae38760"><td class="memItemLeft">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#afb6ce96420e0d7f6cd9da6a95ae38760">llzk::getPathRelativeToAncestor</a> (mlir::SymbolOpInterface symbol, mlir::ModuleOp ancestor, llvm::function_ref&lt; mlir::InFlightDiagnostic()&gt; emitError=nullptr)</td></tr>
+<tr class="memdesc:afb6ce96420e0d7f6cd9da6a95ae38760"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <code class="param">symbol's</code> path relative to the supplied <code class="param">ancestor</code> module.  <br /></td></tr>
 <tr class="memitem:ab6b7b26f334c212bb749b118a3b09972" id="r_ab6b7b26f334c212bb749b118a3b09972"><td class="memItemLeft">mlir::SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ab6b7b26f334c212bb749b118a3b09972">llzk::getFullyQualifiedName</a> (mlir::SymbolOpInterface symbol, bool requireParent=true)</td></tr>
 <tr class="memdesc:ab6b7b26f334c212bb749b118a3b09972"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the full name for this symbol from the root module, including any surrounding symbol table names.  <br /></td></tr>
 <tr class="memitem:a6982559aa99cea04c0cf47ee38166ce2" id="r_a6982559aa99cea04c0cf47ee38166ce2"><td class="memItemLeft">mlir::FailureOr&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a6982559aa99cea04c0cf47ee38166ce2">llzk::getTopRootModule</a> (mlir::Operation *from)</td></tr>

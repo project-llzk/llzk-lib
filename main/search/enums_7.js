@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['uninitializedbehavior_0',['UninitializedBehavior',['../namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762',1,'llzk::witgen']]]
+  ['type_0',['Type',['../classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79a',1,'llzk::Interval']]]
 ];

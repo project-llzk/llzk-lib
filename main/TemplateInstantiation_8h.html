@@ -149,12 +149,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TemplateInstan
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for TemplateInstantiation.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TemplateInstantiation_8h__incl.svg" width="3795" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TemplateInstantiation_8h__incl.svg" width="4570" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TemplateInstantiation_8h__dep__incl.svg" width="528" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TemplateInstantiation_8h__dep__incl.svg" width="863" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="TemplateInstantiation_8h_source.html">Go to the source code of this file.</a></p>
@@ -173,6 +173,10 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a3ef755b775bd0e79fa69e7e84f14db12" id="r_a3ef755b775bd0e79fa69e7e84f14db12"><td class="memItemLeft">mlir::FailureOr&lt; mlir::ArrayAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a3ef755b775bd0e79fa69e7e84f14db12">llzk::polymorphic::detail::rebaseTemplateParams</a> (mlir::SymbolTableCollection &amp;tables, mlir::ArrayAttr templateParams, mlir::Operation *lookupFrom, mlir::ModuleOp destinationRoot, mlir::Operation *requestSite)</td></tr>
+<tr class="memdesc:a3ef755b775bd0e79fa69e7e84f14db12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Re-spell struct types nested in <code class="param">templateParams</code> for <code class="param">destinationRoot</code>, resolving their current names from <code class="param">lookupFrom</code>.  <br /></td></tr>
+<tr class="memitem:aa5ce27908a19f4748bf19687b152d4a1" id="r_aa5ce27908a19f4748bf19687b152d4a1"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#aa5ce27908a19f4748bf19687b152d4a1">llzk::polymorphic::detail::reportDelayedDiagnostics</a> (mlir::Operation *site, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;&amp;diagnostics)</td></tr>
+<tr class="memdesc:aa5ce27908a19f4748bf19687b152d4a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Report diagnostics emitted while substituting a clone, preserving notes and moving notes with unknown locations to the instantiation site.  <br /></td></tr>
 <tr class="memitem:a61f49a0d605e0a32907c033869c9d26c" id="r_a61f49a0d605e0a32907c033869c9d26c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a61f49a0d605e0a32907c033869c9d26c">llzk::polymorphic::detail::convertCalleesInPlace</a> (mlir::Operation *op, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings)</td></tr>
 <tr class="memdesc:a61f49a0d605e0a32907c033869c9d26c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rewrite callees rooted at a type parameter using that parameter's struct binding.  <br /></td></tr>
 <tr class="memitem:a10b759a5143c347d94548927ba1a96ff" id="r_a10b759a5143c347d94548927ba1a96ff"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a10b759a5143c347d94548927ba1a96ff">llzk::polymorphic::detail::evaluateTemplateExprs</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings)</td></tr>

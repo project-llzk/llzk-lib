@@ -61,10 +61,11 @@ var searchData=
   ['_7estructintervalanalysis_58',['~StructIntervalAnalysis',['../classllzk_1_1StructIntervalAnalysis.html#a47af87854ed5d70b7472373f6b6d9c09',1,'llzk::StructIntervalAnalysis']]],
   ['_7esymboldeftreeprinterpassbase_59',['~SymbolDefTreePrinterPassBase',['../classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#a5bca8babde1ca4bb66641f1cd2fe2f59',1,'llzk::impl::SymbolDefTreePrinterPassBase']]],
   ['_7esymbolusegraphprinterpassbase_60',['~SymbolUseGraphPrinterPassBase',['../classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#ad54ce10e0e85ad6a956ad15a57f8f95a',1,'llzk::impl::SymbolUseGraphPrinterPassBase']]],
-  ['_7etestgenerator_61',['~TestGenerator',['../structTestGenerator.html#a79410178fccfd53130bad794ba35f7e4',1,'TestGenerator']]],
-  ['_7etypevarinferencepassbase_62',['~TypeVarInferencePassBase',['../classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html#a264ae43d8abbde84d5f099d8e517e4f4',1,'llzk::polymorphic::impl::TypeVarInferencePassBase']]],
-  ['_7eunuseddeclarationeliminationpassbase_63',['~UnusedDeclarationEliminationPassBase',['../classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a61d074d97ebd3cd2ab08a9a72e74d150',1,'llzk::impl::UnusedDeclarationEliminationPassBase']]],
-  ['_7everifdialect_64',['~VerifDialect',['../classllzk_1_1verif_1_1VerifDialect.html#acc8300eb946f7043fe5121df816d1523',1,'llzk::verif::VerifDialect']]],
-  ['_7ewhiletoforpassbase_65',['~WhileToForPassBase',['../classllzk_1_1impl_1_1WhileToForPassBase.html#a8528b95328132bab4b72e47d6b337d7c',1,'llzk::impl::WhileToForPassBase']]],
-  ['_7ewildcardarrayspecializationpassbase_66',['~WildcardArraySpecializationPassBase',['../classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a5b9be0e715600555b5f59796dc2ba62d',1,'llzk::polymorphic::impl::WildcardArraySpecializationPassBase']]]
+  ['_7etemplatemonomorphizationpassbase_61',['~TemplateMonomorphizationPassBase',['../classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#a18b7a9b16138916478ac3fab35f2e8bd',1,'llzk::polymorphic::impl::TemplateMonomorphizationPassBase']]],
+  ['_7etestgenerator_62',['~TestGenerator',['../structTestGenerator.html#a79410178fccfd53130bad794ba35f7e4',1,'TestGenerator']]],
+  ['_7etypevarinferencepassbase_63',['~TypeVarInferencePassBase',['../classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html#a264ae43d8abbde84d5f099d8e517e4f4',1,'llzk::polymorphic::impl::TypeVarInferencePassBase']]],
+  ['_7eunuseddeclarationeliminationpassbase_64',['~UnusedDeclarationEliminationPassBase',['../classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a61d074d97ebd3cd2ab08a9a72e74d150',1,'llzk::impl::UnusedDeclarationEliminationPassBase']]],
+  ['_7everifdialect_65',['~VerifDialect',['../classllzk_1_1verif_1_1VerifDialect.html#acc8300eb946f7043fe5121df816d1523',1,'llzk::verif::VerifDialect']]],
+  ['_7ewhiletoforpassbase_66',['~WhileToForPassBase',['../classllzk_1_1impl_1_1WhileToForPassBase.html#a8528b95328132bab4b72e47d6b337d7c',1,'llzk::impl::WhileToForPassBase']]],
+  ['_7ewildcardarrayspecializationpassbase_67',['~WildcardArraySpecializationPassBase',['../classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a5b9be0e715600555b5f59796dc2ba62d',1,'llzk::polymorphic::impl::WildcardArraySpecializationPassBase']]]
 ];

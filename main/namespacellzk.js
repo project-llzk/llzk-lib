@@ -333,6 +333,8 @@ var namespacellzk =
     [ "getPathFromTopRoot", "namespacellzk.html#ac9d38947d2a81bf07948ca1b469e48bf", null ],
     [ "getPathFromTopRoot", "namespacellzk.html#ac44528a6b83765bbf6c7f96c8fe2adf9", null ],
     [ "getPathFromTopRoot", "namespacellzk.html#a93a00e76e3a98d887649e677b929e7c8", null ],
+    [ "getPathRelativeToAncestor", "namespacellzk.html#afb6ce96420e0d7f6cd9da6a95ae38760", null ],
+    [ "getPathRelativeToAncestor", "namespacellzk.html#acbba3e4d36321d28df3b55ba06166375", null ],
     [ "getPieces", "namespacellzk.html#a2e5122183c36be89ee3a9b8df87b5223", null ],
     [ "getPieces", "namespacellzk.html#aefd24a67a7806996a53b63a5014c82a2", null ],
     [ "getPrefixAsSymbolRefAttr", "namespacellzk.html#a0cc045d4128ed47c170ca4c017bf02f0", null ],
