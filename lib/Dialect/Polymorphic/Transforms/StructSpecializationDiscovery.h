@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <llvm/ADT/DenseMap.h>
@@ -17,6 +18,10 @@
 #include <cstdint>
 
 namespace llzk::polymorphic::detail {
+
+/// Reject a felt binding read as a non-felt type. Unknown and other bindings
+/// are left unchanged. Read felt values as felt and cast explicitly to other types.
+mlir::LogicalResult verifyConstReadBindingType(ConstReadOp read, mlir::Attribute binding);
 
 /// A struct type that the caller must instantiate, paired with the source use
 /// that needs it. A call inside a loop can require Child<0>, Child<1>, etc. at

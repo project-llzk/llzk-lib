@@ -107,6 +107,9 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     determines specialization identity and is used for every read and forwarded
     argument.
     Forwarding that value to an index parameter produces zero or one.
+    A felt binding must be read as felt, including for untyped parameters.
+    Reading it as index or i1 is diagnosed at `poly.read_const`; use an explicit
+    cast after a felt read for numeric conversion.
 
     Methods must be defined and single-block. Supported regions are `scf.if`,
     signed `scf.for` with known bounds and positive steps, and `scf.while` with

@@ -319,6 +319,12 @@ class StructInstantiationWorklist {
       }
       bindings = std::move(*evaluated);
     }
+    auto reads = source.walk([&bindings](ConstReadOp read) -> WalkResult {
+      return verifyConstReadBindingType(read, bindings.lookup(read.getConstNameAttr()));
+    });
+    if (reads.wasInterrupted()) {
+      return failure();
+    }
     auto clone = source.clone();
     clone.setSymName((source.getSymName() + "__spec_" + Twine(entries.size())).str());
     Operation *parent = templ ? templ->getParentOp() : source->getParentOp();

@@ -518,8 +518,11 @@ class DiscoveryRun {
 
   /// Materialize a template binding in the scalar type requested by read_const.
   /// An absent binding stays unknown rather than supplying a default value.
-  Attribute evaluateConstRead(ConstReadOp read) {
+  FailureOr<Attribute> evaluateConstRead(ConstReadOp read) {
     Attribute value = bindings.lookup(read.getConstNameAttr());
+    if (failed(verifyConstReadBindingType(read, value))) {
+      return failure();
+    }
     if (auto number = dyn_cast_or_null<IntegerAttr>(value)) {
       if (auto type = dyn_cast<felt::FeltType>(read.getType())) {
         value = felt::FeltConstAttr::get(read.getContext(), number.getValue(), type);
@@ -584,7 +587,11 @@ class DiscoveryRun {
       // Unknown values are diagnosed when needed for a loop bound or specialization
       // argument; unknown if conditions cause both branches to be explored.
       if (auto read = dyn_cast<ConstReadOp>(op)) {
-        results[0] = evaluateConstRead(read);
+        auto value = evaluateConstRead(read);
+        if (failed(value)) {
+          return failure();
+        }
+        results[0] = *value;
       } else if (isMemoryEffectFree(&op)) {
         evaluateFoldableOp(op, env, results);
       }
@@ -721,6 +728,17 @@ public:
 };
 
 } // namespace
+
+LogicalResult
+llzk::polymorphic::detail::verifyConstReadBindingType(ConstReadOp read, Attribute binding) {
+  if (auto constant = dyn_cast_if_present<felt::FeltConstAttr>(binding);
+      constant && !isa<felt::FeltType>(read.getType())) {
+    return read.emitError("cannot read felt template binding ")
+           << read.getConstNameAttr() << " of type " << constant.getType() << " as "
+           << read.getType() << "; use an explicit cast";
+  }
+  return success();
+}
 
 FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(
     StructDefOp source, const Bindings &bindings, uint64_t *remainingSteps
