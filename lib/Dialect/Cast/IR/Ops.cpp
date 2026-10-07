@@ -88,7 +88,8 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
         op, felt::FeltConstAttr::get(
-                op->getContext(), llvm::DynamicAPInt(constOp.value()), op.getType()
+                op->getContext(),
+                integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(constOp.getValue())), op.getType()
             )
     );
     return success();

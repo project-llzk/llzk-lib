@@ -1511,7 +1511,12 @@ private:
       auto dstType = IntegerType::get(builder.getContext(), field.bitWidth());
       Value lowered;
       if (isa<IndexType>((*operand).getType())) {
-        lowered = arith::IndexCastUIOp::create(builder, loc, dstType, *operand);
+        // Preserve the signed index before reducing, including for fields narrower
+        // than an index. The extra field bit keeps the modulus positive for remsi.
+        unsigned wideWidth = std::max(64U, field.bitWidth() + 1);
+        auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+        Value wide = arith::IndexCastOp::create(builder, loc, wideType, *operand);
+        lowered = normalizeSignedWideValue(builder, loc, wide, dstType.getWidth(), field);
       } else {
         auto intType = llvm::cast<IntegerType>((*operand).getType());
         if (intType.getWidth() < dstType.getWidth()) {
