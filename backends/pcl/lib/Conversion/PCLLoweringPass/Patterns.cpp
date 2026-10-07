@@ -381,12 +381,15 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
 //===----------------------------------------------------------------------===//
 
 struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
-  using OpConversionPattern<CallOp>::OpConversionPattern;
+  SymbolTableCollection &tables;
+
+  template <typename... Args>
+  ConvertConstrainCall(SymbolTableCollection &symbolTables, Args &&...args)
+      : OpConversionPattern(std::forward<Args>(args)...), tables(symbolTables) {}
 
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    SymbolTableCollection tables;
     auto callee = op.getCalleeTarget(tables);
     // We only care about constrain functions.
     if (failed(callee) || !callee->get().isStructConstrain()) {
@@ -501,12 +504,15 @@ public:
 /// converted are marked illegal, so the pattern only needs to check if the callee is not a contrain
 /// call.
 struct ConvertFreeFunctionCall : public OpConversionPattern<CallOp> {
-  using OpConversionPattern<CallOp>::OpConversionPattern;
+  SymbolTableCollection &tables;
+
+  template <typename... Args>
+  ConvertFreeFunctionCall(SymbolTableCollection &symbolTables, Args &&...args)
+      : OpConversionPattern(std::forward<Args>(args)...), tables(symbolTables) {}
 
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    SymbolTableCollection tables;
     auto callee = op.getCalleeTarget(tables);
     if (failed(callee) || callee->get().isStructConstrain()) {
       return failure();
@@ -643,11 +649,11 @@ struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
 
 /// Converts `struct.readm` ops that read members of felt type from the struct into `pcl.var` ops.
 struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> {
-  // Step 1 preserves symbol definitions. Keep the cache in this pattern so each
-  // analysis/conversion has its own collection, discarded before step 2.
-  mutable SymbolTableCollection tables;
+  SymbolTableCollection &tables;
 
-  using OpConversionPattern<MemberReadOp>::OpConversionPattern;
+  template <typename... Args>
+  ConvertSelfMemberReadOpOfFelt(SymbolTableCollection &symbolTables, Args &&...args)
+      : OpConversionPattern(std::forward<Args>(args)...), tables(symbolTables) {}
 
   LogicalResult
   matchAndRewrite(MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
@@ -857,7 +863,7 @@ struct RemoveModuleOp : public OpConversionPattern<ModuleOp> {
 //===----------------------------------------------------------------------===//
 
 void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
-    const TypeConverter &tc, RewritePatternSet &patterns
+    const TypeConverter &tc, RewritePatternSet &patterns, SymbolTableCollection &tables
 ) {
   patterns.add<
       // clang-format off
@@ -871,14 +877,11 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
       ConvertCmpOp,
       ConvertConstantOp<FeltConstantOp>,
       ConvertArithConstantOp,
-      ConvertConstrainCall,
       ConvertEmitEqualityOp,
       ConvertEnsureConstrainOp,
-      ConvertFreeFunctionCall,
       ConvertFreeFunctionReturnOp,
       ConvertProveDetOp,
       ConvertReturnOp,
-      ConvertSelfMemberReadOpOfFelt,
       ConvertSelfMemberReadOpOfSubcmp,
       ConvertSubcmpMemberReadOp,
       ConvertUnaryOp<NegFeltOp, pcl::NegOp>,
@@ -886,6 +889,9 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
       RemoveIntToFeltOp
       // clang-format on
       >(tc, &getContext());
+  patterns.add<ConvertConstrainCall, ConvertFreeFunctionCall, ConvertSelfMemberReadOpOfFelt>(
+      tables, tc, &getContext()
+  );
   patterns.add<
       // clang-format off
       ConvertArithSelectOp,

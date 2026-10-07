@@ -162,9 +162,11 @@ DupVarsReplacements BaseMode::collectDupVarsReplacements() {
 
 LogicalResult FullLoweringMode::runStep1() {
   ConversionTarget target(getContext());
+  // Step 1 preserves symbol definitions. Discard the cache before step 2.
+  SymbolTableCollection tables;
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionPatterns(tc, patterns, tables);
   populateStep1ConversionTarget(target);
 
   return applyFullConversion(getOperation(), target, std::move(patterns));
@@ -182,9 +184,11 @@ LogicalResult StubbedLoweringMode::runStep1() {
 
   // After the analysis, do the conversion as normal.
   ConversionTarget target(getContext());
+  // Step 1 preserves symbol definitions. Discard the cache before step 2.
+  SymbolTableCollection tables;
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionPatterns(tc, patterns, tables);
   populateStep1ConversionTarget(target);
 
   return applyFullConversion(getOperation(), target, std::move(patterns));
@@ -192,9 +196,11 @@ LogicalResult StubbedLoweringMode::runStep1() {
 
 LogicalResult StubbedLoweringMode::analyze() {
   ConversionTarget target(getContext());
+  // Step 1 preserves symbol definitions. Discard the cache before step 2.
+  SymbolTableCollection tables;
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionPatterns(tc, patterns, tables);
   populateStep1ConversionTarget(target);
 
   return applyAnalysisConversion(
