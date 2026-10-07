@@ -21,6 +21,7 @@
 #pragma once
 
 #include "llzk/Analysis/Intervals.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -34,6 +35,7 @@
 #include <mlir/Dialect/SMT/IR/SMTOps.h>
 #include <mlir/Dialect/SMT/IR/SMTTypes.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/MLIRContext.h>
 #include <mlir/Transforms/DialectConversion.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -42,6 +44,10 @@
 #include <utility>
 
 namespace llzk::smt::detail {
+
+// Keep references to the upstream SMT dialect unambiguous inside LLZK's own
+// `llzk::smt` pass namespace.
+namespace smt = mlir::smt;
 
 /// Theory-neutral primitive emitter interface used by non-native encoders.
 class NonNativeTheoryEmitter {
@@ -205,6 +211,7 @@ enum class ArrayWriteMode : std::uint8_t {
 };
 
 using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mlir::Value>>;
+using ArrayWritePolicy = std::function<ArrayWriteMode(mlir::Value)>;
 
 mlir::FailureOr<FieldRef> resolveSelectedField(mlir::ModuleOp mod, llvm::StringRef fieldName);
 
@@ -318,6 +325,51 @@ public:
     rewriter.replaceOpWithNewOp<mlir::smt::IntSubOp>(op, zero.getResult(), adaptor.getOperand());
     return mlir::success();
   }
+};
+
+class IndexConstConverter : public mlir::OpConversionPattern<mlir::arith::ConstantIndexOp> {
+  using mlir::OpConversionPattern<mlir::arith::ConstantIndexOp>::OpConversionPattern;
+
+  SMTIntTheoryEmitter *emitter;
+
+public:
+  IndexConstConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+  );
+  mlir::LogicalResult matchAndRewrite(
+      mlir::arith::ConstantIndexOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
+class WriteArrayConverter : public mlir::OpConversionPattern<array::WriteArrayOp> {
+  using mlir::OpConversionPattern<array::WriteArrayOp>::OpConversionPattern;
+
+  ArrayWritePolicy policy;
+  SMTIntTheoryEmitter *emitter;
+
+public:
+  WriteArrayConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy policy,
+      SMTIntTheoryEmitter *emitter
+  );
+
+  mlir::LogicalResult matchAndRewrite(
+      array::WriteArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
+class ReadArrayConverter : public mlir::OpConversionPattern<array::ReadArrayOp> {
+  using mlir::OpConversionPattern<array::ReadArrayOp>::OpConversionPattern;
+
+  SMTIntTheoryEmitter *emitter;
+
+public:
+  ReadArrayConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+  );
+  mlir::LogicalResult matchAndRewrite(
+      array::ReadArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
 };
 
 } // namespace llzk::smt::detail
