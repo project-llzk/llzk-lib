@@ -14,6 +14,7 @@
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Shared/KnownTargetVerifier.h"
 #include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
@@ -790,111 +791,26 @@ protected:
 
 struct KnownTargetVerifier : public IncludeOpVerifier {
   KnownTargetVerifier(IncludeOp *c, SymbolLookupResult<ContractOp> &&tgtRes)
-      : IncludeOpVerifier(c), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        targetNamespace(tgtRes.getNamespace()), targetViaInclude(tgtRes.viaInclude()) {}
+      : IncludeOpVerifier(c), shared(c, tgtRes) {}
 
   LogicalResult verifyInputs() override {
-    return verifyTypesMatch(includeOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
+    return shared.verifyTypesMatch(
+        includeOp->getArgOperands().getTypes(), shared.getTargetType().getInputs(), "operand"
+    );
   }
 
   LogicalResult verifyTemplateParams() override {
-    Operation *tgtOp = tgt.getOperation();
+    Operation *tgtOp = shared.getTarget().getOperation();
     if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
-      // When the target function is a free function within a TemplateOp, the IncludeOp may have
-      // template parameter instantiations that must be checked against the template parameters.
-      // - If the function type signature references all template parameters, then the parameter
-      //   instantiation list on the IncludeOp is optional, otherwise it's required.
-      // - If present, the instantiation list must provide a value for every template parameter
-      //   and the value must be type-compatible with the parameter's declared type (if any).
-      // - If present, the instantiation list must result in a function type signature that can
-      //   be unified with the IncludeOp's operand and result types.
-      auto realParams = tgtOpParent.getConstOps<TemplateParamOp>();
-      ArrayAttr callParams = includeOp->getTemplateParamsAttr();
-
-      // When there is no instantiation list, just ensure that it's not required.
-      if (isNullOrEmpty(callParams)) {
-        llvm::SmallDenseSet<SymbolRefAttr> referencedInSignature;
-        llzk::getSymbolsUsedIn(tgtType.getInputs(), referencedInSignature);
-        llzk::getSymbolsUsedIn(tgtType.getResults(), referencedInSignature);
-
-        bool allParamsReferenced = llvm::all_of(realParams, [&](TemplateParamOp p) {
-          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
-        });
-        if (allParamsReferenced) {
-          return success();
-        }
-        return includeOp->emitOpError().append(
-            "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
-            "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
-            "\" appear in the function type signature"
-        );
-      }
-
-      // Ensure `forceIntAttrTypes()` was successful on the IncludeOp's template parameters.
-      if (failed(llzk::forceIntAttrTypes(callParams.getValue(), [this] {
-        return llzk::InFlightDiagnosticWrapper(this->includeOp->emitOpError());
-      }))) {
-        return failure();
-      }
-
-      // The instantiation list is present. Check it has exactly one entry per template param.
-      size_t numTemplateParams = llvm::range_size(realParams);
-      if (callParams.size() != numTemplateParams) {
-        return includeOp->emitOpError().append(
-            "template instantiation has ", callParams.size(), " parameter(s) but \"@",
-            tgtOpParent.getSymName(), "\" expects ", numTemplateParams, " template parameter(s)"
-        );
-      }
-
-      // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(includeOp->verifyTemplateParamValuesCompatibility(realParams))) {
-        return failure();
-      }
-
-      // Check that the provided instantiation values are consistent with what type unification
-      // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult =
-          includeOp->unifyTypeSignatureWithNamespace(tgtType, targetNamespace);
-      // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
-      // even if `verifyInputs()` fails for error aggregation, so we still need to return
-      // early here.
-      if (failed(unifyResult)) {
-        return failure();
-      }
-      return includeOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
+      return shared.verifyTemplateInstantiation(tgtOpParent);
     } else {
-      // Non-template functions cannot contain template parameter instantiations.
+      // Non-template contracts cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();
     }
   }
 
 private:
-  template <typename T>
-  LogicalResult
-  verifyTypesMatch(ValueTypeRange<T> includeOpTypes, ArrayRef<Type> tgtTypes, const char *aspect) {
-    if (tgtTypes.size() != includeOpTypes.size()) {
-      return includeOp->emitOpError()
-          .append("incorrect number of ", aspect, "s for callee, expected ", tgtTypes.size())
-          .attachNote(tgt.getLoc())
-          .append("callee defined here");
-    }
-    for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
-      if (!typesUnify(includeOpTypes[i], tgtTypes[i], targetNamespace)) {
-        auto diag =
-            includeOp->emitOpError().append(aspect, " type mismatch: expected type ", tgtTypes[i]);
-        if (targetViaInclude) {
-          diag.append(" from included target \"", includeOp->getCalleeAttr(), '"');
-        }
-        return diag.append(", but found ", includeOpTypes[i], " for ", aspect, " number ", i);
-      }
-    }
-    return success();
-  }
-
-  ContractOp tgt;
-  FunctionType tgtType;
-  std::vector<llvm::StringRef> targetNamespace;
-  bool targetViaInclude;
+  llzk::KnownTargetVerifier<IncludeOp, ContractOp> shared;
 };
 
 } // namespace
