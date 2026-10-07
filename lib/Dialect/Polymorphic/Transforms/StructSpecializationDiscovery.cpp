@@ -732,10 +732,13 @@ public:
 LogicalResult
 llzk::polymorphic::detail::verifyConstReadBindingType(ConstReadOp read, Attribute binding) {
   if (auto constant = dyn_cast_if_present<felt::FeltConstAttr>(binding);
-      constant && !isa<felt::FeltType>(read.getType())) {
+      constant && constant.getType() != read.getType()) {
     return read.emitError("cannot read felt template binding ")
            << read.getConstNameAttr() << " of type " << constant.getType() << " as "
-           << read.getType() << "; use an explicit cast";
+           << read.getType()
+           << (isa<felt::FeltType>(read.getType())
+                   ? "; read the binding using its declared felt type"
+                   : "; use an explicit cast");
   }
   return success();
 }

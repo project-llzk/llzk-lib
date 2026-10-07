@@ -120,3 +120,57 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
     function.def @constrain(%s: !struct.type<@Main>) { function.return }
   }
 }
+
+// -----
+
+// A felt binding must be read with the same field type.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_felt_unspecified_field_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read felt template binding @N of type '!felt.type<"babybear">' as '!felt.type'; read the binding using its declared felt type}}
+        %n = poly.read_const @N : !felt.type
+        %next = felt.add %n, %n : !felt.type, !felt.type
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// A felt binding must be read with the same field type.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_felt_different_field_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read felt template binding @N of type '!felt.type<"babybear">' as '!felt.type<"goldilocks">'; read the binding using its declared felt type}}
+        %n = poly.read_const @N : !felt.type<"goldilocks">
+        %next = felt.add %n, %n : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}

@@ -19,8 +19,8 @@
 
 namespace llzk::polymorphic::detail {
 
-/// Reject a felt binding read as a non-felt type. Unknown and other bindings
-/// are left unchanged. Read felt values as felt and cast explicitly to other types.
+/// Reject a felt binding read with a different type. Unknown and other bindings
+/// are left unchanged. Read felt values with their exact type before conversion.
 mlir::LogicalResult verifyConstReadBindingType(ConstReadOp read, mlir::Attribute binding);
 
 /// A struct type that the caller must instantiate, paired with the source use
