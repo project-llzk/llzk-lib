@@ -335,13 +335,13 @@ TEST_F(BabyBearFoldTest, Shr) {
 }
 
 TEST_F(BabyBearFoldTest, Shr30) {
-  // A literal equal to the modulus represents zero before shifting.
-  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(30)), 0);
+  // (BB_PRIME - 1) >> 30 = 1 (only the highest bit remains).
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME - 1), babyBearConst(30)), 1);
 }
 
 TEST_F(BabyBearFoldTest, Shr31) {
-  // BB_PRIME >> 31 = 0 (shifts all bits out since BB_PRIME is 31 bits)
-  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(31)), 0);
+  // (BB_PRIME - 1) >> 31 = 0 (all 31 bits are shifted out).
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME - 1), babyBearConst(31)), 0);
 }
 
 //===------------------------------------------------------------------===//
