@@ -325,7 +325,7 @@ template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
   llvm::DynamicAPInt getValue(arith::ConstantOp op) const {
     // Boolean constants are unsigned; other integers use signed interpretation.
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    APInt value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
     return value.getBitWidth() == 1 ? llzk::toDynamicAPInt(value) : llvm::DynamicAPInt(value);
   }
 };
@@ -368,7 +368,7 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
       return success();
     }
 
-    // Boolean constants are unsigned; other integers use signed interpretation.
+    // Boolean constants handled above; other integers use signed interpretation.
     rewriter.replaceOpWithNewOp<pcl::ConstOp>(
         op, pcl::FeltAttr::get(rewriter.getContext(), llvm::DynamicAPInt(value))
     );

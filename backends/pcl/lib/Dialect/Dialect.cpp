@@ -67,7 +67,7 @@ PCLDialect::verifyOperationAttribute(mlir::Operation *op, mlir::NamedAttribute a
 
     const llvm::DynamicAPInt &v = prime.getValue();
     if (v < 2) {
-      return op->emitError() << "prime must be at least 2";
+      return op->emitError("prime must be at least 2");
     }
   }
   return mlir::success();
