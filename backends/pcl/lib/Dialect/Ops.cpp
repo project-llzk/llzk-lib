@@ -52,7 +52,7 @@ template <typename Op> std::optional<PrimeAttr> getFieldPrime(Op &op) {
   return attr;
 }
 
-/// Used in the `isIdentity` and `isZero` callbacks for identifing if the queried value
+/// Used in the `isIdentity` and `isAnnihilator` callbacks for identifing if the queried value
 /// is the LHS or the RHS of the operation.
 enum class Side : std::uint8_t { Lhs, Rhs };
 
@@ -68,7 +68,7 @@ enum class Side : std::uint8_t { Lhs, Rhs };
 template <typename T, typename Op>
 OpFoldResult foldBinaryOp(
     Op &op, typename Op::FoldAdaptor adaptor, llvm::function_ref<T(T, T)> opFn,
-    llvm::function_ref<bool(T, Side)> isIdentity, llvm::function_ref<bool(T, Side)> isZero,
+    llvm::function_ref<bool(T, Side)> isIdentity, llvm::function_ref<bool(T, Side)> isAnnihilator,
     llvm::function_ref<OpFoldResult(T)> factory = nullptr
 ) {
   auto factoryFn = [factory](auto value) -> OpFoldResult {
@@ -92,10 +92,10 @@ OpFoldResult foldBinaryOp(
   }
 
   // If either side is "zero", then the operation is canceled out and return the "zero" attribute.
-  if (lhs && isZero(lhs, Side::Lhs)) {
+  if (lhs && isAnnihilator(lhs, Side::Lhs)) {
     return factoryFn(lhs);
   }
-  if (rhs && isZero(rhs, Side::Rhs)) {
+  if (rhs && isAnnihilator(rhs, Side::Rhs)) {
     return factoryFn(rhs);
   }
   // If either side is the identity, return the other side.
@@ -124,7 +124,7 @@ template <typename Op, typename Fn>
 OpFoldResult tryFoldBinaryFeltOp(
     Op &op, typename Op::FoldAdaptor adaptor, Fn opFn,
     llvm::function_ref<bool(const llvm::DynamicAPInt &, Side)> isIdentity,
-    llvm::function_ref<bool(const llvm::DynamicAPInt &, Side)> isZero
+    llvm::function_ref<bool(const llvm::DynamicAPInt &, Side)> isAnnihilator
 ) {
   auto prime = getFieldPrime(op);
   if (!prime) {
@@ -138,8 +138,8 @@ OpFoldResult tryFoldBinaryFeltOp(
     );
   }, [&prime, isIdentity](FeltAttr value, auto side) {
     return isIdentity(prime->reduce(value).getValue(), side);
-  }, [&prime, isZero](FeltAttr value, auto side) {
-    return isZero(prime->reduce(value).getValue(), side);
+  }, [&prime, isAnnihilator](FeltAttr value, auto side) {
+    return isAnnihilator(prime->reduce(value).getValue(), side);
   }, [&prime](auto value) { return prime->reduce(value); });
 }
 
@@ -313,7 +313,7 @@ struct ZeroMinusXToNegX : public OpRewritePattern<SubOp> {
 
   LogicalResult matchAndRewrite(SubOp op, PatternRewriter &rewriter) const override {
     auto lhsAttr = getLhsAttr(op);
-    if (!lhsAttr || !(lhsAttr.getValue() == 0)) {
+    if (!lhsAttr || lhsAttr.getValue() != 0) {
       return failure();
     }
     rewriter.replaceOpWithNewOp<NegOp>(op, op.getRhs());
@@ -414,10 +414,10 @@ private:
     }
 
     if (auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr)) {
-      if ((feltAttr.getValue() == 0)) {
+      if (feltAttr.getValue() == 0) {
         return FoldedEq {.value = rhsAsBool.getValue(), .constValue = false};
       }
-      if ((feltAttr.getValue() == 1)) {
+      if (feltAttr.getValue() == 1) {
         return FoldedEq {.value = rhsAsBool.getValue(), .constValue = true};
       }
     }
@@ -502,7 +502,7 @@ private:
       return AddOp();
     }
     auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr);
-    if (!feltAttr || !(feltAttr.getValue() == 0)) {
+    if (!feltAttr || feltAttr.getValue() != 0) {
       return AddOp();
     }
 
@@ -544,7 +544,7 @@ private:
       return SubOp();
     }
     auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr);
-    if (!feltAttr || !(feltAttr.getValue() == 0)) {
+    if (!feltAttr || feltAttr.getValue() != 0) {
       return SubOp();
     }
 

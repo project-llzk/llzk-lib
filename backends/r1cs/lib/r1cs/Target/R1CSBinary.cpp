@@ -65,12 +65,12 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
   }
 
   if (circuits.empty()) {
-    return moduleOp.emitOpError() << "does not contain an r1cs.circuit to export";
+    return moduleOp.emitOpError("does not contain an r1cs.circuit to export");
   }
   if (circuits.size() > 1) {
-    auto diag =
-        moduleOp.emitOpError("contains multiple r1cs.circuit ops; specify '--r1cs-circuit-name'");
-    diag << " (available:";
+    auto diag = moduleOp.emitOpError(
+        "contains multiple r1cs.circuit ops; specify '--r1cs-circuit-name' (available:"
+    );
     for (auto circuit : circuits) {
       diag << " @" << circuit.getSymName();
     }
@@ -83,19 +83,18 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
 
 static FailureOr<llvm::DynamicAPInt> parsePrime(ModuleOp moduleOp, StringRef primeText) {
   if (primeText.empty()) {
-    return moduleOp.emitOpError()
-           << "R1CS binary export requires a non-empty '--r1cs-prime' option";
+    return moduleOp.emitOpError("R1CS binary export requires a non-empty '--r1cs-prime' option");
   }
   if (!llvm::all_of(primeText, llvm::isDigit)) {
-    return moduleOp.emitOpError() << "'--r1cs-prime' must be a base-10 integer";
+    return moduleOp.emitOpError("'--r1cs-prime' must be a base-10 integer");
   }
 
   auto prime = llzk::parseDynamicAPInt(primeText);
   if (!prime) {
-    return moduleOp.emitOpError() << llvm::toString(prime.takeError());
+    return moduleOp.emitOpError(llvm::toString(prime.takeError()));
   }
   if (*prime <= 1) {
-    return moduleOp.emitOpError() << "'--r1cs-prime' must be greater than 1";
+    return moduleOp.emitOpError("'--r1cs-prime' must be greater than 1");
   }
 
   return *prime;
