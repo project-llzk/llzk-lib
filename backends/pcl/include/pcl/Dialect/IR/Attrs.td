@@ -33,9 +33,6 @@ def PrimeAttr : AttrDef<PCLDialect, "Prime"> {
   let assemblyFormat = "`<`$value`>`";
 
   let extraClassDeclaration = [{
-  /// Returns the bit width of the prime.
-  unsigned getBitWidth() { return ::llzk::toAPSInt(getValue() - 1).getActiveBits(); }
-
   /// Reduces the given felt such that is within the bounds of the prime.
   ::pcl::FeltAttr reduce(::pcl::FeltAttr attr);
   ::pcl::FeltAttr reduce(const ::llvm::DynamicAPInt &value) {
