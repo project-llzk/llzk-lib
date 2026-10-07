@@ -46,12 +46,9 @@ namespace llzk {
 Expected<DynamicAPInt> parseDynamicAPInt(StringRef str) {
   StringRef digits = str;
   bool negative = digits.consume_front("-");
-  if (digits.empty() || !llvm::all_of(digits, [](char c) { return c >= '0' && c <= '9'; })) {
-    return createStringError(inconvertibleErrorCode(), "expected signed decimal integer");
-  }
   APInt magnitude;
   if (digits.getAsInteger(10, magnitude)) {
-    return createStringError(inconvertibleErrorCode(), "integer is too large");
+    return createStringError(inconvertibleErrorCode(), "expected signed decimal integer");
   }
   DynamicAPInt value = toDynamicAPInt(magnitude);
   return negative ? -value : value;
@@ -64,8 +61,8 @@ hash_code hashDynamicAPInt(const DynamicAPInt &value) {
 
 Expected<APInt> checkedToAPInt(const DynamicAPInt &value, unsigned bitWidth, bool isSigned) {
   APSInt bits = toAPSInt(value);
-  bool fits = bitWidth != 0 && (isSigned ? bits.isSignedIntN(bitWidth)
-                                         : value >= 0 && bits.getActiveBits() <= bitWidth);
+  bool fits = bitWidth != 0 &&
+              (isSigned ? bits.isSignedIntN(bitWidth) : value >= 0 && bits.isIntN(bitWidth));
   if (!fits) {
     return createStringError(inconvertibleErrorCode(), "integer does not fit requested width");
   }
