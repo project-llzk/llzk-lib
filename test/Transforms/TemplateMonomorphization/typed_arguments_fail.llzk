@@ -207,7 +207,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
     poly.param @N
     struct.def @Child {
       function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
-        // expected-error@+1 {{cannot read template binding @N with value index as 'index'}}
+        // expected-error@+1 {{cannot read template binding @N with value 'index' as 'index'}}
         %n = poly.read_const @N : index
         %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
         function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>

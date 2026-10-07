@@ -722,7 +722,7 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
     ConstReadOp read, Attribute binding, Type readType
 ) {
   if (!binding) {
-    return Attribute();
+    return binding;
   }
   if (auto constant = dyn_cast<felt::FeltConstAttr>(binding)) {
     if (constant.getType() != readType) {
@@ -777,7 +777,7 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
     }
   }
   return read.emitError("cannot read template binding ")
-         << read.getConstNameAttr() << " with value " << binding << " as " << readType;
+         << read.getConstNameAttr() << " with value '" << binding << "' as " << readType;
 }
 
 FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(

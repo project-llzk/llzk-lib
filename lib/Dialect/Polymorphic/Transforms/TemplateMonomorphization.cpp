@@ -327,12 +327,10 @@ class StructInstantiationWorklist {
     }
     TemplateTypeConverter parameterConverter(bindings);
     auto reads = source.walk([&bindings, &parameterConverter](ConstReadOp read) -> WalkResult {
-      return failed(resolveConstReadBinding(
-                 read, bindings.lookup(read.getConstNameAttr()),
-                 parameterConverter.convertType(read.getType())
-             ))
-                 ? WalkResult::interrupt()
-                 : WalkResult::advance();
+      return WalkResult(resolveConstReadBinding(
+          read, bindings.lookup(read.getConstNameAttr()),
+          parameterConverter.convertType(read.getType())
+      ));
     });
     if (reads.wasInterrupted()) {
       return failure();
