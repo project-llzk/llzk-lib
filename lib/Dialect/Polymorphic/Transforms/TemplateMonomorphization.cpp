@@ -59,7 +59,11 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
     if (std::optional<Type> expected = parameter.getTypeOpt()) {
       if (auto indexType = dyn_cast<IndexType>(*expected)) {
         if (auto felt = dyn_cast<FeltConstAttr>(argument)) {
-          const APInt &number = felt.getValue();
+          APInt number = felt.getValue();
+          if (felt.getType().hasField()) {
+            const Field &field = felt.getType().getField();
+            number = toAPInt(field.reduce(number), field.bitWidth());
+          }
           if (number.getActiveBits() > 63) {
             return site->emitError("field element ")
                    << argument << " cannot be converted to index parameter @"
@@ -106,13 +110,14 @@ normalizeTypedArguments(StructDefOp source, ArrayAttr arguments, Operation *site
           }
         } else if (
             auto felt = dyn_cast<FeltConstAttr>(argument);
-            felt && felt.getType() == feltType && feltType.hasField()
+            felt && (!felt.getType().getFieldName() || felt.getType() == feltType)
         ) {
-          const Field &field = feltType.getField();
-          value = FeltConstAttr::get(
-              source.getContext(), toAPInt(field.reduce(felt.getValue()), field.bitWidth()),
-              feltType
-          );
+          APInt number = felt.getValue();
+          if (feltType.hasField()) {
+            const Field &field = feltType.getField();
+            number = toAPInt(field.reduce(number), field.bitWidth());
+          }
+          value = FeltConstAttr::get(source.getContext(), number, feltType);
         }
       }
       bool matches = false;
