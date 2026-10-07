@@ -145,7 +145,7 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
 /// pair before exploring its body makes repeated and cyclic requests share a clone.
 class TemplateInstantiationWorklist {
   /// Keep source identity for call retargeting and the explored paths of its clone.
-  struct Entry {
+  struct StructEntry {
     StructDefOp source;
     StructDefOp clone;
     SmallVector<Operation *> visited;
@@ -157,7 +157,10 @@ class TemplateInstantiationWorklist {
     function::FuncDefOp clone;
     SmallVector<Operation *> visited;
     uint64_t remainingSteps;
+    /// Whether discovery reached this clone on a live path. Inactive clones
+    /// retain calls in unexplored branches without evaluating their bodies.
     bool active;
+    /// Whether the clone's body has already been explored.
     bool discovered;
     /// The call that requested this clone, if created during this pass run.
     std::optional<Location> request;
@@ -171,11 +174,11 @@ class TemplateInstantiationWorklist {
   unsigned limit;
   uint64_t evaluationLimit;
   SymbolTableCollection tables;
-  SmallVector<Entry> entries;
-  SmallVector<FunctionEntry> functions;
-  DenseMap<SpecializationKey, unsigned> cache;
+  SmallVector<StructEntry> structEntries;
+  SmallVector<FunctionEntry> functionEntries;
+  DenseMap<SpecializationKey, unsigned> structCache;
   DenseMap<SpecializationKey, unsigned> functionCache;
-  DenseMap<Operation *, unsigned> cloneToId;
+  DenseMap<Operation *, unsigned> structCloneToId;
   DenseMap<Operation *, unsigned> functionCloneToId;
 
   /// Restore source identity when a rewritten body carries a previously
@@ -189,7 +192,7 @@ class TemplateInstantiationWorklist {
         site->emitError("cannot resolve struct type argument ") << type;
         return std::make_pair(Type(type), WalkResult::interrupt());
       }
-      if (!cloneToId.contains(found->get().getOperation())) {
+      if (!structCloneToId.contains(found->get().getOperation())) {
         return std::nullopt;
       }
       auto origin = found->get()->getAttrOfType<SymbolRefAttr>(SPECIALIZATION_ORIGIN_ATTR);
@@ -274,7 +277,7 @@ class TemplateInstantiationWorklist {
       auto arguments = clone->getAttrOfType<ArrayAttr>(SPECIALIZATION_ARGUMENTS_ATTR);
       if (!origin || !arguments ||
           clone->getAttrOfType<IntegerAttr>(SPECIALIZATION_ID_ATTR).getInt() !=
-              checkedCast<int64_t>(entries.size())) {
+              checkedCast<int64_t>(structEntries.size())) {
         return clone.emitError("invalid struct specialization metadata");
       }
       auto key = getSpecializationKey(
@@ -284,11 +287,11 @@ class TemplateInstantiationWorklist {
         return failure();
       }
       clone->setAttr(SPECIALIZATION_ARGUMENTS_ATTR, (*key)->second);
-      if (!cache.try_emplace(**key, entries.size()).second) {
+      if (!structCache.try_emplace(**key, structEntries.size()).second) {
         return clone.emitError("duplicate struct specialization identity");
       }
-      cloneToId[clone.getOperation()] = entries.size();
-      entries.push_back({cast<StructDefOp>((*key)->first), clone, {}, evaluationLimit});
+      structCloneToId[clone.getOperation()] = structEntries.size();
+      structEntries.push_back({cast<StructDefOp>((*key)->first), clone, {}, evaluationLimit});
     }
     return success();
   }
@@ -317,11 +320,11 @@ class TemplateInstantiationWorklist {
         return clone.emitError("invalid function specialization arguments");
       }
       auto key = SpecializationKey(source.getOperation(), arguments);
-      if (!functionCache.try_emplace(key, functions.size()).second) {
+      if (!functionCache.try_emplace(key, functionEntries.size()).second) {
         return clone.emitError("duplicate function specialization identity");
       }
-      functionCloneToId[clone.getOperation()] = functions.size();
-      functions.push_back({source, clone, {}, evaluationLimit, false, false, std::nullopt});
+      functionCloneToId[clone.getOperation()] = functionEntries.size();
+      functionEntries.push_back({source, clone, {}, evaluationLimit, false, false, std::nullopt});
     }
     return success();
   }
@@ -422,44 +425,31 @@ class TemplateInstantiationWorklist {
       Operation *clone, TemplateOp templ, Operation *site,
       llvm::function_ref<void(InFlightDiagnostic &)> describe
   ) {
-    ConstReadOp unresolved;
-    clone->walk([&unresolved](ConstReadOp read) {
-      if (!unresolved) {
-        unresolved = read;
+    WalkResult result =
+        clone->walk([templ, site, describe](ConstReadOp read) mutable -> WalkResult {
+      if (templ && templ.getConstNamed<TemplateExprOp>(read.getConstNameAttr())) {
+        auto diagnostic = site->emitError("template expression ");
+        diagnostic << read.getConstNameAttr() << " could not be evaluated for ";
+        describe(diagnostic);
+      } else {
+        auto diagnostic = site->emitError("unresolved template binding ");
+        diagnostic << read.getConstNameAttr() << " while specializing ";
+        describe(diagnostic);
       }
+      return WalkResult::interrupt();
     });
-    if (!unresolved) {
-      return success();
-    }
-    if (templ && templ.getConstNamed<TemplateExprOp>(unresolved.getConstNameAttr())) {
-      auto diagnostic = site->emitError("template expression ");
-      diagnostic << unresolved.getConstNameAttr() << " could not be evaluated for ";
-      describe(diagnostic);
-      return diagnostic;
-    }
-    auto diagnostic = site->emitError("unresolved template binding ");
-    diagnostic << unresolved.getConstNameAttr() << " while specializing ";
-    describe(diagnostic);
-    return diagnostic;
+    return result.wasInterrupted() ? failure() : success();
   }
 
   /// Reject unstructured branches before cloning a definition, including
   /// branches in regions that discovery would not explore.
   static LogicalResult verifyStructuredControlFlow(Operation *source) {
-    Operation *branch = nullptr;
-    source->walk([&branch](Operation *op) {
-      if (isa<BranchOpInterface>(op)) {
-        branch = op;
-        return WalkResult::interrupt();
-      }
-      return WalkResult::advance();
-    });
-    if (branch) {
+    WalkResult result = source->walk([](BranchOpInterface branch) -> WalkResult {
       return branch->emitError(
           "unstructured control flow is unsupported in template monomorphization"
       );
-    }
-    return success();
+    });
+    return result.wasInterrupted() ? failure() : success();
   }
 
   /// A retained call needs a concrete callee when type rewriting will change
@@ -474,7 +464,7 @@ class TemplateInstantiationWorklist {
           invalid = true;
           return WalkResult::interrupt();
         }
-        if (*key && cache.contains(**key)) {
+        if (*key && structCache.contains(**key)) {
           required = true;
           return WalkResult::interrupt();
         }
@@ -505,7 +495,7 @@ class TemplateInstantiationWorklist {
     auto source = target->get();
     if (auto clone = functionCloneToId.find(source.getOperation());
         clone != functionCloneToId.end()) {
-      functions[clone->second].active |= active;
+      functionEntries[clone->second].active |= active;
       return success();
     }
     if (source.isExternal()) {
@@ -518,9 +508,9 @@ class TemplateInstantiationWorklist {
     unsigned id;
     if (auto found = functionCache.find(*key); found != functionCache.end()) {
       id = found->second;
-      functions[id].active |= active;
+      functionEntries[id].active |= active;
     } else {
-      if (entries.size() + functions.size() >= limit) {
+      if (structEntries.size() + functionEntries.size() >= limit) {
         return call.emitError("template monomorphization specialization limit exceeded");
       }
       if (failed(verifyStructuredControlFlow(source))) {
@@ -554,13 +544,13 @@ class TemplateInstantiationWorklist {
       }
       auto bindings = std::move(*evaluated);
       auto clone = source.clone();
-      clone.setSymName((source.getSymName() + "__spec_" + Twine(functions.size())).str());
+      clone.setSymName((source.getSymName() + "__spec_" + Twine(functionEntries.size())).str());
       Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
       tables.getSymbolTable(parent).insert(clone);
-      id = functions.size();
+      id = functionEntries.size();
       functionCache[*key] = id;
       functionCloneToId[clone.getOperation()] = id;
-      functions.push_back({source, clone, {}, remainingSteps, active, false, call.getLoc()});
+      functionEntries.push_back({source, clone, {}, remainingSteps, active, false, call.getLoc()});
       convertCalleesInPlace(clone, bindings);
       convertCallArguments(clone, bindings);
       SmallVector<Diagnostic> diagnostics;
@@ -583,7 +573,7 @@ class TemplateInstantiationWorklist {
     if (failed(lookupRoot)) {
       return failure();
     }
-    auto name = getPathRelativeToAncestor(functions[id].clone, *lookupRoot, [call] {
+    auto name = getPathRelativeToAncestor(functionEntries[id].clone, *lookupRoot, [call] {
       return call->emitError("specialized free-function callee");
     });
     if (failed(name)) {
@@ -603,7 +593,7 @@ class TemplateInstantiationWorklist {
     }
     auto key = **resolved;
     StructDefOp source = cast<StructDefOp>(key.first);
-    if (auto existing = cloneToId.find(source); existing != cloneToId.end()) {
+    if (auto existing = structCloneToId.find(source); existing != structCloneToId.end()) {
       return existing->second;
     }
     auto destination = getRootModule(source);
@@ -615,10 +605,10 @@ class TemplateInstantiationWorklist {
     if (failed(localArguments)) {
       return failure();
     }
-    if (auto existing = cache.find(key); existing != cache.end()) {
+    if (auto existing = structCache.find(key); existing != structCache.end()) {
       return existing->second;
     }
-    if (entries.size() + functions.size() >= limit) {
+    if (structEntries.size() + functionEntries.size() >= limit) {
       return site->emitError("template monomorphization specialization limit exceeded");
     }
     if (failed(verifyStructuredControlFlow(source))) {
@@ -644,13 +634,13 @@ class TemplateInstantiationWorklist {
       return failure();
     }
     auto clone = source.clone();
-    clone.setSymName((source.getSymName() + "__spec_" + Twine(entries.size())).str());
+    clone.setSymName((source.getSymName() + "__spec_" + Twine(structEntries.size())).str());
     Operation *parent = templ ? templ->getParentOp() : source->getParentOp();
     tables.getSymbolTable(parent).insert(clone);
-    unsigned id = entries.size();
-    cache[key] = id;
-    cloneToId[clone.getOperation()] = id;
-    entries.push_back({source, clone, {}, remainingSteps});
+    unsigned id = structEntries.size();
+    structCache[key] = id;
+    structCloneToId[clone.getOperation()] = id;
+    structEntries.push_back({source, clone, {}, remainingSteps});
     convertCalleesInPlace(clone, bindings);
     clone.walk([&parameterConverter](function::CallOp call) {
       if (auto parameters = call.getTemplateParamsAttr()) {
@@ -798,7 +788,7 @@ class TemplateInstantiationWorklist {
 
   /// Choose a method's owner from the concrete struct carried by the call. Rolled
   /// affine calls keep their original callee and use family metadata for dispatch.
-  LogicalResult retargetCall(function::CallOp call, const Entry *caller, bool visited) {
+  LogicalResult retargetCall(function::CallOp call, const StructEntry *caller, bool visited) {
     auto target = call.getCalleeTarget(tables);
     if (failed(target)) {
       return failure();
@@ -824,10 +814,10 @@ class TemplateInstantiationWorklist {
       if (failed(found)) {
         return failure();
       }
-      auto cloneId = cloneToId.find(found->get().getOperation());
-      if (cloneId != cloneToId.end() && entries[cloneId->second].source == owner) {
+      auto cloneId = structCloneToId.find(found->get().getOperation());
+      if (cloneId != structCloneToId.end() && structEntries[cloneId->second].source == owner) {
         return setSpecializedCallee(
-            call, entries[cloneId->second].clone, target->get().getSymNameAttr()
+            call, structEntries[cloneId->second].clone, target->get().getSymNameAttr()
         );
       }
       if (found->get() == owner) {
@@ -869,12 +859,12 @@ class TemplateInstantiationWorklist {
         return WalkResult::advance();
       });
     };
-    for (Entry &entry : entries) {
+    for (StructEntry &entry : structEntries) {
       if (check(entry.clone).wasInterrupted()) {
         return failure();
       }
     }
-    for (FunctionEntry &entry : functions) {
+    for (FunctionEntry &entry : functionEntries) {
       if (check(entry.clone).wasInterrupted()) {
         return failure();
       }
@@ -910,25 +900,26 @@ public:
     }
     // Discovery appends to these worklists. Indices remain valid as they grow.
     for (unsigned structIndex = 0;;) {
-      bool isStruct = structIndex < entries.size();
+      bool isStruct = structIndex < structEntries.size();
       unsigned functionIndex = 0;
       if (!isStruct) {
-        while (functionIndex < functions.size() &&
-               (!functions[functionIndex].active || functions[functionIndex].discovered)) {
+        while (
+            functionIndex < functionEntries.size() &&
+            (!functionEntries[functionIndex].active || functionEntries[functionIndex].discovered)) {
           ++functionIndex;
         }
-        if (functionIndex == functions.size()) {
+        if (functionIndex == functionEntries.size()) {
           break;
         }
       }
-      Operation *clone = isStruct ? entries[structIndex].clone.getOperation()
-                                  : functions[functionIndex].clone.getOperation();
+      Operation *clone = isStruct ? structEntries[structIndex].clone.getOperation()
+                                  : functionEntries[functionIndex].clone.getOperation();
       SmallVector<Operation *> visited;
-      uint64_t steps =
-          isStruct ? entries[structIndex].remainingSteps : functions[functionIndex].remainingSteps;
+      uint64_t steps = isStruct ? structEntries[structIndex].remainingSteps
+                                : functionEntries[functionIndex].remainingSteps;
       std::optional<ScopedDiagnosticHandler> requestNote;
-      if (!isStruct && functions[functionIndex].request) {
-        Location request = *functions[functionIndex].request;
+      if (!isStruct && functionEntries[functionIndex].request) {
+        Location request = *functionEntries[functionIndex].request;
         Attribute origin = clone->getAttr(SPECIALIZATION_ORIGIN_ATTR);
         Attribute arguments = clone->getAttr(SPECIALIZATION_ARGUMENTS_ATTR);
         requestNote.emplace(clone->getContext(), [request, origin, arguments](Diagnostic &diag) {
@@ -977,22 +968,23 @@ public:
         return failure();
       }
       if (isStruct) {
-        entries[structIndex].visited = std::move(visited);
+        structEntries[structIndex].visited = std::move(visited);
         ++structIndex;
       } else {
-        functions[functionIndex].visited = std::move(visited);
-        functions[functionIndex].discovered = true;
+        functionEntries[functionIndex].visited = std::move(visited);
+        functionEntries[functionIndex].discovered = true;
       }
     }
     // A call in an unselected branch is not a dependency to explore. Retain
     // its template callee unless a known struct specialization changes its
     // signature; in that case a concrete callee is needed for valid IR.
     for (unsigned structIndex = 0, functionIndex = 0;
-         structIndex < entries.size() || functionIndex < functions.size();) {
-      bool isStruct = structIndex < entries.size();
-      Operation *clone = isStruct ? entries[structIndex].clone.getOperation()
-                                  : functions[functionIndex].clone.getOperation();
-      auto &visited = isStruct ? entries[structIndex].visited : functions[functionIndex].visited;
+         structIndex < structEntries.size() || functionIndex < functionEntries.size();) {
+      bool isStruct = structIndex < structEntries.size();
+      Operation *clone = isStruct ? structEntries[structIndex].clone.getOperation()
+                                  : functionEntries[functionIndex].clone.getOperation();
+      auto &visited =
+          isStruct ? structEntries[structIndex].visited : functionEntries[functionIndex].visited;
       DenseSet<Operation *> visitedSet(visited.begin(), visited.end());
       auto calls = clone->walk([this, &visitedSet](function::CallOp call) {
         if (visitedSet.contains(call)) {
@@ -1027,14 +1019,14 @@ public:
     // definition independently of its spelling, including uses in preserved paths
     // that discovery did not execute.
     llvm::MapVector<Operation *, SmallVector<Operation *>> clonesByRoot;
-    for (Entry &entry : entries) {
+    for (StructEntry &entry : structEntries) {
       auto lookupRoot = getRootModule(entry.clone);
       if (failed(lookupRoot)) {
         return failure();
       }
       clonesByRoot[lookupRoot->getOperation()].push_back(entry.clone);
     }
-    for (FunctionEntry &entry : functions) {
+    for (FunctionEntry &entry : functionEntries) {
       auto lookupRoot = getRootModule(entry.clone);
       if (failed(lookupRoot)) {
         return failure();
@@ -1061,14 +1053,14 @@ public:
         if (!*key) {
           return std::nullopt;
         }
-        auto existing = cache.find(**key);
-        if (existing == cache.end()) {
+        auto existing = structCache.find(**key);
+        if (existing == structCache.end()) {
           return std::nullopt;
         }
-        auto name =
-            getPathRelativeToAncestor(entries[existing->second].clone, lookupRoot, [lookupRoot] {
-          return lookupRoot->emitError("specialized struct");
-        });
+        auto name = getPathRelativeToAncestor(
+            structEntries[existing->second].clone, lookupRoot,
+            [lookupRoot] { return lookupRoot->emitError("specialized struct"); }
+        );
         if (failed(name)) {
           invalid = true;
           return std::make_pair(Type(type), WalkResult::skip());
@@ -1088,7 +1080,7 @@ public:
         return failure();
       }
     }
-    for (Entry &entry : entries) {
+    for (StructEntry &entry : structEntries) {
       DenseSet<Operation *> visited(entry.visited.begin(), entry.visited.end());
       auto result = entry.clone.walk([this, &entry, &visited](function::CallOp call) {
         return WalkResult(retargetCall(call, &entry, visited.contains(call)));
@@ -1097,7 +1089,7 @@ public:
         return failure();
       }
     }
-    for (FunctionEntry &entry : functions) {
+    for (FunctionEntry &entry : functionEntries) {
       DenseSet<Operation *> visited(entry.visited.begin(), entry.visited.end());
       auto result = entry.clone.walk([this, &visited](function::CallOp call) {
         return WalkResult(retargetCall(call, nullptr, visited.contains(call)));
@@ -1110,7 +1102,7 @@ public:
     if (failed(mainRoot)) {
       return failure();
     }
-    auto mainName = getPathRelativeToAncestor(entries[*mainId].clone, *mainRoot, [this] {
+    auto mainName = getPathRelativeToAncestor(structEntries[*mainId].clone, *mainRoot, [this] {
       return root.emitError("specialized main");
     });
     if (failed(mainName)) {
