@@ -438,7 +438,7 @@ class TemplateInstantiationWorklist {
       }
       return WalkResult::interrupt();
     });
-    return result.wasInterrupted() ? failure() : success();
+    return failure(result.wasInterrupted());
   }
 
   /// Reject unstructured branches before cloning a definition, including
@@ -449,7 +449,7 @@ class TemplateInstantiationWorklist {
           "unstructured control flow is unsupported in template monomorphization"
       );
     });
-    return result.wasInterrupted() ? failure() : success();
+    return failure(result.wasInterrupted());
   }
 
   /// A retained call needs a concrete callee when type rewriting will change
