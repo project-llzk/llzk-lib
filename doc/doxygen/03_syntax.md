@@ -93,10 +93,9 @@ attribute. Numeric getters deliver the complete decimal value to an
 it. Width-taking string/limb constructors have been removed. Native `int64_t`
 felt convenience constructors remain available.
 
-Numeric bytecode payloads use new encoding tags and minimal signed two's-complement
-encodings. Old felt-constant, field-specification, and loop-bound payload tags are
-rejected rather than reinterpreted with different signedness. Regenerate bytecode
-from textual IR when moving to this representation.
+Numeric bytecode payloads for felt constants, field specifications, and loop bounds
+use minimal signed two's-complement encodings. Only payload tags corresponding to
+these signed encodings are accepted.
 
 The APInt overloads of felt/field-specification builders, `Field::reduce` and
 `Field::inv`, and the old width-insensitive attribute parameter remain temporary
