@@ -448,7 +448,7 @@ static FailureOr<Value> createRandomMemRef(
         arith::ConstantOp::create(
             builder, loc,
             IntegerAttr::get(
-                intType, llvm::cantFail(llzk::checkedToAPInt(candidate, intType.getWidth(), false))
+                intType, cantFail(checkedToAPInt(candidate, intType.getWidth(), false))
             )
         ),
         alloc, indices
@@ -504,8 +504,7 @@ static FailureOr<LoweredValue> createDefaultValue(
           arith::ConstantOp::create(
               builder, loc,
               IntegerAttr::get(
-                  intType,
-                  llvm::cantFail(llzk::checkedToAPInt(candidate, intType.getWidth(), false))
+                  intType, cantFail(checkedToAPInt(candidate, intType.getWidth(), false))
               )
           )
       );
@@ -575,8 +574,7 @@ lowerFeltToSignedWide(OpBuilder &builder, Location loc, Value operand, const Fie
   Value prime =
       arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
   Value half = arith::ConstantOp::create(
-      builder, loc,
-      IntegerAttr::get(feltType, llvm::cantFail(checkedToAPInt(field.half(), width, false)))
+      builder, loc, IntegerAttr::get(feltType, cantFail(checkedToAPInt(field.half(), width, false)))
   );
   Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::uge, operand, half);
   Value signedOperand = arith::SubIOp::create(builder, loc, operandWide, prime);
@@ -644,7 +642,7 @@ lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
 
 /// Lower a field inversion through exponentiation by `p - 2`.
 static Value lowerFeltInv(OpBuilder &builder, Location loc, Value operand, const Field &field) {
-  llvm::APInt exponent = llvm::cantFail(checkedToAPInt(field.prime() - 2, field.bitWidth(), false));
+  llvm::APInt exponent = cantFail(checkedToAPInt(field.prime() - 2, field.bitWidth(), false));
   Value result = makeOneFelt(builder, loc, field);
   Value base = operand;
   for (unsigned bit = 0; bit < exponent.getBitWidth(); ++bit) {
@@ -1230,7 +1228,7 @@ private:
       // Reduce into the field first, then build an APInt with the exact storage width.
       auto constVal = feltConst.getValue().getValue();
       auto modVal = field.reduce(constVal);
-      auto intVal = llvm::cantFail(checkedToAPInt(modVal, field.bitWidth(), false));
+      auto intVal = cantFail(checkedToAPInt(modVal, field.bitWidth(), false));
       Value lowered = arith::ConstantOp::create(builder, loc, IntegerAttr::get(intType, intVal));
       return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
     }

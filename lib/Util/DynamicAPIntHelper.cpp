@@ -70,11 +70,10 @@ Expected<APInt> checkedToAPInt(const DynamicAPInt &value, unsigned bitWidth, boo
 }
 
 Expected<int64_t> checkedToInt64(const DynamicAPInt &value) {
-  auto bits = checkedToAPInt(value, 64, true);
-  if (!bits) {
-    return bits.takeError();
+  if (value < numeric_limits<int64_t>::min() || value > numeric_limits<int64_t>::max()) {
+    return createStringError(inconvertibleErrorCode(), "integer does not fit requested width");
   }
-  return bits->getSExtValue();
+  return static_cast<int64_t>(value);
 }
 
 Expected<uint64_t> checkedToUInt64(const DynamicAPInt &value) {
@@ -100,13 +99,15 @@ DynamicAPInt operator^(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
 DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   APSInt bits = toAPSInt(lhs);
   unsigned width = bits.getSignificantBits();
-  if (rhs < 0 || rhs > DynamicAPInt(std::numeric_limits<unsigned>::max() - width)) {
+  auto maxAmount =
+      toDynamicAPInt(APSInt::getUnsigned(std::numeric_limits<unsigned>::max() - width));
+  if (rhs < 0 || rhs > maxAmount) {
     llvm::report_fatal_error("invalid or unrepresentable left shift");
   }
   if (lhs == 0) {
     return DynamicAPInt(0);
   }
-  unsigned amount = static_cast<unsigned>(int64_t(rhs));
+  unsigned amount = checkedCast<unsigned>(cantFail(checkedToUInt64(rhs)));
   return DynamicAPInt(bits.sextOrTrunc(width + amount).shl(amount));
 }
 
@@ -115,13 +116,13 @@ DynamicAPInt operator>>(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
     llvm::report_fatal_error("negative right shift");
   }
   APSInt bits = toAPSInt(lhs);
-  if (rhs >= DynamicAPInt(bits.getSignificantBits())) {
+  if (rhs >= toDynamicAPInt(APSInt::getUnsigned(bits.getSignificantBits()))) {
     return DynamicAPInt(lhs < 0 ? -1 : 0);
   }
-  return DynamicAPInt(bits.ashr(static_cast<unsigned>(int64_t(rhs))));
+  return DynamicAPInt(bits.ashr(checkedCast<unsigned>(cantFail(checkedToUInt64(rhs)))));
 }
 
-DynamicAPInt toDynamicAPInt(StringRef str) { return llvm::cantFail(parseDynamicAPInt(str)); }
+DynamicAPInt toDynamicAPInt(StringRef str) { return cantFail(parseDynamicAPInt(str)); }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
   // DynamicAPInt interprets APInt (implicit cast from APSInt for the constructor below) as

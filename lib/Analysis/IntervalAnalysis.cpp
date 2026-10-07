@@ -1137,7 +1137,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         for (Attribute attr : *maybeIndices) {
           auto idxAttr = llvm::dyn_cast<IntegerAttr>(attr);
           ensure(idxAttr != nullptr, "array.new delinearize should produce integer attributes");
-          path.emplace_back(llvm::DynamicAPInt(idxAttr.getValue()));
+          path.emplace_back(integerAttrToDynamicAPInt(idxAttr));
         }
 
         recordRefWrite(SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue());
@@ -1152,12 +1152,12 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         if (!elementRefs.isSingleValue()) {
           continue;
         }
-        auto maybeIndices = indexGen.delinearize(llzk::checkedCast<int64_t>(i), op->getContext());
+        auto maybeIndices = indexGen.delinearize(checkedCast<int64_t>(i), op->getContext());
         ensure(maybeIndices.has_value(), "could not delinearize aggregate array.new index");
         SourceRef elementTarget = arrayRoot;
         for (Attribute attr : *maybeIndices) {
           auto child = elementTarget.createChild(
-              SourceRefIndex(llvm::DynamicAPInt(llvm::cast<IntegerAttr>(attr).getValue()))
+              SourceRefIndex(integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(attr)))
           );
           ensure(succeeded(child), "could not create aggregate array element SourceRef");
           elementTarget = *child;

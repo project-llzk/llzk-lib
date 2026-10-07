@@ -162,7 +162,7 @@ DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i,
 
 IntegerAttr Field::getPrimeAttr(MLIRContext *context, unsigned bitWidth) const {
   return IntegerAttr::get(
-      IntegerType::get(context, bitWidth), llvm::cantFail(checkedToAPInt(prime(), bitWidth, false))
+      IntegerType::get(context, bitWidth), cantFail(checkedToAPInt(prime(), bitWidth, false))
   );
 }
 

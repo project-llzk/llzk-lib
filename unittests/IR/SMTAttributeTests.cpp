@@ -20,7 +20,7 @@
 class SMTAttributeTests : public LLZKTest {};
 
 TEST_F(SMTAttributeTests, NumericAPIntStorageReusesEqualValuesAcrossWidths) {
-  auto expectStorageReuse = [&](const llvm::APInt &narrow, const llvm::APInt &wide) {
+  auto expectStorageReuse = [this](const llvm::APInt &narrow, const llvm::APInt &wide) {
     ASSERT_TRUE(llvm::APInt::isSameValue(narrow, wide));
     EXPECT_EQ(
         llvm::hash_combine(llzk::DynamicAPIntValue(llzk::toDynamicAPInt(narrow))),
@@ -171,7 +171,7 @@ TEST_F(SMTAttributeTests, CheckedFieldLimbBuildersRejectModuliBelowTwo) {
 }
 
 TEST_F(SMTAttributeTests, BuiltinIntegerConversionPreservesSignedness) {
-  auto decode = [&](mlir::IntegerType type, uint64_t bits) {
+  auto decode = [](mlir::IntegerType type, uint64_t bits) {
     return llzk::integerAttrToDynamicAPInt(mlir::IntegerAttr::get(type, bits));
   };
   EXPECT_EQ(

@@ -255,6 +255,14 @@ TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   auto tooBig = checkedToInt64(DynamicAPInt(INT64_MAX) + 1);
   EXPECT_FALSE(tooBig);
   consumeError(tooBig.takeError());
+  auto tooSmall = checkedToInt64(DynamicAPInt(INT64_MIN) - 1);
+  EXPECT_FALSE(tooSmall);
+  consumeError(tooSmall.takeError());
+  for (int64_t value : {INT64_MIN, int64_t(-1), int64_t(0), INT64_MAX}) {
+    auto wide = checkedToInt64(DynamicAPInt(APInt(256, value, true)));
+    ASSERT_TRUE(wide);
+    EXPECT_EQ(*wide, value);
+  }
   auto negative = checkedToUInt64(DynamicAPInt(-1));
   EXPECT_FALSE(negative);
   consumeError(negative.takeError());
@@ -279,6 +287,14 @@ TEST(DynamicAPIntSafetyTest, HugeRightShiftAndSignedLeftShift) {
   EXPECT_EQ(DynamicAPInt(-42) >> huge, DynamicAPInt(-1));
   EXPECT_EQ(DynamicAPInt(-3) << DynamicAPInt(100), -3 * (DynamicAPInt(1) << DynamicAPInt(100)));
   EXPECT_EQ(DynamicAPInt(-3) >> DynamicAPInt(1), DynamicAPInt(-2));
+  auto unsignedMax = toDynamicAPInt(APSInt::getUnsigned(std::numeric_limits<unsigned>::max()));
+  EXPECT_EQ(DynamicAPInt(42) >> unsignedMax, DynamicAPInt(0));
+  EXPECT_EQ(DynamicAPInt(-42) >> unsignedMax, DynamicAPInt(-1));
+  EXPECT_DEATH(DynamicAPInt(1) << unsignedMax, "invalid or unrepresentable left shift");
+  EXPECT_EQ(DynamicAPInt(0) << (unsignedMax - 1), DynamicAPInt(0));
+  DynamicAPInt wideCount(APInt(256, 1));
+  EXPECT_EQ(DynamicAPInt(3) << wideCount, DynamicAPInt(6));
+  EXPECT_EQ(DynamicAPInt(-3) >> wideCount, DynamicAPInt(-2));
 }
 
 TEST(DynamicAPIntSafetyTest, ModularExponentiationNormalizesInputs) {
