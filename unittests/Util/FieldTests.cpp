@@ -107,6 +107,37 @@ TEST_P(FieldTests, ReducedToSignedInverses) {
 
 INSTANTIATE_TEST_SUITE_P(FieldValSuite, FieldTests, testing::ValuesIn(FieldTests::TestingValues()));
 
+TEST(FieldBoundaryTests, InvalidModuliReportErrorsWithoutRegistration) {
+  // Exercise both public overloads directly, bypassing FieldSpecAttr validation.
+  mlir::MLIRContext ctx;
+  for (int64_t prime : {-7, 0, 1}) {
+    SCOPED_TRACE(prime);
+    for (bool useString : {false, true}) {
+      SCOPED_TRACE(useString ? "string overload" : "DynamicAPInt overload");
+      StringRef name = useString ? "field-test-invalid-string" : "field-test-invalid-integer";
+      ASSERT_TRUE(failed(Field::tryGetField(name)));
+      unsigned callbacks = 0;
+      std::vector<std::string> diagnostics;
+      mlir::ScopedDiagnosticHandler handler(&ctx, [&](mlir::Diagnostic &diag) {
+        diagnostics.push_back(diag.str());
+        return mlir::success();
+      });
+      auto errFn = [&]() {
+        ++callbacks;
+        return InFlightDiagnosticWrapper(mlir::emitError(mlir::UnknownLoc::get(&ctx)));
+      };
+      if (useString) {
+        Field::addField(name, std::to_string(prime), errFn);
+      } else {
+        Field::addField(name, DynamicAPInt(prime), errFn);
+      }
+      EXPECT_EQ(callbacks, 1U);
+      EXPECT_EQ(diagnostics, (std::vector<std::string> {"field modulus must be at least 2"}));
+      EXPECT_TRUE(failed(Field::tryGetField(name)));
+    }
+  }
+}
+
 TEST(FieldBoundaryTests, TwoElementFieldEncodesItsModulus) {
   Field::addField("dynamic-apint-test-two", DynamicAPInt(2), nullptr);
   const auto &field = Field::getField("dynamic-apint-test-two");
