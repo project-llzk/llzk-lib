@@ -33,6 +33,18 @@ namespace llzk::polymorphic {
 /// name.
 inline constexpr llvm::StringLiteral TEMPLATE_NAME_PATTERN_ATTR = "poly.name_pattern";
 
+/// Metadata on concrete struct clones and rolled affine family uses.
+inline constexpr llvm::StringLiteral SPECIALIZATION_ID_ATTR = "poly.specialization_id";
+inline constexpr llvm::StringLiteral SPECIALIZATION_ORIGIN_ATTR = "poly.origin";
+inline constexpr llvm::StringLiteral SPECIALIZATION_ARGUMENTS_ATTR = "poly.arguments";
+inline constexpr llvm::StringLiteral FAMILY_ATTR = "poly.family";
+inline constexpr llvm::StringLiteral FAMILY_SPECIALIZATIONS_ATTR = "poly.family_specializations";
+inline constexpr llvm::StringLiteral FAMILY_INDICES_KEY = "indices";
+inline constexpr llvm::StringLiteral FAMILY_SPECIALIZATION_KEY = "specialization";
+/// The original affine-parameterized struct family, paired with element indices
+/// and a concrete specialization ID in each poly.family record.
+inline constexpr llvm::StringLiteral FAMILY_TYPE_KEY = "type";
+
 template <typename OpT>
 concept TemplateSymbolBindingOp =
     std::is_same_v<OpT, TemplateSymbolBindingOpInterface> ||

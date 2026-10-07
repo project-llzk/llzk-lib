@@ -1,0 +1,306 @@
+// Discovery diagnoses unknown values needed for specialization.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// A multi-block method with a branch is rejected before discovery evaluates it.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{unstructured control flow is unsupported in template monomorphization}}
+      cf.br ^exit
+    ^exit:
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// An unknown while condition cannot determine which body requests are reached.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Main> {
+      %zero = arith.constant 0 : index
+      %felt_zero = felt.const 0
+      %condition = bool.cmp eq(%input, %felt_zero)
+      // expected-error@+1 {{struct discovery requires a known while condition}}
+      %result = scf.while (%i = %zero) : (index) -> index {
+        scf.condition(%condition) %i : index
+      } do {
+      ^bb0(%i: index):
+        scf.yield %i : index
+      }
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type) { function.return }
+  }
+}
+
+// -----
+
+// Different yields from an unknown condition leave the affine specialization argument unresolved.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %felt_zero = felt.const 0
+        %condition = bool.cmp eq(%input, %felt_zero)
+        %two = arith.constant 2 : index
+        %three = arith.constant 3 : index
+        %value = scf.if %condition -> index {
+          scf.yield %two : index
+        } else {
+          scf.yield %three : index
+        }
+        // expected-error@+1 {{cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// A runtime-dependent loop bound prevents discovery, even when the loop body is empty.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Unsupported {
+    poly.param @N : index
+    function.def @f() { function.return }
+  }
+  struct.def @Main {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Main> {
+      %zero = felt.const 0
+      %condition = bool.cmp eq(%input, %zero)
+      %zero_index = arith.constant 0 : index
+      %three = arith.constant 3 : index
+      %one = arith.constant 1 : index
+      %bound = scf.if %condition -> (index) {
+        scf.yield %zero_index : index
+      } else {
+        scf.yield %three : index
+      }
+      // expected-error@+1 {{struct discovery requires known signed for bounds and a positive step}}
+      scf.for %i = %zero_index to %bound step %one {
+      }
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %input: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An unknown carried value makes the second iteration's specialization argument unresolved.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %felt_zero = felt.const 0
+        %condition = bool.cmp eq(%input, %felt_zero)
+        %unknown_zero = arith.constant 0 : index
+        %unknown_one = arith.constant 1 : index
+        %unknown = scf.if %condition -> index {
+          scf.yield %unknown_zero : index
+        } else {
+          scf.yield %unknown_one : index
+        }
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %value = scf.for %i = %zero to %two step %one iter_args(%v = %one) -> index {
+          // expected-error@+1 {{cannot resolve affine struct specialization argument}}
+          %child = function.call @Child::@Child::@compute(){(%v)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+          scf.yield %unknown : index
+        }
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// An affine struct member needs an enclosing array.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "bare_affine_member"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    // expected-error@+1 {{affine struct type requires an enclosing array}}
+    struct.member @item : !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The element map must accept exactly the enclosing array indices.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "wrong_map_arity"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    // expected-error@+1 {{affine struct argument requires one input per array dimension}}
+    struct.member @items : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i,j) -> (i+j)>]>>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Affine maps inside struct type arguments need separate specialization support.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "nested_affine_type_argument"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Wrap {
+    poly.param @T : !poly.tvar<@T>
+    struct.def @Wrap {
+      struct.member @value : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@Wrap::@Wrap<[@T]>> {
+        %s = struct.new : !struct.type<@Wrap::@Wrap<[@T]>>
+        function.return %s : !struct.type<@Wrap::@Wrap<[@T]>>
+      }
+      function.def @constrain(%s: !struct.type<@Wrap::@Wrap<[@T]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    // expected-error@+1 {{affine maps nested in struct type arguments are not supported}}
+    struct.member @bad : !struct.type<@Wrap::@Wrap<[!struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %items = array.new : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A family call without a known array or affine call source cannot claim an empty candidate set.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "no_family_source"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %x: !felt.type) attributes {function.allow_non_native_field_ops} {
+      %i = cast.toindex %x : !felt.type
+      %pod = pod.new(%i) : !pod.type<[@comp: !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>]>
+      %item = pod.read %pod[@comp] : !pod.type<[@comp: !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>]>, !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+      // expected-error@+1 {{no known source for affine struct call argument}}
+      function.call @Child::@Child::@constrain(%item) : (!struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>) -> ()
+      function.return
+    }
+  }
+}

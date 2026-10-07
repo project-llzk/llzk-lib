@@ -52,6 +52,89 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
   }];
 }
 
+def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
+  let summary = "Specialize structs reachable from llzk.main";
+  let description = [{
+    Starting with a concrete `llzk.main`, discover and instantiate struct
+    dependencies until every requested specialization has been processed. Reuse
+    definitions by source symbol and concrete argument list, including reachable
+    structs with no template parameters. Preserve source
+    templates and control flow, and update direct type uses and method calls to
+    their concrete definitions.
+
+    Loops remain in the IR rather than being unrolled; discovery evaluates their
+    iterations to identify specializations without expanding the loop bodies.
+    "Rolled" calls and struct types below retain affine parameters that depend on
+    those iterations or on array element indices.
+
+    Affine calls and array values retain their parameterized types. Their
+    `poly.family_specializations` and `poly.family` attributes identify the
+    concrete definitions needed by later elaboration; definitions carry
+    `poly.specialization_id`, `poly.origin` and `poly.arguments` attributes.
+    `poly.family` appears on members and operations producing an array value,
+    including `struct.readm` and `array.new`. Each entry names the rolled struct
+    type, the enclosing array's index tuple, and the matching specialization.
+    The `type` entry retains the original affine-parameterized family type; it
+    identifies which struct field is being specialized within a POD element.
+    `specialization` identifies the concrete clone through its
+    `poly.specialization_id`. For example, an element at index 2 of a Child<i>
+    family retains Child<i> in `type` and names the clone whose `poly.arguments`
+    are [2]. Concrete sibling fields have no family entry.
+    On a rolled call, `poly.family_specializations` lists candidates collected
+    from all matching arrays and affine calls in the source instance. The list
+    may be empty only when a known array has an empty dimension. A consumer
+    selects a target by evaluating the argument type's affine map using the
+    value's affine inputs, often an array element's indices, and matching the
+    resulting arguments to `poly.arguments`.
+    `poly.origin` and every struct name nested in `poly.arguments` are relative
+    to the outermost `llzk.lang` root, which is also the lookup anchor when
+    reloading this metadata. Cache keys use the same argument spelling, so
+    requests from different roots reuse the same specialization. Substitution
+    re-spells type arguments relative to the clone's root; an argument whose
+    definition is outside that root is diagnosed at the instantiation site.
+    Arguments to typed `poly.param` declarations are converted to the declared
+    type using the conversions below, before forming a cache key. An
+    incompatible argument is diagnosed. Felt-to-index conversion requires a
+    value in the nonnegative signed 64-bit index range. Arguments to felt
+    parameters with a known field are reduced modulo its prime before forming
+    the cache key and substituting uses. A felt literal with no specified field
+    acquires the parameter's declared field; a different explicit field is
+    rejected. Equivalent field values therefore share a specialization. With no
+    known field, index-to-felt conversion requires a nonnegative value and
+    preserves it. Untyped parameters retain their input
+    attributes, so differently spelled numeric values can create distinct
+    specializations. An `i1` parameter accepts only boolean arguments or index
+    zero and one, which become false and true. Other index values fail type
+    conversion at the instantiation site. The normalized boolean binding
+    determines specialization identity and is used for every read and forwarded
+    argument.
+    Forwarding that value to an index parameter produces zero or one.
+    A felt binding must be read with its exact felt type, including its field,
+    even for untyped parameters. Mismatched felt types are diagnosed at
+    `poly.read_const`.
+    Reading it as index or i1 is diagnosed at `poly.read_const`; use an explicit
+    cast after a felt read for numeric conversion. Integer bindings read as i1
+    must be zero or one. Integer-to-felt reads use the same modular conversion
+    as typed arguments, and negative values require a known field modulus.
+    Reads whose type is a type variable use its concrete binding.
+
+    Methods must be defined and single-block. Supported regions are `scf.if`,
+    signed `scf.for` with known bounds and positive steps, and `scf.while` with
+    a known condition at every check. Unstructured branches are diagnosed.
+    Constant evaluation
+    uses template bindings and fold hooks; global and aggregate reads and call
+    results remain unknown. Required specialization arguments must resolve.
+    Reachable free-function calls are diagnosed until function support is added.
+    Includes must be inlined before running this pass.
+  }];
+  let options =
+      [Option<"specializationLimit", "max-specializations", "unsigned", "1000",
+              "Maximum number of concrete struct definitions">,
+       Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
+              "Maximum steps shared by template expressions and methods in one "
+              "discovery run">];
+}
+
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
   let summary = "Flatten structs and unroll loops";
   let description = [{

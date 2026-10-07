@@ -84,21 +84,6 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
-static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&diagnostics) {
-  DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
-  for (Diagnostic &diag : diagnostics) {
-    // Update any notes referencing an UnknownLoc to use the CallOp location.
-    for (Diagnostic &note : diag.getNotes()) {
-      assert(note.getNotes().empty() && "notes cannot have notes attached");
-      if (llvm::isa<UnknownLoc>(note.getLocation())) {
-        note = std::move(Diagnostic(caller.getLoc(), note.getSeverity()).append(note.str()));
-      }
-    }
-    // Report. Based on InFlightDiagnostic::report().
-    engine.emit(std::move(diag));
-  }
-}
-
 class ConversionTracker {
   /// Published result of one successful partial-function conversion.
   ///
@@ -218,7 +203,7 @@ public:
   void reportDelayedDiagnostics(StructType newType, CallOp caller) {
     auto res = delayedDiagnostics.find(newType);
     if (res != delayedDiagnostics.end()) {
-      ::reportDelayedDiagnostics(caller, std::move(res->second));
+      llzk::polymorphic::detail::reportDelayedDiagnostics(caller, std::move(res->second));
 
       // Emitting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
       // Unfortunately, this means if the key StructType is the result of instantiation at multiple
@@ -817,7 +802,7 @@ static LogicalResult applyBodyConversions(
     return failure();
   }
   LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp]   instantiated clone: " << newFunc << '\n');
-  ::reportDelayedDiagnostics(op, std::move(delayedDiagnostics));
+  llzk::polymorphic::detail::reportDelayedDiagnostics(op, std::move(delayedDiagnostics));
 
   SymbolTableCollection tables;
   WalkResult res = newFunc.walk([&tables](CallOp nestedCall) {

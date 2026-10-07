@@ -22,8 +22,10 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/AttrTypeSubElements.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -145,7 +147,7 @@ public:
         }
         diag.attachNote(UnknownLoc::get(getContext()))
             << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \"" << sym
-            << "\" for this call";
+            << "\" for this specialization";
         diagnostics.push_back(std::move(diag));
       }
       replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
@@ -410,6 +412,60 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
 } // namespace
 
 namespace llzk::polymorphic::detail {
+
+void reportDelayedDiagnostics(Operation *site, SmallVector<Diagnostic> &&diagnostics) {
+  DiagnosticEngine &engine = site->getContext()->getDiagEngine();
+  for (Diagnostic &diagnostic : diagnostics) {
+    for (Diagnostic &note : diagnostic.getNotes()) {
+      assert(note.getNotes().empty() && "notes cannot have notes attached");
+      if (isa<UnknownLoc>(note.getLocation())) {
+        note = std::move(Diagnostic(site->getLoc(), note.getSeverity()).append(note.str()));
+      }
+    }
+    engine.emit(std::move(diagnostic));
+  }
+}
+
+FailureOr<ArrayAttr> rebaseTemplateParams(
+    SymbolTableCollection &tables, ArrayAttr templateParams, Operation *lookupFrom,
+    ModuleOp destinationRoot, Operation *requestSite
+) {
+  if (!templateParams) {
+    return ArrayAttr::get(requestSite->getContext(), {});
+  }
+  AttrTypeReplacer rebaser;
+  rebaser.addReplacement(
+      [&tables, lookupFrom, destinationRoot,
+       requestSite](StructType type) -> std::optional<std::pair<Type, WalkResult>> {
+    auto found = type.getDefinition(tables, lookupFrom);
+    if (failed(found)) {
+      return std::make_pair(Type(type), WalkResult::interrupt());
+    }
+    if (found->viaInclude()) {
+      requestSite->emitError("inline includes before rebasing template parameters");
+      return std::make_pair(Type(type), WalkResult::interrupt());
+    }
+    auto name = getPathRelativeToAncestor(found->get(), destinationRoot, [requestSite, type] {
+      return requestSite->emitError("struct type argument ") << type;
+    });
+    if (failed(name)) {
+      return std::make_pair(Type(type), WalkResult::interrupt());
+    }
+    auto nested =
+        rebaseTemplateParams(tables, type.getParams(), lookupFrom, destinationRoot, requestSite);
+    if (failed(nested)) {
+      return std::make_pair(Type(type), WalkResult::interrupt());
+    }
+    auto rebased = getStructTypeWithParams(*name, type.getParams() ? *nested : ArrayAttr());
+    return std::make_pair(Type(rebased), WalkResult::skip());
+  }
+  );
+  auto result = dyn_cast_if_present<ArrayAttr>(rebaser.replace(templateParams));
+  if (!result) {
+    return failure();
+  }
+  return result;
+}
 
 Attribute TemplateTypeConverter::convertIfPossible(Attribute attr) const {
   auto it = paramNameToValue.find(attr);

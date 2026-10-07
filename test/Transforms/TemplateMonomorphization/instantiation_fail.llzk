@@ -1,0 +1,76 @@
+// Monomorphization diagnoses unsupported entry points, calls, and type-argument scopes.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// A module without llzk.main cannot select an entry specialization.
+// expected-error@+1 {{template monomorphization requires a concrete llzk.main}}
+module attributes {llzk.lang} {}
+
+// -----
+
+// A reachable free-function call is explicitly unsupported.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Unsupported {
+    poly.param @N : index
+    function.def @f() { function.return }
+  }
+  struct.def @Main {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Main> {
+      // expected-error@+1 {{free-function calls are not yet supported by template monomorphization}}
+      function.call @Unsupported::@f<[3]>() : () -> ()
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>, %input: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A template inside Bar cannot use an outer-root struct argument; diagnose the requesting member.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-note@+1 {{symbol is defined outside the supplied module}}
+  struct.def @Outer {
+    function.def @compute() -> !struct.type<@Outer> {
+      %s = struct.new : !struct.type<@Outer>
+      function.return %s : !struct.type<@Outer>
+    }
+    function.def @constrain(%s: !struct.type<@Outer>) { function.return }
+  }
+  // expected-note@+1 {{symbol path must start from this module}}
+  module @Bar attributes {llzk.lang} {
+    poly.template @TBox {
+      poly.param @T : !poly.tvar<@T>
+      struct.def @Box {
+        struct.member @value : !poly.tvar<@T>
+        function.def @compute() -> !struct.type<@TBox::@Box<[@T]>> {
+          %s = struct.new : !struct.type<@TBox::@Box<[@T]>>
+          function.return %s : !struct.type<@TBox::@Box<[@T]>>
+        }
+        function.def @constrain(%s: !struct.type<@TBox::@Box<[@T]>>) { function.return }
+      }
+    }
+  }
+  struct.def @Main {
+    // expected-error@+1 {{struct type argument '!struct.type<@Outer>' is not visible from module "Bar"}}
+    struct.member @box : !struct.type<@Bar::@TBox::@Box<[!struct.type<@Outer>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}

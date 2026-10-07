@@ -812,7 +812,7 @@ module attributes {llzk.lang} {
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = arith.constant true
-      // expected-note@+1 {{when instantiating 'struct.def' parameter "@A" for this call}}
+      // expected-note@+1 {{when instantiating 'struct.def' parameter "@A" for this specialization}}
       %1 = function.call @MyTemplate::@TestReadConstAsBool2::@compute(%0) : (i1) -> !struct.type<@MyTemplate::@TestReadConstAsBool2<[2]>>
       struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@MyTemplate::@TestReadConstAsBool2<[2]>>
       function.return %self : !struct.type<@Main>

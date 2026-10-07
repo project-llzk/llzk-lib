@@ -52,6 +52,22 @@ public:
   }
 };
 
+/// Re-spell struct types nested in \p templateParams for \p destinationRoot, resolving
+/// their current names from \p lookupFrom. Numeric and other value parameters are
+/// preserved. A null list becomes an empty list. Reports inaccessible type
+/// parameters and unsupported includes at \p requestSite, where instantiation was
+/// requested, so moving bindings does not move their diagnostics into a clone.
+mlir::FailureOr<mlir::ArrayAttr> rebaseTemplateParams(
+    mlir::SymbolTableCollection &tables, mlir::ArrayAttr templateParams,
+    mlir::Operation *lookupFrom, mlir::ModuleOp destinationRoot, mlir::Operation *requestSite
+);
+
+/// Report diagnostics emitted while substituting a clone, preserving notes and
+/// moving notes with unknown locations to the instantiation site.
+void reportDelayedDiagnostics(
+    mlir::Operation *site, llvm::SmallVector<mlir::Diagnostic> &&diagnostics
+);
+
 /// Rewrite callees rooted at a type parameter using that parameter's struct binding.
 /// Other callees and explicit call arguments are left unchanged.
 void convertCalleesInPlace(

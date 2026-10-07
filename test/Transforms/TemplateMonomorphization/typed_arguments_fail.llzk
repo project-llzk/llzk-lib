@@ -1,0 +1,247 @@
+// Typed numeric argument conversion rejects out-of-range values.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// A field element above the signed index range cannot become an index.
+// expected-error@+1 {{field element #felt<const 9223372036854775808> : !felt.type cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 9223372036854775808>]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A negative index argument requires a known field for modular conversion.
+// expected-error@+1 {{index argument -1 : index cannot be converted to felt parameter @N: negative values require a known field modulus}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[-1]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : !felt.type
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Fail instantiation when an index argument is incompatible with an i1 parameter.
+// expected-error@+1 {{index argument 98 : index cannot be converted to i1 parameter @N: expected zero or one}}
+module attributes {llzk.lang, llzk.main = !struct.type<@TOuter::@Outer<[98]>>, test.scenario = "i1_forwarded_to_index"} {
+  poly.template @TChild {
+    poly.param @M : index
+    struct.def @Child {
+      struct.member @arr : !array.type<@M x i1>
+      function.def @compute() -> !struct.type<@TChild::@Child<[@M]>> {
+        %self = struct.new : !struct.type<@TChild::@Child<[@M]>>
+        function.return %self : !struct.type<@TChild::@Child<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TChild::@Child<[@M]>>) { function.return }
+    }
+  }
+  poly.template @TOuter {
+    poly.param @N : i1
+    struct.def @Outer {
+      struct.member @child : !struct.type<@TChild::@Child<[@N]>>
+      function.def @compute() -> !struct.type<@TOuter::@Outer<[@N]>> {
+        %self = struct.new : !struct.type<@TOuter::@Outer<[@N]>>
+        function.return %self : !struct.type<@TOuter::@Outer<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TOuter::@Outer<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// An untyped felt binding cannot be read implicitly as index.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_felt_index_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read felt template binding @N of type '!felt.type' as 'index'; use an explicit cast}}
+        %n = poly.read_const @N : index
+        %one = arith.constant 1 : index
+        %next = arith.addi %n, %one : index
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Template-expression evaluation reports the same incompatible read.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_felt_expression_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    poly.expr @Next {
+      // expected-error@+1 {{cannot read felt template binding @N of type '!felt.type' as 'index'; use an explicit cast}}
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// A felt binding must be read with the same field type.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_felt_unspecified_field_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read felt template binding @N of type '!felt.type<"babybear">' as '!felt.type'; read the binding using its declared felt type}}
+        %n = poly.read_const @N : !felt.type
+        %next = felt.add %n, %n : !felt.type, !felt.type
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// A felt binding must be read with the same field type.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_felt_different_field_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read felt template binding @N of type '!felt.type<"babybear">' as '!felt.type<"goldilocks">'; read the binding using its declared felt type}}
+        %n = poly.read_const @N : !felt.type<"goldilocks">
+        %next = felt.add %n, %n : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_negative_unknown_field"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read negative template binding @N as felt without a known field modulus}}
+        %n = poly.read_const @N : !felt.type
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[-1]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_type_value_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read template binding @N with value "index" as type 'index'}}
+        %n = poly.read_const @N : index
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[index]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+
+// Reject non-boolean integer bindings at an untyped i1 read.
+module attributes {llzk.lang, llzk.main = !struct.type<@Flag::@Flag<[2]>>, test.scenario = "untyped_non_boolean_read"} {
+  poly.template @Flag {
+    poly.param @A
+    struct.def @Flag {
+      function.def @compute() -> !struct.type<@Flag::@Flag<[@A]>> {
+        %self = struct.new : !struct.type<@Flag::@Flag<[@A]>>
+        function.return %self : !struct.type<@Flag::@Flag<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@Flag::@Flag<[@A]>>) {
+        // expected-error@+1 {{cannot read template binding @A with value 2 : index as i1: expected zero or one; use an explicit cast}}
+        %flag = poly.read_const @A : i1
+        function.return
+      }
+    }
+  }
+}

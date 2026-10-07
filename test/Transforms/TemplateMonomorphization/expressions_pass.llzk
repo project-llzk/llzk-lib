@@ -1,0 +1,148 @@
+// Template expressions determine concrete specialization parameters.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s --enable-var-scope
+
+// The true branch of Next computes N + 1; Parent<3> discovers Child<4> and Leaf<4>.
+module attributes {test.scenario = "expressions", llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Leaf {
+    poly.param @N : index
+    struct.def @Leaf {
+      struct.member @values : !array.type<@N x !felt.type>
+      function.def @compute() -> !struct.type<@Leaf::@Leaf<[@N]>> {
+        %self = struct.new : !struct.type<@Leaf::@Leaf<[@N]>>
+        function.return %self : !struct.type<@Leaf::@Leaf<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Leaf::@Leaf<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @leaf : !struct.type<@Leaf::@Leaf<[@N]>>
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %leaf = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
+        %self = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %yes = arith.constant true
+      %v = scf.if %yes -> (index) {
+        %sum = arith.addi %n, %one : index
+        scf.yield %sum : index
+      } else {
+        scf.yield %n : index
+      }
+      poly.yield %v : index
+    }
+    struct.def @Parent {
+      function.def @compute() -> !struct.type<@Parent::@Parent<[@N]>> {
+        %a = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@Next]>>
+        %b = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@Next]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Parent__spec_0>, test.scenario = "expressions"} {
+// CHECK-NEXT:    poly.template @Leaf {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Leaf {
+// CHECK-NEXT:        struct.member @values : !array.type<@N x !felt.type>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Leaf::@Leaf<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Child {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        struct.member @leaf : !struct.type<@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Parent {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.expr @Next {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_7]] -> (index) {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_5]], %[[VAL_6]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_9]] : index
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : index
+// CHECK-NEXT:        }
+// CHECK-NEXT:        poly.yield %[[VAL_8]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Parent {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@Next]>>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@Next]>>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_12]] : !struct.type<@Parent::@Parent<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Parent__spec_0 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_16]] : !struct.type<@Parent__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      struct.member @leaf : !struct.type<@Leaf__spec_2>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = function.call @Leaf__spec_2::@compute() : () -> !struct.type<@Leaf__spec_2>
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_19]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_20:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    struct.def @Leaf__spec_2 {
+// CHECK-NEXT:      struct.member @values : !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Leaf__spec_2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf__spec_2>
+// CHECK-NEXT:        function.return %[[VAL_21]] : !struct.type<@Leaf__spec_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @Leaf::@Leaf, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:  }
