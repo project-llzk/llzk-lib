@@ -391,6 +391,9 @@ module attributes {llzk.lang} {
   EXPECT_EQ(buildStringViaPrint(afterArg), "%arg0");
 }
 
+// Numeric source-reference keys must hash by value, independent of whether a
+// DynamicAPInt was constructed from a native integer or a 256-bit APInt. Cover
+// both individual indices and ranges so equal keys work in hash containers.
 TEST_F(SourceRefTests, NumericKeyHashIgnoresIntegerRepresentation) {
   DynamicAPInt narrow(7), wide(llvm::APInt(256, 7));
   SourceRefIndex a(narrow), b(wide);
