@@ -153,7 +153,7 @@ public:
 /// This object owns the requests and evaluation budget for a single discover()
 /// call so a later call with different template arguments starts from fresh state.
 class DiscoveryRun {
-  StructDefOp source;
+  Operation *source;
   StructSpecializationDiscovery::Bindings bindings;
   SpecializationTypeResolver typeResolver;
   SymbolTableCollection tables;
@@ -172,7 +172,7 @@ class DiscoveryRun {
   /// Charge work before evaluating it, including empty loop bodies' terminators.
   LogicalResult consumeStep(Operation *site) {
     if (!remaining) {
-      return site->emitError("struct specialization discovery step limit exceeded");
+      return site->emitError("specialization discovery step limit exceeded");
     }
     --remaining;
     return success();
@@ -200,15 +200,17 @@ class DiscoveryRun {
         }
       }
     }
-    if (type == llvm::cast<StructType>(typeResolver.resolveType(source.getType()))) {
+    if (auto structure = dyn_cast<StructDefOp>(source);
+        structure &&
+        type == llvm::cast<StructType>(typeResolver.resolveType(structure.getType()))) {
       return success();
     }
     SmallVector<Attribute> indexAttrs;
     for (int64_t index : indices) {
-      indexAttrs.push_back(IntegerAttr::get(IndexType::get(source.getContext()), index));
+      indexAttrs.push_back(IntegerAttr::get(IndexType::get(context()), index));
     }
     auto requestKey = std::make_tuple(
-        site, Type(type), ArrayAttr::get(source.getContext(), indexAttrs), Type(familyType),
+        site, Type(type), ArrayAttr::get(context(), indexAttrs), Type(familyType),
         static_cast<unsigned>(kind)
     );
     if (!seen.insert(requestKey).second) {
@@ -271,7 +273,7 @@ class DiscoveryRun {
       }
       SmallVector<Attribute> operands;
       for (int64_t index : indices) {
-        operands.push_back(IntegerAttr::get(IndexType::get(source.getContext()), index));
+        operands.push_back(IntegerAttr::get(IndexType::get(context()), index));
       }
       auto concrete = typeResolver.resolveAffineStructArguments(
           structure, [this, site, &operands](AffineMapAttr map) -> Attribute {
@@ -459,7 +461,7 @@ class DiscoveryRun {
     auto stride = getKnownInteger(env.lookup(loop.getStep()));
     if (!lower || !upper || !stride || *stride <= 0 || loop.getUnsignedCmp()) {
       return loop.emitError(
-          "struct discovery requires known signed for bounds and a positive step"
+          "specialization discovery requires known signed 'for' bounds and a positive step"
       );
     }
     results.clear();
@@ -475,7 +477,7 @@ class DiscoveryRun {
         return failure();
       }
       if (i > std::numeric_limits<int64_t>::max() - *stride) {
-        return loop.emitError("struct discovery loop induction overflow");
+        return loop.emitError("specialization discovery loop induction overflow");
       }
       i += *stride;
     }
@@ -502,7 +504,7 @@ class DiscoveryRun {
       }
       auto known = dyn_cast_or_null<IntegerAttr>(condition);
       if (!known || !known.getType().isInteger(1)) {
-        return loop.emitError("struct discovery requires a known while condition");
+        return loop.emitError("specialization discovery requires a known while condition");
       }
       if (known.getValue().isZero()) {
         results = std::move(forwarded);
@@ -566,7 +568,7 @@ class DiscoveryRun {
         return failure();
       }
     } else if (op.getNumRegions()) {
-      return op.emitError("unsupported control flow in struct specialization discovery");
+      return op.emitError("unsupported control flow in specialization discovery");
     } else {
       // The environment tracks scalar constants produced by template reads and
       // folding. Resolving global reads requires looking up global initializers;
@@ -624,7 +626,7 @@ class DiscoveryRun {
         return success();
       }
       if (op.hasTrait<OpTrait::IsTerminator>()) {
-        return op.emitError("unsupported control flow in struct specialization discovery");
+        return op.emitError("unsupported control flow in specialization discovery");
       }
       SmallVector<Attribute> results(op.getNumResults());
       if (failed(evaluateOperation(op, env, results))) {
@@ -636,12 +638,14 @@ class DiscoveryRun {
   }
 
 public:
+  MLIRContext *context() { return source->getContext(); }
+
   DiscoveryRun(
-      StructDefOp structure, const StructSpecializationDiscovery::Bindings &parameters,
+      Operation *definition, const StructSpecializationDiscovery::Bindings &parameters,
       uint64_t limit, SmallVectorImpl<Operation *> *visited,
       StructSpecializationDiscovery::CallTargets *targets = nullptr
   )
-      : source(structure), bindings(parameters), typeResolver(bindings), remaining(limit),
+      : source(definition), bindings(parameters), typeResolver(bindings), remaining(limit),
         visitedOperations(visited), callTargets(targets) {}
 
   uint64_t getRemainingSteps() const { return remaining; }
@@ -662,21 +666,30 @@ public:
     return bindings;
   }
 
-  /// Evaluate template expressions, then discover members and each method.
+  /// Evaluate template expressions, then inspect the struct's methods or the
+  /// free function's body.
   FailureOr<StructSpecializationDiscovery::Requests> run() {
     if (failed(evaluateBindings())) {
       return failure();
     }
-    for (auto member : source.getOps<MemberDefOp>()) {
-      if (failed(collectTypes(member, member.getType()))) {
-        return failure();
+    if (auto structure = dyn_cast<StructDefOp>(source)) {
+      for (auto member : structure.getOps<MemberDefOp>()) {
+        if (failed(collectTypes(member, member.getType()))) {
+          return failure();
+        }
       }
     }
-    for (auto function : source.getOps<function::FuncDefOp>()) {
+    SmallVector<function::FuncDefOp> functions;
+    if (auto structure = dyn_cast<StructDefOp>(source)) {
+      llvm::append_range(functions, structure.getOps<function::FuncDefOp>());
+    } else {
+      functions.push_back(cast<function::FuncDefOp>(source));
+    }
+    for (auto function : functions) {
       if (!function.getBody().hasOneBlock()) {
         return function.emitError(
-            "struct discovery requires a defined single-block method; unstructured control flow "
-            "is unsupported"
+            "specialization discovery requires a defined single-block function; "
+            "unstructured control flow is unsupported"
         );
       }
       for (Type type : function.getFunctionType().getInputs()) {
@@ -781,7 +794,7 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
 }
 
 FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(
-    StructDefOp source, const Bindings &bindings, uint64_t *remainingSteps
+    Operation *source, const Bindings &bindings, uint64_t *remainingSteps
 ) const {
   DiscoveryRun run(source, bindings, limit, nullptr);
   auto evaluated = run.evaluateBindings();
@@ -792,7 +805,7 @@ FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery
 }
 
 FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discover(
-    StructDefOp source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
+    Operation *source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
     CallTargets *callTargets
 ) const {
   return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();

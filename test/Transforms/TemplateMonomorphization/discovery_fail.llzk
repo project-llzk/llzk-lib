@@ -24,7 +24,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %zero = arith.constant 0 : index
       %felt_zero = felt.const 0
       %condition = bool.cmp eq(%input, %felt_zero)
-      // expected-error@+1 {{struct discovery requires a known while condition}}
+      // expected-error@+1 {{specialization discovery requires a known while condition}}
       %result = scf.while (%i = %zero) : (index) -> index {
         scf.condition(%condition) %i : index
       } do {
@@ -117,7 +117,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       } else {
         scf.yield %three : index
       }
-      // expected-error@+1 {{struct discovery requires known signed for bounds and a positive step}}
+      // expected-error@+1 {{specialization discovery requires known signed 'for' bounds and a positive step}}
       scf.for %i = %zero_index to %bound step %one {
       }
       %s = struct.new : !struct.type<@Main>

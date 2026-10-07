@@ -23,6 +23,24 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Struct and free-function clones share the specialization limit.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @first() { function.return }
+  function.def @second() { function.return }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      function.call @first() : () -> ()
+      // expected-error@+1 {{template monomorphization specialization limit exceeded}}
+      function.call @second() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
 // A 100-iteration loop exceeds the configured 20-step evaluation budget.
 module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
   poly.template @Child {

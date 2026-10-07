@@ -53,14 +53,18 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
 }
 
 def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
-  let summary = "Specialize structs reachable from llzk.main";
+  let summary =
+      "Specialize structs and free functions reachable from llzk.main";
   let description = [{
-    Starting with a concrete `llzk.main`, discover and instantiate struct
-    dependencies until every requested specialization has been processed. Reuse
-    definitions by source symbol and concrete argument list, including reachable
-    structs with no template parameters. Preserve source
-    templates and control flow, and update direct type uses and method calls to
-    their concrete definitions.
+    Starting with a concrete `llzk.main`, discover and instantiate struct and
+    free-function dependencies until every requested specialization has been
+    processed. Reuse definitions by source symbol and concrete argument list,
+    including reachable definitions with no template parameters. Free-function
+    arguments may be explicit on a call or inferred from its type signature.
+    Preserve source templates and control flow, and update direct type uses and
+    calls to their concrete definitions. A free-function call retained in an
+    unselected branch receives a concrete callee only when struct type rewriting
+    changes its signature.
 
     Loops remain in the IR rather than being unrolled; discovery evaluates their
     iterations to identify specializations without expanding the loop bodies.
@@ -71,6 +75,8 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     `poly.family_specializations` and `poly.family` attributes identify the
     concrete definitions needed by later elaboration; definitions carry
     `poly.specialization_id`, `poly.origin` and `poly.arguments` attributes.
+    Free-function clones carry `poly.origin` and `poly.arguments`; their
+    identities are separate from the struct IDs used by families.
     `poly.family` appears on members and operations producing an array value,
     including `struct.readm` and `array.new`. Each entry names the rolled struct
     type, the enclosing array's index tuple, and the matching specialization.
@@ -118,18 +124,22 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     as typed arguments, and negative values require a known field modulus.
     Reads whose type is a type variable use its concrete binding.
 
-    Methods must be defined and single-block. Supported regions are `scf.if`,
-    signed `scf.for` with known bounds and positive steps, and `scf.while` with
-    a known condition at every check. Unstructured branches are diagnosed.
-    Constant evaluation
-    uses template bindings and fold hooks; global and aggregate reads and call
-    results remain unknown. Required specialization arguments must resolve.
-    Reachable free-function calls are diagnosed until function support is added.
+    Discovered methods and free functions must be defined and single-block.
+    Supported regions are `scf.if`, signed `scf.for` with known bounds and
+    positive steps, and `scf.while` with a known condition at every check.
+    Unstructured branches are diagnosed. Constant evaluation uses template
+    bindings and fold hooks; global and aggregate reads and call results remain
+    unknown. Function arguments also begin unknown, even when a caller passes
+    a constant. Required specialization arguments must resolve.
+    External free functions retain their declared signatures. Calls with struct
+    types rewritten to distinct clone types are diagnosed, including plain
+    structs, because the declaration would otherwise have a mismatched type.
     Includes must be inlined before running this pass.
   }];
   let options =
-      [Option<"specializationLimit", "max-specializations", "unsigned", "1000",
-              "Maximum number of concrete struct definitions">,
+      [Option<
+           "specializationLimit", "max-specializations", "unsigned", "1000",
+           "Maximum number of concrete struct and free-function definitions">,
        Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
               "Maximum steps shared by template expressions and methods in one "
               "discovery run">];
