@@ -13,7 +13,7 @@ var searchData=
   ['destructure_10',['destructure',['../classllzk_1_1array_1_1CreateArrayOp.html#aae1030958526bf817461c049881ff15f',1,'llzk::array::CreateArrayOp::destructure()'],['../classllzk_1_1pod_1_1NewPodOp.html#abffc915e5b76bb3db8868a91544a499e',1,'llzk::pod::NewPodOp::destructure()']]],
   ['difference_11',['difference',['../classllzk_1_1Interval.html#adf403ad8a32b3ce99f950f2db365f6ea',1,'llzk::Interval']]],
   ['diffjson_12',['diffJSON',['../namespacellzk_1_1witgen.html#a58835e5cae756c594d73168b6ee92c08',1,'llzk::witgen']]],
-  ['discover_13',['discover',['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a87d45f1df90ef1e405d4cf46112ddd92',1,'llzk::polymorphic::detail::StructSpecializationDiscovery']]],
+  ['discover_13',['discover',['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2',1,'llzk::polymorphic::detail::StructSpecializationDiscovery']]],
   ['div_14',['div',['../namespacellzk.html#a899c6e0f79352e9eadb489f1cf822dce',1,'llzk']]],
   ['divfeltopadaptor_15',['DivFeltOpAdaptor',['../classllzk_1_1felt_1_1DivFeltOpAdaptor.html#a8636c8d85ba7a4b938454cc868b87461',1,'llzk::felt::DivFeltOpAdaptor']]],
   ['divfeltopbuildfunchelper_16',['DivFeltOpBuildFuncHelper',['../structDivFeltOpBuildFuncHelper.html#a9651dab8910b6bfae21b999a63c240bf',1,'DivFeltOpBuildFuncHelper']]],
