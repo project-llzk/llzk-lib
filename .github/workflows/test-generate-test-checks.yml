@@ -1,0 +1,17 @@
+name: FileCheck generator tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/generate-test-checks.py'
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run unit tests
+        run: python3 -m unittest scripts/generate-test-checks.py -v
