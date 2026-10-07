@@ -1,5 +1,6 @@
 var NAVTREEINDEX76 =
 {
+"structllzk_1_1OpClassesWithStructTypes.html#a3e5def1e437afcb12c2a1dea7397cec6":[11,0,3,83,1],
 "structllzk_1_1OpClassesWithStructTypes.html#a3e5def1e437afcb12c2a1dea7397cec6":[13,0,1,79,1],
 "structllzk_1_1OpHash.html":[11,0,3,84],
 "structllzk_1_1OpHash.html":[13,0,1,80],
@@ -248,6 +249,5 @@ var NAVTREEINDEX76 =
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a16673202118efbf0bde522faa82e592e":[11,0,3,5,0,1,0,12],
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a16673202118efbf0bde522faa82e592e":[13,0,1,3,0,1,0,12],
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a1793f8c820e46e412e73734067c9c711":[11,0,3,5,0,1,0,13],
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a1793f8c820e46e412e73734067c9c711":[13,0,1,3,0,1,0,13],
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a20646904f704d03a723fda71c6051f42":[11,0,3,5,0,1,0,16]
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a1793f8c820e46e412e73734067c9c711":[13,0,1,3,0,1,0,13]
 };

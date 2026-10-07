@@ -74,6 +74,7 @@ var NAVTREEINDEX66 =
 "contribution-guide.html#commit-your-update":[5,1,2],
 "contribution-guide.html#contribution-philosophy":[5,0],
 "contribution-guide.html#create-a-new-issue":[5,1,0,0],
+"contribution-guide.html#generate-filecheck-directives":[5,1,1,0],
 "contribution-guide.html#getting-started":[5,1],
 "contribution-guide.html#issues":[5,1,0],
 "contribution-guide.html#make-changes":[5,1,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX66 =
 "dialects.html#parameters-5":[7,4,2,0,0],
 "dialects.html#parameters-6":[7,8,1,0,0],
 "dialects.html#parameters-7":[7,9,1,0,0],
-"dialects.html#parameters-8":[7,9,2,0,0],
-"dialects.html#parameters-9":[7,10,1,0,0]
+"dialects.html#parameters-8":[7,9,2,0,0]
 };

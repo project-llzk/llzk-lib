@@ -1,5 +1,6 @@
 var NAVTREEINDEX67 =
 {
+"dialects.html#parameters-9":[7,10,1,0,0],
 "dialects.html#pod-dialect":[7,9],
 "dialects.html#podnew-llzkpodnewpodop":[7,9,0,0],
 "dialects.html#podread-llzkpodreadpodop":[7,9,0,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX67 =
 "functions_b.html":[13,3,0,2],
 "functions_c.html":[13,3,0,3],
 "functions_d.html":[13,3,0,4],
-"functions_e.html":[13,3,0,5],
-"functions_enum.html":[13,3,4]
+"functions_e.html":[13,3,0,5]
 };

@@ -151,6 +151,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('contribution-g
       </li>
       <li class="level2">
         <a href="#make-changes">Make Changes </a>
+        <ul>
+          <li class="level3">
+            <a href="#generate-filecheck-directives">Generate FileCheck directives </a>
+          </li>
+        </ul>
       </li>
       <li class="level2">
         <a href="#commit-your-update">Commit your update </a>
@@ -219,6 +224,14 @@ Make Changes</h2>
 <li>Install or update LLZK development dependencies. For more information, see <a class="el" href="setup.html" title="Setup">the development guide</a></li>
 <li>Create a working branch and start with your changes!</li>
 </ol>
+<h3 class="doxsection"><a class="anchor" id="generate-filecheck-directives"></a>
+Generate FileCheck directives</h3>
+<p>The <span class="tt">scripts/generate-test-checks.py</span> utility generates heuristic FileCheck directives from printed MLIR or LLZK IR. Use it to bootstrap checks, then review them against the behavior the test is intended to cover:</p>
+<div class="fragment"><div class="line">llzk-opt input.llzk --canonicalize | scripts/generate-test-checks.py</div>
+</div><!-- fragment --><p>When <span class="tt">--<a class="el" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a></span> is provided, every line matching <span class="tt">--source_delim_regex</span> begins a source segment; the default pattern is <span class="tt">func @</span>, which does not match LLZK's <span class="tt">function.def</span> spelling. Choose an anchored pattern that matches the actual source segments. For split-input tests, use the split boundaries or generate from a temporary file containing only the relevant input chunks. Use <span class="tt">-i</span>/<span class="tt">--inplace</span> only after checking the generated output. In-place mode requires <span class="tt">--<a class="el" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a></span>, cannot be combined with <span class="tt">--output</span>, and refuses to modify a source whose supplied path or resolved target is in a dirty Git worktree, including untracked files. Use <span class="tt">--allow-dirty</span> only when updating generated directives in a dirty worktree is intentional. In-place output must contain one check block for each source segment; otherwise, the script exits without modifying the source. In-place mode writes the complete result to a temporary file beside the resolved source, copies its permission bits, and then replaces the resolved source file; a source symlink remains intact. In-place generation or replacement failures leave the source unchanged.</p>
+<p>Run the utility's unit tests with <span class="tt">python3 -m unittest scripts/generate-test-checks.py -v</span>.</p>
+<p>Repeated runs replace the generator's note. They replace recognized FileCheck directives only for the selected prefix and preserve unrelated source text and comments. The generated checks are not authoritative: verify that they cover the relevant behavior, and retain complete transformed output for transformation tests.</p>
+<p>The generator places checks before source segments and adds a generated notice. Before committing an LLZK test, remove the notice and its explanatory banner, keep <span class="tt">// RUN:</span> on the first line, and place each complete check block after its input and before the next <span class="tt">// -----</span> separator. Keep the generated indentation and SSA substitutions, with no blank lines or prose inside a check block. These layout adjustments must not omit any transformed output.</p>
 <h2 class="doxsection"><a class="anchor" id="commit-your-update"></a>
 Commit your update</h2>
 <p>Commit the changes once you are happy with them. Remember that all code must pass a format check before it can be merged, so consider running clang format before pushing your commits. For more information, see <a class="el" href="setup.html#dev-workflow" title="Development Workflow">the development workflow section</a>.</p>

@@ -1,5 +1,6 @@
 var NAVTREEINDEX68 =
 {
+"functions_enum.html":[13,3,4],
 "functions_f.html":[13,3,0,6],
 "functions_func.html":[13,3,1],
 "functions_func.html":[13,3,1,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX68 =
 "maintanence.html#release-version":[6,0,0],
 "maintanence.html#releasing-a-new-version":[6,1],
 "maintanence.html#tracking-a-new-version":[6,0],
-"md_doc_2doxygen_214__wtns__format.html":[9],
-"md_doc_2doxygen_214__wtns__format.html#file-schema":[9,0]
+"md_doc_2doxygen_214__wtns__format.html":[9]
 };

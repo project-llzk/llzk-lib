@@ -6,7 +6,9 @@ var contribution_guide =
         [ "Create a new issue", "contribution-guide.html#create-a-new-issue", null ],
         [ "Solve an issue", "contribution-guide.html#solve-an-issue", null ]
       ] ],
-      [ "Make Changes", "contribution-guide.html#make-changes", null ],
+      [ "Make Changes", "contribution-guide.html#make-changes", [
+        [ "Generate FileCheck directives", "contribution-guide.html#generate-filecheck-directives", null ]
+      ] ],
       [ "Commit your update", "contribution-guide.html#commit-your-update", null ],
       [ "Pull Request", "contribution-guide.html#pull-request", [
         [ "Best Practices Checklist", "contribution-guide.html#best-practices-checklist", null ],

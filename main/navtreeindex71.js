@@ -1,5 +1,6 @@
 var NAVTREEINDEX71 =
 {
+"namespacellzk_1_1affineMapHelpers.html#a18815dd9671e63a0ea343ae421627f95":[11,0,3,0,0],
 "namespacellzk_1_1affineMapHelpers.html#a299a5816669d07ae7e394a9d59cdc72a":[11,0,3,0,8],
 "namespacellzk_1_1affineMapHelpers.html#a2ad4eca18f96798a64e8f0a99d43adef":[11,0,3,0,15],
 "namespacellzk_1_1affineMapHelpers.html#a36f0ef5a44e338929f268a0af9b3d8f5":[11,0,3,0,13],
@@ -248,6 +249,5 @@ var NAVTREEINDEX71 =
 "namespacellzk_1_1polymorphic.html#aa2967e64982a04611c249dd98ce6a986":[11,0,3,17,42],
 "namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562":[11,0,3,17,38],
 "namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b":[11,0,3,17,31],
-"namespacellzk_1_1polymorphic.html#abad4e40d06d8eaa25861af6730fdcd0d":[11,0,3,17,52],
-"namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed":[11,0,3,17,37]
+"namespacellzk_1_1polymorphic.html#abad4e40d06d8eaa25861af6730fdcd0d":[11,0,3,17,52]
 };
