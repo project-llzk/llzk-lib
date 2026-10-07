@@ -1209,6 +1209,9 @@ TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackUnreducedIntervals) {
   );
 }
 
+// Equal intervals must hash identically even when their endpoints use different
+// DynamicAPInt representations (native integers versus 256-bit APInts). Cover
+// both unreduced and field intervals to preserve the equality/hash contract.
 TEST_F(IntervalTests, HashIgnoresIntegerRepresentation) {
   DynamicAPInt narrow(7), wide(llvm::APInt(256, 7));
   UnreducedInterval a(narrow, narrow + 1), b(wide, wide + 1);
