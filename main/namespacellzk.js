@@ -82,6 +82,7 @@ var namespacellzk =
     [ "IntervalAnalysisLatticeValue", "classllzk_1_1IntervalAnalysisLatticeValue.html", "classllzk_1_1IntervalAnalysisLatticeValue" ],
     [ "IntervalAnalysisPrinterPassOptions", "structllzk_1_1IntervalAnalysisPrinterPassOptions.html", "structllzk_1_1IntervalAnalysisPrinterPassOptions" ],
     [ "IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", "classllzk_1_1IntervalDataFlowAnalysis" ],
+    [ "KnownTargetVerifier", "classllzk_1_1KnownTargetVerifier.html", "classllzk_1_1KnownTargetVerifier" ],
     [ "LightweightSignalEquivalenceAnalysis", "classllzk_1_1LightweightSignalEquivalenceAnalysis.html", "classllzk_1_1LightweightSignalEquivalenceAnalysis" ],
     [ "LLZKCallLikeOpInterface", "classllzk_1_1LLZKCallLikeOpInterface.html", "classllzk_1_1LLZKCallLikeOpInterface" ],
     [ "LLZKDialect", "classllzk_1_1LLZKDialect.html", "classllzk_1_1LLZKDialect" ],

@@ -5,6 +5,7 @@ var dir_b9e6121c35254505209e91f4816784f6 =
     [ "CallLikeOpInterfaces.td", "CallLikeOpInterfaces_8td.html", null ],
     [ "DiscardableAllocationOpInterfaces.h", "DiscardableAllocationOpInterfaces_8h.html", "DiscardableAllocationOpInterfaces_8h" ],
     [ "DiscardableAllocationOpInterfaces.td", "DiscardableAllocationOpInterfaces_8td.html", null ],
+    [ "KnownTargetVerifier.h", "KnownTargetVerifier_8h.html", "KnownTargetVerifier_8h" ],
     [ "OpHelpers.h", "OpHelpers_8h.html", "OpHelpers_8h" ],
     [ "OpsBase.td", "OpsBase_8td.html", null ],
     [ "OpTraits.td", "Shared_2OpTraits_8td.html", null ],

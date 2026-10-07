@@ -1,5 +1,7 @@
 var NAVTREEINDEX10 =
 {
+"LightweightSignalEquivalenceAnalysis_8h_source.html":[14,0,2,0,0,12],
+"LowerBoolQuantifiersPass_8cpp.html":[14,0,3,3,1,1,0],
 "LowerBoolQuantifiersPass_8cpp.html#a3a5a3888c88a2035c890c1ebb75236a4":[14,0,3,3,1,1,0,1],
 "LowerBoolQuantifiersPass_8cpp_source.html":[14,0,3,3,1,1,0],
 "LoweringUtils_8h.html":[14,0,2,0,4,5],
@@ -20,14 +22,14 @@ var NAVTREEINDEX10 =
 "OpCAPIParamHelper_8h_source.html":[14,0,4,4,14],
 "OpCAPITestGen_8cpp.html":[14,0,4,4,15],
 "OpCAPITestGen_8cpp_source.html":[14,0,4,4,15],
-"OpHelpers_8h.html":[14,0,2,0,2,12,5],
-"OpHelpers_8h_source.html":[14,0,2,0,2,12,5],
+"OpHelpers_8h.html":[14,0,2,0,2,12,6],
+"OpHelpers_8h_source.html":[14,0,2,0,2,12,6],
 "OpTraits_8cpp.html":[14,0,3,3,5,0,2],
 "OpTraits_8cpp_source.html":[14,0,3,3,5,0,2],
 "OpTraits_8h.html":[14,0,2,0,2,5,0,6],
 "OpTraits_8h_source.html":[14,0,2,0,2,5,0,6],
-"OpsBase_8td.html":[14,0,2,0,2,12,6],
-"OpsBase_8td_source.html":[14,0,2,0,2,12,6],
+"OpsBase_8td.html":[14,0,2,0,2,12,7],
+"OpsBase_8td_source.html":[14,0,2,0,2,12,7],
 "PCL_8cpp.html":[14,0,3,2,1,0],
 "PCL_8cpp.html#a559ca595adacca42bcaac571ad2086b9":[14,0,3,2,1,0,0],
 "PCL_8cpp_source.html":[14,0,3,2,1,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX10 =
 "POD_2Transforms_2TransformationPasses_8capi_8h_8inc.html#ace3ee3b4f2a19be0f19540473d8b0bb7":[14,0,0,0,0,2,9,1,1,1],
 "POD_2Transforms_2TransformationPasses_8capi_8h_8inc_source.html":[14,0,0,0,0,2,9,1,1],
 "POD_2Transforms_2TransformationPasses_8h.html":[14,0,2,0,2,9,1,0],
-"POD_2Transforms_2TransformationPasses_8h.html#a197de990137bba19a1e0623808f75e5d":[14,0,2,0,2,9,1,0,1],
-"POD_2Transforms_2TransformationPasses_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede":[14,0,2,0,2,9,1,0,2],
-"POD_2Transforms_2TransformationPasses_8h.html#ab89199f50939908fa0581f7323f23e14":[14,0,2,0,2,9,1,0,0]
+"POD_2Transforms_2TransformationPasses_8h.html#a197de990137bba19a1e0623808f75e5d":[14,0,2,0,2,9,1,0,1]
 };

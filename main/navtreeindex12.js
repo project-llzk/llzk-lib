@@ -1,5 +1,7 @@
 var NAVTREEINDEX12 =
 {
+"Polymorphic_2IR_2Ops_8td.html":[14,0,2,0,2,10,0,4],
+"Polymorphic_2IR_2Ops_8td_source.html":[14,0,2,0,2,10,0,4],
 "Polymorphic_2IR_2Types_8capi_8cpp_8inc.html":[14,0,0,0,0,2,10,0,10],
 "Polymorphic_2IR_2Types_8capi_8cpp_8inc.html#a0251448163f77247452f046e21ba5eb6":[14,0,0,0,0,2,10,0,10,0],
 "Polymorphic_2IR_2Types_8capi_8cpp_8inc.html#a3f9ca2a6c0d48b1c0735c1bd208c0e9f":[14,0,0,0,0,2,10,0,10,2],
@@ -187,10 +189,10 @@ var NAVTREEINDEX12 =
 "SharedImpl_8h.html":[14,0,3,3,10,1,3],
 "SharedImpl_8h.html#ad78e062f62e0d6e453941fb4ca843e4d":[14,0,3,3,10,1,3,5],
 "SharedImpl_8h_source.html":[14,0,3,3,10,1,3],
-"Shared_2OpTraits_8td.html":[14,0,2,0,2,12,7],
-"Shared_2OpTraits_8td_source.html":[14,0,2,0,2,12,7],
-"Shared_2Types_8td.html":[14,0,2,0,2,12,8],
-"Shared_2Types_8td_source.html":[14,0,2,0,2,12,8],
+"Shared_2OpTraits_8td.html":[14,0,2,0,2,12,8],
+"Shared_2OpTraits_8td_source.html":[14,0,2,0,2,12,8],
+"Shared_2Types_8td.html":[14,0,2,0,2,12,9],
+"Shared_2Types_8td_source.html":[14,0,2,0,2,12,9],
 "SourceRefLattice_8cpp.html":[14,0,3,0,14],
 "SourceRefLattice_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d":[14,0,3,0,14,0],
 "SourceRefLattice_8cpp_source.html":[14,0,3,0,14],
@@ -247,7 +249,5 @@ var NAVTREEINDEX12 =
 "String_2IR_2Ops_8capi_8test_8cpp_8inc.html#a26e699207cda8e00abb292c45f6843ee":[14,0,0,0,0,2,14,0,5,4],
 "String_2IR_2Ops_8capi_8test_8cpp_8inc.html#a348cc97354cfdc86d8b6047fa1414a94":[14,0,0,0,0,2,14,0,5,2],
 "String_2IR_2Ops_8capi_8test_8cpp_8inc.html#af93d9b3e17bfd57b184c5c269a9380a4":[14,0,0,0,0,2,14,0,5,6],
-"String_2IR_2Ops_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,14,0,5],
-"String_2IR_2Ops_8cpp.html":[14,0,3,3,14,0,1],
-"String_2IR_2Ops_8cpp.html#a52c883a38e577b8b12282ff70c95a16d":[14,0,3,3,14,0,1,0]
+"String_2IR_2Ops_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,14,0,5]
 };

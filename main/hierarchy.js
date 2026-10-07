@@ -621,6 +621,7 @@ var hierarchy =
       [ "llzk::felt::InvFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1InvFeltOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::witgen::JSONMismatch", "structllzk_1_1witgen_1_1JSONMismatch.html", null ],
+    [ "llzk::KnownTargetVerifier&lt; OriginOp, TargetOp &gt;", "classllzk_1_1KnownTargetVerifier.html", null ],
     [ "llzk::polymorphic::detail::LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", [
       [ "llzk::polymorphic::detail::EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", null ]
     ] ],
