@@ -113,7 +113,10 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     even for untyped parameters. Mismatched felt types are diagnosed at
     `poly.read_const`.
     Reading it as index or i1 is diagnosed at `poly.read_const`; use an explicit
-    cast after a felt read for numeric conversion.
+    cast after a felt read for numeric conversion. Integer bindings read as i1
+    must be zero or one. Integer-to-felt reads use the same modular conversion
+    as typed arguments, and negative values require a known field modulus.
+    Reads whose type is a type variable use its concrete binding.
 
     Methods must be defined and single-block. Supported regions are `scf.if`,
     signed `scf.for` with known bounds and positive steps, and `scf.while` with

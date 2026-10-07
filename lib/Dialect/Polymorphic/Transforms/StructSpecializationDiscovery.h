@@ -19,9 +19,12 @@
 
 namespace llzk::polymorphic::detail {
 
-/// Reject a felt binding read with a different type. Unknown and other bindings
-/// are left unchanged. Read felt values with their exact type before conversion.
-mlir::LogicalResult verifyConstReadBindingType(ConstReadOp read, mlir::Attribute binding);
+/// Materialize a binding with the resolved read type for evaluation or cloning.
+/// Unknown bindings remain unknown. Felt bindings require an exact type match.
+/// Integer-to-i1 reads require zero or one; integer-to-felt reads reduce values
+/// with a known modulus and reject negative values without one.
+mlir::FailureOr<mlir::Attribute>
+resolveConstReadBinding(ConstReadOp read, mlir::Attribute binding, mlir::Type readType);
 
 /// A struct type that the caller must instantiate, paired with the source use
 /// that needs it. A call inside a loop can require Child<0>, Child<1>, etc. at

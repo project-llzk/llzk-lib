@@ -146,29 +146,3 @@ module attributes {test.scenario = "expressions", llzk.lang, llzk.main = !struct
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @Leaf::@Leaf, poly.specialization_id = 2 : i64}
 // CHECK-NEXT:  }
-
-// -----
-
-// A warning from a substituted constant keeps its severity and note when llzk.main requests it.
-// expected-note@+1 {{when instantiating 'struct.def' parameter "@A" for this specialization}}
-module attributes {llzk.lang, llzk.main = !struct.type<@Flag::@Flag<[2]>>, test.scenario = "delayed_warning"} {
-  poly.template @Flag {
-    poly.param @A
-    struct.def @Flag {
-      function.def @compute() -> !struct.type<@Flag::@Flag<[@A]>> {
-        %self = struct.new : !struct.type<@Flag::@Flag<[@A]>>
-        function.return %self : !struct.type<@Flag::@Flag<[@A]>>
-      }
-      function.def @constrain(%self: !struct.type<@Flag::@Flag<[@A]>>) {
-        // expected-warning@+1 {{Interpreting non-zero value 2 as true}}
-        %flag = poly.read_const @A : i1
-        function.return
-      }
-    }
-  }
-}
-
-// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Flag__spec_0>, test.scenario = "delayed_warning"} {
-// CHECK: struct.def @Flag__spec_0 {
-// CHECK: arith.constant true
-// CHECK: poly.arguments = [2 : index]

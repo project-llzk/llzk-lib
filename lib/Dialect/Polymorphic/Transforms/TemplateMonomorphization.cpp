@@ -12,13 +12,14 @@
 #include "TemplateInstantiation.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
-#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/Walk.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/AttrTypeSubElements.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/Interfaces/ControlFlowInterfaces.h>
@@ -324,8 +325,14 @@ class StructInstantiationWorklist {
       }
       bindings = std::move(*evaluated);
     }
-    auto reads = source.walk([&bindings](ConstReadOp read) -> WalkResult {
-      return verifyConstReadBindingType(read, bindings.lookup(read.getConstNameAttr()));
+    TemplateTypeConverter parameterConverter(bindings);
+    auto reads = source.walk([&bindings, &parameterConverter](ConstReadOp read) -> WalkResult {
+      return failed(resolveConstReadBinding(
+                 read, bindings.lookup(read.getConstNameAttr()),
+                 parameterConverter.convertType(read.getType())
+             ))
+                 ? WalkResult::interrupt()
+                 : WalkResult::advance();
     });
     if (reads.wasInterrupted()) {
       return failure();
@@ -339,7 +346,6 @@ class StructInstantiationWorklist {
     cloneToId[clone.getOperation()] = id;
     entries.push_back({source, clone, {}, remainingSteps});
     convertCalleesInPlace(clone, bindings);
-    TemplateTypeConverter parameterConverter(bindings);
     clone.walk([&parameterConverter](function::CallOp call) {
       if (auto parameters = call.getTemplateParamsAttr()) {
         SmallVector<Attribute> values;
@@ -362,6 +368,32 @@ class StructInstantiationWorklist {
       }
       );
       selfTypes.recursivelyReplaceElementsIn(clone, true, false, true);
+    }
+    // Materialize reads with the same conversions used by expression discovery.
+    auto constants = clone.walk([&bindings, &parameterConverter](ConstReadOp read) -> WalkResult {
+      auto value = resolveConstReadBinding(
+          read, bindings.lookup(read.getConstNameAttr()),
+          parameterConverter.convertType(read.getType())
+      );
+      if (failed(value)) {
+        return WalkResult::interrupt();
+      }
+      if (!*value) {
+        return WalkResult::advance();
+      }
+      OpBuilder builder(read);
+      Value constant;
+      if (auto felt = dyn_cast<FeltConstAttr>(*value)) {
+        constant = FeltConstantOp::create(builder, read.getLoc(), felt);
+      } else {
+        constant = arith::ConstantOp::create(builder, read.getLoc(), cast<TypedAttr>(*value));
+      }
+      read.replaceAllUsesWith(constant);
+      read.erase();
+      return WalkResult::advance();
+    });
+    if (constants.wasInterrupted()) {
+      return failure();
     }
     SmallVector<Diagnostic> diagnostics;
     if (failed(substituteStructBody(clone, source.getType(), bindings, diagnostics))) {

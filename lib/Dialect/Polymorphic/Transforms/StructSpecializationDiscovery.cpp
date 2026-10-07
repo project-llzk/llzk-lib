@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -519,21 +520,9 @@ class DiscoveryRun {
   /// Materialize a template binding in the scalar type requested by read_const.
   /// An absent binding stays unknown rather than supplying a default value.
   FailureOr<Attribute> evaluateConstRead(ConstReadOp read) {
-    Attribute value = bindings.lookup(read.getConstNameAttr());
-    if (failed(verifyConstReadBindingType(read, value))) {
-      return failure();
-    }
-    if (auto number = dyn_cast_or_null<IntegerAttr>(value)) {
-      if (auto type = dyn_cast<felt::FeltType>(read.getType())) {
-        value = felt::FeltConstAttr::get(read.getContext(), number.getValue(), type);
-      } else if (read.getType().isIndex() || isa<IntegerType>(read.getType())) {
-        unsigned width = read.getType().isIndex() ? 64 : read.getType().getIntOrFloatBitWidth();
-        auto bits = width == 1 ? APInt(1, !number.getValue().isZero())
-                               : number.getValue().sextOrTrunc(width);
-        value = IntegerAttr::get(read.getType(), bits);
-      }
-    }
-    return value;
+    return resolveConstReadBinding(
+        read, bindings.lookup(read.getConstNameAttr()), typeResolver.resolveType(read.getType())
+    );
   }
 
   /// Use existing arithmetic semantics when every operand is known. Unfoldable
@@ -729,18 +718,66 @@ public:
 
 } // namespace
 
-LogicalResult
-llzk::polymorphic::detail::verifyConstReadBindingType(ConstReadOp read, Attribute binding) {
-  if (auto constant = dyn_cast_if_present<felt::FeltConstAttr>(binding);
-      constant && constant.getType() != read.getType()) {
-    return read.emitError("cannot read felt template binding ")
-           << read.getConstNameAttr() << " of type " << constant.getType() << " as "
-           << read.getType()
-           << (isa<felt::FeltType>(read.getType())
-                   ? "; read the binding using its declared felt type"
-                   : "; use an explicit cast");
+FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
+    ConstReadOp read, Attribute binding, Type readType
+) {
+  if (!binding) {
+    return Attribute();
   }
-  return success();
+  if (auto constant = dyn_cast<felt::FeltConstAttr>(binding)) {
+    if (constant.getType() != readType) {
+      return read.emitError("cannot read felt template binding ")
+             << read.getConstNameAttr() << " of type " << constant.getType() << " as " << readType
+             << (isa<felt::FeltType>(readType) ? "; read the binding using its declared felt type"
+                                               : "; use an explicit cast");
+    }
+    if (constant.getType().hasField()) {
+      const Field &field = constant.getType().getField();
+      return Attribute(
+          felt::FeltConstAttr::get(
+              read.getContext(), toAPInt(field.reduce(constant.getValue()), field.bitWidth()),
+              constant.getType()
+          )
+      );
+    }
+    return binding;
+  }
+  if (auto integer = dyn_cast<IntegerAttr>(binding)) {
+    const APInt &number = integer.getValue();
+    if (auto type = dyn_cast<felt::FeltType>(readType)) {
+      // An i1's set bit represents one; index values have signed semantics.
+      auto value = integer.getType().isSignlessInteger(1)
+                       ? llvm::DynamicAPInt(number.getZExtValue())
+                       : llvm::DynamicAPInt(number);
+      if (type.hasField()) {
+        const Field &field = type.getField();
+        return Attribute(
+            felt::FeltConstAttr::get(
+                read.getContext(), toAPInt(field.reduce(value), field.bitWidth()), type
+            )
+        );
+      }
+      if (value < 0) {
+        return read.emitError("cannot read negative template binding ")
+               << read.getConstNameAttr() << " as felt without a known field modulus";
+      }
+      return Attribute(felt::FeltConstAttr::get(read.getContext(), number, type));
+    }
+    if (readType.isSignlessInteger(1)) {
+      if (!number.isZero() && !number.isOne()) {
+        return read.emitError("cannot read template binding ")
+               << read.getConstNameAttr() << " with value " << binding
+               << " as i1: expected zero or one; use an explicit cast";
+      }
+      return Attribute(IntegerAttr::get(readType, number.isOne() ? 1 : 0));
+    }
+    if (readType.isIndex()) {
+      auto bits = integer.getType().isSignlessInteger(1) ? number.zext(64) : number.sextOrTrunc(64);
+      return Attribute(IntegerAttr::get(readType, bits));
+    }
+  }
+  return read.emitError("cannot read template binding ")
+         << read.getConstNameAttr() << " with value " << binding << " as " << readType;
 }
 
 FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(

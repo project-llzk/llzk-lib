@@ -174,3 +174,74 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
     function.def @constrain(%s: !struct.type<@Main>) { function.return }
   }
 }
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_negative_unknown_field"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read negative template binding @N as felt without a known field modulus}}
+        %n = poly.read_const @N : !felt.type
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[-1]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "untyped_type_value_read"} {
+  poly.template @ChildTemplate {
+    poly.param @N
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        // expected-error@+1 {{cannot read template binding @N with value index as 'index'}}
+        %n = poly.read_const @N : index
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[index]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+
+// Reject non-boolean integer bindings at an untyped i1 read.
+module attributes {llzk.lang, llzk.main = !struct.type<@Flag::@Flag<[2]>>, test.scenario = "untyped_non_boolean_read"} {
+  poly.template @Flag {
+    poly.param @A
+    struct.def @Flag {
+      function.def @compute() -> !struct.type<@Flag::@Flag<[@A]>> {
+        %self = struct.new : !struct.type<@Flag::@Flag<[@A]>>
+        function.return %self : !struct.type<@Flag::@Flag<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@Flag::@Flag<[@A]>>) {
+        // expected-error@+1 {{cannot read template binding @A with value 2 : index as i1: expected zero or one; use an explicit cast}}
+        %flag = poly.read_const @A : i1
+        function.return
+      }
+    }
+  }
+}
