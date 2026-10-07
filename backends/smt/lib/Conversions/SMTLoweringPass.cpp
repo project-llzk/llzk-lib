@@ -1026,8 +1026,10 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
         if (isa<felt::FeltType>(type)) {
           productArgRanges.emplace_back(strategy.getScalarValueRange(arg));
           productArgArrayExtents.emplace_back(std::nullopt);
-        } else if (auto arrType = dyn_cast<array::ArrayType>(type);
-                   arrType && isa<felt::FeltType>(arrType.getElementType())) {
+        } else if (
+            auto arrType = dyn_cast<array::ArrayType>(type);
+            arrType && isa<felt::FeltType>(arrType.getElementType())
+        ) {
           auto extents = getExtents(arrType);
           if (failed(extents)) {
             productFunc.emitError(
