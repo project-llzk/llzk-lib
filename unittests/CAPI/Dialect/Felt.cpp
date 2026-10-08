@@ -221,6 +221,21 @@ TEST_F(CAPITest, FeltPartsConstructorsAcceptEmptyAndLeadingZeroParts) {
   );
 }
 
+TEST_F(CAPITest, FieldSpecPartsConstructorRejectsModuliBelowTwo) {
+  auto name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("custom"));
+  EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, nullptr, 0).ptr, nullptr);
+  for (uint64_t value : {0, 1}) {
+    const uint64_t parts[] = {value, 0};
+    for (intptr_t count : {1, 2}) {
+      EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, count).ptr, nullptr);
+    }
+  }
+  const uint64_t parts[] = {2, 0};
+  auto attr = llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, 2);
+  ASSERT_NE(attr.ptr, nullptr);
+  EXPECT_EQ(llvm::cast<llzk::felt::FieldSpecAttr>(unwrap(attr)).getPrime(), 2);
+}
+
 TEST_F(CAPITest, FieldSpecConstructors) {
   auto name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("custom"));
   // A 127-bit prime exercises multiple limbs.
