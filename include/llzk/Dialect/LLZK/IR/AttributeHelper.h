@@ -66,14 +66,27 @@ inline mlir::FailureOr<APIntValue> parseAPIntValue(mlir::AsmParser &parser) {
 }
 
 /// Attribute storage adapter providing numeric hashing for DynamicAPInt.
-/// Public accessors expose the integer directly; the adapter owns its value.
+///
+/// This is meant as a thin adaptor for storing DynamicAPInt in attribute storage generated
+/// by tablegen. It should not generally be used outside of attribute storage contexts.
+/// Public accessors on the attribute expose the underlying value directly rather than
+/// exposing this wrapper.
 class DynamicAPIntValue {
 public:
   DynamicAPIntValue(const llvm::DynamicAPInt &integer) : value(integer) {}
+
+  /// Borrow the owned integer.
+  ///
+  /// The returned reference must not outlive this wrapper. For the expected use case of
+  /// wrappers held in attribute storage, its lifetime is that of the owning MLIRContext
+  /// so this borrow is safe. References obtained from temporary instances of this wrapper
+  /// must not be held beyond the full expression that creates the wrapper.
   operator const llvm::DynamicAPInt &() const { return value; }
+
   friend bool operator==(const DynamicAPIntValue &a, const DynamicAPIntValue &b) {
     return a.value == b.value;
   }
+
   friend llvm::hash_code hash_value(const DynamicAPIntValue &key) {
     return hashDynamicAPInt(key.value);
   }
