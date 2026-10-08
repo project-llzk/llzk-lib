@@ -106,6 +106,7 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromString(
 
 /// Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing
 /// the prime. All bits are interpreted unsigned. An empty array represents zero.
+/// Moduli below two produce a diagnostic and a null attribute.
 ///
 /// Requirements:
 /// `nParts` must be non-negative and `parts` must be non-null when `nParts` is positive.

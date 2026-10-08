@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
@@ -99,7 +100,12 @@ MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
 ) {
   assert(nParts >= 0 && "part count must be non-negative");
   assert((parts || nParts == 0) && "non-empty parts must not be null");
-  return wrap(FieldSpecAttr::get(unwrap(ctx), unwrap(fieldName), llvm::ArrayRef(parts, nParts)));
+  return wrap(
+      FieldSpecAttr::getChecked(
+          UnknownLoc::get(unwrap(ctx)), unwrap(ctx), unwrap(fieldName),
+          toDynamicAPInt(llvm::ArrayRef(parts, nParts))
+      )
+  );
 }
 
 MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx) {
