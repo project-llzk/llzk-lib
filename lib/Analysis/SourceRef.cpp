@@ -92,6 +92,15 @@ compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceR
 
 /* SourceRefIndex */
 
+SourceRefIndex SourceRefIndex::forArrayDimension(int64_t size) {
+  assert((size >= 0 || ShapedType::isDynamic(size)) && "invalid array dimension");
+  return SourceRefIndex(llvm::DynamicAPInt(0), llvm::DynamicAPInt(size));
+}
+
+bool SourceRefIndex::hasUnboundedUpperBound() const {
+  return isIndexRange() && getIndexRange().second == ShapedType::kDynamic;
+}
+
 void SourceRefIndex::print(raw_ostream &os) const {
   if (isMember()) {
     os << '@' << getMember().getName();
@@ -101,7 +110,7 @@ void SourceRefIndex::print(raw_ostream &os) const {
     os << getIndex();
   } else {
     auto [low, high] = getIndexRange();
-    if (ShapedType::isDynamic(int64_t(high))) {
+    if (hasUnboundedUpperBound()) {
       os << "<dynamic>";
     } else {
       os << low << ':' << high;
@@ -168,7 +177,7 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
 bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
   if (isIndex() && rhs.isIndexRange()) {
     auto [low, high] = rhs.getIndexRange();
-    return low <= getIndex() && getIndex() < high;
+    return low <= getIndex() && (rhs.hasUnboundedUpperBound() || getIndex() < high);
   }
   if (isIndexRange() && rhs.isIndex()) {
     return rhs.overlaps(*this);
@@ -176,7 +185,12 @@ bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
   if (isIndexRange() && rhs.isIndexRange()) {
     auto [lhsLow, lhsHigh] = getIndexRange();
     auto [rhsLow, rhsHigh] = rhs.getIndexRange();
-    return lhsLow < rhsHigh && rhsLow < lhsHigh;
+    if ((!hasUnboundedUpperBound() && lhsLow >= lhsHigh) ||
+        (!rhs.hasUnboundedUpperBound() && rhsLow >= rhsHigh)) {
+      return false;
+    }
+    return (rhs.hasUnboundedUpperBound() || lhsLow < rhsHigh) &&
+           (hasUnboundedUpperBound() || rhsLow < lhsHigh);
   }
   return *this == rhs;
 }

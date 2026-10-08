@@ -10,8 +10,10 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Analysis/SourceRefLattice.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
@@ -63,6 +65,99 @@ TEST_F(SourceRefTests, IndexHalfOpenOverlap) {
   EXPECT_FALSE(range.overlaps(SourceRefIndex(5)));
   EXPECT_TRUE(range.overlaps(overlappingRange));
   EXPECT_FALSE(range.overlaps(adjacentRange));
+}
+
+// Dynamic dimension bounds select every nonnegative index, including values
+// beyond the old unsigned 64-bit sentinel, without changing finite ranges.
+TEST_F(SourceRefTests, DynamicDimensionOverlap) {
+  auto dynamic = SourceRefIndex::forArrayDimension(ShapedType::kDynamic);
+  auto finite = SourceRefIndex::forArrayDimension(5);
+  auto empty = SourceRefIndex::forArrayDimension(0);
+  SourceRefIndex huge(toDynamicAPInt("18446744073709551616"));
+
+  EXPECT_TRUE(dynamic.hasUnboundedUpperBound());
+  EXPECT_EQ(buildStringViaPrint(dynamic), "<dynamic>");
+  EXPECT_TRUE(dynamic.overlaps(dynamic));
+  EXPECT_TRUE(dynamic.overlaps(SourceRefIndex(0)));
+  EXPECT_TRUE(dynamic.overlaps(huge));
+  EXPECT_TRUE(huge.overlaps(dynamic));
+  EXPECT_FALSE(dynamic.overlaps(SourceRefIndex(-1)));
+  EXPECT_TRUE(dynamic.overlaps(finite));
+  EXPECT_TRUE(finite.overlaps(dynamic));
+  EXPECT_FALSE(dynamic.overlaps(empty));
+  EXPECT_FALSE(empty.overlaps(dynamic));
+  EXPECT_FALSE(finite.overlaps(SourceRefIndex(5)));
+
+  SourceRefIndex tail(llvm::DynamicAPInt(5), llvm::DynamicAPInt(ShapedType::kDynamic));
+  EXPECT_FALSE(tail.overlaps(finite));
+  EXPECT_FALSE(finite.overlaps(tail));
+  EXPECT_TRUE(tail.overlaps(dynamic));
+}
+
+// Exercise the three analysis paths that construct fallback access ranges:
+// source-reference reads, source-reference write targets, and interval writes.
+TEST_F(SourceRefTests, SymbolicArrayAccessesRetainOverlappingReferences) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    function.def @access(%array: !array.type<@N x !felt.type>, %i: index, %value: !felt.type)
+        -> !felt.type attributes {function.allow_witness} {
+      array.write %array[%i] = %value : <@N x !felt.type>, !felt.type
+      %read = array.read %array[%i] : <@N x !felt.type>, !felt.type
+      function.return %read : !felt.type
+    }
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  array::ReadArrayOp read;
+  array::WriteArrayOp write;
+  mod->walk([&](array::ReadArrayOp op) { read = op; });
+  mod->walk([&](array::WriteArrayOp op) { write = op; });
+  ASSERT_TRUE(read);
+  ASSERT_TRUE(write);
+
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  ASSERT_TRUE(succeeded(llzk::dataflow::loadAndRunRequiredAnalyses(solver, *mod)));
+  solver.load<SourceRefAnalysis>();
+  auto *intervals =
+      solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool, bool>(
+          llvm::CreateZ3Solver(), Field::getField("babybear"), false, false
+      );
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+
+  SourceRef element(llvm::cast<BlockArgument>(read.getArrRef()), {SourceRefIndex(0)});
+  auto readState = SourceRefAnalysis::getValueState(solver, read.getResult());
+  ASSERT_TRUE(readState.isSingleValue());
+  EXPECT_TRUE(readState.getSingleValue().overlaps(element));
+  auto writeState = SourceRefAnalysis::getWriteTargetState(solver, write);
+  ASSERT_TRUE(succeeded(writeState));
+  ASSERT_TRUE(writeState->isSingleValue());
+  EXPECT_TRUE(writeState->getSingleValue().overlaps(element));
+  EXPECT_TRUE(writeState->getSingleValue().overlaps(readState.getSingleValue()));
+
+  const auto &writes = intervals->getWriteResults();
+  ASSERT_EQ(writes.size(), 1);
+  EXPECT_TRUE(writes.begin()->first.overlaps(element));
+  EXPECT_TRUE(writes.begin()->first.overlaps(readState.getSingleValue()));
+}
+
+TEST_F(SourceRefTests, UnboundedRangesSelectMaterializedArrayElements) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  SourceRef root(llvm::cast<OpResult>(structDef.getComputeFuncOp().getSelfValueFromCompute()));
+  SourceRefLatticeValue array(llvm::ArrayRef<int64_t>({3}));
+  auto dynamic = SourceRefIndex::forArrayDimension(ShapedType::kDynamic);
+  EXPECT_EQ(array.write({dynamic}, SourceRefLatticeValue(root)), ChangeResult::Change);
+  for (int64_t i = 0; i < 3; ++i) {
+    EXPECT_TRUE(array.getElemFlatIdx(i).getScalarValue().contains(root));
+  }
+  auto extracted = array.extract({dynamic});
+  ASSERT_TRUE(succeeded(extracted));
+  EXPECT_TRUE(extracted->first.getScalarValue().contains(root));
 }
 
 TEST_F(SourceRefTests, MemberOrderingUsesNamesToBreakEqualLocations) {
