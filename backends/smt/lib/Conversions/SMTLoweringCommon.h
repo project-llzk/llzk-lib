@@ -41,6 +41,8 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringMap.h>
 
+#include <memory>
+#include <optional>
 #include <utility>
 
 namespace llzk::smt::detail {
@@ -133,6 +135,11 @@ public:
       mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name
   ) const override;
 
+  /// Declare a fresh SMT array with the requested type.
+  mlir::Value emitFreshArray(
+      mlir::OpBuilder &builder, mlir::Location loc, mlir::StringRef name, mlir::smt::ArrayType type
+  ) const;
+
   mlir::Value emitConstant(
       mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
   ) const override;
@@ -172,9 +179,18 @@ public:
       mlir::Value lhs, mlir::Value rhs
   ) const override;
 
-  // arr[i, j, k] => (select (select (select arr i) j) k)
+  /// Lower `arr[i, j, k]` to nested SMT array selections.
   mlir::Value emitArraySelect(
       mlir::Location loc, mlir::Value array, mlir::ValueRange indices, mlir::OpBuilder &builder
+  );
+
+  /// Functionally update a nested SMT array at the given rank-N index.
+  ///
+  /// The leaf is updated first, then each containing array is rebuilt with an
+  /// inside-out sequence of `smt.array.store` operations.
+  mlir::Value emitArrayStore(
+      mlir::Location loc, mlir::Value array, mlir::ValueRange indices, mlir::Value value,
+      mlir::OpBuilder &builder
   );
 
   // forall x, inbounds(x, arr) => phi(x)
@@ -213,6 +229,66 @@ enum class ArrayWriteMode : std::uint8_t {
 using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mlir::Value>>;
 using ArrayWritePolicy = std::function<ArrayWriteMode(mlir::Value)>;
 
+/// The canonical identity and initial value of one overwrite-enabled array.
+///
+/// The key is an SSA value for local allocations today. Keeping it behind the
+/// resolver boundary allows a future policy to use a canonical member/storage
+/// identity instead of treating each member-read SSA result as distinct state.
+struct ArrayStateRoot {
+  mlir::Value key;
+  mlir::Value initialValue;
+  mlir::Location diagnosticLoc;
+  mlir::Block *stateBlock;
+};
+
+/// The policy-selected semantics and optional mutable state root for an array.
+struct ResolvedArraySemantics {
+  ArrayWriteMode mode;
+  std::optional<ArrayStateRoot> overwriteRoot;
+};
+
+/// Resolves array provenance into write semantics and a logical state root.
+class ArraySemanticsResolver {
+  ArrayWritePolicy policy;
+
+public:
+  explicit ArraySemanticsResolver(ArrayWritePolicy writePolicy) : policy(std::move(writePolicy)) {}
+
+  mlir::FailureOr<ResolvedArraySemantics> resolve(mlir::Value array) const;
+};
+
+/// Prevalidated straight-line lowering state shared by array access patterns.
+///
+/// The state groups accesses by their resolver-provided logical identity and
+/// records them by walking blocks in source order. It deliberately does not use
+/// SSA use-list order or conversion-pattern visitation order. Each overwrite
+/// chain is lowered as a single rewrite transaction, while write-once accesses
+/// continue through the existing assertion-based path.
+class ArrayLoweringState {
+  struct Record {
+    ArrayStateRoot root;
+    llvm::SmallVector<mlir::Operation *> accesses;
+    bool processed = false;
+  };
+
+  llvm::SmallVector<Record> records;
+  llvm::DenseMap<mlir::Value, unsigned> recordByKey;
+  llvm::DenseMap<mlir::Operation *, unsigned> overwriteAccesses;
+
+  mlir::LogicalResult initialize(mlir::Operation *scope, const ArraySemanticsResolver &resolver);
+
+public:
+  static mlir::FailureOr<std::unique_ptr<ArrayLoweringState>>
+  create(mlir::Operation *scope, const ArraySemanticsResolver &resolver);
+
+  bool isOverwriteAccess(mlir::Operation *access) const;
+
+  mlir::LogicalResult lowerOverwriteChain(
+      mlir::Operation *trigger, mlir::ConversionPatternRewriter &rewriter,
+      SMTIntTheoryEmitter &emitter
+  );
+};
+
 mlir::FailureOr<FieldRef> resolveSelectedField(mlir::ModuleOp mod, llvm::StringRef fieldName);
 
 class LLZKToSMTTypeConverter : public mlir::TypeConverter {
@@ -225,6 +301,9 @@ bool containsFeltOrStruct(mlir::Type type);
 mlir::Operation *convertStructProductToFunc(mlir::Operation *op, mlir::MLIRContext *context);
 
 void configureSMTNoCFBodyConversionTarget(mlir::ConversionTarget &target);
+
+/// Add optimized-only legality requirements for local array lowering.
+void configureSMTOverwriteArrayConversionTarget(mlir::ConversionTarget &target);
 
 mlir::Operation *applySMTNoCFBodyConversion(
     mlir::Operation *op, mlir::ConversionTarget &target, mlir::RewritePatternSet &&patterns
@@ -341,15 +420,45 @@ public:
   ) const override;
 };
 
+/// Convert a fresh LLZK allocation to a uniquely named functional SMT array.
+class CreateArrayConverter : public mlir::OpConversionPattern<array::CreateArrayOp> {
+  using mlir::OpConversionPattern<array::CreateArrayOp>::OpConversionPattern;
+
+  SMTIntTheoryEmitter *emitter;
+
+public:
+  CreateArrayConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+  );
+  mlir::LogicalResult matchAndRewrite(
+      array::CreateArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
+/// Fold a statically known LLZK array dimension to an SMT integer constant.
+class ArrayLengthConverter : public mlir::OpConversionPattern<array::ArrayLengthOp> {
+  using mlir::OpConversionPattern<array::ArrayLengthOp>::OpConversionPattern;
+
+  SMTIntTheoryEmitter *emitter;
+
+public:
+  ArrayLengthConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+  );
+  mlir::LogicalResult matchAndRewrite(
+      array::ArrayLengthOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
 class WriteArrayConverter : public mlir::OpConversionPattern<array::WriteArrayOp> {
   using mlir::OpConversionPattern<array::WriteArrayOp>::OpConversionPattern;
 
-  ArrayWritePolicy policy;
+  ArrayLoweringState *state;
   SMTIntTheoryEmitter *emitter;
 
 public:
   WriteArrayConverter(
-      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy policy,
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayLoweringState *state,
       SMTIntTheoryEmitter *emitter
   );
 
@@ -361,11 +470,13 @@ public:
 class ReadArrayConverter : public mlir::OpConversionPattern<array::ReadArrayOp> {
   using mlir::OpConversionPattern<array::ReadArrayOp>::OpConversionPattern;
 
+  ArrayLoweringState *state;
   SMTIntTheoryEmitter *emitter;
 
 public:
   ReadArrayConverter(
-      mlir::TypeConverter &converter, mlir::MLIRContext *context, SMTIntTheoryEmitter *emitter
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayLoweringState *state,
+      SMTIntTheoryEmitter *emitter
   );
   mlir::LogicalResult matchAndRewrite(
       array::ReadArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
