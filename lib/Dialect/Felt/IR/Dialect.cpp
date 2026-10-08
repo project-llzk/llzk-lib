@@ -74,14 +74,19 @@ struct FeltDialectBytecodeInterface
         return {};
       }
 
-      if (*prime < 2) {
-        reader.emitError("field modulus must be at least 2");
-        return {};
+      // Create the FieldSpecAttr with verification.
+      auto fieldSpec = llzk::felt::FieldSpecAttr::getChecked([&reader]() {
+        return reader.emitError();
+      }, getContext(), fieldName, *prime);
+
+      // Cache the verified field, reporting an error if there's a conflict.
+      if (fieldSpec) {
+        llzk::Field::addField(fieldName.getValue(), *prime, [&reader]() {
+          return llzk::InFlightDiagnosticWrapper(reader.emitError());
+        });
       }
-      llzk::Field::addField(fieldName.getValue(), *prime, [&reader]() {
-        return llzk::InFlightDiagnosticWrapper(reader.emitError());
-      });
-      return llzk::felt::FieldSpecAttr::get(getContext(), fieldName, *prime);
+
+      return fieldSpec;
     }
     }
 
@@ -158,21 +163,19 @@ Attribute FieldSpecAttr::parse(AsmParser &odsParser, Type) {
   assert(succeeded(fieldNameAttrRes));
   assert(succeeded(primeRes));
 
-  // Custom logic: cache the field, reporting an error if there's a conflict
-  auto errFn = [&odsParser]() {
-    return InFlightDiagnosticWrapper(odsParser.emitError(odsParser.getCurrentLocation()));
-  };
-  const auto &prime = static_cast<const llvm::DynamicAPInt &>(*primeRes);
-  if (prime < 2) {
-    odsParser.emitError(odsLoc, "field modulus must be at least 2");
-    return {};
-  }
-  Field::addField(fieldNameAttrRes.value(), prime, errFn);
+  // Create the FieldSpecAttr with verification.
+  const llvm::DynamicAPInt &prime = *primeRes;
+  auto fieldSpec =
+      odsParser.getChecked<FieldSpecAttr>(odsLoc, odsParser.getContext(), *fieldNameAttrRes, prime);
 
-  return odsParser.getChecked<FieldSpecAttr>(
-      odsLoc, odsParser.getContext(), StringAttr(*fieldNameAttrRes),
-      static_cast<const llvm::DynamicAPInt &>(*primeRes)
-  );
+  // Cache the verified field, reporting an error if there's a conflict.
+  if (fieldSpec) {
+    Field::addField(fieldNameAttrRes.value(), prime, [&odsParser]() {
+      return InFlightDiagnosticWrapper(odsParser.emitError(odsParser.getCurrentLocation()));
+    });
+  }
+
+  return fieldSpec;
 }
 
 void FieldSpecAttr::print(AsmPrinter &odsPrinter) const {

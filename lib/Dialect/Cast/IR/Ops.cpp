@@ -113,8 +113,7 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
     // Only materialize nonnegative values representable by the index builder.
     auto converted = checkedToInt64(value);
     if (!converted) {
-      llvm::consumeError(converted.takeError());
-      return failure();
+      return rewriter.notifyMatchFailure(op, llvm::toString(converted.takeError()));
     }
     if (*converted >= 0) {
       rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, *converted);
