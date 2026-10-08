@@ -1,0 +1,65 @@
+// RUN: llzk-opt %s --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.llzk-layout
+// RUN: llzk-translate %s --llzk-generate-layout -o %t.generated.layout
+// RUN: FileCheck %s --match-full-lines < %t.generated.layout
+// RUN: FileCheck %s --match-full-lines < %t.llzk-layout
+// RUN: llzk-opt %s --llzk-monomorphize-templates --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.again.llzk-layout
+// RUN: diff %t.llzk-layout %t.again.llzk-layout
+// RUN: llzk-opt %s --llzk-monomorphize-templates -o %t.monomorphized.llzk
+// RUN: llzk-translate --llzk-layout %t.monomorphized.llzk -o %t.roundtrip.llzk-layout
+// RUN: diff %t.llzk-layout %t.roundtrip.llzk-layout
+// Signal IDs follow declaration order, expanding each field before the next.
+
+module @Top attributes {llzk.lang, llzk.main = !struct.type<@TMain::@Main<[2]>>} {
+  struct.def @Child {
+    struct.member @temporary : !felt.type
+    struct.member @publicTemporary : !felt.type {llzk.pub}
+    struct.member @zout : !felt.type {signal}
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@Child> {
+      %self = struct.new : <@Child>
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>) {
+      function.return
+    }
+  }
+  poly.template @TMain {
+    poly.param @N : index
+    struct.def @Main {
+      struct.member @temporary : !array.type<3 x !felt.type>
+      struct.member @z : !felt.type {signal}
+      struct.member @children : !array.type<@N x !struct.type<@Child>>
+      struct.member @pod : !pod.type<[@zeta: !felt.type, @nested: !array.type<2 x !felt.type>]> {signal}
+      function.def @compute(%input: !array.type<11 x !felt.type>) -> !struct.type<@TMain::@Main<[@N]>> {
+        %self = struct.new : <@TMain::@Main<[@N]>>
+        function.return %self : !struct.type<@TMain::@Main<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMain::@Main<[@N]>>, %input: !array.type<11 x !felt.type> {function.arg_name = "input"}) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: # LLZK layout map v1
+// CHECK-NEXT:  # signals
+// CHECK-NEXT:  signal 0	arg["input"][0]
+// CHECK-NEXT:  signal 1	arg["input"][1]
+// CHECK-NEXT:  signal 2	arg["input"][2]
+// CHECK-NEXT:  signal 3	arg["input"][3]
+// CHECK-NEXT:  signal 4	arg["input"][4]
+// CHECK-NEXT:  signal 5	arg["input"][5]
+// CHECK-NEXT:  signal 6	arg["input"][6]
+// CHECK-NEXT:  signal 7	arg["input"][7]
+// CHECK-NEXT:  signal 8	arg["input"][8]
+// CHECK-NEXT:  signal 9	arg["input"][9]
+// CHECK-NEXT:  signal 10	arg["input"][10]
+// CHECK-NEXT:  signal 11	main["z"]
+// CHECK-NEXT:  signal 12	main["children"][0]["zout"]
+// CHECK-NEXT:  signal 13	main["children"][0]["out"]
+// CHECK-NEXT:  signal 14	main["children"][1]["zout"]
+// CHECK-NEXT:  signal 15	main["children"][1]["out"]
+// CHECK-NEXT:  signal 16	main["pod"]["zeta"]
+// CHECK-NEXT:  signal 17	main["pod"]["nested"][0]
+// CHECK-NEXT:  signal 18	main["pod"]["nested"][1]
+// CHECK-NOT: {{.}}

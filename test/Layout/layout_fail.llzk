@@ -1,0 +1,18 @@
+// RUN: not llzk-translate --llzk-layout %s 2> %t.error
+// RUN: FileCheck %s < %t.error
+// Export does not instantiate templates or guess unresolved dimensions.
+// CHECK: error: LLZK layout requires a monomorphized llzk.main
+
+module attributes {llzk.lang, llzk.main = !struct.type<@TMain::@Main<[2]>>} {
+  poly.template @TMain {
+    poly.param @N : index
+    struct.def @Main {
+      struct.member @values : !array.type<@N x !felt.type>
+      function.def @compute() -> !struct.type<@TMain::@Main<[@N]>> {
+        %self = struct.new : <@TMain::@Main<[@N]>>
+        function.return %self : !struct.type<@TMain::@Main<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMain::@Main<[@N]>>) { function.return }
+    }
+  }
+}

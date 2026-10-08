@@ -1,0 +1,34 @@
+// RUN: not llzk-translate %s --llzk-layout 2> %t.error
+// RUN: FileCheck %s < %t.error
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @out : !felt.type {signal}
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @ConcreteChild {
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@ConcreteChild> {
+      %self = struct.new : <@ConcreteChild>
+      function.return %self : !struct.type<@ConcreteChild>
+    }
+    function.def @constrain(%self: !struct.type<@ConcreteChild>) { function.return }
+  } {poly.specialization_id = 1 : i64, poly.origin = @Child::@Child, poly.arguments = [0 : index]}
+  struct.def @Main {
+    struct.member @items : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {poly.family = [{indices = [0 : index], specialization = "bad", type = !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>}]}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: error: invalid poly.family entry for LLZK layout

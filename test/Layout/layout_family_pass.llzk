@@ -1,0 +1,97 @@
+// RUN: llzk-translate %s --llzk-generate-layout -o %t.generated.layout
+// RUN: FileCheck %s --match-full-lines < %t.generated.layout
+// RUN: llzk-opt %s --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.layout
+// RUN: FileCheck %s --match-full-lines < %t.layout
+// RUN: llzk-opt %s --llzk-monomorphize-templates --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.again.layout
+// RUN: diff %t.layout %t.again.layout
+// Rolled POD fields select separate family elements by type and numeric indices.
+// All signals are unused here, but every declared signal must still receive an ID.
+
+module @Top attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  module @Helpers {
+    poly.template @Child {
+      poly.param @N : index
+      struct.def @Child {
+        struct.member @temporary : !felt.type
+        struct.member @values : !array.type<@N x !felt.type> {signal}
+        function.def @compute() -> !struct.type<@Helpers::@Child::@Child<[@N]>> {
+          %self = struct.new : <@Helpers::@Child::@Child<[@N]>>
+          function.return %self : !struct.type<@Helpers::@Child::@Child<[@N]>>
+        }
+        function.def @constrain(%self: !struct.type<@Helpers::@Child::@Child<[@N]>>) { function.return }
+      }
+    }
+    struct.def @Fixed {
+      struct.member @out : !felt.type {signal}
+      function.def @compute() -> !struct.type<@Helpers::@Fixed> {
+        %self = struct.new : <@Helpers::@Fixed>
+        function.return %self : !struct.type<@Helpers::@Fixed>
+      }
+      function.def @constrain(%self: !struct.type<@Helpers::@Fixed>) { function.return }
+    }
+  }
+  struct.def @Main {
+    struct.member @unused : !felt.type {llzk.pub}
+    struct.member @pods : !array.type<2,3 x !pod.type<[@temporary: !felt.type, @a: !struct.type<@Helpers::@Child::@Child<[affine_map<(i,j) -> (i * 3 + j + 1)>]>>, @b: !struct.type<@Helpers::@Child::@Child<[affine_map<(i,j) -> (i + j + 2)>]>>, @fixed: !struct.type<@Helpers::@Fixed>]>>
+    struct.member @empty : !array.type<0 x !struct.type<@Helpers::@Child::@Child<[affine_map<(i) -> (i)>]>>>
+    function.def @compute(%input: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type) { function.return }
+  }
+}
+
+// CHECK-LABEL: # LLZK layout map v1
+// CHECK-NEXT:  # signals
+// CHECK-NEXT:  signal 0	arg1
+// CHECK-NEXT:  signal 1	main["unused"]
+// CHECK-NEXT:  signal 2	main["pods"][0][0]["a"]["values"][0]
+// CHECK-NEXT:  signal 3	main["pods"][0][0]["b"]["values"][0]
+// CHECK-NEXT:  signal 4	main["pods"][0][0]["b"]["values"][1]
+// CHECK-NEXT:  signal 5	main["pods"][0][0]["fixed"]["out"]
+// CHECK-NEXT:  signal 6	main["pods"][0][1]["a"]["values"][0]
+// CHECK-NEXT:  signal 7	main["pods"][0][1]["a"]["values"][1]
+// CHECK-NEXT:  signal 8	main["pods"][0][1]["b"]["values"][0]
+// CHECK-NEXT:  signal 9	main["pods"][0][1]["b"]["values"][1]
+// CHECK-NEXT:  signal 10	main["pods"][0][1]["b"]["values"][2]
+// CHECK-NEXT:  signal 11	main["pods"][0][1]["fixed"]["out"]
+// CHECK-NEXT:  signal 12	main["pods"][0][2]["a"]["values"][0]
+// CHECK-NEXT:  signal 13	main["pods"][0][2]["a"]["values"][1]
+// CHECK-NEXT:  signal 14	main["pods"][0][2]["a"]["values"][2]
+// CHECK-NEXT:  signal 15	main["pods"][0][2]["b"]["values"][0]
+// CHECK-NEXT:  signal 16	main["pods"][0][2]["b"]["values"][1]
+// CHECK-NEXT:  signal 17	main["pods"][0][2]["b"]["values"][2]
+// CHECK-NEXT:  signal 18	main["pods"][0][2]["b"]["values"][3]
+// CHECK-NEXT:  signal 19	main["pods"][0][2]["fixed"]["out"]
+// CHECK-NEXT:  signal 20	main["pods"][1][0]["a"]["values"][0]
+// CHECK-NEXT:  signal 21	main["pods"][1][0]["a"]["values"][1]
+// CHECK-NEXT:  signal 22	main["pods"][1][0]["a"]["values"][2]
+// CHECK-NEXT:  signal 23	main["pods"][1][0]["a"]["values"][3]
+// CHECK-NEXT:  signal 24	main["pods"][1][0]["b"]["values"][0]
+// CHECK-NEXT:  signal 25	main["pods"][1][0]["b"]["values"][1]
+// CHECK-NEXT:  signal 26	main["pods"][1][0]["b"]["values"][2]
+// CHECK-NEXT:  signal 27	main["pods"][1][0]["fixed"]["out"]
+// CHECK-NEXT:  signal 28	main["pods"][1][1]["a"]["values"][0]
+// CHECK-NEXT:  signal 29	main["pods"][1][1]["a"]["values"][1]
+// CHECK-NEXT:  signal 30	main["pods"][1][1]["a"]["values"][2]
+// CHECK-NEXT:  signal 31	main["pods"][1][1]["a"]["values"][3]
+// CHECK-NEXT:  signal 32	main["pods"][1][1]["a"]["values"][4]
+// CHECK-NEXT:  signal 33	main["pods"][1][1]["b"]["values"][0]
+// CHECK-NEXT:  signal 34	main["pods"][1][1]["b"]["values"][1]
+// CHECK-NEXT:  signal 35	main["pods"][1][1]["b"]["values"][2]
+// CHECK-NEXT:  signal 36	main["pods"][1][1]["b"]["values"][3]
+// CHECK-NEXT:  signal 37	main["pods"][1][1]["fixed"]["out"]
+// CHECK-NEXT:  signal 38	main["pods"][1][2]["a"]["values"][0]
+// CHECK-NEXT:  signal 39	main["pods"][1][2]["a"]["values"][1]
+// CHECK-NEXT:  signal 40	main["pods"][1][2]["a"]["values"][2]
+// CHECK-NEXT:  signal 41	main["pods"][1][2]["a"]["values"][3]
+// CHECK-NEXT:  signal 42	main["pods"][1][2]["a"]["values"][4]
+// CHECK-NEXT:  signal 43	main["pods"][1][2]["a"]["values"][5]
+// CHECK-NEXT:  signal 44	main["pods"][1][2]["b"]["values"][0]
+// CHECK-NEXT:  signal 45	main["pods"][1][2]["b"]["values"][1]
+// CHECK-NEXT:  signal 46	main["pods"][1][2]["b"]["values"][2]
+// CHECK-NEXT:  signal 47	main["pods"][1][2]["b"]["values"][3]
+// CHECK-NEXT:  signal 48	main["pods"][1][2]["b"]["values"][4]
+// CHECK-NEXT:  signal 49	main["pods"][1][2]["fixed"]["out"]
+// CHECK-NOT: {{.}}
