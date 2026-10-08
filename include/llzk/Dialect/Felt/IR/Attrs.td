@@ -25,6 +25,8 @@ def LLZK_FeltConstAttr
     Its value is independent of storage width. Consumers reduce the literal
     modulo the field prime before applying field operations; an unspecified
     field does not cause the literal to be reduced during construction.
+    Builders accepting ArrayRef<uint64_t> decode unsigned limbs in
+    least-significant-first order without truncation; an empty array is zero.
   }];
 
   let parameters = (ins DynamicAPIntParameter<"The felt constant value">:$value,
@@ -42,6 +44,15 @@ def LLZK_FeltConstAttr
            (ins "const ::llvm::DynamicAPInt &":$value,
                "::llvm::StringRef":$fieldName),
            [{ return get(context, value, FeltType::get(context, fieldName)); }]>,
+       AttrBuilder<
+           (ins "::llvm::ArrayRef<uint64_t>":$parts, "FeltType":$ty),
+           [{ return get(context, ::llzk::toDynamicAPInt(parts), ty); }]>,
+       AttrBuilder<(ins "::llvm::ArrayRef<uint64_t>":$parts),
+                   [{ return get(context, ::llzk::toDynamicAPInt(parts)); }]>,
+       AttrBuilder<
+           (ins "::llvm::ArrayRef<uint64_t>":$parts,
+               "::llvm::StringRef":$fieldName),
+           [{ return get(context, ::llzk::toDynamicAPInt(parts), fieldName); }]>,
        // Temporary migration adapters; removed in stage 4 after migrating C++
        // callers.
        AttrBuilder<
@@ -65,6 +76,9 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
   let summary = "prime field specification";
   let description = [{
     A specification of a prime field for use by felt types.
+    Builders accepting ArrayRef<uint64_t> decode unsigned limbs in
+    least-significant-first order without truncation; an empty array is zero
+    (which is rejected by verification as an invalid modulus).
 
     These specifications are provided in the `llzk.fields` attribute on the root
     module as either a single element or a flat array, for example:
@@ -93,6 +107,14 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
            (ins "::mlir::StringAttr":$fieldName,
                "const ::llvm::DynamicAPInt &":$prime),
            [{ return $_get(context, fieldName, ::llzk::DynamicAPIntValue(prime)); }]>,
+       AttrBuilder<
+           (ins "::mlir::StringAttr":$fieldName,
+               "::llvm::ArrayRef<uint64_t>":$parts),
+           [{ return get(context, fieldName, ::llzk::toDynamicAPInt(parts)); }]>,
+       AttrBuilder<
+           (ins "::llvm::StringRef":$fieldName,
+               "::llvm::ArrayRef<uint64_t>":$parts),
+           [{ return get(context, ::mlir::StringAttr::get(context, fieldName), parts); }]>,
        // Temporary migration adapter; removed in stage 4.
        AttrBuilder<
            (ins "::mlir::StringAttr":$fieldName, "::llvm::APInt":$prime),

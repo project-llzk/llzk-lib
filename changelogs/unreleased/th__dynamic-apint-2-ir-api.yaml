@@ -1,7 +1,14 @@
 changed:
   - Felt literals, field specifications, and loop bounds store signed arbitrary-precision integers independent of bit width.
   - Felt constant folding reduces signed literals before field operations and comparisons.
-  - The C API takes decimal strings and prints numeric values through callbacks, replacing width-taking string and limb constructors and 64-bit numeric getters.
+  - CAPI:
+    - "`llzkFelt_FeltConstAttrGetInField` → `llzkFelt_FeltConstAttrGetFromInt64InField`"
+    - "`llzkFelt_FeltConstAttrGetUnspecified` → `llzkFelt_FeltConstAttrGetFromInt64Unspecified`"
+    - "`llzkFelt_FeltConstAttrGetWithBits` → `llzkFelt_FeltConstAttrGetFromInt64` (drop `numBits`); likewise for the `InField` and `Unspecified` variants."
+    - "`llzkFelt_FeltConstAttrGet` now takes a decimal `MlirStringRef` value; use `llzkFelt_FeltConstAttrGetFromInt64` for the previous `int64_t` interface."
+    - "`llzkFelt_FieldSpecAttrGet` and `llzkLlzk_LoopBoundsAttrGet` now take decimal `MlirStringRef` values instead of `int64_t` numeric parameters."
+    - "`llzkFelt_FeltConstAttrGetFromString` and `llzkFelt_FeltConstAttrGetFromParts` (including `InField` and `Unspecified` variants), plus `llzkFelt_FieldSpecAttrGetFromString` and `llzkFelt_FieldSpecAttrGetFromParts`: drop `numBits`."
+    - "`llzkFelt_FeltConstAttrGetValue`, `llzkFelt_FieldSpecAttrGetPrime`, and `llzkLlzk_LoopBoundsAttrGetLower`/`GetUpper`/`GetStep`: replace the `int64_t` return value with `MlirStringCallback callback, void *userData` arguments receiving decimal text."
   - Numeric bytecode uses new signed encoding tags; regenerate old numeric bytecode from textual IR.
 fixed:
   - Negative and positive integer literals cannot alias through width-insensitive unsigned attribute keys.
