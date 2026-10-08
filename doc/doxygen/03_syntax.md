@@ -89,9 +89,7 @@ compares the literal and type, so `-1` and `p - 1` need not be the same attribut
 The C API accepts signed decimal `MlirStringRef` values for felt constants, field
 moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
 attribute. Numeric getters deliver the complete decimal value to an
-`MlirStringCallback`; callers must copy the callback text if they need to retain
-it. Width-taking string/limb constructors have been removed. Native `int64_t`
-felt convenience constructors remain available.
+`MlirStringCallback`; callers must copy the callback text if they need to retain it.
 
 Numeric bytecode payloads for felt constants, field specifications, and loop bounds
 use minimal signed two's-complement encodings. Only payload tags corresponding to
