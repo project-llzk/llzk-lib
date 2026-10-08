@@ -189,9 +189,9 @@ private:
 
   std::string getFreshName(mlir::StringRef baseName) const;
 
-  smt::IntConstantOp createPrimeConstant(mlir::OpBuilder &builder, mlir::Location loc) const;
+  mlir::smt::IntConstantOp createPrimeConstant(mlir::OpBuilder &builder, mlir::Location loc) const;
 
-  smt::IntConstantOp createIntConstant(
+  mlir::smt::IntConstantOp createIntConstant(
       mlir::OpBuilder &builder, mlir::Location loc, const llvm::DynamicAPInt &value
   ) const;
 };

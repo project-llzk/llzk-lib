@@ -626,12 +626,12 @@ void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
   auto arrayElementInRange = [this, &range, &builder, &loc, &array](ValueRange indices) -> Value {
     auto element = emitter->emitArraySelect(loc, array, indices, builder);
     auto [rangeLo, rangeHi] = emitter->getRangeBoundAssertions(builder, loc, element, range);
-    return builder.create<smt::AndOp>(loc, rangeLo, rangeHi).getResult();
+    return mlir::smt::AndOp::create(builder, loc, rangeLo, rangeHi).getResult();
   };
 
   auto rangeAssertion =
       emitter->emitQuantifiedAssertion(loc, extents, arrayElementInRange, builder);
-  builder.create<smt::AssertOp>(loc, rangeAssertion);
+  mlir::smt::AssertOp::create(builder, loc, rangeAssertion);
 }
 
 bool OptimizedNonNativeStrategy::maybeContainsZeroResidue(const UnreducedInterval &range) const {
@@ -763,7 +763,7 @@ void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
     };
     if (succeeded(extents)) {
       Value predicate = emitter->emitQuantifiedAssertion(loc, *extents, equalAtPosition, builder);
-      builder.create<smt::AssertOp>(loc, predicate);
+      mlir::smt::AssertOp::create(builder, loc, predicate);
       return;
     }
     // If the arrays are dynamically sized, just emit a warning and fall back to asserting the whole
@@ -1034,11 +1034,11 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";
         auto symbolType = typeConverter.convertType(memberDef.getType());
-        auto constraintSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, symbolType, StringAttr::get(&getContext(), constraintName)
+        auto constraintSym = mlir::smt::DeclareFunOp::create(
+            rewriter, preamble, symbolType, StringAttr::get(&getContext(), constraintName)
         );
-        auto witnessSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, symbolType, StringAttr::get(&getContext(), witnessName)
+        auto witnessSym = mlir::smt::DeclareFunOp::create(
+            rewriter, preamble, symbolType, StringAttr::get(&getContext(), witnessName)
         );
         if (isa<felt::FeltType>(memberDef.getType())) {
           strategy.emitRangeConstraint(
