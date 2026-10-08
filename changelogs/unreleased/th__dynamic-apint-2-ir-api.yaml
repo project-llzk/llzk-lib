@@ -6,3 +6,4 @@ changed:
 fixed:
   - Negative and positive integer literals cannot alias through width-insensitive unsigned attribute keys.
   - Field specifications reject moduli below two.
+  - Template monomorphization normalizes arbitrary-precision felt arguments without fixed-width intermediates and rejects felt-to-index values outside the nonnegative signed 64-bit range.

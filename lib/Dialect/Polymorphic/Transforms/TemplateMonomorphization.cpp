@@ -29,6 +29,7 @@
 #include <llvm/ADT/STLFunctionalExtras.h>
 
 #include <cstdint>
+#include <limits>
 
 namespace llzk::polymorphic {
 #define GEN_PASS_DEF_TEMPLATEMONOMORPHIZATIONPASS
@@ -48,6 +49,7 @@ namespace {
 /// Fail if an argument cannot be converted to the declared parameter type.
 /// An i1 binding accepts only boolean values or index zero/one; subsequent reads
 /// and forwarding use the normalized boolean value.
+/// Felt values retain arbitrary precision until a range-checked index conversion.
 /// Untyped parameters retain their supplied attributes.
 FailureOr<ArrayAttr> normalizeTypedArguments(
     Operation *source, ArrayAttr arguments, Operation *site, StringRef kind = "struct"
@@ -63,18 +65,18 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
     if (std::optional<Type> expected = parameter.getTypeOpt()) {
       if (auto indexType = dyn_cast<IndexType>(*expected)) {
         if (auto felt = dyn_cast<FeltConstAttr>(argument)) {
-          APInt number = felt.getValue();
+          llvm::DynamicAPInt number = felt.getValue();
           if (felt.getType().hasField()) {
             const Field &field = felt.getType().getField();
-            number = toAPInt(field.reduce(number), field.bitWidth());
+            number = field.reduce(number);
           }
-          if (number.getActiveBits() > 63) {
+          if (number < 0 || number > std::numeric_limits<int64_t>::max()) {
             return site->emitError("field element ")
                    << argument << " cannot be converted to index parameter @"
                    << parameter.getSymName()
                    << ": value exceeds the nonnegative signed 64-bit index range";
           }
-          value = IntegerAttr::get(indexType, number.getZExtValue());
+          value = IntegerAttr::get(indexType, static_cast<int64_t>(number));
         } else if (
             auto integer = dyn_cast<IntegerAttr>(argument);
             integer && integer.getType().isSignlessInteger(1)
@@ -101,25 +103,25 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
           if (feltType.hasField()) {
             const Field &field = feltType.getField();
             auto reduced = field.reduce(llvm::DynamicAPInt(integer.getValue()));
-            value = FeltConstAttr::get(
-                source->getContext(), toAPInt(reduced, field.bitWidth()), feltType
-            );
+            value = FeltConstAttr::get(source->getContext(), reduced, feltType);
           } else {
             if (integer.getValue().isNegative()) {
               return site->emitError("index argument ")
                      << argument << " cannot be converted to felt parameter @"
                      << parameter.getSymName() << ": negative values require a known field modulus";
             }
-            value = FeltConstAttr::get(source->getContext(), integer.getValue(), feltType);
+            value = FeltConstAttr::get(
+                source->getContext(), llvm::DynamicAPInt(integer.getValue()), feltType
+            );
           }
         } else if (
             auto felt = dyn_cast<FeltConstAttr>(argument);
             felt && (!felt.getType().getFieldName() || felt.getType() == feltType)
         ) {
-          APInt number = felt.getValue();
+          llvm::DynamicAPInt number = felt.getValue();
           if (feltType.hasField()) {
             const Field &field = feltType.getField();
-            number = toAPInt(field.reduce(number), field.bitWidth());
+            number = field.reduce(number);
           }
           value = FeltConstAttr::get(source->getContext(), number, feltType);
         }
