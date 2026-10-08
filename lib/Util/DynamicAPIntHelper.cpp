@@ -190,7 +190,7 @@ DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p) {
   // Fermat: f^(p-2) mod p
   DynamicAPInt exp = p - 2;
   DynamicAPInt result = modExp(f, exp, p);
-  assert((f * result) % p == 1 && "inverse is incorrect");
+  assert(llvm::mod(f * result, p) == 1 && "inverse is incorrect");
   return result;
 }
 
