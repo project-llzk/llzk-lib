@@ -693,9 +693,7 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
       indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
     } else {
-      auto lower = llvm::DynamicAPInt(0);
-      llvm::DynamicAPInt upper(arrayType.getDimSize(i));
-      indices.emplace_back(lower, upper);
+      indices.push_back(SourceRefIndex::forArrayDimension(arrayType.getDimSize(i)));
     }
   }
 
