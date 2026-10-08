@@ -43,6 +43,15 @@ static DynamicAPInt binaryBitOp(
 
 namespace llzk {
 
+DynamicAPInt toDynamicAPInt(ArrayRef<uint64_t> parts) {
+  DynamicAPInt value(0);
+  const auto radix = toDynamicAPInt(APInt(65, {0, 1}));
+  for (size_t i = parts.size(); i > 0; --i) {
+    value = value * radix + toDynamicAPInt(APInt(64, parts[i - 1]));
+  }
+  return value;
+}
+
 Expected<DynamicAPInt> parseDynamicAPInt(StringRef str) {
   StringRef digits = str;
   bool negative = digits.consume_front("-");

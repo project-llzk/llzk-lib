@@ -32,14 +32,74 @@ using namespace llzk::felt;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, FeltDialect)
 
-MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetInField(MlirContext ctx, int64_t value, MlirStringRef fieldName) {
+MlirAttribute llzkFelt_FeltConstAttrGetFromInt64(MlirContext ctx, int64_t value, MlirType type) {
+  return wrap(
+      FeltConstAttr::get(unwrap(ctx), llvm::DynamicAPInt(value), unwrap_cast<FeltType>(type))
+  );
+}
+
+MlirAttribute
+llzkFelt_FeltConstAttrGetFromInt64InField(MlirContext ctx, int64_t value, MlirStringRef fieldName) {
   return wrap(FeltConstAttr::get(unwrap(ctx), llvm::DynamicAPInt(value), unwrap(fieldName)));
 }
 
-MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value) {
+MlirAttribute llzkFelt_FeltConstAttrGetFromInt64Unspecified(MlirContext ctx, int64_t value) {
   return wrap(FeltConstAttr::get(unwrap(ctx), llvm::DynamicAPInt(value)));
+}
+
+MlirAttribute
+llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, MlirStringRef str, MlirType type) {
+  return llzkFelt_FeltConstAttrGet(ctx, str, type);
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(
+    MlirContext ctx, MlirStringRef str, MlirStringRef fieldName
+) {
+  return llzkFelt_FeltConstAttrGetFromString(ctx, str, llzkFelt_FeltTypeGetFromRef(ctx, fieldName));
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(MlirContext ctx, MlirStringRef str) {
+  return llzkFelt_FeltConstAttrGetFromString(ctx, str, llzkFelt_FeltTypeGetUnspecified(ctx));
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirType type
+) {
+  assert(nParts >= 0 && "part count must be non-negative");
+  assert((parts || nParts == 0) && "non-empty parts must not be null");
+  return wrap(
+      FeltConstAttr::get(unwrap(ctx), llvm::ArrayRef(parts, nParts), unwrap_cast<FeltType>(type))
+  );
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName
+) {
+  return llzkFelt_FeltConstAttrGetFromParts(
+      ctx, parts, nParts, llzkFelt_FeltTypeGetFromRef(ctx, fieldName)
+  );
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts
+) {
+  return llzkFelt_FeltConstAttrGetFromParts(
+      ctx, parts, nParts, llzkFelt_FeltTypeGetUnspecified(ctx)
+  );
+}
+
+MlirAttribute llzkFelt_FieldSpecAttrGetFromString(
+    MlirContext ctx, MlirIdentifier fieldName, MlirStringRef primeStr
+) {
+  return llzkFelt_FieldSpecAttrGet(ctx, fieldName, primeStr);
+}
+
+MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
+    MlirContext ctx, MlirIdentifier fieldName, const uint64_t *parts, intptr_t nParts
+) {
+  assert(nParts >= 0 && "part count must be non-negative");
+  assert((parts || nParts == 0) && "non-empty parts must not be null");
+  return wrap(FieldSpecAttr::get(unwrap(ctx), unwrap(fieldName), llvm::ArrayRef(parts, nParts)));
 }
 
 MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx) {

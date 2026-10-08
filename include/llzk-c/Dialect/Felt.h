@@ -36,13 +36,82 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 // FeltConstAttr
 //===----------------------------------------------------------------------===//
 
-/// Creates a llzk::felt::FeltConstAttr with the given value in the specified field.
+/// Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field.
+/// The provided `MlirType` must be a llzk::felt::FeltType.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetInField(MlirContext ctx, int64_t value, MlirStringRef fieldName);
+llzkFelt_FeltConstAttrGetFromInt64(MlirContext ctx, int64_t value, MlirType type);
 
-/// Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field.
+/// Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value);
+llzkFelt_FeltConstAttrGetFromInt64InField(MlirContext ctx, int64_t value, MlirStringRef fieldName);
+
+/// Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in an unspecified field.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetFromInt64Unspecified(MlirContext ctx, int64_t value);
+
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer
+/// in the specified field. Returns a null attribute for malformed decimal input.
+/// The provided `MlirType` must be a llzk::felt::FeltType.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, MlirStringRef str, MlirType type);
+
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer
+/// in the specified field. Returns a null attribute for malformed decimal input.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(
+    MlirContext ctx, MlirStringRef str, MlirStringRef fieldName
+);
+
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer
+/// in an unspecified field. Returns a null attribute for malformed decimal input.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetFromStringUnspecified(MlirContext ctx, MlirStringRef str);
+
+/// Creates a llzk::felt::FeltConstAttr from unsigned 64-bit parts in LSB order using all bits. An
+/// empty array represents zero. The constant is created in the specified field.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts` is positive.
+/// The provided `MlirType` must be a llzk::felt::FeltType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirType type
+);
+
+/// Creates a llzk::felt::FeltConstAttr from unsigned 64-bit parts in LSB order using all bits. An
+/// empty array represents zero. The constant is created in the specified field.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts` is positive.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName
+);
+
+/// Creates a llzk::felt::FeltConstAttr from unsigned 64-bit parts in LSB order using all bits. An
+/// empty array represents zero. The constant is created in an unspecified field.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts` is positive.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts
+);
+
+//===----------------------------------------------------------------------===//
+// FieldSpecAttr
+//===----------------------------------------------------------------------===//
+
+/// Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.
+/// Returns a null attribute for malformed decimal input.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromString(
+    MlirContext ctx, MlirIdentifier fieldName, MlirStringRef primeStr
+);
+
+/// Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing
+/// the prime. All bits are interpreted unsigned. An empty array represents zero.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts` is positive.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
+    MlirContext ctx, MlirIdentifier fieldName, const uint64_t *parts, intptr_t nParts
+);
 
 //===----------------------------------------------------------------------===//
 // FeltType
