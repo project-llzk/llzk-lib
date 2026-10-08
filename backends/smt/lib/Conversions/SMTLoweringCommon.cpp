@@ -68,6 +68,13 @@ Value SMTIntTheoryEmitter::emitFreshSymbol(OpBuilder &builder, Location loc, Str
       .getResult();
 }
 
+Value SMTIntTheoryEmitter::emitFreshArray(
+    OpBuilder &builder, Location loc, StringRef name, smt::ArrayType type
+) const {
+  return smt::DeclareFunOp::create(builder, loc, type, StringAttr::get(ctx, getFreshName(name)))
+      .getResult();
+}
+
 Value SMTIntTheoryEmitter::emitConstant(
     OpBuilder &builder, Location loc, const DynamicAPInt &value
 ) const {
@@ -211,6 +218,200 @@ Value SMTIntTheoryEmitter::emitArraySelect(
   return array;
 }
 
+Value SMTIntTheoryEmitter::emitArrayStore(
+    Location loc, Value array, ValueRange indices, Value value, OpBuilder &builder
+) {
+  assert(!indices.empty() && "an array store requires at least one index");
+
+  SmallVector<Value> arrays {array};
+  arrays.reserve(indices.size());
+  for (Value index : indices.drop_back()) {
+    arrays.push_back(smt::ArraySelectOp::create(builder, loc, arrays.back(), index).getResult());
+  }
+
+  Value updated =
+      smt::ArrayStoreOp::create(builder, loc, arrays.back(), indices.back(), value).getResult();
+  for (size_t depth = indices.size() - 1; depth > 0; --depth) {
+    updated =
+        smt::ArrayStoreOp::create(builder, loc, arrays[depth - 1], indices[depth - 1], updated)
+            .getResult();
+  }
+  return updated;
+}
+
+FailureOr<ResolvedArraySemantics> ArraySemanticsResolver::resolve(Value array) const {
+  ArrayWriteMode mode = policy(array);
+  if (mode == ArrayWriteMode::WriteOnce) {
+    return ResolvedArraySemantics {mode, std::nullopt};
+  }
+
+  auto allocation = array.getDefiningOp<array::CreateArrayOp>();
+  if (!allocation) {
+    emitError(
+        array.getLoc()
+    ) << "overwrite array policy did not provide a supported canonical state root";
+    return failure();
+  }
+
+  Value allocationValue = allocation.getResult();
+  return ResolvedArraySemantics {
+      mode,
+      ArrayStateRoot {allocationValue, allocationValue, allocation.getLoc(), allocation->getBlock()}
+  };
+}
+
+FailureOr<std::unique_ptr<ArrayLoweringState>>
+ArrayLoweringState::create(Operation *scope, const ArraySemanticsResolver &resolver) {
+  auto state = std::make_unique<ArrayLoweringState>();
+  if (failed(state->initialize(scope, resolver))) {
+    return failure();
+  }
+  return state;
+}
+
+LogicalResult
+ArrayLoweringState::initialize(Operation *scope, const ArraySemanticsResolver &resolver) {
+  WalkResult registration = scope->walk([&](array::CreateArrayOp allocation) {
+    auto arrayType = allocation.getType();
+    if (!isa<felt::FeltType>(arrayType.getElementType())) {
+      return WalkResult::advance();
+    }
+
+    FailureOr<ResolvedArraySemantics> semantics = resolver.resolve(allocation.getResult());
+    if (failed(semantics)) {
+      return WalkResult::interrupt();
+    }
+    if (semantics->mode == ArrayWriteMode::WriteOnce) {
+      return WalkResult::advance();
+    }
+    if (!semantics->overwriteRoot.has_value()) {
+      allocation.emitError("overwrite array semantics require a state root");
+      return WalkResult::interrupt();
+    }
+
+    const ArrayStateRoot &root = *semantics->overwriteRoot;
+    unsigned recordIndex = records.size();
+    if (!recordByKey.try_emplace(root.key, recordIndex).second) {
+      allocation.emitError("duplicate overwrite array state root");
+      return WalkResult::interrupt();
+    }
+    records.push_back(Record {root, {}, false});
+    return WalkResult::advance();
+  });
+  if (registration.wasInterrupted()) {
+    return failure();
+  }
+
+  for (Record &record : records) {
+    for (OpOperand &use : record.root.initialValue.getUses()) {
+      Operation *user = use.getOwner();
+      if (isa<array::ArrayLengthOp>(user)) {
+        continue;
+      }
+      bool isDirectAccess = isa<array::ReadArrayOp, array::WriteArrayOp>(user) &&
+                            user->getBlock() == record.root.stateBlock;
+      if (isDirectAccess) {
+        continue;
+      }
+
+      InFlightDiagnostic diagnostic = user->emitError(
+          "SMT overwrite lowering requires direct array reads and writes in the "
+          "allocation's block; aliases, escapes, and control-flow state threading are "
+          "not supported"
+      );
+      diagnostic.attachNote(record.root.diagnosticLoc).append("array allocated here");
+      return failure();
+    }
+  }
+
+  WalkResult collection = scope->walk([&](Operation *operation) {
+    Value arrayValue;
+    if (auto read = dyn_cast<array::ReadArrayOp>(operation)) {
+      arrayValue = read.getArrRef();
+    } else if (auto write = dyn_cast<array::WriteArrayOp>(operation)) {
+      arrayValue = write.getArrRef();
+    } else {
+      return WalkResult::advance();
+    }
+
+    FailureOr<ResolvedArraySemantics> semantics = resolver.resolve(arrayValue);
+    if (failed(semantics)) {
+      return WalkResult::interrupt();
+    }
+    if (semantics->mode == ArrayWriteMode::WriteOnce) {
+      return WalkResult::advance();
+    }
+    if (!semantics->overwriteRoot.has_value()) {
+      operation->emitError("overwrite array semantics require a state root");
+      return WalkResult::interrupt();
+    }
+
+    auto recordIt = recordByKey.find(semantics->overwriteRoot->key);
+    if (recordIt == recordByKey.end()) {
+      operation->emitError("failed to find prevalidated overwrite array state");
+      return WalkResult::interrupt();
+    }
+    unsigned recordIndex = recordIt->second;
+    records[recordIndex].accesses.push_back(operation);
+    overwriteAccesses[operation] = recordIndex;
+    return WalkResult::advance();
+  });
+  return success(!collection.wasInterrupted());
+}
+
+bool ArrayLoweringState::isOverwriteAccess(Operation *access) const {
+  return overwriteAccesses.contains(access);
+}
+
+LogicalResult ArrayLoweringState::lowerOverwriteChain(
+    Operation *trigger, ConversionPatternRewriter &rewriter, SMTIntTheoryEmitter &emitter
+) {
+  auto accessIt = overwriteAccesses.find(trigger);
+  if (accessIt == overwriteAccesses.end()) {
+    return failure();
+  }
+
+  Record &record = records[accessIt->second];
+  if (record.processed) {
+    return success();
+  }
+
+  Value current = rewriter.getRemappedValue(record.root.initialValue);
+  if (!current || !isa<smt::ArrayType>(current.getType())) {
+    return failure();
+  }
+
+  // Lower the complete source-ordered chain in one transaction. This avoids
+  // assigning semantics to the conversion driver's pattern visitation order.
+  for (Operation *access : record.accesses) {
+    rewriter.setInsertionPoint(access);
+    if (auto write = dyn_cast<array::WriteArrayOp>(access)) {
+      SmallVector<Value> indices;
+      if (failed(rewriter.getRemappedValues(write.getIndices(), indices))) {
+        return failure();
+      }
+      Value rvalue = rewriter.getRemappedValue(write.getRvalue());
+      if (!rvalue) {
+        return failure();
+      }
+      current = emitter.emitArrayStore(write.getLoc(), current, indices, rvalue, rewriter);
+      rewriter.eraseOp(write);
+      continue;
+    }
+
+    auto read = cast<array::ReadArrayOp>(access);
+    SmallVector<Value> indices;
+    if (failed(rewriter.getRemappedValues(read.getIndices(), indices))) {
+      return failure();
+    }
+    Value selected = emitter.emitArraySelect(read.getLoc(), current, indices, rewriter);
+    rewriter.replaceOp(read, selected);
+  }
+
+  record.processed = true;
+  return success();
+}
+
 bool isFeltOrArrayOfFelt(Type type) {
   if (isa<felt::FeltType>(type)) {
     return true;
@@ -334,6 +535,15 @@ void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
   });
   target.addDynamicallyLegalOp<scf::IfOp>([](scf::IfOp ifOp) {
     return none_of(ifOp.getResultTypes(), containsFeltOrStruct);
+  });
+}
+
+void configureSMTOverwriteArrayConversionTarget(ConversionTarget &target) {
+  target.addDynamicallyLegalOp<array::CreateArrayOp>([](array::CreateArrayOp op) {
+    return !isa<felt::FeltType>(op.getType().getElementType());
+  });
+  target.addDynamicallyLegalOp<array::ArrayLengthOp>([](array::ArrayLengthOp op) {
+    return !isa<felt::FeltType>(op.getArrRefType().getElementType());
   });
 }
 
@@ -513,12 +723,87 @@ LogicalResult IndexConstConverter::matchAndRewrite(
   return success();
 }
 
+CreateArrayConverter::CreateArrayConverter(
+    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<array::CreateArrayOp>(converter, context, /*benefit=*/2),
+      emitter {theoryEmitter} {}
+
+LogicalResult CreateArrayConverter::matchAndRewrite(
+    array::CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+  auto convertedType =
+      dyn_cast_or_null<smt::ArrayType>(getTypeConverter()->convertType(op.getType()));
+  if (!convertedType) {
+    return failure();
+  }
+
+  Value current = emitter->emitFreshArray(rewriter, op.getLoc(), "array_alloc", convertedType);
+  if (!adaptor.getElements().empty()) {
+    FailureOr<SmallVector<size_t>> extents = getExtents(op.getType());
+    if (failed(extents)) {
+      op.emitError("SMT lowering cannot initialize a dynamically-shaped local array");
+      return failure();
+    }
+
+    for (auto [linearIndex, element] : llvm::enumerate(adaptor.getElements())) {
+      SmallVector<size_t> coordinates(extents->size());
+      size_t remainder = linearIndex;
+      for (size_t dimension = extents->size(); dimension > 0; --dimension) {
+        size_t extent = (*extents)[dimension - 1];
+        coordinates[dimension - 1] = remainder % extent;
+        remainder /= extent;
+      }
+
+      SmallVector<Value> indices;
+      indices.reserve(coordinates.size());
+      for (size_t coordinate : coordinates) {
+        indices.push_back(emitter->emitConstant(
+            rewriter, op.getLoc(), llvm::DynamicAPInt {static_cast<int64_t>(coordinate)}
+        ));
+      }
+      current = emitter->emitArrayStore(op.getLoc(), current, indices, element, rewriter);
+    }
+  }
+
+  rewriter.replaceOp(op, current);
+  return success();
+}
+
+ArrayLengthConverter::ArrayLengthConverter(
+    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<array::ArrayLengthOp>(converter, context, /*benefit=*/2),
+      emitter {theoryEmitter} {}
+
+LogicalResult ArrayLengthConverter::matchAndRewrite(
+    array::ArrayLengthOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+) const {
+  llvm::APInt dimensionValue;
+  if (!matchPattern(op.getDim(), m_ConstantInt(&dimensionValue))) {
+    return rewriter.notifyMatchFailure(op, "array dimension is not constant");
+  }
+  std::optional<int64_t> dimension = dimensionValue.trySExtValue();
+  FailureOr<SmallVector<size_t>> extents = getExtents(op.getArrRefType());
+  if (!dimension || *dimension < 0 || failed(extents) ||
+      static_cast<size_t>(*dimension) >= extents->size()) {
+    return rewriter.notifyMatchFailure(op, "array dimension has no static extent");
+  }
+
+  Value length = emitter->emitConstant(
+      rewriter, op.getLoc(),
+      llvm::DynamicAPInt {static_cast<int64_t>((*extents)[static_cast<size_t>(*dimension)])}
+  );
+  rewriter.replaceOp(op, length);
+  return success();
+}
+
 WriteArrayConverter::WriteArrayConverter(
-    TypeConverter &converter, MLIRContext *context, ArrayWritePolicy writePolicy,
+    TypeConverter &converter, MLIRContext *context, ArrayLoweringState *arrayState,
     SMTIntTheoryEmitter *theoryEmitter
 )
     : OpConversionPattern<array::WriteArrayOp>(converter, context, /*benefit=*/2),
-      policy {std::move(writePolicy)}, emitter {theoryEmitter} {}
+      state {arrayState}, emitter {theoryEmitter} {}
 
 LogicalResult WriteArrayConverter::matchAndRewrite(
     array::WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -529,7 +814,7 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
   }
 
   // Turn `arr[i] = val` to `assert arr[i] == val`
-  if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
+  if (!state->isOverwriteAccess(op)) {
     Value selected =
         emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
     // I don't think interval analysis does much interesting with arrays so I don't think we can do
@@ -540,25 +825,24 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
         op, smt::EqOp::create(rewriter, op->getLoc(), reducedSelected, reducedRval).getResult()
     );
     return success();
-
-  } else {
-    // TODO: Track a fresh SMT value for the most recently stored copy of the array, store to that,
-    // and update the most recent. This requires doing it in order, though, and handling control
-    // flow carefully
-    op.emitError("SMT lowering currently only supports write-once arrays");
-    return failure();
   }
+
+  return state->lowerOverwriteChain(op, rewriter, *emitter);
 }
 
 ReadArrayConverter::ReadArrayConverter(
-    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+    TypeConverter &converter, MLIRContext *context, ArrayLoweringState *arrayState,
+    SMTIntTheoryEmitter *theoryEmitter
 )
     : OpConversionPattern<array::ReadArrayOp>(converter, context, /*benefit=*/2),
-      emitter {theoryEmitter} {}
+      state {arrayState}, emitter {theoryEmitter} {}
 
 LogicalResult ReadArrayConverter::matchAndRewrite(
     array::ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
+  if (state->isOverwriteAccess(op)) {
+    return state->lowerOverwriteChain(op, rewriter, *emitter);
+  }
   auto readResult =
       emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
   rewriter.replaceOp(op, readResult.getDefiningOp());

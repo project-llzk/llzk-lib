@@ -362,7 +362,7 @@ public:
   Value emitSignedModValue(OpBuilder &builder, Location loc, Value lhs, Value rhs) const;
   void populatePatterns(
       RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
-      const SignalSymbols &signalSymbols
+      const SignalSymbols &signalSymbols, ArrayLoweringState *arrayState
   ) const;
 
 private:
@@ -914,7 +914,7 @@ Value OptimizedNonNativeStrategy::emitSignedModValue(
 
 void OptimizedNonNativeStrategy::populatePatterns(
     RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
-    const SignalSymbols &signalSymbols
+    const SignalSymbols &signalSymbols, ArrayLoweringState *arrayState
 ) const {
   patterns.add<
       BasicConverter<felt::AddFeltOp, mlir::smt::IntAddOp>,
@@ -931,10 +931,12 @@ void OptimizedNonNativeStrategy::populatePatterns(
   patterns.add<ConstrainConverter>(converter, context, this);
   patterns.add<MemberWriteConverter>(converter, context, signalSymbols, this);
   patterns.add<MemberReadConverter>(converter, context, signalSymbols);
-  patterns.add<ReadArrayConverter, IndexConstConverter>(converter, context, emitter.get());
-  patterns.add<WriteArrayConverter>(converter, context, [](Value) -> ArrayWriteMode {
-    return ArrayWriteMode::WriteOnce;
-  }, emitter.get());
+  patterns.add<CreateArrayConverter, ArrayLengthConverter, IndexConstConverter>(
+      converter, context, emitter.get()
+  );
+  patterns.add<ReadArrayConverter, WriteArrayConverter>(
+      converter, context, arrayState, emitter.get()
+  );
 }
 
 } // namespace llzk
@@ -966,7 +968,19 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
     ConversionTarget target {*context};
 
     configureSMTNoCFBodyConversionTarget(target);
-    strategy.populatePatterns(patterns, typeConverter, context, signalSymbols);
+    configureSMTOverwriteArrayConversionTarget(target);
+
+    ArraySemanticsResolver resolver {[](Value arrayValue) {
+      return arrayValue.getDefiningOp<array::CreateArrayOp>() ? ArrayWriteMode::Overwrite
+                                                              : ArrayWriteMode::WriteOnce;
+    }};
+    FailureOr<std::unique_ptr<ArrayLoweringState>> arrayState =
+        ArrayLoweringState::create(op, resolver);
+    if (failed(arrayState)) {
+      return nullptr;
+    }
+
+    strategy.populatePatterns(patterns, typeConverter, context, signalSymbols, arrayState->get());
     return applySMTNoCFBodyConversion(op, target, std::move(patterns));
   }
 
