@@ -1,0 +1,245 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' -split-input-file %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type
+!A = !array.type<8 x !F>
+!S = !struct.type<@StoreThenSelect>
+
+module attributes {llzk.lang} {
+  struct.def @StoreThenSelect {
+    function.def @product(%val: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %arr = array.new : !A
+      array.write %arr[%c0] = %val : !A, !F
+      %read = array.read %arr[%c0] : !A, !F
+      constrain.eq %read, %val : !F, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_StoreThenSelect(
+// CHECK: %[[STORED:.*]] = smt.array.store %[[BASE:.*]]{{\[}}%[[INDEX:.*]]], %[[VALUE:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NOT: smt.assert
+// CHECK: %[[READ:.*]] = smt.array.select %[[STORED]]{{\[}}%[[INDEX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[EQ:.*]] = smt.eq %[[READ]], %[[VALUE]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+
+// -----
+
+!F = !felt.type
+!A = !array.type<2, 3 x !F>
+!S = !struct.type<@MultidimensionalStore>
+
+module attributes {llzk.lang} {
+  struct.def @MultidimensionalStore {
+    function.def @product(%val: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %arr = array.new : !A
+      array.write %arr[%c0, %c1] = %val : !A, !F
+      %read = array.read %arr[%c0, %c1] : !A, !F
+      constrain.eq %read, %val : !F, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_MultidimensionalStore(
+// CHECK: %[[INNER:.*]] = smt.array.select %[[BASE:.*]]{{\[}}%[[ROW:.*]]] : !smt.array<[!smt.int -> !smt.array<[!smt.int -> !smt.int]>]>
+// CHECK: %[[INNER_STORED:.*]] = smt.array.store %[[INNER]]{{\[}}%[[COL:.*]]], %[[VALUE:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[OUTER_STORED:.*]] = smt.array.store %[[BASE]]{{\[}}%[[ROW]]], %[[INNER_STORED]] : !smt.array<[!smt.int -> !smt.array<[!smt.int -> !smt.int]>]>
+// CHECK-NOT: smt.assert
+// CHECK: %[[READ_ROW:.*]] = smt.array.select %[[OUTER_STORED]]{{\[}}%[[ROW]]] : !smt.array<[!smt.int -> !smt.array<[!smt.int -> !smt.int]>]>
+// CHECK: %[[READ:.*]] = smt.array.select %[[READ_ROW]]{{\[}}%[[COL]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[EQ:.*]] = smt.eq %[[READ]], %[[VALUE]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+
+// -----
+
+!F = !felt.type
+!A = !array.type<8 x !F>
+!S = !struct.type<@MultipleStores>
+
+module attributes {llzk.lang} {
+  struct.def @MultipleStores {
+    function.def @product(%first: !F, %second: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %arr = array.new : !A
+
+      array.write %arr[%c0] = %first : !A, !F
+      %first_read = array.read %arr[%c0] : !A, !F
+      constrain.eq %first_read, %first : !F, !F
+
+      array.write %arr[%c0] = %second : !A, !F
+      %second_read = array.read %arr[%c0] : !A, !F
+      constrain.eq %second_read, %second : !F, !F
+
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_MultipleStores(
+// CHECK: %[[FIRST_STORE:.*]] = smt.array.store %[[BASE:.*]]{{\[}}%[[INDEX:.*]]], %[[FIRST:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NOT: smt.assert
+// CHECK: %[[FIRST_READ:.*]] = smt.array.select %[[FIRST_STORE]]{{\[}}%[[INDEX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[FIRST_EQ:.*]] = smt.eq %[[FIRST_READ]], %[[FIRST]] : !smt.int
+// CHECK: smt.assert %[[FIRST_EQ]]
+// CHECK: %[[SECOND_STORE:.*]] = smt.array.store %[[FIRST_STORE]]{{\[}}%[[INDEX]]], %[[SECOND:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NOT: smt.assert
+// CHECK: %[[SECOND_READ:.*]] = smt.array.select %[[SECOND_STORE]]{{\[}}%[[INDEX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[SECOND_EQ:.*]] = smt.eq %[[SECOND_READ]], %[[SECOND]] : !smt.int
+// CHECK: smt.assert %[[SECOND_EQ]]
+
+// -----
+
+!F = !felt.type
+!A = !array.type<8 x !F>
+!S = !struct.type<@ArgumentArrayIsWriteOnce>
+
+module attributes {llzk.lang} {
+  struct.def @ArgumentArrayIsWriteOnce {
+    function.def @product(%arr: !A, %val: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      array.write %arr[%c0] = %val : !A, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_ArgumentArrayIsWriteOnce(
+// CHECK-NOT: smt.array.store
+// CHECK: smt.int.constant 9223372036854775807
+// CHECK: %[[SELECTED:.*]] = smt.array.select %[[ARRAY:.*]]{{\[}}%[[INDEX:.*]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NOT: smt.array.store
+// CHECK: %[[REDUCED_SELECTED:.*]] = smt.int.mod %[[SELECTED]], %{{.*}}
+// CHECK: %[[REDUCED_VALUE:.*]] = smt.int.mod %{{.*}}, %{{.*}}
+// CHECK: %[[EQ:.*]] = smt.eq %[[REDUCED_SELECTED]], %[[REDUCED_VALUE]] : !smt.int
+// CHECK-NOT: smt.array.store
+// CHECK: smt.assert %[[EQ]]
+// CHECK-NOT: smt.array.store
+
+// -----
+
+!F = !felt.type
+!A = !array.type<2 x !F>
+!S = !struct.type<@InitializedAndReadBeforeWrite>
+
+module attributes {llzk.lang} {
+  struct.def @InitializedAndReadBeforeWrite {
+    function.def @product(%initial: !F, %other: !F, %replacement: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %arr = array.new %initial, %other : !A
+      %before = array.read %arr[%c0] : !A, !F
+      constrain.eq %before, %initial : !F, !F
+      array.write %arr[%c1] = %replacement : !A, !F
+      %after = array.read %arr[%c1] : !A, !F
+      constrain.eq %after, %replacement : !F, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_InitializedAndReadBeforeWrite(
+// CHECK: %[[BASE:.*]] = smt.declare_fun "array_alloc" : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[INIT0:.*]] = smt.array.store %[[BASE]]{{\[}}%[[ZERO:.*]]], %[[INITIAL:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[INIT1:.*]] = smt.array.store %[[INIT0]]{{\[}}%[[ONE:.*]]], %[[OTHER:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[BEFORE:.*]] = smt.array.select %[[INIT1]]{{\[}}%[[READ_ZERO:.*]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[UPDATED:.*]] = smt.array.store %[[INIT1]]{{\[}}%[[READ_ONE:.*]]], %[[REPLACEMENT:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[AFTER:.*]] = smt.array.select %[[UPDATED]]{{\[}}%[[READ_ONE]]] : !smt.array<[!smt.int -> !smt.int]>
+
+// -----
+
+!F = !felt.type
+!A = !array.type<2 x !F>
+!S = !struct.type<@IndependentAllocations>
+
+module attributes {llzk.lang} {
+  struct.def @IndependentAllocations {
+    function.def @product(%initial: !F, %other: !F, %replacement: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %first = array.new %initial, %other : !A
+      %second = array.new %initial, %other : !A
+      array.write %first[%c0] = %replacement : !A, !F
+      %read_first = array.read %first[%c0] : !A, !F
+      %read_second = array.read %second[%c0] : !A, !F
+      constrain.eq %read_first, %replacement : !F, !F
+      constrain.eq %read_second, %initial : !F, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_IndependentAllocations(
+// CHECK: %[[FIRST_BASE:.*]] = smt.declare_fun "array_alloc" : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[FIRST_INIT0:.*]] = smt.array.store %[[FIRST_BASE]]{{\[}}%{{.*}}], %[[INITIAL:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[FIRST_INIT1:.*]] = smt.array.store %[[FIRST_INIT0]]{{\[}}%{{.*}}], %[[OTHER:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[SECOND_BASE:.*]] = smt.declare_fun "array_alloc{{(_[0-9]+)?}}" : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[SECOND_INIT0:.*]] = smt.array.store %[[SECOND_BASE]]{{\[}}%{{.*}}], %[[INITIAL]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[SECOND_INIT1:.*]] = smt.array.store %[[SECOND_INIT0]]{{\[}}%{{.*}}], %[[OTHER]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[FIRST_UPDATED:.*]] = smt.array.store %[[FIRST_INIT1]]{{\[}}%[[INDEX:.*]]], %[[REPLACEMENT:.*]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: smt.array.select %[[FIRST_UPDATED]]{{\[}}%[[INDEX]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: smt.array.select %[[SECOND_INIT1]]{{\[}}%[[INDEX]]] : !smt.array<[!smt.int -> !smt.int]>
+
+// -----
+
+!F = !felt.type
+!A = !array.type<8 x !F>
+!S = !struct.type<@LocalArrayLength>
+
+module attributes {llzk.lang} {
+  struct.def @LocalArrayLength {
+    function.def @product() -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %arr = array.new : !A
+      %len = array.len %arr, %c0 : !A
+      %read = array.read %arr[%len] : !A, !F
+      constrain.eq %read, %read : !F, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_LocalArrayLength(
+// CHECK: %[[ARRAY:.*]] = smt.declare_fun "array_alloc" : !smt.array<[!smt.int -> !smt.int]>
+// CHECK: %[[LENGTH:.*]] = smt.int.constant 8
+// CHECK: smt.array.select %[[ARRAY]]{{\[}}%[[LENGTH]]] : !smt.array<[!smt.int -> !smt.int]>
+
+// -----
+
+!F = !felt.type
+!A = !array.type<8 x !F>
+!S = !struct.type<@MemberArrayIsWriteOnce>
+
+module attributes {llzk.lang} {
+  struct.def @MemberArrayIsWriteOnce {
+    struct.member @arr : !A
+    function.def @product(%val: !F) -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %arr = struct.readm %self[@arr] : !S, !A
+      array.write %arr[%c0] = %val : !A, !F
+      function.return %self : !S
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_MemberArrayIsWriteOnce(
+// CHECK-NOT: smt.array.store
+// CHECK: smt.int.constant 9223372036854775807
+// CHECK: %[[SELECTED:.*]] = smt.array.select %[[ARRAY:.*]]{{\[}}%[[INDEX:.*]]] : !smt.array<[!smt.int -> !smt.int]>
+// CHECK-NOT: smt.array.store
+// CHECK: %[[REDUCED_SELECTED:.*]] = smt.int.mod %[[SELECTED]], %{{.*}}
+// CHECK: %[[REDUCED_VALUE:.*]] = smt.int.mod %{{.*}}, %{{.*}}
+// CHECK: %[[EQ:.*]] = smt.eq %[[REDUCED_SELECTED]], %[[REDUCED_VALUE]] : !smt.int
+// CHECK-NOT: smt.array.store
+// CHECK: smt.assert %[[EQ]]
+// CHECK-NOT: smt.array.store

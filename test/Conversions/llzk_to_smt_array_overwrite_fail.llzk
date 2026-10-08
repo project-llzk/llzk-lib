@@ -1,0 +1,86 @@
+// RUN: split-file %s %t
+// RUN: not llzk-opt --llzk-to-smt-no-cf='field=babybear' %t/nested.llzk 2>&1 | FileCheck --check-prefix=NESTED %s
+// RUN: not llzk-opt --llzk-to-smt-no-cf='field=babybear' %t/alias.llzk 2>&1 | FileCheck --check-prefix=ALIAS %s
+// RUN: not llzk-opt --llzk-to-smt-no-cf='field=babybear' %t/escape.llzk 2>&1 | FileCheck --check-prefix=ESCAPE %s
+// RUN: not llzk-opt --llzk-to-smt-no-cf='field=babybear' %t/dynamic-argument.llzk 2>&1 | FileCheck --check-prefix=DYNAMIC %s
+
+//--- nested.llzk
+!F = !felt.type
+!A = !array.type<2 x !F>
+!S = !struct.type<@NestedAccess>
+
+module attributes {llzk.lang} {
+  struct.def @NestedAccess {
+    function.def @product(%value: !F) -> !S {
+      %self = struct.new : !S
+      %zero = felt.const 0
+      %condition = bool.cmp eq (%value, %zero)
+      %c0 = arith.constant 0 : index
+      %arr = array.new : !A
+      scf.if %condition {
+        array.write %arr[%c0] = %value : !A, !F
+      }
+      function.return %self : !S
+    }
+  }
+}
+
+// NESTED: error: SMT overwrite lowering requires direct array reads and writes in the allocation's block
+// NESTED: note: array allocated here
+
+//--- alias.llzk
+!F = !felt.type
+!A = !array.type<2, 2 x !F>
+!S = !struct.type<@SubarrayAlias>
+
+module attributes {llzk.lang} {
+  struct.def @SubarrayAlias {
+    function.def @product() -> !S {
+      %self = struct.new : !S
+      %c0 = arith.constant 0 : index
+      %arr = array.new : !A
+      %subarray = array.extract %arr[%c0] : !A
+      function.return %self : !S
+    }
+  }
+}
+
+// ALIAS: error: SMT overwrite lowering requires direct array reads and writes in the allocation's block
+// ALIAS: note: array allocated here
+
+//--- escape.llzk
+!F = !felt.type
+!A = !array.type<2 x !F>
+!S = !struct.type<@EscapingCall>
+
+module attributes {llzk.lang} {
+  function.def private @consume(!A) attributes {extern}
+
+  struct.def @EscapingCall {
+    function.def @product() -> !S {
+      %self = struct.new : !S
+      %arr = array.new : !A
+      function.call @consume(%arr) : (!A) -> ()
+      function.return %self : !S
+    }
+  }
+}
+
+// ESCAPE: error: SMT overwrite lowering requires direct array reads and writes in the allocation's block
+// ESCAPE: note: array allocated here
+
+//--- dynamic-argument.llzk
+!F = !felt.type
+!A = !array.type<? x !F>
+!S = !struct.type<@DynamicArrayArgument>
+
+module attributes {llzk.lang} {
+  struct.def @DynamicArrayArgument {
+    function.def @product(%array: !A) -> !S {
+      %self = struct.new : !S
+      function.return %self : !S
+    }
+  }
+}
+
+// DYNAMIC: error: SMT lowering does not support dynamically-shaped array arguments
