@@ -302,6 +302,12 @@ TEST(DynamicAPIntSafetyTest, ModularExponentiationNormalizesInputs) {
   EXPECT_EQ(modExp(DynamicAPInt(3), DynamicAPInt(0), DynamicAPInt(1)), DynamicAPInt(0));
 }
 
+// Negative representatives must pass the inverse postcondition in assertion-enabled builds.
+TEST(DynamicAPIntSafetyTest, ModularInverseAcceptsNegativeRepresentatives) {
+  EXPECT_EQ(modInversePrime(DynamicAPInt(-3), DynamicAPInt(17)), DynamicAPInt(11));
+  EXPECT_EQ(modInversePrime(DynamicAPInt(-20), DynamicAPInt(17)), DynamicAPInt(11));
+}
+
 TEST(DynamicAPIntSafetyTest, FieldEncodingRejectsInvalidValuesWithoutAppending) {
   BinaryBuffer buffer;
   ASSERT_FALSE(buffer.writeFieldElement(2, DynamicAPInt(0x1234)));
