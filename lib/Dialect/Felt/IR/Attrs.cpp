@@ -14,9 +14,11 @@ using namespace mlir;
 namespace llzk::felt {
 
 LogicalResult FieldSpecAttr::verify(
-    llvm::function_ref<InFlightDiagnostic()> emitError, StringAttr, llzk::DynamicAPIntValue prime
+    llvm::function_ref<InFlightDiagnostic()> emitError, StringAttr,
+    llzk::DynamicAPIntValue primeWrapper
 ) {
-  if (static_cast<const llvm::DynamicAPInt &>(prime) < 2) {
+  const llvm::DynamicAPInt &prime = primeWrapper; // implict unwrap
+  if (prime < 2) {
     return emitError() << "field modulus must be at least 2";
   }
   return success();

@@ -47,11 +47,9 @@ static DenseMap<StringRef, Field> &getKnownFields() {
 
 Field::Field(std::string_view primeStr, StringRef name) : Field(toDynamicAPInt(primeStr), name) {}
 
-Field::Field(const llvm::DynamicAPInt &prime, StringRef name) : primeName(name) {
-  primeMod = prime;
-  halfPrime = (primeMod + 1) / 2;
-  bitwidth = std::max(1U, toAPSInt(prime - 1).getActiveBits());
-}
+Field::Field(const llvm::DynamicAPInt &prime, StringRef name)
+    : primeName(name), primeMod(prime), halfPrime((primeMod + 1) / 2),
+      bitwidth(std::max(1U, toAPSInt(prime - 1).getActiveBits())) {}
 
 FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fieldName) {
   static std::once_flag fieldsInit;
