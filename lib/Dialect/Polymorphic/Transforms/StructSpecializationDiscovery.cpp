@@ -759,7 +759,7 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
     if (auto type = dyn_cast<felt::FeltType>(readType)) {
       // An i1's set bit represents one; index values have signed semantics.
       auto value = integer.getType().isSignlessInteger(1)
-                       ? llvm::DynamicAPInt(number.getZExtValue())
+                       ? llvm::DynamicAPInt(number.isOne() ? 1 : 0)
                        : llvm::DynamicAPInt(number);
       if (type.hasField()) {
         const Field &field = type.getField();

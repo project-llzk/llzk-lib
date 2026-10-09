@@ -312,7 +312,7 @@ TEST(DynamicAPIntSafetyTest, FieldEncodingRejectsInvalidValuesWithoutAppending) 
   BinaryBuffer buffer;
   ASSERT_FALSE(buffer.writeFieldElement(2, DynamicAPInt(0x1234)));
   EXPECT_EQ(buffer.bytes(), (llvm::ArrayRef<char> {'\x34', '\x12'}));
-  for (auto [size, value] : std::vector<std::pair<uint32_t, DynamicAPInt>> {
+  for (const auto &[size, value] : std::vector<std::pair<uint32_t, DynamicAPInt>> {
            {0, DynamicAPInt(0)},
            {1, DynamicAPInt(-1)},
            {1, DynamicAPInt(256)},

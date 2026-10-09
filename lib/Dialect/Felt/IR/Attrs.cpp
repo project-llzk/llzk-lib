@@ -15,7 +15,8 @@ namespace llzk::felt {
 
 LogicalResult FieldSpecAttr::verify(
     llvm::function_ref<InFlightDiagnostic()> emitError, StringAttr,
-    llzk::DynamicAPIntValue primeWrapper
+    // TableGen requires this parameter to be passed by value.
+    llzk::DynamicAPIntValue primeWrapper // NOLINT(performance-unnecessary-value-param)
 ) {
   const llvm::DynamicAPInt &prime = primeWrapper; // implict unwrap
   if (prime < 2) {

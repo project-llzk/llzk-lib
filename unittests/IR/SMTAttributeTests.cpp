@@ -107,8 +107,8 @@ TEST_F(SMTAttributeTests, FeltLimbBuildersPreserveSignedValuesAndFieldTypes) {
            TestCase {{}, "0"},
            TestCase {{UINT64_MAX}, "-1"},
            TestCase {{UINT64_MAX, UINT64_MAX}, "-1"},
-           TestCase {{uint64_t(1) << 63}, "-9223372036854775808"},
-           TestCase {{0, uint64_t(1) << 63}, "-170141183460469231731687303715884105728"},
+           TestCase {{uint64_t(1) << 63U}, "-9223372036854775808"},
+           TestCase {{0, uint64_t(1) << 63U}, "-170141183460469231731687303715884105728"},
            TestCase {{UINT64_MAX, UINT64_MAX - 1}, "-18446744073709551617"},
            TestCase {{UINT64_MAX, 0}, "18446744073709551615"},
            TestCase {{2, 1}, "18446744073709551618"},
@@ -141,7 +141,7 @@ TEST_F(SMTAttributeTests, CheckedFieldLimbBuildersRejectModuliBelowTwo) {
            llvm::SmallVector<uint64_t> {1, 0},
            llvm::SmallVector<uint64_t> {UINT64_MAX},
            llvm::SmallVector<uint64_t> {UINT64_MAX, UINT64_MAX},
-           llvm::SmallVector<uint64_t> {0, uint64_t(1) << 63},
+           llvm::SmallVector<uint64_t> {0, uint64_t(1) << 63U},
        }) {
     EXPECT_FALSE(FieldSpecAttr::getChecked(loc, &ctx, name, llvm::ArrayRef<uint64_t>(parts)));
     EXPECT_FALSE(
@@ -172,7 +172,9 @@ TEST_F(SMTAttributeTests, CheckedFieldLimbBuildersRejectModuliBelowTwo) {
 
 TEST_F(SMTAttributeTests, BuiltinIntegerConversionPreservesSignedness) {
   auto decode = [](mlir::IntegerType type, uint64_t bits) {
-    return llzk::integerAttrToDynamicAPInt(mlir::IntegerAttr::get(type, bits));
+    return llzk::integerAttrToDynamicAPInt(
+        mlir::IntegerAttr::get(type, llvm::APInt(type.getWidth(), bits))
+    );
   };
   EXPECT_EQ(
       decode(mlir::IntegerType::get(&ctx, 8, mlir::IntegerType::Unsigned), 255),
@@ -183,4 +185,9 @@ TEST_F(SMTAttributeTests, BuiltinIntegerConversionPreservesSignedness) {
   EXPECT_EQ(
       decode(mlir::IntegerType::get(&ctx, 1, mlir::IntegerType::Signed), 1), llvm::DynamicAPInt(-1)
   );
+  EXPECT_EQ(
+      decode(mlir::IntegerType::get(&ctx, 64, mlir::IntegerType::Unsigned), UINT64_MAX),
+      llzk::toDynamicAPInt("18446744073709551615")
+  );
+  EXPECT_EQ(decode(mlir::IntegerType::get(&ctx, 64), UINT64_MAX), llvm::DynamicAPInt(-1));
 }

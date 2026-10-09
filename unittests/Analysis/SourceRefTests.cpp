@@ -263,7 +263,7 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
       ),
       ChangeResult::Change
   );
-  for (uint64_t index = 1; index < 3; ++index) {
+  for (int64_t index = 1; index < 3; ++index) {
     auto ranged = vector.extract({SourceRefIndex(llvm::DynamicAPInt(index))});
     ASSERT_TRUE(succeeded(ranged));
     EXPECT_TRUE(ranged->first.getScalarValue().contains(constrainRoot));
