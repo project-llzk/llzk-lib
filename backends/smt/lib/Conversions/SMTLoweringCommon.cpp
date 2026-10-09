@@ -9,6 +9,7 @@
 
 #include "SMTLoweringCommon.h"
 
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -21,9 +22,16 @@
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/ValueRange.h>
+#include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/TypeSwitch.h>
+
+#include <utility>
 
 using namespace mlir;
 
@@ -34,12 +42,10 @@ std::pair<Value, Value> SMTIntTheoryEmitter::getRangeBoundAssertions(
 ) const {
   auto lower = createIntConstant(builder, loc, range.getLHS());
   auto upper = createIntConstant(builder, loc, range.getRHS());
-  auto lowerBound = mlir::smt::IntCmpOp::create(
-      builder, loc, mlir::smt::IntPredicate::ge, value, lower.getResult()
-  );
-  auto upperBound = mlir::smt::IntCmpOp::create(
-      builder, loc, mlir::smt::IntPredicate::le, value, upper.getResult()
-  );
+  auto lowerBound =
+      smt::IntCmpOp::create(builder, loc, smt::IntPredicate::ge, value, lower.getResult());
+  auto upperBound =
+      smt::IntCmpOp::create(builder, loc, smt::IntPredicate::le, value, upper.getResult());
 
   return {lowerBound.getResult(), upperBound.getResult()};
 }
@@ -49,15 +55,15 @@ void SMTIntTheoryEmitter::emitRangeConstraint(
 ) const {
   auto [lowerBound, upperBound] = getRangeBoundAssertions(builder, loc, value, range);
   // Assert the lower bound of the canonical/unreduced interval for this symbol.
-  mlir::smt::AssertOp::create(builder, loc, lowerBound);
+  smt::AssertOp::create(builder, loc, lowerBound);
   // Assert the upper bound of the canonical/unreduced interval for this symbol.
-  mlir::smt::AssertOp::create(builder, loc, upperBound);
+  smt::AssertOp::create(builder, loc, upperBound);
 }
 
 Value SMTIntTheoryEmitter::emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const {
   std::string freshName = getFreshName(name);
-  return mlir::smt::DeclareFunOp::create(
-             builder, loc, mlir::smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
+  return smt::DeclareFunOp::create(
+             builder, loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
   )
       .getResult();
 }
@@ -69,19 +75,19 @@ Value SMTIntTheoryEmitter::emitConstant(
 }
 
 Value SMTIntTheoryEmitter::emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return mlir::smt::IntSubOp::create(builder, loc, lhs, rhs).getResult();
+  return smt::IntSubOp::create(builder, loc, lhs, rhs).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return mlir::smt::IntAddOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
+  return smt::IntAddOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return mlir::smt::IntMulOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
+  return smt::IntMulOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-  return mlir::smt::IntDivOp::create(builder, loc, lhs, rhs).getResult();
+  return smt::IntDivOp::create(builder, loc, lhs, rhs).getResult();
 }
 
 Value SMTIntTheoryEmitter::emitSignedDiv(
@@ -100,7 +106,7 @@ Value SMTIntTheoryEmitter::emitSignedRem(
 
 Value SMTIntTheoryEmitter::emitModPrime(OpBuilder &builder, Location loc, Value value) const {
   auto primeConst = createPrimeConstant(builder, loc);
-  return mlir::smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
+  return smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
       .getResult();
 }
 
@@ -118,8 +124,7 @@ Value SMTIntTheoryEmitter::emitOrderedComparison(
       {boolean::FeltCmpPredicate::LE, mlir::smt::IntPredicate::le},
       {boolean::FeltCmpPredicate::LT, mlir::smt::IntPredicate::lt}
   };
-  return mlir::smt::IntCmpOp::create(builder, loc, predicateComparator[predicate], lhs, rhs)
-      .getResult();
+  return smt::IntCmpOp::create(builder, loc, predicateComparator[predicate], lhs, rhs).getResult();
 }
 
 /// |value| = if value < 0 then -value else value
@@ -128,7 +133,7 @@ Value SMTIntTheoryEmitter::emitAbsValue(OpBuilder &builder, Location loc, Value 
   Value isNegative =
       emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
   Value negated = emitSub(builder, loc, zero, value);
-  return mlir::smt::IteOp::create(builder, loc, isNegative, negated, value).getResult();
+  return smt::IteOp::create(builder, loc, isNegative, negated, value).getResult();
 }
 
 /// absQuotient = |lhs| / |rhs|
@@ -143,11 +148,9 @@ Value SMTIntTheoryEmitter::emitTruncatingSignedDivision(
   Value rhsAbs = emitAbsValue(builder, loc, rhs);
   Value absQuotient = emitDiv(builder, loc, lhsAbs, rhsAbs);
   // we can use xor here because we are checking if the signs are different
-  Value signsDiffer =
-      mlir::smt::XOrOp::create(builder, loc, ValueRange {lhsNeg, rhsNeg}).getResult();
+  Value signsDiffer = smt::XOrOp::create(builder, loc, ValueRange {lhsNeg, rhsNeg}).getResult();
   Value negatedQuotient = emitSub(builder, loc, zero, absQuotient);
-  return mlir::smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient)
-      .getResult();
+  return smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient).getResult();
 }
 
 std::string SMTIntTheoryEmitter::getFreshName(StringRef baseName) const {
@@ -157,20 +160,20 @@ std::string SMTIntTheoryEmitter::getFreshName(StringRef baseName) const {
   }
 
   std::string uniqueName(baseName);
-  uniqueName += "_";
+  uniqueName += '_';
   uniqueName += std::to_string(count);
   return uniqueName;
 }
 
 mlir::smt::IntConstantOp
 SMTIntTheoryEmitter::createPrimeConstant(OpBuilder &builder, Location loc) const {
-  return mlir::smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, prime));
+  return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, prime));
 }
 
 mlir::smt::IntConstantOp SMTIntTheoryEmitter::createIntConstant(
     OpBuilder &builder, Location loc, const DynamicAPInt &value
 ) const {
-  return mlir::smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, toAPSInt(value)));
+  return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, toAPSInt(value)));
 }
 
 FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
@@ -203,7 +206,7 @@ Value SMTIntTheoryEmitter::emitArraySelect(
     Location loc, Value array, ValueRange indices, OpBuilder &builder
 ) {
   for (auto index : indices) {
-    array = mlir::smt::ArraySelectOp::create(builder, loc, array, index).getResult();
+    array = smt::ArraySelectOp::create(builder, loc, array, index).getResult();
   }
   return array;
 }
@@ -245,11 +248,11 @@ Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
       antecedents.push_back(hi);
     }
 
-    Value antecedent = mlir::smt::AndOp::create(b, l, antecedents).getResult();
+    Value antecedent = smt::AndOp::create(b, l, antecedents).getResult();
     auto consequent = body(indices);
-    return mlir::smt::ImpliesOp::create(b, l, antecedent, consequent);
+    return smt::ImpliesOp::create(b, l, antecedent, consequent);
   };
-  return mlir::smt::ForallOp::create(builder, loc, forallTypes, elementInRange).getResult();
+  return smt::ForallOp::create(builder, loc, forallTypes, elementInRange).getResult();
 }
 
 static inline Type smtArrayOfRank(MLIRContext *ctx, int64_t rank, Type elementType) {
@@ -270,11 +273,12 @@ LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
     }
     return arrType;
   });
+  addConversion([ctx](IndexType) { return mlir::smt::IntType::get(ctx); });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
       return mlir::smt::BoolType::get(ctx);
     }
-    return type;
+    return mlir::smt::IntType::get(ctx);
   });
   addConversion([ctx](felt::FeltType) { return mlir::smt::IntType::get(ctx); });
 }
@@ -483,6 +487,84 @@ LogicalResult FeltConstConverter::matchAndRewrite(
   rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
       op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
   );
+  return success();
+}
+
+IndexConstConverter::IndexConstConverter(
+    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<arith::ConstantIndexOp>(converter, context, /*benefit=*/2),
+      emitter {theoryEmitter} {}
+
+LogicalResult IndexConstConverter::matchAndRewrite(
+    arith::ConstantIndexOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+) const {
+  auto smtIndexOp =
+      smt::IntConstantOp::create(rewriter, op.getLoc(), dyn_cast<IntegerAttr>(op.getValue()));
+
+  // Constrain the index to be between 0 and 2^64 - 1
+  emitter->emitRangeConstraint(
+      rewriter, op.getLoc(), smtIndexOp.getResult(),
+      UnreducedInterval {
+          // Have to do this because the other constructor for UnreducedInterval only accepts
+          // int64_t
+          llvm::DynamicAPInt {llvm::APSInt {64, 0}},
+          llvm::DynamicAPInt {llvm::APInt::getSignedMaxValue(64)}
+      }
+  );
+  rewriter.replaceOp(op, smtIndexOp);
+  return success();
+}
+
+WriteArrayConverter::WriteArrayConverter(
+    TypeConverter &converter, MLIRContext *context, ArrayWritePolicy writePolicy,
+    SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<array::WriteArrayOp>(converter, context, /*benefit=*/2),
+      policy {std::move(writePolicy)}, emitter {theoryEmitter} {}
+
+LogicalResult WriteArrayConverter::matchAndRewrite(
+    array::WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+
+  if (!isa<felt::FeltType>(op.getArrRef().getType().getElementType())) {
+    return failure();
+  }
+
+  // Turn `arr[i] = val` to `assert arr[i] == val`
+  if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
+    Value selected =
+        emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+    // I don't think interval analysis does much interesting with arrays so I don't think we can do
+    // better than this?
+    auto reducedSelected = emitter->emitModPrime(rewriter, op->getLoc(), selected);
+    auto reducedRval = emitter->emitModPrime(rewriter, op->getLoc(), adaptor.getRvalue());
+    rewriter.replaceOpWithNewOp<smt::AssertOp>(
+        op, smt::EqOp::create(rewriter, op->getLoc(), reducedSelected, reducedRval).getResult()
+    );
+    return success();
+
+  } else {
+    // TODO: Track a fresh SMT value for the most recently stored copy of the array, store to that,
+    // and update the most recent. This requires doing it in order, though, and handling control
+    // flow carefully
+    op.emitError("SMT lowering currently only supports write-once arrays");
+    return failure();
+  }
+}
+
+ReadArrayConverter::ReadArrayConverter(
+    TypeConverter &converter, MLIRContext *context, SMTIntTheoryEmitter *theoryEmitter
+)
+    : OpConversionPattern<array::ReadArrayOp>(converter, context, /*benefit=*/2),
+      emitter {theoryEmitter} {}
+
+LogicalResult ReadArrayConverter::matchAndRewrite(
+    array::ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+  auto readResult =
+      emitter->emitArraySelect(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+  rewriter.replaceOp(op, readResult.getDefiningOp());
   return success();
 }
 
