@@ -1,5 +1,6 @@
 changed:
   - PCL field constants and prime attributes now use signed arbitrary-precision integers; arithmetic no longer depends on manually chosen widths.
+  - "LLZK-to-PCL lowering now interprets non-boolean arith.constant values as signed two's-complement integers instead of unsigned bit patterns. For example, an all-ones constant lowers to -1 (prime - 1 after field reduction), rather than 2^width - 1. One-bit constants still lower to PCL booleans."
   - R1CS coefficient syntax no longer includes an MLIR integer width, and binary export accepts arbitrary-precision decimal moduli without a caller-supplied width.
   - SMT lowering reduces signed felt literals using the field selected by the pass, including when source types do not name a field.
 fixed:
