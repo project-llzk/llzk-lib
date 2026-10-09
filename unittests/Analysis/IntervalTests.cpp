@@ -21,8 +21,10 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Parser/Parser.h>
 
+#include <array>
 #include <gtest/gtest.h>
 #include <string>
+#include <unordered_set>
 
 using namespace mlir;
 using namespace llzk;
@@ -49,6 +51,33 @@ protected:
     ASSERT_TRUE(checkCond(expected, actual, expected == actual));
   }
 };
+
+// Field aliases share interval identity, while different primes remain distinct.
+TEST_F(IntervalTests, EqualityAndHashIncludeFieldPrime) {
+  auto intervals = [](const Field &field) {
+    return std::array {
+        Interval::Empty(field), Interval::Entire(field), Interval::Degenerate(field, field.one()),
+        UnreducedInterval(1, 7).reduce(field)
+    };
+  };
+  const auto bn128 = intervals(Field::getField("bn128"));
+  const auto bn254 = intervals(Field::getField("bn254"));
+  const auto grumpkin = intervals(Field::getField("grumpkin"));
+  const Interval::Hash hash;
+
+  for (size_t idx = 0; idx < bn128.size(); ++idx) {
+    SCOPED_TRACE(idx);
+    EXPECT_EQ(bn128[idx], bn254[idx]);
+    EXPECT_EQ(hash(bn128[idx]), hash(bn254[idx]));
+    EXPECT_NE(bn128[idx], grumpkin[idx]);
+
+    std::unordered_set<Interval, Interval::Hash> values;
+    EXPECT_TRUE(values.insert(bn128[idx]).second);
+    EXPECT_FALSE(values.insert(bn254[idx]).second);
+    EXPECT_TRUE(values.insert(grumpkin[idx]).second);
+    EXPECT_EQ(values.size(), 2U);
+  }
+}
 
 TEST_F(IntervalTests, UnreducedIntervalOverlap) {
   UnreducedInterval a(0, 100), b(100, 200), c(101, 300), d(1, 0);

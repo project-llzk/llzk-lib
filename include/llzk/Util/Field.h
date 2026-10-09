@@ -123,6 +123,11 @@ public:
     return lhs.primeMod == rhs.primeMod;
   }
 
+  /// Hash the prime modulus (consistent with the equality operator).
+  struct Hash {
+    size_t operator()(const Field &field) const { return hashDynamicAPInt(field.primeMod); }
+  };
+
   friend bool operator<(const Field &lhs, const Field &rhs) {
     return std::tie(lhs.primeMod, lhs.primeName, lhs.bitwidth, lhs.halfPrime) <
            std::tie(rhs.primeMod, rhs.primeName, rhs.bitwidth, rhs.halfPrime);
