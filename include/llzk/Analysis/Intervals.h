@@ -328,7 +328,10 @@ public:
 
   template <Type... Types> bool is() const { return ((ty == Types) || ...); }
 
-  bool operator==(const Interval &rhs) const { return ty == rhs.ty && a == rhs.a && b == rhs.b; }
+  /// Compare interval type, endpoints, and field prime, independently of field names.
+  bool operator==(const Interval &rhs) const {
+    return ty == rhs.ty && a == rhs.a && b == rhs.b && getField() == rhs.getField();
+  }
 
   /* Getters */
 
@@ -342,8 +345,10 @@ public:
   /* Utility */
   struct Hash {
     unsigned operator()(const Interval &i) const {
-      return std::hash<Type> {}(i.ty) ^
-             llvm::hash_combine(hashDynamicAPInt(i.a), hashDynamicAPInt(i.b));
+      return llvm::hash_combine(
+          std::hash<Type> {}(i.ty), Field::Hash {}(i.getField()), hashDynamicAPInt(i.a),
+          hashDynamicAPInt(i.b)
+      );
     }
   };
 
