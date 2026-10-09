@@ -501,7 +501,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenTrue) {
 
 TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
   auto field = Field::getField("goldilocks");
-  auto overflowingValue = field.reduce(llvm::APInt(64, uint64_t(1) << 63U));
+  auto overflowingValue = field.reduce(toDynamicAPInt(llvm::APInt(64, uint64_t(1) << 63U)));
 
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {

@@ -41,10 +41,7 @@ public:
   addField(llvm::StringRef fieldName, const llvm::DynamicAPInt &prime, EmitErrorFn errFn) {
     return addField(Field(prime, fieldName), errFn);
   }
-  inline static void
-  addField(llvm::StringRef fieldName, llvm::StringRef primeStr, EmitErrorFn errFn) {
-    return addField(Field(primeStr, fieldName), errFn);
-  }
+  static void addField(llvm::StringRef fieldName, llvm::StringRef primeStr, EmitErrorFn errFn);
 
   /// @brief Get a Field from a given field name string, or failure if the
   /// field is not defined.
@@ -72,16 +69,16 @@ public:
   /// @brief For the prime field p, returns p.
   llvm::DynamicAPInt prime() const { return primeMod; }
 
-  /// @brief Returns p / 2.
+  /// @brief Returns ceil(p / 2), the first negative signed representative.
   llvm::DynamicAPInt half() const { return halfPrime; }
 
   /// @brief Returns i as a signed field element
   inline llvm::DynamicAPInt felt(int i) const { return reduce(i); }
 
-  /// @brief Returns 0 at the bitwidth of the field.
+  /// @brief Returns the zero field element.
   inline llvm::DynamicAPInt zero() const { return felt(0); }
 
-  /// @brief Returns 1 at the bitwidth of the field.
+  /// @brief Returns the unit field element.
   inline llvm::DynamicAPInt one() const { return felt(1); }
 
   /// @brief Returns p - 1, which is the max value possible in a prime field described by p.
@@ -90,16 +87,11 @@ public:
   /// @brief Returns the multiplicative inverse of `i` in prime field `p`.
   llvm::DynamicAPInt inv(const llvm::DynamicAPInt &i) const;
 
-  /// Temporary migration adapter; removed in stage 4.
-  llvm::DynamicAPInt inv(const llvm::APInt &i) const;
-
-  /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
+  /// @brief Returns the canonical representative of i mod p in [0, p).
   /// Field elements are returned as signed integers so that negation functions
   /// as expected (i.e., reducing -1 will yield p-1).
   llvm::DynamicAPInt reduce(const llvm::DynamicAPInt &i) const;
   inline llvm::DynamicAPInt reduce(int64_t i) const { return reduce(llvm::DynamicAPInt(i)); }
-  /// Temporary migration adapter; removed in stage 4.
-  llvm::DynamicAPInt reduce(const llvm::APInt &i) const;
 
   /// Converts a canonical field element to its signed integer representation:
   ///   toSigned(f) = f         if f < field.half()
@@ -107,6 +99,7 @@ public:
   ///   (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)
   llvm::DynamicAPInt toSigned(const llvm::DynamicAPInt &i) const;
 
+  /// Width sufficient for the modulus and its representatives, independent of literal storage.
   inline unsigned bitWidth() const { return bitwidth; }
 
   inline llvm::StringRef name() const { return primeName; }

@@ -23,7 +23,6 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 
-#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/BitVector.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
@@ -534,7 +533,9 @@ static LogicalResult serializeLinearCombination(
     }
 
     buffer.writeU32(term.wireId);
-    buffer.writeFieldElement(fieldSizeBytes, term.coefficient);
+    if (auto error = buffer.writeFieldElement(fieldSizeBytes, term.coefficient)) {
+      return circuit.emitOpError(llvm::toString(std::move(error)));
+    }
     previousWireId = term.wireId;
     sawAnyTerm = true;
   }
@@ -561,7 +562,9 @@ static FailureOr<BinaryBuffer> serializeExportedCircuit(
 
   BinaryBuffer headerSection;
   headerSection.writeU32(*fieldSizeBytes);
-  headerSection.writeFieldElement(*fieldSizeBytes, prime);
+  if (auto error = headerSection.writeFieldElement(*fieldSizeBytes, prime)) {
+    return circuit.emitOpError(llvm::toString(std::move(error)));
+  }
   headerSection.writeU32(model.numWires);
   headerSection.writeU32(model.numPublicOutputs);
   headerSection.writeU32(model.numPublicInputs);

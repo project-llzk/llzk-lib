@@ -76,11 +76,7 @@ namespace {
 
 /// Return the first canonical felt value interpreted as a negative integer.
 static llvm::APSInt getSignedFeltThreshold(const llvm::APSInt &prime) {
-  llvm::APSInt two(llvm::APInt(prime.getBitWidth(), 2), prime.isUnsigned());
-  llvm::APSInt one(llvm::APInt(prime.getBitWidth(), 1), prime.isUnsigned());
-  llvm::APSInt threshold = prime / two;
-  threshold += one;
-  return threshold;
+  return toAPSInt((toDynamicAPInt(prime) + 1) / 2);
 }
 
 /// Decide when modular reduction can be avoided or must be reintroduced.
@@ -260,19 +256,7 @@ private:
   }
 
   llvm::DynamicAPInt floorDiv(const llvm::DynamicAPInt &value) const {
-    llvm::APSInt lhs = toAPSInt(value);
-    llvm::APSInt rhs = toAPSInt(primeDynamic);
-    unsigned width = std::max(lhs.getBitWidth(), rhs.getBitWidth()) + 1;
-    lhs = lhs.extend(width);
-    rhs = rhs.extend(width);
-    lhs.setIsSigned(true);
-    rhs.setIsSigned(true);
-    llvm::APSInt quotient = lhs / rhs;
-    llvm::APSInt remainder = lhs % rhs;
-    if (remainder < 0) {
-      quotient -= llvm::APSInt(llvm::APInt(width, 1), /*isUnsigned=*/false);
-    }
-    return toDynamicAPInt(quotient);
+    return llvm::floorDiv(value, primeDynamic);
   }
 
   llvm::DynamicAPInt ceilDiv(const llvm::DynamicAPInt &value) const { return -floorDiv(-value); }

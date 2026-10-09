@@ -48,11 +48,17 @@ public:
   explicit SourceRefIndex(SymbolLookupResult<component::MemberDefOp> f) : index(f) {}
   explicit SourceRefIndex(mlir::StringAttr recordName) : index(recordName) {}
   explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
-  explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
   explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
-  SourceRefIndex(const llvm::APInt &low, const llvm::APInt &high)
-      : index(IndexRange {toDynamicAPInt(low), toDynamicAPInt(high)}) {}
+  /// Construct a half-open range; a high bound of ShapedType::kDynamic means unbounded.
+  SourceRefIndex(const llvm::DynamicAPInt &low, const llvm::DynamicAPInt &high)
+      : index(IndexRange {low, high}) {}
   explicit SourceRefIndex(IndexRange r) : index(r) {}
+
+  /// Select every nonnegative index in a static or dynamic array dimension.
+  static SourceRefIndex forArrayDimension(int64_t size);
+
+  /// Whether this range has no finite upper bound.
+  bool hasUnboundedUpperBound() const;
 
   bool isMember() const {
     return std::holds_alternative<SymbolLookupResult<component::MemberDefOp>>(index) ||

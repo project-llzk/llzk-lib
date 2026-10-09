@@ -10,8 +10,10 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Analysis/SourceRefLattice.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
@@ -53,9 +55,9 @@ module attributes {llzk.lang} {
 };
 
 TEST_F(SourceRefTests, IndexHalfOpenOverlap) {
-  SourceRefIndex range(APInt(64, 2), APInt(64, 5));
-  SourceRefIndex overlappingRange(APInt(64, 4), APInt(64, 7));
-  SourceRefIndex adjacentRange(APInt(64, 5), APInt(64, 8));
+  SourceRefIndex range(llvm::DynamicAPInt(2), llvm::DynamicAPInt(5));
+  SourceRefIndex overlappingRange(llvm::DynamicAPInt(4), llvm::DynamicAPInt(7));
+  SourceRefIndex adjacentRange(llvm::DynamicAPInt(5), llvm::DynamicAPInt(8));
 
   EXPECT_FALSE(range.overlaps(SourceRefIndex(1)));
   EXPECT_TRUE(range.overlaps(SourceRefIndex(2)));
@@ -63,6 +65,99 @@ TEST_F(SourceRefTests, IndexHalfOpenOverlap) {
   EXPECT_FALSE(range.overlaps(SourceRefIndex(5)));
   EXPECT_TRUE(range.overlaps(overlappingRange));
   EXPECT_FALSE(range.overlaps(adjacentRange));
+}
+
+// Dynamic dimension bounds select every nonnegative index, including values
+// beyond the old unsigned 64-bit sentinel, without changing finite ranges.
+TEST_F(SourceRefTests, DynamicDimensionOverlap) {
+  auto dynamic = SourceRefIndex::forArrayDimension(ShapedType::kDynamic);
+  auto finite = SourceRefIndex::forArrayDimension(5);
+  auto empty = SourceRefIndex::forArrayDimension(0);
+  SourceRefIndex huge(toDynamicAPInt("18446744073709551616"));
+
+  EXPECT_TRUE(dynamic.hasUnboundedUpperBound());
+  EXPECT_EQ(buildStringViaPrint(dynamic), "<dynamic>");
+  EXPECT_TRUE(dynamic.overlaps(dynamic));
+  EXPECT_TRUE(dynamic.overlaps(SourceRefIndex(0)));
+  EXPECT_TRUE(dynamic.overlaps(huge));
+  EXPECT_TRUE(huge.overlaps(dynamic));
+  EXPECT_FALSE(dynamic.overlaps(SourceRefIndex(-1)));
+  EXPECT_TRUE(dynamic.overlaps(finite));
+  EXPECT_TRUE(finite.overlaps(dynamic));
+  EXPECT_FALSE(dynamic.overlaps(empty));
+  EXPECT_FALSE(empty.overlaps(dynamic));
+  EXPECT_FALSE(finite.overlaps(SourceRefIndex(5)));
+
+  SourceRefIndex tail(llvm::DynamicAPInt(5), llvm::DynamicAPInt(ShapedType::kDynamic));
+  EXPECT_FALSE(tail.overlaps(finite));
+  EXPECT_FALSE(finite.overlaps(tail));
+  EXPECT_TRUE(tail.overlaps(dynamic));
+}
+
+// Exercise the three analysis paths that construct fallback access ranges:
+// source-reference reads, source-reference write targets, and interval writes.
+TEST_F(SourceRefTests, SymbolicArrayAccessesRetainOverlappingReferences) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    function.def @access(%array: !array.type<@N x !felt.type>, %i: index, %value: !felt.type)
+        -> !felt.type attributes {function.allow_witness} {
+      array.write %array[%i] = %value : <@N x !felt.type>, !felt.type
+      %read = array.read %array[%i] : <@N x !felt.type>, !felt.type
+      function.return %read : !felt.type
+    }
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  array::ReadArrayOp read;
+  array::WriteArrayOp write;
+  mod->walk([&](array::ReadArrayOp op) { read = op; });
+  mod->walk([&](array::WriteArrayOp op) { write = op; });
+  ASSERT_TRUE(read);
+  ASSERT_TRUE(write);
+
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  ASSERT_TRUE(succeeded(llzk::dataflow::loadAndRunRequiredAnalyses(solver, *mod)));
+  solver.load<SourceRefAnalysis>();
+  auto *intervals =
+      solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool, bool>(
+          llvm::CreateZ3Solver(), Field::getField("babybear"), false, false
+      );
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+
+  SourceRef element(llvm::cast<BlockArgument>(read.getArrRef()), {SourceRefIndex(0)});
+  auto readState = SourceRefAnalysis::getValueState(solver, read.getResult());
+  ASSERT_TRUE(readState.isSingleValue());
+  EXPECT_TRUE(readState.getSingleValue().overlaps(element));
+  auto writeState = SourceRefAnalysis::getWriteTargetState(solver, write);
+  ASSERT_TRUE(succeeded(writeState));
+  ASSERT_TRUE(writeState->isSingleValue());
+  EXPECT_TRUE(writeState->getSingleValue().overlaps(element));
+  EXPECT_TRUE(writeState->getSingleValue().overlaps(readState.getSingleValue()));
+
+  const auto &writes = intervals->getWriteResults();
+  ASSERT_EQ(writes.size(), 1);
+  EXPECT_TRUE(writes.begin()->first.overlaps(element));
+  EXPECT_TRUE(writes.begin()->first.overlaps(readState.getSingleValue()));
+}
+
+TEST_F(SourceRefTests, UnboundedRangesSelectMaterializedArrayElements) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  SourceRef root(llvm::cast<OpResult>(structDef.getComputeFuncOp().getSelfValueFromCompute()));
+  SourceRefLatticeValue array(llvm::ArrayRef<int64_t>({3}));
+  auto dynamic = SourceRefIndex::forArrayDimension(ShapedType::kDynamic);
+  EXPECT_EQ(array.write({dynamic}, SourceRefLatticeValue(root)), ChangeResult::Change);
+  for (int64_t i = 0; i < 3; ++i) {
+    EXPECT_TRUE(array.getElemFlatIdx(i).getScalarValue().contains(root));
+  }
+  auto extracted = array.extract({dynamic});
+  ASSERT_TRUE(succeeded(extracted));
+  EXPECT_TRUE(extracted->first.getScalarValue().contains(root));
 }
 
 TEST_F(SourceRefTests, MemberOrderingUsesNamesToBreakEqualLocations) {
@@ -135,12 +230,14 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   SourceRefLatticeValue matrix(llvm::ArrayRef<int64_t>({2, 2}));
   EXPECT_EQ(
       matrix.write(
-          {SourceRefIndex(APInt(64, 0)), SourceRefIndex(APInt(64, 1))},
+          {SourceRefIndex(llvm::DynamicAPInt(0)), SourceRefIndex(llvm::DynamicAPInt(1))},
           SourceRefLatticeValue(computeRoot)
       ),
       ChangeResult::Change
   );
-  auto point = matrix.extract({SourceRefIndex(APInt(64, 0)), SourceRefIndex(APInt(64, 1))});
+  auto point = matrix.extract(
+      {SourceRefIndex(llvm::DynamicAPInt(0)), SourceRefIndex(llvm::DynamicAPInt(1))}
+  );
   ASSERT_TRUE(succeeded(point));
   EXPECT_EQ(point->first.getSingleValue(), computeRoot);
 
@@ -151,8 +248,8 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   EXPECT_EQ(
       row.getElemFlatIdx(1).setValue(SourceRefLatticeValue(computeRoot)), ChangeResult::Change
   );
-  EXPECT_EQ(matrix.write({SourceRefIndex(APInt(64, 1))}, row), ChangeResult::Change);
-  auto writtenRow = matrix.extract({SourceRefIndex(APInt(64, 1))});
+  EXPECT_EQ(matrix.write({SourceRefIndex(llvm::DynamicAPInt(1))}, row), ChangeResult::Change);
+  auto writtenRow = matrix.extract({SourceRefIndex(llvm::DynamicAPInt(1))});
   ASSERT_TRUE(succeeded(writtenRow));
   ASSERT_TRUE(writtenRow->first.isArray());
   EXPECT_EQ(writtenRow->first.getElemFlatIdx(0).getSingleValue(), constrainRoot);
@@ -161,12 +258,13 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   SourceRefLatticeValue vector(llvm::ArrayRef<int64_t>({3}));
   EXPECT_EQ(
       vector.write(
-          {SourceRefIndex(APInt(64, 1), APInt(64, 3))}, SourceRefLatticeValue(constrainRoot)
+          {SourceRefIndex(llvm::DynamicAPInt(1), llvm::DynamicAPInt(3))},
+          SourceRefLatticeValue(constrainRoot)
       ),
       ChangeResult::Change
   );
   for (uint64_t index = 1; index < 3; ++index) {
-    auto ranged = vector.extract({SourceRefIndex(APInt(64, index))});
+    auto ranged = vector.extract({SourceRefIndex(llvm::DynamicAPInt(index))});
     ASSERT_TRUE(succeeded(ranged));
     EXPECT_TRUE(ranged->first.getScalarValue().contains(constrainRoot));
   }
@@ -177,11 +275,13 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
       matrixSlice.getElemFlatIdx(0).setValue(SourceRefLatticeValue(computeRoot)),
       ChangeResult::Change
   );
-  EXPECT_EQ(tensor.write({SourceRefIndex(APInt(64, 1))}, matrixSlice), ChangeResult::Change);
+  EXPECT_EQ(
+      tensor.write({SourceRefIndex(llvm::DynamicAPInt(1))}, matrixSlice), ChangeResult::Change
+  );
 
   SourceRefLatticeValue transposedSlice(llvm::ArrayRef<int64_t>({3, 2}));
   EXPECT_DEATH(
-      (void)tensor.write({SourceRefIndex(APInt(64, 0))}, transposedSlice),
+      (void)tensor.write({SourceRefIndex(llvm::DynamicAPInt(0))}, transposedSlice),
       "SourceRef array write value shape does not match selected storage"
   );
 }

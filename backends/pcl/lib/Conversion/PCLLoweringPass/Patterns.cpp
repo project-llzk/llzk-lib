@@ -27,6 +27,7 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
@@ -324,9 +325,7 @@ protected:
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
   llvm::DynamicAPInt getValue(arith::ConstantOp op) const {
-    // Boolean constants are unsigned; other integers use signed interpretation.
-    APInt value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
-    return value.getBitWidth() == 1 ? llzk::toDynamicAPInt(value) : llvm::DynamicAPInt(value);
+    return llzk::integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(op.getValue()));
   }
 };
 
@@ -358,7 +357,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
   LogicalResult matchAndRewrite(
       arith::ConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    auto intAttr = llvm::cast<IntegerAttr>(op.getValue());
+    const APInt &value = intAttr.getValue();
     if (op.getType().isInteger(1)) {
       if (value.isOne()) {
         rewriter.replaceOpWithNewOp<pcl::TrueOp>(op);
@@ -367,10 +367,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
       }
       return success();
     }
-
-    // Boolean constants handled above; other integers use signed interpretation.
     rewriter.replaceOpWithNewOp<pcl::ConstOp>(
-        op, pcl::FeltAttr::get(rewriter.getContext(), llvm::DynamicAPInt(value))
+        op, pcl::FeltAttr::get(rewriter.getContext(), llzk::integerAttrToDynamicAPInt(intAttr))
     );
     return success();
   }

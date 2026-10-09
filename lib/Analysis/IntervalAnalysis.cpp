@@ -693,9 +693,7 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
       indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
     } else {
-      auto lower = APInt::getZero(64);
-      APInt upper(64, arrayType.getDimSize(i));
-      indices.emplace_back(lower, upper);
+      indices.push_back(SourceRefIndex::forArrayDimension(arrayType.getDimSize(i)));
     }
   }
 
@@ -1137,7 +1135,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         for (Attribute attr : *maybeIndices) {
           auto idxAttr = llvm::dyn_cast<IntegerAttr>(attr);
           ensure(idxAttr != nullptr, "array.new delinearize should produce integer attributes");
-          path.emplace_back(idxAttr.getValue());
+          path.emplace_back(integerAttrToDynamicAPInt(idxAttr));
         }
 
         recordRefWrite(SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue());
@@ -1152,12 +1150,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         if (!elementRefs.isSingleValue()) {
           continue;
         }
-        auto maybeIndices = indexGen.delinearize(llzk::checkedCast<int64_t>(i), op->getContext());
+        auto maybeIndices = indexGen.delinearize(checkedCast<int64_t>(i), op->getContext());
         ensure(maybeIndices.has_value(), "could not delinearize aggregate array.new index");
         SourceRef elementTarget = arrayRoot;
         for (Attribute attr : *maybeIndices) {
-          auto child =
-              elementTarget.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
+          auto child = elementTarget.createChild(
+              SourceRefIndex(integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(attr)))
+          );
           ensure(succeeded(child), "could not create aggregate array element SourceRef");
           elementTarget = *child;
         }
@@ -1331,7 +1330,7 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
       .Case<arith::ConstantIntOp>([&](auto intConst) {
         auto valAttr = dyn_cast<IntegerAttr>(intConst.getValue());
         ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
-        return toDynamicAPInt(valAttr.getValue());
+        return integerAttrToDynamicAPInt(valAttr);
       })
       .Default([](auto *illegalOp) {
         std::string err;

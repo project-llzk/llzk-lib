@@ -1,0 +1,26 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn128"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c0 = felt.const -1 <"bn128">
+      struct.writem %self[@out] = %c0 : !struct.type<@Main>, !felt.type<"bn128">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: {
+// CHECK-NEXT:    "out": "21888242871839275222246405745257275088548364400416034343698204186575808495616"
+// CHECK-NEXT:  }
+
+//--- input.json
+{}

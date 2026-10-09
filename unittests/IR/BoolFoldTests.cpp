@@ -49,7 +49,7 @@ protected:
   }
 
   FeltConstAttr babyBearConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val), BB_FIELD);
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val), BB_FIELD);
   }
 
   /// Insert two arith.constant i1 ops into a detached block, build a binary
