@@ -266,7 +266,9 @@ module attributes {llzk.lang} {
 // target's function signature.
 module attributes {llzk.lang} {
   poly.template @IncludeLocalParamTypeMismatch {
+    // expected-note@+1 {{argument symbol defined here}}
     poly.param @N : index
+    // expected-note@+1 {{parameter restriction declared here}}
     poly.param @F : !felt.type
 
     function.def @token() {
@@ -291,8 +293,10 @@ module attributes {llzk.lang} {
 // poly.param.
 module attributes {llzk.lang} {
   poly.template @IncludeLocalExprTypeMismatch {
+    // expected-note@+1 {{parameter restriction declared here}}
     poly.param @F : !felt.type
 
+    // expected-note@+1 {{argument symbol defined here}}
     poly.expr @Index {
       %index = arith.constant 0 : index
       poly.yield %index : index
@@ -1336,9 +1340,11 @@ module attributes {llzk.lang} {
 // A constant global must satisfy a template parameter restriction even when
 // that parameter cannot be inferred from the included contract's signature.
 module attributes {llzk.lang} {
+  // expected-note@+1 {{argument symbol defined here}}
   global.def const @F : !felt.type = 7
 
   poly.template @SpecTemplate {
+    // expected-note@+1 {{parameter restriction declared here}}
     poly.param @N : index
 
     function.def @token() {

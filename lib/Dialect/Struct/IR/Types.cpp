@@ -9,6 +9,8 @@
 
 #include "llzk/Dialect/Struct/IR/Types.h"
 
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
@@ -16,6 +18,36 @@ using namespace mlir;
 using namespace llzk::polymorphic;
 
 namespace llzk::component {
+
+namespace {
+
+/// Check a concrete struct argument against its declared restriction. With a restriction,
+/// affine maps are valid only for index or integer parameters; a fieldless felt constant satisfies
+/// a fielded felt restriction. StructType::verify has already checked IntegerAttr types.
+bool isCompatibleTemplateArgument(Attribute value, Type restriction) {
+  if (isa<TypeVarType>(restriction)) {
+    return isa<TypeAttr>(value);
+  }
+
+  if (isa<AffineMapAttr>(value)) {
+    return isa<IndexType, IntegerType>(restriction);
+  }
+
+  if (felt::FeltType feltType = dyn_cast<felt::FeltType>(restriction)) {
+    if (felt::FeltConstAttr feltValue = dyn_cast<felt::FeltConstAttr>(value)) {
+      felt::FeltType valueType = feltValue.getType();
+      return !feltType.hasField() || !valueType.hasField() || valueType == feltType;
+    }
+    return isa<IntegerAttr>(value);
+  }
+
+  if (isa<IndexType, IntegerType>(restriction)) {
+    return isa<IntegerAttr>(value);
+  }
+  return false;
+}
+
+} // namespace
 
 LogicalResult StructType::verify(
     function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr /*nameRef*/, ArrayAttr params
@@ -44,14 +76,26 @@ FailureOr<SymbolLookupResult<StructDefOp>> StructType::getDefinition(
   // If this StructType contains parameters, make sure the StructDefOp is within a TemplateOp with
   // the same number of params.
   if (typeParams) {
-    size_t numExpected = 0;
-    if (TemplateOp parent = getParentOfType<TemplateOp>(*res.value())) {
-      numExpected = parent.numConstOps<TemplateParamOp>();
-    }
+    TemplateOp parent = getParentOfType<TemplateOp>(*res.value());
+    size_t numExpected = parent ? parent.numConstOps<TemplateParamOp>() : 0;
     if (typeParams.size() != numExpected) {
       return op->emitError() << '\'' << StructType::name << "' type has " << typeParams.size()
                              << " parameters but \"" << res.value().get().getSymName()
                              << "\" expects " << numExpected;
+    }
+    if (parent) {
+      for (auto [paramOp, value] :
+           llvm::zip_equal(parent.getConstOps<TemplateParamOp>(), typeParams.getValue())) {
+        std::optional<Type> restriction = paramOp.getTypeOpt();
+        if (!restriction || llvm::isa<SymbolRefAttr>(value)) {
+          continue;
+        }
+        if (!isCompatibleTemplateArgument(value, *restriction)) {
+          return op->emitError() << "instantiation value '" << value
+                                 << "' is not compatible with parameter \"@" << paramOp.getName()
+                                 << "\" type restriction " << *restriction;
+        }
+      }
     }
   }
   return res;
