@@ -60,9 +60,52 @@ The tool expects that the IR has already been converted to the backend's dialect
 llzk-opt <input.llzk> --llzk-to-pcl | llzk-translate --pcl-to-lisp
 ```
 
+The `--llzk-generate-layout` pipeline monomorphizes LLZK IR and exports its
+logical felt-signal layout:
+
+```sh
+llzk-translate circuit.llzk --llzk-generate-layout -o circuit.llzk-layout
+```
+
+For already monomorphized IR, `--llzk-layout` exports the layout directly.
+Both commands require main to define a `@constrain` function; product-only main
+components are unsupported.
+
+The text format starts with a layout map header and a `# signals` section.
+Each line gives a signal ID and a storage path, such as
+`signal 0<TAB>main["children"][0]["out"]`. IDs start at zero and cover every
+declared signal, including unused signals. A member's `{signal}` annotation
+marks signal storage; unmarked felt intermediates receive no IDs. Main's
+inputs and public output members are implicit signals. Child components are
+traversed to find their annotated members. Struct members and POD fields
+follow declaration order, expanding each field fully before moving to the next.
+Arrays follow numeric index order, with the last dimension varying fastest.
+Constrain arguments come first in signature order, followed by the main
+instance's members. The
+`main` root identifies the main instance; `arg["name"]` or `argN` identifies
+an argument to its constrain function. Argument names are display labels; the
+in-memory paths start with `"main"` or `"arg"` and the argument's signature
+position, so root names are separate from signal IDs. Non-felt
+scalars and empty arrays contribute no signals.
+
+Array dimensions must be concrete. Rolled arrays of parameterized structs use
+the monomorphizer's `poly.family` metadata to select a concrete specialization
+at each element, including struct fields inside POD elements. Missing mappings
+are diagnosed, as are ambiguous specialization IDs and mismatched origins. The
+exporter trusts the monomorphizer's mapping of indices to specialization arguments;
+passes that change specializations must keep this metadata consistent. Unrelated
+specialization metadata does not block export. The exporter inspects storage declarations without evaluating
+function bodies. It assigns logical signal IDs independently of backend wires
+and auxiliary variables; later lowering can attach a wire-to-signal mapping.
+The C++ `buildLLZKLayout` API returns the paths indexed by ID, and `getSignalId`
+looks up an ID by path. Renaming clone symbols or repeating monomorphization
+does not change IDs for the same declarations. Reordering fields changes IDs.
+
 #### LLZK-Specific Options
 
 ```
+--llzk-generate-layout  Monomorphizes LLZK and exports the logical signal layout
+--llzk-layout           Exports the logical LLZK signal layout
 --pcl-to-lisp           Translates from PCL IR to PCL lisp
 --smt-to-smtlib         Translates from SMT to SMTLIB
 --zklean-to-lean        Translates from zkLean dialects IR to Lean code

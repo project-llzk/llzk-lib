@@ -1,0 +1,22 @@
+// RUN: llzk-translate %s --llzk-layout -o %t.layout
+// RUN: FileCheck %s --match-full-lines < %t.layout
+// External constrain inputs are available from the signature without an entry block.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%scalar: !felt.type, %array: !array.type<2 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def private @constrain(%self: !struct.type<@Main>, %scalar: !felt.type {function.arg_name = "scalar"}, %array: !array.type<2 x !felt.type>)
+  }
+}
+
+// CHECK-LABEL: # LLZK layout map v1
+// CHECK-NEXT:  # signals
+// CHECK-NEXT:  signal 0	arg["scalar"]
+// CHECK-NEXT:  signal 1	arg2[0]
+// CHECK-NEXT:  signal 2	arg2[1]
+// CHECK-NEXT:  signal 3	main["out"]
+// CHECK-NOT: {{.}}

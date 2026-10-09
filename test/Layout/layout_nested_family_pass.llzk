@@ -1,0 +1,63 @@
+// RUN: llzk-translate %s --llzk-generate-layout -o %t.layout
+// RUN: FileCheck %s --match-full-lines < %t.layout
+// RUN: llzk-opt %s --llzk-monomorphize-templates -o %t.mono.llzk
+// RUN: llzk-translate %t.mono.llzk --llzk-layout -o %t.direct.layout
+// RUN: diff %t.layout %t.direct.layout
+// RUN: llzk-translate %t.mono.llzk --llzk-generate-layout -o %t.again.layout
+// RUN: diff %t.layout %t.again.layout
+// Families in template clones, two-level families, and nested arrays restart indices.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Outer<[2]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @out : !array.type<@N x !felt.type> {signal}
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Mid {
+    poly.param @N : index
+    struct.def @Mid {
+      struct.member @kids : !array.type<@N x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>
+      function.def @compute() -> !struct.type<@Mid::@Mid<[@N]>> {
+        %self = struct.new : <@Mid::@Mid<[@N]>>
+        function.return %self : !struct.type<@Mid::@Mid<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Mid::@Mid<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @M : index
+    struct.def @Outer {
+      struct.member @kids : !array.type<@M x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>
+      struct.member @mids : !array.type<@M x !struct.type<@Mid::@Mid<[affine_map<(i) -> (i + 1)>]>>>
+      struct.member @pods : !array.type<@M x !pod.type<[@inner: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(j) -> (j + 1)>]>>>]>>
+      function.def @compute() -> !struct.type<@Outer::@Outer<[@M]>> {
+        %self = struct.new : <@Outer::@Outer<[@M]>>
+        function.return %self : !struct.type<@Outer::@Outer<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Outer<[@M]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: # LLZK layout map v1
+// CHECK-NEXT:  # signals
+// CHECK-NEXT:  signal 0	main["kids"][0]["out"][0]
+// CHECK-NEXT:  signal 1	main["kids"][1]["out"][0]
+// CHECK-NEXT:  signal 2	main["kids"][1]["out"][1]
+// CHECK-NEXT:  signal 3	main["mids"][0]["kids"][0]["out"][0]
+// CHECK-NEXT:  signal 4	main["mids"][1]["kids"][0]["out"][0]
+// CHECK-NEXT:  signal 5	main["mids"][1]["kids"][1]["out"][0]
+// CHECK-NEXT:  signal 6	main["mids"][1]["kids"][1]["out"][1]
+// CHECK-NEXT:  signal 7	main["pods"][0]["inner"][0]["out"][0]
+// CHECK-NEXT:  signal 8	main["pods"][0]["inner"][1]["out"][0]
+// CHECK-NEXT:  signal 9	main["pods"][0]["inner"][1]["out"][1]
+// CHECK-NEXT:  signal 10	main["pods"][1]["inner"][0]["out"][0]
+// CHECK-NEXT:  signal 11	main["pods"][1]["inner"][1]["out"][0]
+// CHECK-NEXT:  signal 12	main["pods"][1]["inner"][1]["out"][1]
+// CHECK-NOT: {{.}}

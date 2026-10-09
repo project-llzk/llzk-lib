@@ -1,0 +1,17 @@
+// RUN: not llzk-translate %s --llzk-layout -o %t.layout 2> %t.error
+// RUN: FileCheck %s < %t.error
+// RUN: not llzk-translate %s --llzk-generate-layout -o %t.generated.layout 2> %t.generated.error
+// RUN: FileCheck %s < %t.generated.error
+// Valid product-only main must not silently drop its input signals.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @product(%input: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// CHECK-LABEL: error: LLZK layout requires a main constrain function

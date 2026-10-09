@@ -1,0 +1,4 @@
+added:
+  - Export logical signal layouts in declaration order with `llzk-translate --llzk-layout`, including unused signals, nested components, and monomorphized struct families.
+  - Generate a signal layout directly from template-based LLZK IR with `llzk-translate --llzk-generate-layout`, which runs template monomorphization before export.
+  - Provide the C++ `buildLLZKLayout` API and storage-path lookup for logical signal IDs.

@@ -1,0 +1,62 @@
+// RUN: llzk-translate %s --llzk-layout -o %t.layout
+// RUN: FileCheck %s --match-full-lines < %t.layout
+// Unrelated malformed/duplicate IDs are ignored; integer widths need not be i64.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @out : !felt.type {signal}
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @ConcreteChild {
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@ConcreteChild> {
+      %self = struct.new : <@ConcreteChild>
+      function.return %self : !struct.type<@ConcreteChild>
+    }
+    function.def @constrain(%self: !struct.type<@ConcreteChild>) { function.return }
+  } {poly.specialization_id = 1 : i32, poly.origin = @Child::@Child, poly.arguments = [0 : index]}
+  struct.def @UnusedA {
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@UnusedA> {
+      %self = struct.new : <@UnusedA>
+      function.return %self : !struct.type<@UnusedA>
+    }
+    function.def @constrain(%self: !struct.type<@UnusedA>) { function.return }
+  } {poly.specialization_id = 0 : i64}
+  struct.def @UnusedB {
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@UnusedB> {
+      %self = struct.new : <@UnusedB>
+      function.return %self : !struct.type<@UnusedB>
+    }
+    function.def @constrain(%self: !struct.type<@UnusedB>) { function.return }
+  } {poly.specialization_id = 0 : i64}
+  struct.def @UnusedBad {
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@UnusedBad> {
+      %self = struct.new : <@UnusedBad>
+      function.return %self : !struct.type<@UnusedBad>
+    }
+    function.def @constrain(%self: !struct.type<@UnusedBad>) { function.return }
+  } {poly.specialization_id = "bad"}
+  struct.def @Main {
+    struct.member @items : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {poly.family = [{indices = [0 : index], specialization = 1 : i32, type = !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>}]}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: # LLZK layout map v1
+// CHECK-NEXT:  # signals
+// CHECK-NEXT:  signal 0	main["items"][0]["out"]
+// CHECK-NOT: {{.}}
