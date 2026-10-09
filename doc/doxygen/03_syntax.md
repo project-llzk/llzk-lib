@@ -76,9 +76,16 @@ Conversions to machine integers, MLIR integer values, and binary encodings must
 specify the signed interpretation and check that the value fits. C++ clients can
 use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
 to report invalid input and overflow without depending on assertions.
-`toDynamicAPInt(ArrayRef<uint64_t>)` decodes unsigned 64-bit limbs in
-least-significant-first order without truncation; an empty array represents zero.
-`FeltConstAttr::get` and `FieldSpecAttr::get` also accept this limb format directly.
+`toSignedDynamicAPInt(ArrayRef<uint64_t>)` decodes 64-bit limbs in
+least-significant-first order as a signed two's-complement integer. The top bit of
+the highest (last) limb is the sign bit; an empty array represents zero.
+`FeltConstAttr::get` and `FieldSpecAttr::get` accept this same signed limb format.
+To represent a positive value whose highest data limb has its top bit set, append
+a zero limb at the most-significant end of the array. For example, `{UINT64_MAX}`
+represents `-1`, while `{UINT64_MAX, 0}` represents `2^64 - 1`. A field modulus
+below two is invalid: `FieldSpecAttr::get` requires a valid modulus, while
+`FieldSpecAttr::getChecked` emits a diagnostic and returns a null attribute for
+an invalid modulus.
 
 During the four-stage migration, the old `toAPInt` and `toExactWidthAPInt` helpers
 remain temporary adapters for existing callers. Stage 4 removes them after all
