@@ -65,12 +65,12 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
   }
 
   if (circuits.empty()) {
-    return moduleOp.emitOpError() << "does not contain an r1cs.circuit to export";
+    return moduleOp.emitOpError("does not contain an r1cs.circuit to export");
   }
   if (circuits.size() > 1) {
-    auto diag =
-        moduleOp.emitOpError("contains multiple r1cs.circuit ops; specify '--r1cs-circuit-name'");
-    diag << " (available:";
+    auto diag = moduleOp.emitOpError(
+        "contains multiple r1cs.circuit ops; specify '--r1cs-circuit-name' (available:"
+    );
     for (auto circuit : circuits) {
       diag << " @" << circuit.getSymName();
     }
@@ -81,27 +81,23 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
   return circuits.front();
 }
 
-static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText) {
+static FailureOr<llvm::DynamicAPInt> parsePrime(ModuleOp moduleOp, StringRef primeText) {
   if (primeText.empty()) {
-    return moduleOp.emitOpError()
-           << "R1CS binary export requires a non-empty '--r1cs-prime' option";
+    return moduleOp.emitOpError("R1CS binary export requires a non-empty '--r1cs-prime' option");
   }
   if (!llvm::all_of(primeText, llvm::isDigit)) {
-    return moduleOp.emitOpError() << "'--r1cs-prime' must be a base-10 integer";
+    return moduleOp.emitOpError("'--r1cs-prime' must be a base-10 integer");
   }
 
-  // `APInt` requires a bit width up front when parsing from decimal text. Four
-  // bits per digit is intentionally loose but always sufficient because
-  // `10 < 2^4`.
-  unsigned bits = std::max(1u, 4u * static_cast<unsigned>(primeText.size()));
-  llvm::APInt tmp(bits, primeText, 10);
-  unsigned activeBits = std::max(1u, tmp.getActiveBits());
-  llvm::APInt prime = tmp.zextOrTrunc(activeBits);
-  if (prime.ule(1)) {
-    return moduleOp.emitOpError() << "'--r1cs-prime' must be greater than 1";
+  auto prime = llzk::parseDynamicAPInt(primeText);
+  if (!prime) {
+    return moduleOp.emitOpError(llvm::toString(prime.takeError()));
+  }
+  if (*prime <= 1) {
+    return moduleOp.emitOpError("'--r1cs-prime' must be greater than 1");
   }
 
-  return prime;
+  return *prime;
 }
 
 enum class ExportWireClass : std::uint8_t {
@@ -167,8 +163,8 @@ struct ExportedCircuit {
 ///    reserved mapping.
 class CircuitExportModelBuilder {
 public:
-  CircuitExportModelBuilder(r1cs::CircuitDefOp circuitOp, const llvm::APInt &prime)
-      : circuit(circuitOp), primeModulus(llzk::toDynamicAPInt(prime)) {}
+  CircuitExportModelBuilder(r1cs::CircuitDefOp circuitOp, const llvm::DynamicAPInt &prime)
+      : circuit(circuitOp), primeModulus(prime) {}
 
   FailureOr<ExportedCircuit> build() {
     Block &entryBlock = circuit.getBody().front();
@@ -196,12 +192,7 @@ private:
   };
 
   llvm::DynamicAPInt decodeFieldElement(r1cs::FeltAttr attr) const {
-    // FeltAttr stores an IntegerAttr with a signless IntegerType, so we cannot
-    // use `IntegerAttr::getAPSInt()` here. The lowering constructs felt
-    // literals from signed APSInts, so we explicitly recover that signed
-    // interpretation before reducing modulo the export field prime.
-    llvm::APSInt signedValue(attr.getValue().getValue(), false);
-    return reduce(llzk::toDynamicAPInt(signedValue));
+    return reduce(attr.getValue());
   }
 
   llvm::DynamicAPInt reduce(const llvm::DynamicAPInt &value) const {
@@ -507,8 +498,10 @@ private:
   DenseSet<Value> failedLinearValues;
 };
 
-static FailureOr<uint32_t> computeFieldSizeBytes(Operation *op, const llvm::APInt &prime) {
-  uint32_t minBytes = std::max(1u, (prime.getActiveBits() + 7u) / 8u);
+static FailureOr<uint32_t> computeFieldSizeBytes(Operation *op, const llvm::DynamicAPInt &prime) {
+  uint64_t minBytes = std::max(
+      uint64_t(1), (static_cast<uint64_t>(llzk::toAPSInt(prime).getActiveBits()) + 7u) / 8u
+  );
   uint64_t roundedSize = ((static_cast<uint64_t>(minBytes) + 7u) / 8u) * 8u;
   if (!std::in_range<uint32_t>(roundedSize)) {
     return op->emitOpError() << "field size does not fit in a 32-bit header field";
@@ -550,7 +543,7 @@ static LogicalResult serializeLinearCombination(
 }
 
 static FailureOr<BinaryBuffer> serializeExportedCircuit(
-    r1cs::CircuitDefOp circuit, const llvm::APInt &prime, const ExportedCircuit &model
+    r1cs::CircuitDefOp circuit, const llvm::DynamicAPInt &prime, const ExportedCircuit &model
 ) {
   if (model.wireToLabel.size() != model.numWires) {
     return circuit.emitOpError() << "internal export error: wire-to-label map has "
@@ -568,7 +561,7 @@ static FailureOr<BinaryBuffer> serializeExportedCircuit(
 
   BinaryBuffer headerSection;
   headerSection.writeU32(*fieldSizeBytes);
-  headerSection.writeFieldElement(*fieldSizeBytes, llzk::toDynamicAPInt(prime));
+  headerSection.writeFieldElement(*fieldSizeBytes, prime);
   headerSection.writeU32(model.numWires);
   headerSection.writeU32(model.numPublicOutputs);
   headerSection.writeU32(model.numPublicInputs);
@@ -614,7 +607,7 @@ LogicalResult r1cs::exportR1CSBinary(
     return failure();
   }
 
-  FailureOr<llvm::APInt> parsedPrime = parsePrime(moduleOp, prime);
+  FailureOr<llvm::DynamicAPInt> parsedPrime = parsePrime(moduleOp, prime);
   if (failed(parsedPrime)) {
     return failure();
   }

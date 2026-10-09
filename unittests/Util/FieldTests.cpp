@@ -13,6 +13,7 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <unordered_set>
 
 using namespace llvm;
 using namespace llzk;
@@ -62,6 +63,28 @@ TEST(FieldAliasTests, BuiltinAliasesUseExpectedPrimes) {
           "21888242871839275222246405745257275088696311157297823662689037894645226208583"
       )
   );
+}
+
+// Hashing follows prime equality even for aliases and independently copied fields.
+TEST(FieldAliasTests, HashUsesPrimeIdentity) {
+  const Field &bn128 = Field::getField("bn128");
+  const Field &bn254 = Field::getField("bn254");
+  const Field &grumpkin = Field::getField("grumpkin");
+  const Field copy = bn128;
+  const Field::Hash hash;
+
+  EXPECT_EQ(bn128, bn254);
+  EXPECT_EQ(bn128, copy);
+  EXPECT_NE(bn128, grumpkin);
+  EXPECT_EQ(hash(bn128), hash(bn254));
+  EXPECT_EQ(hash(bn128), hash(copy));
+
+  std::unordered_set<Field, Field::Hash> fields;
+  EXPECT_TRUE(fields.insert(bn128).second);
+  EXPECT_FALSE(fields.insert(bn254).second);
+  EXPECT_FALSE(fields.insert(copy).second);
+  EXPECT_TRUE(fields.insert(grumpkin).second);
+  EXPECT_EQ(fields.size(), 2U);
 }
 
 //===------------------------------------------------------------------===//

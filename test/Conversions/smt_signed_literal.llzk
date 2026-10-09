@@ -1,0 +1,31 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt --llzk-to-smt-no-cf-naive='field=babybear' %s | FileCheck --enable-var-scope --check-prefix=NAIVE %s
+
+module attributes {llzk.lang} {
+  struct.def @Signed {
+    struct.member @out : !felt.type
+    function.def @product() -> !struct.type<@Signed> {
+      %self = struct.new : <@Signed>
+      %minus_one = felt.const -1
+      struct.writem %self[@out] = %minus_one : <@Signed>, !felt.type
+      function.return %self : !struct.type<@Signed>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_Signed() {
+// CHECK: %[[OUT:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// CHECK: smt.int.cmp le %[[OUT]],
+// CHECK: %[[MINUS_ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
+// CHECK-NEXT: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[OUT]], %[[MINUS_ONE]] : !smt.int
+// CHECK-NEXT: smt.assert %[[EQ]]
+
+// NAIVE-LABEL: func.func @smt_Signed() {
+// NAIVE: %[[OUT:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// NAIVE-NEXT: %[[MINUS_ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
+// NAIVE-NEXT: %[[MODULUS:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// NAIVE-NEXT: %[[OUT_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[OUT]], %[[MODULUS]]
+// NAIVE-NEXT: %[[MODULUS_COPY:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// NAIVE-NEXT: %[[VALUE_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[MINUS_ONE]], %[[MODULUS_COPY]]
+// NAIVE-NEXT: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[OUT_MOD]], %[[VALUE_MOD]] : !smt.int
+// NAIVE-NEXT: smt.assert %[[EQ]]
