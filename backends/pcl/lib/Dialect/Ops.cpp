@@ -196,9 +196,7 @@ template <typename Op> struct FoldDoubleNeg : public OpRewritePattern<Op> {
 OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
   return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
     return lhs + rhs;
-  }, [](const auto &value, auto) { return (value == 0); }, [](const auto &, auto) {
-    return false;
-  });
+  }, [](const auto &value, auto) { return value == 0; }, [](const auto &, auto) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -272,9 +270,7 @@ private:
 OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
   return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
     return lhs * rhs;
-  }, [](auto &value, auto) { return (value == 1); }, [](auto &value, auto) {
-    return (value == 0);
-  });
+  }, [](auto &value, auto) { return value == 1; }, [](auto &value, auto) { return value == 0; });
 }
 
 void MulOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
@@ -337,17 +333,14 @@ void SubOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext
 }
 
 OpFoldResult SubOp::fold(FoldAdaptor adaptor) {
-  return tryFoldBinaryFeltOp(
-      *this, adaptor, [](const auto &lhs, const auto &rhs, const auto &prime) {
-    // (lhs - rhs) mod p == (lhs + (p - rhs)) mod p iff 0 <= lhs < p and 0 <= rhs < p.
-    // The `tryFoldBinaryFeltOp` helper ensures `lhs` and `rhs` are inside the field, so the
-    // assumption above is safe.
+  return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
+    // DynamicAPInt can represent negative values and `tryFoldBinaryFeltOp()` reduces
+    // the result modulo the prime into the canonical nonnegative range.
     return lhs - rhs;
   }, [](auto &value, auto side) {
     // lhs - 0 = lhs
-    return side == Side::Rhs && (value == 0);
-  }, [](auto &, auto) { return false; }
-  );
+    return side == Side::Rhs && value == 0;
+  }, [](auto &, auto) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
