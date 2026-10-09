@@ -81,7 +81,7 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
             auto integer = dyn_cast<IntegerAttr>(argument);
             integer && integer.getType().isSignlessInteger(1)
         ) {
-          value = IntegerAttr::get(indexType, integer.getValue().getZExtValue());
+          value = IntegerAttr::get(indexType, integer.getValue().isOne() ? 1 : 0);
         }
       } else if (
           auto integerType = dyn_cast<IntegerType>(*expected);
@@ -1070,7 +1070,7 @@ public:
         return std::make_pair(Type(StructType::get(*name)), WalkResult::skip());
       }
       );
-      for (auto clone : clones) {
+      for (Operation *clone : clones) {
         // Provenance uses top-root names, not the root of the rewritten body.
         auto origin = clone->removeAttr(SPECIALIZATION_ORIGIN_ATTR);
         auto args = clone->removeAttr(SPECIALIZATION_ARGUMENTS_ATTR);
