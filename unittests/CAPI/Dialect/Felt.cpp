@@ -194,7 +194,7 @@ TEST_F(CAPITest, FeltStringConstructorsRejectMalformedInput) {
   auto type = wrap(cppGetFeltType("bn254"));
   auto field = mlirStringRefCreateFromCString("bn254");
   auto name = mlirIdentifierGet(context, field);
-  for (auto input : {"", "12x", "--1"}) {
+  for (const auto *input : {"", "12x", "--1"}) {
     auto text = mlirStringRefCreateFromCString(input);
     EXPECT_EQ(llzkFelt_FeltConstAttrGetFromString(context, text, type).ptr, nullptr);
     EXPECT_EQ(llzkFelt_FeltConstAttrGetFromStringInField(context, text, field).ptr, nullptr);
@@ -237,7 +237,7 @@ TEST_F(CAPITest, FieldSpecPartsConstructorRejectsModuliBelowTwo) {
       EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, count).ptr, nullptr);
     }
   }
-  for (uint64_t value : {UINT64_MAX, uint64_t(1) << 63}) {
+  for (uint64_t value : {UINT64_MAX, uint64_t(1) << 63U}) {
     const uint64_t parts[] = {value, value};
     for (intptr_t count : {1, 2}) {
       EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, count).ptr, nullptr);
@@ -259,19 +259,19 @@ TEST_F(CAPITest, FeltPartsConstructorsPreserveSignedValues) {
   };
   for (const auto &test : {
            TestCase {{UINT64_MAX}, "-1"},
-           TestCase {{uint64_t(1) << 63}, "-9223372036854775808"},
+           TestCase {{uint64_t(1) << 63U}, "-9223372036854775808"},
            TestCase {{INT64_MAX}, "9223372036854775807"},
            TestCase {{UINT64_MAX, UINT64_MAX}, "-1"},
            TestCase {{0, UINT64_MAX}, "-18446744073709551616"},
            TestCase {{UINT64_MAX, UINT64_MAX - 1}, "-18446744073709551617"},
-           TestCase {{0, uint64_t(1) << 63}, "-170141183460469231731687303715884105728"},
+           TestCase {{0, uint64_t(1) << 63U}, "-170141183460469231731687303715884105728"},
            TestCase {{UINT64_MAX, 0}, "18446744073709551615"},
            TestCase {{2, 1}, "18446744073709551618"},
            TestCase {{0, 0}, "0"},
        }) {
     SCOPED_TRACE(test.expected);
-    auto *parts = test.parts.data();
-    auto count = test.parts.size();
+    const auto *parts = test.parts.data();
+    auto count = llzk::checkedCast<intptr_t>(test.parts.size());
     for (auto attr : {
              llzkFelt_FeltConstAttrGetFromParts(context, parts, count, type),
              llzkFelt_FeltConstAttrGetFromPartsInField(context, parts, count, field),
@@ -290,7 +290,7 @@ TEST_F(CAPITest, FieldSpecConstructors) {
   auto name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("custom"));
   // A 127-bit prime exercises multiple limbs.
   auto text = mlirStringRefCreateFromCString("170141183460469231731687303715884105727");
-  const uint64_t parts[] = {UINT64_MAX, UINT64_MAX >> 1};
+  const uint64_t parts[] = {UINT64_MAX, UINT64_MAX >> 1U};
   auto expected = llzk::toDynamicAPInt(unwrap(text));
   for (auto attr : {
            llzkFelt_FieldSpecAttrGetFromString(context, name, text),

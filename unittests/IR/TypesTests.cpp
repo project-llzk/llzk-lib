@@ -208,7 +208,7 @@ TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
     return true;
   }();
 
-  auto felt = [&](uint64_t value, llvm::StringRef field) {
+  auto felt = [&](int64_t value, llvm::StringRef field) {
     return FeltConstAttr::get(&ctx, llvm::DynamicAPInt(value), field);
   };
   FeltConstAttr unspecified = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(37));
