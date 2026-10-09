@@ -81,7 +81,7 @@ public:
         layout.argumentNames[index] = *name;
       }
       path.assign({builder.getStringAttr("arg"), builder.getI64IntegerAttr(index)});
-      if (failed(visitType(constrain.getArgument(index).getType(), constrain, path, true))) {
+      if (failed(visitType(constrain.getFunctionType().getInput(index), constrain, path, true))) {
         return failure();
       }
     }
