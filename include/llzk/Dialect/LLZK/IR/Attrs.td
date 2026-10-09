@@ -56,18 +56,17 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
     ```
   }];
 
-  let parameters = (ins WidthInsensitiveAPIntParameter<
+  let parameters = (ins DynamicAPIntParameter<
                         "Loop variable lower bound (inclusive)">:$lower,
-      WidthInsensitiveAPIntParameter<
-                        "Loop variable upper bound (exclusive)">:$upper,
-      WidthInsensitiveAPIntParameter<"Loop variable step/increment">:$step);
+      DynamicAPIntParameter<"Loop variable upper bound (exclusive)">:$upper,
+      DynamicAPIntParameter<"Loop variable step/increment">:$step);
 
   let builders = [AttrBuilder<
-      (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper,
-          "::llvm::APInt":$step),
-      [{ return $_get(context, ::llzk::APIntValue(std::move(lower)),
-          ::llzk::APIntValue(std::move(upper)),
-          ::llzk::APIntValue(std::move(step))); }]>];
+      (ins "::llvm::DynamicAPInt":$lower, "::llvm::DynamicAPInt":$upper,
+          "::llvm::DynamicAPInt":$step),
+      [{ return $_get(context, ::llzk::DynamicAPIntValue(std::move(lower)),
+          ::llzk::DynamicAPIntValue(std::move(upper)),
+          ::llzk::DynamicAPIntValue(std::move(step))); }]>];
 
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
 }

@@ -87,7 +87,9 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
   return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
+        op, felt::FeltConstAttr::get(
+                op->getContext(), llvm::DynamicAPInt(constOp.value()), op.getType()
+            )
     );
     return success();
   }).Default([](auto) { return failure(); });
@@ -108,13 +110,13 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     auto value = constOp.getValue().getValue();
-    // Require a nonnegative APInt representation that fits in the signed 64-bit index builder.
-    // The sign check also protects programmatically constructed attributes whose APInt width was
-    // not normalized by the textual IR parser.
-    if (!value.isNegative() && value.getActiveBits() <= 63) {
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(
-          op, static_cast<int64_t>(value.getZExtValue())
-      );
+    // Only materialize nonnegative values representable by the index builder.
+    auto converted = checkedToInt64(value);
+    if (!converted) {
+      return rewriter.notifyMatchFailure(op, llvm::toString(converted.takeError()));
+    }
+    if (*converted >= 0) {
+      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, *converted);
       return success();
     }
   }

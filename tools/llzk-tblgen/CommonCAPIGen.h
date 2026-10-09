@@ -200,6 +200,12 @@ inline bool isCppLanguageConstruct(mlir::StringRef methodName) {
       .Default(false);
 }
 
+/// Whether a parameter represents an arbitrary-precision mathematical integer.
+inline bool isDynamicAPIntType(mlir::StringRef cppType) {
+  cppType.consume_front("::");
+  return cppType == "llzk::DynamicAPIntValue" || cppType == "llvm::DynamicAPInt";
+}
+
 /// @brief Check if a C++ type is APInt
 /// @param cppType The C++ type string to check
 /// @return true if the type is an APInt or LLZK's numeric APInt storage key

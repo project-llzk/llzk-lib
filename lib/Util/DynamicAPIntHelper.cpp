@@ -13,6 +13,7 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallString.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <limits>
@@ -42,6 +43,16 @@ static DynamicAPInt binaryBitOp(
 }
 
 namespace llzk {
+
+DynamicAPInt toSignedDynamicAPInt(ArrayRef<uint64_t> parts) {
+  if (parts.empty()) {
+    return DynamicAPInt(0);
+  }
+  if (parts.size() <= std::numeric_limits<unsigned>::max() / 64) {
+    return DynamicAPInt(APInt(static_cast<unsigned>(parts.size()) * 64, parts));
+  }
+  llvm::report_fatal_error("part array exceeds APInt's maximum bit width");
+}
 
 Expected<DynamicAPInt> parseDynamicAPInt(StringRef str) {
   StringRef digits = str;

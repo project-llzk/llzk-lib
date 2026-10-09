@@ -76,8 +76,37 @@ Conversions to machine integers, MLIR integer values, and binary encodings must
 specify the signed interpretation and check that the value fits. C++ clients can
 use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
 to report invalid input and overflow without depending on assertions.
+`toSignedDynamicAPInt(ArrayRef<uint64_t>)` decodes 64-bit limbs in
+least-significant-first order as a signed two's-complement integer. The top bit of
+the highest (last) limb is the sign bit; an empty array represents zero.
+`FeltConstAttr::get` and `FieldSpecAttr::get` accept this same signed limb format.
+To represent a positive value whose highest data limb has its top bit set, append
+a zero limb at the most-significant end of the array. For example, `{UINT64_MAX}`
+represents `-1`, while `{UINT64_MAX, 0}` represents `2^64 - 1`. A field modulus
+below two is invalid: `FieldSpecAttr::get` requires a valid modulus, while
+`FieldSpecAttr::getChecked` emits a diagnostic and returns a null attribute for
+an invalid modulus.
 
 During the four-stage migration, the old `toAPInt` and `toExactWidthAPInt` helpers
 remain temporary adapters for existing callers. Stage 4 removes them after all
 callers move to checked fixed-width encoding. APInt/APSInt decoding and encoding
 at LLVM/MLIR boundaries remain necessary after the migration.
+Felt constant attributes retain the exact signed literal, including when their
+field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
+modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
+compares the literal and type, so `-1` and `p - 1` need not be the same attribute.
+
+The C API accepts signed decimal `MlirStringRef` values for felt constants, field
+moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
+attribute. Numeric getters deliver the complete decimal value to an
+`MlirStringCallback`; callers must copy the callback text if they need to retain it.
+
+Numeric bytecode payloads for felt constants, field specifications, and loop bounds
+use minimal signed two's-complement encodings. Only payload tags corresponding to
+these signed encodings are accepted.
+
+The APInt overloads of felt/field-specification builders, `Field::reduce` and
+`Field::inv`, and the old width-insensitive attribute parameter remain temporary
+migration adapters through stage 3. Stage 4 removes them after downstream callers
+use DynamicAPInt. `DynamicAPIntValue` is permanent owning storage for canonical
+numeric hashing, not a migration adapter.

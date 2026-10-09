@@ -36,65 +36,71 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 // FeltConstAttr
 //===----------------------------------------------------------------------===//
 
-/// Creates a llzk::felt::FeltConstAttr with the given value in the specified field.
-MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetInField(MlirContext ctx, int64_t value, MlirStringRef fieldName);
-
-/// Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field.
-MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value);
-
-/// Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.
+/// Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field.
 /// The provided `MlirType` must be a llzk::felt::FeltType.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value, MlirType type);
+llzkFelt_FeltConstAttrGetFromInt64(MlirContext ctx, int64_t value, MlirType type);
 
-/// Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsInField(
-    MlirContext ctx, unsigned numBits, int64_t value, MlirStringRef fieldName
-);
-
-/// Creates a llzk::felt::FeltConstAttr with a set bit length and value in an unspecified field.
+/// Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field.
+/// An undefined field name emits a diagnostic and returns a null attribute.
+/// See llzkFelt_FeltTypeGetFromRef for the requirements on `fieldName`.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFelt_FeltConstAttrGetWithBitsUnspecified(MlirContext ctx, unsigned numBits, int64_t value);
+llzkFelt_FeltConstAttrGetFromInt64InField(MlirContext ctx, int64_t value, MlirStringRef fieldName);
 
-/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number
-/// in the specified field.
+/// Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in an unspecified field.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetFromInt64Unspecified(MlirContext ctx, int64_t value);
+
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer
+/// in the specified field. Returns a null attribute for malformed decimal input.
 /// The provided `MlirType` must be a llzk::felt::FeltType.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromString(
-    MlirContext ctx, unsigned numBits, MlirStringRef str, MlirType type
-);
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, MlirStringRef str, MlirType type);
 
-/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number
-/// in the specified field.
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer
+/// in the specified field. Returns a null attribute for malformed decimal input.
+/// An undefined field name emits a diagnostic and returns a null attribute.
+/// See llzkFelt_FeltTypeGetFromRef for the requirements on `fieldName`.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(
-    MlirContext ctx, unsigned numBits, MlirStringRef str, MlirStringRef fieldName
+    MlirContext ctx, MlirStringRef str, MlirStringRef fieldName
 );
 
-/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number
-/// in an unspecified field.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(
-    MlirContext ctx, unsigned numBits, MlirStringRef str
-);
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer
+/// in an unspecified field. Returns a null attribute for malformed decimal input.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetFromStringUnspecified(MlirContext ctx, MlirStringRef str);
 
-/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order
-/// in the specified field.
+/// Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order. The most significant bit
+/// is treated as the sign bit. The value is 0 when `nParts == 0`. The constant is created with
+/// the specified llzk::felt::FeltType.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts > 0`.
 /// The provided `MlirType` must be a llzk::felt::FeltType.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
-    MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirType type
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirType type
 );
 
-/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order
-/// in the specified field.
+/// Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order. The most significant bit
+/// is treated as the sign bit. The value is 0 when `nParts == 0`. The constant is created with
+/// the llzk::felt::FeltType for the specified field name.
+/// An undefined field name emits a diagnostic and returns a null attribute.
+/// See llzkFelt_FeltTypeGetFromRef for the requirements on `fieldName`.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts > 0`.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(
-    MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts,
-    MlirStringRef fieldName
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName
 );
 
-/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order
-/// in an unspecified field.
+/// Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order. The most significant bit
+/// is treated as the sign bit. The value is 0 when `nParts == 0`. The constant is created with
+/// the unspecified-field llzk::felt::FeltType.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts > 0`.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
-    MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts
+    MlirContext ctx, const uint64_t *parts, intptr_t nParts
 );
 
 //===----------------------------------------------------------------------===//
@@ -102,25 +108,38 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
 //===----------------------------------------------------------------------===//
 
 /// Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.
+/// Returns a null attribute for malformed decimal input.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromString(
-    MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, MlirStringRef primeStr
+    MlirContext ctx, MlirIdentifier fieldName, MlirStringRef primeStr
 );
 
-/// Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing
-/// the prime.
+/// Creates a llzk::felt::FieldSpecAttr from 64-bit parts in LSB order. The most significant bit
+/// is treated as the sign bit. The value is 0 when `nParts == 0`. A modulus below two produces a
+/// diagnostic and a null attribute.
+///
+/// Requirements:
+/// `nParts` must be non-negative and `parts` must be non-null when `nParts > 0`.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
-    MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, const uint64_t *parts,
-    intptr_t nParts
+    MlirContext ctx, MlirIdentifier fieldName, const uint64_t *parts, intptr_t nParts
 );
 
 //===----------------------------------------------------------------------===//
 // FeltType
 //===----------------------------------------------------------------------===//
 
-/// Creates a llzk::felt::FeltType with an unspecified field.
+/// Gets the llzk::felt::FeltType without the field specified.
 MLIR_CAPI_EXPORTED MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx);
 
-/// Create a llzk::felt::FeltType Type with the given parameters.
+/// Gets a llzk::felt::FeltType referring to an already defined field.
+///
+/// Requirements:
+/// `fieldName` must exactly match a built-in field name (e.g., "bn254") or a custom
+/// field registered with LLZK. Pass the name itself, without quotes or an '@' prefix.
+/// The string must contain `fieldName.length` readable bytes; it need not be null-terminated
+/// and is copied into `ctx`, so its storage need only remain valid for this call.
+///
+/// A `fieldName` that has not been defined emits a diagnostic and returns a null type. Use
+/// `llzkFelt_FeltTypeGetUnspecified` for an unspecified field, rather than an empty name here.
 MLIR_CAPI_EXPORTED MlirType llzkFelt_FeltTypeGetFromRef(MlirContext ctx, MlirStringRef fieldName);
 
 #ifdef __cplusplus

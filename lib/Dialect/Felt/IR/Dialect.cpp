@@ -37,8 +37,8 @@ namespace {
 
 /// Denotes which dialect attribute is serialized.
 enum class FeltAttrEncoding : uint8_t {
-  FeltConst = 0,
-  FieldSpec = 1,
+  FeltConst = 2,
+  FieldSpec = 3,
 };
 
 struct FeltDialectBytecodeInterface
@@ -57,7 +57,7 @@ struct FeltDialectBytecodeInterface
 
     switch (static_cast<FeltAttrEncoding>(encoding)) {
     case FeltAttrEncoding::FeltConst: {
-      FailureOr<APInt> value = llzk::readAPInt(reader);
+      FailureOr<llvm::DynamicAPInt> value = llzk::readDynamicAPInt(reader);
       llzk::felt::FeltType type;
       if (failed(value) || failed(reader.readType(type))) {
         return {};
@@ -69,15 +69,24 @@ struct FeltDialectBytecodeInterface
       if (failed(reader.readAttribute(fieldName))) {
         return {};
       }
-      FailureOr<APInt> prime = llzk::readAPInt(reader);
+      FailureOr<llvm::DynamicAPInt> prime = llzk::readDynamicAPInt(reader);
       if (failed(prime)) {
         return {};
       }
 
-      llzk::Field::addField(fieldName.getValue(), *prime, [&reader]() {
-        return llzk::InFlightDiagnosticWrapper(reader.emitError());
-      });
-      return llzk::felt::FieldSpecAttr::get(getContext(), fieldName, *prime);
+      // Create the FieldSpecAttr with verification.
+      auto fieldSpec = llzk::felt::FieldSpecAttr::getChecked([&reader]() {
+        return reader.emitError();
+      }, getContext(), fieldName, *prime);
+
+      // Cache the verified field, reporting an error if there's a conflict.
+      if (fieldSpec) {
+        llzk::Field::addField(fieldName.getValue(), *prime, [&reader]() {
+          return llzk::InFlightDiagnosticWrapper(reader.emitError());
+        });
+      }
+
+      return fieldSpec;
     }
     }
 
@@ -88,14 +97,14 @@ struct FeltDialectBytecodeInterface
   LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &writer) const final {
     if (auto feltConst = dyn_cast<llzk::felt::FeltConstAttr>(attr)) {
       writer.writeVarInt(static_cast<uint64_t>(FeltAttrEncoding::FeltConst));
-      llzk::writeAPInt(writer, feltConst.getValue());
+      llzk::writeDynamicAPInt(writer, feltConst.getValue());
       writer.writeType(feltConst.getType());
       return success();
     }
     if (auto fieldSpec = dyn_cast<llzk::felt::FieldSpecAttr>(attr)) {
       writer.writeVarInt(static_cast<uint64_t>(FeltAttrEncoding::FieldSpec));
       writer.writeAttribute(fieldSpec.getFieldName());
-      llzk::writeAPInt(writer, fieldSpec.getPrime());
+      llzk::writeDynamicAPInt(writer, fieldSpec.getPrime());
       return success();
     }
     return failure();
@@ -117,7 +126,7 @@ Attribute FieldSpecAttr::parse(AsmParser &odsParser, Type) {
   Builder odsBuilder(odsParser.getContext());
   llvm::SMLoc odsLoc = odsParser.getCurrentLocation();
   FailureOr<StringAttr> fieldNameAttrRes;
-  FailureOr<llvm::APInt> primeRes;
+  FailureOr<llzk::DynamicAPIntValue> primeRes;
 
   // Parse literal '<'
   if (odsParser.parseLess()) {
@@ -139,11 +148,11 @@ Attribute FieldSpecAttr::parse(AsmParser &odsParser, Type) {
   }
 
   // Parse variable 'prime'
-  primeRes = FieldParser<llvm::APInt>::parse(odsParser);
+  primeRes = llzk::parseDynamicAPIntValue(odsParser);
   if (failed(primeRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be a `llvm::APInt`"
+        "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be an integer"
     );
     return {};
   }
@@ -154,15 +163,19 @@ Attribute FieldSpecAttr::parse(AsmParser &odsParser, Type) {
   assert(succeeded(fieldNameAttrRes));
   assert(succeeded(primeRes));
 
-  // Custom logic: cache the field, reporting an error if there's a conflict
-  auto errFn = [&odsParser]() {
-    return InFlightDiagnosticWrapper(odsParser.emitError(odsParser.getCurrentLocation()));
-  };
-  Field::addField(fieldNameAttrRes.value(), primeRes.value(), errFn);
+  // Create the FieldSpecAttr with verification.
+  const llvm::DynamicAPInt &prime = *primeRes;
+  auto fieldSpec =
+      odsParser.getChecked<FieldSpecAttr>(odsLoc, odsParser.getContext(), *fieldNameAttrRes, prime);
 
-  return odsParser.getChecked<FieldSpecAttr>(
-      odsLoc, odsParser.getContext(), StringAttr(*fieldNameAttrRes), llvm::APInt(*primeRes)
-  );
+  // Cache the verified field, reporting an error if there's a conflict.
+  if (fieldSpec) {
+    Field::addField(fieldNameAttrRes.value(), prime, [&odsParser]() {
+      return InFlightDiagnosticWrapper(odsParser.emitError(odsParser.getCurrentLocation()));
+    });
+  }
+
+  return fieldSpec;
 }
 
 void FieldSpecAttr::print(AsmPrinter &odsPrinter) const {
@@ -182,11 +195,11 @@ Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
   SMLoc odsLoc = odsParser.getCurrentLocation();
 
   // Parse the APInt value.
-  FailureOr<APInt> valueRes = FieldParser<APInt>::parse(odsParser);
+  auto valueRes = llzk::parseDynamicAPIntValue(odsParser);
   if (failed(valueRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`"
+        "failed to parse LLZK_FeltConstAttr parameter 'value' which is to be an integer"
     );
     return {};
   }

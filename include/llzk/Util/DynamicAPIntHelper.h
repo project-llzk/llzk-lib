@@ -21,6 +21,7 @@
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/Hashing.h>
 #include <llvm/ADT/StringRef.h>
@@ -62,6 +63,11 @@ llvm::DynamicAPInt toDynamicAPInt(const llvm::APSInt &i);
 /// Converts an APInt to a DynamicAPInt, using an unsigned interpretation. For a signed
 /// interpretation, use `DynamicAPInt(const APInt &)` directly.
 llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i);
+
+/// Decode 64-bit parts in LSB order as a two's-complement signed integer.
+/// The highest bit of the last part is the sign bit; an empty array represents
+/// zero. Reports a fatal error if the part count cannot fit APInt's bit width.
+llvm::DynamicAPInt toSignedDynamicAPInt(llvm::ArrayRef<uint64_t> parts);
 
 inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
   return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));

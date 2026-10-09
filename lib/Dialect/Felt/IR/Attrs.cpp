@@ -13,6 +13,17 @@ using namespace mlir;
 
 namespace llzk::felt {
 
+LogicalResult FieldSpecAttr::verify(
+    llvm::function_ref<InFlightDiagnostic()> emitError, StringAttr,
+    llzk::DynamicAPIntValue primeWrapper
+) {
+  const llvm::DynamicAPInt &prime = primeWrapper; // implict unwrap
+  if (prime < 2) {
+    return emitError() << "field modulus must be at least 2";
+  }
+  return success();
+}
+
 StringAttr FeltConstAttr::getFieldName() const {
   auto ft = getType();
   return ft ? ft.getFieldName() : StringAttr();
