@@ -68,6 +68,8 @@ llzk-translate circuit.llzk --llzk-generate-layout -o circuit.llzk-layout
 ```
 
 For already monomorphized IR, `--llzk-layout` exports the layout directly.
+Both commands require main to define a `@constrain` function; product-only main
+components are unsupported.
 
 The text format starts with a layout map header and a `# signals` section.
 Each line gives a signal ID and a storage path, such as

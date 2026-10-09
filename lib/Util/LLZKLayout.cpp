@@ -68,18 +68,21 @@ public:
     }
     topRoot = *root;
 
+    auto constrain = main->get().getConstrainFuncOp();
+    if (!constrain) {
+      return main->get().emitError("LLZK layout requires a main constrain function");
+    }
+
     SmallVector<Attribute> path;
     // Arguments to main's constrain come before the member defs in the layout.
-    if (auto constrain = main->get().getConstrainFuncOp()) {
-      layout.argumentNames.resize(constrain.getNumArguments());
-      for (unsigned index = 1; index < constrain.getNumArguments(); ++index) {
-        if (auto name = constrain.getArgNameAttr(index)) {
-          layout.argumentNames[index] = *name;
-        }
-        path.assign({builder.getStringAttr("arg"), builder.getI64IntegerAttr(index)});
-        if (failed(visitType(constrain.getArgument(index).getType(), constrain, path, true))) {
-          return failure();
-        }
+    layout.argumentNames.resize(constrain.getNumArguments());
+    for (unsigned index = 1; index < constrain.getNumArguments(); ++index) {
+      if (auto name = constrain.getArgNameAttr(index)) {
+        layout.argumentNames[index] = *name;
+      }
+      path.assign({builder.getStringAttr("arg"), builder.getI64IntegerAttr(index)});
+      if (failed(visitType(constrain.getArgument(index).getType(), constrain, path, true))) {
+        return failure();
       }
     }
 

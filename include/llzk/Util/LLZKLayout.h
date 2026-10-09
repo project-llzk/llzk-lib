@@ -53,6 +53,7 @@ struct LLZKLayout {
 
 /// Enumerate the signal leaves of llzk.main and its constrain arguments. Struct
 /// references and array shapes must be concrete after template monomorphization.
+/// Main must define a constrain function; product-only main components are unsupported.
 /// Rolled arrays in member storage are resolved through poly.family metadata,
 /// including struct fields inside POD elements. The monomorphizer's mapping is
 /// trusted to associate each index tuple with the correct specialization arguments;
