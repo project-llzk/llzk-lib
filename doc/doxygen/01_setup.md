@@ -85,7 +85,7 @@ pushd third-party
 export THIRD_PARTY="$PWD"
 
 # Configure LLVM build
-git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.0 --depth 1
+git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.3 --depth 1
 pushd llvm-project
 mkdir build
 pushd build
