@@ -12,7 +12,10 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
+#include <mlir/IR/Diagnostics.h>
+
 #include <llvm/ADT/APInt.h>
+#include <llvm/ADT/SmallVector.h>
 
 class SMTAttributeTests : public LLZKTest {};
 
@@ -53,9 +56,9 @@ TEST_F(SMTAttributeTests, DynamicIntegerStorageUsesSignedNumericIdentity) {
   EXPECT_NE(negative, positive);
 }
 
-TEST_F(SMTAttributeTests, LimbBuildersPreserveUnsignedValuesAndFieldTypes) {
+TEST_F(SMTAttributeTests, LimbBuildersPreservePositiveValuesAndFieldTypes) {
   using namespace llzk::felt;
-  const uint64_t parts[] = {7, UINT64_C(0x8000000000000000)};
+  const uint64_t parts[] = {7, UINT64_C(0x8000000000000000), 0};
   const auto expected = llzk::toDynamicAPInt("170141183460469231731687303715884105735");
   auto type = FeltType::get(&ctx, "babybear");
   auto explicitType = FeltConstAttr::get(&ctx, parts, type);
@@ -78,15 +81,88 @@ TEST_F(SMTAttributeTests, LimbBuildersCanonicalizeEmptyAndHighZeroLimbs) {
   using namespace llzk::felt;
   llvm::ArrayRef<uint64_t> empty;
   const uint64_t zero[] = {0, 0};
-  EXPECT_EQ(llzk::toDynamicAPInt(empty), 0);
   EXPECT_EQ(FeltConstAttr::get(&ctx, empty), FeltConstAttr::get(&ctx, zero));
   EXPECT_EQ(FeltConstAttr::get(&ctx, empty).getValue(), 0);
 
-  const uint64_t parts[] = {UINT64_MAX};
+  const uint64_t parts[] = {UINT64_MAX, 0};
   const uint64_t padded[] = {UINT64_MAX, 0, 0};
   EXPECT_EQ(FeltConstAttr::get(&ctx, parts), FeltConstAttr::get(&ctx, padded));
   EXPECT_EQ(
       FeltConstAttr::get(&ctx, parts).getValue(), llzk::toDynamicAPInt("18446744073709551615")
   );
   EXPECT_EQ(FieldSpecAttr::get(&ctx, "custom", parts), FieldSpecAttr::get(&ctx, "custom", padded));
+}
+
+TEST_F(SMTAttributeTests, FeltLimbBuildersPreserveSignedValuesAndFieldTypes) {
+  using namespace llzk::felt;
+  struct TestCase {
+    llvm::SmallVector<uint64_t> parts;
+    const char *expected;
+  };
+  auto type = FeltType::get(&ctx, "babybear");
+  for (const auto &test : {
+           TestCase {{}, "0"},
+           TestCase {{UINT64_MAX}, "-1"},
+           TestCase {{UINT64_MAX, UINT64_MAX}, "-1"},
+           TestCase {{uint64_t(1) << 63}, "-9223372036854775808"},
+           TestCase {{0, uint64_t(1) << 63}, "-170141183460469231731687303715884105728"},
+           TestCase {{UINT64_MAX, UINT64_MAX - 1}, "-18446744073709551617"},
+           TestCase {{UINT64_MAX, 0}, "18446744073709551615"},
+           TestCase {{2, 1}, "18446744073709551618"},
+       }) {
+    SCOPED_TRACE(test.expected);
+    auto expected = llzk::toDynamicAPInt(test.expected);
+    auto explicitType = FeltConstAttr::get(&ctx, test.parts, type);
+    auto namedField = FeltConstAttr::get(&ctx, test.parts, "babybear");
+    auto unspecified = FeltConstAttr::get(&ctx, test.parts);
+    EXPECT_EQ(explicitType, namedField);
+    EXPECT_EQ(explicitType.getType(), type);
+    EXPECT_EQ(unspecified.getType(), FeltType::get(&ctx));
+    EXPECT_EQ(explicitType.getValue(), expected);
+    EXPECT_EQ(unspecified.getValue(), expected);
+  }
+}
+
+TEST_F(SMTAttributeTests, CheckedFieldLimbBuildersRejectModuliBelowTwo) {
+  using namespace llzk::felt;
+  unsigned diagnostics = 0;
+  mlir::ScopedDiagnosticHandler handler(&ctx, [&](mlir::Diagnostic &diag) {
+    EXPECT_NE(diag.str().find("field modulus must be at least 2"), std::string::npos);
+    ++diagnostics;
+    return mlir::success();
+  });
+  auto name = mlir::StringAttr::get(&ctx, "custom");
+  for (const auto &parts : {
+           llvm::SmallVector<uint64_t> {},
+           llvm::SmallVector<uint64_t> {0},
+           llvm::SmallVector<uint64_t> {1, 0},
+           llvm::SmallVector<uint64_t> {UINT64_MAX},
+           llvm::SmallVector<uint64_t> {UINT64_MAX, UINT64_MAX},
+           llvm::SmallVector<uint64_t> {0, uint64_t(1) << 63},
+       }) {
+    EXPECT_FALSE(FieldSpecAttr::getChecked(loc, &ctx, name, llvm::ArrayRef<uint64_t>(parts)));
+    EXPECT_FALSE(
+        FieldSpecAttr::getChecked(
+            loc, &ctx, llvm::StringRef("custom"), llvm::ArrayRef<uint64_t>(parts)
+        )
+    );
+  }
+  EXPECT_EQ(diagnostics, 12U);
+  for (const auto &parts : {
+           llvm::SmallVector<uint64_t> {2},
+           llvm::SmallVector<uint64_t> {2, 0},
+           llvm::SmallVector<uint64_t> {UINT64_MAX, 0},
+       }) {
+    auto expected = FieldSpecAttr::get(&ctx, name, parts);
+    EXPECT_EQ(
+        FieldSpecAttr::getChecked(loc, &ctx, name, llvm::ArrayRef<uint64_t>(parts)), expected
+    );
+    EXPECT_EQ(
+        FieldSpecAttr::getChecked(
+            loc, &ctx, llvm::StringRef("custom"), llvm::ArrayRef<uint64_t>(parts)
+        ),
+        expected
+    );
+  }
+  EXPECT_EQ(diagnostics, 12U);
 }

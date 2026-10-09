@@ -64,9 +64,10 @@ llvm::DynamicAPInt toDynamicAPInt(const llvm::APSInt &i);
 /// interpretation, use `DynamicAPInt(const APInt &)` directly.
 llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i);
 
-/// Decode unsigned 64-bit limbs in least-significant-first order without truncation.
-/// An empty array represents zero; high zero limbs do not affect the value.
-llvm::DynamicAPInt toDynamicAPInt(llvm::ArrayRef<uint64_t> parts);
+/// Decode 64-bit parts in LSB order as a two's-complement signed integer.
+/// The highest bit of the last part is the sign bit; an empty array represents
+/// zero. Reports a fatal error if the part count cannot fit APInt's bit width.
+llvm::DynamicAPInt toSignedDynamicAPInt(llvm::ArrayRef<uint64_t> parts);
 
 inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
   return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));

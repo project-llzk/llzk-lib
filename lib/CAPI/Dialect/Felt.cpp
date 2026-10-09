@@ -41,7 +41,11 @@ MlirAttribute llzkFelt_FeltConstAttrGetFromInt64(MlirContext ctx, int64_t value,
 
 MlirAttribute
 llzkFelt_FeltConstAttrGetFromInt64InField(MlirContext ctx, int64_t value, MlirStringRef fieldName) {
-  return wrap(FeltConstAttr::get(unwrap(ctx), llvm::DynamicAPInt(value), unwrap(fieldName)));
+  MlirType type = llzkFelt_FeltTypeGetFromRef(ctx, fieldName);
+  if (mlirTypeIsNull(type)) {
+    return MlirAttribute {nullptr};
+  }
+  return llzkFelt_FeltConstAttrGetFromInt64(ctx, value, type);
 }
 
 MlirAttribute llzkFelt_FeltConstAttrGetFromInt64Unspecified(MlirContext ctx, int64_t value) {
@@ -56,7 +60,11 @@ llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, MlirStringRef str, MlirType
 MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(
     MlirContext ctx, MlirStringRef str, MlirStringRef fieldName
 ) {
-  return llzkFelt_FeltConstAttrGetFromString(ctx, str, llzkFelt_FeltTypeGetFromRef(ctx, fieldName));
+  MlirType type = llzkFelt_FeltTypeGetFromRef(ctx, fieldName);
+  if (mlirTypeIsNull(type)) {
+    return MlirAttribute {nullptr};
+  }
+  return llzkFelt_FeltConstAttrGetFromString(ctx, str, type);
 }
 
 MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(MlirContext ctx, MlirStringRef str) {
@@ -76,9 +84,11 @@ MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
 MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(
     MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName
 ) {
-  return llzkFelt_FeltConstAttrGetFromParts(
-      ctx, parts, nParts, llzkFelt_FeltTypeGetFromRef(ctx, fieldName)
-  );
+  MlirType type = llzkFelt_FeltTypeGetFromRef(ctx, fieldName);
+  if (mlirTypeIsNull(type)) {
+    return MlirAttribute {nullptr};
+  }
+  return llzkFelt_FeltConstAttrGetFromParts(ctx, parts, nParts, type);
 }
 
 MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
@@ -103,7 +113,7 @@ MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
   return wrap(
       FieldSpecAttr::getChecked(
           UnknownLoc::get(unwrap(ctx)), unwrap(ctx), unwrap(fieldName),
-          toDynamicAPInt(llvm::ArrayRef(parts, nParts))
+          llvm::ArrayRef(parts, nParts)
       )
   );
 }
@@ -113,5 +123,9 @@ MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx) {
 }
 
 MlirType llzkFelt_FeltTypeGetFromRef(MlirContext ctx, MlirStringRef fieldName) {
-  return wrap(FeltType::get(unwrap(ctx), unwrap(fieldName)));
+  return wrap(
+      FeltType::getChecked(
+          UnknownLoc::get(unwrap(ctx)), unwrap(ctx), StringAttr::get(unwrap(ctx), unwrap(fieldName))
+      )
+  );
 }

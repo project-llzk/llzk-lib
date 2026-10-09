@@ -20,6 +20,7 @@
 #include <mlir-c/Support.h>
 
 #include <mlir/CAPI/Support.h>
+#include <mlir/IR/Diagnostics.h>
 
 #include <llvm/ADT/APInt.h>
 
@@ -147,15 +148,15 @@ TEST_F(CAPITest, FeltConstructorsPreserveAllBits) {
   auto type = wrap(cppGetFeltType("bn254"));
   auto field = mlirStringRefCreateFromCString("bn254");
   auto text = mlirStringRefCreateFromCString("340282366920938463463374607431768211455");
-  const uint64_t parts[] = {UINT64_MAX, UINT64_MAX};
+  const uint64_t parts[] = {UINT64_MAX, UINT64_MAX, 0};
   auto expected = llzk::toDynamicAPInt(unwrap(text));
   for (auto attr : {
            llzkFelt_FeltConstAttrGetFromString(context, text, type),
            llzkFelt_FeltConstAttrGetFromStringInField(context, text, field),
            llzkFelt_FeltConstAttrGetFromStringUnspecified(context, text),
-           llzkFelt_FeltConstAttrGetFromParts(context, parts, 2, type),
-           llzkFelt_FeltConstAttrGetFromPartsInField(context, parts, 2, field),
-           llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, parts, 2),
+           llzkFelt_FeltConstAttrGetFromParts(context, parts, 3, type),
+           llzkFelt_FeltConstAttrGetFromPartsInField(context, parts, 3, field),
+           llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, parts, 3),
        }) {
     ASSERT_NE(attr.ptr, nullptr);
     EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(), expected);
@@ -222,6 +223,12 @@ TEST_F(CAPITest, FeltPartsConstructorsAcceptEmptyAndLeadingZeroParts) {
 }
 
 TEST_F(CAPITest, FieldSpecPartsConstructorRejectsModuliBelowTwo) {
+  unsigned diagnostics = 0;
+  mlir::ScopedDiagnosticHandler handler(unwrap(context), [&](mlir::Diagnostic &diag) {
+    EXPECT_NE(diag.str().find("field modulus must be at least 2"), std::string::npos);
+    ++diagnostics;
+    return mlir::success();
+  });
   auto name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("custom"));
   EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, nullptr, 0).ptr, nullptr);
   for (uint64_t value : {0, 1}) {
@@ -230,10 +237,53 @@ TEST_F(CAPITest, FieldSpecPartsConstructorRejectsModuliBelowTwo) {
       EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, count).ptr, nullptr);
     }
   }
+  for (uint64_t value : {UINT64_MAX, uint64_t(1) << 63}) {
+    const uint64_t parts[] = {value, value};
+    for (intptr_t count : {1, 2}) {
+      EXPECT_EQ(llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, count).ptr, nullptr);
+    }
+  }
+  EXPECT_EQ(diagnostics, 9U);
   const uint64_t parts[] = {2, 0};
   auto attr = llzkFelt_FieldSpecAttrGetFromParts(context, name, parts, 2);
   ASSERT_NE(attr.ptr, nullptr);
   EXPECT_EQ(llvm::cast<llzk::felt::FieldSpecAttr>(unwrap(attr)).getPrime(), 2);
+}
+
+TEST_F(CAPITest, FeltPartsConstructorsPreserveSignedValues) {
+  auto type = wrap(cppGetFeltType("bn254"));
+  auto field = mlirStringRefCreateFromCString("bn254");
+  struct TestCase {
+    llvm::SmallVector<uint64_t> parts;
+    const char *expected;
+  };
+  for (const auto &test : {
+           TestCase {{UINT64_MAX}, "-1"},
+           TestCase {{uint64_t(1) << 63}, "-9223372036854775808"},
+           TestCase {{INT64_MAX}, "9223372036854775807"},
+           TestCase {{UINT64_MAX, UINT64_MAX}, "-1"},
+           TestCase {{0, UINT64_MAX}, "-18446744073709551616"},
+           TestCase {{UINT64_MAX, UINT64_MAX - 1}, "-18446744073709551617"},
+           TestCase {{0, uint64_t(1) << 63}, "-170141183460469231731687303715884105728"},
+           TestCase {{UINT64_MAX, 0}, "18446744073709551615"},
+           TestCase {{2, 1}, "18446744073709551618"},
+           TestCase {{0, 0}, "0"},
+       }) {
+    SCOPED_TRACE(test.expected);
+    auto *parts = test.parts.data();
+    auto count = test.parts.size();
+    for (auto attr : {
+             llzkFelt_FeltConstAttrGetFromParts(context, parts, count, type),
+             llzkFelt_FeltConstAttrGetFromPartsInField(context, parts, count, field),
+             llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, parts, count),
+         }) {
+      ASSERT_FALSE(mlirAttributeIsNull(attr));
+      EXPECT_EQ(
+          llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(),
+          llzk::toDynamicAPInt(test.expected)
+      );
+    }
+  }
 }
 
 TEST_F(CAPITest, FieldSpecConstructors) {
@@ -291,6 +341,29 @@ TEST_F(CAPITest, llzk_felt_type_get_with_field_ref) {
   auto fieldName = MlirStringRef {.data = "bn128", .length = 5};
   auto type = llzkFelt_FeltTypeGetFromRef(context, fieldName);
   EXPECT_NE(type.ptr, (void *)NULL);
+}
+
+TEST_F(CAPITest, llzk_felt_unknown_field_returns_null) {
+  unsigned diagnostics = 0;
+  mlir::ScopedDiagnosticHandler handler(unwrap(context), [&](mlir::Diagnostic &diag) {
+    EXPECT_NE(diag.str().find("is not defined"), std::string::npos);
+    ++diagnostics;
+    return mlir::success();
+  });
+  for (const char *name : {"unknown_field_for_capi_test", ""}) {
+    auto field = mlirStringRefCreateFromCString(name);
+    auto value = mlirStringRefCreateFromCString("1");
+    uint64_t parts[] = {1};
+    EXPECT_TRUE(mlirTypeIsNull(llzkFelt_FeltTypeGetFromRef(context, field)));
+    EXPECT_TRUE(mlirAttributeIsNull(llzkFelt_FeltConstAttrGetFromInt64InField(context, 1, field)));
+    EXPECT_TRUE(
+        mlirAttributeIsNull(llzkFelt_FeltConstAttrGetFromStringInField(context, value, field))
+    );
+    EXPECT_TRUE(
+        mlirAttributeIsNull(llzkFelt_FeltConstAttrGetFromPartsInField(context, parts, 1, field))
+    );
+  }
+  EXPECT_EQ(diagnostics, 8U);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_felt_type_pass) {
