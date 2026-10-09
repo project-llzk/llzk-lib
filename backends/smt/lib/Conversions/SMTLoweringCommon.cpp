@@ -264,8 +264,11 @@ static inline Type smtArrayOfRank(MLIRContext *ctx, int64_t rank, Type elementTy
 LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
 
   addConversion([](Type type) { return type; });
-  addConversion([this, ctx](array::ArrayType arrType) {
-    return smtArrayOfRank(ctx, arrType.getRank(), convertType(arrType.getElementType()));
+  addConversion([this, ctx](array::ArrayType arrType) -> Type {
+    if (isa<felt::FeltType>(arrType.getElementType())) {
+      return smtArrayOfRank(ctx, arrType.getRank(), convertType(arrType.getElementType()));
+    }
+    return arrType;
   });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
