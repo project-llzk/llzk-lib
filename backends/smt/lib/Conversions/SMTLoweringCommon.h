@@ -46,6 +46,12 @@ using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mli
 
 mlir::FailureOr<FieldRef> resolveSelectedField(mlir::ModuleOp mod, llvm::StringRef fieldName);
 
+/// Return ceil(prime / 2), the cutoff for signed interpretation. Canonical values below
+/// this cutoff remain unchanged; values at or above it are interpreted as value - prime.
+static inline llvm::DynamicAPInt getSignedFeltThreshold(const llvm::DynamicAPInt &prime) {
+  return (prime + 1) / 2;
+}
+
 class LLZKToSMTTypeConverter : public mlir::TypeConverter {
 public:
   explicit LLZKToSMTTypeConverter(mlir::MLIRContext *ctx);
