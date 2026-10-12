@@ -115,5 +115,6 @@ var searchData=
   ['duplicate_20op_20elim_112',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-op-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'']]],
   ['duplicate_20read_20write_20elim_113',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'']]],
   ['dynamicapinthelper_2ecpp_114',['DynamicAPIntHelper.cpp',['../DynamicAPIntHelper_8cpp.html',1,'']]],
-  ['dynamicapinthelper_2eh_115',['DynamicAPIntHelper.h',['../DynamicAPIntHelper_8h.html',1,'']]]
+  ['dynamicapinthelper_2eh_115',['DynamicAPIntHelper.h',['../DynamicAPIntHelper_8h.html',1,'']]],
+  ['dynamicapintvalue_116',['DynamicAPIntValue',['../classllzk_1_1DynamicAPIntValue.html',1,'llzk::DynamicAPIntValue'],['../classllzk_1_1DynamicAPIntValue.html#ab3dc1d3c3becca4f4a89e3008d928368',1,'llzk::DynamicAPIntValue::DynamicAPIntValue()']]]
 ];

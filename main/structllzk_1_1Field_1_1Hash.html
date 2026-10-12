@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: Member List</title>
+<title>LLZK: llzk::Field::Hash Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1APIntValue.html','',''); });
+document.addEventListener('DOMContentLoaded',() => { initNavTree('structllzk_1_1Field_1_1Hash.html','','structllzk_1_1Field_1_1Hash-members'); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -127,24 +127,65 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1A
 </div>
 
 <div class="header">
-  <div class="headertitle"><div class="title">llzk::APIntValue Member List</div></div>
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="structllzk_1_1Field_1_1Hash-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">llzk::Field::Hash Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html#ad18b99fc4f427714099620ff8e21553e">APIntValue</a>(llvm::APInt apInt)</td><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="odd"><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html#a8d5614b3d6bc0b737ac2aef846f9a88c">getValue</a>() const</td><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html#ad66d6c9e2fef9fa3817de9b20fa29ada">hash_value</a>(const APIntValue &amp;key)</td><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td><td class="entry"><span class="mlabel">friend</span></td></tr>
-  <tr class="odd"><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html#ac86001bb0ca69f4d990aa5462cb81c00">operator const llvm::APInt &amp;</a>() const</td><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html#aa56be5a8f288492dbc9a35fe151e2c93">operator==</a>(const APIntValue &amp;lhs, const APIntValue &amp;rhs)</td><td class="entry"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td><td class="entry"><span class="mlabel">friend</span></td></tr>
-</table></div><!-- contents -->
+<p><a class="el" href="structllzk_1_1Field_1_1Hash.html" title="Hash the prime modulus (consistent with the equality operator).">Hash</a> the prime modulus (consistent with the equality operator).  
+ <a href="#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="Field_8h_source.html">Field.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:af488cf418b5a244728c6a7fee70e9898" id="r_af488cf418b5a244728c6a7fee70e9898"><td class="memItemLeft">size_t&#160;</td><td class="memItemRight"><a class="el" href="#af488cf418b5a244728c6a7fee70e9898">operator()</a> (const <a class="el" href="classllzk_1_1Field.html#a2abf8d65ff6ae1f4778cec3b164b5d08">Field</a> &amp;field) const</td></tr>
+</table>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="structllzk_1_1Field_1_1Hash.html" title="Hash the prime modulus (consistent with the equality operator).">Hash</a> the prime modulus (consistent with the equality operator). </p>
+
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00120">120</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="af488cf418b5a244728c6a7fee70e9898" name="af488cf418b5a244728c6a7fee70e9898"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af488cf418b5a244728c6a7fee70e9898">&#9670;&#160;</a></span>operator()()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t llzk::Field::Hash::operator() </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Field.html#a2abf8d65ff6ae1f4778cec3b164b5d08">Field</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>field</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00121">121</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>include/llzk/Util/<a class="el" href="Field_8h_source.html">Field.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- HTML footer for doxygen 1.13.2-->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a href="namespacellzk.html">llzk</a></li><li class="navelem"><a href="classllzk_1_1Field.html">Field</a></li><li class="navelem"><a href="structllzk_1_1Field_1_1Hash.html">Hash</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

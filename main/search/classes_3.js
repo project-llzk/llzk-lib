@@ -32,5 +32,6 @@ var searchData=
   ['dotgraphtraits_3c_20const_20llzk_3a_3asymboldeftree_20_2a_20_3e_29',['DOTGraphTraits&lt; const llzk::SymbolDefTree * &gt;',['../structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html',1,'llvm']]],
   ['dotgraphtraits_3c_20const_20llzk_3a_3asymboldeftreenode_20_2a_20_3e_30',['DOTGraphTraits&lt; const llzk::SymbolDefTreeNode * &gt;',['../structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html',1,'llvm']]],
   ['dotgraphtraits_3c_20const_20llzk_3a_3asymbolusegraph_20_2a_20_3e_31',['DOTGraphTraits&lt; const llzk::SymbolUseGraph * &gt;',['../structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html',1,'llvm']]],
-  ['dotgraphtraits_3c_20const_20llzk_3a_3asymbolusegraphnode_20_2a_20_3e_32',['DOTGraphTraits&lt; const llzk::SymbolUseGraphNode * &gt;',['../structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html',1,'llvm']]]
+  ['dotgraphtraits_3c_20const_20llzk_3a_3asymbolusegraphnode_20_2a_20_3e_32',['DOTGraphTraits&lt; const llzk::SymbolUseGraphNode * &gt;',['../structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html',1,'llvm']]],
+  ['dynamicapintvalue_33',['DynamicAPIntValue',['../classllzk_1_1DynamicAPIntValue.html',1,'llzk']]]
 ];

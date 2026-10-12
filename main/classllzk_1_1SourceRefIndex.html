@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1S
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="classllzk_1_1SourceRefIndex-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::SourceRefIndex Class Reference</div></div>
 </div><!--header-->
@@ -150,10 +151,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:acab7e76855426429662adbfd98cfab36" id="r_acab7e76855426429662adbfd98cfab36"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#acab7e76855426429662adbfd98cfab36">SourceRefIndex</a> (<a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a> &gt; f)</td></tr>
 <tr class="memitem:ac0d43137d4c7a331b9853b65e2c5ff41" id="r_ac0d43137d4c7a331b9853b65e2c5ff41"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac0d43137d4c7a331b9853b65e2c5ff41">SourceRefIndex</a> (mlir::StringAttr recordName)</td></tr>
 <tr class="memitem:a5cd174c311d318f4c7416ceb5a01a9d6" id="r_a5cd174c311d318f4c7416ceb5a01a9d6"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a5cd174c311d318f4c7416ceb5a01a9d6">SourceRefIndex</a> (const llvm::DynamicAPInt &amp;i)</td></tr>
-<tr class="memitem:a6e2a0654d0faf48f1ae0958b32c30b08" id="r_a6e2a0654d0faf48f1ae0958b32c30b08"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a6e2a0654d0faf48f1ae0958b32c30b08">SourceRefIndex</a> (const llvm::APInt &amp;i)</td></tr>
 <tr class="memitem:ad17cf8610d0a9deb5193f59fe8bd886c" id="r_ad17cf8610d0a9deb5193f59fe8bd886c"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad17cf8610d0a9deb5193f59fe8bd886c">SourceRefIndex</a> (int64_t i)</td></tr>
-<tr class="memitem:a646cd5fc8b4b253a499d519aa4267c34" id="r_a646cd5fc8b4b253a499d519aa4267c34"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a646cd5fc8b4b253a499d519aa4267c34">SourceRefIndex</a> (const llvm::APInt &amp;low, const llvm::APInt &amp;high)</td></tr>
+<tr class="memitem:ac129e05680570c77f33c53bb780de838" id="r_ac129e05680570c77f33c53bb780de838"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac129e05680570c77f33c53bb780de838">SourceRefIndex</a> (const llvm::DynamicAPInt &amp;low, const llvm::DynamicAPInt &amp;high)</td></tr>
+<tr class="memdesc:ac129e05680570c77f33c53bb780de838"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a half-open range; a high bound of ShapedType::kDynamic means unbounded.  <br /></td></tr>
 <tr class="memitem:ad01ad534c696d0d1ce96f1d3f4c37c9c" id="r_ad01ad534c696d0d1ce96f1d3f4c37c9c"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad01ad534c696d0d1ce96f1d3f4c37c9c">SourceRefIndex</a> (IndexRange r)</td></tr>
+<tr class="memitem:a94e446243bdb94db3b95849e924c84b6" id="r_a94e446243bdb94db3b95849e924c84b6"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a94e446243bdb94db3b95849e924c84b6">hasUnboundedUpperBound</a> () const</td></tr>
+<tr class="memdesc:a94e446243bdb94db3b95849e924c84b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this range has no finite upper bound.  <br /></td></tr>
 <tr class="memitem:a373bef0ab8d60663d938d86f3315c0ca" id="r_a373bef0ab8d60663d938d86f3315c0ca"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a373bef0ab8d60663d938d86f3315c0ca">isMember</a> () const</td></tr>
 <tr class="memitem:abcb58d89ccfda2fd30e9c92535f069a1" id="r_abcb58d89ccfda2fd30e9c92535f069a1"><td class="memItemLeft"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#abcb58d89ccfda2fd30e9c92535f069a1">getMember</a> () const</td></tr>
 <tr class="memitem:a37ed68a585165086f55b59af53e75571" id="r_a37ed68a585165086f55b59af53e75571"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a37ed68a585165086f55b59af53e75571">isPodRecord</a> () const</td></tr>
@@ -170,6 +173,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ab5568af3d68c368f637d72a059527306"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true when these path components select any common storage.  <br /></td></tr>
 <tr class="memitem:a1d6036549b476aa2b7f2c18fc2d53847" id="r_a1d6036549b476aa2b7f2c18fc2d53847"><td class="memItemLeft">std::strong_ordering&#160;</td><td class="memItemRight"><a class="el" href="#a1d6036549b476aa2b7f2c18fc2d53847">operator&lt;=&gt;</a> (const <a class="el" href="#adc1a6bf8c296ac89b20f91dd778cb34b">SourceRefIndex</a> &amp;rhs) const</td></tr>
 <tr class="memitem:a29651943856b55e37c47b126a2f4ba12" id="r_a29651943856b55e37c47b126a2f4ba12"><td class="memItemLeft">size_t&#160;</td><td class="memItemRight"><a class="el" href="#a29651943856b55e37c47b126a2f4ba12">getHash</a> () const</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a72af6fe9fe08ddf6c5da4e2b248cc98e" id="r_a72af6fe9fe08ddf6c5da4e2b248cc98e"><td class="memItemLeft">static <a class="el" href="#adc1a6bf8c296ac89b20f91dd778cb34b">SourceRefIndex</a>&#160;</td><td class="memItemRight"><a class="el" href="#a72af6fe9fe08ddf6c5da4e2b248cc98e">forArrayDimension</a> (int64_t size)</td></tr>
+<tr class="memdesc:a72af6fe9fe08ddf6c5da4e2b248cc98e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select every nonnegative index in a static or dynamic array dimension.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Defines an index into an LLZK object. </p>
@@ -178,7 +186,7 @@ Public Member Functions</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00043">43</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="adc1a6bf8c296ac89b20f91dd778cb34b" name="adc1a6bf8c296ac89b20f91dd778cb34b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adc1a6bf8c296ac89b20f91dd778cb34b">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[1/8]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#adc1a6bf8c296ac89b20f91dd778cb34b">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[1/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -205,7 +213,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="acab7e76855426429662adbfd98cfab36" name="acab7e76855426429662adbfd98cfab36"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acab7e76855426429662adbfd98cfab36">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[2/8]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#acab7e76855426429662adbfd98cfab36">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[2/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -232,7 +240,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="ac0d43137d4c7a331b9853b65e2c5ff41" name="ac0d43137d4c7a331b9853b65e2c5ff41"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac0d43137d4c7a331b9853b65e2c5ff41">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[3/8]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0d43137d4c7a331b9853b65e2c5ff41">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[3/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -259,7 +267,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="a5cd174c311d318f4c7416ceb5a01a9d6" name="a5cd174c311d318f4c7416ceb5a01a9d6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5cd174c311d318f4c7416ceb5a01a9d6">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[4/8]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a5cd174c311d318f4c7416ceb5a01a9d6">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[4/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -285,35 +293,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a6e2a0654d0faf48f1ae0958b32c30b08" name="a6e2a0654d0faf48f1ae0958b32c30b08"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6e2a0654d0faf48f1ae0958b32c30b08">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[5/8]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llzk::SourceRefIndex::SourceRefIndex </td>
-          <td>(</td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel explicit">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00051">51</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
-
-</div>
-</div>
 <a id="ad17cf8610d0a9deb5193f59fe8bd886c" name="ad17cf8610d0a9deb5193f59fe8bd886c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad17cf8610d0a9deb5193f59fe8bd886c">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[6/8]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad17cf8610d0a9deb5193f59fe8bd886c">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[5/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -335,12 +316,12 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00052">52</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00051">51</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
-<a id="a646cd5fc8b4b253a499d519aa4267c34" name="a646cd5fc8b4b253a499d519aa4267c34"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a646cd5fc8b4b253a499d519aa4267c34">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[7/8]</span></h2>
+<a id="ac129e05680570c77f33c53bb780de838" name="ac129e05680570c77f33c53bb780de838"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac129e05680570c77f33c53bb780de838">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[6/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -351,12 +332,12 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">llzk::SourceRefIndex::SourceRefIndex </td>
           <td>(</td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>low</em></span>, </td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>low</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>high</em></span>&#160;)</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>high</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -366,12 +347,14 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Construct a half-open range; a high bound of ShapedType::kDynamic means unbounded. </p>
+
 <p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00053">53</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
 <a id="ad01ad534c696d0d1ce96f1d3f4c37c9c" name="ad01ad534c696d0d1ce96f1d3f4c37c9c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad01ad534c696d0d1ce96f1d3f4c37c9c">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[8/8]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad01ad534c696d0d1ce96f1d3f4c37c9c">&#9670;&#160;</a></span>SourceRefIndex() <span class="overload">[7/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -421,7 +404,36 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00088">88</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00094">94</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+
+</div>
+</div>
+<a id="a72af6fe9fe08ddf6c5da4e2b248cc98e" name="a72af6fe9fe08ddf6c5da4e2b248cc98e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72af6fe9fe08ddf6c5da4e2b248cc98e">&#9670;&#160;</a></span>forArrayDimension()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#adc1a6bf8c296ac89b20f91dd778cb34b">SourceRefIndex</a> llzk::SourceRefIndex::forArrayDimension </td>
+          <td>(</td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>size</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Select every nonnegative index in a static or dynamic array dimension. </p>
+
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00095">95</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -448,7 +460,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00113">113</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00119">119</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -475,7 +487,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00077">77</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00083">83</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -502,7 +514,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00083">83</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00089">89</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -529,7 +541,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00061">61</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00067">67</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -556,7 +568,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00074">74</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00080">80</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -583,7 +595,28 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00070">70</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00076">76</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+
+</div>
+</div>
+<a id="a94e446243bdb94db3b95849e924c84b6" name="a94e446243bdb94db3b95849e924c84b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94e446243bdb94db3b95849e924c84b6">&#9670;&#160;</a></span>hasUnboundedUpperBound()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::SourceRefIndex::hasUnboundedUpperBound </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Whether this range has no finite upper bound. </p>
+
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00100">100</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -610,7 +643,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00076">76</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00082">82</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -637,7 +670,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00082">82</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00088">88</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -664,7 +697,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00057">57</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00063">63</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -691,7 +724,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00069">69</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00075">75</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -710,7 +743,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00112">112</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00121">121</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -737,7 +770,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00091">91</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00097">97</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -759,7 +792,7 @@ Public Member Functions</h2></td></tr>
 <p>Return true when these path components select any common storage. </p>
 <p>Index ranges are half-open. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00175">175</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00177">177</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -778,7 +811,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00095">95</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00104">104</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>

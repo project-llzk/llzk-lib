@@ -170,17 +170,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZK_2IR_2Attr
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">using </span>Base::Base;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;llzk.loopbounds&quot;</span>;</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;llzk&quot;</span>;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">static</span> LoopBoundsAttr get(::mlir::MLIRContext *context, ::llzk::APIntValue lower, ::llzk::APIntValue upper, ::llzk::APIntValue step);</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">static</span> LoopBoundsAttr get(::mlir::MLIRContext *context, ::llvm::APInt lower, ::llvm::APInt upper, ::llvm::APInt step);</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">static</span> LoopBoundsAttr get(::mlir::MLIRContext *context, ::llzk::DynamicAPIntValue lower, ::llzk::DynamicAPIntValue upper, ::llzk::DynamicAPIntValue step);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">static</span> LoopBoundsAttr get(::mlir::MLIRContext *context, ::llvm::DynamicAPInt lower, ::llvm::DynamicAPInt upper, ::llvm::DynamicAPInt step);</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;loopbounds&quot;</span>};</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  }</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  const ::llvm::APInt &amp;getLower() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  const ::llvm::APInt &amp;getUpper() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  const ::llvm::APInt &amp;getStep() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  const ::llvm::DynamicAPInt &amp;getLower() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  const ::llvm::DynamicAPInt &amp;getUpper() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  const ::llvm::DynamicAPInt &amp;getStep() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>};</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>} <span class="comment">// namespace llzk</span></div>

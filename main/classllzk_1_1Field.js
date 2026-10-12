@@ -1,5 +1,6 @@
 var classllzk_1_1Field =
 [
+    [ "Hash", "structllzk_1_1Field_1_1Hash.html", "structllzk_1_1Field_1_1Hash" ],
     [ "Field", "classllzk_1_1Field.html#a2abf8d65ff6ae1f4778cec3b164b5d08", null ],
     [ "Field", "classllzk_1_1Field.html#a31d1517bcd81eef3fbe87ebfc0099804", null ],
     [ "Field", "classllzk_1_1Field.html#ae6eb866460140177c7e85bdeb5a3c77c", null ],
@@ -8,14 +9,12 @@ var classllzk_1_1Field =
     [ "felt", "classllzk_1_1Field.html#a67cf5f88ccdfb5c9fa56164a7fa7d52d", null ],
     [ "getPrimeAttr", "classllzk_1_1Field.html#a14c60e9780992545f3ba457d4ef4849c", null ],
     [ "half", "classllzk_1_1Field.html#a0ba190165250763577ea685828a52d98", null ],
-    [ "inv", "classllzk_1_1Field.html#aaaf90138e9e077e306770c6b42306871", null ],
-    [ "inv", "classllzk_1_1Field.html#a7e120e6674063d384f3528bb9c13e263", null ],
+    [ "inv", "classllzk_1_1Field.html#aa0cffe8e7b415e9f645270f10cd862ba", null ],
     [ "maxVal", "classllzk_1_1Field.html#afda1ab238804fa3c60c6eb830109767f", null ],
     [ "name", "classllzk_1_1Field.html#a53c22d58ec6540d875295016d1816067", null ],
     [ "one", "classllzk_1_1Field.html#a571128ae1db115e147ea6d480166aeb5", null ],
     [ "operator=", "classllzk_1_1Field.html#a8d084b08ada5abd365ec11fe6644d3fa", null ],
     [ "prime", "classllzk_1_1Field.html#a47ec17bc79f0c5b89ef340db23ed76a7", null ],
-    [ "reduce", "classllzk_1_1Field.html#a70940b8886993bdff31e6b82db1b7ebb", null ],
     [ "reduce", "classllzk_1_1Field.html#a4b004a9fbedd042fe568bda6a9455bfb", null ],
     [ "reduce", "classllzk_1_1Field.html#a8441c9b1837fb919983c838284bc63ab", null ],
     [ "toSigned", "classllzk_1_1Field.html#a39381adb038ecf28cf28c97737c61cc1", null ],

@@ -48,7 +48,6 @@ var hierarchy =
       ] ],
       [ "llzk::felt::AndFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1AndFeltOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::APIntValue", "classllzk_1_1APIntValue.html", null ],
     [ "llzk::polymorphic::detail::ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", [
       [ "llzk::polymorphic::ApplyMapOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", null ],
       [ "llzk::polymorphic::ApplyMapOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", [
@@ -105,8 +104,7 @@ var hierarchy =
       [ "llvm::cl::NestedOptionsParserBase< llzk::NestedPipelineOptions< PipelineOptionsT > >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", [
         [ "llvm::cl::parser< llzk::NestedPipelineOptions< PipelineOptionsT > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html", null ]
       ] ],
-      [ "llvm::cl::NestedOptionsParserBase< OptionsT >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", null ],
-      [ "llvm::cl::parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", null ]
+      [ "llvm::cl::NestedOptionsParserBase< OptionsT >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", null ]
     ] ],
     [ "llzk::BinaryBuffer", "classllzk_1_1BinaryBuffer.html", null ],
     [ "llzk::BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
@@ -407,6 +405,7 @@ var hierarchy =
       ] ],
       [ "llzk::felt::DivFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::DynamicAPIntValue", "classllzk_1_1DynamicAPIntValue.html", null ],
     [ "llzk::CallGraphNode::Edge", "classllzk_1_1CallGraphNode_1_1Edge.html", null ],
     [ "llzk::constrain::detail::EmitContainmentOpGenericAdaptorBase", "classllzk_1_1constrain_1_1detail_1_1EmitContainmentOpGenericAdaptorBase.html", [
       [ "llzk::constrain::EmitContainmentOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1constrain_1_1EmitContainmentOpGenericAdaptor.html", null ],
@@ -551,6 +550,7 @@ var hierarchy =
       [ "llvm::GraphTraits< Inverse< const llzk::SymbolUseGraph * > >", "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4_01_4.html", null ]
     ] ],
     [ "llzk::ExpressionValue::Hash", "structllzk_1_1ExpressionValue_1_1Hash.html", null ],
+    [ "llzk::Field::Hash", "structllzk_1_1Field_1_1Hash.html", null ],
     [ "llzk::Interval::Hash", "structllzk_1_1Interval_1_1Hash.html", null ],
     [ "llzk::SourceRef::Hash", "structllzk_1_1SourceRef_1_1Hash.html", null ],
     [ "llzk::SourceRefIndex::Hash", "structllzk_1_1SourceRefIndex_1_1Hash.html", null ],

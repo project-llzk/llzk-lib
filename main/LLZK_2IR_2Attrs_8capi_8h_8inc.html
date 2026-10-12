@@ -151,14 +151,14 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a522fab20db3dd987f2c3bc0166f4c3a0" id="r_a522fab20db3dd987f2c3bc0166f4c3a0"><td class="memItemLeft">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight"><a class="el" href="#a522fab20db3dd987f2c3bc0166f4c3a0">llzkAttributeIsA_Llzk_LoopBoundsAttr</a> (MlirAttribute)</td></tr>
 <tr class="memdesc:a522fab20db3dd987f2c3bc0166f4c3a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::LoopBoundsAttr.  <br /></td></tr>
-<tr class="memitem:a92c67962bfe0e2be7d57b29a3579c115" id="r_a92c67962bfe0e2be7d57b29a3579c115"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a92c67962bfe0e2be7d57b29a3579c115">llzkLlzk_LoopBoundsAttrGet</a> (MlirContext ctx, int64_t lower, int64_t upper, int64_t step)</td></tr>
-<tr class="memdesc:a92c67962bfe0e2be7d57b29a3579c115"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a ::llzk::LoopBoundsAttr Attribute with the given parameters.  <br /></td></tr>
-<tr class="memitem:a0f5690d0a2c6a5da4f689665512c7bcd" id="r_a0f5690d0a2c6a5da4f689665512c7bcd"><td class="memItemLeft">MLIR_CAPI_EXPORTED int64_t&#160;</td><td class="memItemRight"><a class="el" href="#a0f5690d0a2c6a5da4f689665512c7bcd">llzkLlzk_LoopBoundsAttrGetLower</a> (MlirAttribute)</td></tr>
-<tr class="memdesc:a0f5690d0a2c6a5da4f689665512c7bcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'lower' parameter from a ::llzk::LoopBoundsAttr Attribute.  <br /></td></tr>
-<tr class="memitem:a69a0bbe458793e5464e5a6d9a9b91bb7" id="r_a69a0bbe458793e5464e5a6d9a9b91bb7"><td class="memItemLeft">MLIR_CAPI_EXPORTED int64_t&#160;</td><td class="memItemRight"><a class="el" href="#a69a0bbe458793e5464e5a6d9a9b91bb7">llzkLlzk_LoopBoundsAttrGetUpper</a> (MlirAttribute)</td></tr>
-<tr class="memdesc:a69a0bbe458793e5464e5a6d9a9b91bb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'upper' parameter from a ::llzk::LoopBoundsAttr Attribute.  <br /></td></tr>
-<tr class="memitem:a616ed95f160bb71abd57c869f62d50c4" id="r_a616ed95f160bb71abd57c869f62d50c4"><td class="memItemLeft">MLIR_CAPI_EXPORTED int64_t&#160;</td><td class="memItemRight"><a class="el" href="#a616ed95f160bb71abd57c869f62d50c4">llzkLlzk_LoopBoundsAttrGetStep</a> (MlirAttribute)</td></tr>
-<tr class="memdesc:a616ed95f160bb71abd57c869f62d50c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'step' parameter from a ::llzk::LoopBoundsAttr Attribute.  <br /></td></tr>
+<tr class="memitem:a9ddf13851f0416bbc9d648024b6bc20d" id="r_a9ddf13851f0416bbc9d648024b6bc20d"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a9ddf13851f0416bbc9d648024b6bc20d">llzkLlzk_LoopBoundsAttrGet</a> (MlirContext ctx, MlirStringRef lower, MlirStringRef upper, MlirStringRef step)</td></tr>
+<tr class="memdesc:a9ddf13851f0416bbc9d648024b6bc20d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a ::llzk::LoopBoundsAttr Attribute with the given parameters.  <br /></td></tr>
+<tr class="memitem:a12eda644be78b76b194d75fb3bb39726" id="r_a12eda644be78b76b194d75fb3bb39726"><td class="memItemLeft">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight"><a class="el" href="#a12eda644be78b76b194d75fb3bb39726">llzkLlzk_LoopBoundsAttrGetLower</a> (MlirAttribute, MlirStringCallback callback, void *userData)</td></tr>
+<tr class="memdesc:a12eda644be78b76b194d75fb3bb39726"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'lower' value. The callback must copy the text to retain it.  <br /></td></tr>
+<tr class="memitem:a9aa6e0604aa00ed7e1d181f5c4f2b0b1" id="r_a9aa6e0604aa00ed7e1d181f5c4f2b0b1"><td class="memItemLeft">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight"><a class="el" href="#a9aa6e0604aa00ed7e1d181f5c4f2b0b1">llzkLlzk_LoopBoundsAttrGetUpper</a> (MlirAttribute, MlirStringCallback callback, void *userData)</td></tr>
+<tr class="memdesc:a9aa6e0604aa00ed7e1d181f5c4f2b0b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'upper' value. The callback must copy the text to retain it.  <br /></td></tr>
+<tr class="memitem:a951038185129d5fa27d2458cebb016d9" id="r_a951038185129d5fa27d2458cebb016d9"><td class="memItemLeft">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight"><a class="el" href="#a951038185129d5fa27d2458cebb016d9">llzkLlzk_LoopBoundsAttrGetStep</a> (MlirAttribute, MlirStringCallback callback, void *userData)</td></tr>
+<tr class="memdesc:a951038185129d5fa27d2458cebb016d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'step' value. The callback must copy the text to retain it.  <br /></td></tr>
 <tr class="memitem:a0be07662675b160010825d9b7b9a0bd5" id="r_a0be07662675b160010825d9b7b9a0bd5"><td class="memItemLeft">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight"><a class="el" href="#a0be07662675b160010825d9b7b9a0bd5">llzkAttributeIsA_Llzk_PublicAttr</a> (MlirAttribute)</td></tr>
 <tr class="memdesc:a0be07662675b160010825d9b7b9a0bd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::PublicAttr.  <br /></td></tr>
 <tr class="memitem:a3507c6bc275a3b166b2fd31e05607574" id="r_a3507c6bc275a3b166b2fd31e05607574"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a3507c6bc275a3b166b2fd31e05607574">llzkLlzk_PublicAttrGet</a> (MlirContext ctx)</td></tr>
@@ -182,7 +182,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Attribute is a ::llzk::LoopBoundsAttr. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00019">19</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00021">21</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -203,12 +203,12 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Attribute is a ::llzk::PublicAttr. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00040">40</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00054">54</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a92c67962bfe0e2be7d57b29a3579c115" name="a92c67962bfe0e2be7d57b29a3579c115"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a92c67962bfe0e2be7d57b29a3579c115">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGet()</h2>
+<a id="a9ddf13851f0416bbc9d648024b6bc20d" name="a9ddf13851f0416bbc9d648024b6bc20d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9ddf13851f0416bbc9d648024b6bc20d">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGet()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -221,87 +221,114 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>lower</em></span>, </td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>lower</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>upper</em></span>, </td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>upper</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>step</em></span>&#160;)</td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>step</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Create a ::llzk::LoopBoundsAttr Attribute with the given parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00023">23</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00025">25</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a0f5690d0a2c6a5da4f689665512c7bcd" name="a0f5690d0a2c6a5da4f689665512c7bcd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0f5690d0a2c6a5da4f689665512c7bcd">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetLower()</h2>
+<a id="a12eda644be78b76b194d75fb3bb39726" name="a12eda644be78b76b194d75fb3bb39726"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a12eda644be78b76b194d75fb3bb39726">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetLower()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED int64_t llzkLlzk_LoopBoundsAttrGetLower </td>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkLlzk_LoopBoundsAttrGetLower </td>
           <td>(</td>
-          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
-          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Get 'lower' parameter from a ::llzk::LoopBoundsAttr Attribute. </p>
-
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00028">28</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
-
-</div>
-</div>
-<a id="a616ed95f160bb71abd57c869f62d50c4" name="a616ed95f160bb71abd57c869f62d50c4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a616ed95f160bb71abd57c869f62d50c4">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetStep()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED int64_t llzkLlzk_LoopBoundsAttrGetStep </td>
-          <td>(</td>
-          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Get 'step' parameter from a ::llzk::LoopBoundsAttr Attribute. </p>
+<p>Print the exact signed decimal 'lower' value. The callback must copy the text to retain it. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00036">36</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a69a0bbe458793e5464e5a6d9a9b91bb7" name="a69a0bbe458793e5464e5a6d9a9b91bb7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69a0bbe458793e5464e5a6d9a9b91bb7">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetUpper()</h2>
+<a id="a951038185129d5fa27d2458cebb016d9" name="a951038185129d5fa27d2458cebb016d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a951038185129d5fa27d2458cebb016d9">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetStep()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED int64_t llzkLlzk_LoopBoundsAttrGetUpper </td>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkLlzk_LoopBoundsAttrGetStep </td>
           <td>(</td>
-          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Get 'upper' parameter from a ::llzk::LoopBoundsAttr Attribute. </p>
+<p>Print the exact signed decimal 'step' value. The callback must copy the text to retain it. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00048">48</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9aa6e0604aa00ed7e1d181f5c4f2b0b1" name="a9aa6e0604aa00ed7e1d181f5c4f2b0b1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9aa6e0604aa00ed7e1d181f5c4f2b0b1">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetUpper()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkLlzk_LoopBoundsAttrGetUpper </td>
+          <td>(</td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Print the exact signed decimal 'upper' value. The callback must copy the text to retain it. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00042">42</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -322,7 +349,7 @@ Functions</h2></td></tr>
 
 <p>Create a ::llzk::PublicAttr Attribute with the given parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00044">44</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00058">58</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

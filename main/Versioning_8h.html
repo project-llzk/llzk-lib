@@ -134,13 +134,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Versioning_8h.
   <div class="headertitle"><div class="title">Versioning.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;mlir/Bytecode/BytecodeImplementation.h&gt;</code><br />
-<code>#include &lt;llvm/ADT/APInt.h&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="DynamicAPIntHelper_8h_source.html">llzk/Util/DynamicAPIntHelper.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Bytecode/BytecodeImplementation.h&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Versioning.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Versioning_8h__incl.svg" width="542" height="131"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Versioning_8h__incl.svg" width="1806" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -162,10 +162,10 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a36fb7107da98c39ae715ff024f4ad07e" id="r_a36fb7107da98c39ae715ff024f4ad07e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a36fb7107da98c39ae715ff024f4ad07e">llzk::writeAPInt</a> (mlir::DialectBytecodeWriter &amp;writer, const llvm::APInt &amp;value)</td></tr>
-<tr class="memdesc:a36fb7107da98c39ae715ff024f4ad07e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write an APInt with its bit width, so the bytecode reader can use MLIR's native APInt payload encoding instead of falling back to decimal assembly.  <br /></td></tr>
-<tr class="memitem:a82afa19ff769b0dd05db76e22a364bd5" id="r_a82afa19ff769b0dd05db76e22a364bd5"><td class="memItemLeft">mlir::FailureOr&lt; llvm::APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a82afa19ff769b0dd05db76e22a364bd5">llzk::readAPInt</a> (mlir::DialectBytecodeReader &amp;reader)</td></tr>
-<tr class="memdesc:a82afa19ff769b0dd05db76e22a364bd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read an APInt written by <span class="tt"><a class="el" href="namespacellzk.html#a36fb7107da98c39ae715ff024f4ad07e" title="Write an APInt with its bit width, so the bytecode reader can use MLIR&#39;s native APInt payload encodin...">writeAPInt</a></span>.  <br /></td></tr>
+<tr class="memitem:afb3131a62a62678ca6664eb3c22c9c3e" id="r_afb3131a62a62678ca6664eb3c22c9c3e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#afb3131a62a62678ca6664eb3c22c9c3e">llzk::writeDynamicAPInt</a> (mlir::DialectBytecodeWriter &amp;writer, const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memdesc:afb3131a62a62678ca6664eb3c22c9c3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the minimal signed two's-complement encoding of a mathematical integer.  <br /></td></tr>
+<tr class="memitem:a438c72736d1d8276e965ca23354fd39e" id="r_a438c72736d1d8276e965ca23354fd39e"><td class="memItemLeft">mlir::FailureOr&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a438c72736d1d8276e965ca23354fd39e">llzk::readDynamicAPInt</a> (mlir::DialectBytecodeReader &amp;reader)</td></tr>
+<tr class="memdesc:a438c72736d1d8276e965ca23354fd39e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode a signed integer, rejecting invalid widths before allocating storage.  <br /></td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

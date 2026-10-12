@@ -1,5 +1,9 @@
 var DynamicAPIntHelper_8h =
 [
+    [ "llzk::checkedToAPInt", "namespacellzk.html#a504642a05cdf52c3836ff8392307042e", null ],
+    [ "llzk::checkedToInt64", "namespacellzk.html#a74f5183a15c12532abf39df9f432fa8f", null ],
+    [ "llzk::checkedToUInt64", "namespacellzk.html#a345c8af476b04223346776123a9ae80d", null ],
+    [ "llzk::hashDynamicAPInt", "namespacellzk.html#af0464a368b3aedaa3fcc6ba54ccbb0fb", null ],
     [ "llzk::modExp", "namespacellzk.html#a79c7df33a29f599757f22c2920d8addf", null ],
     [ "llzk::modInversePrime", "namespacellzk.html#a1f83757b07f122a5c8f74807ce83119a", null ],
     [ "llzk::operator&", "namespacellzk.html#a7d838b81c2874e5ce443ff1de91839d3", null ],
@@ -7,11 +11,11 @@ var DynamicAPIntHelper_8h =
     [ "llzk::operator>>", "namespacellzk.html#a7d13a019e952052198f1b49196e67111", null ],
     [ "llzk::operator^", "namespacellzk.html#a0841c189e0c22cc4c75ab9a378029d4c", null ],
     [ "llzk::operator|", "namespacellzk.html#a82e0f350b35605a55c3383c14dbbdc2c", null ],
-    [ "llzk::toAPInt", "namespacellzk.html#a1998817a76cc8f6e316294d1b18e2e92", null ],
+    [ "llzk::parseDynamicAPInt", "namespacellzk.html#a8760228ae4ab06f100ea2307af6e6b00", null ],
     [ "llzk::toAPSInt", "namespacellzk.html#a3b93df0843f457f1f81cc0dc5933d1c9", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#ad74feac4c1ab67da90787102f5231390", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#a42ddc7147daa762ec4335b255dacd7b3", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#aee183fbf8efdb7074e4ae15d7a4029a4", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#a254f0d812ac8a3f615d91a868115ee83", null ],
-    [ "llzk::toExactWidthAPInt", "namespacellzk.html#ab655bb1748d3ea9a799f9c044ce65d0e", null ]
+    [ "llzk::toSignedDynamicAPInt", "namespacellzk.html#a64be4f9cd510f0edf0e70b6423517ecf", null ]
 ];

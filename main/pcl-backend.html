@@ -418,6 +418,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('pcl-backend.ht
           </li>
         </ul>
       </li>
+      <li class="level2">
+        <a href="#integer-values">Integer values </a>
+      </li>
     </ul>
   </li>
 </ul>
@@ -972,7 +975,7 @@ FeltAttr</h3>
 <p><em>Field element represented as an arbitrary precision integer</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#pcl.felt&lt;</div>
-<div class="line">  ::llzk::APIntValue   # value</div>
+<div class="line">  ::llzk::DynamicAPIntValue   # value</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="parameters-14"></a>
 Parameters:</h4>
@@ -980,7 +983,7 @@ Parameters:</h4>
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Parameter  </th><th class="markdownTableHeadCenter">C++ type  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">felt constant value  </td></tr>
+<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">felt constant value  </td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="boolattr"></a>
 BoolAttr</h3>
@@ -1002,16 +1005,16 @@ PrimeAttr</h3>
 <p><em>Prime field modulus for this module</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#pcl.prime&lt;</div>
-<div class="line">  ::llzk::APIntValue   # value</div>
+<div class="line">  ::llzk::DynamicAPIntValue   # value</div>
 <div class="line">&gt;</div>
-</div><!-- fragment --><p>Attach this as a named attribute (e.g. pcl.prime) on builtin.module. Use an APInt literal so very large primes are supported.</p>
+</div><!-- fragment --><p>Attach this as a named attribute (e.g. pcl.prime) on builtin.module. Use a signed arbitrary-precision literal so very large primes are supported.</p>
 <h4 class="doxsection"><a class="anchor" id="parameters-16"></a>
 Parameters:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Parameter  </th><th class="markdownTableHeadCenter">C++ type  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">field prime modulus  </td></tr>
+<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">field prime modulus  </td></tr>
 </table>
 <h2 class="doxsection"><a class="anchor" id="types-8"></a>
 Types</h2>
@@ -1023,6 +1026,9 @@ BoolType</h3>
 FeltType</h3>
 <p><em>Finite field element</em></p>
 <p>Syntax: <span class="tt">!pcl.felt</span></p>
+<h2 class="doxsection"><a class="anchor" id="integer-values"></a>
+Integer values</h2>
+<p>PCL felt constants and prime moduli use signed arbitrary-precision integers. Arithmetic intermediates grow as needed and are reduced modulo the module's prime. Literal storage widths have no semantic meaning. During LLZK-to-PCL conversion, the prime modulus is inferred from the felt types used across the circuit and stored in the top-level module's <span class="tt">pcl.prime</span> attribute. Conversion requires a single field for the entire circuit. Its value must be at least two; the PCL verifier does not check primality. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

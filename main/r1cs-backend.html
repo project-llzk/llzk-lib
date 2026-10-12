@@ -252,6 +252,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('r1cs-backend.h
           </li>
         </ul>
       </li>
+      <li class="level2">
+        <a href="#arbitrary-precision-coefficients">Arbitrary-precision coefficients </a>
+      </li>
     </ul>
   </li>
 </ul>
@@ -305,7 +308,7 @@ Results:</h4>
 <div class="line">    %3 = r1cs.to_linear %arg1 : !r1cs.signal to !r1cs.linear</div>
 <div class="line">    %4 = r1cs.to_linear %arg2 : !r1cs.signal to !r1cs.linear</div>
 <div class="line">    %5 = r1cs.to_linear %1 : !r1cs.signal to !r1cs.linear</div>
-<div class="line">    %6 = r1cs.mul_const %5,  -1 : i64 : !r1cs.linear</div>
+<div class="line">    %6 = r1cs.mul_const %5,  -1 : !r1cs.linear</div>
 <div class="line">    r1cs.constrain %3, %4, %6 : !r1cs.linear</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>Traits: <span class="tt">IsolatedFromAbove</span>, <span class="tt">NoTerminator</span>, <span class="tt">SingleBlock</span></p>
@@ -478,15 +481,16 @@ FeltAttr</h3>
 <p><em>Field element represented as an arbitrary precision integer</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#r1cs.felt&lt;</div>
-<div class="line">  ::mlir::IntegerAttr   # value</div>
+<div class="line">  ::llzk::DynamicAPIntValue   # value</div>
 <div class="line">&gt;</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="parameters-11"></a>
+</div><!-- fragment --><p>An exact signed mathematical coefficient, independent of storage width. Binary export reduces coefficients modulo the selected field prime.</p>
+<h4 class="doxsection"><a class="anchor" id="parameters-11"></a>
 Parameters:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Parameter  </th><th class="markdownTableHeadCenter">C++ type  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt">::mlir::IntegerAttr</span>  </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">signed coefficient  </td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="publicattr-1"></a>
 PublicAttr</h3>
@@ -504,6 +508,9 @@ LinearType</h3>
 SignalType</h3>
 <p><em>R1CS signal wire type</em></p>
 <p>Syntax: <span class="tt">!r1cs.signal</span></p>
+<h2 class="doxsection"><a class="anchor" id="arbitrary-precision-coefficients"></a>
+Arbitrary-precision coefficients</h2>
+<p>R1CS constants and multipliers use exact signed mathematical integers. Their assembly has no integer-width annotation: for example, <span class="tt">r1cs.mul_const x, -1 : !r1cs.linear</span>. Binary export reduces each coefficient modulo the selected prime. The <span class="tt">--r1cs-prime</span> decimal option does not require a bit width; the exporter derives the fixed byte width required by the R1CS format. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

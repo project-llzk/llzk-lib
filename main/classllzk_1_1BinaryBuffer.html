@@ -144,14 +144,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9649416155042285f0d601d04a39c25f" id="r_a9649416155042285f0d601d04a39c25f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a9649416155042285f0d601d04a39c25f">writeU32</a> (uint32_t value)</td></tr>
 <tr class="memitem:a8fad1640e59f35da69df63cf03c79d8f" id="r_a8fad1640e59f35da69df63cf03c79d8f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a8fad1640e59f35da69df63cf03c79d8f">writeU64</a> (uint64_t value)</td></tr>
 <tr class="memitem:a02ac44f59f084f391a40d29a16ed30c1" id="r_a02ac44f59f084f391a40d29a16ed30c1"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a02ac44f59f084f391a40d29a16ed30c1">writeBytes</a> (llvm::ArrayRef&lt; char &gt; bytes)</td></tr>
-<tr class="memitem:a6db29670dc304a332cc4005cf6a35b2e" id="r_a6db29670dc304a332cc4005cf6a35b2e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a6db29670dc304a332cc4005cf6a35b2e">writeFieldElement</a> (uint32_t size, const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memitem:a258c9415333fef024831ba0117e1a9ae" id="r_a258c9415333fef024831ba0117e1a9ae"><td class="memItemLeft">llvm::Error&#160;</td><td class="memItemRight"><a class="el" href="#a258c9415333fef024831ba0117e1a9ae">writeFieldElement</a> (uint32_t size, const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memdesc:a258c9415333fef024831ba0117e1a9ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append an unsigned fixed-width field encoding, rejecting overflow and negatives.  <br /></td></tr>
 <tr class="memitem:a1794e3e2ade2bce1b8ca4cab5988710a" id="r_a1794e3e2ade2bce1b8ca4cab5988710a"><td class="memItemLeft">uint64_t&#160;</td><td class="memItemRight"><a class="el" href="#a1794e3e2ade2bce1b8ca4cab5988710a">size</a> () const</td></tr>
 <tr class="memitem:a4c52f1feac20fcb3d6a24319724a7bf8" id="r_a4c52f1feac20fcb3d6a24319724a7bf8"><td class="memItemLeft">llvm::ArrayRef&lt; char &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4c52f1feac20fcb3d6a24319724a7bf8">bytes</a> () const</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Accumulate fixed-width integers and field elements in little-endian order. </p>
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00024">24</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00025">25</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a4c52f1feac20fcb3d6a24319724a7bf8" name="a4c52f1feac20fcb3d6a24319724a7bf8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4c52f1feac20fcb3d6a24319724a7bf8">&#9670;&#160;</a></span>bytes()</h2>
@@ -176,7 +177,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00039">39</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00049">49</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 
 </div>
 </div>
@@ -203,7 +204,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00038">38</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00048">48</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 
 </div>
 </div>
@@ -230,12 +231,12 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00029">29</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00030">30</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 
 </div>
 </div>
-<a id="a6db29670dc304a332cc4005cf6a35b2e" name="a6db29670dc304a332cc4005cf6a35b2e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6db29670dc304a332cc4005cf6a35b2e">&#9670;&#160;</a></span>writeFieldElement()</h2>
+<a id="a258c9415333fef024831ba0117e1a9ae" name="a258c9415333fef024831ba0117e1a9ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a258c9415333fef024831ba0117e1a9ae">&#9670;&#160;</a></span>writeFieldElement()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -244,7 +245,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void llzk::BinaryBuffer::writeFieldElement </td>
+          <td class="memname">llvm::Error llzk::BinaryBuffer::writeFieldElement </td>
           <td>(</td>
           <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>size</em></span>, </td>
         </tr>
@@ -261,7 +262,10 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00031">31</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p>Append an unsigned fixed-width field encoding, rejecting overflow and negatives. </p>
+<p>On failure the buffer is unchanged. </p>
+
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00034">34</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 
 </div>
 </div>
@@ -288,7 +292,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00026">26</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00027">27</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 
 </div>
 </div>
@@ -315,7 +319,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00027">27</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BinaryBuffer_8h_source.html#l00028">28</a> of file <a class="el" href="BinaryBuffer_8h_source.html">BinaryBuffer.h</a>.</p>
 
 </div>
 </div>

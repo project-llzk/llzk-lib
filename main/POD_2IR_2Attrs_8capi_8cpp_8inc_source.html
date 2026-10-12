@@ -140,49 +140,51 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('POD_2IR_2Attrs
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">\*===----------------------------------------------------------------------===*/</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;mlir/CAPI/IR.h&gt;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;mlir/CAPI/Support.h&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;llvm/ADT/TypeSwitch.h&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;utility&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellvm.html">llvm</a>;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="foldopen" id="foldopen00019" data-start="{" data-end="}">
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a9119d2f3d85af814de528dfb5f6d5399">   19</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a9119d2f3d85af814de528dfb5f6d5399">llzkAttributeIsA_Pod_RecordAttr</a>(MlirAttribute inp) {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <span class="keywordflow">return</span> llvm::isa&lt;RecordAttr&gt;(unwrap(inp));</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;mlir/IR/Diagnostics.h&gt;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinAttributes.h&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;mlir/CAPI/IR.h&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;mlir/CAPI/Support.h&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;llvm/ADT/TypeSwitch.h&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;utility&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellvm.html">llvm</a>;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="foldopen" id="foldopen00021" data-start="{" data-end="}">
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a9119d2f3d85af814de528dfb5f6d5399">   21</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a9119d2f3d85af814de528dfb5f6d5399">llzkAttributeIsA_Pod_RecordAttr</a>(MlirAttribute inp) {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <span class="keywordflow">return</span> llvm::isa&lt;RecordAttr&gt;(unwrap(inp));</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>}</div>
 </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="foldopen" id="foldopen00023" data-start="{" data-end="}">
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a63bb876134ce93b107c1fc846d9fe263">   23</a></span>MlirAttribute <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a63bb876134ce93b107c1fc846d9fe263">llzkPod_RecordAttrGet</a>(MlirContext ctx, MlirIdentifier name, MlirType type) {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordflow">return</span> wrap(RecordAttr::get(unwrap(ctx), unwrap(name), ::llvm::cast&lt;::mlir::Type&gt;(unwrap(type))));</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>}</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="foldopen" id="foldopen00025" data-start="{" data-end="}">
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a63bb876134ce93b107c1fc846d9fe263">   25</a></span>MlirAttribute <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a63bb876134ce93b107c1fc846d9fe263">llzkPod_RecordAttrGet</a>(MlirContext ctx, MlirIdentifier name, MlirType type) {</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keywordflow">return</span> wrap(RecordAttr::get(unwrap(ctx), unwrap(name), ::llvm::cast&lt;::mlir::Type&gt;(unwrap(type))));</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>}</div>
 </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="foldopen" id="foldopen00028" data-start="{" data-end="}">
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#afcd06ee7292ad1cdb1ab953444ef4900">   28</a></span>MlirIdentifier <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#afcd06ee7292ad1cdb1ab953444ef4900">llzkPod_RecordAttrGetName</a>(MlirAttribute inp) {</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordflow">return</span> wrap(llvm::cast&lt;RecordAttr&gt;(unwrap(inp)).getName());</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>}</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="foldopen" id="foldopen00030" data-start="{" data-end="}">
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#afcd06ee7292ad1cdb1ab953444ef4900">   30</a></span>MlirIdentifier <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#afcd06ee7292ad1cdb1ab953444ef4900">llzkPod_RecordAttrGetName</a>(MlirAttribute inp) {</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordflow">return</span> wrap(llvm::cast&lt;RecordAttr&gt;(unwrap(inp)).getName());</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>}</div>
 </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="foldopen" id="foldopen00032" data-start="{" data-end="}">
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a5c366502e7d2352c7341f162349207e7">   32</a></span>MlirType <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a5c366502e7d2352c7341f162349207e7">llzkPod_RecordAttrGetType</a>(MlirAttribute inp) {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordflow">return</span> wrap(llvm::cast&lt;RecordAttr&gt;(unwrap(inp)).getType());</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
+<div class="foldopen" id="foldopen00034" data-start="{" data-end="}">
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a5c366502e7d2352c7341f162349207e7">   34</a></span>MlirType <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a5c366502e7d2352c7341f162349207e7">llzkPod_RecordAttrGetType</a>(MlirAttribute inp) {</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordflow">return</span> wrap(llvm::cast&lt;RecordAttr&gt;(unwrap(inp)).getType());</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>}</div>
 </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="foldopen" id="foldopen00036" data-start="{" data-end="}">
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a28397005aabcbdb07c903d9fec36028c">   36</a></span>MlirAttribute <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a28397005aabcbdb07c903d9fec36028c">llzkPod_RecordAttrGetNameSym</a>(MlirAttribute inp) {</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordflow">return</span> wrap(llvm::cast&lt;RecordAttr&gt;(unwrap(inp)).getNameSym());</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="foldopen" id="foldopen00038" data-start="{" data-end="}">
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a28397005aabcbdb07c903d9fec36028c">   38</a></span>MlirAttribute <a class="code hl_function" href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a28397005aabcbdb07c903d9fec36028c">llzkPod_RecordAttrGetNameSym</a>(MlirAttribute inp) {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">return</span> wrap(llvm::cast&lt;RecordAttr&gt;(unwrap(inp)).getNameSym());</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>}</div>
 </div>
-<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a28397005aabcbdb07c903d9fec36028c"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a28397005aabcbdb07c903d9fec36028c">llzkPod_RecordAttrGetNameSym</a></div><div class="ttdeci">MlirAttribute llzkPod_RecordAttrGetNameSym(MlirAttribute inp)</div><div class="ttdoc">Returns the record name as a symbol.</div><div class="ttdef"><b>Definition</b> <a href="#l00036">Attrs.capi.cpp.inc:36</a></div></div>
-<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a5c366502e7d2352c7341f162349207e7"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a5c366502e7d2352c7341f162349207e7">llzkPod_RecordAttrGetType</a></div><div class="ttdeci">MlirType llzkPod_RecordAttrGetType(MlirAttribute inp)</div><div class="ttdoc">Get &#39;type&#39; parameter from a llzk::pod::RecordAttr Attribute.</div><div class="ttdef"><b>Definition</b> <a href="#l00032">Attrs.capi.cpp.inc:32</a></div></div>
-<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a63bb876134ce93b107c1fc846d9fe263"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a63bb876134ce93b107c1fc846d9fe263">llzkPod_RecordAttrGet</a></div><div class="ttdeci">MlirAttribute llzkPod_RecordAttrGet(MlirContext ctx, MlirIdentifier name, MlirType type)</div><div class="ttdoc">Create a llzk::pod::RecordAttr Attribute with the given parameters.</div><div class="ttdef"><b>Definition</b> <a href="#l00023">Attrs.capi.cpp.inc:23</a></div></div>
-<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a9119d2f3d85af814de528dfb5f6d5399"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a9119d2f3d85af814de528dfb5f6d5399">llzkAttributeIsA_Pod_RecordAttr</a></div><div class="ttdeci">bool llzkAttributeIsA_Pod_RecordAttr(MlirAttribute inp)</div><div class="ttdoc">Returns true if the Attribute is a llzk::pod::RecordAttr.</div><div class="ttdef"><b>Definition</b> <a href="#l00019">Attrs.capi.cpp.inc:19</a></div></div>
-<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_afcd06ee7292ad1cdb1ab953444ef4900"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#afcd06ee7292ad1cdb1ab953444ef4900">llzkPod_RecordAttrGetName</a></div><div class="ttdeci">MlirIdentifier llzkPod_RecordAttrGetName(MlirAttribute inp)</div><div class="ttdoc">Get &#39;name&#39; parameter from a llzk::pod::RecordAttr Attribute.</div><div class="ttdef"><b>Definition</b> <a href="#l00028">Attrs.capi.cpp.inc:28</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a28397005aabcbdb07c903d9fec36028c"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a28397005aabcbdb07c903d9fec36028c">llzkPod_RecordAttrGetNameSym</a></div><div class="ttdeci">MlirAttribute llzkPod_RecordAttrGetNameSym(MlirAttribute inp)</div><div class="ttdoc">Returns the record name as a symbol.</div><div class="ttdef"><b>Definition</b> <a href="#l00038">Attrs.capi.cpp.inc:38</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a5c366502e7d2352c7341f162349207e7"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a5c366502e7d2352c7341f162349207e7">llzkPod_RecordAttrGetType</a></div><div class="ttdeci">MlirType llzkPod_RecordAttrGetType(MlirAttribute inp)</div><div class="ttdoc">Get &#39;type&#39; parameter from a llzk::pod::RecordAttr Attribute.</div><div class="ttdef"><b>Definition</b> <a href="#l00034">Attrs.capi.cpp.inc:34</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a63bb876134ce93b107c1fc846d9fe263"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a63bb876134ce93b107c1fc846d9fe263">llzkPod_RecordAttrGet</a></div><div class="ttdeci">MlirAttribute llzkPod_RecordAttrGet(MlirContext ctx, MlirIdentifier name, MlirType type)</div><div class="ttdoc">Create a llzk::pod::RecordAttr Attribute with the given parameters.</div><div class="ttdef"><b>Definition</b> <a href="#l00025">Attrs.capi.cpp.inc:25</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_a9119d2f3d85af814de528dfb5f6d5399"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#a9119d2f3d85af814de528dfb5f6d5399">llzkAttributeIsA_Pod_RecordAttr</a></div><div class="ttdeci">bool llzkAttributeIsA_Pod_RecordAttr(MlirAttribute inp)</div><div class="ttdoc">Returns true if the Attribute is a llzk::pod::RecordAttr.</div><div class="ttdef"><b>Definition</b> <a href="#l00021">Attrs.capi.cpp.inc:21</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Attrs_8capi_8cpp_8inc_html_afcd06ee7292ad1cdb1ab953444ef4900"><div class="ttname"><a href="POD_2IR_2Attrs_8capi_8cpp_8inc.html#afcd06ee7292ad1cdb1ab953444ef4900">llzkPod_RecordAttrGetName</a></div><div class="ttdeci">MlirIdentifier llzkPod_RecordAttrGetName(MlirAttribute inp)</div><div class="ttdoc">Get &#39;name&#39; parameter from a llzk::pod::RecordAttr Attribute.</div><div class="ttdef"><b>Definition</b> <a href="#l00030">Attrs.capi.cpp.inc:30</a></div></div>
 <div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00411">SourceRefLattice.cpp:411</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_8cpp.html
 <code>#include &quot;<a class="el" href="Felt_2IR_2Ops_8h_source.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Types_8h_source.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="AttributeHelper_8h_source.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="DynamicAPIntHelper_8h_source.html">llzk/Util/DynamicAPIntHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/CAPI/Registration.h&gt;</code><br />
 <code>#include &lt;mlir/CAPI/Wrap.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">llzk/Dialect/Felt/IR/Attrs.capi.cpp.inc</a>&quot;</code><br />
@@ -148,60 +149,138 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_8cpp.html
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Felt.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Felt_8cpp__incl.svg" width="3622" height="578"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Felt_8cpp__incl.svg" width="3734" height="654"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Felt_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a7b5a459877dfa59cedb21a078fe2ec28" id="r_a7b5a459877dfa59cedb21a078fe2ec28"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a7b5a459877dfa59cedb21a078fe2ec28">llzkFelt_FeltConstAttrGetInField</a> (MlirContext ctx, int64_t value, MlirStringRef fieldName)</td></tr>
-<tr class="memdesc:a7b5a459877dfa59cedb21a078fe2ec28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr with the given value in the specified field.  <br /></td></tr>
-<tr class="memitem:a3e697c3166d5e562e89103fd13b02ded" id="r_a3e697c3166d5e562e89103fd13b02ded"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a3e697c3166d5e562e89103fd13b02ded">llzkFelt_FeltConstAttrGetUnspecified</a> (MlirContext ctx, int64_t value)</td></tr>
-<tr class="memdesc:a3e697c3166d5e562e89103fd13b02ded"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field.  <br /></td></tr>
-<tr class="memitem:aeae8be0d80367fb8dfe8bb76d7abdcff" id="r_aeae8be0d80367fb8dfe8bb76d7abdcff"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#aeae8be0d80367fb8dfe8bb76d7abdcff">llzkFelt_FeltConstAttrGetWithBits</a> (MlirContext ctx, unsigned numBits, int64_t value, MlirType type)</td></tr>
-<tr class="memdesc:aeae8be0d80367fb8dfe8bb76d7abdcff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.  <br /></td></tr>
-<tr class="memitem:aa68ed00d7067d8ec608d8dc3a5d3e096" id="r_aa68ed00d7067d8ec608d8dc3a5d3e096"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#aa68ed00d7067d8ec608d8dc3a5d3e096">llzkFelt_FeltConstAttrGetWithBitsInField</a> (MlirContext ctx, unsigned numBits, int64_t value, MlirStringRef fieldName)</td></tr>
-<tr class="memdesc:aa68ed00d7067d8ec608d8dc3a5d3e096"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.  <br /></td></tr>
-<tr class="memitem:ac10951c3d45a5dfe5015737267ef6150" id="r_ac10951c3d45a5dfe5015737267ef6150"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ac10951c3d45a5dfe5015737267ef6150">llzkFelt_FeltConstAttrGetWithBitsUnspecified</a> (MlirContext ctx, unsigned numBits, int64_t value)</td></tr>
-<tr class="memdesc:ac10951c3d45a5dfe5015737267ef6150"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr with a set bit length and value in an unspecified field.  <br /></td></tr>
-<tr class="memitem:a610ef21234419a7dcf82a2bf6b687afc" id="r_a610ef21234419a7dcf82a2bf6b687afc"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a610ef21234419a7dcf82a2bf6b687afc">llzkFelt_FeltConstAttrGetFromString</a> (MlirContext ctx, unsigned numBits, MlirStringRef str, MlirType type)</td></tr>
-<tr class="memdesc:a610ef21234419a7dcf82a2bf6b687afc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field.  <br /></td></tr>
-<tr class="memitem:ab5c5c5f2fc67b1a6a92f0bc92d45e92c" id="r_ab5c5c5f2fc67b1a6a92f0bc92d45e92c"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">llzkFelt_FeltConstAttrGetFromStringInField</a> (MlirContext ctx, unsigned numBits, MlirStringRef str, MlirStringRef fieldName)</td></tr>
-<tr class="memdesc:ab5c5c5f2fc67b1a6a92f0bc92d45e92c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field.  <br /></td></tr>
-<tr class="memitem:ad1522c1b7e958ce9add3b71bd21f4aa3" id="r_ad1522c1b7e958ce9add3b71bd21f4aa3"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ad1522c1b7e958ce9add3b71bd21f4aa3">llzkFelt_FeltConstAttrGetFromStringUnspecified</a> (MlirContext ctx, unsigned numBits, MlirStringRef str)</td></tr>
-<tr class="memdesc:ad1522c1b7e958ce9add3b71bd21f4aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in an unspecified field.  <br /></td></tr>
-<tr class="memitem:a47845ad51aa441e63c523575f1e62566" id="r_a47845ad51aa441e63c523575f1e62566"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a47845ad51aa441e63c523575f1e62566">llzkFelt_FeltConstAttrGetFromParts</a> (MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirType type)</td></tr>
-<tr class="memdesc:a47845ad51aa441e63c523575f1e62566"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified field.  <br /></td></tr>
-<tr class="memitem:a0aca9081ea41fe4def8375e804695bf3" id="r_a0aca9081ea41fe4def8375e804695bf3"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a0aca9081ea41fe4def8375e804695bf3">llzkFelt_FeltConstAttrGetFromPartsInField</a> (MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName)</td></tr>
-<tr class="memdesc:a0aca9081ea41fe4def8375e804695bf3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified field.  <br /></td></tr>
-<tr class="memitem:a4c8aecd54891277a8b1266f9454d9ade" id="r_a4c8aecd54891277a8b1266f9454d9ade"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a4c8aecd54891277a8b1266f9454d9ade">llzkFelt_FeltConstAttrGetFromPartsUnspecified</a> (MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts)</td></tr>
-<tr class="memdesc:a4c8aecd54891277a8b1266f9454d9ade"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in an unspecified field.  <br /></td></tr>
-<tr class="memitem:a55bb4d1b9e550d7b781ad3a604b521b4" id="r_a55bb4d1b9e550d7b781ad3a604b521b4"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a55bb4d1b9e550d7b781ad3a604b521b4">llzkFelt_FieldSpecAttrGetFromString</a> (MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, MlirStringRef primeStr)</td></tr>
-<tr class="memdesc:a55bb4d1b9e550d7b781ad3a604b521b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.  <br /></td></tr>
-<tr class="memitem:aad4ecd41d0aaeba8b968a99daa76aa7b" id="r_aad4ecd41d0aaeba8b968a99daa76aa7b"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#aad4ecd41d0aaeba8b968a99daa76aa7b">llzkFelt_FieldSpecAttrGetFromParts</a> (MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, const uint64_t *parts, intptr_t nParts)</td></tr>
-<tr class="memdesc:aad4ecd41d0aaeba8b968a99daa76aa7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing the prime.  <br /></td></tr>
+<tr class="memitem:ae4a9288750e865bc19d81bb4b8b40c69" id="r_ae4a9288750e865bc19d81bb4b8b40c69"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ae4a9288750e865bc19d81bb4b8b40c69">llzkFelt_FeltConstAttrGetFromInt64</a> (MlirContext ctx, int64_t value, MlirType type)</td></tr>
+<tr class="memdesc:ae4a9288750e865bc19d81bb4b8b40c69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field.  <br /></td></tr>
+<tr class="memitem:a226948b36203da15233c63caa6b76984" id="r_a226948b36203da15233c63caa6b76984"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a226948b36203da15233c63caa6b76984">llzkFelt_FeltConstAttrGetFromInt64InField</a> (MlirContext ctx, int64_t value, MlirStringRef fieldName)</td></tr>
+<tr class="memdesc:a226948b36203da15233c63caa6b76984"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field.  <br /></td></tr>
+<tr class="memitem:a4fd5dbbdd082906f98c0c8d8520b4731" id="r_a4fd5dbbdd082906f98c0c8d8520b4731"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a4fd5dbbdd082906f98c0c8d8520b4731">llzkFelt_FeltConstAttrGetFromInt64Unspecified</a> (MlirContext ctx, int64_t value)</td></tr>
+<tr class="memdesc:a4fd5dbbdd082906f98c0c8d8520b4731"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in an unspecified field.  <br /></td></tr>
+<tr class="memitem:a19c6d32293f5a4d52d43da2b12d06f45" id="r_a19c6d32293f5a4d52d43da2b12d06f45"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a19c6d32293f5a4d52d43da2b12d06f45">llzkFelt_FeltConstAttrGetFromString</a> (MlirContext ctx, MlirStringRef str, MlirType type)</td></tr>
+<tr class="memdesc:a19c6d32293f5a4d52d43da2b12d06f45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer in the specified field.  <br /></td></tr>
+<tr class="memitem:ae85b7d5e011d356210a5a7e04b16f22a" id="r_ae85b7d5e011d356210a5a7e04b16f22a"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ae85b7d5e011d356210a5a7e04b16f22a">llzkFelt_FeltConstAttrGetFromStringInField</a> (MlirContext ctx, MlirStringRef str, MlirStringRef fieldName)</td></tr>
+<tr class="memdesc:ae85b7d5e011d356210a5a7e04b16f22a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer in the specified field.  <br /></td></tr>
+<tr class="memitem:a8c9089b37d5d539845040ab9e2f5df7d" id="r_a8c9089b37d5d539845040ab9e2f5df7d"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a8c9089b37d5d539845040ab9e2f5df7d">llzkFelt_FeltConstAttrGetFromStringUnspecified</a> (MlirContext ctx, MlirStringRef str)</td></tr>
+<tr class="memdesc:a8c9089b37d5d539845040ab9e2f5df7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer in an unspecified field.  <br /></td></tr>
+<tr class="memitem:ac9ab82340145f753d7700c1d951652df" id="r_ac9ab82340145f753d7700c1d951652df"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ac9ab82340145f753d7700c1d951652df">llzkFelt_FeltConstAttrGetFromParts</a> (MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirType type)</td></tr>
+<tr class="memdesc:ac9ab82340145f753d7700c1d951652df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order.  <br /></td></tr>
+<tr class="memitem:a099335349f324fb905f039deea5655fc" id="r_a099335349f324fb905f039deea5655fc"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a099335349f324fb905f039deea5655fc">llzkFelt_FeltConstAttrGetFromPartsInField</a> (MlirContext ctx, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName)</td></tr>
+<tr class="memdesc:a099335349f324fb905f039deea5655fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order.  <br /></td></tr>
+<tr class="memitem:a3e29b8cc5f5e3af3a3d8a4dfaf548487" id="r_a3e29b8cc5f5e3af3a3d8a4dfaf548487"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a3e29b8cc5f5e3af3a3d8a4dfaf548487">llzkFelt_FeltConstAttrGetFromPartsUnspecified</a> (MlirContext ctx, const uint64_t *parts, intptr_t nParts)</td></tr>
+<tr class="memdesc:a3e29b8cc5f5e3af3a3d8a4dfaf548487"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order.  <br /></td></tr>
+<tr class="memitem:a3d4497894d6cfc7a9f1a334e49a1f7f4" id="r_a3d4497894d6cfc7a9f1a334e49a1f7f4"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a3d4497894d6cfc7a9f1a334e49a1f7f4">llzkFelt_FieldSpecAttrGetFromString</a> (MlirContext ctx, MlirIdentifier fieldName, MlirStringRef primeStr)</td></tr>
+<tr class="memdesc:a3d4497894d6cfc7a9f1a334e49a1f7f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.  <br /></td></tr>
+<tr class="memitem:a650a5f188e0654863949058844190159" id="r_a650a5f188e0654863949058844190159"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a650a5f188e0654863949058844190159">llzkFelt_FieldSpecAttrGetFromParts</a> (MlirContext ctx, MlirIdentifier fieldName, const uint64_t *parts, intptr_t nParts)</td></tr>
+<tr class="memdesc:a650a5f188e0654863949058844190159"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a llzk::felt::FieldSpecAttr from 64-bit parts in LSB order.  <br /></td></tr>
 <tr class="memitem:a12867e32713261c0814f5ae885d9e0fd" id="r_a12867e32713261c0814f5ae885d9e0fd"><td class="memItemLeft">MlirType&#160;</td><td class="memItemRight"><a class="el" href="#a12867e32713261c0814f5ae885d9e0fd">llzkFelt_FeltTypeGetUnspecified</a> (MlirContext ctx)</td></tr>
-<tr class="memdesc:a12867e32713261c0814f5ae885d9e0fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> with an unspecified field.  <br /></td></tr>
+<tr class="memdesc:a12867e32713261c0814f5ae885d9e0fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> without the field specified.  <br /></td></tr>
 <tr class="memitem:ab2e19d7a2b236ae6b0966026809884a2" id="r_ab2e19d7a2b236ae6b0966026809884a2"><td class="memItemLeft">MlirType&#160;</td><td class="memItemRight"><a class="el" href="#ab2e19d7a2b236ae6b0966026809884a2">llzkFelt_FeltTypeGetFromRef</a> (MlirContext ctx, MlirStringRef fieldName)</td></tr>
-<tr class="memdesc:ab2e19d7a2b236ae6b0966026809884a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> Type with the given parameters.  <br /></td></tr>
+<tr class="memdesc:ab2e19d7a2b236ae6b0966026809884a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> referring to an already defined field.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="a47845ad51aa441e63c523575f1e62566" name="a47845ad51aa441e63c523575f1e62566"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a47845ad51aa441e63c523575f1e62566">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromParts()</h2>
+<a id="ae4a9288750e865bc19d81bb4b8b40c69" name="ae4a9288750e865bc19d81bb4b8b40c69"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4a9288750e865bc19d81bb4b8b40c69">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromInt64()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts </td>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromInt64 </td>
           <td>(</td>
           <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field. </p>
+<p>The provided <span class="tt">MlirType</span> must be a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00036">36</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a226948b36203da15233c63caa6b76984" name="a226948b36203da15233c63caa6b76984"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a226948b36203da15233c63caa6b76984">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromInt64InField()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromInt64InField </td>
+          <td>(</td>
+          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>fieldName</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in the specified field. </p>
+<p>An undefined field name emits a diagnostic and returns a null attribute. See llzkFelt_FeltTypeGetFromRef for the requirements on <span class="tt">fieldName</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00043">43</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4fd5dbbdd082906f98c0c8d8520b4731" name="a4fd5dbbdd082906f98c0c8d8520b4731"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4fd5dbbdd082906f98c0c8d8520b4731">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromInt64Unspecified()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromInt64Unspecified </td>
+          <td>(</td>
+          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a llzk::felt::FeltConstAttr from a signed 64-bit integer in an unspecified field. </p>
+
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00051">51</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac9ab82340145f753d7700c1d951652df" name="ac9ab82340145f753d7700c1d951652df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9ab82340145f753d7700c1d951652df">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromParts()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromParts </td>
+          <td>(</td>
+          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -221,28 +300,24 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified field. </p>
-<p>The provided <span class="tt">MlirType</span> must be a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>. </p>
+<p>Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order. </p>
+<p>The most significant bit is treated as the sign bit. The value is 0 when <span class="tt">nParts == 0</span>. The constant is created with the specified <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>.</p>
+<p>Requirements: <span class="tt">nParts</span> must be non-negative and <span class="tt">parts</span> must be non-null when <span class="tt">nParts &gt; 0</span>. The provided <span class="tt">MlirType</span> must be a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00079">79</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00074">74</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a0aca9081ea41fe4def8375e804695bf3" name="a0aca9081ea41fe4def8375e804695bf3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0aca9081ea41fe4def8375e804695bf3">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromPartsInField()</h2>
+<a id="a099335349f324fb905f039deea5655fc" name="a099335349f324fb905f039deea5655fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a099335349f324fb905f039deea5655fc">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromPartsInField()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField </td>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField </td>
           <td>(</td>
           <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -262,27 +337,24 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified field. </p>
+<p>Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order. </p>
+<p>The most significant bit is treated as the sign bit. The value is 0 when <span class="tt">nParts == 0</span>. The constant is created with the <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> for the specified field name. An undefined field name emits a diagnostic and returns a null attribute. See llzkFelt_FeltTypeGetFromRef for the requirements on <span class="tt">fieldName</span>.</p>
+<p>Requirements: <span class="tt">nParts</span> must be non-negative and <span class="tt">parts</span> must be non-null when <span class="tt">nParts &gt; 0</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00087">87</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00084">84</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a4c8aecd54891277a8b1266f9454d9ade" name="a4c8aecd54891277a8b1266f9454d9ade"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4c8aecd54891277a8b1266f9454d9ade">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromPartsUnspecified()</h2>
+<a id="a3e29b8cc5f5e3af3a3d8a4dfaf548487" name="a3e29b8cc5f5e3af3a3d8a4dfaf548487"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e29b8cc5f5e3af3a3d8a4dfaf548487">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromPartsUnspecified()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified </td>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified </td>
           <td>(</td>
           <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -297,27 +369,24 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in an unspecified field. </p>
+<p>Creates a llzk::felt::FeltConstAttr from 64-bit parts in LSB order. </p>
+<p>The most significant bit is treated as the sign bit. The value is 0 when <span class="tt">nParts == 0</span>. The constant is created with the unspecified-field <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>.</p>
+<p>Requirements: <span class="tt">nParts</span> must be non-negative and <span class="tt">parts</span> must be non-null when <span class="tt">nParts &gt; 0</span>. </p>
 
 <p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00094">94</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a610ef21234419a7dcf82a2bf6b687afc" name="a610ef21234419a7dcf82a2bf6b687afc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a610ef21234419a7dcf82a2bf6b687afc">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromString()</h2>
+<a id="a19c6d32293f5a4d52d43da2b12d06f45" name="a19c6d32293f5a4d52d43da2b12d06f45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19c6d32293f5a4d52d43da2b12d06f45">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromString()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromString </td>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromString </td>
           <td>(</td>
           <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -332,28 +401,23 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field. </p>
-<p>The provided <span class="tt">MlirType</span> must be a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>. </p>
+<p>Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer in the specified field. </p>
+<p>Returns a null attribute for malformed decimal input. The provided <span class="tt">MlirType</span> must be a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00061">61</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00056">56</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="ab5c5c5f2fc67b1a6a92f0bc92d45e92c" name="ab5c5c5f2fc67b1a6a92f0bc92d45e92c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromStringInField()</h2>
+<a id="ae85b7d5e011d356210a5a7e04b16f22a" name="ae85b7d5e011d356210a5a7e04b16f22a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae85b7d5e011d356210a5a7e04b16f22a">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromStringInField()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField </td>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField </td>
           <td>(</td>
           <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -368,27 +432,23 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field. </p>
+<p>Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer in the specified field. </p>
+<p>Returns a null attribute for malformed decimal input. An undefined field name emits a diagnostic and returns a null attribute. See llzkFelt_FeltTypeGetFromRef for the requirements on <span class="tt">fieldName</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00067">67</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00060">60</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="ad1522c1b7e958ce9add3b71bd21f4aa3" name="ad1522c1b7e958ce9add3b71bd21f4aa3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1522c1b7e958ce9add3b71bd21f4aa3">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromStringUnspecified()</h2>
+<a id="a8c9089b37d5d539845040ab9e2f5df7d" name="a8c9089b37d5d539845040ab9e2f5df7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c9089b37d5d539845040ab9e2f5df7d">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFromStringUnspecified()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified </td>
+          <td class="memname">MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified </td>
           <td>(</td>
           <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -398,165 +458,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in an unspecified field. </p>
+<p>Creates a llzk::felt::FeltConstAttr from a base-10 representation of a signed integer in an unspecified field. </p>
+<p>Returns a null attribute for malformed decimal input. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00073">73</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a7b5a459877dfa59cedb21a078fe2ec28" name="a7b5a459877dfa59cedb21a078fe2ec28"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7b5a459877dfa59cedb21a078fe2ec28">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetInField()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetInField </td>
-          <td>(</td>
-          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>fieldName</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a llzk::felt::FeltConstAttr with the given value in the specified field. </p>
-
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00036">36</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a3e697c3166d5e562e89103fd13b02ded" name="a3e697c3166d5e562e89103fd13b02ded"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e697c3166d5e562e89103fd13b02ded">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetUnspecified()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetUnspecified </td>
-          <td>(</td>
-          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field. </p>
-
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00041">41</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
-
-</div>
-</div>
-<a id="aeae8be0d80367fb8dfe8bb76d7abdcff" name="aeae8be0d80367fb8dfe8bb76d7abdcff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeae8be0d80367fb8dfe8bb76d7abdcff">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetWithBits()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBits </td>
-          <td>(</td>
-          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field. </p>
-<p>The provided <span class="tt">MlirType</span> must be a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a>. </p>
-
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00046">46</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
-
-</div>
-</div>
-<a id="aa68ed00d7067d8ec608d8dc3a5d3e096" name="aa68ed00d7067d8ec608d8dc3a5d3e096"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa68ed00d7067d8ec608d8dc3a5d3e096">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetWithBitsInField()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsInField </td>
-          <td>(</td>
-          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>fieldName</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field. </p>
-
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00050">50</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
-
-</div>
-</div>
-<a id="ac10951c3d45a5dfe5015737267ef6150" name="ac10951c3d45a5dfe5015737267ef6150"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac10951c3d45a5dfe5015737267ef6150">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetWithBitsUnspecified()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsUnspecified </td>
-          <td>(</td>
-          <td class="paramtype">MlirContext</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a llzk::felt::FeltConstAttr with a set bit length and value in an unspecified field. </p>
-
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00057">57</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00070">70</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
@@ -579,9 +484,11 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Create a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> Type with the given parameters. </p>
+<p>Gets a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> referring to an already defined field. </p>
+<p>Requirements: <span class="tt">fieldName</span> must exactly match a built-in field name (e.g., "bn254") or a custom field registered with LLZK. Pass the name itself, without quotes or an '@' prefix. The string must contain <span class="tt">fieldName.length</span> readable bytes; it need not be null-terminated and is copied into <span class="tt">ctx</span>, so its storage need only remain valid for this call.</p>
+<p>A <span class="tt">fieldName</span> that has not been defined emits a diagnostic and returns a null type. Use <span class="tt"><a class="el" href="Felt_8h.html#a40bd1ceaeca6cfc0d9b9d6752b4741b1" title="Gets the llzk::felt::FeltType without the field specified.">llzkFelt_FeltTypeGetUnspecified</a></span> for an unspecified field, rather than an empty name here. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00121">121</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00125">125</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
@@ -600,14 +507,14 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> with an unspecified field. </p>
+<p>Gets the <a class="el" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> without the field specified. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00117">117</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00121">121</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="aad4ecd41d0aaeba8b968a99daa76aa7b" name="aad4ecd41d0aaeba8b968a99daa76aa7b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aad4ecd41d0aaeba8b968a99daa76aa7b">&#9670;&#160;</a></span>llzkFelt_FieldSpecAttrGetFromParts()</h2>
+<a id="a650a5f188e0654863949058844190159" name="a650a5f188e0654863949058844190159"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a650a5f188e0654863949058844190159">&#9670;&#160;</a></span>llzkFelt_FieldSpecAttrGetFromParts()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -625,11 +532,6 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">const uint64_t *</td>          <td class="paramname"><span class="paramname"><em>parts</em></span>, </td>
         </tr>
         <tr>
@@ -640,14 +542,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing the prime. </p>
+<p>Creates a llzk::felt::FieldSpecAttr from 64-bit parts in LSB order. </p>
+<p>The most significant bit is treated as the sign bit. The value is 0 when <span class="tt">nParts == 0</span>. A modulus below two produces a diagnostic and a null attribute.</p>
+<p>Requirements: <span class="tt">nParts</span> must be non-negative and <span class="tt">parts</span> must be non-null when <span class="tt">nParts &gt; 0</span>. </p>
 
 <p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00108">108</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a55bb4d1b9e550d7b781ad3a604b521b4" name="a55bb4d1b9e550d7b781ad3a604b521b4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a55bb4d1b9e550d7b781ad3a604b521b4">&#9670;&#160;</a></span>llzkFelt_FieldSpecAttrGetFromString()</h2>
+<a id="a3d4497894d6cfc7a9f1a334e49a1f7f4" name="a3d4497894d6cfc7a9f1a334e49a1f7f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d4497894d6cfc7a9f1a334e49a1f7f4">&#9670;&#160;</a></span>llzkFelt_FieldSpecAttrGetFromString()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -665,19 +569,15 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>numBits</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>primeStr</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime. </p>
+<p>Returns a null attribute for malformed decimal input. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00100">100</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_8cpp_source.html#l00102">102</a> of file <a class="el" href="Felt_8cpp_source.html">Felt.cpp</a>.</p>
 
 </div>
 </div>

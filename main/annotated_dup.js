@@ -4,8 +4,7 @@ var annotated_dup =
       [ "cl", "namespacellvm_1_1cl.html", [
         [ "NestedOptionsParserBase", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", "classllvm_1_1cl_1_1NestedOptionsParserBase" ],
         [ "parser&lt; llzk::NestedPassOptions&lt; CreatePass &gt; &gt;", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4" ],
-        [ "parser&lt; llzk::NestedPipelineOptions&lt; PipelineOptionsT &gt; &gt;", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4" ],
-        [ "parser&lt; APInt &gt;", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", "classllvm_1_1cl_1_1parser_3_01APInt_01_4" ]
+        [ "parser&lt; llzk::NestedPipelineOptions&lt; PipelineOptionsT &gt; &gt;", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4" ]
       ] ],
       [ "DenseMapInfo&lt; CompatiblePodLeafMaterializationKey &gt;", "structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html", null ],
       [ "DenseMapInfo&lt; llzk::ExpressionValue &gt;", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
@@ -588,7 +587,6 @@ var annotated_dup =
         [ "StructValue", "structllzk_1_1witgen_1_1StructValue.html", "structllzk_1_1witgen_1_1StructValue" ],
         [ "WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", "structllzk_1_1witgen_1_1WitgenOptions" ]
       ] ],
-      [ "APIntValue", "classllzk_1_1APIntValue.html", "classllzk_1_1APIntValue" ],
       [ "AuxAssignment", "structllzk_1_1AuxAssignment.html", "structllzk_1_1AuxAssignment" ],
       [ "BaseBuilder", "classllzk_1_1BaseBuilder.html", "classllzk_1_1BaseBuilder" ],
       [ "BinaryBuffer", "classllzk_1_1BinaryBuffer.html", "classllzk_1_1BinaryBuffer" ],
@@ -609,6 +607,7 @@ var annotated_dup =
       [ "ConstraintDependencyGraphStructAnalysis", "classllzk_1_1ConstraintDependencyGraphStructAnalysis.html", "classllzk_1_1ConstraintDependencyGraphStructAnalysis" ],
       [ "DiscardableAllocationAccessorOpInterface", "classllzk_1_1DiscardableAllocationAccessorOpInterface.html", "classllzk_1_1DiscardableAllocationAccessorOpInterface" ],
       [ "DiscardableAllocationResource", "structllzk_1_1DiscardableAllocationResource.html", "structllzk_1_1DiscardableAllocationResource" ],
+      [ "DynamicAPIntValue", "classllzk_1_1DynamicAPIntValue.html", "classllzk_1_1DynamicAPIntValue" ],
       [ "ExpressionValue", "classllzk_1_1ExpressionValue.html", "classllzk_1_1ExpressionValue" ],
       [ "Field", "classllzk_1_1Field.html", "classllzk_1_1Field" ],
       [ "FileLineColLocComparator", "structllzk_1_1FileLineColLocComparator.html", "structllzk_1_1FileLineColLocComparator" ],

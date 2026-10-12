@@ -1,8 +1,5 @@
 var NAVTREEINDEX82 =
 {
-"tools.html#autotoc_md-llzk-print-predecessors":[3,0,0,0,4],
-"tools.html#autotoc_md-llzk-print-symbol-def-tree":[3,0,0,0,5],
-"tools.html#autotoc_md-llzk-print-symbol-use-graph":[3,0,0,0,6],
 "tools.html#autotoc_md-llzk-product-program":[3,0,0,3,2],
 "tools.html#autotoc_md-llzk-r1cs-lowering":[3,0,0,1,23],
 "tools.html#autotoc_md-llzk-remove-unnecessary-ops":[3,0,0,3,0],

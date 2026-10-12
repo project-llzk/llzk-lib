@@ -170,8 +170,6 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:APIntValue" id="r_APIntValue"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Storage key for APInts whose numeric value is independent of bit width.  <a href="classllzk_1_1APIntValue.html#details">More...</a><br /></td></tr>
 <tr class="memitem:AuxAssignment" id="r_AuxAssignment"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1AuxAssignment.html">AuxAssignment</a></td></tr>
 <tr class="memitem:BaseBuilder" id="r_BaseBuilder"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1BaseBuilder.html">BaseBuilder</a></td></tr>
 <tr class="memitem:BinaryBuffer" id="r_BinaryBuffer"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1BinaryBuffer.html">BinaryBuffer</a></td></tr>
@@ -205,6 +203,8 @@ Classes</h2></td></tr>
 <tr class="memitem:DiscardableAllocationAccessorOpInterface" id="r_DiscardableAllocationAccessorOpInterface"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a></td></tr>
 <tr class="memitem:DiscardableAllocationResource" id="r_DiscardableAllocationResource"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1DiscardableAllocationResource.html">DiscardableAllocationResource</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Memory resource for allocations that may be erased when no stored value is ever read.  <a href="structllzk_1_1DiscardableAllocationResource.html#details">More...</a><br /></td></tr>
+<tr class="memitem:DynamicAPIntValue" id="r_DynamicAPIntValue"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1DynamicAPIntValue.html">DynamicAPIntValue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attribute storage adapter providing numeric hashing for DynamicAPInt.  <a href="classllzk_1_1DynamicAPIntValue.html#details">More...</a><br /></td></tr>
 <tr class="memitem:ExpressionValue" id="r_ExpressionValue"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tracks a solver expression and an interval range for that expression.  <a href="classllzk_1_1ExpressionValue.html#details">More...</a><br /></td></tr>
 <tr class="memitem:Field" id="r_Field"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1Field.html">Field</a></td></tr>
@@ -490,6 +490,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a7e50f86abd1a8550cd1020c2852719c4" id="r_a7e50f86abd1a8550cd1020c2852719c4"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a7e50f86abd1a8550cd1020c2852719c4">createUnusedDeclarationEliminationPass</a> ()</td></tr>
 <tr class="memitem:a933f1191987fa395847ce4e683cc66b2" id="r_a933f1191987fa395847ce4e683cc66b2"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a933f1191987fa395847ce4e683cc66b2">createUnusedDeclarationEliminationPass</a> (<a class="el" href="structllzk_1_1UnusedDeclarationEliminationPassOptions.html">UnusedDeclarationEliminationPassOptions</a> options)</td></tr>
 <tr class="memitem:a50797b4801b8f9649f2b1e027fc02051" id="r_a50797b4801b8f9649f2b1e027fc02051"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a50797b4801b8f9649f2b1e027fc02051">createWhileToForPass</a> ()</td></tr>
+<tr class="memitem:ab5e8bcab27fe2d39365a0726c9154f85" id="r_ab5e8bcab27fe2d39365a0726c9154f85"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#ab5e8bcab27fe2d39365a0726c9154f85">toSignedDynamicAPInt</a> (ArrayRef&lt; uint64_t &gt; parts)</td></tr>
+<tr class="memitem:a5d76b7b954497f678069bb51bae7b88b" id="r_a5d76b7b954497f678069bb51bae7b88b"><td class="memItemLeft">Expected&lt; DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5d76b7b954497f678069bb51bae7b88b">parseDynamicAPInt</a> (StringRef str)</td></tr>
+<tr class="memitem:a408de359c0c6b0221c7f2b42b130ad76" id="r_a408de359c0c6b0221c7f2b42b130ad76"><td class="memItemLeft">hash_code&#160;</td><td class="memItemRight"><a class="el" href="#a408de359c0c6b0221c7f2b42b130ad76">hashDynamicAPInt</a> (const DynamicAPInt &amp;value)</td></tr>
+<tr class="memitem:adf328725e62366b7f18e02d4696d5e1b" id="r_adf328725e62366b7f18e02d4696d5e1b"><td class="memItemLeft">Expected&lt; APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#adf328725e62366b7f18e02d4696d5e1b">checkedToAPInt</a> (const DynamicAPInt &amp;value, unsigned bitWidth, bool isSigned)</td></tr>
+<tr class="memitem:aa7e4f4ae0ab7bf95273d7eac3033c4f3" id="r_aa7e4f4ae0ab7bf95273d7eac3033c4f3"><td class="memItemLeft">Expected&lt; int64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa7e4f4ae0ab7bf95273d7eac3033c4f3">checkedToInt64</a> (const DynamicAPInt &amp;value)</td></tr>
+<tr class="memitem:a75a23a23e2d223f5341853fbbb3b04a4" id="r_a75a23a23e2d223f5341853fbbb3b04a4"><td class="memItemLeft">Expected&lt; uint64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a75a23a23e2d223f5341853fbbb3b04a4">checkedToUInt64</a> (const DynamicAPInt &amp;value)</td></tr>
 <tr class="memitem:a9444ebe99ad0e59505dada6c8bb477e0" id="r_a9444ebe99ad0e59505dada6c8bb477e0"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a9444ebe99ad0e59505dada6c8bb477e0">operator&amp;</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a92b8f56629d729dd2462d2385bdd7094" id="r_a92b8f56629d729dd2462d2385bdd7094"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a92b8f56629d729dd2462d2385bdd7094">operator|</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:af93bf248388cf47f2e92c92d911d7519" id="r_af93bf248388cf47f2e92c92d911d7519"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#af93bf248388cf47f2e92c92d911d7519">operator^</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
@@ -499,8 +505,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a6487238a0c9232afbc011cfbe1f93cce" id="r_a6487238a0c9232afbc011cfbe1f93cce"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a6487238a0c9232afbc011cfbe1f93cce">toDynamicAPInt</a> (const APSInt &amp;i)</td></tr>
 <tr class="memitem:aa1ac1cda97a61a9c7773b936e2b5a8a2" id="r_aa1ac1cda97a61a9c7773b936e2b5a8a2"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#aa1ac1cda97a61a9c7773b936e2b5a8a2">toDynamicAPInt</a> (const APInt &amp;i)</td></tr>
 <tr class="memitem:ad1bfa5460ac00c7974a989fa2e8ddc56" id="r_ad1bfa5460ac00c7974a989fa2e8ddc56"><td class="memItemLeft">APSInt&#160;</td><td class="memItemRight"><a class="el" href="#ad1bfa5460ac00c7974a989fa2e8ddc56">toAPSInt</a> (const DynamicAPInt &amp;i)</td></tr>
-<tr class="memitem:a6ec06c177f8be824dc8c3adc0ae22eb6" id="r_a6ec06c177f8be824dc8c3adc0ae22eb6"><td class="memItemLeft">APInt&#160;</td><td class="memItemRight"><a class="el" href="#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a> (const DynamicAPInt &amp;val, unsigned bitWidth)</td></tr>
-<tr class="memitem:a7ad816687c36ab31df4f80aa25208f27" id="r_a7ad816687c36ab31df4f80aa25208f27"><td class="memItemLeft">APInt&#160;</td><td class="memItemRight"><a class="el" href="#a7ad816687c36ab31df4f80aa25208f27">toExactWidthAPInt</a> (const DynamicAPInt &amp;val, unsigned bitWidth)</td></tr>
 <tr class="memitem:ae716915c256b3e8259e0fd51d5a88b82" id="r_ae716915c256b3e8259e0fd51d5a88b82"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#ae716915c256b3e8259e0fd51d5a88b82">modExp</a> (const DynamicAPInt &amp;base, const DynamicAPInt &amp;exp, const DynamicAPInt &amp;mod)</td></tr>
 <tr class="memitem:acadd66413800c2610538c0e3568561fd" id="r_acadd66413800c2610538c0e3568561fd"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#acadd66413800c2610538c0e3568561fd">modInversePrime</a> (const DynamicAPInt &amp;f, const DynamicAPInt &amp;p)</td></tr>
 <tr class="memitem:a97449772c71c3fa5ed642c11df578b38" id="r_a97449772c71c3fa5ed642c11df578b38"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a97449772c71c3fa5ed642c11df578b38">addSpecifiedFields</a> (ModuleOp modOp)</td></tr>
@@ -632,9 +636,12 @@ Functions</h2></td></tr>
 <tr class="memitem:ae4e8d048536cc8cc728bec99f1f7c0f4" id="r_ae4e8d048536cc8cc728bec99f1f7c0f4"><td class="memTemplParams" colspan="2">template&lt;typename OpTy, typename... Args&gt; </td></tr>
 <tr class="memitem:ae4e8d048536cc8cc728bec99f1f7c0f4 template"><td class="memItemLeft">mlir::Operation *&#160;</td><td class="memItemRight"><a class="el" href="#ae4e8d048536cc8cc728bec99f1f7c0f4">create</a> (MlirOpBuilder cBuilder, MlirLocation cLocation, Args &amp;&amp;...args)</td></tr>
 <tr class="memdesc:ae4e8d048536cc8cc728bec99f1f7c0f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new operation using an ODS build method.  <br /></td></tr>
-<tr class="memitem:a727e2234b62c3fd5538d2e09c3a3f5ba" id="r_a727e2234b62c3fd5538d2e09c3a3f5ba"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a727e2234b62c3fd5538d2e09c3a3f5ba">parseAPIntValue</a> (mlir::AsmParser &amp;parser)</td></tr>
-<tr class="memitem:a39859e51fc665588ce50b49754e871cd" id="r_a39859e51fc665588ce50b49754e871cd"><td class="memItemLeft">llvm::APInt&#160;</td><td class="memItemRight"><a class="el" href="#a39859e51fc665588ce50b49754e871cd">toAPInt</a> (int64_t i)</td></tr>
+<tr class="memitem:a24b8c0b3f58ca71ce8ed62b742d2907f" id="r_a24b8c0b3f58ca71ce8ed62b742d2907f"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1DynamicAPIntValue.html">DynamicAPIntValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a24b8c0b3f58ca71ce8ed62b742d2907f">parseDynamicAPIntValue</a> (mlir::AsmParser &amp;parser)</td></tr>
+<tr class="memdesc:a24b8c0b3f58ca71ce8ed62b742d2907f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse MLIR's signed integer literal and discard its encoding width.  <br /></td></tr>
+<tr class="memitem:afa1f7b48471ab7c54889c07b1e4c53d1" id="r_afa1f7b48471ab7c54889c07b1e4c53d1"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#afa1f7b48471ab7c54889c07b1e4c53d1">integerAttrToDynamicAPInt</a> (mlir::IntegerAttr attr)</td></tr>
+<tr class="memdesc:afa1f7b48471ab7c54889c07b1e4c53d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode an MLIR integer using its signedness; signless i1 denotes a boolean.  <br /></td></tr>
 <tr class="memitem:ab58b991633496850e1ed92acd413908d" id="r_ab58b991633496850e1ed92acd413908d"><td class="memItemLeft">int64_t&#160;</td><td class="memItemRight"><a class="el" href="#ab58b991633496850e1ed92acd413908d">fromAPInt</a> (const llvm::APInt &amp;i)</td></tr>
+<tr class="memdesc:ab58b991633496850e1ed92acd413908d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract a verified MLIR index value; malformed internal IR is a fatal error.  <br /></td></tr>
 <tr class="memitem:a5a58995f554b579f9f32b1454376fa38" id="r_a5a58995f554b579f9f32b1454376fa38"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a5a58995f554b579f9f32b1454376fa38">isNullOrEmpty</a> (mlir::ArrayAttr a)</td></tr>
 <tr class="memitem:a89cd221cd3a7abc89c253af02c81538e" id="r_a89cd221cd3a7abc89c253af02c81538e"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a89cd221cd3a7abc89c253af02c81538e">isNullOrEmpty</a> (mlir::DenseArrayAttr a)</td></tr>
 <tr class="memitem:a080b2e46f6958963ba7d1ff00b26fbc4" id="r_a080b2e46f6958963ba7d1ff00b26fbc4"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a080b2e46f6958963ba7d1ff00b26fbc4">isNullOrEmpty</a> (mlir::DictionaryAttr a)</td></tr>
@@ -642,10 +649,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a53fd11575f45740ca49d163fff8c925e" id="r_a53fd11575f45740ca49d163fff8c925e"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#a53fd11575f45740ca49d163fff8c925e">stringWithoutType</a> (mlir::Attribute a)</td></tr>
 <tr class="memitem:ab3aea79f1ec3c694d5d0bcf1f949c5fe" id="r_ab3aea79f1ec3c694d5d0bcf1f949c5fe"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab3aea79f1ec3c694d5d0bcf1f949c5fe">printAttrs</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayRef&lt; mlir::Attribute &gt; attrs, const mlir::StringRef &amp;separator)</td></tr>
 <tr class="memitem:afa6ef0d937bae15784ca01d0a01c32b4" id="r_afa6ef0d937bae15784ca01d0a01c32b4"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#afa6ef0d937bae15784ca01d0a01c32b4">getTypeFromLlzkMainAttr</a> (mlir::ModuleOp op, mlir::Attribute attr)</td></tr>
-<tr class="memitem:a36fb7107da98c39ae715ff024f4ad07e" id="r_a36fb7107da98c39ae715ff024f4ad07e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a36fb7107da98c39ae715ff024f4ad07e">writeAPInt</a> (mlir::DialectBytecodeWriter &amp;writer, const llvm::APInt &amp;value)</td></tr>
-<tr class="memdesc:a36fb7107da98c39ae715ff024f4ad07e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write an APInt with its bit width, so the bytecode reader can use MLIR's native APInt payload encoding instead of falling back to decimal assembly.  <br /></td></tr>
-<tr class="memitem:a82afa19ff769b0dd05db76e22a364bd5" id="r_a82afa19ff769b0dd05db76e22a364bd5"><td class="memItemLeft">mlir::FailureOr&lt; llvm::APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a82afa19ff769b0dd05db76e22a364bd5">readAPInt</a> (mlir::DialectBytecodeReader &amp;reader)</td></tr>
-<tr class="memdesc:a82afa19ff769b0dd05db76e22a364bd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read an APInt written by <span class="tt"><a class="el" href="#a36fb7107da98c39ae715ff024f4ad07e" title="Write an APInt with its bit width, so the bytecode reader can use MLIR&#39;s native APInt payload encodin...">writeAPInt</a></span>.  <br /></td></tr>
+<tr class="memitem:afb3131a62a62678ca6664eb3c22c9c3e" id="r_afb3131a62a62678ca6664eb3c22c9c3e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#afb3131a62a62678ca6664eb3c22c9c3e">writeDynamicAPInt</a> (mlir::DialectBytecodeWriter &amp;writer, const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memdesc:afb3131a62a62678ca6664eb3c22c9c3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the minimal signed two's-complement encoding of a mathematical integer.  <br /></td></tr>
+<tr class="memitem:a438c72736d1d8276e965ca23354fd39e" id="r_a438c72736d1d8276e965ca23354fd39e"><td class="memItemLeft">mlir::FailureOr&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a438c72736d1d8276e965ca23354fd39e">readDynamicAPInt</a> (mlir::DialectBytecodeReader &amp;reader)</td></tr>
+<tr class="memdesc:a438c72736d1d8276e965ca23354fd39e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode a signed integer, rejecting invalid widths before allocating storage.  <br /></td></tr>
 <tr class="memitem:af218387a3d9b9824ec5b1d060d4989ea" id="r_af218387a3d9b9824ec5b1d060d4989ea"><td class="memItemLeft">mlir::Location&#160;</td><td class="memItemRight"><a class="el" href="#af218387a3d9b9824ec5b1d060d4989ea">getUnknownLoc</a> (mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:a5fca8161d33010dac2a613d7ff184db2" id="r_a5fca8161d33010dac2a613d7ff184db2"><td class="memItemLeft">mlir::OwningOpRef&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5fca8161d33010dac2a613d7ff184db2">createLLZKModule</a> (mlir::MLIRContext *context, mlir::Location loc)</td></tr>
 <tr class="memitem:a24a8f8d60a445812f3792f04b6420f5c" id="r_a24a8f8d60a445812f3792f04b6420f5c"><td class="memItemLeft">mlir::OwningOpRef&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a24a8f8d60a445812f3792f04b6420f5c">createLLZKModule</a> (mlir::MLIRContext *context)</td></tr>
@@ -760,22 +767,35 @@ Functions</h2></td></tr>
 <tr class="memdesc:afb284386fff71ad94c74a27f050076b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compare the source locations of two operations.  <br /></td></tr>
 <tr class="memitem:a60ca7c6c3ae1d404296cec5b7fdf2237" id="r_a60ca7c6c3ae1d404296cec5b7fdf2237"><td class="memTemplParams" colspan="2">template&lt;typename T, typename U&gt; </td></tr>
 <tr class="memitem:a60ca7c6c3ae1d404296cec5b7fdf2237 template"><td class="memItemLeft">constexpr T&#160;</td><td class="memItemRight"><a class="el" href="#a60ca7c6c3ae1d404296cec5b7fdf2237">checkedCast</a> (U u) noexcept</td></tr>
+<tr class="memitem:a8760228ae4ab06f100ea2307af6e6b00" id="r_a8760228ae4ab06f100ea2307af6e6b00"><td class="memItemLeft">llvm::Expected&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a8760228ae4ab06f100ea2307af6e6b00">parseDynamicAPInt</a> (llvm::StringRef str)</td></tr>
+<tr class="memdesc:a8760228ae4ab06f100ea2307af6e6b00"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse a signed decimal integer, rejecting malformed input without asserting.  <br /></td></tr>
+<tr class="memitem:af0464a368b3aedaa3fcc6ba54ccbb0fb" id="r_af0464a368b3aedaa3fcc6ba54ccbb0fb"><td class="memItemLeft">llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#af0464a368b3aedaa3fcc6ba54ccbb0fb">hashDynamicAPInt</a> (const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memdesc:af0464a368b3aedaa3fcc6ba54ccbb0fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hash the signed numeric value, independent of its width or arithmetic history.  <br /></td></tr>
+<tr class="memitem:a504642a05cdf52c3836ff8392307042e" id="r_a504642a05cdf52c3836ff8392307042e"><td class="memItemLeft">llvm::Expected&lt; llvm::APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a504642a05cdf52c3836ff8392307042e">checkedToAPInt</a> (const llvm::DynamicAPInt &amp;value, unsigned bitWidth, bool isSigned)</td></tr>
+<tr class="memdesc:a504642a05cdf52c3836ff8392307042e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Encode a signed or unsigned integer at exactly <span class="tt">bitWidth</span>, rejecting overflow.  <br /></td></tr>
+<tr class="memitem:a74f5183a15c12532abf39df9f432fa8f" id="r_a74f5183a15c12532abf39df9f432fa8f"><td class="memItemLeft">llvm::Expected&lt; int64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a74f5183a15c12532abf39df9f432fa8f">checkedToInt64</a> (const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memdesc:a74f5183a15c12532abf39df9f432fa8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to a native signed integer, rejecting values outside its range.  <br /></td></tr>
+<tr class="memitem:a345c8af476b04223346776123a9ae80d" id="r_a345c8af476b04223346776123a9ae80d"><td class="memItemLeft">llvm::Expected&lt; uint64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a345c8af476b04223346776123a9ae80d">checkedToUInt64</a> (const llvm::DynamicAPInt &amp;value)</td></tr>
+<tr class="memdesc:a345c8af476b04223346776123a9ae80d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to a native unsigned integer, rejecting negative values and overflow.  <br /></td></tr>
 <tr class="memitem:a7d838b81c2874e5ce443ff1de91839d3" id="r_a7d838b81c2874e5ce443ff1de91839d3"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a7d838b81c2874e5ce443ff1de91839d3">operator&amp;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
+<tr class="memdesc:a7d838b81c2874e5ce443ff1de91839d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bitwise operations use infinite two's-complement sign extension.  <br /></td></tr>
 <tr class="memitem:a82e0f350b35605a55c3383c14dbbdc2c" id="r_a82e0f350b35605a55c3383c14dbbdc2c"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a82e0f350b35605a55c3383c14dbbdc2c">operator|</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a0841c189e0c22cc4c75ab9a378029d4c" id="r_a0841c189e0c22cc4c75ab9a378029d4c"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a0841c189e0c22cc4c75ab9a378029d4c">operator^</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a619bc971771be50cd90fe6219aa47aa2" id="r_a619bc971771be50cd90fe6219aa47aa2"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a619bc971771be50cd90fe6219aa47aa2">operator&lt;&lt;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
+<tr class="memdesc:a619bc971771be50cd90fe6219aa47aa2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact left shift; negative or unrepresentable counts are fatal programming errors.  <br /></td></tr>
 <tr class="memitem:a7d13a019e952052198f1b49196e67111" id="r_a7d13a019e952052198f1b49196e67111"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a7d13a019e952052198f1b49196e67111">operator&gt;&gt;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
+<tr class="memdesc:a7d13a019e952052198f1b49196e67111"><td class="mdescLeft">&#160;</td><td class="mdescRight">Arithmetic right shift; arbitrarily large nonnegative counts saturate to 0 or -1.  <br /></td></tr>
 <tr class="memitem:aee183fbf8efdb7074e4ae15d7a4029a4" id="r_aee183fbf8efdb7074e4ae15d7a4029a4"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#aee183fbf8efdb7074e4ae15d7a4029a4">toDynamicAPInt</a> (llvm::StringRef str)</td></tr>
+<tr class="memdesc:aee183fbf8efdb7074e4ae15d7a4029a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse trusted decimal text; invalid text is a fatal programming error.  <br /></td></tr>
 <tr class="memitem:a42ddc7147daa762ec4335b255dacd7b3" id="r_a42ddc7147daa762ec4335b255dacd7b3"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a42ddc7147daa762ec4335b255dacd7b3">toDynamicAPInt</a> (const llvm::APSInt &amp;i)</td></tr>
 <tr class="memitem:ad74feac4c1ab67da90787102f5231390" id="r_ad74feac4c1ab67da90787102f5231390"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#ad74feac4c1ab67da90787102f5231390">toDynamicAPInt</a> (const llvm::APInt &amp;i)</td></tr>
 <tr class="memdesc:ad74feac4c1ab67da90787102f5231390"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts an APInt to a DynamicAPInt, using an unsigned interpretation.  <br /></td></tr>
+<tr class="memitem:a64be4f9cd510f0edf0e70b6423517ecf" id="r_a64be4f9cd510f0edf0e70b6423517ecf"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a64be4f9cd510f0edf0e70b6423517ecf">toSignedDynamicAPInt</a> (llvm::ArrayRef&lt; uint64_t &gt; parts)</td></tr>
+<tr class="memdesc:a64be4f9cd510f0edf0e70b6423517ecf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode 64-bit parts in LSB order as a two's-complement signed integer.  <br /></td></tr>
 <tr class="memitem:a254f0d812ac8a3f615d91a868115ee83" id="r_a254f0d812ac8a3f615d91a868115ee83"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a254f0d812ac8a3f615d91a868115ee83">toDynamicAPInt</a> (size_t i)</td></tr>
 <tr class="memitem:a3b93df0843f457f1f81cc0dc5933d1c9" id="r_a3b93df0843f457f1f81cc0dc5933d1c9"><td class="memItemLeft">llvm::APSInt&#160;</td><td class="memItemRight"><a class="el" href="#a3b93df0843f457f1f81cc0dc5933d1c9">toAPSInt</a> (const llvm::DynamicAPInt &amp;i)</td></tr>
-<tr class="memitem:a1998817a76cc8f6e316294d1b18e2e92" id="r_a1998817a76cc8f6e316294d1b18e2e92"><td class="memItemLeft">llvm::APInt&#160;</td><td class="memItemRight"><a class="el" href="#a1998817a76cc8f6e316294d1b18e2e92">toAPInt</a> (const llvm::DynamicAPInt &amp;i, unsigned bitWidth)</td></tr>
-<tr class="memdesc:a1998817a76cc8f6e316294d1b18e2e92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a DynamicAPInt that is non-negative and fits in <span class="tt">bitWidth</span> bits into an APInt.  <br /></td></tr>
-<tr class="memitem:ab655bb1748d3ea9a799f9c044ce65d0e" id="r_ab655bb1748d3ea9a799f9c044ce65d0e"><td class="memItemLeft">llvm::APInt&#160;</td><td class="memItemRight"><a class="el" href="#ab655bb1748d3ea9a799f9c044ce65d0e">toExactWidthAPInt</a> (const llvm::DynamicAPInt &amp;i, unsigned bitWidth)</td></tr>
-<tr class="memdesc:ab655bb1748d3ea9a799f9c044ce65d0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a DynamicAPInt to an APInt with exactly the requested bit width.  <br /></td></tr>
 <tr class="memitem:a79c7df33a29f599757f22c2920d8addf" id="r_a79c7df33a29f599757f22c2920d8addf"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a79c7df33a29f599757f22c2920d8addf">modExp</a> (const llvm::DynamicAPInt &amp;base, const llvm::DynamicAPInt &amp;exp, const llvm::DynamicAPInt &amp;mod)</td></tr>
+<tr class="memdesc:a79c7df33a29f599757f22c2920d8addf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Modular exponentiation for a nonnegative exponent and positive modulus.  <br /></td></tr>
 <tr class="memitem:a1f83757b07f122a5c8f74807ce83119a" id="r_a1f83757b07f122a5c8f74807ce83119a"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a1f83757b07f122a5c8f74807ce83119a">modInversePrime</a> (const llvm::DynamicAPInt &amp;f, const llvm::DynamicAPInt &amp;p)</td></tr>
 <tr class="memitem:a77bb6a13dd663cf33ccf6248ac67029a" id="r_a77bb6a13dd663cf33ccf6248ac67029a"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a77bb6a13dd663cf33ccf6248ac67029a">hasReadEffect</a> (mlir::Operation *op)</td></tr>
 <tr class="memdesc:a77bb6a13dd663cf33ccf6248ac67029a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true when <code class="param">op</code> has a memory read effect.  <br /></td></tr>
@@ -1425,7 +1445,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00193">193</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00207">207</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -1659,7 +1679,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00073">73</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00096">96</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -2558,6 +2578,138 @@ template&lt;typename T, typename U&gt; </div>
 
 </div>
 </div>
+<a id="adf328725e62366b7f18e02d4696d5e1b" name="adf328725e62366b7f18e02d4696d5e1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf328725e62366b7f18e02d4696d5e1b">&#9670;&#160;</a></span>checkedToAPInt() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Expected&lt; APInt &gt; llzk::checkedToAPInt </td>
+          <td>(</td>
+          <td class="paramtype">const DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>bitWidth</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isSigned</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00062">62</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a504642a05cdf52c3836ff8392307042e" name="a504642a05cdf52c3836ff8392307042e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a504642a05cdf52c3836ff8392307042e">&#9670;&#160;</a></span>checkedToAPInt() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::Expected&lt; llvm::APInt &gt; llzk::checkedToAPInt </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>bitWidth</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isSigned</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Encode a signed or unsigned integer at exactly <span class="tt">bitWidth</span>, rejecting overflow. </p>
+
+</div>
+</div>
+<a id="aa7e4f4ae0ab7bf95273d7eac3033c4f3" name="aa7e4f4ae0ab7bf95273d7eac3033c4f3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7e4f4ae0ab7bf95273d7eac3033c4f3">&#9670;&#160;</a></span>checkedToInt64() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Expected&lt; int64_t &gt; llzk::checkedToInt64 </td>
+          <td>(</td>
+          <td class="paramtype">const DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00072">72</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a74f5183a15c12532abf39df9f432fa8f" name="a74f5183a15c12532abf39df9f432fa8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74f5183a15c12532abf39df9f432fa8f">&#9670;&#160;</a></span>checkedToInt64() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::Expected&lt; int64_t &gt; llzk::checkedToInt64 </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convert to a native signed integer, rejecting values outside its range. </p>
+
+</div>
+</div>
+<a id="a75a23a23e2d223f5341853fbbb3b04a4" name="a75a23a23e2d223f5341853fbbb3b04a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a75a23a23e2d223f5341853fbbb3b04a4">&#9670;&#160;</a></span>checkedToUInt64() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Expected&lt; uint64_t &gt; llzk::checkedToUInt64 </td>
+          <td>(</td>
+          <td class="paramtype">const DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00079">79</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a345c8af476b04223346776123a9ae80d" name="a345c8af476b04223346776123a9ae80d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a345c8af476b04223346776123a9ae80d">&#9670;&#160;</a></span>checkedToUInt64() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::Expected&lt; uint64_t &gt; llzk::checkedToUInt64 </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convert to a native unsigned integer, rejecting negative values and overflow. </p>
+
+</div>
+</div>
 <a id="acf5eaa8548259d578f83f0ab17fce45c" name="acf5eaa8548259d578f83f0ab17fce45c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#acf5eaa8548259d578f83f0ab17fce45c">&#9670;&#160;</a></span>checkFields()</h2>
 
@@ -2818,7 +2970,7 @@ template&lt;typename T, typename U&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Failure if any <a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> does not specify a field. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00264">264</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00278">278</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -4141,7 +4293,9 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00067">67</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p>Extract a verified MLIR index value; malformed internal IR is a fatal error. </p>
+
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00085">85</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4230,7 +4384,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00513">513</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00520">520</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -4263,7 +4417,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00472">472</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00479">479</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -4296,7 +4450,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00486">486</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00493">493</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -5471,7 +5625,7 @@ template&lt;typename OpClass&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A <span class="tt"><a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a></span> for the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> found. Note that returning the lookup result is important, as it may manage a ModuleOp if the struct is found via an include. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00274">274</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00281">281</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -5974,6 +6128,44 @@ template&lt;typename GraphT&gt; </div>
 
 </div>
 </div>
+<a id="a408de359c0c6b0221c7f2b42b130ad76" name="a408de359c0c6b0221c7f2b42b130ad76"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a408de359c0c6b0221c7f2b42b130ad76">&#9670;&#160;</a></span>hashDynamicAPInt() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">hash_code llzk::hashDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">const DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00057">57</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="af0464a368b3aedaa3fcc6ba54ccbb0fb" name="af0464a368b3aedaa3fcc6ba54ccbb0fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0464a368b3aedaa3fcc6ba54ccbb0fb">&#9670;&#160;</a></span>hashDynamicAPInt() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::hash_code llzk::hashDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Hash the signed numeric value, independent of its width or arithmetic history. </p>
+
+</div>
+</div>
 <a id="a77bb6a13dd663cf33ccf6248ac67029a" name="a77bb6a13dd663cf33ccf6248ac67029a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a77bb6a13dd663cf33ccf6248ac67029a">&#9670;&#160;</a></span>hasReadEffect()</h2>
 
@@ -6030,6 +6222,36 @@ template&lt;typename GraphT&gt; </div>
 <p>Returns true when <code class="param">op</code> may have an unknown effect or any effect other than memory read. </p>
 
 <p class="definition">Definition at line <a class="el" href="EffectHelper_8h_source.html#l00030">30</a> of file <a class="el" href="EffectHelper_8h_source.html">EffectHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="afa1f7b48471ab7c54889c07b1e4c53d1" name="afa1f7b48471ab7c54889c07b1e4c53d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa1f7b48471ab7c54889c07b1e4c53d1">&#9670;&#160;</a></span>integerAttrToDynamicAPInt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::DynamicAPInt llzk::integerAttrToDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">mlir::IntegerAttr</td>          <td class="paramname"><span class="paramname"><em>attr</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Decode an MLIR integer using its signedness; signless i1 denotes a boolean. </p>
+<p>Other signless integers and index values use signed interpretation. </p>
+
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00078">78</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -6337,7 +6559,7 @@ template&lt;OpComparable Op&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00069">69</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00092">92</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -6364,7 +6586,7 @@ template&lt;OpComparable Op&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00070">70</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00093">93</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -6391,7 +6613,7 @@ template&lt;OpComparable Op&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00071">71</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00094">94</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -7177,7 +7399,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00149">149</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00166">166</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7205,6 +7427,8 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
+<p>Modular exponentiation for a nonnegative exponent and positive modulus. </p>
+
 </div>
 </div>
 <a id="acadd66413800c2610538c0e3568561fd" name="acadd66413800c2610538c0e3568561fd"></a>
@@ -7226,7 +7450,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00166">166</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00188">188</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7409,7 +7633,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00062">62</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00087">87</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7454,6 +7678,8 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Bitwise operations use infinite two's-complement sign extension. </p>
 
 </div>
 </div>
@@ -7614,7 +7840,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00077">77</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00099">99</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7659,6 +7885,8 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Exact left shift; negative or unrepresentable counts are fatal programming errors. </p>
 
 </div>
 </div>
@@ -7779,7 +8007,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00692">692</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00699">699</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -7802,7 +8030,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00704">704</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00711">711</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -7848,7 +8076,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00079">79</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00114">114</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7894,6 +8122,8 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
+<p>Arithmetic right shift; arbitrarily large nonnegative counts saturate to 0 or -1. </p>
+
 </div>
 </div>
 <a id="af93bf248388cf47f2e92c92d911d7519" name="af93bf248388cf47f2e92c92d911d7519"></a>
@@ -7915,7 +8145,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00072">72</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00095">95</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7983,7 +8213,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00067">67</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00091">91</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -8029,33 +8259,6 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-
-</div>
-</div>
-<a id="a727e2234b62c3fd5538d2e09c3a3f5ba" name="a727e2234b62c3fd5538d2e09c3a3f5ba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a727e2234b62c3fd5538d2e09c3a3f5ba">&#9670;&#160;</a></span>parseAPIntValue()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a> &gt; llzk::parseAPIntValue </td>
-          <td>(</td>
-          <td class="paramtype">mlir::AsmParser &amp;</td>          <td class="paramname"><span class="paramname"><em>parser</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00058">58</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8130,6 +8333,73 @@ template&lt;unsigned N&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00121">121</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+
+</div>
+</div>
+<a id="a8760228ae4ab06f100ea2307af6e6b00" name="a8760228ae4ab06f100ea2307af6e6b00"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8760228ae4ab06f100ea2307af6e6b00">&#9670;&#160;</a></span>parseDynamicAPInt() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::Expected&lt; llvm::DynamicAPInt &gt; llzk::parseDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>str</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Parse a signed decimal integer, rejecting malformed input without asserting. </p>
+
+</div>
+</div>
+<a id="a5d76b7b954497f678069bb51bae7b88b" name="a5d76b7b954497f678069bb51bae7b88b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d76b7b954497f678069bb51bae7b88b">&#9670;&#160;</a></span>parseDynamicAPInt() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Expected&lt; DynamicAPInt &gt; llzk::parseDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>str</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00046">46</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a24b8c0b3f58ca71ce8ed62b742d2907f" name="a24b8c0b3f58ca71ce8ed62b742d2907f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24b8c0b3f58ca71ce8ed62b742d2907f">&#9670;&#160;</a></span>parseDynamicAPIntValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1DynamicAPIntValue.html">DynamicAPIntValue</a> &gt; llzk::parseDynamicAPIntValue </td>
+          <td>(</td>
+          <td class="paramtype">mlir::AsmParser &amp;</td>          <td class="paramname"><span class="paramname"><em>parser</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Parse MLIR's signed integer literal and discard its encoding width. </p>
+
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00068">68</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8643,8 +8913,8 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
-<a id="a82afa19ff769b0dd05db76e22a364bd5" name="a82afa19ff769b0dd05db76e22a364bd5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a82afa19ff769b0dd05db76e22a364bd5">&#9670;&#160;</a></span>readAPInt()</h2>
+<a id="a438c72736d1d8276e965ca23354fd39e" name="a438c72736d1d8276e965ca23354fd39e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a438c72736d1d8276e965ca23354fd39e">&#9670;&#160;</a></span>readDynamicAPInt()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -8653,7 +8923,7 @@ template&lt;typename ConcreteOp&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">mlir::FailureOr&lt; llvm::APInt &gt; llzk::readAPInt </td>
+          <td class="memname">mlir::FailureOr&lt; llvm::DynamicAPInt &gt; llzk::readDynamicAPInt </td>
           <td>(</td>
           <td class="paramtype">mlir::DialectBytecodeReader &amp;</td>          <td class="paramname"><span class="paramname"><em>reader</em></span></td><td>)</td>
           <td></td>
@@ -8666,9 +8936,9 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Read an APInt written by <span class="tt"><a class="el" href="#a36fb7107da98c39ae715ff024f4ad07e" title="Write an APInt with its bit width, so the bytecode reader can use MLIR&#39;s native APInt payload encodin...">writeAPInt</a></span>. </p>
+<p>Decode a signed integer, rejecting invalid widths before allocating storage. </p>
 
-<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00050">50</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00052">52</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 
 </div>
 </div>
@@ -10946,7 +11216,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00074">74</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00097">97</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -11209,80 +11479,6 @@ template&lt;&gt; </div>
 
 </div>
 </div>
-<a id="a6ec06c177f8be824dc8c3adc0ae22eb6" name="a6ec06c177f8be824dc8c3adc0ae22eb6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6ec06c177f8be824dc8c3adc0ae22eb6">&#9670;&#160;</a></span>toAPInt() <span class="overload">[1/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">APInt llzk::toAPInt </td>
-          <td>(</td>
-          <td class="paramtype">const DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>val</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>bitWidth</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00137">137</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a1998817a76cc8f6e316294d1b18e2e92" name="a1998817a76cc8f6e316294d1b18e2e92"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1998817a76cc8f6e316294d1b18e2e92">&#9670;&#160;</a></span>toAPInt() <span class="overload">[2/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::APInt llzk::toAPInt </td>
-          <td>(</td>
-          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>bitWidth</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Converts a DynamicAPInt that is non-negative and fits in <span class="tt">bitWidth</span> bits into an APInt. </p>
-<p>Uses <span class="tt">bitWidth+1</span> so that all field values in <span class="tt">[0, p)</span> — which satisfy <span class="tt">val &lt; 2^bitWidth</span> — have a clear sign bit and print as positive decimals. </p>
-
-</div>
-</div>
-<a id="a39859e51fc665588ce50b49754e871cd" name="a39859e51fc665588ce50b49754e871cd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39859e51fc665588ce50b49754e871cd">&#9670;&#160;</a></span>toAPInt() <span class="overload">[3/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::APInt llzk::toAPInt </td>
-          <td>(</td>
-          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00066">66</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
-
-</div>
-</div>
 <a id="ad1bfa5460ac00c7974a989fa2e8ddc56" name="ad1bfa5460ac00c7974a989fa2e8ddc56"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad1bfa5460ac00c7974a989fa2e8ddc56">&#9670;&#160;</a></span>toAPSInt() <span class="overload">[1/2]</span></h2>
 
@@ -11298,7 +11494,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00116">116</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00145">145</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11334,7 +11530,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00108">108</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00137">137</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11353,7 +11549,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00098">98</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00127">127</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11409,6 +11605,9 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
+<p>Parse trusted decimal text; invalid text is a fatal programming error. </p>
+<p>Use parseDynamicAPInt for external input. </p>
+
 </div>
 </div>
 <a id="a254f0d812ac8a3f615d91a868115ee83" name="a254f0d812ac8a3f615d91a868115ee83"></a>
@@ -11434,7 +11633,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00047">47</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00076">76</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
 
 </div>
 </div>
@@ -11453,53 +11652,46 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00093">93</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00125">125</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a7ad816687c36ab31df4f80aa25208f27" name="a7ad816687c36ab31df4f80aa25208f27"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7ad816687c36ab31df4f80aa25208f27">&#9670;&#160;</a></span>toExactWidthAPInt() <span class="overload">[1/2]</span></h2>
+<a id="ab5e8bcab27fe2d39365a0726c9154f85" name="ab5e8bcab27fe2d39365a0726c9154f85"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5e8bcab27fe2d39365a0726c9154f85">&#9670;&#160;</a></span>toSignedDynamicAPInt() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">APInt llzk::toExactWidthAPInt </td>
+          <td class="memname">DynamicAPInt llzk::toSignedDynamicAPInt </td>
           <td>(</td>
-          <td class="paramtype">const DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>val</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">ArrayRef&lt; uint64_t &gt;</td>          <td class="paramname"><span class="paramname"><em>parts</em></span></td><td>)</td>
           <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>bitWidth</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00143">143</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00036">36</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
-<a id="ab655bb1748d3ea9a799f9c044ce65d0e" name="ab655bb1748d3ea9a799f9c044ce65d0e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab655bb1748d3ea9a799f9c044ce65d0e">&#9670;&#160;</a></span>toExactWidthAPInt() <span class="overload">[2/2]</span></h2>
+<a id="a64be4f9cd510f0edf0e70b6423517ecf" name="a64be4f9cd510f0edf0e70b6423517ecf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64be4f9cd510f0edf0e70b6423517ecf">&#9670;&#160;</a></span>toSignedDynamicAPInt() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">llvm::APInt llzk::toExactWidthAPInt </td>
+          <td class="memname">llvm::DynamicAPInt llzk::toSignedDynamicAPInt </td>
           <td>(</td>
-          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">llvm::ArrayRef&lt; uint64_t &gt;</td>          <td class="paramname"><span class="paramname"><em>parts</em></span></td><td>)</td>
           <td></td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>bitWidth</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Converts a DynamicAPInt to an APInt with exactly the requested bit width. </p>
+<p>Decode 64-bit parts in LSB order as a two's-complement signed integer. </p>
+<p>The highest bit of the last part is the sign bit; an empty array represents zero. Reports a fatal error if the part count cannot fit APInt's bit width. </p>
 
 </div>
 </div>
@@ -12892,8 +13084,8 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 </div>
 </div>
-<a id="a36fb7107da98c39ae715ff024f4ad07e" name="a36fb7107da98c39ae715ff024f4ad07e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a36fb7107da98c39ae715ff024f4ad07e">&#9670;&#160;</a></span>writeAPInt()</h2>
+<a id="afb3131a62a62678ca6664eb3c22c9c3e" name="afb3131a62a62678ca6664eb3c22c9c3e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb3131a62a62678ca6664eb3c22c9c3e">&#9670;&#160;</a></span>writeDynamicAPInt()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -12902,14 +13094,14 @@ template&lt;std::ranges::input_range Range&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void llzk::writeAPInt </td>
+          <td class="memname">void llzk::writeDynamicAPInt </td>
           <td>(</td>
           <td class="paramtype">mlir::DialectBytecodeWriter &amp;</td>          <td class="paramname"><span class="paramname"><em>writer</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -12919,7 +13111,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Write an APInt with its bit width, so the bytecode reader can use MLIR's native APInt payload encoding instead of falling back to decimal assembly. </p>
+<p>Write the minimal signed two's-complement encoding of a mathematical integer. </p>
 
 <p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00044">44</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 

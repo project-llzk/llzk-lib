@@ -137,12 +137,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('DynamicAPIntHe
 <code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &lt;llvm/ADT/ArrayRef.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallString.h&gt;</code><br />
+<code>#include &lt;llvm/Support/ErrorHandling.h&gt;</code><br />
 <code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for DynamicAPIntHelper.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="DynamicAPIntHelper_8cpp__incl.svg" width="1527" height="266"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="DynamicAPIntHelper_8cpp__incl.svg" width="1804" height="266"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="DynamicAPIntHelper_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -153,6 +154,12 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:ab5e8bcab27fe2d39365a0726c9154f85" id="r_ab5e8bcab27fe2d39365a0726c9154f85"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ab5e8bcab27fe2d39365a0726c9154f85">llzk::toSignedDynamicAPInt</a> (ArrayRef&lt; uint64_t &gt; parts)</td></tr>
+<tr class="memitem:a5d76b7b954497f678069bb51bae7b88b" id="r_a5d76b7b954497f678069bb51bae7b88b"><td class="memItemLeft">Expected&lt; DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a5d76b7b954497f678069bb51bae7b88b">llzk::parseDynamicAPInt</a> (StringRef str)</td></tr>
+<tr class="memitem:a408de359c0c6b0221c7f2b42b130ad76" id="r_a408de359c0c6b0221c7f2b42b130ad76"><td class="memItemLeft">hash_code&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a408de359c0c6b0221c7f2b42b130ad76">llzk::hashDynamicAPInt</a> (const DynamicAPInt &amp;value)</td></tr>
+<tr class="memitem:adf328725e62366b7f18e02d4696d5e1b" id="r_adf328725e62366b7f18e02d4696d5e1b"><td class="memItemLeft">Expected&lt; APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#adf328725e62366b7f18e02d4696d5e1b">llzk::checkedToAPInt</a> (const DynamicAPInt &amp;value, unsigned bitWidth, bool isSigned)</td></tr>
+<tr class="memitem:aa7e4f4ae0ab7bf95273d7eac3033c4f3" id="r_aa7e4f4ae0ab7bf95273d7eac3033c4f3"><td class="memItemLeft">Expected&lt; int64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#aa7e4f4ae0ab7bf95273d7eac3033c4f3">llzk::checkedToInt64</a> (const DynamicAPInt &amp;value)</td></tr>
+<tr class="memitem:a75a23a23e2d223f5341853fbbb3b04a4" id="r_a75a23a23e2d223f5341853fbbb3b04a4"><td class="memItemLeft">Expected&lt; uint64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a75a23a23e2d223f5341853fbbb3b04a4">llzk::checkedToUInt64</a> (const DynamicAPInt &amp;value)</td></tr>
 <tr class="memitem:a9444ebe99ad0e59505dada6c8bb477e0" id="r_a9444ebe99ad0e59505dada6c8bb477e0"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a9444ebe99ad0e59505dada6c8bb477e0">llzk::operator&amp;</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a92b8f56629d729dd2462d2385bdd7094" id="r_a92b8f56629d729dd2462d2385bdd7094"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a92b8f56629d729dd2462d2385bdd7094">llzk::operator|</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:af93bf248388cf47f2e92c92d911d7519" id="r_af93bf248388cf47f2e92c92d911d7519"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#af93bf248388cf47f2e92c92d911d7519">llzk::operator^</a> (const DynamicAPInt &amp;lhs, const DynamicAPInt &amp;rhs)</td></tr>
@@ -162,8 +169,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a6487238a0c9232afbc011cfbe1f93cce" id="r_a6487238a0c9232afbc011cfbe1f93cce"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a6487238a0c9232afbc011cfbe1f93cce">llzk::toDynamicAPInt</a> (const APSInt &amp;i)</td></tr>
 <tr class="memitem:aa1ac1cda97a61a9c7773b936e2b5a8a2" id="r_aa1ac1cda97a61a9c7773b936e2b5a8a2"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#aa1ac1cda97a61a9c7773b936e2b5a8a2">llzk::toDynamicAPInt</a> (const APInt &amp;i)</td></tr>
 <tr class="memitem:ad1bfa5460ac00c7974a989fa2e8ddc56" id="r_ad1bfa5460ac00c7974a989fa2e8ddc56"><td class="memItemLeft">APSInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a> (const DynamicAPInt &amp;i)</td></tr>
-<tr class="memitem:a6ec06c177f8be824dc8c3adc0ae22eb6" id="r_a6ec06c177f8be824dc8c3adc0ae22eb6"><td class="memItemLeft">APInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">llzk::toAPInt</a> (const DynamicAPInt &amp;val, unsigned bitWidth)</td></tr>
-<tr class="memitem:a7ad816687c36ab31df4f80aa25208f27" id="r_a7ad816687c36ab31df4f80aa25208f27"><td class="memItemLeft">APInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">llzk::toExactWidthAPInt</a> (const DynamicAPInt &amp;val, unsigned bitWidth)</td></tr>
 <tr class="memitem:ae716915c256b3e8259e0fd51d5a88b82" id="r_ae716915c256b3e8259e0fd51d5a88b82"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">llzk::modExp</a> (const DynamicAPInt &amp;base, const DynamicAPInt &amp;exp, const DynamicAPInt &amp;mod)</td></tr>
 <tr class="memitem:acadd66413800c2610538c0e3568561fd" id="r_acadd66413800c2610538c0e3568561fd"><td class="memItemLeft">DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">llzk::modInversePrime</a> (const DynamicAPInt &amp;f, const DynamicAPInt &amp;p)</td></tr>
 </table>

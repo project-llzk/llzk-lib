@@ -182,51 +182,56 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('CommonAttrOrTy
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      }</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      <span class="keyword">const</span> std::string capiType = <a class="code hl_function" href="CommonCAPIGen_8cpp.html#a2a7e98a2dbfa729cf62f565bb486651c">mapCppTypeToCapiType</a>(cppType);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      <span class="keywordflow">if</span> (<a class="code hl_function" href="CommonCAPIGen_8h.html#a18b437050f432e32bf831b12acc01e73">isPrimitiveType</a>(cppType)) {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    {0} {1} = 0;\n&quot;</span>, capiType, pName);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (isType &amp;&amp; capiType == <span class="stringliteral">&quot;MlirType&quot;</span>) {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    auto {0} = createIndexType();\n&quot;</span>, pName);</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!isType &amp;&amp; capiType == <span class="stringliteral">&quot;MlirAttribute&quot;</span>) {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    auto {0} = createIndexAttribute();\n&quot;</span>, pName);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        <span class="comment">// For enum or other types, use static_cast to initialize with 0</span></div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    {0} {1} = static_cast&lt;{0}&gt;(0);\n&quot;</span>, capiType, pName);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      }</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    }</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordflow">return</span> paramsBuffer;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>}</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      <span class="keywordflow">if</span> (<a class="code hl_function" href="CommonCAPIGen_8h.html#a1a0efdf5eaf75ee3d853f80b7dbb127d">isDynamicAPIntType</a>(cppType)) {</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>        paramsStream &lt;&lt; llvm::formatv(</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>            <span class="stringliteral">&quot;    auto {0} = mlirStringRefCreateFromCString(\&quot;0\&quot;);\n&quot;</span>, pName</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        );</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code hl_function" href="CommonCAPIGen_8h.html#a18b437050f432e32bf831b12acc01e73">isPrimitiveType</a>(cppType)) {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    {0} {1} = 0;\n&quot;</span>, capiType, pName);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (isType &amp;&amp; capiType == <span class="stringliteral">&quot;MlirType&quot;</span>) {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    auto {0} = createIndexType();\n&quot;</span>, pName);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!isType &amp;&amp; capiType == <span class="stringliteral">&quot;MlirAttribute&quot;</span>) {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    auto {0} = createIndexAttribute();\n&quot;</span>, pName);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>        <span class="comment">// For enum or other types, use static_cast to initialize with 0</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;    {0} {1} = static_cast&lt;{0}&gt;(0);\n&quot;</span>, capiType, pName);</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      }</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    }</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordflow">return</span> paramsBuffer;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span></div>
-<div class="foldopen" id="foldopen00070" data-start="{" data-end="}">
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="CommonAttrOrTypeCAPITestGen_8cpp.html#a110dc5e8953ac039e439fb86b4fd1d6b">   70</a></span>std::string <a class="code hl_function" href="CommonAttrOrTypeCAPITestGen_8cpp.html#a110dc5e8953ac039e439fb86b4fd1d6b">generateParamListForAttrOrTypeGet</a>(<span class="keyword">const</span> AttrOrTypeDef &amp;def) {</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="comment">// Use raw_string_ostream for efficient string building</span></div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  std::string paramsBuffer;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="comment">// Reserve approximate space: ~30 chars per parameter</span></div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  paramsBuffer.reserve(30 * def.getParameters().size());</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  llvm::raw_string_ostream paramsStream(paramsBuffer);</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;param : def.getParameters()) {</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    <span class="comment">// Cache the string conversion to avoid repeated calls</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    <span class="keyword">const</span> StringRef pName = param.getName();</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="CommonCAPIGen_8h.html#a9170f92d8fe04bad78a386ed7175d409">isArrayRefType</a>(param.getCppType())) {</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;, {0}Count, {0}&quot;</span>, pName);</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;, {0}&quot;</span>, pName);</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    }</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  }</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="keywordflow">return</span> paramsBuffer;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>}</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span></div>
+<div class="foldopen" id="foldopen00074" data-start="{" data-end="}">
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="CommonAttrOrTypeCAPITestGen_8cpp.html#a110dc5e8953ac039e439fb86b4fd1d6b">   74</a></span>std::string <a class="code hl_function" href="CommonAttrOrTypeCAPITestGen_8cpp.html#a110dc5e8953ac039e439fb86b4fd1d6b">generateParamListForAttrOrTypeGet</a>(<span class="keyword">const</span> AttrOrTypeDef &amp;def) {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="comment">// Use raw_string_ostream for efficient string building</span></div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  std::string paramsBuffer;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="comment">// Reserve approximate space: ~30 chars per parameter</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  paramsBuffer.reserve(30 * def.getParameters().size());</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  llvm::raw_string_ostream paramsStream(paramsBuffer);</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;param : def.getParameters()) {</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="comment">// Cache the string conversion to avoid repeated calls</span></div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="keyword">const</span> StringRef pName = param.getName();</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="CommonCAPIGen_8h.html#a9170f92d8fe04bad78a386ed7175d409">isArrayRefType</a>(param.getCppType())) {</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;, {0}Count, {0}&quot;</span>, pName);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      paramsStream &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;, {0}&quot;</span>, pName);</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    }</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  }</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordflow">return</span> paramsBuffer;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>}</div>
 </div>
-<div class="ttc" id="aCommonAttrOrTypeCAPITestGen_8cpp_html_a110dc5e8953ac039e439fb86b4fd1d6b"><div class="ttname"><a href="CommonAttrOrTypeCAPITestGen_8cpp.html#a110dc5e8953ac039e439fb86b4fd1d6b">generateParamListForAttrOrTypeGet</a></div><div class="ttdeci">std::string generateParamListForAttrOrTypeGet(const AttrOrTypeDef &amp;def)</div><div class="ttdoc">Generate parameter list for Get builder call.</div><div class="ttdef"><b>Definition</b> <a href="#l00070">CommonAttrOrTypeCAPITestGen.cpp:70</a></div></div>
+<div class="ttc" id="aCommonAttrOrTypeCAPITestGen_8cpp_html_a110dc5e8953ac039e439fb86b4fd1d6b"><div class="ttname"><a href="CommonAttrOrTypeCAPITestGen_8cpp.html#a110dc5e8953ac039e439fb86b4fd1d6b">generateParamListForAttrOrTypeGet</a></div><div class="ttdeci">std::string generateParamListForAttrOrTypeGet(const AttrOrTypeDef &amp;def)</div><div class="ttdoc">Generate parameter list for Get builder call.</div><div class="ttdef"><b>Definition</b> <a href="#l00074">CommonAttrOrTypeCAPITestGen.cpp:74</a></div></div>
 <div class="ttc" id="aCommonAttrOrTypeCAPITestGen_8cpp_html_a664353ee1226e519f59fbd7d4e06aa4c"><div class="ttname"><a href="CommonAttrOrTypeCAPITestGen_8cpp.html#a664353ee1226e519f59fbd7d4e06aa4c">generateDummyParamsForAttrOrTypeGet</a></div><div class="ttdeci">std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &amp;def, bool isType)</div><div class="ttdoc">Generate dummy parameters for Get builder.</div><div class="ttdef"><b>Definition</b> <a href="#l00022">CommonAttrOrTypeCAPITestGen.cpp:22</a></div></div>
 <div class="ttc" id="aCommonAttrOrTypeCAPITestGen_8h_html"><div class="ttname"><a href="CommonAttrOrTypeCAPITestGen_8h.html">CommonAttrOrTypeCAPITestGen.h</a></div><div class="ttdoc">This file provides common utilities for generating C API link tests for attributes and types.</div></div>
-<div class="ttc" id="aCommonCAPIGen_8cpp_html_a2a7e98a2dbfa729cf62f565bb486651c"><div class="ttname"><a href="CommonCAPIGen_8cpp.html#a2a7e98a2dbfa729cf62f565bb486651c">mapCppTypeToCapiType</a></div><div class="ttdeci">std::string mapCppTypeToCapiType(StringRef cppType)</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8cpp_source.html#l00854">CommonCAPIGen.cpp:854</a></div></div>
-<div class="ttc" id="aCommonCAPIGen_8h_html_a018220ae1d7b99cb622e3f019ebd611a"><div class="ttname"><a href="CommonCAPIGen_8h.html#a018220ae1d7b99cb622e3f019ebd611a">extractArrayRefElementType</a></div><div class="ttdeci">mlir::StringRef extractArrayRefElementType(mlir::StringRef cppType)</div><div class="ttdoc">Extract element type from ArrayRef&lt;...&gt;.</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00225">CommonCAPIGen.h:225</a></div></div>
+<div class="ttc" id="aCommonCAPIGen_8cpp_html_a2a7e98a2dbfa729cf62f565bb486651c"><div class="ttname"><a href="CommonCAPIGen_8cpp.html#a2a7e98a2dbfa729cf62f565bb486651c">mapCppTypeToCapiType</a></div><div class="ttdeci">std::string mapCppTypeToCapiType(StringRef cppType)</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8cpp_source.html#l00853">CommonCAPIGen.cpp:853</a></div></div>
+<div class="ttc" id="aCommonCAPIGen_8h_html_a018220ae1d7b99cb622e3f019ebd611a"><div class="ttname"><a href="CommonCAPIGen_8h.html#a018220ae1d7b99cb622e3f019ebd611a">extractArrayRefElementType</a></div><div class="ttdeci">mlir::StringRef extractArrayRefElementType(mlir::StringRef cppType)</div><div class="ttdoc">Extract element type from ArrayRef&lt;...&gt;.</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00219">CommonCAPIGen.h:219</a></div></div>
 <div class="ttc" id="aCommonCAPIGen_8h_html_a18b437050f432e32bf831b12acc01e73"><div class="ttname"><a href="CommonCAPIGen_8h.html#a18b437050f432e32bf831b12acc01e73">isPrimitiveType</a></div><div class="ttdeci">bool isPrimitiveType(mlir::StringRef cppType)</div><div class="ttdoc">Check if a C++ type is a known primitive type.</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00161">CommonCAPIGen.h:161</a></div></div>
-<div class="ttc" id="aCommonCAPIGen_8h_html_a9170f92d8fe04bad78a386ed7175d409"><div class="ttname"><a href="CommonCAPIGen_8h.html#a9170f92d8fe04bad78a386ed7175d409">isArrayRefType</a></div><div class="ttdeci">bool isArrayRefType(mlir::StringRef cppType)</div><div class="ttdoc">Check if a C++ type is an ArrayRef type.</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00218">CommonCAPIGen.h:218</a></div></div>
+<div class="ttc" id="aCommonCAPIGen_8h_html_a1a0efdf5eaf75ee3d853f80b7dbb127d"><div class="ttname"><a href="CommonCAPIGen_8h.html#a1a0efdf5eaf75ee3d853f80b7dbb127d">isDynamicAPIntType</a></div><div class="ttdeci">bool isDynamicAPIntType(mlir::StringRef cppType)</div><div class="ttdoc">Whether a parameter represents an arbitrary-precision mathematical integer.</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00204">CommonCAPIGen.h:204</a></div></div>
+<div class="ttc" id="aCommonCAPIGen_8h_html_a9170f92d8fe04bad78a386ed7175d409"><div class="ttname"><a href="CommonCAPIGen_8h.html#a9170f92d8fe04bad78a386ed7175d409">isArrayRefType</a></div><div class="ttdeci">bool isArrayRefType(mlir::StringRef cppType)</div><div class="ttdoc">Check if a C++ type is an ArrayRef type.</div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00212">CommonCAPIGen.h:212</a></div></div>
 <div class="ttc" id="anamespacemlir_1_1tblgen_html"><div class="ttname"><a href="namespacemlir_1_1tblgen.html">mlir::tblgen</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

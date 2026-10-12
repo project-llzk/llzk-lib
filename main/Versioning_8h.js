@@ -2,6 +2,6 @@ var Versioning_8h =
 [
     [ "llzk::LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", "structllzk_1_1LLZKDialectVersion" ],
     [ "llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;", "structllzk_1_1LLZKDialectBytecodeInterface.html", "structllzk_1_1LLZKDialectBytecodeInterface" ],
-    [ "llzk::readAPInt", "namespacellzk.html#a82afa19ff769b0dd05db76e22a364bd5", null ],
-    [ "llzk::writeAPInt", "namespacellzk.html#a36fb7107da98c39ae715ff024f4ad07e", null ]
+    [ "llzk::readDynamicAPInt", "namespacellzk.html#a438c72736d1d8276e965ca23354fd39e", null ],
+    [ "llzk::writeDynamicAPInt", "namespacellzk.html#afb3131a62a62678ca6664eb3c22c9c3e", null ]
 ];

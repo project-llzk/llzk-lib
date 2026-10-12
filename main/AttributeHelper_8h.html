@@ -134,7 +134,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('AttributeHelpe
   <div class="headertitle"><div class="title">AttributeHelper.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="StreamHelper_8h_source.html">llzk/Util/StreamHelper.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="DynamicAPIntHelper_8h_source.html">llzk/Util/DynamicAPIntHelper.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="StreamHelper_8h_source.html">llzk/Util/StreamHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/DialectImplementation.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/APInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/Hashing.h&gt;</code><br />
@@ -142,12 +143,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('AttributeHelpe
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for AttributeHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__incl.svg" width="871" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__incl.svg" width="2176" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__dep__incl.svg" width="7703" height="907"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__dep__incl.svg" width="8042" height="907"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="AttributeHelper_8h_source.html">Go to the source code of this file.</a></p>
@@ -155,8 +156,8 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:mlir_3A_3AFieldParser_3C_20llvm_3A_3AAPInt_20_3E" id="r_mlir_3A_3AFieldParser_3C_20llvm_3A_3AAPInt_20_3E"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structmlir_1_1FieldParser_3_01llvm_1_1APInt_01_4.html">mlir::FieldParser&lt; llvm::APInt &gt;</a></td></tr>
-<tr class="memitem:llzk_3A_3AAPIntValue" id="r_llzk_3A_3AAPIntValue"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Storage key for APInts whose numeric value is independent of bit width.  <a href="classllzk_1_1APIntValue.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llzk_3A_3ADynamicAPIntValue" id="r_llzk_3A_3ADynamicAPIntValue"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1DynamicAPIntValue.html">llzk::DynamicAPIntValue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attribute storage adapter providing numeric hashing for DynamicAPInt.  <a href="classllzk_1_1DynamicAPIntValue.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -164,9 +165,12 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a727e2234b62c3fd5538d2e09c3a3f5ba" id="r_a727e2234b62c3fd5538d2e09c3a3f5ba"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a727e2234b62c3fd5538d2e09c3a3f5ba">llzk::parseAPIntValue</a> (mlir::AsmParser &amp;parser)</td></tr>
-<tr class="memitem:a39859e51fc665588ce50b49754e871cd" id="r_a39859e51fc665588ce50b49754e871cd"><td class="memItemLeft">llvm::APInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a39859e51fc665588ce50b49754e871cd">llzk::toAPInt</a> (int64_t i)</td></tr>
+<tr class="memitem:a24b8c0b3f58ca71ce8ed62b742d2907f" id="r_a24b8c0b3f58ca71ce8ed62b742d2907f"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1DynamicAPIntValue.html">DynamicAPIntValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a24b8c0b3f58ca71ce8ed62b742d2907f">llzk::parseDynamicAPIntValue</a> (mlir::AsmParser &amp;parser)</td></tr>
+<tr class="memdesc:a24b8c0b3f58ca71ce8ed62b742d2907f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse MLIR's signed integer literal and discard its encoding width.  <br /></td></tr>
+<tr class="memitem:afa1f7b48471ab7c54889c07b1e4c53d1" id="r_afa1f7b48471ab7c54889c07b1e4c53d1"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#afa1f7b48471ab7c54889c07b1e4c53d1">llzk::integerAttrToDynamicAPInt</a> (mlir::IntegerAttr attr)</td></tr>
+<tr class="memdesc:afa1f7b48471ab7c54889c07b1e4c53d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode an MLIR integer using its signedness; signless i1 denotes a boolean.  <br /></td></tr>
 <tr class="memitem:ab58b991633496850e1ed92acd413908d" id="r_ab58b991633496850e1ed92acd413908d"><td class="memItemLeft">int64_t&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ab58b991633496850e1ed92acd413908d">llzk::fromAPInt</a> (const llvm::APInt &amp;i)</td></tr>
+<tr class="memdesc:ab58b991633496850e1ed92acd413908d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract a verified MLIR index value; malformed internal IR is a fatal error.  <br /></td></tr>
 <tr class="memitem:a5a58995f554b579f9f32b1454376fa38" id="r_a5a58995f554b579f9f32b1454376fa38"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">llzk::isNullOrEmpty</a> (mlir::ArrayAttr a)</td></tr>
 <tr class="memitem:a89cd221cd3a7abc89c253af02c81538e" id="r_a89cd221cd3a7abc89c253af02c81538e"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a89cd221cd3a7abc89c253af02c81538e">llzk::isNullOrEmpty</a> (mlir::DenseArrayAttr a)</td></tr>
 <tr class="memitem:a080b2e46f6958963ba7d1ff00b26fbc4" id="r_a080b2e46f6958963ba7d1ff00b26fbc4"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a080b2e46f6958963ba7d1ff00b26fbc4">llzk::isNullOrEmpty</a> (mlir::DictionaryAttr a)</td></tr>

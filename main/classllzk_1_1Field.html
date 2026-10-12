@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1F
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#friends">Friends</a> &#124;
@@ -141,6 +142,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1F
 
 <p><code>#include &lt;<a class="el" href="Field_8h_source.html">Field.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:Hash" id="r_Hash"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1Field_1_1Hash.html">Hash</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structllzk_1_1Field_1_1Hash.html" title="Hash the prime modulus (consistent with the equality operator).">Hash</a> the prime modulus (consistent with the equality operator).  <a href="structllzk_1_1Field_1_1Hash.html#details">More...</a><br /></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a2abf8d65ff6ae1f4778cec3b164b5d08" id="r_a2abf8d65ff6ae1f4778cec3b164b5d08"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a2abf8d65ff6ae1f4778cec3b164b5d08">Field</a> ()=delete</td></tr>
@@ -150,35 +156,34 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a47ec17bc79f0c5b89ef340db23ed76a7" id="r_a47ec17bc79f0c5b89ef340db23ed76a7"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a47ec17bc79f0c5b89ef340db23ed76a7">prime</a> () const</td></tr>
 <tr class="memdesc:a47ec17bc79f0c5b89ef340db23ed76a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">For the prime field p, returns p.  <br /></td></tr>
 <tr class="memitem:a0ba190165250763577ea685828a52d98" id="r_a0ba190165250763577ea685828a52d98"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a0ba190165250763577ea685828a52d98">half</a> () const</td></tr>
-<tr class="memdesc:a0ba190165250763577ea685828a52d98"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns p / 2.  <br /></td></tr>
+<tr class="memdesc:a0ba190165250763577ea685828a52d98"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns ceil(p / 2), the first negative signed representative.  <br /></td></tr>
 <tr class="memitem:a67cf5f88ccdfb5c9fa56164a7fa7d52d" id="r_a67cf5f88ccdfb5c9fa56164a7fa7d52d"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a67cf5f88ccdfb5c9fa56164a7fa7d52d">felt</a> (int i) const</td></tr>
 <tr class="memdesc:a67cf5f88ccdfb5c9fa56164a7fa7d52d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns i as a signed field element.  <br /></td></tr>
 <tr class="memitem:a371d71b386b8387a592a9967311a91ab" id="r_a371d71b386b8387a592a9967311a91ab"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a371d71b386b8387a592a9967311a91ab">zero</a> () const</td></tr>
-<tr class="memdesc:a371d71b386b8387a592a9967311a91ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns 0 at the bitwidth of the field.  <br /></td></tr>
+<tr class="memdesc:a371d71b386b8387a592a9967311a91ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the zero field element.  <br /></td></tr>
 <tr class="memitem:a571128ae1db115e147ea6d480166aeb5" id="r_a571128ae1db115e147ea6d480166aeb5"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a571128ae1db115e147ea6d480166aeb5">one</a> () const</td></tr>
-<tr class="memdesc:a571128ae1db115e147ea6d480166aeb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns 1 at the bitwidth of the field.  <br /></td></tr>
+<tr class="memdesc:a571128ae1db115e147ea6d480166aeb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the unit field element.  <br /></td></tr>
 <tr class="memitem:afda1ab238804fa3c60c6eb830109767f" id="r_afda1ab238804fa3c60c6eb830109767f"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#afda1ab238804fa3c60c6eb830109767f">maxVal</a> () const</td></tr>
 <tr class="memdesc:afda1ab238804fa3c60c6eb830109767f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns p - 1, which is the max value possible in a prime field described by p.  <br /></td></tr>
-<tr class="memitem:a7e120e6674063d384f3528bb9c13e263" id="r_a7e120e6674063d384f3528bb9c13e263"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a7e120e6674063d384f3528bb9c13e263">inv</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
-<tr class="memdesc:a7e120e6674063d384f3528bb9c13e263"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the multiplicative inverse of <span class="tt">i</span> in prime field <span class="tt">p</span>.  <br /></td></tr>
-<tr class="memitem:aaaf90138e9e077e306770c6b42306871" id="r_aaaf90138e9e077e306770c6b42306871"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#aaaf90138e9e077e306770c6b42306871">inv</a> (const llvm::APInt &amp;i) const</td></tr>
+<tr class="memitem:aa0cffe8e7b415e9f645270f10cd862ba" id="r_aa0cffe8e7b415e9f645270f10cd862ba"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#aa0cffe8e7b415e9f645270f10cd862ba">inv</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
+<tr class="memdesc:aa0cffe8e7b415e9f645270f10cd862ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the multiplicative inverse of <span class="tt">i</span> in prime field <span class="tt">p</span>.  <br /></td></tr>
 <tr class="memitem:a4b004a9fbedd042fe568bda6a9455bfb" id="r_a4b004a9fbedd042fe568bda6a9455bfb"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a4b004a9fbedd042fe568bda6a9455bfb">reduce</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
-<tr class="memdesc:a4b004a9fbedd042fe568bda6a9455bfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns i mod p and reduces the result into the appropriate bitwidth.  <br /></td></tr>
+<tr class="memdesc:a4b004a9fbedd042fe568bda6a9455bfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the canonical representative of i mod p in [0, p).  <br /></td></tr>
 <tr class="memitem:a8441c9b1837fb919983c838284bc63ab" id="r_a8441c9b1837fb919983c838284bc63ab"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a8441c9b1837fb919983c838284bc63ab">reduce</a> (int64_t i) const</td></tr>
-<tr class="memitem:a70940b8886993bdff31e6b82db1b7ebb" id="r_a70940b8886993bdff31e6b82db1b7ebb"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a70940b8886993bdff31e6b82db1b7ebb">reduce</a> (const llvm::APInt &amp;i) const</td></tr>
 <tr class="memitem:a39381adb038ecf28cf28c97737c61cc1" id="r_a39381adb038ecf28cf28c97737c61cc1"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="#a39381adb038ecf28cf28c97737c61cc1">toSigned</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
 <tr class="memdesc:a39381adb038ecf28cf28c97737c61cc1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a canonical field element to its signed integer representation: toSigned(f) = f if f &lt; field.half() toSigned(f) = f - p if f &gt;= field.half() (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p).  <br /></td></tr>
 <tr class="memitem:a81da197fd28bcd670656ff4dd0929728" id="r_a81da197fd28bcd670656ff4dd0929728"><td class="memItemLeft">unsigned&#160;</td><td class="memItemRight"><a class="el" href="#a81da197fd28bcd670656ff4dd0929728">bitWidth</a> () const</td></tr>
+<tr class="memdesc:a81da197fd28bcd670656ff4dd0929728"><td class="mdescLeft">&#160;</td><td class="mdescRight">Width sufficient for the modulus and its representatives, independent of literal storage.  <br /></td></tr>
 <tr class="memitem:a53c22d58ec6540d875295016d1816067" id="r_a53c22d58ec6540d875295016d1816067"><td class="memItemLeft">llvm::StringRef&#160;</td><td class="memItemRight"><a class="el" href="#a53c22d58ec6540d875295016d1816067">name</a> () const</td></tr>
 <tr class="memitem:aa1b5ece317011cd347f3c5fb1b52addd" id="r_aa1b5ece317011cd347f3c5fb1b52addd"><td class="memItemLeft">llvm::SMTExprRef&#160;</td><td class="memItemRight"><a class="el" href="#aa1b5ece317011cd347f3c5fb1b52addd">createSymbol</a> (const llvm::SMTSolverRef &amp;solver, const char *name) const</td></tr>
 <tr class="memdesc:aa1b5ece317011cd347f3c5fb1b52addd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a SMT solver symbol with the current field's bitwidth.  <br /></td></tr>
 <tr class="memitem:a14c60e9780992545f3ba457d4ef4849c" id="r_a14c60e9780992545f3ba457d4ef4849c"><td class="memItemLeft">mlir::IntegerAttr&#160;</td><td class="memItemRight"><a class="el" href="#a14c60e9780992545f3ba457d4ef4849c">getPrimeAttr</a> (mlir::MLIRContext *context, unsigned bitWidth) const</td></tr>
-<tr class="memdesc:a14c60e9780992545f3ba457d4ef4849c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the field prime modulus materialized as an integer attribute at <span class="tt"><a class="el" href="#a81da197fd28bcd670656ff4dd0929728">bitWidth</a></span>.  <br /></td></tr>
+<tr class="memdesc:a14c60e9780992545f3ba457d4ef4849c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the field prime modulus materialized as an integer attribute at <span class="tt"><a class="el" href="#a81da197fd28bcd670656ff4dd0929728" title="Width sufficient for the modulus and its representatives, independent of literal storage.">bitWidth</a></span>.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:afc60ce46df0214c03114502d3a2ce760" id="r_afc60ce46df0214c03114502d3a2ce760"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#afc60ce46df0214c03114502d3a2ce760">addField</a> (llvm::StringRef fieldName, const llvm::APInt &amp;prime, <a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> errFn)</td></tr>
-<tr class="memdesc:afc60ce46df0214c03114502d3a2ce760"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a new field to the set of available prime fields.  <br /></td></tr>
+<tr class="memitem:a0144d9bb348d718e098cf272f393928f" id="r_a0144d9bb348d718e098cf272f393928f"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a0144d9bb348d718e098cf272f393928f">addField</a> (llvm::StringRef fieldName, const llvm::DynamicAPInt &amp;prime, <a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> errFn)</td></tr>
+<tr class="memdesc:a0144d9bb348d718e098cf272f393928f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a new field to the set of available prime fields.  <br /></td></tr>
 <tr class="memitem:a09f65f5e1d070044a058411f8a4173e7" id="r_a09f65f5e1d070044a058411f8a4173e7"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a09f65f5e1d070044a058411f8a4173e7">addField</a> (llvm::StringRef fieldName, llvm::StringRef primeStr, <a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> errFn)</td></tr>
 <tr class="memitem:a1ccf00c3886c63cef1ab39286fc73c07" id="r_a1ccf00c3886c63cef1ab39286fc73c07"><td class="memItemLeft">static llvm::FailureOr&lt; std::reference_wrapper&lt; const <a class="el" href="#a2abf8d65ff6ae1f4778cec3b164b5d08">Field</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1ccf00c3886c63cef1ab39286fc73c07">tryGetField</a> (llvm::StringRef fieldName)</td></tr>
 <tr class="memdesc:a1ccf00c3886c63cef1ab39286fc73c07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a> from a given field name string, or failure if the field is not defined.  <br /></td></tr>
@@ -277,8 +282,8 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="afc60ce46df0214c03114502d3a2ce760" name="afc60ce46df0214c03114502d3a2ce760"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc60ce46df0214c03114502d3a2ce760">&#9670;&#160;</a></span>addField() <span class="overload">[1/2]</span></h2>
+<a id="a0144d9bb348d718e098cf272f393928f" name="a0144d9bb348d718e098cf272f393928f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0144d9bb348d718e098cf272f393928f">&#9670;&#160;</a></span>addField() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -294,7 +299,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>prime</em></span>, </td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>prime</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -343,12 +348,10 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel static">static</span></span>  </td>
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00045">45</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -375,7 +378,9 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00108">108</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p>Width sufficient for the modulus and its representatives, independent of literal storage. </p>
+
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00103">103</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -408,7 +413,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>Create a SMT solver symbol with the current field's bitwidth. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00113">113</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00108">108</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -437,7 +442,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>Returns i as a signed field element. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00079">79</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00076">76</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -464,7 +469,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00063">63</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00060">60</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -525,9 +530,9 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
       </table>
 </div><div class="memdoc">
 
-<p>Return the field prime modulus materialized as an integer attribute at <span class="tt"><a class="el" href="#a81da197fd28bcd670656ff4dd0929728">bitWidth</a></span>. </p>
+<p>Return the field prime modulus materialized as an integer attribute at <span class="tt"><a class="el" href="#a81da197fd28bcd670656ff4dd0929728" title="Width sufficient for the modulus and its representatives, independent of literal storage.">bitWidth</a></span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00149">149</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00163">163</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -554,37 +559,20 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p>Returns p / 2. </p>
+<p>Returns ceil(p / 2), the first negative signed representative. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00076">76</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00073">73</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
-<a id="aaaf90138e9e077e306770c6b42306871" name="aaaf90138e9e077e306770c6b42306871"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaaf90138e9e077e306770c6b42306871">&#9670;&#160;</a></span>inv() <span class="overload">[1/2]</span></h2>
+<a id="aa0cffe8e7b415e9f645270f10cd862ba" name="aa0cffe8e7b415e9f645270f10cd862ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0cffe8e7b415e9f645270f10cd862ba">&#9670;&#160;</a></span>inv()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">llvm::DynamicAPInt llzk::Field::inv </td>
-          <td>(</td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a7e120e6674063d384f3528bb9c13e263" name="a7e120e6674063d384f3528bb9c13e263"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e120e6674063d384f3528bb9c13e263">&#9670;&#160;</a></span>inv() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::DynamicAPInt llzk::Field::inv </td>
+          <td class="memname">DynamicAPInt llzk::Field::inv </td>
           <td>(</td>
           <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
           <td> const</td>
@@ -593,6 +581,8 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </div><div class="memdoc">
 
 <p>Returns the multiplicative inverse of <span class="tt">i</span> in prime field <span class="tt">p</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00161">161</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -621,7 +611,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>Returns p - 1, which is the max value possible in a prime field described by p. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00088">88</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00085">85</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -648,7 +638,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00110">110</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00105">105</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -675,9 +665,9 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p>Returns 1 at the bitwidth of the field. </p>
+<p>Returns the unit field element. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00085">85</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00082">82</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -731,29 +721,12 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>For the prime field p, returns p. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00073">73</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
-
-</div>
-</div>
-<a id="a70940b8886993bdff31e6b82db1b7ebb" name="a70940b8886993bdff31e6b82db1b7ebb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a70940b8886993bdff31e6b82db1b7ebb">&#9670;&#160;</a></span>reduce() <span class="overload">[1/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::DynamicAPInt llzk::Field::reduce </td>
-          <td>(</td>
-          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00070">70</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
 <a id="a4b004a9fbedd042fe568bda6a9455bfb" name="a4b004a9fbedd042fe568bda6a9455bfb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b004a9fbedd042fe568bda6a9455bfb">&#9670;&#160;</a></span>reduce() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b004a9fbedd042fe568bda6a9455bfb">&#9670;&#160;</a></span>reduce() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -767,13 +740,13 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
       </table>
 </div><div class="memdoc">
 
-<p>Returns i mod p and reduces the result into the appropriate bitwidth. </p>
+<p>Returns the canonical representative of i mod p in [0, p). </p>
 <p><a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a> elements are returned as signed integers so that negation functions as expected (i.e., reducing -1 will yield p-1). </p>
 
 </div>
 </div>
 <a id="a8441c9b1837fb919983c838284bc63ab" name="a8441c9b1837fb919983c838284bc63ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8441c9b1837fb919983c838284bc63ab">&#9670;&#160;</a></span>reduce() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a8441c9b1837fb919983c838284bc63ab">&#9670;&#160;</a></span>reduce() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -795,7 +768,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00099">99</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00094">94</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -816,7 +789,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>Converts a canonical field element to its signed integer representation: toSigned(f) = f if f &lt; field.half() toSigned(f) = f - p if f &gt;= field.half() (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p). </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00141">141</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00159">159</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -851,7 +824,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00056">56</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00054">54</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -884,7 +857,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>Search for a field with the given name, reporting an error if the field is not found. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00067">67</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00065">65</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -911,9 +884,9 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p>Returns 0 at the bitwidth of the field. </p>
+<p>Returns the zero field element. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00082">82</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00079">79</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -976,7 +949,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00120">120</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00115">115</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>

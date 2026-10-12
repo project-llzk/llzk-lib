@@ -44,7 +44,8 @@ var backends_page =
         [ "Types", "r1cs-backend.html#types-7", [
           [ "LinearType", "r1cs-backend.html#lineartype", null ],
           [ "SignalType", "r1cs-backend.html#signaltype", null ]
-        ] ]
+        ] ],
+        [ "Arbitrary-precision coefficients", "r1cs-backend.html#arbitrary-precision-coefficients", null ]
       ] ]
     ] ],
     [ "SMT Backend", "smt-backend.html", [
@@ -169,7 +170,8 @@ var backends_page =
         [ "Types", "pcl-backend.html#types-8", [
           [ "BoolType", "pcl-backend.html#booltype", null ],
           [ "FeltType", "pcl-backend.html#felttype-1", null ]
-        ] ]
+        ] ],
+        [ "Integer values", "pcl-backend.html#integer-values", null ]
       ] ]
     ] ],
     [ "ZKLean Backend", "zklean-backend.html", [

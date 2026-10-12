@@ -223,8 +223,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a6457691390dddbc5923e5c2d1cea025a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a token text represents a C++ modifier/specifier keyword.  <br /></td></tr>
 <tr class="memitem:afb469151f18da8c4a46632a88dd1d057" id="r_afb469151f18da8c4a46632a88dd1d057"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#afb469151f18da8c4a46632a88dd1d057">isCppLanguageConstruct</a> (mlir::StringRef methodName)</td></tr>
 <tr class="memdesc:afb469151f18da8c4a46632a88dd1d057"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a method name represents a C++ control flow keyword or language construct.  <br /></td></tr>
-<tr class="memitem:a6b3ec77f329b1c9f3ff782e0bd9c1687" id="r_a6b3ec77f329b1c9f3ff782e0bd9c1687"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a6b3ec77f329b1c9f3ff782e0bd9c1687">isAPIntType</a> (mlir::StringRef cppType)</td></tr>
-<tr class="memdesc:a6b3ec77f329b1c9f3ff782e0bd9c1687"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a C++ type is APInt.  <br /></td></tr>
+<tr class="memitem:a1a0efdf5eaf75ee3d853f80b7dbb127d" id="r_a1a0efdf5eaf75ee3d853f80b7dbb127d"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a1a0efdf5eaf75ee3d853f80b7dbb127d">isDynamicAPIntType</a> (mlir::StringRef cppType)</td></tr>
+<tr class="memdesc:a1a0efdf5eaf75ee3d853f80b7dbb127d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether a parameter represents an arbitrary-precision mathematical integer.  <br /></td></tr>
 <tr class="memitem:a9170f92d8fe04bad78a386ed7175d409" id="r_a9170f92d8fe04bad78a386ed7175d409"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a9170f92d8fe04bad78a386ed7175d409">isArrayRefType</a> (mlir::StringRef cppType)</td></tr>
 <tr class="memdesc:a9170f92d8fe04bad78a386ed7175d409"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a C++ type is an ArrayRef type.  <br /></td></tr>
 <tr class="memitem:a018220ae1d7b99cb622e3f019ebd611a" id="r_a018220ae1d7b99cb622e3f019ebd611a"><td class="memItemLeft">mlir::StringRef&#160;</td><td class="memItemRight"><a class="el" href="#a018220ae1d7b99cb622e3f019ebd611a">extractArrayRefElementType</a> (mlir::StringRef cppType)</td></tr>
@@ -272,7 +272,7 @@ Variables</h2></td></tr>
 
 <p>Extract element type from ArrayRef&lt;...&gt;. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00225">225</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00219">219</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -571,42 +571,6 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a id="a6b3ec77f329b1c9f3ff782e0bd9c1687" name="a6b3ec77f329b1c9f3ff782e0bd9c1687"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6b3ec77f329b1c9f3ff782e0bd9c1687">&#9670;&#160;</a></span>isAPIntType()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool isAPIntType </td>
-          <td>(</td>
-          <td class="paramtype">mlir::StringRef</td>          <td class="paramname"><span class="paramname"><em>cppType</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Check if a C++ type is APInt. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">cppType</td><td>The C++ type string to check </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>true if the type is an APInt or LLZK's numeric APInt storage key </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00206">206</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
-
-</div>
-</div>
 <a id="a9170f92d8fe04bad78a386ed7175d409" name="a9170f92d8fe04bad78a386ed7175d409"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9170f92d8fe04bad78a386ed7175d409">&#9670;&#160;</a></span>isArrayRefType()</h2>
 
@@ -639,7 +603,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is ArrayRef, llvm::ArrayRef, or ::llvm::ArrayRef </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00218">218</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00212">212</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -715,6 +679,35 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a1a0efdf5eaf75ee3d853f80b7dbb127d" name="a1a0efdf5eaf75ee3d853f80b7dbb127d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a0efdf5eaf75ee3d853f80b7dbb127d">&#9670;&#160;</a></span>isDynamicAPIntType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool isDynamicAPIntType </td>
+          <td>(</td>
+          <td class="paramtype">mlir::StringRef</td>          <td class="paramname"><span class="paramname"><em>cppType</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Whether a parameter represents an arbitrary-precision mathematical integer. </p>
+
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00204">204</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+
+</div>
+</div>
 <a id="a991b2313368129538e13d0914f7d82a4" name="a991b2313368129538e13d0914f7d82a4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a991b2313368129538e13d0914f7d82a4">&#9670;&#160;</a></span>isIntegerType()</h2>
 
@@ -782,7 +775,7 @@ Variables</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is a primitive (bool, void, int, etc.)</dd></dl>
-<dl class="section note"><dt>Note</dt><dd>This function must be called on the CPP type because after converting to CAPI type, some things like APInt become primitive which can lead to missing wrap/unwrap functions. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This function must be called on the CPP type because after converting to CAPI type, some C++ wrapper types require explicit conversion even if their C representation is primitive. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00161">161</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 

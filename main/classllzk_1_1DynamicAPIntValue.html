@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: llzk::APIntValue Class Reference</title>
+<title>LLZK: llzk::DynamicAPIntValue Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1APIntValue.html','','classllzk_1_1APIntValue-members'); });
+document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1DynamicAPIntValue.html','','classllzk_1_1DynamicAPIntValue-members'); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -130,34 +130,35 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1A
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#friends">Friends</a> &#124;
-<a href="classllzk_1_1APIntValue-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">llzk::APIntValue Class Reference</div></div>
+<a href="classllzk_1_1DynamicAPIntValue-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">llzk::DynamicAPIntValue Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
-<p>Storage key for APInts whose numeric value is independent of bit width.  
+<p>Attribute storage adapter providing numeric hashing for DynamicAPInt.  
  <a href="#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad18b99fc4f427714099620ff8e21553e" id="r_ad18b99fc4f427714099620ff8e21553e"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> (llvm::APInt apInt)</td></tr>
-<tr class="memitem:a8d5614b3d6bc0b737ac2aef846f9a88c" id="r_a8d5614b3d6bc0b737ac2aef846f9a88c"><td class="memItemLeft">const llvm::APInt &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a8d5614b3d6bc0b737ac2aef846f9a88c">getValue</a> () const</td></tr>
-<tr class="memitem:ac86001bb0ca69f4d990aa5462cb81c00" id="r_ac86001bb0ca69f4d990aa5462cb81c00"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac86001bb0ca69f4d990aa5462cb81c00">operator const llvm::APInt &amp;</a> () const</td></tr>
+<tr class="memitem:ab3dc1d3c3becca4f4a89e3008d928368" id="r_ab3dc1d3c3becca4f4a89e3008d928368"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> (const llvm::DynamicAPInt &amp;integer)</td></tr>
+<tr class="memitem:a420e0f491208d999b6a77b1763620c79" id="r_a420e0f491208d999b6a77b1763620c79"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a420e0f491208d999b6a77b1763620c79">operator const llvm::DynamicAPInt &amp;</a> () const</td></tr>
+<tr class="memdesc:a420e0f491208d999b6a77b1763620c79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Borrow the owned integer.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:aa56be5a8f288492dbc9a35fe151e2c93" id="r_aa56be5a8f288492dbc9a35fe151e2c93"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aa56be5a8f288492dbc9a35fe151e2c93">operator==</a> (const <a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> &amp;lhs, const <a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> &amp;rhs)</td></tr>
-<tr class="memitem:ad66d6c9e2fef9fa3817de9b20fa29ada" id="r_ad66d6c9e2fef9fa3817de9b20fa29ada"><td class="memItemLeft">llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#ad66d6c9e2fef9fa3817de9b20fa29ada">hash_value</a> (const <a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> &amp;key)</td></tr>
+<tr class="memitem:afe35e9dc790505ab4aaf3e54690ad09c" id="r_afe35e9dc790505ab4aaf3e54690ad09c"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#afe35e9dc790505ab4aaf3e54690ad09c">operator==</a> (const <a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> &amp;a, const <a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> &amp;b)</td></tr>
+<tr class="memitem:adf9a646c443df989fce99f2c95ad6fe5" id="r_adf9a646c443df989fce99f2c95ad6fe5"><td class="memItemLeft">llvm::hash_code&#160;</td><td class="memItemRight"><a class="el" href="#adf9a646c443df989fce99f2c95ad6fe5">hash_value</a> (const <a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> &amp;key)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Storage key for APInts whose numeric value is independent of bit width. </p>
+<div class="textblock"><p>Attribute storage adapter providing numeric hashing for DynamicAPInt. </p>
+<p>This is meant as a thin adaptor for storing DynamicAPInt in attribute storage generated by tablegen. It should not generally be used outside of attribute storage contexts. Public accessors on the attribute expose the underlying value directly rather than exposing this wrapper. </p>
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00037">37</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00043">43</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ad18b99fc4f427714099620ff8e21553e" name="ad18b99fc4f427714099620ff8e21553e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad18b99fc4f427714099620ff8e21553e">&#9670;&#160;</a></span>APIntValue()</h2>
+<a id="ab3dc1d3c3becca4f4a89e3008d928368" name="ab3dc1d3c3becca4f4a89e3008d928368"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3dc1d3c3becca4f4a89e3008d928368">&#9670;&#160;</a></span>DynamicAPIntValue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -166,9 +167,9 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">llzk::APIntValue::APIntValue </td>
+          <td class="memname">llzk::DynamicAPIntValue::DynamicAPIntValue </td>
           <td>(</td>
-          <td class="paramtype">llvm::APInt</td>          <td class="paramname"><span class="paramname"><em>apInt</em></span></td><td>)</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>integer</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -179,13 +180,13 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00039">39</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00045">45</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a8d5614b3d6bc0b737ac2aef846f9a88c" name="a8d5614b3d6bc0b737ac2aef846f9a88c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d5614b3d6bc0b737ac2aef846f9a88c">&#9670;&#160;</a></span>getValue()</h2>
+<a id="a420e0f491208d999b6a77b1763620c79" name="a420e0f491208d999b6a77b1763620c79"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a420e0f491208d999b6a77b1763620c79">&#9670;&#160;</a></span>operator const llvm::DynamicAPInt &amp;()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -194,7 +195,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const llvm::APInt &amp; llzk::APIntValue::getValue </td>
+          <td class="memname">llzk::DynamicAPIntValue::operator const llvm::DynamicAPInt &amp; </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -207,40 +208,16 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00041">41</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p>Borrow the owned integer. </p>
+<p>The returned reference must not outlive this wrapper. For the expected use case of wrappers held in attribute storage, its lifetime is that of the owning MLIRContext so this borrow is safe. References obtained from temporary instances of this wrapper must not be held beyond the full expression that creates the wrapper. </p>
 
-</div>
-</div>
-<a id="ac86001bb0ca69f4d990aa5462cb81c00" name="ac86001bb0ca69f4d990aa5462cb81c00"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac86001bb0ca69f4d990aa5462cb81c00">&#9670;&#160;</a></span>operator const llvm::APInt &amp;()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llzk::APIntValue::operator const llvm::APInt &amp; </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00042">42</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00053">53</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
 <a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
-<a id="ad66d6c9e2fef9fa3817de9b20fa29ada" name="ad66d6c9e2fef9fa3817de9b20fa29ada"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad66d6c9e2fef9fa3817de9b20fa29ada">&#9670;&#160;</a></span>hash_value</h2>
+<a id="adf9a646c443df989fce99f2c95ad6fe5" name="adf9a646c443df989fce99f2c95ad6fe5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf9a646c443df989fce99f2c95ad6fe5">&#9670;&#160;</a></span>hash_value</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -251,7 +228,7 @@ Friends</h2></td></tr>
         <tr>
           <td class="memname">llvm::hash_code hash_value </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>key</em></span></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>key</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -262,12 +239,12 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00048">48</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00059">59</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
-<a id="aa56be5a8f288492dbc9a35fe151e2c93" name="aa56be5a8f288492dbc9a35fe151e2c93"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa56be5a8f288492dbc9a35fe151e2c93">&#9670;&#160;</a></span>operator==</h2>
+<a id="afe35e9dc790505ab4aaf3e54690ad09c" name="afe35e9dc790505ab4aaf3e54690ad09c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe35e9dc790505ab4aaf3e54690ad09c">&#9670;&#160;</a></span>operator==</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -278,12 +255,12 @@ Friends</h2></td></tr>
         <tr>
           <td class="memname">bool operator== </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>a</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="#ad18b99fc4f427714099620ff8e21553e">APIntValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+          <td class="paramtype">const <a class="el" href="#ab3dc1d3c3becca4f4a89e3008d928368">DynamicAPIntValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>b</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -293,7 +270,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00044">44</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00055">55</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -307,7 +284,7 @@ Friends</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="namespacellzk.html">llzk</a></li><li class="navelem"><a href="classllzk_1_1APIntValue.html">APIntValue</a></li>
+    <li class="navelem"><a href="namespacellzk.html">llzk</a></li><li class="navelem"><a href="classllzk_1_1DynamicAPIntValue.html">DynamicAPIntValue</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>
