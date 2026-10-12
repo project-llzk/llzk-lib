@@ -26,6 +26,7 @@
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/AsmParser/AsmParser.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Operation.h>
@@ -437,6 +438,29 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
   } else {
     return success(nullptr);
   }
+}
+
+FailureOr<SymbolLookupResult<StructDefOp>>
+getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef symbolPath) {
+  if (symbolPath.empty()) {
+    return getMainInstanceDef(tables, lookupFrom);
+  }
+  std::string symbolText = symbolPath.str();
+  if (symbolText.front() != '@') {
+    symbolText.insert(symbolText.begin(), '@');
+  }
+  SymbolRefAttr symbol;
+  {
+    // Keep parse failures attached to the caller's location, rather than a temporary buffer.
+    ScopedDiagnosticHandler handler(lookupFrom->getContext(), [](Diagnostic &) {
+      return success();
+    });
+    symbol = dyn_cast_or_null<SymbolRefAttr>(parseAttribute(symbolText, lookupFrom->getContext()));
+  }
+  if (!symbol) {
+    return lookupFrom->emitError() << "invalid root struct symbol path: " << symbolPath;
+  }
+  return lookupTopLevelSymbol<StructDefOp>(tables, symbol, lookupFrom);
 }
 
 FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {

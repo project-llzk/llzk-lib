@@ -1,0 +1,6 @@
+// RUN: llzk-opt %S/Inputs/child_reads.llzk --mlir-very-unsafe-disable-verifier-on-parsing --llzk-expose-child-members -o %t
+// RUN: llzk-opt %t | FileCheck %S/Inputs/child_reads.llzk --match-full-lines
+// RUN: llzk-opt %t --llzk-expose-child-members -o %t.again
+// RUN: diff %t %t.again
+// Covers nested reads, arrays/PODs, shared and unreachable definitions, metadata,
+// unchanged root visibility and function bodies, and idempotence.

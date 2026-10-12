@@ -38,4 +38,18 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   ];
 }
 
+def ExposeChildMembersPass : LLZKPass<"llzk-expose-child-members"> {
+  let summary = "Expose members of concrete child storage reachable from a "
+                "selected root.";
+  let description = [{
+    This pass makes subcomponent fields public, allowing the constraint body to
+    access felt leaves when flattening constraints without scalarizing struct members.
+
+    The root's own member visibility is preserved because changing it would change
+    the circuit's public interface and hence its semantics.
+  }];
+  let options = [Option<"rootStruct", "root-struct", "std::string", "\"\"",
+                        "Root struct symbol path (defaults to llzk.main)">];
+}
+
 #endif // LLZK_DIALECT_STRUCT_TRANSFORMS_TRANSFORMATION_PASSES_TD
