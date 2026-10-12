@@ -1,5 +1,9 @@
 var NAVTREEINDEX67 =
 {
+"dialects.html#global-dialect":[7,6],
+"dialects.html#globaldef-llzkglobalglobaldefop":[7,6,0,0],
+"dialects.html#globalread-llzkglobalglobalreadop":[7,6,0,1],
+"dialects.html#globalwrite-llzkglobalglobalwriteop":[7,6,0,2],
 "dialects.html#include-dialect":[7,7],
 "dialects.html#includefrom-llzkincludeincludeop":[7,7,0,0],
 "dialects.html#llzk-dialect":[7,8],
@@ -245,9 +249,5 @@ var NAVTREEINDEX67 =
 "dir_8c19de2196b4b9037b2ef87455b6f2bd.html":[14,0,2,0,4],
 "dir_8f2980731aba7ec7b9fcae5764f196e3.html":[14,0,0,0],
 "dir_938b141b60f9563406a2140df62dfedf.html":[14,0,3,3,6,0],
-"dir_9494574d2d0bfd72a61e725d818211a1.html":[14,0,4,0],
-"dir_956c2c713c108544d376c74d33f5d381.html":[14,0,3,3,11],
-"dir_961f7ef292a3987e3723514feaf3f181.html":[14,0,2,0,2],
-"dir_97aefd0d527b934f1d99a682da8fe6a9.html":[14,0,3],
-"dir_98906eddf05674c09118c7029b776f53.html":[14,0,0,0,0,2,7,0]
+"dir_9494574d2d0bfd72a61e725d818211a1.html":[14,0,4,0]
 };

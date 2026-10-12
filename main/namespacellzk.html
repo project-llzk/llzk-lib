@@ -244,6 +244,8 @@ Classes</h2></td></tr>
 <tr class="memitem:LLZKDialectBytecodeInterface" id="r_LLZKDialectBytecodeInterface"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">LLZKDialectBytecodeInterface</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This implements the bytecode interface for the LLZK dialect.  <a href="structllzk_1_1LLZKDialectBytecodeInterface.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LLZKDialectVersion" id="r_LLZKDialectVersion"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1LLZKDialectVersion.html">LLZKDialectVersion</a></td></tr>
+<tr class="memitem:LLZKLayout" id="r_LLZKLayout"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Logical felt-signal paths in a monomorphized LLZK circuit.  <a href="structllzk_1_1LLZKLayout.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LLZKSymbolTableImplTrait" id="r_LLZKSymbolTableImplTrait"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LLZKSymbolTableImplTrait.html">LLZKSymbolTableImplTrait</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <span class="tt">LLZKSymbolTable</span> ODS documentation for details.  <a href="classllzk_1_1LLZKSymbolTableImplTrait.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LLZKTypeSwitch" id="r_LLZKTypeSwitch"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1LLZKTypeSwitch.html">LLZKTypeSwitch</a></td></tr>
@@ -792,6 +794,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:afcfdee46edb27b06b8bd67475a16ec37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collects all the fields used in a circuit.  <br /></td></tr>
 <tr class="memitem:ad9aa681c2fc2160938a72878439bad3d" id="r_ad9aa681c2fc2160938a72878439bad3d"><td class="memItemLeft">std::optional&lt; std::reference_wrapper&lt; const <a class="el" href="classllzk_1_1Field.html">Field</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad9aa681c2fc2160938a72878439bad3d">tryDetectSpecifiedField</a> (mlir::Operation *root)</td></tr>
 <tr class="memdesc:ad9aa681c2fc2160938a72878439bad3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try to detect a uniquely used field from the enclosing LLZK module.  <br /></td></tr>
+<tr class="memitem:a45f4a6402571e684a96ff9c901438a49" id="r_a45f4a6402571e684a96ff9c901438a49"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a45f4a6402571e684a96ff9c901438a49">buildLLZKLayout</a> (mlir::ModuleOp module)</td></tr>
+<tr class="memdesc:a45f4a6402571e684a96ff9c901438a49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the signal leaves of llzk.main and its constrain arguments.  <br /></td></tr>
+<tr class="memitem:a07a09d978a5d8db06c6813d5c6a4443f" id="r_a07a09d978a5d8db06c6813d5c6a4443f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a07a09d978a5d8db06c6813d5c6a4443f">printLLZKLayout</a> (const <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &amp;layout, llvm::raw_ostream &amp;output)</td></tr>
+<tr class="memdesc:a07a09d978a5d8db06c6813d5c6a4443f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the logical signal section of the .llzk-layout format.  <br /></td></tr>
 <tr class="memitem:add5fbee8a55ca19fc62c9e5b8e04f380" id="r_add5fbee8a55ca19fc62c9e5b8e04f380"><td class="memTemplParams" colspan="2">template&lt;typename Func, typename... Args&gt; </td></tr>
 <tr class="memitem:add5fbee8a55ca19fc62c9e5b8e04f380 template"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#add5fbee8a55ca19fc62c9e5b8e04f380">buildStringViaCallback</a> (Func &amp;&amp;appendFn, Args &amp;&amp;...args)</td></tr>
 <tr class="memdesc:add5fbee8a55ca19fc62c9e5b8e04f380"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate a string by calling the given <span class="tt">appendFn</span> with an <span class="tt">llvm::raw_ostream &amp;</span> as the first argument followed by the additional <span class="tt">Args</span> provided (if any).  <br /></td></tr>
@@ -1005,6 +1011,10 @@ Variables</h2></td></tr>
 <tr class="memdesc:af2be4b94300457930c6aac7b73294456"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.  <br /></td></tr>
 <tr class="memitem:a2cdeacdd2fdd05b3ea21f81517410ad3" id="r_a2cdeacdd2fdd05b3ea21f81517410ad3"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#a2cdeacdd2fdd05b3ea21f81517410ad3">PRODUCT_SOURCE</a> [] = &quot;product_source&quot;</td></tr>
 <tr class="memdesc:a2cdeacdd2fdd05b3ea21f81517410ad3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on aligned product program ops that specifies where they came from.  <br /></td></tr>
+<tr class="memitem:ae411384cc5d9445d32549d3ffcf7c5ff" id="r_ae411384cc5d9445d32549d3ffcf7c5ff"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#ae411384cc5d9445d32549d3ffcf7c5ff">LAYOUT_MAIN_ROOT</a> [] = &quot;main&quot;</td></tr>
+<tr class="memdesc:ae411384cc5d9445d32549d3ffcf7c5ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structural path root for storage in the main instance.  <br /></td></tr>
+<tr class="memitem:abf95c4bc51e53338b838eef566d105a6" id="r_abf95c4bc51e53338b838eef566d105a6"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#abf95c4bc51e53338b838eef566d105a6">LAYOUT_ARGUMENT_ROOT</a> [] = &quot;arg&quot;</td></tr>
+<tr class="memdesc:abf95c4bc51e53338b838eef566d105a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structural path root for a constrain argument, followed by its position.  <br /></td></tr>
 </table>
 <a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
 <a id="a55eb9bd3756426974f8a8cfe20d1deb7" name="a55eb9bd3756426974f8a8cfe20d1deb7"></a>
@@ -2282,6 +2292,26 @@ template&lt;typename OpClass&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html#l00112">112</a> of file <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html">LLZKTransformationPassPipelines.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a45f4a6402571e684a96ff9c901438a49" name="a45f4a6402571e684a96ff9c901438a49"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a45f4a6402571e684a96ff9c901438a49">&#9670;&#160;</a></span>buildLLZKLayout()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &gt; llzk::buildLLZKLayout </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ModuleOp</td>          <td class="paramname"><span class="paramname"><em>module</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enumerate the signal leaves of llzk.main and its constrain arguments. </p>
+<p>Struct references and array shapes must be concrete after template monomorphization. Main must define a constrain function; product-only main components are unsupported. Rolled arrays in member storage are resolved through poly.family metadata, including struct fields inside POD elements. The monomorphizer's mapping is trusted to associate each index tuple with the correct specialization arguments; export checks that referenced IDs are unambiguous and origins match. Main's constrain arguments are felt scalars or arrays of felt. Does not evaluate or rewrite function bodies. </p>
 
 </div>
 </div>
@@ -8449,6 +8479,32 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
+<a id="a07a09d978a5d8db06c6813d5c6a4443f" name="a07a09d978a5d8db06c6813d5c6a4443f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07a09d978a5d8db06c6813d5c6a4443f">&#9670;&#160;</a></span>printLLZKLayout()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::printLLZKLayout </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>layout</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::raw_ostream &amp;</td>          <td class="paramname"><span class="paramname"><em>output</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Print the logical signal section of the .llzk-layout format. </p>
+<p>Paths must follow the structural format produced by buildLLZKLayout. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00349">349</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+
+</div>
+</div>
 <a id="aa9eb2d93ae702c8d8e1d2164e77f52e8" name="aa9eb2d93ae702c8d8e1d2164e77f52e8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa9eb2d93ae702c8d8e1d2164e77f52e8">&#9670;&#160;</a></span>printMultiDimAndSymbolList()</h2>
 
@@ -13020,6 +13076,58 @@ template&lt;std::ranges::input_range Range&gt; </div>
 <p>Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the root module and specifies the frontend language name that the IR was compiled from, if available. </p>
 
 <p class="definition">Definition at line <a class="el" href="llzk_2Util_2Constants_8h_source.html#l00023">23</a> of file <a class="el" href="llzk_2Util_2Constants_8h_source.html">Constants.h</a>.</p>
+
+</div>
+</div>
+<a id="abf95c4bc51e53338b838eef566d105a6" name="abf95c4bc51e53338b838eef566d105a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf95c4bc51e53338b838eef566d105a6">&#9670;&#160;</a></span>LAYOUT_ARGUMENT_ROOT</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">char llzk::LAYOUT_ARGUMENT_ROOT[] = &quot;arg&quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Structural path root for a constrain argument, followed by its position. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00031">31</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+
+</div>
+</div>
+<a id="ae411384cc5d9445d32549d3ffcf7c5ff" name="ae411384cc5d9445d32549d3ffcf7c5ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae411384cc5d9445d32549d3ffcf7c5ff">&#9670;&#160;</a></span>LAYOUT_MAIN_ROOT</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">char llzk::LAYOUT_MAIN_ROOT[] = &quot;main&quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Structural path root for storage in the main instance. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00029">29</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 
 </div>
 </div>

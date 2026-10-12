@@ -1,5 +1,9 @@
 var NAVTREEINDEX55 =
 {
+"classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a1b5439c6ebd8766b633d31bbc19ccb97":[11,0,3,17,0,1,1],
+"classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a1b5439c6ebd8766b633d31bbc19ccb97":[13,0,1,13,0,1,1],
+"classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a9917693ce299f7029e67fd2d1a09dfd5":[11,0,3,17,0,1,4],
+"classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a9917693ce299f7029e67fd2d1a09dfd5":[13,0,1,13,0,1,4],
 "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#aa089c4576c6a07649d156548f181d64a":[11,0,3,17,0,1,2],
 "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#aa089c4576c6a07649d156548f181d64a":[13,0,1,13,0,1,2],
 "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#ad8436ada740449e3cfa9794e6ea7965e":[11,0,3,17,0,1,3],
@@ -245,9 +249,5 @@ var NAVTREEINDEX55 =
 "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aea7ecc56695f68f1d5595d52c90b823c":[11,0,3,17,1,0,9],
 "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aea7ecc56695f68f1d5595d52c90b823c":[13,0,1,13,1,0,9],
 "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aeb632ce6778e79ce1e4214872982288f":[11,0,3,17,1,0,12],
-"classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aeb632ce6778e79ce1e4214872982288f":[13,0,1,13,1,0,12],
-"classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aef60a06fbb5222a660c7cc186316f5c1":[11,0,3,17,1,0,0],
-"classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aef60a06fbb5222a660c7cc186316f5c1":[13,0,1,13,1,0,0],
-"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html":[11,0,3,17,1,1],
-"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html":[13,0,1,13,1,1]
+"classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aeb632ce6778e79ce1e4214872982288f":[13,0,1,13,1,0,12]
 };

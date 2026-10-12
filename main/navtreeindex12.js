@@ -1,5 +1,9 @@
 var NAVTREEINDEX12 =
 {
+"Polymorphic_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d":[14,0,2,0,2,10,0,3,1],
+"Polymorphic_2IR_2Ops_8h_8inc.html":[14,0,0,0,0,2,10,0,9],
+"Polymorphic_2IR_2Ops_8h_8inc_source.html":[14,0,0,0,0,2,10,0,9],
+"Polymorphic_2IR_2Ops_8h_source.html":[14,0,2,0,2,10,0,3],
 "Polymorphic_2IR_2Ops_8td.html":[14,0,2,0,2,10,0,4],
 "Polymorphic_2IR_2Ops_8td_source.html":[14,0,2,0,2,10,0,4],
 "Polymorphic_2IR_2Types_8capi_8cpp_8inc.html":[14,0,0,0,0,2,10,0,10],
@@ -214,10 +218,10 @@ var NAVTREEINDEX12 =
 "SparseAnalysis_8h_source.html":[14,0,2,0,0,17],
 "SpecializedMemoryPasses_8h.html":[14,0,2,0,4,7],
 "SpecializedMemoryPasses_8h_source.html":[14,0,2,0,4,7],
-"StreamHelper_8cpp.html":[14,0,3,5,4],
-"StreamHelper_8cpp_source.html":[14,0,3,5,4],
-"StreamHelper_8h.html":[14,0,2,0,5,13],
-"StreamHelper_8h_source.html":[14,0,2,0,5,13],
+"StreamHelper_8cpp.html":[14,0,3,5,5],
+"StreamHelper_8cpp_source.html":[14,0,3,5,5],
+"StreamHelper_8h.html":[14,0,2,0,5,14],
+"StreamHelper_8h_source.html":[14,0,2,0,5,14],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc.html":[14,0,0,0,0,2,14,0,0],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc.html#a50c4905f337e8acbd65d8c002384da61":[14,0,0,0,0,2,14,0,0,1],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,14,0,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX12 =
 "String_2IR_2Ops_8capi_8h_8inc.html#a4cce874c251e61a38d922727fbcd9f22":[14,0,0,0,0,2,14,0,4,2],
 "String_2IR_2Ops_8capi_8h_8inc.html#aaca96ae9173a1d8091be134b0d313f27":[14,0,0,0,0,2,14,0,4,3],
 "String_2IR_2Ops_8capi_8h_8inc.html#aae9eecde79c9b0569e2ac3a1cda43f5c":[14,0,0,0,0,2,14,0,4,0],
-"String_2IR_2Ops_8capi_8h_8inc.html#acfb85bb50b2694bd5f58f4b936aae518":[14,0,0,0,0,2,14,0,4,4],
-"String_2IR_2Ops_8capi_8h_8inc.html#ad8d555d4cbf3b1a63cc47e590c50c9b0":[14,0,0,0,0,2,14,0,4,1],
-"String_2IR_2Ops_8capi_8h_8inc_source.html":[14,0,0,0,0,2,14,0,4],
-"String_2IR_2Ops_8capi_8test_8cpp_8inc.html":[14,0,0,0,0,2,14,0,5],
-"String_2IR_2Ops_8capi_8test_8cpp_8inc.html#a0dd798c70076e2a8e0399a74ea07fb26":[14,0,0,0,0,2,14,0,5,5]
+"String_2IR_2Ops_8capi_8h_8inc.html#acfb85bb50b2694bd5f58f4b936aae518":[14,0,0,0,0,2,14,0,4,4]
 };

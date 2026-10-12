@@ -88,6 +88,7 @@ var namespacellzk =
     [ "LLZKDialect", "classllzk_1_1LLZKDialect.html", "classllzk_1_1LLZKDialect" ],
     [ "LLZKDialectBytecodeInterface", "structllzk_1_1LLZKDialectBytecodeInterface.html", "structllzk_1_1LLZKDialectBytecodeInterface" ],
     [ "LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", "structllzk_1_1LLZKDialectVersion" ],
+    [ "LLZKLayout", "structllzk_1_1LLZKLayout.html", "structllzk_1_1LLZKLayout" ],
     [ "LLZKSymbolTableImplTrait", "classllzk_1_1LLZKSymbolTableImplTrait.html", null ],
     [ "LLZKTypeSwitch", "structllzk_1_1LLZKTypeSwitch.html", "structllzk_1_1LLZKTypeSwitch" ],
     [ "LocationComparator", "structllzk_1_1LocationComparator.html", "structllzk_1_1LocationComparator" ],
@@ -211,6 +212,7 @@ var namespacellzk =
     [ "buildFullPolyLoweringPipeline", "namespacellzk.html#aa14b5d0f7b215093118360bd44023927", null ],
     [ "buildFullStructInliningPipeline", "namespacellzk.html#af64bf6226bffcb86733347072c5255e9", null ],
     [ "buildFullStructInliningPipeline", "namespacellzk.html#a9895e6a380f73371e874f1f80d60c507", null ],
+    [ "buildLLZKLayout", "namespacellzk.html#a45f4a6402571e684a96ff9c901438a49", null ],
     [ "buildProductProgramPipeline", "namespacellzk.html#ab8722bb12f11d83d3169e12bc78d661e", null ],
     [ "buildProductProgramPipeline", "namespacellzk.html#a8cd193ef7cefe4761ace3d044ef00586", null ],
     [ "buildRemoveUnnecessaryOpsAndDefsPipeline", "namespacellzk.html#a27026759496d766cbb52aa32e3d94a6e", null ],
@@ -461,6 +463,7 @@ var namespacellzk =
     [ "printAttrs", "namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff", null ],
     [ "printAttrs", "namespacellzk.html#ab3aea79f1ec3c694d5d0bcf1f949c5fe", null ],
     [ "printDimAndSymbolList", "namespacellzk.html#a467753751f4011cd7f8e3e628748b92c", null ],
+    [ "printLLZKLayout", "namespacellzk.html#a07a09d978a5d8db06c6813d5c6a4443f", null ],
     [ "printMultiDimAndSymbolList", "namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8", null ],
     [ "printRegionless", "namespacellzk.html#afd3910c2cc812bacea8d1593cf53b207", null ],
     [ "printTemplateParams", "namespacellzk.html#a28bea81a49cf839e3359ecd4980bc375", null ],
@@ -629,6 +632,8 @@ var namespacellzk =
     [ "FUNC_NAME_CONSTRAIN", "namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f", null ],
     [ "FUNC_NAME_PRODUCT", "namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8", null ],
     [ "LANG_ATTR_NAME", "namespacellzk.html#a1b66c1ee1b386cb29f255332f586e96d", null ],
+    [ "LAYOUT_ARGUMENT_ROOT", "namespacellzk.html#abf95c4bc51e53338b838eef566d105a6", null ],
+    [ "LAYOUT_MAIN_ROOT", "namespacellzk.html#ae411384cc5d9445d32549d3ffcf7c5ff", null ],
     [ "MAIN_ATTR_NAME", "namespacellzk.html#af2be4b94300457930c6aac7b73294456", null ],
     [ "PRODUCT_SOURCE", "namespacellzk.html#a2cdeacdd2fdd05b3ea21f81517410ad3", null ]
 ];

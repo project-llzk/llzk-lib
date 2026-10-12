@@ -635,6 +635,7 @@ var hierarchy =
     ] ],
     [ "LlzkAffineMapOperandsBuilder", "structLlzkAffineMapOperandsBuilder.html", null ],
     [ "llzk::detail::LLZKCallLikeOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::LLZKLayout", "structllzk_1_1LLZKLayout.html", null ],
     [ "LlzkRecordValue", "structLlzkRecordValue.html", null ],
     [ "LlzkSymbolLookupResult", "structLlzkSymbolLookupResult.html", null ],
     [ "llzk::LLZKTypeSwitch&lt; Derived, ResultType &gt;", "structllzk_1_1LLZKTypeSwitch.html", null ],
