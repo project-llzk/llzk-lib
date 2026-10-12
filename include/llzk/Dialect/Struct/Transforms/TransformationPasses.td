@@ -47,6 +47,8 @@ def ExposeChildMembersPass : LLZKPass<"llzk-expose-child-members"> {
 
     The root's own member visibility is preserved because changing it would change
     the circuit's public interface and hence its semantics.
+
+    Use `root-struct` to select a root explicitly; otherwise the pass uses `llzk.main`.
   }];
   let options = [Option<"rootStruct", "root-struct", "std::string", "\"\"",
                         "Root struct symbol path (defaults to llzk.main)">];

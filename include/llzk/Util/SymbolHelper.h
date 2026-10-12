@@ -162,14 +162,9 @@ mlir::FailureOr<llzk::component::StructType> getMainInstanceType(mlir::Operation
 mlir::FailureOr<SymbolLookupResult<llzk::component::StructDefOp>>
 getMainInstanceDef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *lookupFrom);
 
-/// Resolve an explicit root struct symbol path, or fall back to llzk.main when
-/// symbolPath is empty. Paths use MLIR symbol syntax (e.g. @Helpers::@Root),
-/// relative to the nearest enclosing LLZK root module; bare top-level names
-/// are also accepted. An omitted path with no llzk.main succeeds with a null
-/// result, matching getMainInstanceDef. Invalid paths, missing explicit symbols,
-/// and symbols of the wrong kind emit diagnostics and fail. Included definitions
-/// retain their managed lookup resources. This helper does not require concrete
-/// monomorphized storage or mutate visibility; callers enforce those policies.
+/// Resolve symbolPath (MLIR syntax or a bare name), defaulting to llzk.main.
+/// An absent default succeeds with a null result. Invalid paths or unresolved
+/// explicit symbols emit diagnostics and fail.
 mlir::FailureOr<SymbolLookupResult<component::StructDefOp>> getRootStructDef(
     mlir::SymbolTableCollection &tables, mlir::Operation *lookupFrom,
     mlir::StringRef symbolPath = {}

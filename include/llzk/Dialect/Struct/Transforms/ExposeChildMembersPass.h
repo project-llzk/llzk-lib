@@ -15,16 +15,9 @@
 
 namespace llzk::component {
 
-/// Add llzk.pub to members of concrete children reachable through root's storage,
-/// including arrays, PODs, and rolled families. Arrays are followed by element
-/// type; rolled storage visits all matching family specializations without
-/// enumerating coordinates or validating complete array coverage. Root must be a monomorphized
-/// definition attached to an LLZK module; includes must be inlined. Root's own
-/// attributes, source templates, and unreachable definitions remain unchanged.
-/// Preserve signal annotations, storage types, and function bodies. Diagnose
-/// unresolved referenced families without changing any members on failure.
-/// Repeated calls have no additional effect. Child visibility does not imply
-/// public circuit signals. This utility does not require llzk.main metadata.
+/// Make reachable concrete child members public while preserving root's visibility.
+/// Root must be attached to an LLZK module, with templates monomorphized and includes
+/// inlined. Emit diagnostics on failure without changing member visibility.
 mlir::LogicalResult exposeChildMembers(StructDefOp root);
 
 } // namespace llzk::component
