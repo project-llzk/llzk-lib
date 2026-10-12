@@ -310,6 +310,10 @@ TEST_F(SymbolHelperTests, test_getRootStructDef_explicitAndMainRoots) {
   ASSERT_TRUE(succeeded(bareRoot));
   EXPECT_EQ(bareRoot->get(), topRoot);
 
+  auto spacedRoot = getRootStructDef(tables, *module, "  @Root  ");
+  ASSERT_TRUE(succeeded(spacedRoot));
+  EXPECT_EQ(spacedRoot->get(), topRoot);
+
   // Explicit selection remains usable without circuit-main metadata.
   module->getOperation()->removeAttr("llzk.main");
   auto explicitRoot = getRootStructDef(tables, *module, "@Helpers::@Root");
@@ -334,6 +338,7 @@ TEST_F(SymbolHelperTests, test_getRootStructDef_rejectsInvalidSymbols) {
   });
   const std::pair<StringRef, StringRef> cases[] = {
       {"[]", "invalid root struct symbol path"},
+      {"@Root::", "expected nested symbol reference"},
       {"@Missing", "references unknown symbol"},
       {"@Other", "expected a 'struct.def'"},
   };

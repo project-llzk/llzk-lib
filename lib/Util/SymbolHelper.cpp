@@ -442,6 +442,7 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
 
 FailureOr<SymbolLookupResult<StructDefOp>>
 getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef symbolPath) {
+  symbolPath = symbolPath.trim();
   if (symbolPath.empty()) {
     return getMainInstanceDef(tables, lookupFrom);
   }
@@ -450,15 +451,24 @@ getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef
     symbolText.insert(symbolText.begin(), '@');
   }
   SymbolRefAttr symbol;
+  std::string parseError;
   {
-    // Keep parse failures attached to the caller's location, rather than a temporary buffer.
-    ScopedDiagnosticHandler handler(lookupFrom->getContext(), [](Diagnostic &) {
+    // Report parser details at the caller's location instead of the temporary buffer.
+    ScopedDiagnosticHandler handler(lookupFrom->getContext(), [&](Diagnostic &diagnostic) {
+      if (diagnostic.getSeverity() == DiagnosticSeverity::Error) {
+        parseError = diagnostic.str();
+      }
       return success();
     });
     symbol = dyn_cast_or_null<SymbolRefAttr>(parseAttribute(symbolText, lookupFrom->getContext()));
   }
   if (!symbol) {
-    return lookupFrom->emitError() << "invalid root struct symbol path: " << symbolPath;
+    auto diagnostic = lookupFrom->emitError();
+    diagnostic << "invalid root struct symbol path '" << symbolPath << "'";
+    if (!parseError.empty()) {
+      diagnostic << ": " << parseError;
+    }
+    return failure();
   }
   return lookupTopLevelSymbol<StructDefOp>(tables, symbol, lookupFrom);
 }
