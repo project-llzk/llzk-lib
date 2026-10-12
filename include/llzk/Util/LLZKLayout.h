@@ -25,6 +25,11 @@ class raw_ostream;
 
 namespace llzk {
 
+/// Structural path root for storage in the main instance.
+inline constexpr char LAYOUT_MAIN_ROOT[] = "main";
+/// Structural path root for a constrain argument, followed by its position.
+inline constexpr char LAYOUT_ARGUMENT_ROOT[] = "arg";
+
 /// Logical felt-signal paths in a monomorphized LLZK circuit. The first path
 /// segment is "main" for the main instance, or "arg" followed by an i64
 /// constrain argument position. Subsequent segments are StringAttr member names or index
@@ -63,6 +68,7 @@ struct LLZKLayout {
 mlir::FailureOr<LLZKLayout> buildLLZKLayout(mlir::ModuleOp module);
 
 /// Print the logical signal section of the .llzk-layout format.
+/// Paths must follow the structural format produced by buildLLZKLayout.
 void printLLZKLayout(const LLZKLayout &layout, llvm::raw_ostream &output);
 
 } // namespace llzk

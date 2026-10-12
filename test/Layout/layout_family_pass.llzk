@@ -4,6 +4,7 @@
 // RUN: FileCheck %s --match-full-lines < %t.layout
 // RUN: llzk-opt %s --llzk-monomorphize-templates --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.again.layout
 // RUN: diff %t.layout %t.again.layout
+
 // Rolled POD fields select separate family elements by type and numeric indices.
 // All signals are unused here, but every declared signal must still receive an ID.
 

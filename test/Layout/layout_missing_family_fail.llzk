@@ -1,7 +1,6 @@
-// RUN: not llzk-translate --llzk-layout %s 2> %t.error
-// RUN: FileCheck %s < %t.error
+// RUN: llzk-translate %s --llzk-layout -verify-diagnostics
+
 // A rolled family cannot be exported without its element specialization mapping.
-// CHECK: error: missing concrete struct family element for LLZK layout
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @Child {
@@ -16,6 +15,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
   struct.def @Main {
+    // expected-error @+1 {{missing concrete struct family element for LLZK layout}}
     struct.member @items : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : <@Main>

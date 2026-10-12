@@ -1,6 +1,4 @@
-// RUN: not llzk-translate %s --llzk-layout 2> %t.error
-// RUN: FileCheck %s < %t.error
+// RUN: llzk-translate %s --llzk-layout -verify-diagnostics
 
+// expected-error @+1 {{LLZK layout requires a concrete llzk.main}}
 module attributes {llzk.lang} {}
-
-// CHECK-LABEL: error: LLZK layout requires a concrete llzk.main

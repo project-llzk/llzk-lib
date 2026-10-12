@@ -5,6 +5,7 @@
 // RUN: diff %t.layout %t.direct.layout
 // RUN: llzk-translate %t.mono.llzk --llzk-generate-layout -o %t.again.layout
 // RUN: diff %t.layout %t.again.layout
+
 // Families in template clones, two-level families, and nested arrays restart indices.
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Outer<[2]>>} {

@@ -48,7 +48,7 @@ TEST_F(LLZKLayoutTests, LookupUnusedSignalsByStructuralPath) {
   ASSERT_TRUE(succeeded(layout));
   ASSERT_EQ(layout->signalPaths.size(), 13);
   Builder builder(&ctx);
-  auto main = builder.getStringAttr("main");
+  auto main = builder.getStringAttr(llzk::LAYOUT_MAIN_ROOT);
   auto member = builder.getStringAttr("a");
   for (unsigned index = 0; index < 11; ++index) {
     auto path = builder.getArrayAttr({main, member, builder.getIndexAttr(index)});
@@ -57,9 +57,9 @@ TEST_F(LLZKLayoutTests, LookupUnusedSignalsByStructuralPath) {
   }
   EXPECT_EQ(layout->getSignalId(builder.getArrayAttr({main, builder.getStringAttr("z")})), 1);
   EXPECT_EQ(
-      layout->getSignalId(
-          builder.getArrayAttr({builder.getStringAttr("arg"), builder.getI64IntegerAttr(1)})
-      ),
+      layout->getSignalId(builder.getArrayAttr(
+          {builder.getStringAttr(llzk::LAYOUT_ARGUMENT_ROOT), builder.getI64IntegerAttr(1)}
+      )),
       0
   );
   EXPECT_FALSE(layout->argumentNames[0]);
@@ -98,7 +98,7 @@ TEST_F(LLZKLayoutTests, IdsFollowMemberDeclarationOrder) {
   ASSERT_TRUE(succeeded(firstLayout));
   ASSERT_TRUE(succeeded(secondLayout));
   Builder builder(&ctx);
-  auto main = builder.getStringAttr("main");
+  auto main = builder.getStringAttr(llzk::LAYOUT_MAIN_ROOT);
   auto z = builder.getArrayAttr({main, builder.getStringAttr("z")});
   auto a = builder.getArrayAttr({main, builder.getStringAttr("a")});
   EXPECT_EQ(firstLayout->getSignalId(z), 0);

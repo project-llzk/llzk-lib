@@ -1,5 +1,5 @@
-// RUN: not llzk-translate %s --llzk-layout 2> %t.error
-// RUN: FileCheck %s < %t.error
+// RUN: llzk-translate %s --llzk-layout -verify-diagnostics
+
 // Referenced duplicate IDs remain ambiguous even if only one origin matches.
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
@@ -31,6 +31,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@Duplicate>) { function.return }
   } {poly.specialization_id = 1 : i64}
   struct.def @Main {
+    // expected-error @+1 {{ambiguous struct specialization in LLZK layout family}}
     struct.member @items : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {poly.family = [{indices = [0 : index], specialization = 1 : i64, type = !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>}]}
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : <@Main>
@@ -39,5 +40,3 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@Main>) { function.return }
   }
 }
-
-// CHECK-LABEL: error: ambiguous struct specialization in LLZK layout family

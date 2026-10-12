@@ -16,7 +16,9 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/SymbolTable.h>
@@ -26,16 +28,24 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <cassert>
+
 using namespace mlir;
 using namespace llzk::polymorphic;
 
 namespace {
 
-/// Return whether a storage type contains components whose signals need visiting.
-bool containsStruct(Type type) {
-  bool found = false;
-  type.walk([&found](llzk::component::StructType) { found = true; });
-  return found;
+/// Return whether a family entry has a struct type, nonnegative concrete indices,
+/// and a nonnegative specialization ID representable in signed 64 bits.
+bool isValidFamilyEntry(TypeAttr type, ArrayAttr indices, IntegerAttr id) {
+  if (!type || !isa<llzk::component::StructType>(type.getValue()) || !indices || !id ||
+      !id.getValue().isSignedIntN(64) || id.getInt() < 0) {
+    return false;
+  }
+  return llvm::all_of(indices, [](Attribute attr) {
+    auto index = dyn_cast<IntegerAttr>(attr);
+    return index && index.getType().isIndex() && index.getInt() >= 0;
+  });
 }
 
 /// Enumerate declared signal leaves reachable from the main interface.
@@ -80,13 +90,15 @@ public:
       if (auto name = constrain.getArgNameAttr(index)) {
         layout.argumentNames[index] = *name;
       }
-      path.assign({builder.getStringAttr("arg"), builder.getI64IntegerAttr(index)});
+      path.assign(
+          {builder.getStringAttr(llzk::LAYOUT_ARGUMENT_ROOT), builder.getI64IntegerAttr(index)}
+      );
       if (failed(visitType(constrain.getFunctionType().getInput(index), constrain, path, true))) {
         return failure();
       }
     }
 
-    path.assign({builder.getStringAttr("main")});
+    path.assign({builder.getStringAttr(llzk::LAYOUT_MAIN_ROOT)});
     if (failed(visitStruct(main->get(), path, true))) {
       return failure();
     }
@@ -136,12 +148,7 @@ private:
       auto type = dict ? dict.getAs<TypeAttr>(FAMILY_TYPE_KEY) : TypeAttr();
       auto indices = dict ? dict.getAs<ArrayAttr>(FAMILY_INDICES_KEY) : ArrayAttr();
       auto id = dict ? dict.getAs<IntegerAttr>(FAMILY_SPECIALIZATION_KEY) : IntegerAttr();
-      if (!type || !isa<llzk::component::StructType>(type.getValue()) || !indices || !id ||
-          !id.getValue().isSignedIntN(64) || id.getInt() < 0 ||
-          llvm::any_of(indices, [](Attribute attr) {
-        auto index = dyn_cast<IntegerAttr>(attr);
-        return !index || !index.getType().isIndex() || index.getInt() < 0;
-      })) {
+      if (!isValidFamilyEntry(type, indices, id)) {
         return site->emitError("invalid poly.family entry for LLZK layout");
       }
       if (!entries.try_emplace(std::make_pair(type.getValue(), indices), id.getInt()).second) {
@@ -192,7 +199,7 @@ private:
   ) {
     // Unmarked expressions are not signals, but component storage can contain
     // members with their own signal annotations.
-    if (!isSignal && !containsStruct(type)) {
+    if (!isSignal && !walkContains<llzk::component::StructType>(type)) {
       return success();
     }
     if (isa<llzk::felt::FeltType>(type)) {
@@ -292,17 +299,23 @@ private:
 
 /// Render a structural path, using optional argument names as display labels.
 void printPath(ArrayAttr path, ArrayRef<StringAttr> names, llvm::raw_ostream &output) {
-  bool isMain = cast<StringAttr>(path[0]).getValue() == "main";
+  // buildLLZKLayout prefixes paths with main, or arg followed by an argument position.
+  assert(path && !path.empty() && isa<StringAttr>(path[0]) && "expected a layout path root");
+  auto root = cast<StringAttr>(path[0]).getValue();
+  bool isMain = root == llzk::LAYOUT_MAIN_ROOT;
+  assert((isMain || root == llzk::LAYOUT_ARGUMENT_ROOT) && "unexpected layout path root");
   if (isMain) {
-    output << "main";
+    output << llzk::LAYOUT_MAIN_ROOT;
   } else {
+    assert(path.size() >= 2 && isa<IntegerAttr>(path[1]) && "expected an argument position");
     auto argument = cast<IntegerAttr>(path[1]).getInt();
-    if (static_cast<size_t>(argument) < names.size() && names[argument]) {
-      output << "arg[";
+    assert(argument > 0 && "self is excluded from the layout");
+    if (llzk::checkedCast<size_t>(argument) < names.size() && names[argument]) {
+      output << llzk::LAYOUT_ARGUMENT_ROOT << '[';
       names[argument].print(output);
       output << ']';
     } else {
-      output << "arg" << argument;
+      output << llzk::LAYOUT_ARGUMENT_ROOT << argument;
     }
   }
   for (Attribute segment : path.getValue().drop_front(isMain ? 1 : 2)) {

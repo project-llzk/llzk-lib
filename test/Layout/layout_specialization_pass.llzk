@@ -1,5 +1,6 @@
 // RUN: llzk-translate %s --llzk-layout -o %t.layout
 // RUN: FileCheck %s --match-full-lines < %t.layout
+
 // Unrelated malformed/duplicate IDs are ignored; integer widths need not be i64.
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {

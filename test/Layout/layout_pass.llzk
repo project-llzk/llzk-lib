@@ -7,6 +7,7 @@
 // RUN: llzk-opt %s --llzk-monomorphize-templates -o %t.monomorphized.llzk
 // RUN: llzk-translate --llzk-layout %t.monomorphized.llzk -o %t.roundtrip.llzk-layout
 // RUN: diff %t.llzk-layout %t.roundtrip.llzk-layout
+
 // Signal IDs follow declaration order, expanding each field before the next.
 
 module @Top attributes {llzk.lang, llzk.main = !struct.type<@TMain::@Main<[2]>>} {

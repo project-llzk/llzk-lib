@@ -1,5 +1,6 @@
 // RUN: llzk-translate %s --llzk-layout -o %t.layout
 // RUN: FileCheck %s --match-full-lines < %t.layout
+
 // External constrain inputs are available from the signature without an entry block.
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {

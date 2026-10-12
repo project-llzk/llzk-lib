@@ -1,5 +1,4 @@
-// RUN: not llzk-translate %s --llzk-layout 2> %t.error
-// RUN: FileCheck %s < %t.error
+// RUN: llzk-translate %s --llzk-layout -verify-diagnostics
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @Child {
@@ -22,6 +21,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@ConcreteChild>) { function.return }
   } {poly.specialization_id = 1 : i64, poly.origin = @Main, poly.arguments = [0 : index]}
   struct.def @Main {
+    // expected-error @+1 {{struct specialization origin does not match LLZK layout family}}
     struct.member @items : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {poly.family = [{indices = [0 : index], specialization = 1 : i64, type = !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>}]}
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : <@Main>
@@ -30,5 +30,3 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@Main>) { function.return }
   }
 }
-
-// CHECK-LABEL: error: struct specialization origin does not match LLZK layout family
