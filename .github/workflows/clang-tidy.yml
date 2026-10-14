@@ -4,6 +4,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   run-clang-tidy:
@@ -36,7 +37,7 @@ jobs:
             -DLLZK_VERSION_OVERRIDE="${version:?}"'
       - name: Build
         # Generate TableGen headers before analyzing the compilation database.
-        run: nix develop .#debugClang --command bash -c 'cmake --build build --parallel 2'
+        run: nix develop .#debugClang --command bash -c 'cmake --build build'
       - name: Locate Nix clang tools
         id: clang
         run: |
@@ -61,7 +62,8 @@ jobs:
           ignore: 'build|result|third-party'
           step-summary: true
           file-annotations: true
-          thread-comments: update
+          # comments do not work on PRs from forked repos
+          thread-comments: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'update' || 'false' }}
       - name: Fail on diagnostics
         # cpp-linter reports findings without failing the action itself.
         if: steps.linter.outputs.checks-failed > 0
