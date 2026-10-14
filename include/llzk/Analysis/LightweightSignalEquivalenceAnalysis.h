@@ -15,6 +15,19 @@
 
 namespace llzk {
 
+/// A lightweight, positive-only equivalence analysis for signal values.
+///
+/// In addition to recursively comparing ordinary SSA producers, the analysis
+/// understands value-copy snapshots of POD records. Two POD reads are equivalent
+/// when they select the same complete (possibly nested) record path from the same
+/// root POD state. Mutation checks are deliberately local to a single block:
+/// writes to the selected record (or an enclosing record) invalidate a proof,
+/// while writes to disjoint records do not.
+///
+/// POD snapshots copied through POD records and struct members are followed
+/// recursively. Unknown uses, offset-bearing struct-member reads, and control-flow
+/// crossings are handled conservatively and do not establish equivalence. Only
+/// successful queries are cached.
 class LightweightSignalEquivalenceAnalysis {
   llvm::EquivalenceClasses<mlir::Value> equivalentSignals;
 
