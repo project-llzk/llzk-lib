@@ -74,15 +74,6 @@ using namespace llzk::smt::detail;
 
 namespace {
 
-/// Return the first canonical felt value interpreted as a negative integer.
-static llvm::APSInt getSignedFeltThreshold(const llvm::APSInt &prime) {
-  llvm::APSInt two(llvm::APInt(prime.getBitWidth(), 2), prime.isUnsigned());
-  llvm::APSInt one(llvm::APInt(prime.getBitWidth(), 1), prime.isUnsigned());
-  llvm::APSInt threshold = prime / two;
-  threshold += one;
-  return threshold;
-}
-
 /// Decide when modular reduction can be avoided or must be reintroduced.
 ///
 /// This helper owns the interval-analysis view of the current lowering target.
@@ -112,8 +103,7 @@ public:
       const Field &selectedField, DataFlowSolver &dataflowSolver,
       const StructIntervals *intervals = nullptr
   )
-      : field(selectedField), prime(toAPSInt(selectedField.prime())),
-        primeDynamic(toDynamicAPInt(prime)), solver(dataflowSolver) {
+      : field(selectedField), primeDynamic(selectedField.prime()), solver(dataflowSolver) {
     if (!intervals) {
       return;
     }
@@ -201,11 +191,10 @@ public:
     return {ReductionKind::ExplicitWitness, getQuotientRange(diffRange)};
   }
 
-  const llvm::APSInt &getPrime() const { return prime; }
+  const llvm::DynamicAPInt &getPrime() const { return primeDynamic; }
 
 private:
   std::reference_wrapper<const Field> field;
-  llvm::APSInt prime;
   llvm::DynamicAPInt primeDynamic;
   DataFlowSolver &solver;
   llvm::StringMap<UnreducedInterval> witnessRanges;
@@ -260,19 +249,7 @@ private:
   }
 
   llvm::DynamicAPInt floorDiv(const llvm::DynamicAPInt &value) const {
-    llvm::APSInt lhs = toAPSInt(value);
-    llvm::APSInt rhs = toAPSInt(primeDynamic);
-    unsigned width = std::max(lhs.getBitWidth(), rhs.getBitWidth()) + 1;
-    lhs = lhs.extend(width);
-    rhs = rhs.extend(width);
-    lhs.setIsSigned(true);
-    rhs.setIsSigned(true);
-    llvm::APSInt quotient = lhs / rhs;
-    llvm::APSInt remainder = lhs % rhs;
-    if (remainder < 0) {
-      quotient -= llvm::APSInt(llvm::APInt(width, 1), /*isUnsigned=*/false);
-    }
-    return toDynamicAPInt(quotient);
+    return llvm::floorDiv(value, primeDynamic);
   }
 
   llvm::DynamicAPInt ceilDiv(const llvm::DynamicAPInt &value) const { return -floorDiv(-value); }
@@ -443,9 +420,7 @@ private:
   }
 
   mlir::smt::IntConstantOp createPrimeConstant(OpBuilder &builder, Location loc) const {
-    return mlir::smt::IntConstantOp::create(
-        builder, loc, IntegerAttr::get(ctx, reasoner.getPrime())
-    );
+    return createIntConstant(builder, loc, reasoner.getPrime());
   }
 
   mlir::smt::IntConstantOp
@@ -989,14 +964,13 @@ Value OptimizedNonNativeStrategy::emitSignedFeltExpr(
 ) const {
   // Step 1: reduce `loc` to a canonical field element
   Value canonical = emitter->emitModPrime(builder, loc, value);
-  Value threshold = emitter->emitConstant(
-      builder, loc, toDynamicAPInt(getSignedFeltThreshold(reasoner.getPrime()))
-  );
+  Value threshold =
+      emitter->emitConstant(builder, loc, getSignedFeltThreshold(reasoner.getPrime()));
   // Step 2: `isNonNegativeRange <=> canonical < p/2 + 1`
   Value inNonNegativeRange = emitter->emitOrderedComparison(
       builder, loc, boolean::FeltCmpPredicate::LT, canonical, threshold
   );
-  Value prime = emitter->emitConstant(builder, loc, toDynamicAPInt(reasoner.getPrime()));
+  Value prime = emitter->emitConstant(builder, loc, reasoner.getPrime());
   // Step 3: `negativeRep = canonical - p`
   Value negativeRepresentative = emitter->emitSub(builder, loc, canonical, prime);
   // Step 4: `result = if isNonNegative then canonical else canonical - p`
@@ -1034,12 +1008,13 @@ void OptimizedNonNativeStrategy::populatePatterns(
     RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
     const SignalSymbols &signalSymbols
 ) const {
+  patterns.add<FeltConstConverter>(converter, context, reasoner.getPrime());
   patterns.add<
       BasicConverter<felt::AddFeltOp, mlir::smt::IntAddOp>,
       BasicConverter<felt::SubFeltOp, mlir::smt::IntSubOp>,
       BasicConverter<felt::MulFeltOp, mlir::smt::IntMulOp>, FeltNegConverter,
-      BasicConverter<felt::UnsignedModFeltOp, mlir::smt::IntModOp>, FeltConstConverter,
-      ReturnConverter, SCFIfConverter, YieldConverter>(converter, context);
+      BasicConverter<felt::UnsignedModFeltOp, mlir::smt::IntModOp>, ReturnConverter, SCFIfConverter,
+      YieldConverter>(converter, context);
   patterns.add<FunctionDefConverter>(converter, context);
   patterns.add<BoolCmpConverter>(converter, context, this);
   patterns.add<FeltDivConverter>(converter, context, this);

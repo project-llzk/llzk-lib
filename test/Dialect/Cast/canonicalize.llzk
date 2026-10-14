@@ -69,3 +69,27 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// Booleans are unsigned, but index constants preserve their signed value.
+module attributes {llzk.lang} {
+    function.def @signed_constants() -> (!felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+        %true = arith.constant true
+        %index = arith.constant -1 : index
+        %boolean = cast.tofelt %true : i1, !felt.type
+        %boolean_bb = cast.tofelt %true : i1, !felt.type<"babybear">
+        %index_felt = cast.tofelt %index : index, !felt.type
+        %index_bb = cast.tofelt %index : index, !felt.type<"babybear">
+        function.return %boolean, %boolean_bb, %index_felt, %index_bb : !felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">
+    }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @signed_constants() -> (!felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = felt.const  1 : <"babybear">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.\-]+]] = felt.const  -1 : <"babybear">
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : !felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -11,3 +11,7 @@ LLZK uses the [upstream SMT dialect](https://mlir.llvm.org/docs/Dialects/SMT/) f
 operations and terms. On top of that, LLZK defines the smt extensions below.
 
 \include{doc} build/doc/mlir/dialect/SMTInfoDialect.md
+
+Felt literals are reduced modulo the field selected by the lowering pass before
+being emitted as SMT integer constants. This also applies to signed literals and
+to source felt types whose field name is unspecified.

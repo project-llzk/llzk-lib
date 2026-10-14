@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <mlir/Bytecode/BytecodeImplementation.h>
+#include "llzk/Util/DynamicAPIntHelper.h"
 
-#include <llvm/ADT/APInt.h>
+#include <mlir/Bytecode/BytecodeImplementation.h>
 
 #include <limits>
 
@@ -39,23 +39,29 @@ struct LLZKDialectVersion : public mlir::DialectVersion {
   uint64_t majorVersion, minorVersion, patchVersion;
 };
 
-/// Write an APInt with its bit width, so the bytecode reader can use MLIR's
-/// native APInt payload encoding instead of falling back to decimal assembly.
-inline void writeAPInt(mlir::DialectBytecodeWriter &writer, const llvm::APInt &value) {
-  writer.writeVarInt(value.getBitWidth());
-  writer.writeAPIntWithKnownWidth(value);
+/// Write the minimal signed two's-complement encoding of a mathematical integer.
+inline void
+writeDynamicAPInt(mlir::DialectBytecodeWriter &writer, const llvm::DynamicAPInt &value) {
+  llvm::APSInt bits = toAPSInt(value);
+  llvm::APInt canonical = bits.trunc(bits.getSignificantBits());
+  writer.writeVarInt(canonical.getBitWidth());
+  writer.writeAPIntWithKnownWidth(canonical);
 }
 
-/// Read an APInt written by `writeAPInt`.
-inline mlir::FailureOr<llvm::APInt> readAPInt(mlir::DialectBytecodeReader &reader) {
-  uint64_t bitWidth;
-  if (mlir::failed(reader.readVarInt(bitWidth))) {
+/// Decode a signed integer, rejecting invalid widths before allocating storage.
+inline mlir::FailureOr<llvm::DynamicAPInt> readDynamicAPInt(mlir::DialectBytecodeReader &reader) {
+  uint64_t width;
+  if (mlir::failed(reader.readVarInt(width))) {
     return mlir::failure();
   }
-  if (bitWidth > std::numeric_limits<unsigned>::max()) {
-    return reader.emitError("APInt bit width too large");
+  if (width == 0 || width > std::numeric_limits<unsigned>::max()) {
+    return reader.emitError("invalid integer encoding width");
   }
-  return reader.readAPIntWithKnownWidth(static_cast<unsigned>(bitWidth));
+  auto bits = reader.readAPIntWithKnownWidth(static_cast<unsigned>(width));
+  if (mlir::failed(bits)) {
+    return mlir::failure();
+  }
+  return llvm::DynamicAPInt(*bits);
 }
 
 /// @brief This implements the bytecode interface for the LLZK dialect.

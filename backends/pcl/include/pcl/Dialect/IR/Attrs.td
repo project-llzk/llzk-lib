@@ -17,8 +17,7 @@ include "llzk/Dialect/LLZK/IR/AttributeHelper.td"
 def FeltAttr : AttrDef<PCLDialect, "Felt"> {
   let summary = "Field element represented as an arbitrary precision integer";
   let mnemonic = "felt";
-  let parameters =
-      (ins WidthInsensitiveAPIntParameter<"felt constant value">:$value);
+  let parameters = (ins DynamicAPIntParameter<"felt constant value">:$value);
 
   let assemblyFormat = "$value";
 }
@@ -28,19 +27,15 @@ def PrimeAttr : AttrDef<PCLDialect, "Prime"> {
   let summary = "Prime field modulus for this module";
   let description = [{
     Attach this as a named attribute (e.g. pcl.prime) on builtin.module.
-    Use an APInt literal so very large primes are supported.
+    Use a signed arbitrary-precision literal so very large primes are supported.
   }];
-  let parameters =
-      (ins WidthInsensitiveAPIntParameter<"field prime modulus">:$value);
+  let parameters = (ins DynamicAPIntParameter<"field prime modulus">:$value);
   let assemblyFormat = "`<`$value`>`";
 
   let extraClassDeclaration = [{
-  /// Returns the bit width of the prime.
-  unsigned getBitWidth() { return getValue().getBitWidth(); }
-
   /// Reduces the given felt such that is within the bounds of the prime.
   ::pcl::FeltAttr reduce(::pcl::FeltAttr attr);
-  ::pcl::FeltAttr reduce(::llvm::APInt value) {
+  ::pcl::FeltAttr reduce(const ::llvm::DynamicAPInt &value) {
     return reduce(::pcl::FeltAttr::get(getContext(), value));
   }
   }];

@@ -12,10 +12,12 @@
 
 include "mlir/IR/AttrTypeBase.td"
 
-// APInts whose numeric value is independent of bitwidth.
-class WidthInsensitiveAPIntParameter<string desc = "">
-    : AttrOrTypeParameter<"::llzk::APIntValue", desc, "const ::llvm::APInt &"> {
-  let parser = "::llzk::parseAPIntValue($_parser)";
+// Signed mathematical integer with representation-independent equality and
+// hashing.
+class DynamicAPIntParameter<string desc = "">
+    : AttrOrTypeParameter<"::llzk::DynamicAPIntValue", desc,
+                          "const ::llvm::DynamicAPInt &"> {
+  let parser = "::llzk::parseDynamicAPIntValue($_parser)";
   let printer = "$_printer << $_self";
   let comparator = "$_lhs == $_rhs";
 }

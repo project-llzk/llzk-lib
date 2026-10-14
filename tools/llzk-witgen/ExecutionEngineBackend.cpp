@@ -188,8 +188,11 @@ storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &val
   if (!elemBytesU) {
     return elemBytesU.takeError();
   }
-  llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
-  llvm::StoreIntToMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
+  auto raw = checkedToAPInt(value, buffer.feltBitWidth, false);
+  if (!raw) {
+    return raw.takeError();
+  }
+  llvm::StoreIntToMemory(*raw, buffer.storage.data() + byteOffset, *elemBytesU);
   return llvm::Error::success();
 }
 

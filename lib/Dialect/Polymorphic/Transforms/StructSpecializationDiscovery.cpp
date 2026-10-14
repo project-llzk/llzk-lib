@@ -748,8 +748,7 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
       const Field &field = constant.getType().getField();
       return Attribute(
           felt::FeltConstAttr::get(
-              read.getContext(), toAPInt(field.reduce(constant.getValue()), field.bitWidth()),
-              constant.getType()
+              read.getContext(), field.reduce(constant.getValue()), constant.getType()
           )
       );
     }
@@ -760,21 +759,17 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
     if (auto type = dyn_cast<felt::FeltType>(readType)) {
       // An i1's set bit represents one; index values have signed semantics.
       auto value = integer.getType().isSignlessInteger(1)
-                       ? llvm::DynamicAPInt(number.getZExtValue())
+                       ? llvm::DynamicAPInt(number.isOne() ? 1 : 0)
                        : llvm::DynamicAPInt(number);
       if (type.hasField()) {
         const Field &field = type.getField();
-        return Attribute(
-            felt::FeltConstAttr::get(
-                read.getContext(), toAPInt(field.reduce(value), field.bitWidth()), type
-            )
-        );
+        return Attribute(felt::FeltConstAttr::get(read.getContext(), field.reduce(value), type));
       }
       if (value < 0) {
         return read.emitError("cannot read negative template binding ")
                << read.getConstNameAttr() << " as felt without a known field modulus";
       }
-      return Attribute(felt::FeltConstAttr::get(read.getContext(), number, type));
+      return Attribute(felt::FeltConstAttr::get(read.getContext(), value, type));
     }
     if (readType.isSignlessInteger(1)) {
       if (!number.isZero() && !number.isOne()) {
