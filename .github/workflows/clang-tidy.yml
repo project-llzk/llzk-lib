@@ -37,6 +37,32 @@ jobs:
       - name: Build
         # Generate TableGen headers before analyzing the compilation database.
         run: nix develop .#debugClang --command bash -c 'cmake --build build --parallel 2'
+      - name: Locate Nix clang tools
+        id: clang
+        run: |
+          # Resolve the executable inside the Nix environment.
+          # shellcheck disable=SC2016
+          nix develop .#debugClang --command bash -c \
+            'printf "bin=%s\n" "$(dirname "$(command -v clang-tidy)")"' \
+            >> "$GITHUB_OUTPUT"
       - name: Run clang-tidy
-        # clang-tidy normally exits successfully when it only reports warnings.
-        run: nix develop .#debugClang --command bash -c "run-clang-tidy -p build/ -warnings-as-errors='*'"
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ steps.clang.outputs.bin }}
+          database: build
+          style: '' # Disable clang-format; it has a separate workflow.
+          tidy-checks: '' # Use .clang-tidy.
+          files-changed-only: false
+          lines-changed-only: false
+          extensions: 'c,cpp' # Analyze headers through inclusion.
+          ignore: 'build|result|third-party'
+          step-summary: true
+          file-annotations: true
+          thread-comments: update
+      - name: Fail on diagnostics
+        # cpp-linter reports findings without failing the action itself.
+        if: steps.linter.outputs.checks-failed > 0
+        run: exit 1
