@@ -321,8 +321,8 @@ public:
     }
     return mlir::failure();
   }
-  /// Evaluate a numeric constant using the supplied field when its type is fieldless. Felt
-  /// values are reduced into the supplied analysis field; indices retain integer semantics.
+  /// Reduce a felt constant's declared-field representative into the supplied analysis field.
+  /// Fieldless constants use their raw literals instead. Index constants retain integer semantics.
   mlir::FailureOr<llvm::DynamicAPInt> getConstantValue(const Field &field) const;
 
   /// Return a known numeric value, failing for fieldless felt constants.

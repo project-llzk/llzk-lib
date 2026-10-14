@@ -1324,6 +1324,8 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   // clang-format off
   llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
       .Case<FeltConstantOp>([&](auto feltConst) {
+        // Preserve felt.const's declared-field meaning before reduction in the analysis field.
+        // Fieldless literals instead use the raw fallback, as in SourceRef::getConstantValue.
         return field.get().reduce(feltConst.getValue().getReducedValueOrRaw());
       })
       .Case<arith::ConstantIndexOp>([&](auto indexConst) {

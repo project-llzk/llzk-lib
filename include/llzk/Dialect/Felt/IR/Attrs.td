@@ -22,11 +22,12 @@ def LLZK_FeltConstAttr
   let summary = "finite field element";
   let description = [{
     A felt attribute stores an exact signed integer literal and its field type.
-    `rawValue` is independent of storage width. For a specified field with prime
-    modulus `p`, the attribute denotes `rawValue mod p`, regardless of its
-    stored representation. `getReducedValue()` returns the representative in
-    `[0, p)` when the type specifies a field, or `std::nullopt` otherwise.
-    Construction preserves the literal, including its sign.
+
+    For a specified field with prime modulus `p`, the attribute denotes
+    `rawValue mod p`, regardless of its stored representation (i.e. the raw
+    value). Use `getReducedValue()` to obtain the representative in `[0, p)`
+    when the type specifies a field; gives `std::nullopt` otherwise.
+
     Builders accepting ArrayRef<uint64_t> decode 64-bit parts in
     least-significant-first order as a two's-complement signed integer. The
     most significant bit of the last part is the sign bit; an empty array is
@@ -67,13 +68,11 @@ def LLZK_FeltConstAttr
     /// if no type is stored.
     ::mlir::StringAttr getFieldName() const;
 
-    /// Returns the signed raw value reduced to [0, p) for the stored field.
-    /// The result is a nonnegative integer independent of the storage bit width.
-    /// Returns std::nullopt if the type has no specified field.
+    /// If the type specifies a field, returns the field representative in `[0, p)`
+    /// for the signed raw value; gives `std::nullopt` otherwise.
     std::optional<::llvm::DynamicAPInt> getReducedValue() const;
 
-    /// Returns the reduced value when the type specifies a field, otherwise
-    /// the raw signed value. The result is not guaranteed to be reduced.
+    /// If the type specifies a field, returns `getReducedValue()`; otherwise `getRawValue()`.
     /// Use getReducedValue() when folding requires a known field representative.
     ::llvm::DynamicAPInt getReducedValueOrRaw() const;
   }];

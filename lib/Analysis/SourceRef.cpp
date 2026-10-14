@@ -660,6 +660,7 @@ void SourceRef::print(raw_ostream &os) const {
 
 FailureOr<DynamicAPInt> SourceRef::getConstantValue(const Field &field) const {
   if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
+    // Honor the declared-field representative first; only fieldless literals use the raw fallback.
     return field.reduce(feltConst->getValue().getReducedValueOrRaw());
   }
   return getConstantIndexValue();
@@ -667,6 +668,8 @@ FailureOr<DynamicAPInt> SourceRef::getConstantValue(const Field &field) const {
 
 DynamicAPInt SourceRef::getConstantIdentityValue() const {
   if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
+    // Identity uses representatives for specified fields, but must distinguish
+    // exact raw literals when no field is available to establish congruence.
     return feltConst->getValue().getReducedValueOrRaw();
   }
   auto index = getConstantIndexValue();

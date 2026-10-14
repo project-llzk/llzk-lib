@@ -530,6 +530,38 @@ TEST_F(SourceRefTests, FieldlessConstantsSeparateIdentityFromEvaluation) {
   EXPECT_EQ(buildStringViaPrint(a), "<felt.const: 2013265928>");
 }
 
+/// Selecting an analysis field preserves the constant's declared-field representative.
+TEST_F(SourceRefTests, SuppliedFieldPreservesDeclaredConstantField) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(2013265928), "babybear");
+  auto constant = felt::FeltConstantOp::create(builder, loc, attr);
+  SourceRef ref(constant);
+  auto declaredValue = ref.getConstantValue();
+  ASSERT_TRUE(succeeded(declaredValue));
+  EXPECT_EQ(*declaredValue, DynamicAPInt(7));
+  auto analysisValue = ref.getConstantValue(Field::getField("koalabear"));
+  ASSERT_TRUE(succeeded(analysisValue));
+  EXPECT_EQ(*analysisValue, DynamicAPInt(7));
+}
+
+/// Signed literals use their declared representative before reduction into a smaller field.
+TEST_F(SourceRefTests, SuppliedFieldReducesDeclaredSignedRepresentative) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(-1), "koalabear");
+  auto constant = felt::FeltConstantOp::create(builder, loc, attr);
+  SourceRef ref(constant);
+  auto declaredValue = ref.getConstantValue();
+  ASSERT_TRUE(succeeded(declaredValue));
+  EXPECT_EQ(*declaredValue, DynamicAPInt(2130706432));
+  auto analysisValue = ref.getConstantValue(Field::getField("babybear"));
+  ASSERT_TRUE(succeeded(analysisValue));
+  EXPECT_EQ(*analysisValue, DynamicAPInt(117440511));
+}
+
 // Numeric source-reference keys must hash by value, independent of whether a
 // DynamicAPInt was constructed from a native integer or a 256-bit APInt. Cover
 // both individual indices and ranges so equal keys work in hash containers.

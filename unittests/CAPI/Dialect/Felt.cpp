@@ -677,7 +677,9 @@ TEST_F(CAPITest, FeltReducedValueOrRawUsesStringCallback) {
       context, mlirStringRefCreateFromCString("-18446744073709551617")
   );
   std::string reduced, raw;
+  // Verify the C wrapper serializes the reduced branch for a specified field.
   llzkFelt_FeltConstAttrGetReducedValueOrRaw(known, collect, &reduced);
+  // Verify the same wrapper preserves the signed raw fallback for a fieldless literal.
   llzkFelt_FeltConstAttrGetReducedValueOrRaw(unknown, collect, &raw);
   EXPECT_EQ(reduced, "2013265920");
   EXPECT_EQ(raw, "-18446744073709551617");

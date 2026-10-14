@@ -320,6 +320,8 @@ template <typename Op> class ConstantOpValue {};
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
   llvm::DynamicAPInt getValue(FeltConstantOp op) const {
+    // PCL accepts raw signed literals for fieldless constants and interprets them
+    // modulo the module prime inferred elsewhere in the circuit.
     return op.getValue().getReducedValueOrRaw();
   }
 };

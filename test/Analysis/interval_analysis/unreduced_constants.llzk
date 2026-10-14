@@ -1,7 +1,8 @@
 // RUN: llzk-opt --llzk-print-interval-analysis='field=koalabear print-compute-intervals' %s 2>&1 | FileCheck %s
+// RUN: llzk-opt --canonicalize --llzk-print-interval-analysis='field=koalabear print-compute-intervals' %s 2>&1 | FileCheck %s
 
-// Constants belong to babybear even when the analysis field is overridden.
-// Do not canonicalize: exercise each analysis consumer of the stored literal.
+// Constants retain their babybear meaning when the analysis field is overridden.
+// Check direct evaluation and consistency with canonicalization in the declared field.
 module attributes {llzk.lang} {
   struct.def @ConstantValue {
     struct.member @out : !felt.type<"babybear">
@@ -53,6 +54,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
 // CHECK-LABEL: @ZeroMultiplier StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
@@ -61,6 +63,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
 // CHECK-LABEL: @Decomposition StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire

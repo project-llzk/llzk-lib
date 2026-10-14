@@ -103,6 +103,7 @@ TEST_F(BabyBearFoldTest, ReducedConstantBoundaries) {
     auto attr = babyBearConst(value);
     ASSERT_TRUE(attr.getReducedValue());
     EXPECT_EQ(*attr.getReducedValue(), value % BB_PRIME);
+    // Exercise the fallback accessor's reduced branch for a specified field.
     EXPECT_EQ(attr.getReducedValueOrRaw(), value % BB_PRIME);
     EXPECT_EQ(attr.getRawValue(), toDynamicAPInt(value));
   }
@@ -112,6 +113,7 @@ TEST_F(BabyBearFoldTest, ReducedConstantUsesSignedValue) {
   auto attr = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(-1), BB_FIELD);
   ASSERT_TRUE(attr.getReducedValue());
   EXPECT_EQ(*attr.getReducedValue(), toDynamicAPInt(BB_PRIME - 1));
+  // Verify the fallback accessor also reduces signed literals in a known field.
   EXPECT_EQ(attr.getReducedValueOrRaw(), toDynamicAPInt(BB_PRIME - 1));
   EXPECT_EQ(attr.getRawValue(), -1);
 }
@@ -129,6 +131,7 @@ TEST_F(BabyBearFoldTest, ReducedConstantWithoutFieldIsAbsent) {
   llvm::DynamicAPInt raw = toDynamicAPInt(APInt::getAllOnes(256));
   auto attr = FeltConstAttr::get(&ctx, raw);
   EXPECT_FALSE(attr.getReducedValue());
+  // Exercise the raw fallback and ensure a wide positive literal keeps its sign.
   EXPECT_EQ(attr.getReducedValueOrRaw(), raw);
   EXPECT_GT(attr.getReducedValueOrRaw(), 0);
   EXPECT_EQ(attr.getRawValue(), raw);
@@ -138,6 +141,7 @@ TEST_F(BabyBearFoldTest, NegativeFieldlessConstantPreservesRawValue) {
   auto raw = toDynamicAPInt("-18446744073709551617");
   auto attr = FeltConstAttr::get(&ctx, raw);
   EXPECT_FALSE(attr.getReducedValue());
+  // Exercise the raw fallback for a negative literal with no field to reduce it.
   EXPECT_EQ(attr.getReducedValueOrRaw(), raw);
   EXPECT_EQ(attr.getRawValue(), raw);
 }
