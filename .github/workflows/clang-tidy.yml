@@ -35,9 +35,9 @@ jobs:
           nix develop .#debugClang --command bash -c 'cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug -DLLZK_BUILD_DEVTOOLS=ON \
             -DLLZK_VERSION_OVERRIDE="${version:?}"'
-      - name: Build
+      - name: Generate headers
         # Generate TableGen headers before analyzing the compilation database.
-        run: nix develop .#debugClang --command bash -c 'cmake --build build'
+        run: nix develop .#debugClang --command bash -c 'cmake --build build --target llzk-headers'
       - name: Locate Nix clang tools
         id: clang
         run: |
