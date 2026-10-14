@@ -35,8 +35,7 @@ std::optional<llvm::DynamicAPInt> FeltConstAttr::getReducedValue() const {
   if (!type || !type.hasField()) {
     return std::nullopt;
   }
-  const Field &field = type.getField();
-  return field.reduce(getRawValue());
+  return type.getField().reduce(getRawValue());
 }
 
 llvm::DynamicAPInt FeltConstAttr::getReducedValueOrRaw() const {

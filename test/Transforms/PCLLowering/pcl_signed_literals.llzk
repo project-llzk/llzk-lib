@@ -6,8 +6,9 @@
 // Exercise lowering and text export without canonicalization: negative literals
 // with no specified field must retain signed raw values, including beyond 64 bits.
 // The positive literal also distinguishes -1 from its unsigned 64-bit bit pattern.
+// Canonicalization is prevented by keeping the felt.type fieldless and instead
+// adding a dummy attribute where `selectPrime()` can pickup the field.
 !B = !felt.type
-// Supply the export field without attaching a field to the tested literals.
 module attributes {llzk.lang, test.field = !felt.type<"babybear">} {
   struct.def @SignedLiterals {
     struct.member @minus_one : !B {llzk.pub}
@@ -21,18 +22,18 @@ module attributes {llzk.lang, test.field = !felt.type<"babybear">} {
     }
 
     function.def @constrain(%self: !struct.type<@SignedLiterals>) attributes {function.allow_constraint} {
-      %minus_one = felt.const -1
-      %minus_42 = felt.const -42
-      %large_negative = felt.const -18446744073709551617
-      %large_positive = felt.const 18446744073709551615
+      %minus_one = felt.const -1 : !B
+      %minus_42 = felt.const -42 : !B
+      %large_negative = felt.const -18446744073709551617 : !B
+      %large_positive = felt.const 18446744073709551615 : !B
       %a = struct.readm %self[@minus_one] : !struct.type<@SignedLiterals>, !B
       %b = struct.readm %self[@minus_42] : !struct.type<@SignedLiterals>, !B
       %c = struct.readm %self[@large_negative] : !struct.type<@SignedLiterals>, !B
       %d = struct.readm %self[@large_positive] : !struct.type<@SignedLiterals>, !B
-      constrain.eq %a, %minus_one : !B, !felt.type
-      constrain.eq %b, %minus_42 : !B, !felt.type
-      constrain.eq %c, %large_negative : !B, !felt.type
-      constrain.eq %d, %large_positive : !B, !felt.type
+      constrain.eq %a, %minus_one : !B, !B
+      constrain.eq %b, %minus_42 : !B, !B
+      constrain.eq %c, %large_negative : !B, !B
+      constrain.eq %d, %large_positive : !B, !B
       function.return
     }
   }

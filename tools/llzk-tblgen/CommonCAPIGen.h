@@ -518,14 +518,14 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
     std::string returnSuffix;
     mlir::StringRef cppReturnType = method.returnType;
 
-    if (isDynamicAPIntType(cppReturnType)) {
-      capiReturnType = "void";
-      returnPrefix = "std::string text;\n  llvm::raw_string_ostream(text) << ";
-      returnSuffix = ";\n  callback(wrap(llvm::StringRef(text)), userData)";
-    } else if (cppReturnType == "void") {
+    if (cppReturnType == "void") {
       // "void" type doesn't even need "return"
       returnPrefix = "";
       returnSuffix = "";
+    } else if (isDynamicAPIntType(cppReturnType)) {
+      capiReturnType = "void";
+      returnPrefix = "std::string text;\n  llvm::raw_string_ostream(text) << ";
+      returnSuffix = ";\n  callback(wrap(llvm::StringRef(text)), userData)";
     } else {
       // Check if return needs wrapping
       if (isPrimitiveType(cppReturnType)) {

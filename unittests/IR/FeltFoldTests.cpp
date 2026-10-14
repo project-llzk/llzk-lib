@@ -426,6 +426,8 @@ TEST_F(BabyBearFoldTest, FoldsReduceUncanonicalizedOperands) {
   expectNoFold(foldBinary<UnsignedModFeltOp>(two, zero));
 }
 
+// Verify that casting a felt constant uses its mathematical value without requiring the
+// constant to be canonicalized first.
 TEST_F(BabyBearFoldTest, CastToIndexReducesWithoutCanonicalizingConstant) {
   Block block;
   PatternRewriter rewriter(&ctx);

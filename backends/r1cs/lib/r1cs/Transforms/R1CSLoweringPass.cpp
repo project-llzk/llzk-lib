@@ -448,8 +448,8 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         R1CSConstraint inner = constraintMap[op->getOperand(0)];
         constraintMap[v] = inner.negated();
       } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
-        // R1CS preserves fieldless literals as exact signed coefficients;
-        // binary export reduces them modulo the selected prime.
+        // Reduce the constant if a field is specified. Preserve constants with unspecified field;
+        // later binary export reduces them modulo --r1cs-prime, without checking the source fields.
         R1CSConstraint c(cst.getValue().getReducedValueOrRaw());
         constraintMap[v] = c;
       } else {

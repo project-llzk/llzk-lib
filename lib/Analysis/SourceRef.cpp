@@ -660,7 +660,8 @@ void SourceRef::print(raw_ostream &os) const {
 
 FailureOr<DynamicAPInt> SourceRef::getConstantValue(const Field &field) const {
   if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
-    // Honor the declared-field representative first; only fieldless literals use the raw fallback.
+    // Honor the declared prime first (per semantics of `felt.const`); only fieldless literals
+    // use the raw fallback. Regardless, the value is then reduced via the specified `Field`.
     return field.reduce(feltConst->getValue().getReducedValueOrRaw());
   }
   return getConstantIndexValue();

@@ -177,8 +177,8 @@ static std::string formatOperationCall(Operation &op, llvm::DenseMap<Value, std:
 // Uses a base-10 string conversion for readability.
 static std::string formatFeltConstant(llzk::felt::FeltConstantOp constOp) {
   std::string buffer;
-  // Preserve the representative for a specified field; a raw fieldless numeral
-  // is interpreted by the target Lean Field instance.
+  // Use the reduced representative for a specified field; a raw unspecified-field
+  // value is later interpreted by the target Lean Field instance.
   llvm::raw_string_ostream(buffer) << constOp.getValueAttr().getReducedValueOrRaw();
   return buffer;
 }
