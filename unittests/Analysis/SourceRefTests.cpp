@@ -26,6 +26,7 @@
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
+#include <set>
 
 using namespace mlir;
 using namespace llzk;
@@ -574,6 +575,33 @@ TEST_F(SourceRefTests, NumericKeyHashIgnoresIntegerRepresentation) {
   SourceRefIndex y(std::pair {wide, wide + 3});
   EXPECT_EQ(x, y);
   EXPECT_EQ(SourceRefIndex::Hash {}(x), SourceRefIndex::Hash {}(y));
+}
+
+/// Ordered containers retain equal numeric representatives with distinct felt types.
+TEST_F(SourceRefTests, ConstantOrderingDistinguishesFeltTypes) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto makeRef = [&](int64_t value, felt::FeltType type) {
+    auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(value), type);
+    return SourceRef(felt::FeltConstantOp::create(builder, loc, attr));
+  };
+  auto babybear = felt::FeltType::get(&ctx, "babybear");
+  auto a = makeRef(2013265928, babybear);
+  auto b = makeRef(7, felt::FeltType::get(&ctx, "koalabear"));
+  auto c = makeRef(7, felt::FeltType::get(&ctx));
+  auto canonical = makeRef(7, babybear);
+  for (const auto &other : {b, c}) {
+    EXPECT_NE(a, other);
+    EXPECT_NE(a <=> other, std::strong_ordering::equal);
+    EXPECT_NE(a < other, other < a);
+  }
+  EXPECT_NE(b, c);
+  EXPECT_NE(b <=> c, std::strong_ordering::equal);
+  EXPECT_EQ(a, canonical);
+  EXPECT_EQ(a <=> canonical, std::strong_ordering::equal);
+  std::set<SourceRef> refs {a, b, c, canonical};
+  EXPECT_EQ(refs.size(), 3U);
 }
 
 // Congruent signed literals share semantic identity once their field is known.

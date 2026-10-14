@@ -34,6 +34,11 @@ using namespace string;
 
 namespace {
 
+/// Compare opaque pointers using the standard library's strict total pointer order.
+static inline std::strong_ordering comparePointers(const void *lhs, const void *rhs) {
+  return std::compare_three_way {}(lhs, rhs);
+}
+
 std::strong_ordering
 compareDynamicAPInt(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs) {
   if (lhs < rhs) {
@@ -239,7 +244,7 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
     if (auto cmp = *getInputNum() <=> *rhs.getInputNum(); cmp != std::strong_ordering::equal) {
       return cmp;
     }
-    if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+    if (auto cmp = comparePointers(getAsOpaquePointer(), rhs.getAsOpaquePointer());
         cmp != std::strong_ordering::equal) {
       return cmp;
     }
@@ -248,7 +253,7 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
   case SortCategory::CreateStruct:
   case SortCategory::NonDet:
   case SortCategory::RootResult: {
-    if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+    if (auto cmp = comparePointers(getAsOpaquePointer(), rhs.getAsOpaquePointer());
         cmp != std::strong_ordering::equal) {
       return cmp;
     }
@@ -259,11 +264,17 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
         cmp != std::strong_ordering::equal) {
       return cmp;
     }
-    return getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+    return comparePointers(getAsOpaquePointer(), rhs.getAsOpaquePointer());
   }
   case SortCategory::ConstantIndex:
     return compareDynamicAPInt(*getConstantIndexValue(), *rhs.getConstantIndexValue());
   case SortCategory::ConstantFelt:
+    // Constant identity includes the type as well as the field representative.
+    if (auto cmp =
+            comparePointers(getType().getAsOpaquePointer(), rhs.getType().getAsOpaquePointer());
+        cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
     return compareDynamicAPInt(getConstantIdentityValue(), rhs.getConstantIdentityValue());
   }
 
