@@ -31,12 +31,12 @@ jobs:
         run: |
           # Expand version inside the Nix environment.
           # shellcheck disable=SC2016
-          nix develop --command bash -c 'cmake -S . -B build -G Ninja \
+          nix develop .#debugClang --command bash -c 'cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug -DLLZK_BUILD_DEVTOOLS=ON \
             -DLLZK_VERSION_OVERRIDE="${version:?}"'
       - name: Build
         # Generate TableGen headers before analyzing the compilation database.
-        run: nix develop --command bash -c 'cmake --build build --parallel 2'
+        run: nix develop .#debugClang --command bash -c 'cmake --build build --parallel 2'
       - name: Run clang-tidy
         # clang-tidy normally exits successfully when it only reports warnings.
-        run: nix develop --command bash -c "run-clang-tidy -p build/ -warnings-as-errors='*'"
+        run: nix develop .#debugClang --command bash -c "run-clang-tidy -p build/ -warnings-as-errors='*'"
