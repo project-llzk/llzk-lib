@@ -1,0 +1,165 @@
+// Unsupported free-function specializations report the requesting call or definition.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// A template expression read from a global cannot be evaluated yet.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  global.def const @G : index = 4
+  poly.template @T {
+    poly.param @N : index
+    poly.expr @E {
+      %g = global.read const @G : index
+      poly.yield %g : index
+    }
+    function.def @f() -> index {
+      %e = poly.read_const @E : index
+      function.return %e : index
+    }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{template expression @E could not be evaluated for free function @T::@f with arguments [3 : index]}}
+      %value = function.call @T::@f<[3]>() : () -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Discovery cannot execute a function with unstructured control flow.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @f() {
+    // expected-error@+1 {{unstructured control flow is unsupported in template monomorphization}}
+    cf.br ^bb1
+  ^bb1:
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      function.call @f() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Plain structs are cloned too; an unchanged external signature cannot accept the clone.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Payload {
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : !struct.type<@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) { function.return }
+  }
+  function.def private @ext(%payload: !struct.type<@Payload>) -> index attributes {extern}
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %payload = function.call @Payload::@compute() : () -> !struct.type<@Payload>
+      // expected-error@+1 {{external function @ext cannot be called with specialized struct types; external declarations are not specialized}}
+      %value = function.call @ext(%payload) : (!struct.type<@Payload>) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// A parameterized struct clone likewise differs from the external signature.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %self : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  function.def private @ext(%child: !struct.type<@ChildTemplate::@Child<[2]>>) -> index attributes {extern}
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %child = function.call @ChildTemplate::@Child::@compute() : () -> !struct.type<@ChildTemplate::@Child<[2]>>
+      // expected-error@+1 {{external function @ext cannot be called with specialized struct types; external declarations are not specialized}}
+      %value = function.call @ext(%child) : (!struct.type<@ChildTemplate::@Child<[2]>>) -> index
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// A struct result from an external declaration would also need a rewritten signature.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Payload {
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : !struct.type<@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) { function.return }
+  }
+  function.def private @ext() -> !struct.type<@Payload> attributes {extern}
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{external function @ext cannot be called with specialized struct types; external declarations are not specialized}}
+      %payload = function.call @ext() : () -> !struct.type<@Payload>
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Discovery errors in a live function identify the call that requested it.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @loop(%n: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    // expected-error@+1 {{specialization discovery requires known signed 'for' bounds and a positive step}}
+    scf.for %i = %zero to %n step %one {
+      scf.yield
+    }
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %five = arith.constant 5 : index
+      // expected-note@+1 {{while specializing free function @loop with arguments []}}
+      function.call @loop(%five) : (index) -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// A wildcard absent from the call signature still needs a concrete binding.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Hidden {
+    poly.param @T : !poly.tvar<@T>
+    function.def @f() { function.return }
+  }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      // expected-error@+1 {{cannot resolve free-function template parameter @T}}
+      function.call @Hidden::@f<[?]>() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}

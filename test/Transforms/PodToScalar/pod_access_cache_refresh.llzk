@@ -1,0 +1,48 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck %s
+
+!F = !felt.type<"babybear">
+!P = !pod.type<[@value: !F]>
+
+module attributes {llzk.lang} {
+  // Guard against stale POD access analysis during scalarization. struct.readm copies the POD
+  // value, so mutating the read snapshot leaves @m1.value at 7 and sets @m2.value to 9.
+  struct.def @Main {
+    struct.member @m1 : !P
+    struct.member @m2 : !P
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %f7 = felt.const 7 : !F
+      %pod = pod.new : !P
+      pod.write %pod[@value] = %f7 : !P, !F
+      struct.writem %self[@m1] = %pod : !struct.type<@Main>, !P
+      %read = struct.readm %self[@m1] : !struct.type<@Main>, !P
+      %f9 = felt.const 9 : !F
+      pod.write %read[@value] = %f9 : !P, !F
+      struct.writem %self[@m2] = %read : !struct.type<@Main>, !P
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @m1_value : !felt.type<"babybear">
+// CHECK-NEXT:      struct.member @m2_value : !felt.type<"babybear">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[NINE:[0-9a-zA-Z_\.]+]] = felt.const  9 : <"babybear">
+// CHECK-NEXT:        %[[SEVEN:[0-9a-zA-Z_\.]+]] = felt.const  7 : <"babybear">
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        struct.writem %[[SELF]][@m1_value] = %[[SEVEN]] : <@Main>, !felt.type<"babybear">
+// CHECK-NEXT:        struct.writem %[[SELF]][@m2_value] = %[[NINE]] : <@Main>, !felt.type<"babybear">
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

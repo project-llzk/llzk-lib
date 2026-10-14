@@ -6,9 +6,18 @@ function.def @raw_roundtrip() -> !felt.type<"babybear"> {
   %c = felt.const 2013265928 : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
-// CHECK-LABEL: module {
-// CHECK-NEXT:    function.def @raw_roundtrip() -> !felt.type<"babybear"> {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  2013265928 : <"babybear">
+
+// Signed raw literals survive text and bytecode even when a field is specified.
+function.def @negative_roundtrip() -> !felt.type<"babybear"> {
+  %c = felt.const -18446744073709551617 : !felt.type<"babybear">
+  function.return %c : !felt.type<"babybear">
+}
+
+// CHECK-LABEL:   function.def @raw_roundtrip() -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  2013265928 : <"babybear">
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"babybear">
 // CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL:   function.def @negative_roundtrip() -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  -18446744073709551617 : <"babybear">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"babybear">
+// CHECK-NEXT:    }

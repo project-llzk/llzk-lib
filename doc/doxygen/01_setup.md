@@ -74,18 +74,18 @@ build the rest of the dependencies and LLZK:
 ```bash
 # Start from llzk repo top level.
 
+# LLVM's install tree must be outside the LLZK source tree.
+export INSTALL_ROOT="$(dirname "$(pwd -P)")/llzk-llvm-install-root"
+mkdir -p "$INSTALL_ROOT"
+
 # First, build LLVM + MLIR
 rm -rf third-party
 mkdir third-party
 pushd third-party
 export THIRD_PARTY="$PWD"
 
-# This is where llvm will be installed.
-export INSTALL_ROOT="$THIRD_PARTY/llvm-install-root"
-mkdir "$INSTALL_ROOT"
-
 # Configure LLVM build
-git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.0 --depth 1
+git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.3 --depth 1
 pushd llvm-project
 mkdir build
 pushd build

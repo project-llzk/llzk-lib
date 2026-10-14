@@ -50,7 +50,7 @@ module attributes {llzk.lang} {
 
   MLIRContext localCtx;
   DialectRegistry registry;
-  llzk::registerAllDialects(registry);
+  llzk::registerDialects(registry);
   localCtx.appendDialectRegistry(registry);
   localCtx.loadAllAvailableDialects();
 
@@ -99,7 +99,7 @@ module attributes {llzk.lang} {
 
   MLIRContext localCtx;
   DialectRegistry registry;
-  llzk::registerAllDialects(registry);
+  llzk::registerDialects(registry);
   localCtx.appendDialectRegistry(registry);
   localCtx.loadAllAvailableDialects();
 

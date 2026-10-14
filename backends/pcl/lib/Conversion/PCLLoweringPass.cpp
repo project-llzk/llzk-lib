@@ -42,7 +42,6 @@
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
 
-#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/DenseSet.h>
@@ -100,7 +99,7 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
   }
 
   // PCL programs require a module-level attribute specifying the prime.
-  void setPrime(APInt &prime) {
+  void setPrime(const llvm::DynamicAPInt &prime) {
     Operation *op = getOperation();
     op->setAttrs(
         DictionaryAttr::get(
@@ -110,7 +109,7 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
     );
   }
 
-  FailureOr<APSInt> selectPrime() {
+  FailureOr<llvm::DynamicAPInt> selectPrime() {
     Operation *op = getOperation();
     FieldSet fields;
     // If the collection reports that at least one FeltType did not declare the field and
@@ -130,7 +129,7 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
       return op->emitOpError() << "multiple fields is not supported";
     }
     const auto &selectedField = *(fields.begin());
-    return toAPSInt(selectedField.get().prime());
+    return selectedField.get().prime();
   }
 
   std::unique_ptr<pcl::lowering::BaseMode> createMode() {

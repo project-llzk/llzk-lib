@@ -1,7 +1,7 @@
 add_library(ZKLeanConversions)
 add_library(ZKLean::Conversions ALIAS ZKLeanConversions)
 
-target_sources(ZKLeanConversions PRIVATE LLZKToZKLean.cpp ZKLeanToLLZK.cpp)
+target_sources(ZKLeanConversions PRIVATE CAPI.cpp LLZKToZKLean.cpp ZKLeanToLLZK.cpp)
 
 target_link_libraries(
   ZKLeanConversions

@@ -22,8 +22,6 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 
-#include <limits>
-
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
@@ -89,7 +87,10 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
   return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
+        op, felt::FeltConstAttr::get(
+                op->getContext(),
+                integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(constOp.getValue())), op.getType()
+            )
     );
     return success();
   }).Default([](auto) { return failure(); });
@@ -110,12 +111,14 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     if (auto reduced = constOp.getValue().getReducedValue()) {
-      const DynamicAPInt &val = *reduced;
-      // The index builder requires a value that fits in a signed 64-bit integer.
-      if (val >= 0 && val <= std::numeric_limits<int64_t>::max()) {
-        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, static_cast<int64_t>(val));
-        return success();
+      // The reduced representative is nonnegative; the index builder also
+      // requires it to fit in a signed 64-bit integer.
+      auto converted = checkedToInt64(*reduced);
+      if (!converted) {
+        return rewriter.notifyMatchFailure(op, llvm::toString(converted.takeError()));
       }
+      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, *converted);
+      return success();
     }
   }
   return failure();

@@ -51,23 +51,44 @@ namespace mlir::tblgen {
 class Operator;
 } // namespace mlir::tblgen
 
-// Shared command-line options used by all CAPI generators
-extern llvm::cl::OptionCategory OpGenCat;
-extern llvm::cl::opt<std::string> DialectName;
-extern llvm::cl::opt<std::string> FunctionPrefix;
+/// Return the DialectName option, registering it on first access.
+llvm::cl::opt<std::string> &getDialectName();
 
-// Shared flags for controlling code generation
-extern llvm::cl::opt<bool> GenIsA;
-extern llvm::cl::opt<bool> GenOpBuild;
-extern llvm::cl::opt<bool> GenOpOperandGetters;
-extern llvm::cl::opt<bool> GenOpOperandSetters;
-extern llvm::cl::opt<bool> GenOpAttributeGetters;
-extern llvm::cl::opt<bool> GenOpAttributeSetters;
-extern llvm::cl::opt<bool> GenOpRegionGetters;
-extern llvm::cl::opt<bool> GenOpResultGetters;
-extern llvm::cl::opt<bool> GenTypeOrAttrGet;
-extern llvm::cl::opt<bool> GenTypeOrAttrParamGetters;
-extern llvm::cl::opt<bool> GenExtraClassMethods;
+/// Return the FunctionPrefix option, registering it on first access.
+llvm::cl::opt<std::string> &getFunctionPrefix();
+
+/// Return the GenIsA option, registering it on first access.
+llvm::cl::opt<bool> &getGenIsA();
+
+/// Return the GenOpBuild option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpBuild();
+
+/// Return the GenOpOperandGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpOperandGetters();
+
+/// Return the GenOpOperandSetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpOperandSetters();
+
+/// Return the GenOpAttributeGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpAttributeGetters();
+
+/// Return the GenOpAttributeSetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpAttributeSetters();
+
+/// Return the GenOpRegionGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpRegionGetters();
+
+/// Return the GenOpResultGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenOpResultGetters();
+
+/// Return the GenTypeOrAttrGet option, registering it on first access.
+llvm::cl::opt<bool> &getGenTypeOrAttrGet();
+
+/// Return the GenTypeOrAttrParamGetters option, registering it on first access.
+llvm::cl::opt<bool> &getGenTypeOrAttrParamGetters();
+
+/// Return the GenExtraClassMethods option, registering it on first access.
+llvm::cl::opt<bool> &getGenExtraClassMethods();
 
 /// @brief Convert names separated by underscore or colon to PascalCase.
 /// @param str The input string to convert (may contain underscores or colons)
@@ -136,7 +157,7 @@ inline bool isIntegerType(mlir::StringRef type) {
 /// @return true if the type is a primitive (bool, void, int, etc.)
 ///
 /// @note This function must be called on the CPP type because after converting to CAPI type, some
-/// things like APInt become primitive which can lead to missing wrap/unwrap functions.
+/// C++ wrapper types require explicit conversion even if their C representation is primitive.
 inline bool isPrimitiveType(mlir::StringRef cppType) {
   cppType.consume_front("::");
   return cppType == "void" || cppType == "bool" || cppType == "float" || cppType == "double" ||
@@ -179,16 +200,10 @@ inline bool isCppLanguageConstruct(mlir::StringRef methodName) {
       .Default(false);
 }
 
-/// @brief Check if a C++ type is APInt
-/// @param cppType The C++ type string to check
-/// @return true if the type is an APInt or LLZK's numeric APInt storage key
-inline bool isAPIntType(mlir::StringRef cppType) {
+/// Whether a parameter represents an arbitrary-precision mathematical integer.
+inline bool isDynamicAPIntType(mlir::StringRef cppType) {
   cppType.consume_front("::");
-  if (cppType == "llzk::APIntValue") {
-    return true;
-  }
-  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
-  return cppType == "APInt";
+  return cppType == "llzk::DynamicAPIntValue" || cppType == "llvm::DynamicAPInt";
 }
 
 /// @brief Check if a C++ type is an ArrayRef type
@@ -346,7 +361,8 @@ std::optional<std::string> mapCapiTypeToBasicCppType(mlir::StringRef capiType);
 /// @brief Base class for C API generators
 struct Generator {
   Generator(std::string_view recordKind, llvm::raw_ostream &outputStream)
-      : kind(recordKind), os(outputStream), dialectNameCapitalized(toPascalCase(DialectName)) {}
+      : kind(recordKind), os(outputStream), dialectNameCapitalized(toPascalCase(getDialectName())) {
+  }
   virtual ~Generator() = default;
 
   /// @brief Set the dialect and class name for code generation
@@ -413,7 +429,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
     assert(!dialectNamespace.empty() && "Dialect must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
@@ -446,6 +462,12 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
+    // Dynamic integers are returned through a callback to avoid dangling text.
+    if (isDynamicAPIntType(method.returnType)) {
+      capiReturnType = "void";
+      paramListStream << ", MlirStringCallback callback, void *userData";
+    }
+
     // Generate declaration
     if (method.documentation.empty()) {
       os << llvm::formatv("\n/// {0}\n", method.methodName);
@@ -455,7 +477,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
     os << llvm::formatv(
         "MLIR_CAPI_EXPORTED {0} {1}{2}_{3}{4}({5});\n",
         capiReturnType,                  // {0}
-        FunctionPrefix,                  // {1}
+        getFunctionPrefix(),             // {1}
         dialectNameCapitalized,          // {2}
         className,                       // {3}
         toPascalCase(method.methodName), // {4}
@@ -478,7 +500,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
 }
 )";
     assert(!className.empty() && "className must be set");
-    os << llvm::formatv(fmt, FunctionPrefix, kind, dialectNameCapitalized, className);
+    os << llvm::formatv(fmt, getFunctionPrefix(), kind, dialectNameCapitalized, className);
   }
 
   /// @brief Generate implementation for an extra method from an `extraClassDeclaration`
@@ -496,7 +518,11 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
     std::string returnSuffix;
     mlir::StringRef cppReturnType = method.returnType;
 
-    if (cppReturnType == "void") {
+    if (isDynamicAPIntType(cppReturnType)) {
+      capiReturnType = "void";
+      returnPrefix = "std::string text;\n  llvm::raw_string_ostream(text) << ";
+      returnSuffix = ";\n  callback(wrap(llvm::StringRef(text)), userData)";
+    } else if (cppReturnType == "void") {
       // "void" type doesn't even need "return"
       returnPrefix = "";
       returnSuffix = "";
@@ -506,8 +532,8 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
         // Primitive types don't need wrapping
         returnPrefix = "return ";
         returnSuffix = "";
-      } else if (capiReturnType.starts_with("Mlir") || isAPIntType(cppReturnType)) {
-        // MLIR C API types and APInt type need wrapping
+      } else if (capiReturnType.starts_with("Mlir")) {
+        // MLIR C API types need wrapping
         returnPrefix = "return wrap(";
         returnSuffix = ")";
       } else {
@@ -530,6 +556,10 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
+    if (isDynamicAPIntType(cppReturnType)) {
+      paramListStream << ", MlirStringCallback callback, void *userData";
+    }
+
     // Build argument list for C++ method call
     std::string argList;
     llvm::raw_string_ostream argListStream(argList);
@@ -544,9 +574,6 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       if (isPrimitiveType(cppParamType)) {
         // Primitive types don't need unwrapping
         argListStream << param.name;
-      } else if (isAPIntType(cppParamType)) {
-        // APInt needs unwrapping
-        argListStream << "unwrap(" << param.name << ')';
       } else {
         // Convert C++ type to C API type for parameter, skip if it can't be converted
         std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(cppParamType);
@@ -565,7 +592,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
     os << llvm::formatv(
         "{0} {1}{2}_{3}{4}({5}) {{\n",
         capiReturnType,                  // {0}
-        FunctionPrefix,                  // {1}
+        getFunctionPrefix(),             // {1}
         dialectNameCapitalized,          // {2}
         className,                       // {3}
         toPascalCase(method.methodName), // {4}
@@ -610,7 +637,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
@@ -664,6 +691,10 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
       paramListStream << ", " << name;
     }
 
+    if (isDynamicAPIntType(method.returnType)) {
+      paramListStream << ", [](MlirStringRef, void *) {}, nullptr";
+    }
+
     static constexpr char fmt[] = R"(
 /// This test ensures {0}{2}_{3}{4} links properly.
 TEST_F({2}{1}LinkTests, {0}_{3}_{4}) {{
@@ -680,7 +711,7 @@ TEST_F({2}{1}LinkTests, {0}_{3}_{4}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,                  // {0}
+        getFunctionPrefix(),             // {0}
         kind,                            // {1}
         dialectNameCapitalized,          // {2}
         className,                       // {3}

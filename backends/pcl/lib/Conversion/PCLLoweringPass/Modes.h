@@ -19,6 +19,7 @@ namespace mlir {
 class TypeConverter;
 class RewritePatternSet;
 class ConversionTarget;
+class SymbolTableCollection;
 } // namespace mlir
 
 namespace pcl::lowering {
@@ -44,8 +45,11 @@ protected:
   /// `constrain` function of a struct or a used free function.
   bool isStep1LegalOp(mlir::Operation *op);
 
-  void
-  populateStep1ConversionPatterns(const mlir::TypeConverter &tc, mlir::RewritePatternSet &patterns);
+  /// Populates step 1 patterns sharing a cache that must outlive the conversion.
+  void populateStep1ConversionPatterns(
+      const mlir::TypeConverter &tc, mlir::RewritePatternSet &patterns,
+      mlir::SymbolTableCollection &tables
+  );
 
   void populateStep1ConversionTarget(mlir::ConversionTarget &target);
 

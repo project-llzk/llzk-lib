@@ -5,8 +5,9 @@ file(GLOB_RECURSE PCLDialect_SOURCES "*.cpp")
 target_sources(PCLDialect PRIVATE ${PCLDialect_SOURCES})
 target_link_libraries(
   PCLDialect PUBLIC MLIRFuncDialect PCLDialectHeaders
-                     MLIRIR MLIRSupport
-                     LLVMHeaders MLIRHeaders)
+                     MLIRIR MLIRSupport LLZK::LLZKUtil
+                     LLVMHeaders MLIRHeaders
+             PRIVATE LLZKDialectHeaders)
 add_dependencies(PCLDialect PCLDialectIncGen)
 llzk_target_add_mlir_link_settings(PCLDialect)
 

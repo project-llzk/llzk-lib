@@ -169,12 +169,11 @@ public:
   void checkEnded(bool) override {}
 };
 
-/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
-/// and in `AdditionalOpClasses`.
-/// Additional legality checks can be included for certain ops that will run along with the default
-/// check. For an op to be considered legal all checks (default plus additional checks if any) must
-/// return true.
+/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op
+/// legality based on the given `TypeConverter` for Ops listed in both type aliases of
+/// `OpClassesWithStructTypes` and in `AdditionalOpClasses`. Additional legality checks can
+/// be included for certain ops that will run along with the default check. For an op to be
+/// considered legal all checks (default plus additional checks if any) must return true.
 template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 mlir::ConversionTarget newConverterDefinedTarget(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, AdditionalChecks &&...checks
@@ -185,12 +184,11 @@ mlir::ConversionTarget newConverterDefinedTarget(
   );
 }
 
-/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
-/// and in `AdditionalOpClasses`.
-/// Additional legality checks can be included for certain ops that will run along with the default
-/// check. For an op to be considered legal all checks (default plus additional checks if any) must
-/// return true.
+/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op
+/// legality based on the given `TypeConverter` for Ops listed in both type aliases of
+/// `OpClassesWithStructTypes` and in `AdditionalOpClasses`. Additional legality checks can
+/// be included for certain ops that will run along with the default check. For an op to be
+/// considered legal all checks (default plus additional checks if any) must return true.
 template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 mlir::ConversionTarget newConverterDefinedTargetWithCallback(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, LegalityCheckCallback &cb,
@@ -215,8 +213,8 @@ mlir::ConversionTarget newConverterDefinedTargetWithCallback(
       return legality;
     });
   };
-  std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
-  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
+  std::apply(inserter, OpClassesWithStructTypes::NoGeneralBuilder {});
+  std::apply(inserter, OpClassesWithStructTypes::WithGeneralBuilder {});
   applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   return target;
 }

@@ -21,68 +21,59 @@ def LLZK_FeltConstAttr
   let mnemonic = "const";
   let summary = "finite field element";
   let description = [{
-    A felt attribute represents a finite field element. `rawValue` stores the
-    unreduced unsigned integer. For a specified field with prime modulus `p`,
-    the attribute denotes `rawValue mod p`, regardless of its stored
-    representation. `getReducedValue()` returns the representative in `[0, p)`
-    when the type specifies a field, or `std::nullopt` otherwise.
+    A felt attribute stores an exact signed integer literal and its field type.
+    `rawValue` is independent of storage width. For a specified field with prime
+    modulus `p`, the attribute denotes `rawValue mod p`, regardless of its
+    stored representation. `getReducedValue()` returns the representative in
+    `[0, p)` when the type specifies a field, or `std::nullopt` otherwise.
+    Construction preserves the literal, including its sign.
+    Builders accepting ArrayRef<uint64_t> decode 64-bit parts in
+    least-significant-first order as a two's-complement signed integer. The
+    most significant bit of the last part is the sign bit; an empty array is
+    zero. Callers should append a zero part to represent a positive value whose
+    highest data bit would otherwise be interpreted as the sign bit.
   }];
 
-  let parameters = (ins WidthInsensitiveAPIntParameter<
-                        "The unreduced felt constant value">:$rawValue,
-      DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
+  let parameters =
+      (ins DynamicAPIntParameter<"The unreduced felt constant value">:$rawValue,
+          DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
 
   let hasCustomAssemblyFormat = 1;
 
-  let builders = [
-      // Preserve the APInt-facing builder while using a canonical numeric
-      // storage key.
-      AttrBuilder<
-          (ins "::llvm::APInt":$rawValue, "FeltType":$ty),
-          [{ return $_get(context, ::llzk::APIntValue(std::move(rawValue)), ty); }]>,
-      // Like the default builder but with convenience overloads for
-      // constructing the APInt.
-      AttrBuilder<
-          (ins "unsigned":$numBits, "::llvm::StringRef":$str, "FeltType":$ty),
-          [{ return $_get(context, ::llvm::APInt(numBits, str, 10), ty); }]>,
-      AttrBuilder<
-          (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts,
-              "FeltType":$ty),
-          [{ return $_get(context, ::llvm::APInt(numBits, parts), ty); }]>,
-      // All APInt combinations but using felt type with unspecified field.
-      AttrBuilder<(ins "::llvm::APInt":$rawValue),
-                  [{ return get(context, rawValue, FeltType::get(context)); }]>,
-      AttrBuilder<
-          (ins "unsigned":$numBits, "::llvm::StringRef":$str),
-          [{ return get(context, numBits, str, FeltType::get(context)); }]>,
-      AttrBuilder<
-          (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts),
-          [{ return get(context, numBits, parts, FeltType::get(context)); }]>,
-      // All APInt combinations but using the field name to construct felt type.
-      AttrBuilder<
-          (ins "::llvm::APInt":$rawValue, "::llvm::StringRef":$fieldName),
-          [{ return get(context, rawValue, FeltType::get(context, fieldName)); }]>,
-      AttrBuilder<
-          (ins "unsigned":$numBits, "::llvm::StringRef":$str,
-              "::llvm::StringRef":$fieldName),
-          [{ return get(context, numBits, str, FeltType::get(context, fieldName)); }]>,
-      AttrBuilder<
-          (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts,
-              "::llvm::StringRef":$fieldName),
-          [{ return get(context, numBits, parts, FeltType::get(context, fieldName)); }]>];
+  let builders =
+      [AttrBuilder<
+           (ins "const ::llvm::DynamicAPInt &":$rawValue, "FeltType":$ty),
+           [{ return $_get(context, ::llzk::DynamicAPIntValue(rawValue), ty); }]>,
+       AttrBuilder<
+           (ins "const ::llvm::DynamicAPInt &":$rawValue),
+           [{ return get(context, rawValue, FeltType::get(context)); }]>,
+       AttrBuilder<
+           (ins "const ::llvm::DynamicAPInt &":$rawValue,
+               "::llvm::StringRef":$fieldName),
+           [{ return get(context, rawValue, FeltType::get(context, fieldName)); }]>,
+       AttrBuilder<
+           (ins "::llvm::ArrayRef<uint64_t>":$parts, "FeltType":$ty),
+           [{ return get(context, ::llzk::toSignedDynamicAPInt(parts), ty); }]>,
+       AttrBuilder<
+           (ins "::llvm::ArrayRef<uint64_t>":$parts),
+           [{ return get(context, ::llzk::toSignedDynamicAPInt(parts)); }]>,
+       AttrBuilder<
+           (ins "::llvm::ArrayRef<uint64_t>":$parts,
+               "::llvm::StringRef":$fieldName),
+           [{ return get(context, ::llzk::toSignedDynamicAPInt(parts), fieldName); }]>];
 
   let extraClassDeclaration = [{
     /// Returns the field name from the stored FeltType, or a null StringAttr
     /// if no type is stored.
     ::mlir::StringAttr getFieldName() const;
 
-    /// Returns the unsigned raw value reduced to [0, p) for the stored field.
+    /// Returns the signed raw value reduced to [0, p) for the stored field.
     /// The result is a nonnegative integer independent of the storage bit width.
     /// Returns std::nullopt if the type has no specified field.
     std::optional<::llvm::DynamicAPInt> getReducedValue() const;
 
     /// Returns the reduced value when the type specifies a field, otherwise
-    /// the raw unsigned value. The result is not guaranteed to be reduced.
+    /// the raw signed value. The result is not guaranteed to be reduced.
     /// Use getReducedValue() when folding requires a known field representative.
     ::llvm::DynamicAPInt getReducedValueOrRaw() const;
   }];
@@ -93,6 +84,13 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
   let summary = "prime field specification";
   let description = [{
     A specification of a prime field for use by felt types.
+    Builders accepting ArrayRef<uint64_t> decode 64-bit parts in
+    least-significant-first order as a two's-complement signed integer. The
+    most significant bit of the last part is the sign bit; an empty array is
+    zero. Callers should append a zero part to ensure the highest data bit
+    (i.e. the sign bit) is zero since the modulus must be positive. A modulus
+    below two is invalid: `getChecked()` emits a diagnostic and returns a null
+    attribute, while `get()` requires a valid modulus.
 
     These specifications are provided in the `llzk.fields` attribute on the root
     module as either a single element or a flat array, for example:
@@ -110,7 +108,7 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
   }];
 
   let parameters = (ins "::mlir::StringAttr":$fieldName,
-      WidthInsensitiveAPIntParameter<"The prime modulus">:$prime);
+      DynamicAPIntParameter<"The prime modulus">:$prime);
 
   // Format is [{ `<` $fieldName `,` $prime `>` }], but with custom parsing
   // to enable caching of the Field object definition.
@@ -118,18 +116,19 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
 
   let builders =
       [AttrBuilder<
-           (ins "::mlir::StringAttr":$fieldName, "::llvm::APInt":$prime),
-           [{ return $_get(context, fieldName, ::llzk::APIntValue(std::move(prime))); }]>,
-       AttrBuilder<(ins "::llvm::StringRef":$fieldName, "unsigned":$numBits,
-                       "::llvm::StringRef":$primeStr),
-                   [{
-      return $_get(context, ::mlir::StringAttr::get(context, fieldName), ::llvm::APInt(numBits, primeStr, 10));
-    }]>,
-       AttrBuilder<(ins "::llvm::StringRef":$fieldName, "unsigned":$numBits,
+           (ins "::mlir::StringAttr":$fieldName,
+               "const ::llvm::DynamicAPInt &":$prime),
+           [{ return $_get(context, fieldName, ::llzk::DynamicAPIntValue(prime)); }]>,
+       AttrBuilder<(ins "::mlir::StringAttr":$fieldName,
                        "::llvm::ArrayRef<uint64_t>":$parts),
-                   [{
-      return $_get(context, ::mlir::StringAttr::get(context, fieldName), ::llvm::APInt(numBits, parts));
-    }]>];
+                   [{ return $_get(context, fieldName,
+                        ::llzk::DynamicAPIntValue(::llzk::toSignedDynamicAPInt(parts))); }]>,
+       AttrBuilder<
+           (ins "::llvm::StringRef":$fieldName,
+               "::llvm::ArrayRef<uint64_t>":$parts),
+           [{ return $_get(context, ::mlir::StringAttr::get(context, fieldName),
+                        ::llzk::DynamicAPIntValue(::llzk::toSignedDynamicAPInt(parts))); }]>];
+  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_FELT_ATTRS

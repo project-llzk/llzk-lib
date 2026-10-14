@@ -38,7 +38,7 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [Symbol, IsolatedFromAbove,
         %3 = r1cs.to_linear %arg1 : !r1cs.signal to !r1cs.linear
         %4 = r1cs.to_linear %arg2 : !r1cs.signal to !r1cs.linear
         %5 = r1cs.to_linear %1 : !r1cs.signal to !r1cs.linear
-        %6 = r1cs.mul_const %5,  -1 : i64 : !r1cs.linear
+        %6 = r1cs.mul_const %5,  -1 : !r1cs.linear
         r1cs.constrain %3, %4, %6 : !r1cs.linear
     }
     ```

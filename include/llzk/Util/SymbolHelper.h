@@ -12,7 +12,10 @@
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/Diagnostics.h>
 #include <mlir/Interfaces/CallInterfaces.h>
+
+#include <llvm/ADT/STLFunctionalExtras.h>
 
 #include <cassert>
 #include <optional>
@@ -106,6 +109,20 @@ mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+
+/// Return \p symbol's path relative to the supplied \p ancestor module. The path
+/// excludes \p ancestor's own name; nested symbol tables contribute their names,
+/// including modules with the `LANG_ATTR_NAME` attribute. For LLZK type resolution,
+/// \p ancestor must be the module with `LANG_ATTR_NAME` where lookup starts.
+/// Fails if the symbol is not a strict
+/// descendant or an intervening symbol table is unnamed. If supplied, \p emitError
+/// creates the diagnostic's opening message at the caller's chosen location;
+/// this helper appends the failure reason and notes identifying the symbol or
+/// unnamed table and the supplied module. Without \p emitError, failure is silent.
+mlir::FailureOr<mlir::SymbolRefAttr> getPathRelativeToAncestor(
+    mlir::SymbolOpInterface symbol, mlir::ModuleOp ancestor,
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError = nullptr
+);
 
 /// Return the full name for this symbol from the root module, including any surrounding symbol
 /// table names. If `requireParent` is false and the symbol is not nested in any operation, return

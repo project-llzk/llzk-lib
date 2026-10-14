@@ -42,11 +42,11 @@ protected:
   static constexpr StringLiteral BB_FIELD = "babybear";
 
   FeltConstAttr babyBearConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val), BB_FIELD);
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val), BB_FIELD);
   }
 
   FeltConstAttr unspecifiedConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val));
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val));
   }
 
   /// Insert two `felt.const` ops into a detached block, build a binary op on
@@ -89,7 +89,7 @@ protected:
   /// Assert that fold produced the expected unsigned integer value in babybear.
   void expectValue(FeltConstAttr result, uint64_t expected) {
     ASSERT_TRUE(result) << "expected fold to succeed";
-    EXPECT_EQ(result.getRawValue().getZExtValue(), expected);
+    EXPECT_EQ(result.getRawValue(), toDynamicAPInt(expected));
     EXPECT_EQ(result.getFieldName(), StringAttr::get(&ctx, BB_FIELD));
   }
 
@@ -104,19 +104,21 @@ TEST_F(BabyBearFoldTest, ReducedConstantBoundaries) {
     ASSERT_TRUE(attr.getReducedValue());
     EXPECT_EQ(*attr.getReducedValue(), value % BB_PRIME);
     EXPECT_EQ(attr.getReducedValueOrRaw(), value % BB_PRIME);
-    EXPECT_EQ(attr.getRawValue().getZExtValue(), value);
+    EXPECT_EQ(attr.getRawValue(), toDynamicAPInt(value));
   }
 }
 
-TEST_F(BabyBearFoldTest, ReducedConstantUsesUnsignedValue) {
-  auto attr = FeltConstAttr::get(&ctx, APInt(8, 255), BB_FIELD);
+TEST_F(BabyBearFoldTest, ReducedConstantUsesSignedValue) {
+  auto attr = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(-1), BB_FIELD);
   ASSERT_TRUE(attr.getReducedValue());
-  EXPECT_EQ(*attr.getReducedValue(), 255U);
+  EXPECT_EQ(*attr.getReducedValue(), toDynamicAPInt(BB_PRIME - 1));
+  EXPECT_EQ(attr.getReducedValueOrRaw(), toDynamicAPInt(BB_PRIME - 1));
+  EXPECT_EQ(attr.getRawValue(), -1);
 }
 
 TEST_F(BabyBearFoldTest, ReducedConstantHandlesWideValues) {
-  APInt prime(256, BB_PRIME);
-  APInt raw = prime * APInt::getOneBitSet(256, 128) + APInt(256, 17);
+  llvm::DynamicAPInt prime = toDynamicAPInt(BB_PRIME);
+  llvm::DynamicAPInt raw = prime * toDynamicAPInt(APInt::getOneBitSet(256, 128)) + 17;
   auto attr = FeltConstAttr::get(&ctx, raw, BB_FIELD);
   ASSERT_TRUE(attr.getReducedValue());
   EXPECT_EQ(*attr.getReducedValue(), 17U);
@@ -124,11 +126,19 @@ TEST_F(BabyBearFoldTest, ReducedConstantHandlesWideValues) {
 }
 
 TEST_F(BabyBearFoldTest, ReducedConstantWithoutFieldIsAbsent) {
-  APInt raw = APInt::getAllOnes(256);
+  llvm::DynamicAPInt raw = toDynamicAPInt(APInt::getAllOnes(256));
   auto attr = FeltConstAttr::get(&ctx, raw);
   EXPECT_FALSE(attr.getReducedValue());
-  EXPECT_EQ(attr.getReducedValueOrRaw(), toDynamicAPInt(raw));
+  EXPECT_EQ(attr.getReducedValueOrRaw(), raw);
   EXPECT_GT(attr.getReducedValueOrRaw(), 0);
+  EXPECT_EQ(attr.getRawValue(), raw);
+}
+
+TEST_F(BabyBearFoldTest, NegativeFieldlessConstantPreservesRawValue) {
+  auto raw = toDynamicAPInt("-18446744073709551617");
+  auto attr = FeltConstAttr::get(&ctx, raw);
+  EXPECT_FALSE(attr.getReducedValue());
+  EXPECT_EQ(attr.getReducedValueOrRaw(), raw);
   EXPECT_EQ(attr.getRawValue(), raw);
 }
 
@@ -424,7 +434,7 @@ TEST_F(BabyBearFoldTest, CastToIndexReducesWithoutCanonicalizingConstant) {
   auto index = dyn_cast<arith::ConstantIndexOp>(block.back());
   ASSERT_TRUE(index);
   EXPECT_EQ(index.value(), 7);
-  EXPECT_EQ(constant.getValue().getRawValue().getZExtValue(), BB_PRIME + 7);
+  EXPECT_EQ(constant.getValue().getRawValue(), toDynamicAPInt(BB_PRIME + 7));
 }
 
 // Exercise the fold hook directly so constant canonicalization cannot mask regressions.
@@ -437,4 +447,21 @@ TEST_F(BabyBearFoldTest, UnaryFoldsReduceUncanonicalizedOperands) {
   expectValue(foldUnary<NegFeltOp>(one), BB_PRIME - 1);
   expectValue(foldUnary<NotFeltOp>(zero), 134217726);
   expectValue(foldUnary<NotFeltOp>(one), 134217725);
+}
+
+TEST_F(BabyBearFoldTest, SignedLiteralIsReducedBeforeBitwiseOperation) {
+  auto negative = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(-1), BB_FIELD);
+  auto result = foldBinary<AndFeltOp>(negative, babyBearConst(1));
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result.getRawValue(), llvm::DynamicAPInt(0));
+}
+
+TEST_F(BabyBearFoldTest, ShlHugeCountUsesModularExponentiation) {
+  // Fermat's little theorem: 2^(p-1) mod p = 1.
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(42), babyBearConst(BB_PRIME - 1)), 42);
+}
+
+TEST_F(BabyBearFoldTest, InverseOfZeroDoesNotFold) {
+  expectNoFold(foldUnary<InvFeltOp>(babyBearConst(0)));
+  expectNoFold(foldUnary<InvFeltOp>(babyBearConst(BB_PRIME)));
 }

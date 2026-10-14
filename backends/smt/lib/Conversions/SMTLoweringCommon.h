@@ -46,6 +46,12 @@ using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mli
 
 mlir::FailureOr<FieldRef> resolveSelectedField(mlir::ModuleOp mod, llvm::StringRef fieldName);
 
+/// Return ceil(prime / 2), the cutoff for signed interpretation. Canonical values below
+/// this cutoff remain unchanged; values at or above it are interpreted as value - prime.
+static inline llvm::DynamicAPInt getSignedFeltThreshold(const llvm::DynamicAPInt &prime) {
+  return (prime + 1) / 2;
+}
+
 class LLZKToSMTTypeConverter : public mlir::TypeConverter {
 public:
   explicit LLZKToSMTTypeConverter(mlir::MLIRContext *ctx);
@@ -132,20 +138,20 @@ public:
   ) const override;
 };
 
-/// Lower constants to canonical integers using the selected field for fieldless types.
+/// Lower a felt literal using the field selected by the enclosing SMT pass.
 class FeltConstConverter : public mlir::OpConversionPattern<felt::FeltConstantOp> {
 public:
   FeltConstConverter(
-      mlir::TypeConverter &converter, mlir::MLIRContext *context, llvm::APSInt selectedPrime
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, const llvm::DynamicAPInt &modulus
   )
-      : OpConversionPattern(converter, context), prime(std::move(selectedPrime)) {}
+      : OpConversionPattern(converter, context), prime(modulus) {}
 
   mlir::LogicalResult matchAndRewrite(
       felt::FeltConstantOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 
 private:
-  llvm::APSInt prime;
+  llvm::DynamicAPInt prime;
 };
 
 /// Lower felt negation to upstream SMT subtraction from an explicit zero.

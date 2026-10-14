@@ -155,6 +155,20 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
+  module @Local {
+    function.def @accept(%value: index) {
+      function.return
+    }
+  }
+
+  function.def @reject_local_module(%value: !felt.type) {
+    // expected-error@+1 {{'function.call' op operand type mismatch: expected type 'index', but found '!felt.type' for operand number 0}}
+    function.call @Local::@accept(%value) : (!felt.type) -> ()
+    function.return
+  }
+}
+// -----
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) { // expected-note {{callee defined here}}
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index

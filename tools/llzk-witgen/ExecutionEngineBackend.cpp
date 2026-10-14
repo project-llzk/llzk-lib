@@ -33,6 +33,7 @@
 #include <mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
 #include <mlir/Conversion/VectorToLLVM/ConvertVectorToLLVM.h>
+#include <mlir/Dialect/LLVMIR/Transforms/InlinerInterfaceImpl.h>
 #include <mlir/Dialect/MemRef/Transforms/Passes.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/ExecutionEngine/CRunnerUtils.h>
@@ -187,8 +188,11 @@ storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &val
   if (!elemBytesU) {
     return elemBytesU.takeError();
   }
-  llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
-  llvm::StoreIntToMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
+  auto raw = checkedToAPInt(value, buffer.feltBitWidth, false);
+  if (!raw) {
+    return raw.takeError();
+  }
+  llvm::StoreIntToMemory(*raw, buffer.storage.data() + byteOffset, *elemBytesU);
   return llvm::Error::success();
 }
 
@@ -457,6 +461,8 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
   {
     DialectRegistry registry;
+    // WTNS lowering may run the inliner in this context after LLVM is loaded.
+    mlir::LLVM::registerInlinerInterface(registry);
     mlir::arith::registerConvertArithToLLVMInterface(registry);
     mlir::cf::registerConvertControlFlowToLLVMInterface(registry);
     mlir::registerConvertFuncToLLVMInterface(registry);

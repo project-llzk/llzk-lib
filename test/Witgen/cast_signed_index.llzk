@@ -1,0 +1,83 @@
+// RUN: split-file %s %t
+// RUN: sed 's/babybear/goldilocks/g' %t/babybear.llzk > %t/goldilocks.llzk
+// RUN: sed 's/babybear/bn128/g' %t/babybear.llzk > %t/bn128.llzk
+// RUN: llzk-opt %t/babybear.llzk --canonicalize > %t/babybear-folded.llzk
+// RUN: llzk-witgen %t/babybear.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BABYBEAR
+// RUN: llzk-witgen %t/babybear.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BABYBEAR
+// RUN: llzk-witgen %t/babybear-folded.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BABYBEAR
+// RUN: llzk-witgen %t/babybear-folded.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BABYBEAR
+// RUN: llzk-opt %t/goldilocks.llzk --canonicalize > %t/goldilocks-folded.llzk
+// RUN: llzk-witgen %t/goldilocks.llzk --inputs %t/input.json | FileCheck %s --check-prefix=GOLDILOCKS
+// RUN: llzk-witgen %t/goldilocks.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=GOLDILOCKS
+// RUN: llzk-witgen %t/goldilocks-folded.llzk --inputs %t/input.json | FileCheck %s --check-prefix=GOLDILOCKS
+// RUN: llzk-witgen %t/goldilocks-folded.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=GOLDILOCKS
+// RUN: llzk-opt %t/bn128.llzk --canonicalize > %t/bn128-folded.llzk
+// RUN: llzk-witgen %t/bn128.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BN128
+// RUN: llzk-witgen %t/bn128.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BN128
+// RUN: llzk-witgen %t/bn128-folded.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BN128
+// RUN: llzk-witgen %t/bn128-folded.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BN128
+
+// Runtime index conversions must agree with signed constant folding for fields
+// narrower than, equal to, and wider than the 64-bit index representation.
+//--- babybear.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @negative : !felt.type<"babybear"> {llzk.pub}
+    struct.member @minimum : !felt.type<"babybear"> {llzk.pub}
+    struct.member @maximum : !felt.type<"babybear"> {llzk.pub}
+    struct.member @folded : !felt.type<"babybear"> {llzk.pub}
+    struct.member @boolean : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%zero: !felt.type<"babybear"> {function.arg_name = "zero"}) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %base = cast.toindex %zero : !felt.type<"babybear">
+      %minus_one = arith.constant -1 : index
+      %min = arith.constant -9223372036854775808 : index
+      %max = arith.constant 9223372036854775807 : index
+      %true = arith.constant true
+      %negative = arith.addi %base, %minus_one : index
+      %minimum = arith.addi %base, %min : index
+      %maximum = arith.addi %base, %max : index
+      %a = cast.tofelt %negative : index, !felt.type<"babybear">
+      %b = cast.tofelt %minimum : index, !felt.type<"babybear">
+      %c = cast.tofelt %maximum : index, !felt.type<"babybear">
+      %d = cast.tofelt %minus_one : index, !felt.type<"babybear">
+      %e = cast.tofelt %true : i1, !felt.type<"babybear">
+      struct.writem %self[@negative] = %a : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@minimum] = %b : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@maximum] = %c : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@folded] = %d : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@boolean] = %e : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %zero: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// BABYBEAR-LABEL: {
+// BABYBEAR-NEXT:    "boolean": "1",
+// BABYBEAR-NEXT:    "folded": "2013265920",
+// BABYBEAR-NEXT:    "maximum": "1592717041",
+// BABYBEAR-NEXT:    "minimum": "420548879",
+// BABYBEAR-NEXT:    "negative": "2013265920"
+// BABYBEAR-NEXT:  }
+
+// GOLDILOCKS-LABEL: {
+// GOLDILOCKS-NEXT:    "boolean": "1",
+// GOLDILOCKS-NEXT:    "folded": "18446744069414584320",
+// GOLDILOCKS-NEXT:    "maximum": "9223372036854775807",
+// GOLDILOCKS-NEXT:    "minimum": "9223372032559808513",
+// GOLDILOCKS-NEXT:    "negative": "18446744069414584320"
+// GOLDILOCKS-NEXT:  }
+
+// BN128-LABEL: {
+// BN128-NEXT:    "boolean": "1",
+// BN128-NEXT:    "folded": "21888242871839275222246405745257275088548364400416034343698204186575808495616",
+// BN128-NEXT:    "maximum": "9223372036854775807",
+// BN128-NEXT:    "minimum": "21888242871839275222246405745257275088548364400416034343688980814538953719809",
+// BN128-NEXT:    "negative": "21888242871839275222246405745257275088548364400416034343698204186575808495616"
+// BN128-NEXT:  }
+
+//--- input.json
+{"zero": "0"}

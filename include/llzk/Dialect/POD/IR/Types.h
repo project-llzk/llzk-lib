@@ -35,4 +35,8 @@ namespace llzk::pod {
 mlir::ParseResult parsePodType(mlir::AsmParser &parser, mlir::SmallVector<RecordAttr> &);
 void printPodType(mlir::AsmPrinter &printer, mlir::ArrayRef<RecordAttr>);
 
+/// Collect affine maps requiring operand groups when allocating this POD or one of its records.
+/// Recurse through POD records, but only inspect the shape of array records.
+void collectPodMapAttrs(mlir::Type type, mlir::SmallVector<mlir::AffineMapAttr> &mapAttrs);
+
 } // namespace llzk::pod

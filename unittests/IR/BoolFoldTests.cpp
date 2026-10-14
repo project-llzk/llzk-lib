@@ -49,7 +49,7 @@ protected:
   }
 
   FeltConstAttr babyBearConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val), BB_FIELD);
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val), BB_FIELD);
   }
 
   /// Insert two arith.constant i1 ops into a detached block, build a binary
@@ -304,8 +304,8 @@ TEST_F(BoolFoldTest, CmpReducesUncanonicalizedConstants) {
 }
 
 TEST_F(BoolFoldTest, CmpDoesNotFoldWithoutBothFields) {
-  auto unknown = FeltConstAttr::get(&ctx, APInt(64, BB_PRIME));
-  auto unknownZero = FeltConstAttr::get(&ctx, APInt(64, 0));
+  auto unknown = FeltConstAttr::get(&ctx, toDynamicAPInt(BB_PRIME));
+  auto unknownZero = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(0));
   for (auto pred :
        {FeltCmpPredicate::EQ, FeltCmpPredicate::NE, FeltCmpPredicate::LT, FeltCmpPredicate::LE,
         FeltCmpPredicate::GT, FeltCmpPredicate::GE}) {

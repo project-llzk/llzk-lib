@@ -1,0 +1,123 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -split-input-file -llzk-to-pcl %s | FileCheck --enable-var-scope %s
+
+// Preserve signed index boundaries and both boolean values during PCL lowering.
+module attributes {llzk.lang} {
+  struct.def @NegativeIndex {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@NegativeIndex> {
+      %self = struct.new : <@NegativeIndex>
+      function.return %self : !struct.type<@NegativeIndex>
+    }
+    function.def @constrain(%self: !struct.type<@NegativeIndex>) {
+      %constant = arith.constant -1 : index
+      %felt = cast.tofelt %constant : index, !felt.type<"koalabear">
+      %out = struct.readm %self[@out] : !struct.type<@NegativeIndex>, !felt.type<"koalabear">
+      constrain.eq %out, %felt : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    func.func @NegativeIndex() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const -1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MinIndex {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@MinIndex> {
+      %self = struct.new : <@MinIndex>
+      function.return %self : !struct.type<@MinIndex>
+    }
+    function.def @constrain(%self: !struct.type<@MinIndex>) {
+      %constant = arith.constant -9223372036854775808 : index
+      %felt = cast.tofelt %constant : index, !felt.type<"koalabear">
+      %out = struct.readm %self[@out] : !struct.type<@MinIndex>, !felt.type<"koalabear">
+      constrain.eq %out, %felt : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    func.func @MinIndex() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const -9223372036854775808
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PositiveIndex {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@PositiveIndex> {
+      %self = struct.new : <@PositiveIndex>
+      function.return %self : !struct.type<@PositiveIndex>
+    }
+    function.def @constrain(%self: !struct.type<@PositiveIndex>) {
+      %constant = arith.constant 9223372036854775807 : index
+      %felt = cast.tofelt %constant : index, !felt.type<"koalabear">
+      %out = struct.readm %self[@out] : !struct.type<@PositiveIndex>, !felt.type<"koalabear">
+      constrain.eq %out, %felt : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    func.func @PositiveIndex() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 9223372036854775807
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @True {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@True> {
+      %self = struct.new : <@True>
+      function.return %self : !struct.type<@True>
+    }
+    function.def @constrain(%self: !struct.type<@True>) {
+      %constant = arith.constant true
+      %felt = cast.tofelt %constant : i1, !felt.type<"koalabear">
+      %out = struct.readm %self[@out] : !struct.type<@True>, !felt.type<"koalabear">
+      constrain.eq %out, %felt : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    func.func @True() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @False {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@False> {
+      %self = struct.new : <@False>
+      function.return %self : !struct.type<@False>
+    }
+    function.def @constrain(%self: !struct.type<@False>) {
+      %constant = arith.constant false
+      %felt = cast.tofelt %constant : i1, !felt.type<"koalabear">
+      %out = struct.readm %self[@out] : !struct.type<@False>, !felt.type<"koalabear">
+      constrain.eq %out, %felt : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    func.func @False() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.false
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]

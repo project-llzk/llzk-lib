@@ -33,6 +33,10 @@ def LLZK_IntToFeltOp
   let summary = "convert an integer into a field element";
   let description = [{
     This operation converts a supported integer type value into a field element value.
+    Boolean (`i1`) values map to zero or one, while `index` values are interpreted
+    as signed integers. Constant folding preserves the signed literal, including
+    when the result field is unspecified. Once a field is selected, the integer
+    is reduced modulo its prime.
 
     Example:
 

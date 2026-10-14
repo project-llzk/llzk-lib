@@ -9,11 +9,21 @@
 
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 
-#include "llzk/Util/DynamicAPIntHelper.h"
-
 using namespace mlir;
 
 namespace llzk::felt {
+
+LogicalResult FieldSpecAttr::verify(
+    llvm::function_ref<InFlightDiagnostic()> emitError, StringAttr,
+    // TableGen requires this parameter to be passed by value.
+    llzk::DynamicAPIntValue primeWrapper // NOLINT(performance-unnecessary-value-param)
+) {
+  const llvm::DynamicAPInt &prime = primeWrapper; // implict unwrap
+  if (prime < 2) {
+    return emitError() << "field modulus must be at least 2";
+  }
+  return success();
+}
 
 StringAttr FeltConstAttr::getFieldName() const {
   FeltType ft = getType();
@@ -33,7 +43,7 @@ llvm::DynamicAPInt FeltConstAttr::getReducedValueOrRaw() const {
   if (auto reduced = getReducedValue()) {
     return *reduced;
   }
-  return toDynamicAPInt(getRawValue());
+  return getRawValue();
 }
 
 } // namespace llzk::felt

@@ -7,7 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This header declares the C interface to target Picus PCL.
+/// \file
+/// Declares the C interface for Picus PCL conversion, transformation, and translation.
 //
 //===----------------------------------------------------------------------===//
 
@@ -15,10 +16,16 @@
 #define MLIR_C_TARGET_PCL_H
 
 #include "mlir-c/IR.h"
+#include "mlir-c/Pass.h"
 #include "mlir-c/Support.h"
 
-// Include the generated CAPI
+#include "llzk/Config/Config.h"
+
+// Include the generated pass APIs when the PCL backend is enabled.
+#if LLZK_WITH_PCL
 #include "pcl/Conversion/ConversionPasses.capi.h.inc"
+#include "pcl/Transforms/TransformationPasses.capi.h.inc"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

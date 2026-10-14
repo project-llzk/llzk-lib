@@ -104,7 +104,7 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
 static FeltConstAttr buildFoldResult(
     MLIRContext *ctx, const DynamicAPInt &val, const Field &field, StringRef fieldName
 ) {
-  return FeltConstAttr::get(ctx, toAPInt(val, field.bitWidth()), fieldName);
+  return FeltConstAttr::get(ctx, field.reduce(val), fieldName);
 }
 
 } // namespace
@@ -114,9 +114,8 @@ static FeltConstAttr buildFoldResult(
 //===------------------------------------------------------------------===//
 
 void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  SmallString<32> buf;
-  llvm::raw_svector_ostream(buf) << "felt_const_";
-  getValue().getRawValue().toStringUnsigned(buf);
+  std::string buf;
+  llvm::raw_string_ostream(buf) << "felt_const_" << getValue().getRawValue();
   setNameFn(getResult(), buf);
 }
 
@@ -126,11 +125,11 @@ OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue
 LogicalResult FeltConstantOp::canonicalize(FeltConstantOp op, PatternRewriter &rewriter) {
   FeltConstAttr valueAttr = op.getValue();
   auto reduced = valueAttr.getReducedValue();
-  if (!reduced || toDynamicAPInt(valueAttr.getRawValue()) == *reduced) {
+  if (!reduced || valueAttr.getRawValue() == *reduced) {
     return failure();
   }
   rewriter.modifyOpInPlace(op, [&]() {
-    op.setValueAttr(FeltConstAttr::get(op.getContext(), toAPSInt(*reduced), valueAttr.getType()));
+    op.setValueAttr(FeltConstAttr::get(op.getContext(), *reduced, valueAttr.getType()));
   });
   return success();
 }
@@ -289,7 +288,11 @@ OpFoldResult ShlFeltOp::fold(FoldAdaptor adaptor) {
     return {};
   }
   return buildFoldResult(
-      getContext(), data->field->reduce(data->lhsVal << data->rhsVal), *data->field, data->fieldName
+      getContext(),
+      data->field->reduce(
+          data->lhsVal * modExp(DynamicAPInt(2), data->rhsVal, data->field->prime())
+      ),
+      *data->field, data->fieldName
   );
 }
 

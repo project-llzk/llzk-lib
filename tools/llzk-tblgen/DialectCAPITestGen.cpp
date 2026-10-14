@@ -18,6 +18,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CAPIGenRegistration.h"
 #include "CommonCAPIGen.h"
 
 #include <mlir/TableGen/Dialect.h>
@@ -33,8 +34,6 @@
 
 using namespace mlir;
 using namespace mlir::tblgen;
-
-static llvm::cl::OptionCategory dialectTestGenCat("Options for -gen-dialect-capi-tests");
 
 namespace test_templates {
 
@@ -68,7 +67,7 @@ static bool emitDialectCAPITests(const llvm::RecordKeeper &records, llvm::raw_os
 
   // Use command-line dialect name if provided, otherwise use from definition
   std::string effectiveDialectName =
-      DialectName.empty() ? dialect.getName().str() : DialectName.getValue();
+      getDialectName().empty() ? dialect.getName().str() : getDialectName().getValue();
 
   // Get the C++ namespace from the dialect definition. It's like "::llzk::boolean"
   // so replace all ':' with '_' to form the handle suffix.
@@ -87,6 +86,9 @@ static bool emitDialectCAPITests(const llvm::RecordKeeper &records, llvm::raw_os
   return false;
 }
 
-static mlir::GenRegistration genDialectCAPITests(
-    "gen-dialect-capi-tests", "Generate dialect-level C API unit tests", &emitDialectCAPITests
-);
+void llzk::registerDialectCAPITestGenerator() {
+  static llvm::cl::OptionCategory dialectTestGenCat("Options for -gen-dialect-capi-tests");
+  static mlir::GenRegistration genDialectCAPITests(
+      "gen-dialect-capi-tests", "Generate dialect-level C API unit tests", &emitDialectCAPITests
+  );
+}

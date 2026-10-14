@@ -274,7 +274,7 @@ LogicalResult FeltConstConverter::matchAndRewrite(
   if (!r) {
     // If not already reduced, reduce the raw value modulo that prime before emitting
     // an SMT integer: SMT integers do not implicitly apply finite-field reduction.
-    r = toDynamicAPInt(attr.getRawValue()) % toDynamicAPInt(prime);
+    r = llvm::mod(attr.getRawValue(), prime);
   }
   rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
       op, IntegerAttr::get(getContext(), toAPSInt(*r))

@@ -48,8 +48,6 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    // Suppress false positive from `clang-tidy`
-    // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
     auto modOp = llvm::dyn_cast<ModuleOp>(getOperation());
     if (!modOp) {
       constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";

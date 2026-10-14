@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Bool/IR/Utils.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -141,7 +142,7 @@ eval(FeltCmpPredicate pred, const llvm::DynamicAPInt &lval, const llvm::DynamicA
 OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getLhs());
   auto rhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getRhs());
-  if (!lhsAttr || !rhsAttr) {
+  if (!lhsAttr || !rhsAttr || lhsAttr.getFieldName() != rhsAttr.getFieldName()) {
     return {};
   }
 

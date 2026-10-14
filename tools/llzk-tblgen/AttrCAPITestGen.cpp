@@ -20,6 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CAPIGenRegistration.h"
 #include "CommonAttrOrTypeCAPITestGen.h"
 #include "CommonCAPIGen.h"
 
@@ -56,6 +57,8 @@ static bool emitAttrCAPITests(const llvm::RecordKeeper &records, raw_ostream &os
   return false;
 }
 
-static mlir::GenRegistration genAttrCAPITests(
-    "gen-attr-capi-tests", "Generate attribute C API unit tests", &emitAttrCAPITests
-);
+void llzk::registerAttrCAPITestGenerator() {
+  static mlir::GenRegistration genAttrCAPITests(
+      "gen-attr-capi-tests", "Generate attribute C API unit tests", &emitAttrCAPITests
+  );
+}

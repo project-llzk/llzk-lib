@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This header declares the registration and creation method for
-// transformation passes.
+/// \file
+/// Declares the registration and creation method for transformation passes.
 //
 //===----------------------------------------------------------------------===//
 
