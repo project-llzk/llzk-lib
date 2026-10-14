@@ -1,0 +1,36 @@
+name: Clang-tidy check
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  run-clang-tidy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.35.2/install
+          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Set Git credentials
+        run: |
+          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
+          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
+          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
+      - uses: cachix/cachix-action@v17
+        with:
+          name: veridise-public
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      - name: Configure
+        run: nix develop --command bash -c 'cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DLLZK_BUILD_DEVTOOLS=ON'
+      - name: Build
+        # Generate TableGen headers before analyzing the compilation database.
+        run: nix develop --command bash -c 'cmake --build build --parallel 2'
+      - name: Run clang-tidy
+        # clang-tidy normally exits successfully when it only reports warnings.
+        run: nix develop --command bash -c "run-clang-tidy -p build/ -warnings-as-errors='*'"
