@@ -27,7 +27,13 @@ jobs:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
       - name: Configure
-        run: nix develop --command bash -c 'cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DLLZK_BUILD_DEVTOOLS=ON'
+        # Use Nix's package version because the shallow checkout has no version tags.
+        run: |
+          # Expand version inside the Nix environment.
+          # shellcheck disable=SC2016
+          nix develop --command bash -c 'cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug -DLLZK_BUILD_DEVTOOLS=ON \
+            -DLLZK_VERSION_OVERRIDE="${version:?}"'
       - name: Build
         # Generate TableGen headers before analyzing the compilation database.
         run: nix develop --command bash -c 'cmake --build build --parallel 2'
