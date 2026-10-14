@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @recur(%x: !felt.type) {
+    // expected-error @+1 {{recursive calls are unsupported}}
+    function.call @recur(%x) : (!felt.type) -> ()
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      function.call @recur(%x) : (!felt.type) -> ()
+      function.return
+    }
+  }
+}

@@ -15,7 +15,8 @@
 
 namespace llzk::component {
 
-/// Make reachable concrete child members public while preserving root's visibility.
+/// Make reachable concrete child members and matching rolled family declarations
+/// public while preserving root's visibility and all signal annotations.
 /// Root must be attached to an LLZK module, with templates monomorphized and includes
 /// inlined. Emit diagnostics on failure without changing member visibility.
 mlir::LogicalResult exposeChildMembers(StructDefOp root);

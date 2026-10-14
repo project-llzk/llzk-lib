@@ -1,0 +1,24 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @read(%input: !array.type<1 x !felt.type>) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    // expected-error @+1 {{read of uninitialized function input storage}}
+    %value = array.read %input[%zero] : !array.type<1 x !felt.type>, !felt.type
+    constrain.eq %value, %value : !felt.type, !felt.type
+    function.return
+  }
+  struct.def @Main {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %local = array.new : !array.type<1 x !felt.type>
+      function.call @read(%local) : (!array.type<1 x !felt.type>) -> ()
+      function.return
+    }
+  }
+}

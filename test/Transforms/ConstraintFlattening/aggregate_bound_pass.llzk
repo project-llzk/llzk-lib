@@ -1,0 +1,39 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %array = array.new %two : !array.type<1 x index>
+      %bound = array.read %array[%zero] : !array.type<1 x index>, index
+      scf.for %i = %zero to %bound step %one {
+        constrain.eq %x, %x : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}

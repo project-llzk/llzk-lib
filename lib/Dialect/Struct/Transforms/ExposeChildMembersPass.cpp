@@ -43,6 +43,8 @@ class ChildStorageVisitor {
   llvm::DenseSet<Operation *> visited;
   /// Reachable children to expose only after the entire traversal succeeds.
   SmallVector<StructDefOp> children;
+  /// Rolled declarations needed by reads through unchanged family handles.
+  llvm::DenseSet<Operation *> rolledMembers;
 
 public:
   ChildStorageVisitor(ModuleOp module, StructDefOp root)
@@ -57,6 +59,9 @@ public:
       for (auto member : child.getMemberDefs()) {
         member.setPublicAttr();
       }
+    }
+    for (Operation *member : rolledMembers) {
+      cast<MemberDefOp>(member).setPublicAttr();
     }
     return success();
   }
@@ -81,6 +86,18 @@ private:
     return success();
   }
 
+  /// Legalize matching declarations without traversing or instantiating templates.
+  void collectRolledMembers(StructDefOp rolled, StructDefOp concrete) {
+    if (rolled == storageRoot) {
+      return;
+    }
+    for (auto member : concrete.getMemberDefs()) {
+      if (auto declaration = rolled.getMemberDef(member.getSymNameAttr())) {
+        rolledMembers.insert(declaration);
+      }
+    }
+  }
+
   /// Visit the possible concrete definitions for a rolled storage type. Family
   /// coordinates are irrelevant to visibility; repeated IDs are resolved once.
   LogicalResult visitFamily(StructType structure, Operation *site) {
@@ -91,6 +108,15 @@ private:
     auto records = dyn_cast<ArrayAttr>(metadata);
     if (!records) {
       return site->emitError("invalid poly.family metadata for child-member visibility");
+    }
+    auto rolled = structure.getDefinition(tables, site);
+    if (failed(rolled)) {
+      return failure();
+    }
+    if (!*rolled || rolled->viaInclude()) {
+      return site->emitError(
+          "cannot resolve child-member visibility family source; inline includes first"
+      );
     }
     llvm::DenseSet<int64_t> seenIds;
     for (Attribute record : records) {
@@ -114,6 +140,7 @@ private:
       if (failed(definition) || failed(visitStruct(*definition))) {
         return failure();
       }
+      collectRolledMembers(rolled->get(), *definition);
     }
     if (seenIds.empty()) {
       return site->emitError("missing concrete struct family element for child-member visibility");
