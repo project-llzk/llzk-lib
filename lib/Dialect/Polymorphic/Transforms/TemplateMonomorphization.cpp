@@ -122,8 +122,7 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
         ) {
           llvm::DynamicAPInt number = felt.getReducedValueOrRaw();
           if (feltType.hasField()) {
-            const Field &field = feltType.getField();
-            number = field.reduce(number);
+            number = feltType.getField().reduce(number);
           }
           value = FeltConstAttr::get(source->getContext(), number, feltType);
         }

@@ -369,7 +369,11 @@ private:
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
-      return bind({WitnessVal(field.reduce(feltConst.getValue().getReducedValueOrRaw()))});
+      auto value = feltConst.getValue().getReducedValue();
+      if (!value) {
+        return makeError("felt constant requires a specified field for witness generation");
+      }
+      return bind({WitnessVal(*value)});
     }
 
     auto handleBinaryFelt = [&](auto feltOp, auto fn) -> llvm::Expected<BlockResult> {
