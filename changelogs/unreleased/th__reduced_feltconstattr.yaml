@@ -1,14 +1,22 @@
+added:
+  - "`FeltConstAttr::getReducedValue()` returning `std::optional<llvm::DynamicAPInt>` with the representative in `[0, p)` for a specified prime field, or `std::nullopt` when the field is unspecified."
+  - "`FeltConstAttr::getReducedValueOrRaw()` returning `llvm::DynamicAPInt` with the reduced representative when the field is specified, otherwise the raw signed value."
+  - "`SourceRef::getConstantValue(const Field &)` to evaluate felt constants in the supplied analysis field while preserving integer semantics for index constants."
+  - "canonicalization of `felt.const` to use reduced field representatives when the field is specified, leaving fieldless constants unchanged."
+  - CAPI:
+    - "`llzkFelt_FeltConstAttrGetReducedValueOrRaw`, returning the reduced representative for a specified field, otherwise the raw signed literal."
+
 changed:
-  - Rename `FeltConstAttr::value` and `getValue()` to `rawValue` and `getRawValue()`, including the generated C getter `llzkFelt_FeltConstAttrGetRawValue()`.
+  - Rename `FeltConstAttr::value` and `getValue()` to `rawValue` and `getRawValue()` (resp.).
   - Define `felt.const N` in a specified field as `N mod p`, independently of canonicalization. Text and bytecode serialization preserve the raw value.
+  - Use explicit reduction accessors in felt arithmetic and boolean comparison folding and template normalization, retaining raw literals where reduction must be deferred.
+  - Require a reduced field representative in both witness-generation backends, diagnose constants without a specified field, and remove redundant reduction.
+  - CAPI:
+    - "`llzkFelt_FeltConstAttrGetValue` → `llzkFelt_FeltConstAttrGetRawValue`"
 
 fixed:
-  - Avoid folding fieldless comparisons and index casts or converting fieldless template arguments to indices; reduce fieldless constants using the selected field in interval analysis and SMT lowering.
-  - Use field representatives for constants with a specified field in arithmetic folding, boolean comparisons, index casts, source-reference and interval analysis, witness generation, and PCL, R1CS, SMT, and ZKLean backends.
-  - Preserve raw-value identity for fieldless constants in source-reference equality, hashing, ordering, and printing; numeric evaluation without a field now fails, and array dependency tracking falls back to a range when an exact index cannot be evaluated.
-
-added:
-  - Add `FeltConstAttr::getReducedValue()` returning `std::optional<llvm::DynamicAPInt>` with the representative in `[0, p)` for a specified prime field, or `std::nullopt` when the field is unspecified.
-  - Add `FeltConstAttr::getReducedValueOrRaw()` returning `llvm::DynamicAPInt` with the reduced representative when the field is specified, otherwise the raw signed value; its generated C getter returns decimal text through a callback.
-  - Add `SourceRef::getConstantValue(const Field &)` to evaluate felt constants in the supplied analysis field while preserving integer semantics for index constants.
-  - Add canonicalization of `felt.const` to use reduced field representatives when the field is specified, leaving fieldless constants unchanged.
+  - Use reduced representatives within the nonnegative signed 64-bit range when canonicalizing felt-to-index casts or converting felt template arguments to index parameters. Leave fieldless casts unchanged and reject fieldless felt-to-index template arguments.
+  - Use specified-field representatives for source-reference identity and PCL, R1CS, and ZKLean lowering, preserving deferred reduction of fieldless literals in these backends.
+  - Preserve each felt constant's declared-field representative before reducing it into the selected interval-analysis field; fieldless literals are reduced directly in the analysis field.
+  - Make SMT constant lowering honor the constant's specified field, falling back to the configured lowering prime only for fieldless literals.
+  - Give congruent constants in the same specified field the same source-reference identity while preserving exact raw-value identity for fieldless constants in equality, hashing, ordering, and printing. Numeric evaluation without a field now fails, and array dependency tracking falls back to a range when an exact index cannot be evaluated.
