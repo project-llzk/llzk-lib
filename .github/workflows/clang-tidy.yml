@@ -58,7 +58,6 @@ jobs:
           tidy-checks: '' # Use .clang-tidy.
           files-changed-only: false
           lines-changed-only: false
-          extensions: 'c,cpp' # Analyze headers through inclusion.
           ignore: 'build|result|third-party'
           step-summary: true
           file-annotations: true
