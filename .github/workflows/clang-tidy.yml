@@ -56,8 +56,8 @@ jobs:
           database: build
           style: '' # Disable clang-format; it has a separate workflow.
           tidy-checks: '' # Use .clang-tidy.
-          files-changed-only: false
-          lines-changed-only: false
+          files-changed-only: true
+          lines-changed-only: true
           extensions: 'c,cpp' # Analyze headers through inclusion.
           ignore: 'build|result|third-party'
           step-summary: true
