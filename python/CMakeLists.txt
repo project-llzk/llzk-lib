@@ -5,6 +5,13 @@
 # Set both MLIR and nanobind domain definitions consistently.
 set(MLIR_BINDINGS_PYTHON_NB_DOMAIN "llzk")
 
+# Python runtime libraries are installed beside the extensions. In particular,
+# Nix's global CMAKE_INSTALL_NAME_DIR points at lib/, not this package directory.
+# MLIR adds @loader_path to the modules' rpaths so colocated libraries resolve.
+if(APPLE)
+  set(CMAKE_INSTALL_NAME_DIR "@rpath")
+endif()
+
 declare_mlir_python_sources(LLZKPythonDialectSources)
 declare_mlir_python_sources(LLZKPythonDialectSources.Dialects ADD_TO_PARENT
                             LLZKPythonDialectSources)
