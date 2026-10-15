@@ -56,13 +56,14 @@ jobs:
           database: build
           style: '' # Disable clang-format; it has a separate workflow.
           tidy-checks: '' # Use .clang-tidy.
-          files-changed-only: false
-          lines-changed-only: false
+          files-changed-only: true
+          lines-changed-only: true
           ignore: 'build|result|third-party'
           step-summary: true
           file-annotations: true
           # comments do not work on PRs from forked repos
           thread-comments: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'update' || 'false' }}
+          no-lgtm: false
       - name: Fail on diagnostics
         # cpp-linter reports findings without failing the action itself.
         if: steps.linter.outputs.checks-failed > 0
