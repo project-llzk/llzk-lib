@@ -12,15 +12,19 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/DialectRegistration.h"
+#include "llzk-c/DialectRegistration.h"
 
-#include <mlir/Bindings/Python/PybindAdaptors.h>
-#include <mlir/CAPI/IR.h>
+#include <mlir/Bindings/Python/NanobindAdaptors.h>
 
-PYBIND11_MODULE(_llzkRegistration, m) {
-  m.doc() = "LLZK dialect registration";
+NB_MODULE(_llzkRegistration, m) {
+  m.doc() = "LLZK dialect and pass registration";
 
-  m.def("register_dialects", [](MlirDialectRegistry registry) {
-    llzk::registerDialects(*unwrap(registry));
-  });
+  m.def(
+      "register_dialects", &llzkRegisterCoreDialects,
+      "Register core LLZK dialects in an MLIR dialect registry."
+  );
+  m.def(
+      "register_passes", &llzkRegisterCorePasses,
+      "Register core LLZK passes and add their extensions to a dialect registry."
+  );
 }

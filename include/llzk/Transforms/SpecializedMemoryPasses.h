@@ -154,7 +154,7 @@ class RemoveDeadValuesWorkaroundPass
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(RemoveDeadValuesWorkaroundPass)
 
-  llvm::StringRef getArgument() const override { return "remove-dead-values"; }
+  llvm::StringRef getArgument() const override { return "llzk-remove-dead-values"; }
   llvm::StringRef getDescription() const override { return "Remove dead values"; }
 
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
