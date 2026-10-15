@@ -38,7 +38,7 @@ module attributes {llzk.lang} {
   function.def @nonterminating() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
     %lo = felt.const 1 : <"bn128">
     %hi = felt.const 5 : <"bn128">
-    // expected-warning@+1 {{failed to transform op: could not identify step}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: could not identify step}}
     scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
       %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
       scf.condition(%cond) %i : !felt.type<"bn128">
@@ -55,7 +55,7 @@ module attributes {llzk.lang} {
   function.def @initially_false() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
     %lo = felt.const 5 : <"bn128">
     %hi = felt.const 2 : <"bn128">
-    // expected-warning@+1 {{failed to transform op: could not identify step}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: could not identify step}}
     scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
       %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
       scf.condition(%cond) %i : !felt.type<"bn128">

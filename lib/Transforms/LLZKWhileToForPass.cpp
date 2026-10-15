@@ -71,7 +71,7 @@ struct ForOpInfo {
 
 static inline ForOpInfo parseInfo(WhileOp op) {
   auto reportFailureReason = [&op](Twine reason) {
-    return op.emitWarning() << "failed to transform op: " << reason;
+    return op.emitWarning() << "'llzk-while-to-for' failed to transform loop: " << reason;
   };
 
   ForOpInfo info;
@@ -178,21 +178,18 @@ static inline ForOpInfo parseInfo(WhileOp op) {
         auto lo = field->get().reduce(lower.getValue().getValue());
         auto hi = field->get().reduce(upper.getValue().getValue());
         auto end = field->get().reduce(next.getValue().getValue());
-        // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
-        // bounding hi also bounds lo and hi - lo.
-        bool fitsIndex = hi <= llvm::DynamicAPInt(std::numeric_limits<int64_t>::max());
-        // A while loop also executes the condition region on its final check.
-        // Dropping that execution is only safe for pure preamble operations.
-        bool purePreamble =
-            llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
-          return mlir::isPure(&preambleOp);
-        });
         if (lo < hi && end >= hi) {
+          // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
+          // bounding hi also bounds lo and hi - lo.
+          bool fitsIndex = hi <= llvm::DynamicAPInt(std::numeric_limits<int64_t>::max());
+          // A while loop also executes the condition region on its final check.
+          // Dropping that execution is only safe for pure preamble operations.
+          bool purePreamble =
+              llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
+            return mlir::isPure(&preambleOp);
+          });
           if (!fitsIndex) {
-            reportFailureReason(
-                "loop upper bound cannot be represented as a nonnegative index; leaving while loop "
-                "unchanged"
-            );
+            reportFailureReason("upper bound cannot be represented as a nonnegative index");
             return info;
           }
           if (!purePreamble) {
@@ -201,18 +198,15 @@ static inline ForOpInfo parseInfo(WhileOp op) {
           }
           OpBuilder builder(op);
           // Use canonical representatives, including when source literals are negative.
-          info.lb = FeltConstantOp::create(
-                        builder, op.getLoc(), FeltConstAttr::get(op.getContext(), lo, type)
-          )
-                        .getResult();
-          info.ub = FeltConstantOp::create(
-                        builder, op.getLoc(), FeltConstAttr::get(op.getContext(), hi, type)
-          )
-                        .getResult();
-          info.step = FeltConstantOp::create(
-                          builder, op.getLoc(), FeltConstAttr::get(op.getContext(), hi - lo, type)
-          )
-                          .getResult();
+          auto createBound = [&](const llvm::DynamicAPInt &value) -> Value {
+            return FeltConstantOp::create(
+                       builder, op.getLoc(), FeltConstAttr::get(op.getContext(), value, type)
+            )
+                .getResult();
+          };
+          info.lb = createBound(lo);
+          info.ub = createBound(hi);
+          info.step = createBound(hi - lo);
         }
       }
     }
