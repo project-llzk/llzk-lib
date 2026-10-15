@@ -1,0 +1,56 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt --llzk-full-pcl-lowering %s | FileCheck %s
+
+!F = !felt.type<"bn128">
+!Outputs = !pod.type<[@values: !array.type<2 x !F>]>
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !array.type<2 x !F> {llzk.pub}
+    struct.member @cache : !Outputs
+    function.def @compute(%in: !F) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %in: !F) attributes {function.allow_non_native_field_ops} {
+      %out = struct.readm %self[@out] : <@Main>, !array.type<2 x !F>
+      %cache = struct.readm %self[@cache] : <@Main>, !Outputs
+      %values = pod.read %cache[@values] : <[@values: !array.type<2 x !F>]>, !array.type<2 x !F>
+      %lo = felt.const 0 : <"bn128">
+      %hi = felt.const 2 : <"bn128">
+      %step = felt.const 1 : <"bn128">
+      // Normalize this felt iterator to a for loop, then unroll it before scalarization.
+      scf.while (%i = %lo) : (!F) -> !F {
+        %cond = bool.cmp lt(%i, %hi) : !F, !F
+        scf.condition(%cond) %i : !F
+      } do {
+      ^bb0(%i: !F):
+        %index = cast.toindex %i : !F
+        %value = array.read %values[%index] : <2 x !F>, !F
+        %output = array.read %out[%index] : <2 x !F>, !F
+        constrain.eq %value, %in : !F, !F
+        constrain.eq %output, %value : !F, !F
+        %next = felt.add %i, %step : !F, !F
+        scf.yield %next : !F
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617>} {
+// CHECK-NEXT:    func.func @Main(%[[INPUT:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt) {
+// CHECK-NEXT:      %[[OUT_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "out_0" true
+// CHECK-NEXT:      %[[OUT_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "out_1" true
+// CHECK-NEXT:      %[[CACHE_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_2" false
+// CHECK-NEXT:      %[[CACHE_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_3" false
+// CHECK-NEXT:      %[[CACHE_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CACHE_ZERO]], %[[INPUT]]
+// CHECK-NEXT:      pcl.assert %[[CACHE_ZERO_EQ]]
+// CHECK-NEXT:      %[[OUT_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[OUT_ZERO]], %[[CACHE_ZERO]]
+// CHECK-NEXT:      pcl.assert %[[OUT_ZERO_EQ]]
+// CHECK-NEXT:      %[[CACHE_ONE_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CACHE_ONE]], %[[INPUT]]
+// CHECK-NEXT:      pcl.assert %[[CACHE_ONE_EQ]]
+// CHECK-NEXT:      %[[OUT_ONE_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[OUT_ONE]], %[[CACHE_ONE]]
+// CHECK-NEXT:      pcl.assert %[[OUT_ONE_EQ]]
+// CHECK-NEXT:      return %[[OUT_ZERO]], %[[OUT_ONE]] : !pcl.felt, !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
