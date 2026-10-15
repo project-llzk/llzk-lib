@@ -1,0 +1,111 @@
+// RUN: llzk-opt --llzk-while-to-for --canonicalize --verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  // The iterator starts below the upper bound and is updated to that bound.
+  // Convert the loop: it executes exactly once.
+  function.def @single() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const 1 : <"bn128">
+    %hi = felt.const 2 : <"bn128">
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %next = felt.const 2 : <"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    }
+    function.return %lo : !felt.type<"bn128">
+  }
+  // The constant iterator update is greater than the upper bound.
+  // Convert the loop: it still executes exactly once.
+  function.def @overshoot() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const 1 : <"bn128">
+    %hi = felt.const 5 : <"bn128">
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %next = felt.const 9 : <"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    }
+    function.return %lo : !felt.type<"bn128">
+  }
+  // The constant iterator update remains below the upper bound, so the loop
+  // never terminates. Leave it unchanged rather than converting it to a for loop.
+  function.def @nonterminating() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const 1 : <"bn128">
+    %hi = felt.const 5 : <"bn128">
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: could not identify step}}
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %next = felt.const 2 : <"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    }
+    function.return %lo : !felt.type<"bn128">
+  }
+  // The initial iterator is already above the upper bound, so the body never
+  // executes. Leave it unchanged: the new conversion only handles one iteration.
+  function.def @initially_false() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const 5 : <"bn128">
+    %hi = felt.const 2 : <"bn128">
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: could not identify step}}
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %next = felt.const 9 : <"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    }
+    function.return %lo : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @single() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[SINGLE_LO:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:      constrain.eq %[[SINGLE_LO]], %[[SINGLE_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[SINGLE_LO]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @overshoot() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[OVERSHOOT_LO:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:      constrain.eq %[[OVERSHOOT_LO]], %[[OVERSHOOT_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[OVERSHOOT_LO]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @nonterminating() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[REPEAT_NEXT:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[REPEAT_LO:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:      %[[REPEAT_HI:[0-9a-zA-Z_\.]+]] = felt.const  5 : <"bn128">
+// CHECK-NEXT:      %[[REPEAT_RESULT:[0-9a-zA-Z_\.]+]] = scf.while (%[[REPEAT_IV:[0-9a-zA-Z_\.]+]] = %[[REPEAT_LO]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[REPEAT_COND:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[REPEAT_IV]], %[[REPEAT_HI]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.condition(%[[REPEAT_COND]]) %[[REPEAT_IV]] : !felt.type<"bn128">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[REPEAT_BODY_IV:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        constrain.eq %[[REPEAT_BODY_IV]], %[[REPEAT_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.yield %[[REPEAT_NEXT]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[REPEAT_LO]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @initially_false() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[SKIP_NEXT:[0-9a-zA-Z_\.]+]] = felt.const  9 : <"bn128">
+// CHECK-NEXT:      %[[SKIP_LO:[0-9a-zA-Z_\.]+]] = felt.const  5 : <"bn128">
+// CHECK-NEXT:      %[[SKIP_HI:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[SKIP_RESULT:[0-9a-zA-Z_\.]+]] = scf.while (%[[SKIP_IV:[0-9a-zA-Z_\.]+]] = %[[SKIP_LO]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[SKIP_COND:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[SKIP_IV]], %[[SKIP_HI]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.condition(%[[SKIP_COND]]) %[[SKIP_IV]] : !felt.type<"bn128">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[SKIP_BODY_IV:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        constrain.eq %[[SKIP_BODY_IV]], %[[SKIP_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.yield %[[SKIP_NEXT]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[SKIP_LO]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
