@@ -1,2 +1,3 @@
 fixed:
   - Convert constant-bound while loops with a constant iterator update to for loops when they provably execute exactly once.
+  - Preserve constant-update while loops when bounds cannot fit an index or condition-region side effects would be lost; normalize accepted field literals before converting bounds.

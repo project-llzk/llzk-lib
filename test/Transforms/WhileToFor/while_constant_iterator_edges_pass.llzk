@@ -1,0 +1,90 @@
+// RUN: llzk-opt --llzk-while-to-for --canonicalize --verify-diagnostics %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Reject a canonical upper bound above INT64_MAX; felt-to-index would fail.
+  function.def @large_bound() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const 0 : <"bn128">
+    %hi = felt.const -1 : <"bn128">
+    // expected-warning@+1 {{failed to transform op: loop upper bound cannot be represented as a nonnegative index; leaving while loop unchanged}}
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %next = felt.const -1 : <"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    }
+    function.return %lo : !felt.type<"bn128">
+  }
+
+  // Preserve both executions of a condition region that emits a constraint.
+  function.def @effectful_preamble() -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const 1 : <"bn128">
+    %hi = felt.const 2 : <"bn128">
+    // expected-warning@+1 {{failed to transform op: condition region contains operations that are not pure}}
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      constrain.eq %i, %lo : !felt.type<"bn128">, !felt.type<"bn128">
+      %next = felt.const 2 : <"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    }
+    function.return %lo : !felt.type<"bn128">
+  }
+
+  // Normalize negative literals to representable field values before casting.
+  function.def @negative_literals() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops, function.allow_witness, function.allow_constraint} {
+    %lo = felt.const -2013265920 : <"babybear">
+    %hi = felt.const -2013265919 : <"babybear">
+    scf.while (%i = %lo) : (!felt.type<"babybear">) -> !felt.type<"babybear"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"babybear">, !felt.type<"babybear">
+      scf.condition(%cond) %i : !felt.type<"babybear">
+    } do {
+    ^bb0(%i: !felt.type<"babybear">):
+      constrain.eq %i, %lo : !felt.type<"babybear">, !felt.type<"babybear">
+      %next = felt.const -2013265919 : <"babybear">
+      scf.yield %next : !felt.type<"babybear">
+    }
+    function.return %lo : !felt.type<"babybear">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @large_bound() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[LARGE_LO:[-0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[LARGE_HI:[-0-9a-zA-Z_\.]+]] = felt.const  -1 : <"bn128">
+// CHECK-NEXT:      %[[LARGE_RESULT:[-0-9a-zA-Z_\.]+]] = scf.while (%[[LARGE_IV:[-0-9a-zA-Z_\.]+]] = %[[LARGE_LO]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[LARGE_COND:[-0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[LARGE_IV]], %[[LARGE_HI]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.condition(%[[LARGE_COND]]) %[[LARGE_IV]] : !felt.type<"bn128">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[LARGE_BODY_IV:[-0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        constrain.eq %[[LARGE_BODY_IV]], %[[LARGE_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.yield %[[LARGE_HI]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[LARGE_LO]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @effectful_preamble() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[EFFECT_LO:[-0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:      %[[EFFECT_HI:[-0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[EFFECT_RESULT:[-0-9a-zA-Z_\.]+]] = scf.while (%[[EFFECT_IV:[-0-9a-zA-Z_\.]+]] = %[[EFFECT_LO]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        constrain.eq %[[EFFECT_IV]], %[[EFFECT_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[EFFECT_COND:[-0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[EFFECT_IV]], %[[EFFECT_HI]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.condition(%[[EFFECT_COND]]) %[[EFFECT_IV]] : !felt.type<"bn128">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[EFFECT_BODY_IV:[-0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        constrain.eq %[[EFFECT_BODY_IV]], %[[EFFECT_LO]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.yield %[[EFFECT_HI]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[EFFECT_LO]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @negative_literals() -> !felt.type<"babybear"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[NEGATIVE_LO:[-0-9a-zA-Z_\.]+]] = felt.const  -2013265920 : <"babybear">
+// CHECK-NEXT:      %[[CANONICAL_IV:[-0-9a-zA-Z_\.]+]] = felt.const  1 : <"babybear">
+// CHECK-NEXT:      constrain.eq %[[CANONICAL_IV]], %[[NEGATIVE_LO]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[NEGATIVE_LO]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

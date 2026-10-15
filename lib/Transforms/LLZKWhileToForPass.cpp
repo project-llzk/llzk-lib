@@ -33,9 +33,12 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Field.h"
 
+#include <mlir/Interfaces/SideEffectInterfaces.h>
+
 #include <llvm/Support/Debug.h>
 
 #include <algorithm>
+#include <limits>
 
 namespace llzk {
 #define GEN_PASS_DEF_WHILETOFORPASS
@@ -175,8 +178,37 @@ static inline ForOpInfo parseInfo(WhileOp op) {
         auto lo = field->get().reduce(lower.getValue().getValue());
         auto hi = field->get().reduce(upper.getValue().getValue());
         auto end = field->get().reduce(next.getValue().getValue());
+        // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
+        // bounding hi also bounds lo and hi - lo.
+        bool fitsIndex = hi <= llvm::DynamicAPInt(std::numeric_limits<int64_t>::max());
+        // A while loop also executes the condition region on its final check.
+        // Dropping that execution is only safe for pure preamble operations.
+        bool purePreamble =
+            llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
+          return mlir::isPure(&preambleOp);
+        });
         if (lo < hi && end >= hi) {
+          if (!fitsIndex) {
+            reportFailureReason(
+                "loop upper bound cannot be represented as a nonnegative index; leaving while loop "
+                "unchanged"
+            );
+            return info;
+          }
+          if (!purePreamble) {
+            reportFailureReason("condition region contains operations that are not pure");
+            return info;
+          }
           OpBuilder builder(op);
+          // Use canonical representatives, including when source literals are negative.
+          info.lb = FeltConstantOp::create(
+                        builder, op.getLoc(), FeltConstAttr::get(op.getContext(), lo, type)
+          )
+                        .getResult();
+          info.ub = FeltConstantOp::create(
+                        builder, op.getLoc(), FeltConstAttr::get(op.getContext(), hi, type)
+          )
+                        .getResult();
           info.step = FeltConstantOp::create(
                           builder, op.getLoc(), FeltConstAttr::get(op.getContext(), hi - lo, type)
           )
