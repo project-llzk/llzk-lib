@@ -19,7 +19,7 @@
 #include <mlir-c/IR.h> // IWYU pragma: keep
 #include <mlir-c/Support.h>
 
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 
 #ifdef __cplusplus
 extern "C" {
