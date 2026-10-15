@@ -237,7 +237,7 @@ static void handleType(Type type, FieldsCtx &ctx) {
     } else {
       ctx.status = failure();
       if (ctx.scope) {
-        ctx.scope->emitWarning() << "felt type is unspecified, which may cause some passes to fail";
+        ctx.scope->emitWarning("felt type is unspecified, which may cause some passes to fail");
       }
     }
   });

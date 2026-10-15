@@ -5,7 +5,8 @@
 // A single explicit field does not supply a default for unspecified felt types.
 // Field collection rejects this module before either backend evaluates constants.
 
-// CHECK-LABEL: llzk-witgen error: failed to collect fields for llzk-witgen
+// CHECK-LABEL: warning: felt type is unspecified, which may cause some passes to fail
+// CHECK-LABEL: llzk-witgen error: llzk-witgen failed collecting 'felt.type' fields
 
 //--- test.llzk
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
