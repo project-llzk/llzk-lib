@@ -1,0 +1,17 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt --llzk-full-pcl-lowering --verify-diagnostics %s
+
+// Preprocessing must not silently add outputs to an assertion-only component.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-error@+1 {{must have at least one public member}}
+  struct.def @Main {
+    function.def @compute(%in: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %in: !felt.type<"bn128">) {
+      constrain.eq %in, %in : !felt.type<"bn128">, !felt.type<"bn128">
+      function.return
+    }
+  }
+}
