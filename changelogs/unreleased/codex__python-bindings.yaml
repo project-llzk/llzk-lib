@@ -1,0 +1,6 @@
+added:
+  - Generate Python operation wrappers for all core LLZK dialects and expose core pass registration.
+  - Add a Python-enabled Nix development shell and build-tree and installed-package binding tests.
+fixed:
+  - Build LLZK Python bindings with MLIR's nanobind adaptors and locate the installed MLIR C API library.
+  - Allow LLZK pass registration alongside MLIR Python passes; expose the patched dead-value pass as llzk-remove-dead-values.
