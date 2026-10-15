@@ -1,6 +1,7 @@
+#include <cstdint>
 #include <tuple>
 
-enum class Thing { One, Two, Three };
+enum class Thing : std::uint8_t { One, Two, Three };
 
 struct A {
   Thing th;
