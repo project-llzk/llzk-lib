@@ -274,3 +274,79 @@ TEST_F(SymbolHelperTests, test_getPathRelativeToAncestor_unnamedIntermediateModu
   EXPECT_EQ(notes.begin()->getLocation(), unnamed.getLoc());
   EXPECT_EQ(std::next(notes.begin())->getLocation(), module->getLoc());
 }
+
+TEST_F(SymbolHelperTests, test_getRootStructDef_explicitAndMainRoots) {
+  auto module = parseSourceString<ModuleOp>(
+      R"mlir(
+        module attributes {llzk.lang, llzk.main = !struct.type<@Root>} {
+          struct.def @Root {
+            function.def @product() -> !struct.type<@Root> {
+              %self = struct.new : <@Root>
+              function.return %self : !struct.type<@Root>
+            }
+          }
+          module @Helpers {
+            struct.def @Root {
+              function.def @product() -> !struct.type<@Helpers::@Root> {
+                %self = struct.new : <@Helpers::@Root>
+                function.return %self : !struct.type<@Helpers::@Root>
+              }
+            }
+          }
+        }
+      )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  auto topRoot = module->lookupSymbol<component::StructDefOp>("Root");
+  auto helpers = module->lookupSymbol<ModuleOp>("Helpers");
+  auto nestedRoot = helpers.lookupSymbol<component::StructDefOp>("Root");
+  SymbolTableCollection tables;
+  auto defaultRoot = getRootStructDef(tables, *module);
+  ASSERT_TRUE(succeeded(defaultRoot));
+  ASSERT_TRUE(*defaultRoot);
+  EXPECT_EQ(defaultRoot->get(), topRoot);
+  auto bareRoot = getRootStructDef(tables, *module, "Root");
+  ASSERT_TRUE(succeeded(bareRoot));
+  EXPECT_EQ(bareRoot->get(), topRoot);
+
+  auto spacedRoot = getRootStructDef(tables, *module, "  @Root  ");
+  ASSERT_TRUE(succeeded(spacedRoot));
+  EXPECT_EQ(spacedRoot->get(), topRoot);
+
+  // Explicit selection remains usable without circuit-main metadata.
+  module->getOperation()->removeAttr("llzk.main");
+  auto explicitRoot = getRootStructDef(tables, *module, "@Helpers::@Root");
+  ASSERT_TRUE(succeeded(explicitRoot));
+  EXPECT_EQ(explicitRoot->get(), nestedRoot);
+  auto absentDefault = getRootStructDef(tables, *module);
+  ASSERT_TRUE(succeeded(absentDefault));
+  EXPECT_FALSE(*absentDefault);
+}
+
+TEST_F(SymbolHelperTests, test_getRootStructDef_rejectsInvalidSymbols) {
+  auto module = parseSourceString<ModuleOp>(
+      "module attributes {llzk.lang} { function.def @Other() { function.return } }", &ctx
+  );
+  ASSERT_TRUE(module);
+  SymbolTableCollection tables;
+  ctx.printOpOnDiagnostic(false);
+  SmallVector<Diagnostic> diagnostics;
+  ScopedDiagnosticHandler handler(&ctx, [&diagnostics](Diagnostic &diagnostic) {
+    diagnostics.push_back(std::move(diagnostic));
+    return success();
+  });
+  const std::pair<StringRef, StringRef> cases[] = {
+      {"[]", "invalid root struct symbol path"},
+      {"@Root::", "expected nested symbol reference"},
+      {"@Missing", "references unknown symbol"},
+      {"@Other", "expected a 'struct.def'"},
+  };
+  for (auto [symbol, message] : cases) {
+    SCOPED_TRACE(symbol.str());
+    diagnostics.clear();
+    EXPECT_TRUE(failed(getRootStructDef(tables, *module, symbol)));
+    ASSERT_EQ(diagnostics.size(), 1U);
+    EXPECT_NE(diagnostics.front().str().find(message.str()), std::string::npos);
+  }
+}

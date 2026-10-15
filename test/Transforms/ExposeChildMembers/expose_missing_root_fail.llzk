@@ -1,0 +1,3 @@
+// RUN: llzk-opt %s --llzk-expose-child-members --verify-diagnostics -o /dev/null
+// expected-error @+1 {{child-member visibility requires llzk.main or an explicit root-struct}}
+module attributes {llzk.lang} {}

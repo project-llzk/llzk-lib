@@ -1,0 +1,92 @@
+// RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Root" -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: llzk-opt %t --llzk-expose-child-members="root-struct=@Root" -o %t.again
+// RUN: diff %t %t.again
+// Visibility needs the referenced definition set, not a layout for every element.
+// The trillion-element array has a sparse representative family with repeated IDs.
+// Entries for a different rolled type occur only in empty storage and are ignored.
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    struct.def @T {
+      struct.member @out : !felt.type {signal}
+      function.def @product() -> !struct.type<@T::@T<[@N]>> {
+        %self = struct.new : <@T::@T<[@N]>>
+        function.return %self : !struct.type<@T::@T<[@N]>>
+      }
+    }
+  }
+  struct.def @A {
+    struct.member @out : !felt.type {signal}
+    function.def @product() -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+  } {poly.specialization_id = 1 : i64, poly.origin = @T::@T, poly.arguments = [0 : index]}
+  struct.def @B {
+    struct.member @out : !felt.type {signal}
+    function.def @product() -> !struct.type<@B> {
+      %self = struct.new : <@B>
+      function.return %self : !struct.type<@B>
+    }
+  } {poly.specialization_id = 2 : i64, poly.origin = @T::@T, poly.arguments = [0 : index]}
+  struct.def @Unused {
+    struct.member @out : !felt.type {signal}
+    function.def @product() -> !struct.type<@Unused> {
+      %self = struct.new : <@Unused>
+      function.return %self : !struct.type<@Unused>
+    }
+  } {poly.specialization_id = "malformed", poly.origin = @T::@T, poly.arguments = [0 : index]}
+  struct.def @Root {
+    struct.member @items : !pod.type<[@present: !array.type<1000000000000 x !struct.type<@T::@T<[affine_map<(i) -> (i)>]>>>, @empty: !array.type<0 x !struct.type<@T::@T<[affine_map<(i) -> (i + 7)>]>>>]> {poly.family = [{indices = [0 : index], specialization = 1 : i64, type = !struct.type<@T::@T<[affine_map<(i) -> (i)>]>>}, {indices = [1 : index], specialization = 2 : i64, type = !struct.type<@T::@T<[affine_map<(i) -> (i)>]>>}, {indices = [2 : index], specialization = 1 : i64, type = !struct.type<@T::@T<[affine_map<(i) -> (i)>]>>}, {indices = [0 : index], specialization = 3 : i64, type = !struct.type<@T::@T<[affine_map<(i) -> (i + 7)>]>>}, {specialization = "irrelevant", type = !struct.type<@T::@T<[affine_map<(i) -> (i + 7)>]>>}]}
+    function.def @product() -> !struct.type<@Root> {
+      %self = struct.new : <@Root>
+      function.return %self : !struct.type<@Root>
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 7)>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @T {
+// CHECK-NEXT:        struct.member @out : !felt.type {signal}
+// CHECK-NEXT:        function.def @product() -> !struct.type<@T::@T<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@T<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@T::@T<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub, signal}
+// CHECK-NEXT:      function.def @product() -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [0 : index], poly.origin = @T::@T, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    struct.def @B {
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub, signal}
+// CHECK-NEXT:      function.def @product() -> !struct.type<@B> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@B>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [0 : index], poly.origin = @T::@T, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:    struct.def @Unused {
+// CHECK-NEXT:      struct.member @out : !felt.type {signal}
+// CHECK-NEXT:      function.def @product() -> !struct.type<@Unused> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Unused>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Unused>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [0 : index], poly.origin = @T::@T, poly.specialization_id = "malformed"}
+// CHECK-NEXT:    struct.def @Root {
+// CHECK-NEXT:      struct.member @items : !pod.type<[@present: !array.type<1000000000000 x !struct.type<@T::@T<[#[[$ATTR_0]]]>>>, @empty: !array.type<0 x !struct.type<@T::@T<[#[[$ATTR_1]]]>>>]> {poly.family = [{indices = [0 : index], specialization = 1 : i64, type = !struct.type<@T::@T<[#[[$ATTR_0]]]>>}, {indices = [1 : index], specialization = 2 : i64, type = !struct.type<@T::@T<[#[[$ATTR_0]]]>>}, {indices = [2 : index], specialization = 1 : i64, type = !struct.type<@T::@T<[#[[$ATTR_0]]]>>}, {indices = [0 : index], specialization = 3 : i64, type = !struct.type<@T::@T<[#[[$ATTR_1]]]>>}, {specialization = "irrelevant", type = !struct.type<@T::@T<[#[[$ATTR_1]]]>>}]}
+// CHECK-NEXT:      function.def @product() -> !struct.type<@Root> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Root>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Root>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
