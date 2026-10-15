@@ -14,6 +14,7 @@
 /// * The `before` block has an argument %arg (the "induction variable") such that:
 ///   * The scf.condition condition has the form `bool.cmp lt(%arg, %upper_bound)`
 ///   * The value yielded from the after block has the form `felt.add %arg, %step`
+///     or is a constant that makes a constant-bound loop execute exactly once
 /// * `%upper_bound` and `%step` do not depend on any loop-carried variables
 /// * The final yielded value of the induction variable does not have uses outside the loop
 ///
@@ -30,6 +31,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/Field.h"
 
 #include <llvm/Support/Debug.h>
 
@@ -156,6 +158,31 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       info.step = incOp.getLhs();
     } else if (incOp.getLhs() == ivarAfter) {
       info.step = incOp.getRhs();
+    }
+  }
+
+  // Constant propagation can replace the final increment of a one-iteration loop
+  // with a constant. Only accept it when the initial condition is true and the
+  // yielded value makes the next condition false; otherwise it may loop forever.
+  if (!info.step.has_value()) {
+    auto lower = info.lb->getDefiningOp<FeltConstantOp>();
+    auto upper = info.ub->getDefiningOp<FeltConstantOp>();
+    auto next = nextIvar.getDefiningOp<FeltConstantOp>();
+    auto type = dyn_cast<FeltType>(ivarAfter.getType());
+    if (lower && upper && next && type && type.getFieldName()) {
+      auto field = llzk::Field::tryGetField(type.getFieldName().getValue());
+      if (succeeded(field)) {
+        auto lo = field->get().reduce(lower.getValue().getValue());
+        auto hi = field->get().reduce(upper.getValue().getValue());
+        auto end = field->get().reduce(next.getValue().getValue());
+        if (lo < hi && end >= hi) {
+          OpBuilder builder(op);
+          info.step = FeltConstantOp::create(
+                          builder, op.getLoc(), FeltConstAttr::get(op.getContext(), hi - lo, type)
+          )
+                          .getResult();
+        }
+      }
     }
   }
 

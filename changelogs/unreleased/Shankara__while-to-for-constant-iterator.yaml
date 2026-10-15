@@ -1,0 +1,2 @@
+fixed:
+  - Convert constant-bound while loops with a constant iterator update to for loops when they provably execute exactly once.
