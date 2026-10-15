@@ -85,6 +85,7 @@ import llzk
 
 with ir.Context() as context, ir.Location.unknown():
     llzk.add_dialects_to_context(context)
+    context.load_all_available_dialects()
     felt_type = ir.Type.parse("!felt.type")
     module = ir.Module.create()
     with ir.InsertionPoint(module.body):
@@ -110,8 +111,9 @@ For explicit registration, create an `ir.DialectRegistry`, call
 Call `llzk.registration.register_passes(registry)` once before creating pass
 pipelines to register core LLZK passes and their context extensions. Append that
 registry to the context used by the pass manager. Registration makes dialects
-available for lazy loading; call `context.load_all_available_dialects()` when
-immediate operation-registration queries are needed. Use
+available for lazy loading during parsing; call
+`context.load_all_available_dialects()` before constructing operations directly
+or querying operation registration. Use
 `llzk-remove-dead-values` for LLZK's poison-cleanup variant of MLIR's pass;
 MLIR's Python package already registers the upstream `remove-dead-values` name.
 Native LLZK tools retain that older name as an alias for the LLZK variant.
