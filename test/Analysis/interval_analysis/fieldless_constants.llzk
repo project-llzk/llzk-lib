@@ -48,10 +48,10 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @ConstantValue StructIntervals {
 // CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]].out in Degenerate(7)
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]].out in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
 // CHECK-LABEL: @ZeroMultiplier StructIntervals {
