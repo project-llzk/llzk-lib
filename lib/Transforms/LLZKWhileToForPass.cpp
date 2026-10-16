@@ -72,7 +72,7 @@ struct ForOpInfo {
 
 static inline ForOpInfo parseInfo(WhileOp op) {
   auto reportFailureReason = [&op](Twine reason) {
-    return op.emitWarning() << "'llzk-while-to-for' failed to transform loop: " << reason;
+    return op.emitWarning("'llzk-while-to-for' failed to transform loop: ") << reason;
   };
 
   ForOpInfo info;
@@ -127,26 +127,23 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     return info;
   }
 
+  OpBuilder builder(op);
+  // Materialize a felt bound before the loop in the supplied induction variable type.
+  auto createBound = [&builder, &op](const llvm::DynamicAPInt &value, FeltType type) -> Value {
+    auto attr = FeltConstAttr::get(builder.getContext(), value, type);
+    return FeltConstantOp::create(builder, op.getLoc(), attr).getResult();
+  };
+
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
-    auto *ctx = op->getContext();
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
     auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
 
-    OpBuilder builder {ctx};
-    builder.setInsertionPoint(op);
-
     // Make these constant felts for now; the actual for op builder will later clean it up
-    auto createBound = [&builder, &op, &ivarType](const auto &value) -> Value {
-      return FeltConstantOp::create(
-                 builder, op->getLoc(), FeltConstAttr::get(op->getContext(), value, ivarType)
-      )
-          .getResult();
-    };
-    info.lb = createBound(bounds.getLower());
-    info.ub = createBound(bounds.getUpper());
-    info.step = createBound(bounds.getStep());
+    info.lb = createBound(bounds.getLower(), ivarType);
+    info.ub = createBound(bounds.getUpper(), ivarType);
+    info.step = createBound(bounds.getStep(), ivarType);
     return info;
   }
 
@@ -186,32 +183,24 @@ static inline ForOpInfo parseInfo(WhileOp op) {
         if (lo < hi && end >= hi) {
           // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
           // bounding hi also bounds lo and hi - lo.
-          bool fitsIndex = hi <= llvm::DynamicAPInt(std::numeric_limits<int64_t>::max());
+          if (hi > llvm::DynamicAPInt(std::numeric_limits<int64_t>::max())) {
+            reportFailureReason("upper bound cannot be represented as a nonnegative index");
+            return info;
+          }
           // A while loop also executes the condition region on its final check.
           // Dropping that execution is only safe for pure preamble operations.
           bool purePreamble =
               llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
             return mlir::isPure(&preambleOp);
           });
-          if (!fitsIndex) {
-            reportFailureReason("upper bound cannot be represented as a nonnegative index");
-            return info;
-          }
           if (!purePreamble) {
             reportFailureReason("condition region contains operations that are not pure");
             return info;
           }
-          OpBuilder builder(op);
           // Use canonical representatives, including when source literals are negative.
-          auto createBound = [&](const llvm::DynamicAPInt &value) -> Value {
-            return FeltConstantOp::create(
-                       builder, op.getLoc(), FeltConstAttr::get(op.getContext(), value, type)
-            )
-                .getResult();
-          };
-          info.lb = createBound(lo);
-          info.ub = createBound(hi);
-          info.step = createBound(hi - lo);
+          info.lb = createBound(lo, type);
+          info.ub = createBound(hi, type);
+          info.step = createBound(hi - lo, type);
         }
       }
     }

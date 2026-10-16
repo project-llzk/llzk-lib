@@ -240,7 +240,7 @@ private:
     for (auto signalDef : entryBlock.getOps<r1cs::SignalDefOp>()) {
       uint32_t label = signalDef.getLabel();
       if (label == 0) {
-        return signalDef.emitOpError() << "label 0 is reserved for the implicit one wire in .r1cs";
+        return signalDef.emitOpError("label 0 is reserved for the implicit one wire in .r1cs");
       }
 
       nextFreshLabel = std::max(nextFreshLabel, static_cast<uint64_t>(label) + 1);
@@ -503,7 +503,7 @@ static FailureOr<uint32_t> computeFieldSizeBytes(Operation *op, const llvm::Dyna
   );
   uint64_t roundedSize = ((static_cast<uint64_t>(minBytes) + 7u) / 8u) * 8u;
   if (!std::in_range<uint32_t>(roundedSize)) {
-    return op->emitOpError() << "field size does not fit in a 32-bit header field";
+    return op->emitOpError("field size does not fit in a 32-bit header field");
   }
   return llzk::checkedCast<uint32_t>(roundedSize);
 }
@@ -529,7 +529,7 @@ static LogicalResult serializeLinearCombination(
                                    << " but only " << numWires << " wires were assigned";
     }
     if (sawAnyTerm && term.wireId <= previousWireId) {
-      return circuit.emitOpError() << "linear combination terms must be sorted by wire id";
+      return circuit.emitOpError("linear combination terms must be sorted by wire id");
     }
 
     buffer.writeU32(term.wireId);
@@ -552,7 +552,7 @@ static FailureOr<BinaryBuffer> serializeExportedCircuit(
                                  << " wires";
   }
   if (model.wireToLabel.empty() || model.wireToLabel.front() != 0) {
-    return circuit.emitOpError() << "internal export error: wire 0 must map to label 0";
+    return circuit.emitOpError("internal export error: wire 0 must map to label 0");
   }
 
   FailureOr<uint32_t> fieldSizeBytes = computeFieldSizeBytes(circuit, prime);

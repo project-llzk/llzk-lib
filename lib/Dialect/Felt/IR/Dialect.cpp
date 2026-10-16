@@ -51,7 +51,7 @@ struct FeltDialectBytecodeInterface
       return {};
     }
     if (encoding > std::numeric_limits<uint8_t>::max()) {
-      reader.emitError() << "unknown felt attribute encoding: " << encoding;
+      reader.emitError("unknown felt attribute encoding: ") << encoding;
       return {};
     }
 
@@ -90,7 +90,7 @@ struct FeltDialectBytecodeInterface
     }
     }
 
-    reader.emitError() << "unknown felt attribute encoding: " << encoding;
+    reader.emitError("unknown felt attribute encoding: ") << encoding;
     return {};
   }
 
