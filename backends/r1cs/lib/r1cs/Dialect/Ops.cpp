@@ -160,7 +160,7 @@ LogicalResult CircuitDefOp::verify() {
 
   // === Step 3: Require at least one public signal ===
   if (!foundPublic) {
-    return emitOpError() << "at least one signal must be marked public";
+    return emitOpError("at least one signal must be marked public");
   }
 
   return success();

@@ -32,8 +32,7 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   if (!fieldName.empty()) {
     auto fieldLookupResult = Field::tryGetField(fieldName);
     if (failed(fieldLookupResult)) {
-      mod.emitError() << "unknown field \"" << fieldName << "\"";
-      return failure();
+      return mod.emitError() << "unknown field \"" << fieldName << '"';
     }
     fields.insert(fieldLookupResult.value());
   }
@@ -41,13 +40,11 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   (void)collectFields(mod, fields);
 
   if (fields.empty()) {
-    mod.emitError() << "no prime field specified; could not deduce";
-    return failure();
+    return mod.emitError("no prime field specified; could not deduce");
   }
 
   if (fields.size() > 1) {
-    mod.emitError() << "multiple fields unsupported";
-    return failure();
+    return mod.emitError("multiple fields unsupported");
   }
 
   return *(fields.begin());
@@ -178,8 +175,7 @@ LogicalResult MemberReadConverter::matchAndRewrite(
     component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
   if (!isa<felt::FeltType>(op.getResult().getType())) {
-    op.emitError("SMT lowering currently only supports felt-valued struct.readm");
-    return failure();
+    return op.emitError("SMT lowering currently only supports felt-valued struct.readm");
   }
 
   auto it = symbols.find(adaptor.getMemberName());

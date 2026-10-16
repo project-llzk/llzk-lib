@@ -56,7 +56,7 @@ struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LL
       return {};
     }
     if (encoding > std::numeric_limits<uint8_t>::max()) {
-      reader.emitError() << "unknown LLZK attribute encoding: " << encoding;
+      reader.emitError("unknown LLZK attribute encoding: ") << encoding;
       return {};
     }
 
@@ -72,7 +72,7 @@ struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LL
     }
     }
 
-    reader.emitError() << "unknown LLZK attribute encoding: " << encoding;
+    reader.emitError("unknown LLZK attribute encoding: ") << encoding;
     return {};
   }
 

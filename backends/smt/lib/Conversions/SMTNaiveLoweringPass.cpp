@@ -271,8 +271,7 @@ public:
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (!isa<felt::FeltType>(op.getVal().getType())) {
-      op.emitError("SMT lowering currently only supports felt-valued struct.writem");
-      return failure();
+      return op.emitError("SMT lowering currently only supports felt-valued struct.writem");
     }
 
     auto it = symbols.find(adaptor.getMemberName());
