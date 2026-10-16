@@ -113,7 +113,7 @@ var searchData=
   ['code_110',['code',['../LICENSE_8txt.html#a99101f1111e3615a81e34012de5a239b',1,'LICENSE.txt']]],
   ['code_20of_20conduct_111',['Contributor Covenant Code of Conduct',['../code-of-conduct.html',1,'contribution-guide']]],
   ['coefficients_112',['Arbitrary-precision coefficients',['../r1cs-backend.html#arbitrary-precision-coefficients',1,'']]],
-  ['collectfields_113',['collectFields',['../namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37',1,'llzk']]],
+  ['collectfields_113',['collectFields',['../namespacellzk.html#ade0a132d2633c09a60ea3dc041c501ef',1,'llzk']]],
   ['collectinputbindings_114',['collectInputBindings',['../namespacellzk_1_1witgen.html#a1f06d3a4be9069abde9e602783b8e0d8',1,'llzk::witgen']]],
   ['collectoutputbindings_115',['collectOutputBindings',['../namespacellzk_1_1witgen.html#a2e561645b067a0b8f299c6ab3b4b83a1',1,'llzk::witgen::collectOutputBindings(component::StructDefOp mainDef, SymbolTableCollection &amp;tables, Operation *origin, OutputScope scope)'],['../namespacellzk_1_1witgen.html#a1f308b7ff71b3e5edf1d0b3a951a1c6c',1,'llzk::witgen::collectOutputBindings(component::StructDefOp mainDef, mlir::SymbolTableCollection &amp;tables, mlir::Operation *origin, OutputScope scope)']]],
   ['collectpodmapattrs_116',['collectPodMapAttrs',['../namespacellzk_1_1pod.html#a6a6280c35a679e93e0dc884f434f5422',1,'llzk::pod::collectPodMapAttrs(Type type, SmallVector&lt; AffineMapAttr &gt; &amp;mapAttrs)'],['../namespacellzk_1_1pod.html#a573ddd550dd13e4c56c3ac8974354679',1,'llzk::pod::collectPodMapAttrs(mlir::Type type, mlir::SmallVector&lt; mlir::AffineMapAttr &gt; &amp;mapAttrs)']]],
