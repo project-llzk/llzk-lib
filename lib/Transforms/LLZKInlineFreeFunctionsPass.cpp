@@ -290,21 +290,20 @@ static SmallVector<FreeFunctionCall> collectFreeFunctionCalls(
   return calls;
 }
 
-/// Collect every non-external free function in `mod` whose symbol has no
-/// remaining uses anywhere in the symbol-use graph, including uses in nested
-/// symbol tables.
+/// Collect every non-external free function within `mod` whose symbol has no remaining
+/// uses anywhere in the symbol-use graph, including uses in nested symbol tables.
 static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
   SymbolUseGraph useGraph(mod.getOperation());
   SmallVector<FuncDefOp> unusedFunctions;
-  for (FuncDefOp func : mod.getOps<FuncDefOp>()) {
-    if (func.isExternal()) {
-      continue;
+  mod.walk([&](FuncDefOp func) {
+    if (func.isExternal() || !llvm::isa<ModuleOp, polymorphic::TemplateOp>(func->getParentOp())) {
+      return;
     }
     const SymbolUseGraphNode *node = useGraph.lookupNode(func);
     if (!node || !node->hasPredecessor()) {
       unusedFunctions.push_back(func);
     }
-  }
+  });
   return unusedFunctions;
 }
 

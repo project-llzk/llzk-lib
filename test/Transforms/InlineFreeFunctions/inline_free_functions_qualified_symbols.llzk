@@ -3,6 +3,7 @@
 // Qualified global and callee references must be checked as complete paths.
 // Their nested name components do not exist as standalone root symbols.
 // Both calls in @Main must inline, preserving the fully qualified global reads.
+// Cleanup must erase @forward, then @read once its final use is removed.
 module attributes {llzk.lang} {
   module @global {
     module @constants {
@@ -38,21 +39,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @lib {
-// CHECK-NEXT:      function.def @read() -> !array.type<2 x !felt.type> {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
-// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<2 x !felt.type>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @forward() -> !array.type<2 x !felt.type> {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @lib::@read() : () -> !array.type<2 x !felt.type>
-// CHECK-NEXT:        function.return %[[VAL_1]] : !array.type<2 x !felt.type>
-// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @product() -> !struct.type<@Main> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
-// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
