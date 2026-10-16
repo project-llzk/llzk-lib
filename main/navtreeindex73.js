@@ -158,7 +158,8 @@ var NAVTREEINDEX73 =
 "r1cs-backend.html#signaltype":[8,0,0,2,1],
 "r1cs-backend.html#types-7":[8,0,0,2],
 "setup.html":[2],
-"setup.html#dev-workflow":[2,2],
+"setup.html#building-with-pcl":[2,2],
+"setup.html#dev-workflow":[2,3],
 "setup.html#manual-build-setup":[2,1],
 "setup.html#nix-setup":[2,0],
 "smt-backend.html":[8,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX73 =
 "structEmitContainmentOpBuildFuncHelper.html":[13,0,33],
 "structEmitContainmentOpBuildFuncHelper.html#a8548e19edefb8d6759350398684bce01":[13,0,33,0],
 "structEmitContainmentOpBuildFuncHelper.html#aaebe5e98dd6fee4307c1de111d7253d4":[13,0,33,1],
-"structEmitEqualityOpBuildFuncHelper.html":[13,0,34],
-"structEmitEqualityOpBuildFuncHelper.html#a19364aead87923458ffbd54dc2349964":[13,0,34,0]
+"structEmitEqualityOpBuildFuncHelper.html":[13,0,34]
 };

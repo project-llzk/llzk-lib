@@ -23,5 +23,6 @@ var searchData=
   ['bool_20yield_20_3a_3allzk_3a_3aboolean_3a_3ayieldop_20',['&lt;span class=&quot;tt&quot;&gt;bool.yield&lt;/span&gt; (llzk::boolean::YieldOp)',['../dialects.html#boolyield-llzkbooleanyieldop',1,'']]],
   ['boolattr_21',['BoolAttr',['../pcl-backend.html#boolattr',1,'']]],
   ['booltype_22',['BoolType',['../pcl-backend.html#booltype',1,'']]],
-  ['build_20setup_23',['Manual Build Setup',['../setup.html#manual-build-setup',1,'']]]
+  ['build_20setup_23',['Manual Build Setup',['../setup.html#manual-build-setup',1,'']]],
+  ['building_20with_20pcl_24',['Building with PCL',['../setup.html#building-with-pcl',1,'']]]
 ];

@@ -37,6 +37,7 @@ var NAVTREE =
     [ "Setup", "setup.html", [
       [ "Nix Setup", "setup.html#nix-setup", null ],
       [ "Manual Build Setup", "setup.html#manual-build-setup", null ],
+      [ "Building with PCL", "setup.html#building-with-pcl", null ],
       [ "Development Workflow", "setup.html#dev-workflow", null ]
     ] ],
     [ "Tool Guides", "tools.html", [
@@ -634,15 +635,15 @@ var NAVTREEINDEX =
 "namespacellzk.html#ae1c6668dc1a3a4c1a2b856902a3895b0",
 "namespacellzk_1_1impl.html#a43b34038f2aae69d95362c5bbcd9a535",
 "namespacemembers_func_d.html",
-"structEmitEqualityOpBuildFuncHelper.html#ac6e510b8157fde62c5346011dd31d186",
-"structUnifiableCastOpBuildFuncHelper.html",
+"structEmitEqualityOpBuildFuncHelper.html#a19364aead87923458ffbd54dc2349964",
+"structTestGenerator.html#af6cf156e7b5bbd833c8eddb14922330b",
 "structllzk_1_1IntervalAnalysisContext.html",
 "structllzk_1_1array_1_1detail_1_1ArrayTypeStorage.html#a83972eee46c98be1064ccc72f9fcf979",
 "structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceInterfaceTraits.html",
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#aa1c686eeeec7d994c4b9885e1f6217e8",
 "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#a65456921b57398e3844ac01ca8a280f2",
 "structllzk_1_1verif_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html#a0d70edda904677f12bfbce16d5bfe20d",
-"tools.html#autotoc_md-llzk-product-program"
+"tools.html#autotoc_md-llzk-print-symbol-use-graph"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

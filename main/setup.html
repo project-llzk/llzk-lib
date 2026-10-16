@@ -139,6 +139,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('setup.html',''
     <a href="#manual-build-setup">Manual Build Setup </a>
   </li>
   <li class="level1">
+    <a href="#building-with-pcl">Building with PCL </a>
+  </li>
+  <li class="level1">
     <a href="#dev-workflow">Development Workflow </a>
   </li>
 </ul>
@@ -236,7 +239,13 @@ Manual Build Setup</h1>
 <div class="line">  -DClang_DIR=&quot;$INSTALL_ROOT&quot;/lib/cmake/clang \</div>
 <div class="line">  -DLLVM_EXTERNAL_LIT=&quot;$LIT_PATH&quot; \</div>
 <div class="line">  -DLLZK_BUILD_DEVTOOLS=ON</div>
-</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="dev-workflow"></a>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="building-with-pcl"></a>
+Building with PCL</h1>
+<p>The bundled <a class="el" href="pcl-backend.html" title="PCL Backend">PCL backend</a> is enabled by default (<span class="tt"><a class="el" href="Config_8h.html#af5b8c36f95b040198d36440fefacf933" title="Public PCL feature flag; use #if LLZK_WITH_PCL to guard PCL-dependent code.">LLZK_WITH_PCL</a>=AUTO</span>), including with <span class="tt">nix build</span>. To enable it explicitly, add <span class="tt">-DLLZK_WITH_PCL=ON</span> to the LLZK CMake configuration command above. For an existing build, run from the repository root (inside <span class="tt">nix develop</span> when using Nix):</p>
+<div class="fragment"><div class="line">cmake -S . -B build -DLLZK_WITH_PCL=ON</div>
+<div class="line">cmake --build build</div>
+</div><!-- fragment --><p>Use <span class="tt">-DLLZK_WITH_PCL=OFF</span> to disable the backend.</p>
+<h1 class="doxsection"><a class="anchor" id="dev-workflow"></a>
 Development Workflow</h1>
 <p>Once you have generated the build configuration and are in the <span class="tt">build</span> directory, you can run the following commands:</p>
 <ul>
