@@ -113,10 +113,16 @@ pipelines to register core LLZK passes and their context extensions. Append that
 registry to the context used by the pass manager. Registration makes dialects
 available for lazy loading during parsing; call
 `context.load_all_available_dialects()` before constructing operations directly
-or querying operation registration. Use
-`llzk-remove-dead-values` for LLZK's poison-cleanup variant of MLIR's pass;
-MLIR's Python package already registers the upstream `remove-dead-values` name.
-Native LLZK tools retain that older name as an alias for the LLZK variant.
+or querying operation registration.
+
+After LLZK pass registration, both `remove-dead-values` and
+`llzk-remove-dead-values` select LLZK's cleanup wrapper in Python pipelines,
+native LLZK pipelines, and `llzk-opt` command-line flags. The wrapper runs the
+upstream pass, replaces remaining live `ub.poison` values with `llzk.nondet`,
+and removes unused poison values and trivial else regions. The historical name
+is a pipeline alias, which takes precedence over MLIR Python's already registered
+upstream pass. Call `registration.register_passes(registry)` before parsing
+pipelines: previously constructed pass managers retain their existing passes.
 
 # Manual Build Setup
 

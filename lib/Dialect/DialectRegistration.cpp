@@ -103,10 +103,12 @@ static inline void registerTransformsPasses() {
   mlir::registerPrintIRPass();
   mlir::registerPrintOpStatsPass();
   mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
-  // Keep the historical CLI spelling when the host has not already registered
-  // the upstream pass (MLIR's Python package registers it during import).
-  if (!mlir::PassInfo::lookup("remove-dead-values") &&
-      !mlir::PassPipelineInfo::lookup("remove-dead-values")) {
+  // Pipelines take precedence over individual passes in MLIR's textual parser.
+  // Always install this alias, including when Python has already registered the
+  // upstream pass, so the historical spelling consistently uses LLZK's cleanup.
+  // llzk-opt registers no upstream pass under this name, so its direct command
+  // line flag also resolves to this pipeline without a duplicate option.
+  if (!mlir::PassPipelineInfo::lookup("remove-dead-values")) {
     mlir::PassPipelineRegistration<>(
         "remove-dead-values", "Remove dead values with LLZK poison cleanup",
         [](mlir::OpPassManager &pm) { pm.addPass(llzk::createRemoveDeadValuesWorkaroundPass()); }
