@@ -161,7 +161,9 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
           usesRootLookup = name == globalRef.getNameRefAttrName();
         }
         if (usesRootLookup) {
-          property.getValue().walk(detectMissingRootSymbolRef);
+          // Check the complete path, not its nested FlatSymbolRefAttr components:
+          // those resolve within the preceding symbol, not from the root.
+          detectMissingRootSymbolRef(llvm::cast<SymbolRefAttr>(property.getValue()));
         } else {
           walkAttrSymbolRefs(
               property.getValue(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef
