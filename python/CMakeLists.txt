@@ -152,8 +152,12 @@ set_property(TARGET LLZKPythonExtensionModules.extension._llzkRegistration.dso
              PROPERTY MLIR_AGGREGATE_EXCLUDE_LIBS "${LLZK_PYTHON_EXCLUDE_LIBS}")
 # The C API runtime depends on LLVM, which also supplies LLZK's direct LLVM calls.
 target_link_libraries(LLZKPythonExtensionModules.extension._llzkRegistration.dso
-                      PRIVATE LLVM
-                      # Dense forward dataflow is not pulled into MLIRPythonCAPI.
-                      # Link this archive without its transitive static runtime;
-                      # the shared C API supplies the rest of its dependencies.
-                      "$<TARGET_FILE:MLIRAnalysis>")
+                      PRIVATE LLVM)
+
+# Dense forward dataflow is not pulled into MLIRPythonCAPI. When the Python
+# consumer filters out MLIRAnalysis, retain its archive without its transitive
+# static runtime. Attach it to LLZKAnalysis so CMake places it after the archive
+# that references it: Unix linkers need that order to extract the missing code.
+# Installed native libraries retain their normal MLIRAnalysis target dependency.
+target_link_libraries(LLZKAnalysis INTERFACE
+  "$<BUILD_INTERFACE:$<$<IN_LIST:MLIRAnalysis,$<TARGET_PROPERTY:MLIR_AGGREGATE_EXCLUDE_LIBS>>:$<TARGET_FILE:MLIRAnalysis>>>")
