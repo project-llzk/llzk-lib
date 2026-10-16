@@ -1,0 +1,28 @@
+// RUN: %python %S/check-aggregate-copies.py llzk-opt llzk-witgen llzk-translate %s %t
+
+// Case: struct-read
+// Mutation of a copied aggregate must leave its source or stored value intact.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @values : !array.type<1 x !felt.type<"babybear">>
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%x: !felt.type<"babybear"> {llzk.pub}) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %zero = arith.constant 0 : index
+      %z = felt.const 0 : !felt.type<"babybear">
+      %a = array.new %x : !array.type<1 x !felt.type<"babybear">>
+      struct.writem %self[@values] = %a : !struct.type<@Main>, !array.type<1 x !felt.type<"babybear">>
+      %copy = struct.readm %self[@values] : !struct.type<@Main>, !array.type<1 x !felt.type<"babybear">>
+      array.write %copy[%zero] = %z : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %original = struct.readm %self[@values] : !struct.type<@Main>, !array.type<1 x !felt.type<"babybear">>
+      %value = array.read %original[%zero] : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      struct.writem %self[@out] = %value : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"babybear"> {llzk.pub}) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %x : !felt.type<"babybear">
+      function.return
+    }
+  }
+}

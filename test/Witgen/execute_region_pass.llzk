@@ -1,0 +1,24 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | %python -c "import json,sys; assert json.load(sys.stdin) == {'out': '3'}"
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %value = scf.execute_region -> !felt.type<"babybear"> {
+        %three = felt.const 3 : !felt.type<"babybear">
+        scf.yield %three : !felt.type<"babybear">
+      }
+      struct.writem %self[@out] = %value : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+[]
