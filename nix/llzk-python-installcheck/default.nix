@@ -17,5 +17,6 @@ runCommand "llzk-python-installcheck"
   ''
     python ${../../test/Python/registration.py}
     python ${../../test/Python/operations.py}
+    python ${../../test/Python/pass_registration.py} ${llzk_pkg}/bin/llzk-opt
     touch "$out"
   ''
