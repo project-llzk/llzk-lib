@@ -27,6 +27,9 @@ void registerDialects(mlir::DialectRegistry &registry);
 /// Register LLZK analysis, validation, and transformation passes and pipelines, SMT
 /// conversion passes, and MLIR transformation passes in the global pass registry.
 /// Add LLZK and MLIR func inlining extensions to \p registry.
+/// Register `remove-dead-values` as a pipeline alias for LLZK's cleanup wrapper,
+/// taking precedence over an already registered upstream pass in textual pipelines.
+/// Register passes before parsing pipelines that must use LLZK's behavior.
 void registerPasses(mlir::DialectRegistry &registry);
 
 } // namespace llzk
