@@ -55,7 +55,7 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_from_int64) {
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   ASSERT_TRUE(cxx_attr);
   EXPECT_EQ(cxx_attr.getFieldName(), ty.getFieldName());
-  const auto &value = cxx_attr.getValue();
+  const auto &value = cxx_attr.getRawValue();
   EXPECT_EQ(value, 2147483647);
 }
 
@@ -66,7 +66,7 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_from_int64_in_field) {
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   ASSERT_TRUE(cxx_attr);
   EXPECT_EQ(cxx_attr.getFieldName().getValue(), fieldName.data);
-  const auto &value = cxx_attr.getValue();
+  const auto &value = cxx_attr.getRawValue();
   EXPECT_EQ(value, 0);
 }
 
@@ -76,7 +76,7 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_from_int64_unspecified) {
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   ASSERT_TRUE(cxx_attr);
   EXPECT_EQ(cxx_attr.getFieldName(), nullptr);
-  const auto &value = cxx_attr.getValue();
+  const auto &value = cxx_attr.getRawValue();
   EXPECT_EQ(value, 0);
 }
 
@@ -159,7 +159,7 @@ TEST_F(CAPITest, FeltConstructorsPreserveAllBits) {
            llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, parts, 3),
        }) {
     ASSERT_NE(attr.ptr, nullptr);
-    EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(), expected);
+    EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getRawValue(), expected);
   }
 }
 
@@ -173,7 +173,7 @@ TEST_F(CAPITest, FeltConstructorsPreserveSignedValues) {
              llzkFelt_FeltConstAttrGetFromInt64Unspecified(context, value),
          }) {
       ASSERT_NE(attr.ptr, nullptr);
-      EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(), value);
+      EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getRawValue(), value);
     }
   }
   auto text = mlirStringRefCreateFromCString("-18446744073709551617");
@@ -184,7 +184,7 @@ TEST_F(CAPITest, FeltConstructorsPreserveSignedValues) {
        }) {
     ASSERT_NE(attr.ptr, nullptr);
     EXPECT_EQ(
-        llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(),
+        llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getRawValue(),
         llzk::toDynamicAPInt(unwrap(text))
     );
   }
@@ -212,12 +212,12 @@ TEST_F(CAPITest, FeltPartsConstructorsAcceptEmptyAndLeadingZeroParts) {
            llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, nullptr, 0),
        }) {
     ASSERT_NE(attr.ptr, nullptr);
-    EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(), 0);
+    EXPECT_EQ(llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getRawValue(), 0);
   }
   const uint64_t parts[] = {UINT64_MAX, 0};
   auto attr = llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, parts, 2);
   EXPECT_EQ(
-      llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(),
+      llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getRawValue(),
       llzk::toDynamicAPInt("18446744073709551615")
   );
 }
@@ -279,7 +279,7 @@ TEST_F(CAPITest, FeltPartsConstructorsPreserveSignedValues) {
          }) {
       ASSERT_FALSE(mlirAttributeIsNull(attr));
       EXPECT_EQ(
-          llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getValue(),
+          llvm::cast<llzk::felt::FeltConstAttr>(unwrap(attr)).getRawValue(),
           llzk::toDynamicAPInt(test.expected)
       );
     }
@@ -308,7 +308,7 @@ TEST_F(CAPITest, FeltIntegerRoundTrip) {
   auto attr = llzkFelt_FeltConstAttrGet(context, text, wrap(cppGetFeltType("bn254")));
   ASSERT_NE(attr.ptr, nullptr);
   std::string result;
-  llzkFelt_FeltConstAttrGetValue(attr, [](MlirStringRef part, void *out) {
+  llzkFelt_FeltConstAttrGetRawValue(attr, [](MlirStringRef part, void *out) {
     static_cast<std::string *>(out)->append(part.data, part.length);
   }, &result);
   EXPECT_EQ(result, "-18446744073709551617");
@@ -666,4 +666,21 @@ std::unique_ptr<InvFeltOpBuildFuncHelper> InvFeltOpBuildFuncHelper::get() {
     }
   };
   return std::make_unique<Impl>();
+}
+
+TEST_F(CAPITest, FeltReducedValueOrRawUsesStringCallback) {
+  auto collect = [](MlirStringRef part, void *out) {
+    static_cast<std::string *>(out)->append(part.data, part.length);
+  };
+  auto known = llzkFelt_FeltConstAttrGetFromInt64(context, -1, wrap(cppGetFeltType("babybear")));
+  auto unknown = llzkFelt_FeltConstAttrGetFromStringUnspecified(
+      context, mlirStringRefCreateFromCString("-18446744073709551617")
+  );
+  std::string reduced, raw;
+  // Verify the C wrapper serializes the reduced branch for a specified field.
+  llzkFelt_FeltConstAttrGetReducedValueOrRaw(known, collect, &reduced);
+  // Verify the same wrapper preserves the signed raw fallback for a fieldless literal.
+  llzkFelt_FeltConstAttrGetReducedValueOrRaw(unknown, collect, &raw);
+  EXPECT_EQ(reduced, "2013265920");
+  EXPECT_EQ(raw, "-18446744073709551617");
 }

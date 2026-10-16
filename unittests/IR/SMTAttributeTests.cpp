@@ -47,7 +47,7 @@ TEST_F(SMTAttributeTests, DynamicIntegerStorageUsesSignedNumericIdentity) {
     auto a = llzk::felt::FeltConstAttr::get(&ctx, small);
     auto b = llzk::felt::FeltConstAttr::get(&ctx, wide);
     EXPECT_EQ(a, b);
-    EXPECT_EQ(a.getValue(), small);
+    EXPECT_EQ(a.getRawValue(), small);
     EXPECT_EQ(
         llvm::hash_combine(llzk::DynamicAPIntValue(small)),
         llvm::hash_combine(llzk::DynamicAPIntValue(wide))
@@ -70,8 +70,8 @@ TEST_F(SMTAttributeTests, LimbBuildersPreservePositiveValuesAndFieldTypes) {
   EXPECT_EQ(explicitType, namedField);
   EXPECT_EQ(explicitType.getType(), type);
   EXPECT_EQ(unspecified.getType(), FeltType::get(&ctx));
-  EXPECT_EQ(explicitType.getValue(), expected);
-  EXPECT_EQ(unspecified.getValue(), expected);
+  EXPECT_EQ(explicitType.getRawValue(), expected);
+  EXPECT_EQ(unspecified.getRawValue(), expected);
 
   auto name = mlir::StringAttr::get(&ctx, "custom");
   auto spec = FieldSpecAttr::get(&ctx, name, parts);
@@ -85,13 +85,13 @@ TEST_F(SMTAttributeTests, LimbBuildersCanonicalizeEmptyAndHighZeroLimbs) {
   llvm::ArrayRef<uint64_t> empty;
   const uint64_t zero[] = {0, 0};
   EXPECT_EQ(FeltConstAttr::get(&ctx, empty), FeltConstAttr::get(&ctx, zero));
-  EXPECT_EQ(FeltConstAttr::get(&ctx, empty).getValue(), 0);
+  EXPECT_EQ(FeltConstAttr::get(&ctx, empty).getRawValue(), 0);
 
   const uint64_t parts[] = {UINT64_MAX, 0};
   const uint64_t padded[] = {UINT64_MAX, 0, 0};
   EXPECT_EQ(FeltConstAttr::get(&ctx, parts), FeltConstAttr::get(&ctx, padded));
   EXPECT_EQ(
-      FeltConstAttr::get(&ctx, parts).getValue(), llzk::toDynamicAPInt("18446744073709551615")
+      FeltConstAttr::get(&ctx, parts).getRawValue(), llzk::toDynamicAPInt("18446744073709551615")
   );
   EXPECT_EQ(FieldSpecAttr::get(&ctx, "custom", parts), FieldSpecAttr::get(&ctx, "custom", padded));
 }
@@ -121,8 +121,8 @@ TEST_F(SMTAttributeTests, FeltLimbBuildersPreserveSignedValuesAndFieldTypes) {
     EXPECT_EQ(explicitType, namedField);
     EXPECT_EQ(explicitType.getType(), type);
     EXPECT_EQ(unspecified.getType(), FeltType::get(&ctx));
-    EXPECT_EQ(explicitType.getValue(), expected);
-    EXPECT_EQ(unspecified.getValue(), expected);
+    EXPECT_EQ(explicitType.getRawValue(), expected);
+    EXPECT_EQ(unspecified.getRawValue(), expected);
   }
 }
 

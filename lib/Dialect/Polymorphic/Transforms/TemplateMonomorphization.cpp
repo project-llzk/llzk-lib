@@ -65,11 +65,13 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
     if (std::optional<Type> expected = parameter.getTypeOpt()) {
       if (auto indexType = dyn_cast<IndexType>(*expected)) {
         if (auto felt = dyn_cast<FeltConstAttr>(argument)) {
-          llvm::DynamicAPInt number = felt.getValue();
-          if (felt.getType().hasField()) {
-            const Field &field = felt.getType().getField();
-            number = field.reduce(number);
+          auto reduced = felt.getReducedValue();
+          if (!reduced) {
+            return site->emitError("field element ")
+                   << argument << " cannot be converted to index parameter @"
+                   << parameter.getSymName() << ": a known field modulus is required";
           }
+          const llvm::DynamicAPInt &number = *reduced;
           if (number < 0 || number > std::numeric_limits<int64_t>::max()) {
             return site->emitError("field element ")
                    << argument << " cannot be converted to index parameter @"
@@ -116,12 +118,13 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
           }
         } else if (
             auto felt = dyn_cast<FeltConstAttr>(argument);
-            felt && (!felt.getType().getFieldName() || felt.getType() == feltType)
+            felt && (felt.getType() == feltType || !felt.getType().getFieldName())
         ) {
-          llvm::DynamicAPInt number = felt.getValue();
+          // Fieldless arguments acquire the parameter's field below when known;
+          // otherwise their exact raw literals must survive specialization.
+          llvm::DynamicAPInt number = felt.getReducedValueOrRaw();
           if (feltType.hasField()) {
-            const Field &field = feltType.getField();
-            number = field.reduce(number);
+            number = feltType.getField().reduce(number);
           }
           value = FeltConstAttr::get(source->getContext(), number, feltType);
         }

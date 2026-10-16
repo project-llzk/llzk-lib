@@ -239,13 +239,12 @@ module attributes {llzk.lang} {
       struct.member @"$temp" : !struct.type<@TNondetReg::@NondetReg<[]>> {column}
       struct.member @v : !struct.type<@TDiv::@Div<[]>>
       function.def @compute(%arg0: !array.type<2 x !felt.type>) -> !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-        %felt_const_0 = felt.const  0
         %felt_const_1 = felt.const  1
         %self = struct.new : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>
-        %0 = cast.toindex %felt_const_1
+        %0 = arith.constant 1 : index
         %1 = array.read %arg0[%0] : <2 x !felt.type>, !felt.type
         %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
-        %3 = cast.toindex %felt_const_1
+        %3 = arith.constant 1 : index
         %4 = array.read %arg0[%3] : <2 x !felt.type>, !felt.type
         %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
         %6 = function.call @TDiv::@Div::@compute(%2, %5) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
@@ -255,7 +254,7 @@ module attributes {llzk.lang} {
         %9 = function.call @TNondetReg::@NondetReg::@compute(%8) : (!felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>>
         struct.writem %self[@"$temp"] = %9 : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
         %10 = struct.readm %self[@"$temp"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
-        %11 = cast.toindex %felt_const_0
+        %11 = arith.constant 0 : index
         %12 = array.read %arg0[%11] : <2 x !felt.type>, !felt.type
         %13 = struct.readm %7[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
         %14 = function.call @TDiv::@Div::@compute(%13, %12) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
@@ -267,31 +266,30 @@ module attributes {llzk.lang} {
         %18 = struct.readm %self[@"$temp_1"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
         %array = array.new %10, %18 : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
         struct.writem %self[@out] = %array : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
-        %19 = cast.toindex %felt_const_0
+        %19 = arith.constant 0 : index
         %20 = array.read %array[%19] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
-        %21 = cast.toindex %felt_const_1
+        %21 = arith.constant 1 : index
         %22 = array.read %arg0[%21] : <2 x !felt.type>, !felt.type
         %23 = struct.readm %20[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
-        %24 = cast.toindex %felt_const_1
+        %24 = arith.constant 1 : index
         %25 = array.read %arg0[%24] : <2 x !felt.type>, !felt.type
-        %26 = cast.toindex %felt_const_1
+        %26 = arith.constant 1 : index
         %27 = array.read %array[%26] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
-        %28 = cast.toindex %felt_const_0
+        %28 = arith.constant 0 : index
         %29 = array.read %arg0[%28] : <2 x !felt.type>, !felt.type
         %30 = struct.readm %27[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
-        %31 = cast.toindex %felt_const_1
+        %31 = arith.constant 1 : index
         %32 = array.read %array[%31] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
         %33 = struct.readm %32[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
         struct.writem %self[@"$super"] = %array : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
         function.return %self : !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>
       }
       function.def @constrain(%arg0: !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
-        %felt_const_0 = felt.const  0
         %felt_const_1 = felt.const  1
-        %0 = cast.toindex %felt_const_1
+        %0 = arith.constant 1 : index
         %1 = array.read %arg1[%0] : <2 x !felt.type>, !felt.type
         %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
-        %3 = cast.toindex %felt_const_1
+        %3 = arith.constant 1 : index
         %4 = array.read %arg1[%3] : <2 x !felt.type>, !felt.type
         %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
         %6 = struct.readm %arg0[@v] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
@@ -299,7 +297,7 @@ module attributes {llzk.lang} {
         %7 = struct.readm %6[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
         %8 = struct.readm %arg0[@"$temp"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
         function.call @TNondetReg::@NondetReg::@constrain(%8, %7) : (!struct.type<@TNondetReg::@NondetReg<[]>>, !felt.type) -> ()
-        %9 = cast.toindex %felt_const_0
+        %9 = arith.constant 0 : index
         %10 = array.read %arg1[%9] : <2 x !felt.type>, !felt.type
         %11 = struct.readm %6[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
         %12 = struct.readm %arg0[@"$temp_0"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
@@ -308,24 +306,24 @@ module attributes {llzk.lang} {
         %14 = struct.readm %arg0[@"$temp_1"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
         function.call @TNondetReg::@NondetReg::@constrain(%14, %13) : (!struct.type<@TNondetReg::@NondetReg<[]>>, !felt.type) -> ()
         %array = array.new %8, %14 : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
-        %15 = cast.toindex %felt_const_0
+        %15 = arith.constant 0 : index
         %16 = array.read %array[%15] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
-        %17 = cast.toindex %felt_const_1
+        %17 = arith.constant 1 : index
         %18 = array.read %arg1[%17] : <2 x !felt.type>, !felt.type
         %19 = felt.sub %felt_const_1, %18 : !felt.type, !felt.type
         %20 = struct.readm %16[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
         %21 = felt.mul %20, %19 : !felt.type, !felt.type
-        %22 = cast.toindex %felt_const_1
+        %22 = arith.constant 1 : index
         %23 = array.read %arg1[%22] : <2 x !felt.type>, !felt.type
         %24 = felt.add %23, %felt_const_1 : !felt.type, !felt.type
         constrain.eq %21, %24 : !felt.type, !felt.type
-        %25 = cast.toindex %felt_const_1
+        %25 = arith.constant 1 : index
         %26 = array.read %array[%25] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
-        %27 = cast.toindex %felt_const_0
+        %27 = arith.constant 0 : index
         %28 = array.read %arg1[%27] : <2 x !felt.type>, !felt.type
         %29 = struct.readm %26[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
         %30 = felt.mul %29, %28 : !felt.type, !felt.type
-        %31 = cast.toindex %felt_const_1
+        %31 = arith.constant 1 : index
         %32 = array.read %array[%31] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
         %33 = struct.readm %32[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
         constrain.eq %30, %33 : !felt.type, !felt.type

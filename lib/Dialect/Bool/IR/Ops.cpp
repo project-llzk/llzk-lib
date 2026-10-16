@@ -142,21 +142,17 @@ eval(FeltCmpPredicate pred, const llvm::DynamicAPInt &lval, const llvm::DynamicA
 OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getLhs());
   auto rhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getRhs());
-  if (!lhsAttr || !rhsAttr) {
+  if (!lhsAttr || !rhsAttr || lhsAttr.getFieldName() != rhsAttr.getFieldName()) {
     return {};
   }
 
-  auto fieldName = lhsAttr.getFieldName();
-  if (!fieldName || fieldName != rhsAttr.getFieldName()) {
+  auto lhs = lhsAttr.getReducedValue();
+  auto rhs = rhsAttr.getReducedValue();
+  if (!lhs || !rhs) {
     return {};
   }
-  auto field = Field::tryGetField(fieldName.getValue());
-  if (failed(field)) {
-    return {};
-  }
-  auto lval = field->get().reduce(lhsAttr.getValue());
-  auto rval = field->get().reduce(rhsAttr.getValue());
-  return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
+
+  return makeBoolAttr(getContext(), eval(getPredicate(), *lhs, *rhs));
 }
 
 //===------------------------------------------------------------------===//

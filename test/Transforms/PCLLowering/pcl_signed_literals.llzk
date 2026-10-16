@@ -4,10 +4,12 @@
 // RUN: llzk-translate -pcl-to-lisp -lisp-compressed-lines %t | FileCheck --check-prefix=LISP %s
 
 // Exercise lowering and text export without canonicalization: negative literals
-// must retain their signed mathematical values, including beyond 64 bits.
+// with no specified field must retain signed raw values, including beyond 64 bits.
 // The positive literal also distinguishes -1 from its unsigned 64-bit bit pattern.
-!B = !felt.type<"babybear">
-module attributes {llzk.lang} {
+// Canonicalization is prevented by keeping the felt.type fieldless and instead
+// adding a dummy attribute where `selectPrime()` can pickup the field.
+!B = !felt.type
+module attributes {llzk.lang, test.field = !felt.type<"babybear">} {
   struct.def @SignedLiterals {
     struct.member @minus_one : !B {llzk.pub}
     struct.member @minus_42 : !B {llzk.pub}

@@ -12,6 +12,6 @@ operations and terms. On top of that, LLZK defines the smt extensions below.
 
 \include{doc} build/doc/mlir/dialect/SMTInfoDialect.md
 
-Felt literals are reduced modulo the field selected by the lowering pass before
-being emitted as SMT integer constants. This also applies to signed literals and
-to source felt types whose field name is unspecified.
+Felt literals are reduced to `[0, p)` before being emitted as SMT integer
+constants, including signed literals. A specified source field determines `p`;
+for fieldless literals, the field selected by the lowering pass determines `p`.

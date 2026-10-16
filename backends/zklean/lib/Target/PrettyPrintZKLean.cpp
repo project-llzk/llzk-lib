@@ -176,10 +176,11 @@ static std::string formatOperationCall(Operation &op, llvm::DenseMap<Value, std:
 // Render a felt constant as a decimal literal.
 // Uses a base-10 string conversion for readability.
 static std::string formatFeltConstant(llzk::felt::FeltConstantOp constOp) {
-  auto value = constOp.getValueAttr().getValue();
-  llvm::SmallString<32> buffer;
-  llvm::raw_svector_ostream(buffer) << value;
-  return std::string(buffer);
+  std::string buffer;
+  // Use the reduced representative for a specified field; a raw unspecified-field
+  // value is later interpreted by the target Lean Field instance.
+  llvm::raw_string_ostream(buffer) << constOp.getValueAttr().getReducedValueOrRaw();
+  return buffer;
 }
 
 // Assign vN names to SSA results for readable Lean output.

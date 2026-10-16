@@ -1224,11 +1224,15 @@ private:
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
+      auto constVal = feltConst.getValue().getReducedValue();
+      if (!constVal) {
+        return feltConst.emitError(
+            "felt constant requires a specified field for witness generation"
+        );
+      }
       auto intType = IntegerType::get(builder.getContext(), field.bitWidth());
-      // Reduce into the field first, then build an APInt with the exact storage width.
-      auto constVal = feltConst.getValue().getValue();
-      auto modVal = field.reduce(constVal);
-      auto intVal = cantFail(checkedToAPInt(modVal, field.bitWidth(), false));
+      // Store the field representative in an APInt with the exact storage width.
+      auto intVal = cantFail(checkedToAPInt(*constVal, field.bitWidth(), false));
       Value lowered = arith::ConstantOp::create(builder, loc, IntegerAttr::get(intType, intVal));
       return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
     }

@@ -690,8 +690,11 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
     SourceRefLatticeValue idxVals = getSourceRefState(idxOperand);
 
     // Only exact constant indices get tracked precisely.
-    if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+    auto constantIndex = idxVals.isSingleValue()
+                             ? idxVals.getSingleValue().getConstantValue(field.get())
+                             : FailureOr<DynamicAPInt>();
+    if (succeeded(constantIndex)) {
+      indices.emplace_back(*constantIndex);
     } else {
       indices.push_back(SourceRefIndex::forArrayDimension(arrayType.getDimSize(i)));
     }
@@ -720,7 +723,7 @@ Interval IntervalDataFlowAnalysis::getRefInterval(const SourceRef &ref) {
   }
 
   if (ref.isConstantInt()) {
-    auto constVal = ref.getConstantValue();
+    auto constVal = ref.getConstantValue(field.get());
     if (succeeded(constVal)) {
       return Interval::Degenerate(field.get(), *constVal);
     }
@@ -761,7 +764,7 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
   }
 
   if (ref.isConstantInt()) {
-    auto constVal = ref.getConstantValue();
+    auto constVal = ref.getConstantValue(field.get());
     if (succeeded(constVal)) {
       return UnreducedInterval(*constVal, *constVal);
     }
@@ -1321,8 +1324,9 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   // clang-format off
   llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
       .Case<FeltConstantOp>([&](auto feltConst) {
-        auto constOpVal = feltConst.getValue().getValue();
-        return field.get().reduce(constOpVal);
+        // Preserve felt.const's declared-field meaning before reduction in the analysis field.
+        // Fieldless literals instead use the raw fallback, as in SourceRef::getConstantValue.
+        return field.get().reduce(feltConst.getValue().getReducedValueOrRaw());
       })
       .Case<arith::ConstantIndexOp>([&](auto indexConst) {
         return DynamicAPInt(indexConst.value());
@@ -1558,8 +1562,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   auto mulCase = [&](MulFeltOp mulOp) {
     // We check for the constant case first.
     auto constCase = [&](FeltConstantOp constOperand, Value multiplicand) {
-      auto latVal = getLatticeElement(multiplicand)->getValue().getScalarValue();
-      auto constVal = f.reduce(constOperand.getValue().getValue());
+      DynamicAPInt constVal = getConst(constOperand);
       if (constVal == 0) {
         // There's no inverse for zero, so we do nothing.
         return;
@@ -1796,8 +1799,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
       if (failed(handleRefValue())) {
         return failure();
       }
-      auto constInt = c.getValue().getValue();
-      consts.push_back(field.get().reduce(constInt));
+      consts.push_back(getConst(c));
       continue;
     } else if (m_RefValue(&signalVal).match(v)) {
       if (failed(handleRefValue())) {

@@ -56,7 +56,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @large_bound() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[LARGE_LO:[-0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:      %[[LARGE_HI:[-0-9a-zA-Z_\.]+]] = felt.const  -1 : <"bn128">
+// CHECK-NEXT:      %[[LARGE_HI:[-0-9a-zA-Z_\.]+]] = felt.const  21888242871839275222246405745257275088548364400416034343698204186575808495616 : <"bn128">
 // CHECK-NEXT:      %[[LARGE_RESULT:[-0-9a-zA-Z_\.]+]] = scf.while (%[[LARGE_IV:[-0-9a-zA-Z_\.]+]] = %[[LARGE_LO]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
 // CHECK-NEXT:        %[[LARGE_COND:[-0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[LARGE_IV]], %[[LARGE_HI]]) : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        scf.condition(%[[LARGE_COND]]) %[[LARGE_IV]] : !felt.type<"bn128">
@@ -82,9 +82,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[EFFECT_LO]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @negative_literals() -> !felt.type<"babybear"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:      %[[NEGATIVE_LO:[-0-9a-zA-Z_\.]+]] = felt.const  -2013265920 : <"babybear">
 // CHECK-NEXT:      %[[CANONICAL_IV:[-0-9a-zA-Z_\.]+]] = felt.const  1 : <"babybear">
-// CHECK-NEXT:      constrain.eq %[[CANONICAL_IV]], %[[NEGATIVE_LO]] : !felt.type<"babybear">, !felt.type<"babybear">
-// CHECK-NEXT:      function.return %[[NEGATIVE_LO]] : !felt.type<"babybear">
+// CHECK-NEXT:      constrain.eq %[[CANONICAL_IV]], %[[CANONICAL_IV]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[CANONICAL_IV]] : !felt.type<"babybear">
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
