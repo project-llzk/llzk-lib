@@ -38,6 +38,7 @@
 #include <llvm/Support/Debug.h>
 
 #include <algorithm>
+#include <cassert>
 #include <limits>
 
 namespace llzk {
@@ -173,10 +174,15 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       auto upper = info.ub->getDefiningOp<FeltConstantOp>();
       auto next = nextIvar.getDefiningOp<FeltConstantOp>();
       if (lower && upper && next) {
+        // In valid IR, all 3 constants must have the same type as the induction variable
+        // and we checked above that it has a field so they can all be reduced via the field.
+        assert(lower.getType() == type && "lower bound type must match induction variable");
+        assert(upper.getType() == type && "upper bound type must match induction variable");
+        assert(next.getType() == type && "yielded constant type must match induction variable");
         const llzk::Field &field = type.getField();
-        auto lo = field.reduce(lower.getValue().getValue());
-        auto hi = field.reduce(upper.getValue().getValue());
-        auto end = field.reduce(next.getValue().getValue());
+        auto lo = field.reduce(lower.getValue().getRawValue());
+        auto hi = field.reduce(upper.getValue().getRawValue());
+        auto end = field.reduce(next.getValue().getRawValue());
         if (lo < hi && end >= hi) {
           // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
           // bounding hi also bounds lo and hi - lo.
