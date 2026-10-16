@@ -71,12 +71,12 @@ struct LoweredValue {
 static FailureOr<std::reference_wrapper<const Field>> getModuleField(ModuleOp moduleOp) {
   FieldSet fields;
   if (failed(collectFields(moduleOp.getOperation(), fields, false))) {
-    moduleOp.emitError("failed to collect fields for llzk-witgen lowering");
-    return failure();
+    return moduleOp.emitError(
+        "llzk-witgen execution-engine lowering failed collecting 'felt.type' fields"
+    );
   }
   if (fields.size() != 1) {
-    moduleOp.emitError("llzk-witgen execution-engine lowering requires exactly one field");
-    return failure();
+    return moduleOp.emitError("llzk-witgen execution-engine lowering requires exactly one field");
   }
   return *fields.begin();
 }
