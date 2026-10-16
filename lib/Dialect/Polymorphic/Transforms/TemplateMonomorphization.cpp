@@ -118,7 +118,7 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
           }
         } else if (
             auto felt = dyn_cast<FeltConstAttr>(argument);
-            felt && (!felt.getType().getFieldName() || felt.getType() == feltType)
+            felt && (felt.getType() == feltType || !felt.getType().getFieldName())
         ) {
           // Fieldless arguments acquire the parameter's field below when known;
           // otherwise their exact raw literals must survive specialization.

@@ -168,16 +168,15 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // with a constant. Only accept it when the initial condition is true and the
   // yielded value makes the next condition false; otherwise it may loop forever.
   if (!info.step.has_value()) {
-    auto lower = info.lb->getDefiningOp<FeltConstantOp>();
-    auto upper = info.ub->getDefiningOp<FeltConstantOp>();
-    auto next = nextIvar.getDefiningOp<FeltConstantOp>();
-    auto type = dyn_cast<FeltType>(ivarAfter.getType());
-    if (lower && upper && next && type && type.getFieldName()) {
-      auto field = llzk::Field::tryGetField(type.getFieldName().getValue());
-      if (succeeded(field)) {
-        auto lo = field->get().reduce(lower.getValue().getValue());
-        auto hi = field->get().reduce(upper.getValue().getValue());
-        auto end = field->get().reduce(next.getValue().getValue());
+    if (auto type = dyn_cast<FeltType>(ivarAfter.getType()); type && type.hasField()) {
+      auto lower = info.lb->getDefiningOp<FeltConstantOp>();
+      auto upper = info.ub->getDefiningOp<FeltConstantOp>();
+      auto next = nextIvar.getDefiningOp<FeltConstantOp>();
+      if (lower && upper && next) {
+        const llzk::Field &field = type.getField();
+        auto lo = field.reduce(lower.getValue().getValue());
+        auto hi = field.reduce(upper.getValue().getValue());
+        auto end = field.reduce(next.getValue().getValue());
         if (lo < hi && end >= hi) {
           // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
           // bounding hi also bounds lo and hi - lo.
