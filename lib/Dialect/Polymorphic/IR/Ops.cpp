@@ -191,7 +191,18 @@ Type TemplateExprOp::getType() {
   return yieldOp.getVal().getType();
 }
 
-std::optional<Type> TemplateExprOp::getTypeOpt() { return getType(); }
+std::optional<Type> TemplateExprOp::getTypeOpt() {
+  // A symbol user may be verified before this expression's initializer region is verified.
+  Region &region = getInitializerRegion();
+  if (!region.hasOneBlock() || region.front().empty()) {
+    return std::nullopt;
+  }
+  auto yieldOp = llvm::dyn_cast<YieldOp>(region.front().back());
+  if (!yieldOp || yieldOp->getNumOperands() != 1) {
+    return std::nullopt;
+  }
+  return yieldOp.getVal().getType();
+}
 
 //===------------------------------------------------------------------===//
 // ConstReadOp

@@ -1,0 +1,100 @@
+// RUN: llzk-opt -verify-diagnostics %s | FileCheck %s
+
+// Typed symbols with the required field remain valid struct arguments.
+module attributes {llzk.lang} {
+  global.def const @GlobalValue : !felt.type<"bn128"> = 35
+
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @AnyField {
+    poly.param @N : !felt.type
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@AnyField::@S<[@N]>> {
+        %self = struct.new : !struct.type<@AnyField::@S<[@N]>>
+        function.return %self : !struct.type<@AnyField::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@AnyField::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @LocalValue : !felt.type<"bn128">
+    poly.param @DeferredValue
+
+    struct.def @Use {
+      struct.member @from_global : !struct.type<@T::@S<[@GlobalValue]>>
+      struct.member @from_binding : !struct.type<@T::@S<[@LocalValue]>>
+      struct.member @from_deferred_binding : !struct.type<@T::@S<[@DeferredValue]>>
+      // A fieldless restriction accepts the same known field in concrete and symbolic forms.
+      struct.member @from_concrete_any_field : !struct.type<@AnyField::@S<[#felt<const 35 : !felt.type<"bn128">>]>>
+      struct.member @from_global_any_field : !struct.type<@AnyField::@S<[@GlobalValue]>>
+      struct.member @from_binding_any_field : !struct.type<@AnyField::@S<[@LocalValue]>>
+
+      function.def @compute() -> !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>>
+        function.return %self : !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @GlobalValue : !felt.type<"bn128"> =  35 : <"bn128">
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : !felt.type<"bn128">
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@T::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@T::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @AnyField {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@AnyField::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@AnyField::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@AnyField::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@AnyField::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @LocalValue : !felt.type<"bn128">
+// CHECK-NEXT:      poly.param @DeferredValue
+// CHECK-NEXT:      struct.def @Use {
+// CHECK-NEXT:        struct.member @from_global : !struct.type<@T::@S<[@GlobalValue]>>
+// CHECK-NEXT:        struct.member @from_binding : !struct.type<@T::@S<[@LocalValue]>>
+// CHECK-NEXT:        struct.member @from_deferred_binding : !struct.type<@T::@S<[@DeferredValue]>>
+// CHECK-NEXT:        struct.member @from_concrete_any_field : !struct.type<@AnyField::@S<[#felt<const 35 : <"bn128">>]>>
+// CHECK-NEXT:        struct.member @from_global_any_field : !struct.type<@AnyField::@S<[@GlobalValue]>>
+// CHECK-NEXT:        struct.member @from_binding_any_field : !struct.type<@AnyField::@S<[@LocalValue]>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Caller::@Use<[@LocalValue, @DeferredValue]>>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

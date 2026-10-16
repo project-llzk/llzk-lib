@@ -56,10 +56,8 @@ def LLZK_TemplateOp
     }
     ```
 
-    The order of `poly.param` definitions in the template body determines the order that
-    template parameters must be listed in the parameter list of a `struct.type` referring
-    to a struct nested within the template. In the example above, the type of `@StructName`
-    is `!struct.type<@TemplateName::@StructName<[@N, @T]>>`.
+    The nested struct above may forward both template parameters in declaration order as
+    `!struct.type<@TemplateName::@StructName<[@N, @T]>>`.
 
     Transform passes may attach the discardable generic attribute `poly.name_pattern` to a partial
     template with `P` current `poly.param` operations. Its value is an `ArrayAttr` of `P + 1`
