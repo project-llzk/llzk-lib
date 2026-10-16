@@ -66,6 +66,14 @@ with ir.Context() as context, ir.Location.unknown():
     )
     assert reparsed.operation.verify()
 
+    # Dense dataflow comes from MLIRAnalysis rather than MLIRPythonCAPI. Exercise
+    # it through the extension to catch missing archive code and runtime clashes.
+    before_analysis = str(reparsed)
+    PassManager.parse("builtin.module(llzk-print-predecessors)").run(
+        reparsed.operation
+    )
+    assert str(reparsed) == before_analysis
+
     # Coexist with upstream's eagerly registered remove-dead-values pass.
     poison_module = ir.Module.parse("module { %0 = ub.poison : i32 }")
     PassManager.parse("builtin.module(llzk-remove-dead-values)").run(
