@@ -108,9 +108,22 @@ podRecordUnmodified(Value storage, StringAttr selectedRecord, Operation *lhs, Op
   });
 }
 
+/// Return whether \p op contains a nested write that may target the member read
+/// by \p read. Struct values are identity-bearing handles, so a write through a
+/// different SSA value cannot be assumed to target a distinct component.
+static bool containsPotentiallyAliasingMemberWrite(Operation *op, MemberReadOp read) {
+  WalkResult result = op->walk([&](MemberWriteOp write) {
+    if (write.getOperation() != op && write.getMemberNameAttr() == read.getMemberNameAttr()) {
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return result.wasInterrupted();
+}
+
 /// Find the reaching same-block member write for a read. The search stops at an
-/// unknown use of the component, and only an exact component/member match can be
-/// forwarded.
+/// unknown use of the component or a potentially aliasing same-member write,
+/// and only an exact component/member match can be forwarded.
 static MemberWriteOp findReachingMemberWrite(MemberReadOp read) {
   if (read.getTableOffset().has_value()) {
     return nullptr;
@@ -118,6 +131,29 @@ static MemberWriteOp findReachingMemberWrite(MemberReadOp read) {
 
   Value component = read.getComponent();
   for (Operation *cur = read->getPrevNode(); cur; cur = cur->getPrevNode()) {
+    if (auto memberWrite = dyn_cast<MemberWriteOp>(cur)) {
+      if (memberWrite.getComponent() == component) {
+        if (memberWrite.getMemberNameAttr() != read.getMemberNameAttr()) {
+          continue;
+        }
+        if (memberWrite.getVal().getType() != read.getVal().getType()) {
+          return nullptr;
+        }
+        return memberWrite;
+      }
+
+      // A struct handle copied through a POD, struct member, or another
+      // identity-preserving operation may denote the same component despite
+      // having a distinct SSA value.
+      if (memberWrite.getMemberNameAttr() == read.getMemberNameAttr()) {
+        return nullptr;
+      }
+    }
+
+    if (containsPotentiallyAliasingMemberWrite(cur, read)) {
+      return nullptr;
+    }
+
     if (!operationUsesValue(cur, component)) {
       continue;
     }
@@ -133,18 +169,6 @@ static MemberWriteOp findReachingMemberWrite(MemberReadOp read) {
         continue;
       }
       return nullptr;
-    }
-    if (auto memberWrite = dyn_cast<MemberWriteOp>(cur)) {
-      if (memberWrite.getComponent() != component) {
-        return nullptr;
-      }
-      if (memberWrite.getMemberNameAttr() != read.getMemberNameAttr()) {
-        continue;
-      }
-      if (memberWrite.getVal().getType() != read.getVal().getType()) {
-        return nullptr;
-      }
-      return memberWrite;
     }
     return nullptr;
   }

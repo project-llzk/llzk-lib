@@ -409,3 +409,51 @@ module attributes {llzk.lang} {
 // CHECK-NOT:       function.call @OverwrittenStructSnapshot::@product(
 // CHECK:           function.call @OverwrittenStructSnapshot::@compute(
 // CHECK:           function.call @OverwrittenStructSnapshot::@constrain(
+
+// -----
+
+!Handles = !pod.type<[@root: !struct.type<@Root>]>
+
+module attributes {llzk.lang} {
+  struct.def @AliasedMemberWrite {
+    function.def @compute(%input: !felt.type) -> !struct.type<@AliasedMemberWrite> {
+      %self = struct.new : !struct.type<@AliasedMemberWrite>
+      function.return %self : !struct.type<@AliasedMemberWrite>
+    }
+    function.def @constrain(
+        %self: !struct.type<@AliasedMemberWrite>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @value : !felt.type
+    struct.member @child : !struct.type<@AliasedMemberWrite>
+    function.def @compute(
+        %handles: !Handles, %old: !felt.type, %new: !felt.type) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      pod.write %handles[@root] = %self : !Handles, !struct.type<@Root>
+      %alias = pod.read %handles[@root] : !Handles, !struct.type<@Root>
+      struct.writem %self[@value] = %old : !struct.type<@Root>, !felt.type
+      %child = function.call @AliasedMemberWrite::@compute(%old) : (!felt.type) -> !struct.type<@AliasedMemberWrite>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@AliasedMemberWrite>
+      struct.writem %alias[@value] = %new : !struct.type<@Root>, !felt.type
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %handles: !Handles,
+        %old: !felt.type, %new: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@AliasedMemberWrite>
+      %input = struct.readm %self[@value] : !struct.type<@Root>, !felt.type
+      function.call @AliasedMemberWrite::@constrain(%child, %input) : (!struct.type<@AliasedMemberWrite>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @AliasedMemberWrite::@product(
+// CHECK:           function.call @AliasedMemberWrite::@compute(
+// CHECK:           struct.writem
+// CHECK:           function.call @AliasedMemberWrite::@constrain(
