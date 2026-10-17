@@ -126,6 +126,20 @@ cmake .. -GNinja \
   -DLLZK_BUILD_DEVTOOLS=ON
 ```
 
+# Building with PCL
+
+The bundled \ref pcl-backend "PCL backend" is enabled by default
+(`LLZK_WITH_PCL=AUTO`), including with `nix build`. To enable it explicitly, add
+`-DLLZK_WITH_PCL=ON` to the LLZK CMake configuration command above. For an existing
+build, run from the repository root (inside `nix develop` when using Nix):
+
+```bash
+cmake -S . -B build -DLLZK_WITH_PCL=ON
+cmake --build build
+```
+
+Use `-DLLZK_WITH_PCL=OFF` to disable the backend.
+
 # Development Workflow {#dev-workflow}
 
 Once you have generated the build configuration and are in the `build` directory,

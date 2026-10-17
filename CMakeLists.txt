@@ -268,6 +268,14 @@ install(TARGETS LLZKAllDialects EXPORT LLZKTargets)
 add_subdirectory(include)
 add_subdirectory(lib)
 add_subdirectory(backends)
+
+# Generate all includes needed for source analysis without building the libraries.
+add_custom_target(llzk-headers)
+add_dependencies(llzk-headers LLZKDialectHeaders ZKLeanDialectHeaders)
+if(TARGET PCLDialectHeaders)
+  add_dependencies(llzk-headers PCLDialectHeaders)
+endif()
+
 add_subdirectory(tools)
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(python)
