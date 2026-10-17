@@ -143,7 +143,7 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     if (compute.getNumOperands() == 0) {
       return true;
     }
-    for (unsigned i = 0, e = compute->getNumOperands() - 1; i < e; i++) {
+    for (unsigned i = 0, e = compute->getNumOperands(); i < e; i++) {
       if (!equivalence.areSignalsEquivalent(compute->getOperand(i), constrain->getOperand(i + 1))) {
         return false;
       }
@@ -192,6 +192,8 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
         compute.getOperands()
     );
     compute->replaceAllUsesWith(newCall.getResults());
+    compute->erase();
+    constrain->erase();
   }
 
   return success();

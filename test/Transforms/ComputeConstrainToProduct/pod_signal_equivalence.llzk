@@ -1,0 +1,459 @@
+// RUN: llzk-opt -split-input-file --llzk-compute-constrain-to-product="root-struct=Root" %s | FileCheck --enable-var-scope %s
+
+!Inputs = !pod.type<[@value: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @SameRecord {
+    function.def @compute(%input: !felt.type) -> !struct.type<@SameRecord> {
+      %self = struct.new : !struct.type<@SameRecord>
+      function.return %self : !struct.type<@SameRecord>
+    }
+    function.def @constrain(%self: !struct.type<@SameRecord>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@SameRecord>
+    function.def @compute(%inputs: !Inputs) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      %child = function.call @SameRecord::@compute(%input) : (!felt.type) -> !struct.type<@SameRecord>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@SameRecord>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(%self: !struct.type<@Root>, %inputs: !Inputs) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@SameRecord>
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      function.call @SameRecord::@constrain(%child, %input) : (!struct.type<@SameRecord>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK:           function.call @SameRecord::@product(
+
+// -----
+
+!Inputs = !pod.type<[@value: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @ClobberedRecord {
+    function.def @compute(%input: !felt.type) -> !struct.type<@ClobberedRecord> {
+      %self = struct.new : !struct.type<@ClobberedRecord>
+      function.return %self : !struct.type<@ClobberedRecord>
+    }
+    function.def @constrain(%self: !struct.type<@ClobberedRecord>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@ClobberedRecord>
+    function.def @compute(%inputs: !Inputs, %replacement: !felt.type) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      %child = function.call @ClobberedRecord::@compute(%input) : (!felt.type) -> !struct.type<@ClobberedRecord>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@ClobberedRecord>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %inputs: !Inputs, %replacement: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@ClobberedRecord>
+      pod.write %inputs[@value] = %replacement : !Inputs, !felt.type
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      function.call @ClobberedRecord::@constrain(%child, %input) : (!struct.type<@ClobberedRecord>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @ClobberedRecord::@product(
+// CHECK:           function.call @ClobberedRecord::@compute(
+// CHECK:           function.call @ClobberedRecord::@constrain(
+
+// -----
+
+!Inputs = !pod.type<[@left: !felt.type, @right: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @DifferentRecords {
+    function.def @compute(%input: !felt.type) -> !struct.type<@DifferentRecords> {
+      %self = struct.new : !struct.type<@DifferentRecords>
+      function.return %self : !struct.type<@DifferentRecords>
+    }
+    function.def @constrain(%self: !struct.type<@DifferentRecords>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@DifferentRecords>
+    function.def @compute(%inputs: !Inputs) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@left] : !Inputs, !felt.type
+      %child = function.call @DifferentRecords::@compute(%input) : (!felt.type) -> !struct.type<@DifferentRecords>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@DifferentRecords>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(%self: !struct.type<@Root>, %inputs: !Inputs) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@DifferentRecords>
+      %input = pod.read %inputs[@right] : !Inputs, !felt.type
+      function.call @DifferentRecords::@constrain(%child, %input) : (!struct.type<@DifferentRecords>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @DifferentRecords::@product(
+// CHECK:           function.call @DifferentRecords::@compute(
+// CHECK:           function.call @DifferentRecords::@constrain(
+
+// -----
+
+!Inner = !pod.type<[@value: !felt.type]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+module attributes {llzk.lang} {
+  struct.def @NestedSamePath {
+    function.def @compute(%input: !felt.type) -> !struct.type<@NestedSamePath> {
+      %self = struct.new : !struct.type<@NestedSamePath>
+      function.return %self : !struct.type<@NestedSamePath>
+    }
+    function.def @constrain(%self: !struct.type<@NestedSamePath>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@NestedSamePath>
+    function.def @compute(%outer: !Outer) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %inner = pod.read %outer[@inner] : !Outer, !Inner
+      %input = pod.read %inner[@value] : !Inner, !felt.type
+      %child = function.call @NestedSamePath::@compute(%input) : (!felt.type) -> !struct.type<@NestedSamePath>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@NestedSamePath>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(%self: !struct.type<@Root>, %outer: !Outer) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@NestedSamePath>
+      %inner = pod.read %outer[@inner] : !Outer, !Inner
+      %input = pod.read %inner[@value] : !Inner, !felt.type
+      function.call @NestedSamePath::@constrain(%child, %input) : (!struct.type<@NestedSamePath>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK:           function.call @NestedSamePath::@product(
+
+// -----
+
+!Inner = !pod.type<[@value: !felt.type]>
+!Outer = !pod.type<[@left: !Inner, @right: !Inner]>
+
+module attributes {llzk.lang} {
+  struct.def @NestedDifferentPaths {
+    function.def @compute(%input: !felt.type) -> !struct.type<@NestedDifferentPaths> {
+      %self = struct.new : !struct.type<@NestedDifferentPaths>
+      function.return %self : !struct.type<@NestedDifferentPaths>
+    }
+    function.def @constrain(%self: !struct.type<@NestedDifferentPaths>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@NestedDifferentPaths>
+    function.def @compute(%outer: !Outer) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %inner = pod.read %outer[@left] : !Outer, !Inner
+      %input = pod.read %inner[@value] : !Inner, !felt.type
+      %child = function.call @NestedDifferentPaths::@compute(%input) : (!felt.type) -> !struct.type<@NestedDifferentPaths>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@NestedDifferentPaths>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(%self: !struct.type<@Root>, %outer: !Outer) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@NestedDifferentPaths>
+      %inner = pod.read %outer[@right] : !Outer, !Inner
+      %input = pod.read %inner[@value] : !Inner, !felt.type
+      function.call @NestedDifferentPaths::@constrain(%child, %input) : (!struct.type<@NestedDifferentPaths>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @NestedDifferentPaths::@product(
+// CHECK:           function.call @NestedDifferentPaths::@compute(
+// CHECK:           function.call @NestedDifferentPaths::@constrain(
+
+// -----
+
+!Inputs = !pod.type<[@value: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @DistinctPods {
+    function.def @compute(%input: !felt.type) -> !struct.type<@DistinctPods> {
+      %self = struct.new : !struct.type<@DistinctPods>
+      function.return %self : !struct.type<@DistinctPods>
+    }
+    function.def @constrain(%self: !struct.type<@DistinctPods>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@DistinctPods>
+    function.def @compute(%value: !felt.type) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %inputs = pod.new { @value = %value } : !Inputs
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      %child = function.call @DistinctPods::@compute(%input) : (!felt.type) -> !struct.type<@DistinctPods>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@DistinctPods>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(%self: !struct.type<@Root>, %value: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@DistinctPods>
+      %inputs = pod.new { @value = %value } : !Inputs
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      function.call @DistinctPods::@constrain(%child, %input) : (!struct.type<@DistinctPods>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @DistinctPods::@product(
+// CHECK:           function.call @DistinctPods::@compute(
+// CHECK:           function.call @DistinctPods::@constrain(
+
+// -----
+
+!Inputs = !pod.type<[@selected: !felt.type, @other: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @DisjointWrite {
+    function.def @compute(%input: !felt.type) -> !struct.type<@DisjointWrite> {
+      %self = struct.new : !struct.type<@DisjointWrite>
+      function.return %self : !struct.type<@DisjointWrite>
+    }
+    function.def @constrain(%self: !struct.type<@DisjointWrite>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@DisjointWrite>
+    function.def @compute(%inputs: !Inputs, %replacement: !felt.type) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@selected] : !Inputs, !felt.type
+      %child = function.call @DisjointWrite::@compute(%input) : (!felt.type) -> !struct.type<@DisjointWrite>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@DisjointWrite>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %inputs: !Inputs, %replacement: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@DisjointWrite>
+      pod.write %inputs[@other] = %replacement : !Inputs, !felt.type
+      %input = pod.read %inputs[@selected] : !Inputs, !felt.type
+      function.call @DisjointWrite::@constrain(%child, %input) : (!struct.type<@DisjointWrite>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK:           function.call @DisjointWrite::@product(
+
+// -----
+
+!Inner = !pod.type<[@value: !felt.type]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+module attributes {llzk.lang} {
+  struct.def @NestedOuterReplacement {
+    function.def @compute(%input: !felt.type) -> !struct.type<@NestedOuterReplacement> {
+      %self = struct.new : !struct.type<@NestedOuterReplacement>
+      function.return %self : !struct.type<@NestedOuterReplacement>
+    }
+    function.def @constrain(
+        %self: !struct.type<@NestedOuterReplacement>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @child : !struct.type<@NestedOuterReplacement>
+    function.def @compute(%outer: !Outer, %replacement: !Inner) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %inner = pod.read %outer[@inner] : !Outer, !Inner
+      %input = pod.read %inner[@value] : !Inner, !felt.type
+      %child = function.call @NestedOuterReplacement::@compute(%input) : (!felt.type) -> !struct.type<@NestedOuterReplacement>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@NestedOuterReplacement>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %outer: !Outer, %replacement: !Inner) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@NestedOuterReplacement>
+      pod.write %outer[@inner] = %replacement : !Outer, !Inner
+      %inner = pod.read %outer[@inner] : !Outer, !Inner
+      %input = pod.read %inner[@value] : !Inner, !felt.type
+      function.call @NestedOuterReplacement::@constrain(%child, %input) : (!struct.type<@NestedOuterReplacement>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @NestedOuterReplacement::@product(
+// CHECK:           function.call @NestedOuterReplacement::@compute(
+// CHECK:           function.call @NestedOuterReplacement::@constrain(
+
+// -----
+
+!Inputs = !pod.type<[@value: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @StructSnapshot {
+    function.def @compute(%input: !felt.type) -> !struct.type<@StructSnapshot> {
+      %self = struct.new : !struct.type<@StructSnapshot>
+      function.return %self : !struct.type<@StructSnapshot>
+    }
+    function.def @constrain(%self: !struct.type<@StructSnapshot>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @saved : !Inputs
+    struct.member @child : !struct.type<@StructSnapshot>
+    function.def @compute(%inputs: !Inputs) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      struct.writem %self[@saved] = %inputs : !struct.type<@Root>, !Inputs
+      %child = function.call @StructSnapshot::@compute(%input) : (!felt.type) -> !struct.type<@StructSnapshot>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@StructSnapshot>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(%self: !struct.type<@Root>, %inputs: !Inputs) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@StructSnapshot>
+      %copy = struct.readm %self[@saved] : !struct.type<@Root>, !Inputs
+      %input = pod.read %copy[@value] : !Inputs, !felt.type
+      function.call @StructSnapshot::@constrain(%child, %input) : (!struct.type<@StructSnapshot>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK:           function.call @StructSnapshot::@product(
+// CHECK-NOT:       function.call @StructSnapshot::@compute(
+// CHECK-NOT:       function.call @StructSnapshot::@constrain(
+// CHECK:           function.return
+
+// -----
+
+!Inputs = !pod.type<[@value: !felt.type]>
+
+module attributes {llzk.lang} {
+  struct.def @OverwrittenStructSnapshot {
+    function.def @compute(%input: !felt.type) -> !struct.type<@OverwrittenStructSnapshot> {
+      %self = struct.new : !struct.type<@OverwrittenStructSnapshot>
+      function.return %self : !struct.type<@OverwrittenStructSnapshot>
+    }
+    function.def @constrain(
+        %self: !struct.type<@OverwrittenStructSnapshot>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @saved : !Inputs
+    struct.member @child : !struct.type<@OverwrittenStructSnapshot>
+    function.def @compute(%inputs: !Inputs, %replacement: !Inputs) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@value] : !Inputs, !felt.type
+      struct.writem %self[@saved] = %inputs : !struct.type<@Root>, !Inputs
+      %child = function.call @OverwrittenStructSnapshot::@compute(%input) : (!felt.type) -> !struct.type<@OverwrittenStructSnapshot>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@OverwrittenStructSnapshot>
+      struct.writem %self[@saved] = %replacement : !struct.type<@Root>, !Inputs
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %inputs: !Inputs, %replacement: !Inputs) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@OverwrittenStructSnapshot>
+      %copy = struct.readm %self[@saved] : !struct.type<@Root>, !Inputs
+      %input = pod.read %copy[@value] : !Inputs, !felt.type
+      function.call @OverwrittenStructSnapshot::@constrain(%child, %input) : (!struct.type<@OverwrittenStructSnapshot>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @OverwrittenStructSnapshot::@product(
+// CHECK:           function.call @OverwrittenStructSnapshot::@compute(
+// CHECK:           function.call @OverwrittenStructSnapshot::@constrain(
+
+// -----
+
+!Handles = !pod.type<[@root: !struct.type<@Root>]>
+
+module attributes {llzk.lang} {
+  struct.def @AliasedMemberWrite {
+    function.def @compute(%input: !felt.type) -> !struct.type<@AliasedMemberWrite> {
+      %self = struct.new : !struct.type<@AliasedMemberWrite>
+      function.return %self : !struct.type<@AliasedMemberWrite>
+    }
+    function.def @constrain(
+        %self: !struct.type<@AliasedMemberWrite>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @value : !felt.type
+    struct.member @child : !struct.type<@AliasedMemberWrite>
+    function.def @compute(
+        %handles: !Handles, %old: !felt.type, %new: !felt.type) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      pod.write %handles[@root] = %self : !Handles, !struct.type<@Root>
+      %alias = pod.read %handles[@root] : !Handles, !struct.type<@Root>
+      struct.writem %self[@value] = %old : !struct.type<@Root>, !felt.type
+      %child = function.call @AliasedMemberWrite::@compute(%old) : (!felt.type) -> !struct.type<@AliasedMemberWrite>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@AliasedMemberWrite>
+      struct.writem %alias[@value] = %new : !struct.type<@Root>, !felt.type
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %handles: !Handles,
+        %old: !felt.type, %new: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@AliasedMemberWrite>
+      %input = struct.readm %self[@value] : !struct.type<@Root>, !felt.type
+      function.call @AliasedMemberWrite::@constrain(%child, %input) : (!struct.type<@AliasedMemberWrite>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @AliasedMemberWrite::@product(
+// CHECK:           function.call @AliasedMemberWrite::@compute(
+// CHECK:           struct.writem
+// CHECK:           function.call @AliasedMemberWrite::@constrain(
