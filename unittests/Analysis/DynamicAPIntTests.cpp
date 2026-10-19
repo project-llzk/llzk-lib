@@ -320,6 +320,42 @@ TEST(DynamicAPIntSafetyTest, CheckedParsing) {
   }
 }
 
+/// Cover both native extraction paths, including values with redundant sign bits.
+TEST(DynamicAPIntSafetyTest, CheckedToSizeAcceptsBoundaryValues) {
+  constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
+  for (size_t value : {size_t(0), size_t(1), sizeMax / 2, sizeMax / 2 + 1, sizeMax - 1, sizeMax}) {
+    SCOPED_TRACE(value);
+    for (const llvm::DynamicAPInt &input :
+         {llzk::toDynamicAPInt(value), llvm::DynamicAPInt(llvm::APInt(256, value))}) {
+      auto checked = checkedToSize(input, "unit-test boundary");
+      ASSERT_TRUE(static_cast<bool>(checked)) << llvm::toString(checked.takeError());
+      EXPECT_EQ(*checked, value);
+    }
+  }
+}
+
+/// Preserve overflow diagnostics for near-boundary and arbitrarily large values.
+TEST(DynamicAPIntSafetyTest, CheckedToSizeRejectsOverflow) {
+  // Leave a zero sign bit above SIZE_MAX + 1.
+  llvm::APInt justTooLarge =
+      llvm::APInt::getOneBitSet(sizeof(size_t) * CHAR_BIT + 2, std::numeric_limits<size_t>::digits);
+  for (const llvm::APInt &bits : {justTooLarge, llvm::APInt::getOneBitSet(256, 200)}) {
+    auto checked = checkedToSize(llvm::DynamicAPInt(bits), "unit-test overflow");
+    ASSERT_FALSE(static_cast<bool>(checked));
+    EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test overflow would overflow size_t");
+  }
+}
+
+/// Negative values retain the underflow diagnostic regardless of their magnitude.
+TEST(DynamicAPIntSafetyTest, CheckedToSizeRejectsUnderflow) {
+  for (const llvm::DynamicAPInt &value :
+       {llvm::DynamicAPInt(-1), -llvm::DynamicAPInt(llvm::APInt::getOneBitSet(256, 200))}) {
+    auto checked = checkedToSize(value, llvm::Twine("unit-test") + " underflow");
+    ASSERT_FALSE(static_cast<bool>(checked));
+    EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test underflow would underflow size_t");
+  }
+}
+
 TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   auto signedMax = checkedToInt64(DynamicAPInt(INT64_MAX));
   ASSERT_TRUE(signedMax);

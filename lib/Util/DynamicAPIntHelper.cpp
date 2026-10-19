@@ -86,6 +86,29 @@ Expected<uint64_t> checkedToUInt64(const DynamicAPInt &value) {
   return bits->getZExtValue();
 }
 
+Expected<size_t> checkedToSize(const DynamicAPInt &value, const Twine &context) {
+  if (value < 0) {
+    return createStringError(inconvertibleErrorCode(), context + " would underflow size_t");
+  }
+  constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
+  if (value <= std::numeric_limits<int64_t>::max()) {
+    auto native = static_cast<uint64_t>(static_cast<int64_t>(value));
+    if (native > sizeMax) {
+      return createStringError(inconvertibleErrorCode(), context + " would overflow size_t");
+    }
+    return static_cast<size_t>(native);
+  }
+
+  static const llvm::DynamicAPInt maxValue = llzk::toDynamicAPInt(sizeMax);
+  if (value > maxValue) {
+    return createStringError(inconvertibleErrorCode(), context + " would overflow size_t");
+  }
+  // A valid value above INT64_MAX is in the upper half of a 64-bit size_t.
+  // Its distance from SIZE_MAX fits in int64_t, so extract that instead.
+  auto distance = static_cast<int64_t>(maxValue - value);
+  return sizeMax - static_cast<size_t>(distance);
+}
+
 DynamicAPInt operator&(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   return binaryBitOp(lhs, rhs, [](const APInt &a, const APInt &b) { return a & b; });
 }

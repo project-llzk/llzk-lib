@@ -74,8 +74,8 @@ numeric identity.
 
 Conversions to machine integers, MLIR integer values, and binary encodings must
 specify the signed interpretation and check that the value fits. C++ clients can
-use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
-to report invalid input and overflow without depending on assertions.
+use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, `checkedToUInt64`, and
+`checkedToSize` to report invalid input and overflow without depending on assertions.
 `toSignedDynamicAPInt(ArrayRef<uint64_t>)` decodes 64-bit limbs in
 least-significant-first order as a signed two's-complement integer. The top bit of
 the highest (last) limb is the sign bit; an empty array represents zero.

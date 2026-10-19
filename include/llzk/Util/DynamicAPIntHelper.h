@@ -25,6 +25,7 @@
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/Hashing.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/Twine.h>
 #include <llvm/Support/Error.h>
 
 #include <climits>
@@ -48,6 +49,10 @@ llvm::Expected<int64_t> checkedToInt64(const llvm::DynamicAPInt &value);
 
 /// Convert to a native unsigned integer, rejecting negative values and overflow.
 llvm::Expected<uint64_t> checkedToUInt64(const llvm::DynamicAPInt &value);
+
+/// Convert to size_t, rejecting negative values and overflow. Prefix errors with the supplied
+/// diagnostic context.
+llvm::Expected<size_t> checkedToSize(const llvm::DynamicAPInt &value, const llvm::Twine &context);
 
 /// Bitwise operations use infinite two's-complement sign extension.
 llvm::DynamicAPInt operator&(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
