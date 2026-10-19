@@ -1,10 +1,15 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @identity(%input: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+    function.return %input : !array.type<2 x !felt.type>
+  }
   function.def @write(%input: !array.type<2 x !felt.type>, %value: !felt.type) {
     %zero = arith.constant 0 : index
     %one = arith.constant 1 : index
+    %returned = function.call @identity(%input) : (!array.type<2 x !felt.type>) -> !array.type<2 x !felt.type>
+    // A returned alias remains protected by the enclosing call.
     // Loop-carried values retain the function input's identity.
-    %result = scf.for %i = %zero to %one step %one iter_args(%carried = %input) -> (!array.type<2 x !felt.type>) {
+    %result = scf.for %i = %zero to %one step %one iter_args(%carried = %returned) -> (!array.type<2 x !felt.type>) {
       // expected-error @+1 {{cannot write to function input or original storage}}
       array.write %carried[%zero] = %value : !array.type<2 x !felt.type>, !felt.type
       scf.yield %carried : !array.type<2 x !felt.type>

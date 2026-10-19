@@ -36,6 +36,7 @@ class ConstraintBindings {
   struct Root {
     mlir::Value input;
     mlir::Value storage;
+    unsigned protections = 0;
     llvm::DenseMap<mlir::ArrayAttr, mlir::Value> leaves;
   };
 
@@ -139,6 +140,9 @@ public:
     }
     if (auto type = llvm::dyn_cast<pod::PodType>(path.type)) {
       for (auto record : type.getRecords()) {
+        if (++steps > limit) {
+          return site->emitError("constraint flattening: evaluation step limit exceeded");
+        }
         auto field = child(path, record.getName(), record.getType());
         if (mlir::failed(walk(field, site, visit))) {
           return mlir::failure();
@@ -164,17 +168,23 @@ public:
       return *value;
     }
     site->emitError(
-        roots[path.root].input
+        (roots[path.root].input || roots[path.root].protections)
             ? "constraint flattening: read of uninitialized function input storage"
             : "constraint flattening: read of uninitialized local storage"
     );
     return mlir::failure();
   }
 
+  /// Temporarily make an argument root read-only without copying its identity.
+  void protect(AccessPath path) { ++roots[path.root].protections; }
+
+  /// Release one call's protection; enclosing calls retain their own protection.
+  void unprotect(AccessPath path) { --roots[path.root].protections; }
+
   /// Reject writes based on destination identity, never scalar provenance.
   mlir::LogicalResult writable(AccessPath path, mlir::Operation *site) const {
     const Root &root = roots[path.root];
-    if (root.input || root.storage) {
+    if (root.input || root.storage || root.protections) {
       return site->emitError(
           "constraint flattening: cannot write to function input or original storage"
       );
@@ -214,18 +224,15 @@ public:
     if (mlir::failed(walk(source, site, collect))) {
       return mlir::failure();
     }
-    auto prefix = destination.steps.getValue();
+    // Visit only the overwritten subtree, rather than scanning unrelated leaves
+    // in the root on every array.insert. The snapshot makes overlap safe.
+    if (mlir::failed(walk(destination, site, [&](AccessPath leaf) {
+      roots[leaf.root].leaves.erase(leaf.steps);
+      return mlir::success();
+    }))) {
+      return mlir::failure();
+    }
     auto &targetLeaves = roots[destination.root].leaves;
-    llvm::SmallVector<mlir::ArrayAttr> replaced;
-    for (auto [path, value] : targetLeaves) {
-      if (path.size() >= prefix.size() &&
-          llvm::equal(path.getValue().take_front(prefix.size()), prefix)) {
-        replaced.push_back(path);
-      }
-    }
-    for (auto path : replaced) {
-      targetLeaves.erase(path);
-    }
     for (auto [path, value] : snapshot) {
       targetLeaves[path] = value;
     }

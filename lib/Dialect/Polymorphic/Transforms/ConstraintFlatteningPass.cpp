@@ -57,6 +57,8 @@ class ConstraintElaborator {
   /// Live unresolved scalar storage reads are rejected after dead SSA removal.
   llvm::DenseSet<Operation *> nonSignalReads;
   SmallVector<FuncDefOp> activeCalls;
+  /// Structural expressions may survive expansion only when dead.
+  llvm::DenseSet<Operation *> structuralOps;
 
   LogicalResult error(Operation *op, const Twine &message) {
     return op->emitError("constraint flattening: ") << message;
@@ -328,14 +330,15 @@ class ConstraintElaborator {
     if (!type.isIndex() && !type.isInteger(1)) {
       return error(&op, "lower non-native operations before constraint flattening");
     }
-    Operation *temporary = builder.clone(op, mapping);
-    auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(temporary->getResult(0)));
-    if (!constant) {
-      return error(&op, "structural operation requires a compile-time value");
+    Operation *emitted = builder.clone(op, mapping);
+    if (auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(emitted->getResult(0)))) {
+      frame[op.getResult(0)] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
+      facts.forget(emitted->getResult(0));
+      emitted->erase();
+    } else {
+      frame[op.getResult(0)] = emitted->getResult(0);
+      structuralOps.insert(emitted);
     }
-    frame[op.getResult(0)] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
-    facts.forget(temporary->getResult(0));
-    temporary->erase();
     return success();
   }
 
@@ -380,7 +383,8 @@ class ConstraintElaborator {
     }
   }
 
-  /// Expand one defined function using fresh SSA bindings.
+  /// Expand one defined function using fresh SSA bindings. Aggregate arguments
+  /// retain identity, but their roots are protected from writes during the call.
   LogicalResult invoke(
       FuncDefOp callee, ArrayRef<BoundValue> arguments, Operation *site,
       SmallVectorImpl<BoundValue> &results
@@ -399,16 +403,19 @@ class ConstraintElaborator {
     }
     Environment frame;
     for (auto [parameter, argument] : llvm::zip_equal(callee.getArguments(), arguments)) {
-      auto value =
-          activeCalls.empty() ? FailureOr<BoundValue>(argument) : copy(argument, site, parameter);
-      if (failed(value)) {
-        return failure();
+      frame[parameter] = argument;
+      if (auto path = std::get_if<AccessPath>(&argument)) {
+        bindings.protect(*path);
       }
-      frame[parameter] = *value;
     }
     activeCalls.push_back(callee);
     auto status = expand(callee.getBody().front(), frame, results);
     activeCalls.pop_back();
+    for (const auto &argument : arguments) {
+      if (auto path = std::get_if<AccessPath>(&argument)) {
+        bindings.unprotect(*path);
+      }
+    }
     return status;
   }
 
@@ -419,7 +426,7 @@ class ConstraintElaborator {
       arguments.push_back(frame.lookup(argument));
     }
     FuncDefOp target;
-    if (op.calleeIsConstrain() && !arguments.empty()) {
+    if (op.calleeIsStructConstrain() && !arguments.empty()) {
       auto info = storage->describe(std::get<Value>(arguments.front()), op);
       if (failed(info)) {
         return failure();
@@ -473,15 +480,14 @@ class ConstraintElaborator {
       carried.push_back(frame.lookup(value));
     }
     for (int64_t i = *lower; i < *upper;) {
-      Environment iteration = frame;
-      iteration[op.getInductionVar()] = Value(
+      frame[op.getInductionVar()] = Value(
           arith::ConstantOp::create(
               builder, op.getLoc(), builder.getIntegerAttr(op.getInductionVar().getType(), i)
           )
       );
-      bind(op.getRegionIterArgs(), carried, iteration);
+      bind(op.getRegionIterArgs(), carried, frame);
       carried.clear();
-      if (failed(expand(*op.getBody(), iteration, carried))) {
+      if (failed(expand(*op.getBody(), frame, carried))) {
         return failure();
       }
       if (!hasNextStaticIteration(i, *upper, *step)) {
@@ -500,10 +506,9 @@ class ConstraintElaborator {
       carried.push_back(frame.lookup(value));
     }
     while (true) {
-      Environment before = frame;
-      bind(op.getBeforeArguments(), carried, before);
+      bind(op.getBeforeArguments(), carried, frame);
       SmallVector<BoundValue> condition;
-      if (failed(expand(op.getBefore().front(), before, condition))) {
+      if (failed(expand(op.getBefore().front(), frame, condition))) {
         return failure();
       }
       auto test = facts.integer(std::get<Value>(condition.front()));
@@ -514,10 +519,9 @@ class ConstraintElaborator {
       if (!*test) {
         break;
       }
-      Environment after = frame;
-      bind(op.getAfterArguments(), carried, after);
+      bind(op.getAfterArguments(), carried, frame);
       carried.clear();
-      if (failed(expand(op.getAfter().front(), after, carried))) {
+      if (failed(expand(op.getAfter().front(), frame, carried))) {
         return failure();
       }
     }
@@ -622,22 +626,14 @@ class ConstraintElaborator {
   }
 
   /// Visit source operations once per execution; all ordinary values remain SSA.
-  LogicalResult expand(Block &block, Environment frame, SmallVectorImpl<BoundValue> &results) {
+  LogicalResult expand(Block &block, Environment &frame, SmallVectorImpl<BoundValue> &results) {
     for (Operation &op : block) {
       if (++steps > limit) {
         return error(&op, "evaluation step limit exceeded");
       }
       if (isa<ReturnOp, scf::YieldOp, scf::ConditionOp>(op)) {
         for (Value value : op.getOperands()) {
-          BoundValue emitted = frame.lookup(value);
-          if (isa<ReturnOp>(op) && activeCalls.size() > 1) {
-            auto copied = copy(emitted, &op);
-            if (failed(copied)) {
-              return failure();
-            }
-            emitted = *copied;
-          }
-          results.push_back(emitted);
+          results.push_back(frame.lookup(value));
         }
         return success();
       }
@@ -658,6 +654,9 @@ class ConstraintElaborator {
       }
     }
     for (Operation &op : output.front()) {
+      if (structuralOps.contains(&op)) {
+        return error(&op, "structural operation requires a compile-time value");
+      }
       if (nonSignalReads.contains(&op)) {
         return error(
             &op, "live unresolved non-signal scalar storage; algebraic elimination is required"
