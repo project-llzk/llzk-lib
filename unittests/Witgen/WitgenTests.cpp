@@ -246,14 +246,41 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   EXPECT_EQ((*second)[1].getAsString(), "4");
 }
 
+/// Cover both native extraction paths, including values with redundant sign bits.
+TEST_F(WitgenTests, CheckedDynamicAPIntToSizeAcceptsBoundaryValues) {
+  constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
+  for (size_t value : {size_t(0), size_t(1), sizeMax / 2, sizeMax / 2 + 1, sizeMax - 1, sizeMax}) {
+    SCOPED_TRACE(value);
+    for (const llvm::DynamicAPInt &input :
+         {llzk::toDynamicAPInt(value), llvm::DynamicAPInt(llvm::APInt(256, value))}) {
+      auto checked = witgen::checkedDynamicAPIntToSize(input, "unit-test boundary");
+      ASSERT_TRUE(static_cast<bool>(checked)) << llvm::toString(checked.takeError());
+      EXPECT_EQ(*checked, value);
+    }
+  }
+}
+
+/// Preserve overflow diagnostics for near-boundary and arbitrarily large values.
 TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
-  llvm::DynamicAPInt value = llzk::toDynamicAPInt(
-      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
-  );
-  value += llvm::DynamicAPInt(1);
-  auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test overflow");
-  ASSERT_FALSE(static_cast<bool>(checked));
-  EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
+  // Leave a zero sign bit above SIZE_MAX + 1.
+  llvm::APInt justTooLarge =
+      llvm::APInt::getOneBitSet(sizeof(size_t) * CHAR_BIT + 2, std::numeric_limits<size_t>::digits);
+  for (const llvm::APInt &bits : {justTooLarge, llvm::APInt::getOneBitSet(256, 200)}) {
+    auto checked =
+        witgen::checkedDynamicAPIntToSize(llvm::DynamicAPInt(bits), "unit-test overflow");
+    ASSERT_FALSE(static_cast<bool>(checked));
+    EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test overflow would overflow size_t");
+  }
+}
+
+/// Negative values retain the underflow diagnostic regardless of their magnitude.
+TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsUnderflow) {
+  for (const llvm::DynamicAPInt &value :
+       {llvm::DynamicAPInt(-1), -llvm::DynamicAPInt(llvm::APInt::getOneBitSet(256, 200))}) {
+    auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test underflow");
+    ASSERT_FALSE(static_cast<bool>(checked));
+    EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test underflow would underflow size_t");
+  }
 }
 
 TEST_F(WitgenTests, JSONDiffReportsScalarMismatchAtPath) {

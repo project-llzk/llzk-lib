@@ -32,11 +32,23 @@ dynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::Twine context) {
   if (value < 0) {
     return makeError(context + " would underflow size_t");
   }
-  llvm::APSInt as = llzk::toAPSInt(value);
-  if (as.getActiveBits() > std::numeric_limits<size_t>::digits) {
+  constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
+  if (value <= std::numeric_limits<int64_t>::max()) {
+    auto native = static_cast<uint64_t>(static_cast<int64_t>(value));
+    if (native > sizeMax) {
+      return makeError(context + " would overflow size_t");
+    }
+    return static_cast<size_t>(native);
+  }
+
+  static const llvm::DynamicAPInt maxValue = llzk::toDynamicAPInt(sizeMax);
+  if (value > maxValue) {
     return makeError(context + " would overflow size_t");
   }
-  return static_cast<size_t>(as.getZExtValue());
+  // A valid value above INT64_MAX is in the upper half of a 64-bit size_t.
+  // Its distance from SIZE_MAX fits in int64_t, so extract that instead.
+  auto distance = static_cast<int64_t>(maxValue - value);
+  return sizeMax - static_cast<size_t>(distance);
 }
 
 llvm::Expected<size_t>
