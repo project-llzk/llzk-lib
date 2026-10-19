@@ -38,7 +38,7 @@ void r1cs::registerR1CSTranslation() {
       [](Operation *op, llvm::raw_ostream &output) -> LogicalResult {
     auto moduleOp = dyn_cast<ModuleOp>(op);
     if (!moduleOp) {
-      return op->emitOpError() << "expected builtin.module as top level operation";
+      return op->emitOpError("expected builtin.module as top level operation");
     }
     return exportR1CSBinary(moduleOp, output, prime, circuitName);
   }, [](DialectRegistry &registry) { registry.insert<R1CSDialect>(); }

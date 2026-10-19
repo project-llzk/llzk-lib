@@ -462,6 +462,12 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
+    // Dynamic integers are returned through a callback to avoid dangling text.
+    if (isDynamicAPIntType(method.returnType)) {
+      capiReturnType = "void";
+      paramListStream << ", MlirStringCallback callback, void *userData";
+    }
+
     // Generate declaration
     if (method.documentation.empty()) {
       os << llvm::formatv("\n/// {0}\n", method.methodName);
@@ -516,6 +522,10 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       // "void" type doesn't even need "return"
       returnPrefix = "";
       returnSuffix = "";
+    } else if (isDynamicAPIntType(cppReturnType)) {
+      capiReturnType = "void";
+      returnPrefix = "std::string text;\n  llvm::raw_string_ostream(text) << ";
+      returnSuffix = ";\n  callback(wrap(llvm::StringRef(text)), userData)";
     } else {
       // Check if return needs wrapping
       if (isPrimitiveType(cppReturnType)) {
@@ -544,6 +554,10 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       }
       const std::string &capiParamType = capiParamTypeOpt.value();
       paramListStream << ", " << capiParamType << ' ' << param.name;
+    }
+
+    if (isDynamicAPIntType(cppReturnType)) {
+      paramListStream << ", MlirStringCallback callback, void *userData";
     }
 
     // Build argument list for C++ method call
@@ -675,6 +689,10 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
       }
 
       paramListStream << ", " << name;
+    }
+
+    if (isDynamicAPIntType(method.returnType)) {
+      paramListStream << ", [](MlirStringRef, void *) {}, nullptr";
     }
 
     static constexpr char fmt[] = R"(

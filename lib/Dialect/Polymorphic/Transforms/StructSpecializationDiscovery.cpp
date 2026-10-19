@@ -744,13 +744,8 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
              << (isa<felt::FeltType>(readType) ? "; read the binding using its declared felt type"
                                                : "; use an explicit cast");
     }
-    if (constant.getType().hasField()) {
-      const Field &field = constant.getType().getField();
-      return Attribute(
-          felt::FeltConstAttr::get(
-              read.getContext(), field.reduce(constant.getValue()), constant.getType()
-          )
-      );
+    if (auto reduced = constant.getReducedValue()) {
+      return Attribute(felt::FeltConstAttr::get(read.getContext(), *reduced, constant.getType()));
     }
     return binding;
   }

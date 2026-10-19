@@ -101,7 +101,8 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     Arguments to typed `poly.param` declarations are converted to the declared
     type using the conversions below, before forming a cache key. An
     incompatible argument is diagnosed. Felt-to-index conversion requires a
-    value in the nonnegative signed 64-bit index range. Arguments to felt
+    known field and a reduced representative in the nonnegative signed 64-bit
+    index range. Fieldless felt literals cannot determine an index. Arguments to felt
     parameters with a known field are reduced modulo its prime before forming
     the cache key and substituting uses. A felt literal with no specified field
     acquires the parameter's declared field; a different explicit field is

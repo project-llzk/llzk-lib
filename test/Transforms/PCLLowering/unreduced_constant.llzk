@@ -1,0 +1,64 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt --llzk-to-pcl=mode=full %s | FileCheck %s
+// RUN: llzk-opt --llzk-to-pcl=mode=stubbed %s | FileCheck %s
+
+// Without prior canonicalization, both lowering modes reduce BabyBear literals
+// 2013265928 and -1 to 7 and 2013265920, while fieldless literals retain their
+// signed raw values. The explicit BabyBear members supply pcl.prime = 2013265921
+// for interpreting all four constraints, including the fieldless constants.
+module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
+  struct.def @ReducedConstant {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @negative : !felt.type<"babybear"> {llzk.pub}
+    struct.member @fieldless : !felt.type {llzk.pub}
+    struct.member @fieldless_negative : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@ReducedConstant> {
+      %self = struct.new : !struct.type<@ReducedConstant>
+      %out = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %negative = felt.const -1 : !felt.type<"babybear">
+      struct.writem %self[@negative] = %negative : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %fieldless = felt.const 2013265928 : !felt.type
+      struct.writem %self[@fieldless] = %fieldless : !struct.type<@ReducedConstant>, !felt.type
+      %fieldless_negative = felt.const -1 : !felt.type
+      struct.writem %self[@fieldless_negative] = %fieldless_negative : !struct.type<@ReducedConstant>, !felt.type
+      function.return %self : !struct.type<@ReducedConstant>
+    }
+    function.def @constrain(%self: !struct.type<@ReducedConstant>) {
+      %out = struct.readm %self[@out] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %out_constant = felt.const 2013265928 : !felt.type<"babybear">
+      constrain.eq %out, %out_constant : !felt.type<"babybear">
+      %negative = struct.readm %self[@negative] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %negative_constant = felt.const -1 : !felt.type<"babybear">
+      constrain.eq %negative, %negative_constant : !felt.type<"babybear">
+      %fieldless = struct.readm %self[@fieldless] : !struct.type<@ReducedConstant>, !felt.type
+      %fieldless_constant = felt.const 2013265928 : !felt.type
+      constrain.eq %fieldless, %fieldless_constant : !felt.type
+      %fieldless_negative = struct.readm %self[@fieldless_negative] : !struct.type<@ReducedConstant>, !felt.type
+      %fieldless_negative_constant = felt.const -1 : !felt.type
+      constrain.eq %fieldless_negative, %fieldless_negative_constant : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
+// CHECK-NEXT:    func.func @ReducedConstant() -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 7
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.var "negative" true
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.const 2013265920
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_3]], %[[VAL_4]]
+// CHECK-NEXT:      pcl.assert %[[VAL_5]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pcl.var "fieldless" true
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.const 2013265928
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_6]], %[[VAL_7]]
+// CHECK-NEXT:      pcl.assert %[[VAL_8]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.var "fieldless_negative" true
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.const -1
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_9]], %[[VAL_10]]
+// CHECK-NEXT:      pcl.assert %[[VAL_11]]
+// CHECK-NEXT:      return %[[VAL_0]], %[[VAL_3]], %[[VAL_6]], %[[VAL_9]] : !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

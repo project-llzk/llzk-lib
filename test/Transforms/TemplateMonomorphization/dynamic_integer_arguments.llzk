@@ -2,7 +2,7 @@
 
 // Numeric normalization keeps full precision and reduces known-field arguments
 // before narrowing to index or using them as specialization keys.
-module attributes {llzk.lang, llzk.main = !struct.type<@T::@Child<[#felt<const 9223372036854775807>]>>, test.scenario = "index_max"} {
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@Child<[#felt<const 9223372036854775807 : !felt.type<"bn254">>]>>, test.scenario = "index_max"} {
   poly.template @T {
     poly.param @N : index
     struct.def @Child {

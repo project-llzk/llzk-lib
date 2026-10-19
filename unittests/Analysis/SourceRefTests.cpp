@@ -26,6 +26,7 @@
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
+#include <set>
 
 using namespace mlir;
 using namespace llzk;
@@ -491,6 +492,77 @@ module attributes {llzk.lang} {
   EXPECT_EQ(buildStringViaPrint(afterArg), "%arg0");
 }
 
+TEST_F(SourceRefTests, ConstantFeltValueUsesFieldRepresentative) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(2013265928), "babybear");
+  auto constant = felt::FeltConstantOp::create(builder, loc, attr);
+  SourceRef ref(constant);
+  auto value = ref.getConstantFeltValue();
+  ASSERT_TRUE(succeeded(value));
+  EXPECT_EQ(*value, DynamicAPInt(7));
+}
+
+/// Fieldless constants have no numeric field representative until a field is supplied.
+/// Their equality, hashing, ordering, and printing must still use the raw value:
+/// 2013265928 reduces to 7 in BabyBear, but remains distinct from a fieldless 7.
+TEST_F(SourceRefTests, FieldlessConstantsSeparateIdentityFromEvaluation) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(2013265928));
+  auto first = felt::FeltConstantOp::create(builder, loc, attr);
+  auto second = felt::FeltConstantOp::create(builder, loc, attr);
+  auto seven =
+      felt::FeltConstantOp::create(builder, loc, felt::FeltConstAttr::get(&ctx, DynamicAPInt(7)));
+  EXPECT_FALSE(first.getValue().getReducedValue());
+  SourceRef a(first), b(second), c(seven);
+  EXPECT_TRUE(failed(a.getConstantFeltValue()));
+  EXPECT_TRUE(failed(a.getConstantValue()));
+  auto value = a.getConstantValue(Field::getField("babybear"));
+  ASSERT_TRUE(succeeded(value));
+  EXPECT_EQ(*value, DynamicAPInt(7));
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(SourceRef::Hash {}(a), SourceRef::Hash {}(b));
+  EXPECT_NE(a, c);
+  EXPECT_EQ(a <=> b, std::strong_ordering::equal);
+  EXPECT_NE(a <=> c, std::strong_ordering::equal);
+  EXPECT_EQ(buildStringViaPrint(a), "<felt.const: 2013265928>");
+}
+
+/// Selecting an analysis field preserves the constant's declared-field representative.
+TEST_F(SourceRefTests, SuppliedFieldPreservesDeclaredConstantField) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(2013265928), "babybear");
+  auto constant = felt::FeltConstantOp::create(builder, loc, attr);
+  SourceRef ref(constant);
+  auto declaredValue = ref.getConstantValue();
+  ASSERT_TRUE(succeeded(declaredValue));
+  EXPECT_EQ(*declaredValue, DynamicAPInt(7));
+  auto analysisValue = ref.getConstantValue(Field::getField("koalabear"));
+  ASSERT_TRUE(succeeded(analysisValue));
+  EXPECT_EQ(*analysisValue, DynamicAPInt(7));
+}
+
+/// Signed literals use their declared representative before reduction into a smaller field.
+TEST_F(SourceRefTests, SuppliedFieldReducesDeclaredSignedRepresentative) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(-1), "koalabear");
+  auto constant = felt::FeltConstantOp::create(builder, loc, attr);
+  SourceRef ref(constant);
+  auto declaredValue = ref.getConstantValue();
+  ASSERT_TRUE(succeeded(declaredValue));
+  EXPECT_EQ(*declaredValue, DynamicAPInt(2130706432));
+  auto analysisValue = ref.getConstantValue(Field::getField("babybear"));
+  ASSERT_TRUE(succeeded(analysisValue));
+  EXPECT_EQ(*analysisValue, DynamicAPInt(117440511));
+}
+
 // Numeric source-reference keys must hash by value, independent of whether a
 // DynamicAPInt was constructed from a native integer or a 256-bit APInt. Cover
 // both individual indices and ranges so equal keys work in hash containers.
@@ -503,4 +575,48 @@ TEST_F(SourceRefTests, NumericKeyHashIgnoresIntegerRepresentation) {
   SourceRefIndex y(std::pair {wide, wide + 3});
   EXPECT_EQ(x, y);
   EXPECT_EQ(SourceRefIndex::Hash {}(x), SourceRefIndex::Hash {}(y));
+}
+
+/// Ordered containers retain equal numeric representatives with distinct felt types.
+TEST_F(SourceRefTests, ConstantOrderingDistinguishesFeltTypes) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto makeRef = [&](int64_t value, felt::FeltType type) {
+    auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(value), type);
+    return SourceRef(felt::FeltConstantOp::create(builder, loc, attr));
+  };
+  auto babybear = felt::FeltType::get(&ctx, "babybear");
+  auto a = makeRef(2013265928, babybear);
+  auto b = makeRef(7, felt::FeltType::get(&ctx, "koalabear"));
+  auto c = makeRef(7, felt::FeltType::get(&ctx));
+  auto canonical = makeRef(7, babybear);
+  for (const auto &other : {b, c}) {
+    EXPECT_NE(a, other);
+    EXPECT_NE(a <=> other, std::strong_ordering::equal);
+    EXPECT_NE(a < other, other < a);
+  }
+  EXPECT_NE(b, c);
+  EXPECT_NE(b <=> c, std::strong_ordering::equal);
+  EXPECT_EQ(a, canonical);
+  EXPECT_EQ(a <=> canonical, std::strong_ordering::equal);
+  std::set<SourceRef> refs {a, b, c, canonical};
+  EXPECT_EQ(refs.size(), 3U);
+}
+
+// Congruent signed literals share semantic identity once their field is known.
+TEST_F(SourceRefTests, SignedRepresentativesShareConstantIdentity) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto makeRef = [&](int64_t value) {
+    auto attr = felt::FeltConstAttr::get(&ctx, DynamicAPInt(value), "babybear");
+    return SourceRef(felt::FeltConstantOp::create(builder, loc, attr));
+  };
+  auto negative = makeRef(-1);
+  auto canonical = makeRef(2013265920);
+  EXPECT_EQ(negative, canonical);
+  EXPECT_EQ(SourceRef::Hash {}(negative), SourceRef::Hash {}(canonical));
+  EXPECT_EQ(negative <=> canonical, std::strong_ordering::equal);
+  EXPECT_EQ(buildStringViaPrint(negative), "<felt.const: 2013265920>");
 }

@@ -1104,7 +1104,7 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
       }
     }
 
-    return failure();
+    return diag;
   }
 
   /// Build a post-order traversal of the exact symbol-use slice reachable from struct
@@ -1236,7 +1236,7 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
       for (auto &[caller, callees] : retVal) {
         llvm::dbgs().indent(2) << "inlining the following into \"" << caller.getSymName() << "\"\n";
         for (StructDefOp c : callees) {
-          llvm::dbgs().indent(4) << "\"" << c.getSymName() << "\"\n";
+          llvm::dbgs().indent(4) << '"' << c.getSymName() << "\"\n";
         }
       }
       llvm::dbgs() << "-----------------------------------------------------------------\n";

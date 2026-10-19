@@ -22,9 +22,12 @@ def LLZK_FeltConstAttr
   let summary = "finite field element";
   let description = [{
     A felt attribute stores an exact signed integer literal and its field type.
-    Its value is independent of storage width. Consumers reduce the literal
-    modulo the field prime before applying field operations; an unspecified
-    field does not cause the literal to be reduced during construction.
+
+    For a specified field with prime modulus `p`, the attribute denotes
+    `rawValue mod p`, regardless of its stored representation (i.e. the raw
+    value). Use `getReducedValue()` to obtain the representative in `[0, p)`
+    when the type specifies a field; gives `std::nullopt` otherwise.
+
     Builders accepting ArrayRef<uint64_t> decode 64-bit parts in
     least-significant-first order as a two's-complement signed integer. The
     most significant bit of the last part is the sign bit; an empty array is
@@ -32,21 +35,23 @@ def LLZK_FeltConstAttr
     highest data bit would otherwise be interpreted as the sign bit.
   }];
 
-  let parameters = (ins DynamicAPIntParameter<"The felt constant value">:$value,
-      DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
+  let parameters =
+      (ins DynamicAPIntParameter<"The unreduced felt constant value">:$rawValue,
+          DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
 
   let hasCustomAssemblyFormat = 1;
 
   let builders =
       [AttrBuilder<
-           (ins "const ::llvm::DynamicAPInt &":$value, "FeltType":$ty),
-           [{ return $_get(context, ::llzk::DynamicAPIntValue(value), ty); }]>,
-       AttrBuilder<(ins "const ::llvm::DynamicAPInt &":$value),
-                   [{ return get(context, value, FeltType::get(context)); }]>,
+           (ins "const ::llvm::DynamicAPInt &":$rawValue, "FeltType":$ty),
+           [{ return $_get(context, ::llzk::DynamicAPIntValue(rawValue), ty); }]>,
        AttrBuilder<
-           (ins "const ::llvm::DynamicAPInt &":$value,
+           (ins "const ::llvm::DynamicAPInt &":$rawValue),
+           [{ return get(context, rawValue, FeltType::get(context)); }]>,
+       AttrBuilder<
+           (ins "const ::llvm::DynamicAPInt &":$rawValue,
                "::llvm::StringRef":$fieldName),
-           [{ return get(context, value, FeltType::get(context, fieldName)); }]>,
+           [{ return get(context, rawValue, FeltType::get(context, fieldName)); }]>,
        AttrBuilder<
            (ins "::llvm::ArrayRef<uint64_t>":$parts, "FeltType":$ty),
            [{ return get(context, ::llzk::toSignedDynamicAPInt(parts), ty); }]>,
@@ -62,6 +67,14 @@ def LLZK_FeltConstAttr
     /// Returns the field name from the stored FeltType, or a null StringAttr
     /// if no type is stored.
     ::mlir::StringAttr getFieldName() const;
+
+    /// If the type specifies a field, returns the field representative in `[0, p)`
+    /// for the signed raw value; gives `std::nullopt` otherwise.
+    std::optional<::llvm::DynamicAPInt> getReducedValue() const;
+
+    /// If the type specifies a field, returns `getReducedValue()`; otherwise `getRawValue()`.
+    /// Use getReducedValue() when folding requires a known field representative.
+    ::llvm::DynamicAPInt getReducedValueOrRaw() const;
   }];
 }
 

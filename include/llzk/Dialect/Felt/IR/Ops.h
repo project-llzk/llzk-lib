@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 
+#include <mlir/IR/PatternMatch.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations

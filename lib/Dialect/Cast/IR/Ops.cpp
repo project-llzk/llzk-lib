@@ -110,13 +110,13 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    auto value = constOp.getValue().getValue();
-    // Only materialize nonnegative values representable by the index builder.
-    auto converted = checkedToInt64(value);
-    if (!converted) {
-      return rewriter.notifyMatchFailure(op, llvm::toString(converted.takeError()));
-    }
-    if (*converted >= 0) {
+    if (auto reduced = constOp.getValue().getReducedValue()) {
+      // The reduced representative is nonnegative; the index builder also
+      // requires it to fit in a signed 64-bit integer.
+      auto converted = checkedToInt64(*reduced);
+      if (!converted) {
+        return rewriter.notifyMatchFailure(op, llvm::toString(converted.takeError()));
+      }
       rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, *converted);
       return success();
     }

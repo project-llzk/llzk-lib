@@ -1091,7 +1091,7 @@ private:
       if (Operation *def = value.getDefiningOp()) {
         def->emitError("missing SMTLIB value binding");
       } else {
-        module.emitError() << "missing SMTLIB value binding for block argument";
+        module.emitError("missing SMTLIB value binding for block argument");
       }
       return failure();
     }

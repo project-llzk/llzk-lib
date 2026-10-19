@@ -96,8 +96,9 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
         const auto &idxVals = idxIt->second;
 
-        if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-          indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+        auto constantIndex = idxVals.getConstantValue();
+        if (succeeded(constantIndex)) {
+          indices.emplace_back(*constantIndex);
         } else {
           auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
           assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
@@ -303,8 +304,9 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     const auto &idxVals = idxIt->second->getValue();
 
-    if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+    auto constantIndex = idxVals.getConstantValue();
+    if (succeeded(constantIndex)) {
+      indices.emplace_back(*constantIndex);
     } else {
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
       assert(i <= std::numeric_limits<unsigned>::max() && "index too large");

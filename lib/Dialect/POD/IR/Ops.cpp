@@ -621,8 +621,8 @@ void ReadPodOp::writeProperties(DialectBytecodeWriter &writer) {
 LogicalResult ReadPodOp::verify() {
   auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
   if (!podTy) {
-    return emitError() << "reference operand expected a plain-old-data struct but got "
-                       << getPodRef().getType();
+    return emitError("reference operand expected a plain-old-data struct but got ")
+           << getPodRef().getType();
   }
 
   auto lookup = podTy.getRecord(getRecordName(), [this]() { return this->emitError(); });

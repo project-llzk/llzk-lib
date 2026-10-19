@@ -17,7 +17,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
   }
   struct.def @Main {
     struct.member @a : !struct.type<@ChildTemplate::@Child<[3]>>
-    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3>]>>
+    struct.member @b : !struct.type<@ChildTemplate::@Child<[#felt<const 3 : !felt.type<"babybear">>]>>
     struct.member @c : !struct.type<@ChildTemplate::@Child<[#felt<const 2013265924 : !felt.type<"babybear">>]>>
     function.def @compute() -> !struct.type<@Main> {
       %s = struct.new : !struct.type<@Main>
