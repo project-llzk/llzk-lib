@@ -29,8 +29,10 @@
 #include <llvm/Support/Error.h>
 
 #include <climits>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 namespace llzk {
 
@@ -73,6 +75,16 @@ llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, const llvm::Dynamic
 /// Sufficiently large nonnegative \p rhs yields 0 for nonnegative \p lhs,
 /// or -1 for negative \p lhs.
 llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, int64_t rhs);
+
+/// Arithmetic right shift by an unsigned count, checked before conversion to int64_t.
+/// Sufficiently large \p rhs yields 0 for nonnegative \p lhs, or -1 for negative \p lhs.
+template <std::unsigned_integral T>
+llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, T rhs) {
+  if (rhs > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return llvm::DynamicAPInt(lhs < 0 ? -1 : 0);
+  }
+  return lhs >> static_cast<int64_t>(rhs);
+}
 
 /// Parse trusted decimal text; invalid text is a fatal programming error.
 /// Use parseDynamicAPInt for external input.

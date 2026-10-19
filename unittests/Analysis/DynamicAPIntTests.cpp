@@ -480,6 +480,33 @@ TEST(DynamicAPIntSafetyTest, NativeShiftCountBoundaries) {
   );
 }
 
+/// Unsigned counts must saturate before a potentially lossy signed conversion.
+TEST(DynamicAPIntSafetyTest, UnsignedRightShiftCountBoundaries) {
+  uint64_t signedMax = std::numeric_limits<int64_t>::max();
+  for (uint64_t count : {signedMax, signedMax + 1, std::numeric_limits<uint64_t>::max()}) {
+    SCOPED_TRACE(count);
+    EXPECT_EQ(DynamicAPInt(42) >> count, DynamicAPInt(0));
+    EXPECT_EQ(DynamicAPInt(-42) >> count, DynamicAPInt(-1));
+    EXPECT_EQ(DynamicAPInt(0) >> count, DynamicAPInt(0));
+  }
+  size_t sizeMax = std::numeric_limits<size_t>::max();
+  EXPECT_EQ(DynamicAPInt(42) >> sizeMax, DynamicAPInt(0));
+  EXPECT_EQ(DynamicAPInt(-42) >> sizeMax, DynamicAPInt(-1));
+  EXPECT_EQ(DynamicAPInt(0) >> sizeMax, DynamicAPInt(0));
+  EXPECT_EQ(DynamicAPInt(42) >> std::numeric_limits<unsigned long long>::max(), DynamicAPInt(0));
+  EXPECT_EQ(DynamicAPInt(-42) >> std::numeric_limits<unsigned long long>::max(), DynamicAPInt(-1));
+
+  EXPECT_EQ(DynamicAPInt(42) >> uint64_t(0), DynamicAPInt(42));
+  EXPECT_EQ(DynamicAPInt(-3) >> uint64_t(1), DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) >> size_t(1), DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) >> uint8_t(1), DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) >> uint16_t(1), DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) >> 1U, DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) >> 1UL, DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) >> 1ULL, DynamicAPInt(-2));
+  EXPECT_EQ(getBN254() >> uint64_t(32), getBN254() >> DynamicAPInt(32));
+}
+
 /// Counts outside int64_t must be handled before delegating to the native overloads.
 TEST(DynamicAPIntSafetyTest, ShiftCountOutsideInt64) {
   auto count = toDynamicAPInt("9223372036854775808");
