@@ -1,0 +1,27 @@
+// RUN: llzk-opt -split-input-file --canonicalize %s | FileCheck %s
+// RUN: llzk-opt -split-input-file --canonicalize %s | llzk-opt -split-input-file --canonicalize | FileCheck %s
+
+module attributes {llzk.lang, llzk.fields = #felt.field<"small_prime", 7>} {
+  function.def @custom_field() -> !felt.type<"small_prime"> {
+    %c = felt.const 24 : !felt.type<"small_prime">
+    function.return %c : !felt.type<"small_prime">
+  }
+}
+// CHECK-LABEL:   function.def @custom_field() -> !felt.type<"small_prime"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"small_prime">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"small_prime">
+// CHECK-NEXT:    }
+
+// -----
+
+// Use a very large prime, 2^521 - 1
+module attributes {llzk.lang, llzk.fields = #felt.field<"521_bit", 6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151>} {
+  function.def @custom_field() -> !felt.type<"521_bit"> {
+    %c = felt.const 6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151 : !felt.type<"521_bit">
+    function.return %c : !felt.type<"521_bit">
+  }
+}
+// CHECK-LABEL:   function.def @custom_field() -> !felt.type<"521_bit"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"521_bit">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"521_bit">
+// CHECK-NEXT:    }

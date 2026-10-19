@@ -178,8 +178,7 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   if (!fieldName.empty()) {
     auto fieldLookupResult = Field::tryGetField(fieldName);
     if (failed(fieldLookupResult)) {
-      mod.emitError() << "unknown field \"" << fieldName << "\"";
-      return failure();
+      return mod.emitError() << "unknown field \"" << fieldName << '"';
     }
     fields.insert(fieldLookupResult.value());
   }
@@ -187,13 +186,11 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   (void)collectFields(mod, fields);
 
   if (fields.empty()) {
-    mod.emitError() << "no prime field specified; could not deduce";
-    return failure();
+    return mod.emitError("no prime field specified; could not deduce");
   }
 
   if (fields.size() > 1) {
-    mod.emitError() << "multiple fields unsupported";
-    return failure();
+    return mod.emitError("multiple fields unsupported");
   }
 
   return *(fields.begin());
@@ -480,8 +477,17 @@ LogicalResult YieldConverter::matchAndRewrite(
 LogicalResult FeltConstConverter::matchAndRewrite(
     felt::FeltConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
+  auto attr = op.getValue();
+  // Preserve the constant's representative in its specified field, if any. But
+  // fieldless constants acquire their field from the SMT lowering configuration.
+  auto r = attr.getReducedValue();
+  if (!r) {
+    // If not already reduced, reduce the raw value modulo that prime before emitting
+    // an SMT integer: SMT integers do not implicitly apply finite-field reduction.
+    r = llvm::mod(attr.getRawValue(), prime);
+  }
   rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
-      op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
+      op, IntegerAttr::get(getContext(), toAPSInt(*r))
   );
   return success();
 }

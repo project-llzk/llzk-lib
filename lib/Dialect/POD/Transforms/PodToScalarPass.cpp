@@ -2538,11 +2538,10 @@ public:
           switch (inferCommonArrayInstantiation(leafValues, instantiationInfo)) {
           case CommonArrayInstantiationStatus::conflict:
             // TODO: this POD could be promoted to a complete `struct.def` but that's not easy.
-            op.emitOpError(
+            return op.emitOpError(
                 "with POD elements having conflicting affine map instantiations cannot be promoted "
                 "to higher dimensional array"
             );
-            return failure();
           case CommonArrayInstantiationStatus::inferred: {
             materializedType = preciseSplitType;
             SmallVector<ValueRange> mapOperands;
@@ -5648,8 +5647,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     }
   }
   if (resolver.hasResolvableLateVirtualPodOps(modOp)) {
-    modOp.emitError("late virtual POD resolution did not reach a fixpoint");
-    return failure();
+    return modOp.emitError("late virtual POD resolution did not reach a fixpoint");
   }
 
   RewritePatternSet postConversionPatterns(ctx);

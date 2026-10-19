@@ -3,11 +3,11 @@ Checks: bugprone-*,
         -bugprone-branch-clone,
         -bugprone-easily-swappable-parameters,
         -bugprone-unchecked-optional-access, // has many false positives but should be checked occasionally
+        -misc-static-assert, // has false positives due to glibc 2.44's variadic assert
         llvm-twine-local,
         llvm-prefer-isa-or-dyn-cast-in-conditionals,
         misc-definitions-in-headers,
         misc-uniqueptr-reset-release,
-        misc-static-assert,
         misc-redundant-expression,
         misc-header-include-cycle,
         misc-unused-parameters,

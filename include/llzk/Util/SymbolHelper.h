@@ -162,6 +162,14 @@ mlir::FailureOr<llzk::component::StructType> getMainInstanceType(mlir::Operation
 mlir::FailureOr<SymbolLookupResult<llzk::component::StructDefOp>>
 getMainInstanceDef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *lookupFrom);
 
+/// Resolve symbolPath (MLIR syntax or a bare name), defaulting to llzk.main.
+/// An absent default succeeds with a null result. Invalid paths or unresolved
+/// explicit symbols emit diagnostics and fail.
+mlir::FailureOr<SymbolLookupResult<component::StructDefOp>> getRootStructDef(
+    mlir::SymbolTableCollection &tables, mlir::Operation *lookupFrom,
+    mlir::StringRef symbolPath = {}
+);
+
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., function::FuncDefOp)
 /// @param symbolTable

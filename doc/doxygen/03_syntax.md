@@ -63,3 +63,54 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 - All references to functions and types must use fully-qualified paths.
 
 [circomlib-and-gate]: https://github.com/iden3/circomlib/blob/master/circuits/gates.circom#L29-L35
+
+### Mathematical integers and fixed-width encodings
+
+LLZK's arbitrary-precision arithmetic uses signed mathematical integers. Bitwise
+AND, OR, and XOR use infinite two's-complement sign extension. Field reduction
+maps an integer into `[0, p)`; signed field operations interpret that representative
+using the field's signed threshold. A storage width is not part of an integer's
+numeric identity.
+
+Conversions to machine integers, MLIR integer values, and binary encodings must
+specify the signed interpretation and check that the value fits. C++ clients can
+use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
+to report invalid input and overflow without depending on assertions.
+`toSignedDynamicAPInt(ArrayRef<uint64_t>)` decodes 64-bit limbs in
+least-significant-first order as a signed two's-complement integer. The top bit of
+the highest (last) limb is the sign bit; an empty array represents zero.
+`FeltConstAttr::get` and `FieldSpecAttr::get` accept this same signed limb format.
+To represent a positive value whose highest data limb has its top bit set, append
+a zero limb at the most-significant end of the array. For example, `{UINT64_MAX}`
+represents `-1`, while `{UINT64_MAX, 0}` represents `2^64 - 1`. A field modulus
+below two is invalid: `FieldSpecAttr::get` requires a valid modulus, while
+`FieldSpecAttr::getChecked` emits a diagnostic and returns a null attribute for
+an invalid modulus.
+
+Felt constant attributes store the exact signed literal, including when their
+field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
+modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
+compares the literal and type, so `-1` and `p - 1` need not be the same attribute.
+
+The C API accepts signed decimal `MlirStringRef` values for felt constants, field
+moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
+attribute. Numeric getters deliver the complete decimal value to an
+`MlirStringCallback`; callers must copy the callback text if they need to retain
+it. Native `int64_t` felt convenience constructors are also available.
+
+Numeric bytecode payloads for felt constants, field specifications, and loop bounds
+use minimal signed two's-complement encodings. Only payload tags corresponding to
+these signed encodings are accepted.
+
+C++ mathematical-integer builders accept `DynamicAPInt`. The owning
+`DynamicAPIntValue` storage adapter supplies canonical numeric hashing to MLIR
+while public accessors return `DynamicAPInt` directly.
+`APInt`/`APSInt` uses implement MLIR, LLVM bitvector, parser, and binary encoding
+boundaries. Boolean and explicitly unsigned MLIR integers decode as nonnegative;
+other signless integers and index values use signed interpretation.
+
+Arithmetic right shift uses sign extension and handles arbitrarily large counts.
+Exact left shift rejects negative or unrepresentable counts; allocation remains
+proportional to the result size. Felt left shifts compute a modular power of two,
+so their memory usage does not scale with the numeric shift count. Binary field
+encoders require nonnegative, fitting values and return errors on overflow.

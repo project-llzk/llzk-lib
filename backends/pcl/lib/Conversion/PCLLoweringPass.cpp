@@ -42,7 +42,6 @@
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
 
-#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/DenseSet.h>
@@ -93,14 +92,13 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
                                     << " for member: " << member.getName();
         }
       }
-      return hasPublicMembers ? success()
-                              : op.emitOpError() << "must have at least one public member";
+      return hasPublicMembers ? success() : op.emitOpError("must have at least one public member");
     }).wasInterrupted()
     );
   }
 
   // PCL programs require a module-level attribute specifying the prime.
-  void setPrime(APInt &prime) {
+  void setPrime(const llvm::DynamicAPInt &prime) {
     Operation *op = getOperation();
     op->setAttrs(
         DictionaryAttr::get(
@@ -110,27 +108,27 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
     );
   }
 
-  FailureOr<APSInt> selectPrime() {
+  FailureOr<llvm::DynamicAPInt> selectPrime() {
     Operation *op = getOperation();
     FieldSet fields;
     // If the collection reports that at least one FeltType did not declare the field and
     // the fields set is empty, then we raise an error.
     if (failed(collectFields(op, fields)) && fields.empty()) {
-      return op->emitOpError() << "could not deduce the prime field";
+      return op->emitOpError("could not deduce the prime field");
     }
     // If the fields is empty and we reached this point it means that the IR we are about to lower
     // does not have a single felt type (because felts without a field will make `collectFields`
     // return failure). We return an error here since we don't have a prime to emit. In practice,
     // this situation it's going to be unlikely.
     if (fields.empty()) {
-      return op->emitOpError() << "does not contain felt types and prime field couldn't be deduced";
+      return op->emitOpError("does not contain felt types and prime field couldn't be deduced");
     }
     // The pass only supports having one field for the whole circuit.
     if (fields.size() > 1) {
-      return op->emitOpError() << "multiple fields is not supported";
+      return op->emitOpError("multiple fields is not supported");
     }
     const auto &selectedField = *(fields.begin());
-    return toAPSInt(selectedField.get().prime());
+    return selectedField.get().prime();
   }
 
   std::unique_ptr<pcl::lowering::BaseMode> createMode() {

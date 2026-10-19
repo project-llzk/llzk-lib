@@ -22,7 +22,7 @@
 
 #include <mlir-c/IR.h>
 
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 
 // Include the generated CAPI
 #include "llzk/Dialect/Array/IR/Ops.capi.h.inc"

@@ -56,6 +56,24 @@ public:
     return *getScalarValue().begin();
   }
 
+  /// Return the numeric value of a single constant reference, or failure otherwise.
+  /// Fieldless felt constants fail until an analysis field is supplied.
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantValue() const {
+    if (isSingleValue()) {
+      return getSingleValue().getConstantValue();
+    }
+    return mlir::failure();
+  }
+
+  /// Return a single constant reference's value using the supplied analysis field.
+  /// Uses SourceRef::getConstantValue semantics; fails unless there is one constant reference.
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantValue(const Field &field) const {
+    if (isSingleValue()) {
+      return getSingleValue().getConstantValue(field);
+    }
+    return mlir::failure();
+  }
+
   /// Return the dimensions of this array-shaped value.
   using Base::getArrayShape;
 

@@ -741,9 +741,8 @@ std::optional<std::string> tryCppTypeToCapiType(StringRef cppType) {
     return std::make_optional(cppType.str());
   }
 
-  // APInt type is converted via llzk::fromAPInt()
-  if (isAPIntType(cppType)) {
-    return std::make_optional("int64_t");
+  if (isDynamicAPIntType(cppType)) {
+    return std::make_optional("MlirStringRef");
   }
 
   // Pointer type conversions happen via the `unwrap()` function generated

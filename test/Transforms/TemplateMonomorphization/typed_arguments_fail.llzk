@@ -2,8 +2,8 @@
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
 
 // A field element above the signed index range cannot become an index.
-// expected-error@+1 {{field element #felt<const 9223372036854775808> : !felt.type cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
-module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 9223372036854775808>]>>} {
+// expected-error@+1 {{field element #felt<const 9223372036854775808 : <"bn254">> : !felt.type<"bn254"> cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 9223372036854775808 : !felt.type<"bn254">>]>>} {
   poly.template @ChildTemplate {
     poly.param @N : index
     struct.def @Child {
@@ -242,6 +242,76 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Flag::@Flag<[2]>>, test.
         %flag = poly.read_const @A : i1
         function.return
       }
+    }
+  }
+}
+
+// -----
+
+// A fieldless literal cannot determine its representative, including for index conversion.
+// expected-error@+1 {{field element #felt<const -1> : !felt.type cannot be converted to index parameter @N: a known field modulus is required}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const -1>]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+
+// -----
+
+// A field literal outside the nonnegative signed index range cannot become an index.
+// expected-error@+1 {{field element #felt<const -18446744073709551617 : <"bn254">> : !felt.type<"bn254"> cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const -18446744073709551617 : !felt.type<"bn254">>]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+
+// -----
+
+// A field literal outside the nonnegative signed index range cannot become an index.
+// expected-error@+1 {{field element #felt<const 18446744073709551616 : <"bn254">> : !felt.type<"bn254"> cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 18446744073709551616 : !felt.type<"bn254">>]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A fieldless literal cannot determine its representative, including for index conversion.
+// expected-error@+1 {{field element #felt<const 2013265921> : !felt.type cannot be converted to index parameter @N: a known field modulus is required}}
+module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 2013265921>]>>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
     }
   }
 }

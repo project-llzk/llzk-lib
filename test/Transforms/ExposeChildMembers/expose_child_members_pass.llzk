@@ -1,0 +1,93 @@
+// RUN: llzk-opt %S/Inputs/child_reads.llzk --llzk-expose-child-members -o %t
+// RUN: llzk-opt %t | FileCheck %s --match-full-lines
+// RUN: llzk-opt %t --llzk-expose-child-members -o %t.again
+// RUN: diff %t %t.again
+
+// Covers nested storage, arrays/PODs, shared and unreachable definitions, metadata,
+// unchanged root visibility and function bodies, and idempotence.
+
+// CHECK-LABEL: module @Top attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Leaf {
+// CHECK-NEXT:      struct.member @scratch : !felt.type {llzk.pub, tag = "keep"}
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub, signal}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Leaf> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  42
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@out] = %[[VAL_1]] : <@Leaf>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Leaf>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@out] : <@Leaf>, !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  42
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ArrayLeaf {
+// CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub, signal}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ArrayLeaf> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@ArrayLeaf>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@ArrayLeaf>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrayLeaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @PodLeaf {
+// CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub, signal}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@PodLeaf> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@PodLeaf>
+// CHECK-NEXT:        function.return %[[VAL_7]] : !struct.type<@PodLeaf>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@PodLeaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @EmptyOnly {
+// CHECK-NEXT:      struct.member @value : !felt.type {signal}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@EmptyOnly> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@EmptyOnly>
+// CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@EmptyOnly>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@EmptyOnly>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Child {
+// CHECK-NEXT:      struct.member @leaf : !struct.type<@Leaf> {llzk.pub}
+// CHECK-NEXT:      struct.member @many : !array.type<2 x !struct.type<@ArrayLeaf>> {llzk.pub}
+// CHECK-NEXT:      struct.member @pod : !pod.type<[@a: !struct.type<@PodLeaf>, @b: !felt.type]> {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Child>
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@Child>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@Child>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Unused {
+// CHECK-NEXT:      struct.member @private : !felt.type {signal}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Unused> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@Unused>
+// CHECK-NEXT:        function.return %[[VAL_13]] : !struct.type<@Unused>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Unused>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.specialization_id = "malformed"}
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @child : !struct.type<@Child>
+// CHECK-NEXT:      struct.member @shared : !struct.type<@Child>
+// CHECK-NEXT:      struct.member @empty : !array.type<0 x !struct.type<@EmptyOnly>>
+// CHECK-NEXT:      struct.member @private : !felt.type {signal}
+// CHECK-NEXT:      struct.member @output : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_15]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@child] : <@Main>, !struct.type<@Child>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -448,7 +448,9 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         R1CSConstraint inner = constraintMap[op->getOperand(0)];
         constraintMap[v] = inner.negated();
       } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
-        R1CSConstraint c(toDynamicAPInt(cst.getValue().getValue()));
+        // Reduce the constant if a field is specified. Preserve constants with unspecified field;
+        // later binary export reduces them modulo --r1cs-prime, without checking the source fields.
+        R1CSConstraint c(cst.getValue().getReducedValueOrRaw());
         constraintMap[v] = c;
       } else {
         llvm::errs() << "Unhandled op in R1CS lowering: " << *op << '\n';
@@ -525,7 +527,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     // Start with the constant, if present
     if (lc.constant != 0) {
       result = r1cs::ConstOp::create(
-          builder, loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
+          builder, loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), lc.constant)
       );
     }
 
@@ -541,7 +543,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       Value scaled = coeff == 1 ? lin
                                 : r1cs::MulConstOp::create(
                                       builder, loc, linearTy, lin,
-                                      r1cs::FeltAttr::get(builder.getContext(), toAPSInt(coeff))
+                                      r1cs::FeltAttr::get(builder.getContext(), coeff)
                                   );
 
       // Accumulate via r1cs.add
@@ -556,7 +558,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       // Entire linear combination was zero
       result = r1cs::ConstOp::create(
           builder, loc, r1cs::LinearType::get(builder.getContext()),
-          r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
+          r1cs::FeltAttr::get(builder.getContext(), lc.constant)
       );
     }
 

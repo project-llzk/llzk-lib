@@ -27,6 +27,7 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
@@ -318,15 +319,19 @@ template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
-  APInt getValue(FeltConstantOp op) const { return op.getValue().getValue(); }
+  llvm::DynamicAPInt getValue(FeltConstantOp op) const {
+    // PCL accepts fieldless constants with raw signed values and reduces them modulo the prime
+    // inferred by `selectPrime()`. However, it requires exactly one declared field across the
+    // circuit so it's acceptable to reduce values with the specified prime immediately or hold
+    // the raw value for later reduction.
+    return op.getValue().getReducedValueOrRaw();
+  }
 };
 
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
-  APInt getValue(arith::ConstantOp op) const {
-    // Extend width by 1 bit to avoid sign issues.
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
-    return value.zext(value.getBitWidth() + 1);
+  llvm::DynamicAPInt getValue(arith::ConstantOp op) const {
+    return llzk::integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(op.getValue()));
   }
 };
 
@@ -358,7 +363,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
   LogicalResult matchAndRewrite(
       arith::ConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    auto intAttr = llvm::cast<IntegerAttr>(op.getValue());
+    const APInt &value = intAttr.getValue();
     if (op.getType().isInteger(1)) {
       if (value.isOne()) {
         rewriter.replaceOpWithNewOp<pcl::TrueOp>(op);
@@ -367,10 +373,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
       }
       return success();
     }
-
-    // Extend width by 1 bit to avoid sign issues.
     rewriter.replaceOpWithNewOp<pcl::ConstOp>(
-        op, pcl::FeltAttr::get(rewriter.getContext(), value.zext(value.getBitWidth() + 1))
+        op, pcl::FeltAttr::get(rewriter.getContext(), llzk::integerAttrToDynamicAPInt(intAttr))
     );
     return success();
   }

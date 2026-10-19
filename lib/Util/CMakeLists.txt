@@ -12,6 +12,7 @@ target_link_libraries(
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR
   PRIVATE
+    MLIRAsmParser
     LLZKIncludeDialect
     LLZKPODDialect
     LLZKPolymorphicDialect

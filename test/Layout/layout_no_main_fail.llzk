@@ -1,0 +1,4 @@
+// RUN: llzk-translate %s --llzk-layout -verify-diagnostics
+
+// expected-error @+1 {{LLZK layout requires a concrete llzk.main}}
+module attributes {llzk.lang} {}

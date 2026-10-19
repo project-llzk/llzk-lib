@@ -10,8 +10,8 @@
 #ifndef LLZK_DIALECT_SMTINFO_IR_SMTINFO_TD
 #define LLZK_DIALECT_SMTINFO_IR_SMTINFO_TD
 
-include "SMTInfoAttributes.td"
-include "SMTInfoDialect.td"
-include "SMTInfoOps.td"
+include "llzk/Dialect/SMTInfo/IR/SMTInfoAttributes.td"
+include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.td"
+include "llzk/Dialect/SMTInfo/IR/SMTInfoOps.td"
 
 #endif // LLZK_DIALECT_SMTINFO_IR_SMTINFO_TD

@@ -19,6 +19,9 @@
 #include "zklean/Target/TranslateRegistration.h"
 
 #include "llzk/Config/Config.h"
+#include "llzk/Dialect/DialectRegistration.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Util/LLZKLayout.h"
 
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -28,6 +31,7 @@
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Tools/mlir-translate/MlirTranslateMain.h>
+#include <mlir/Tools/mlir-translate/Translation.h>
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/StringRef.h>
@@ -40,6 +44,28 @@
 #endif // LLZK_WITH_PCL
 
 using namespace llzk;
+using namespace mlir;
+
+/// Optionally monomorphize the module before exporting its logical signal layout.
+static LogicalResult generateLayout(Operation *op, llvm::raw_ostream &output, bool monomorphize) {
+  auto module = dyn_cast<ModuleOp>(op);
+  if (!module) {
+    return op->emitOpError("expected builtin.module as top level operation");
+  }
+  if (monomorphize) {
+    PassManager pm(module.getContext());
+    pm.addPass(polymorphic::createTemplateMonomorphizationPass());
+    if (failed(pm.run(module))) {
+      return failure();
+    }
+  }
+  auto result = buildLLZKLayout(module);
+  if (failed(result)) {
+    return failure();
+  }
+  printLLZKLayout(*result, output);
+  return success();
+}
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
@@ -53,14 +79,24 @@ int main(int argc, char **argv) {
   });
 
   // Register all MLIR translations
-  mlir::registerAllTranslations();
+  registerAllTranslations();
+  TranslateFromMLIRRegistration layout(
+      "llzk-layout", "export the logical LLZK signal layout",
+      [](Operation *op, llvm::raw_ostream &output) { return generateLayout(op, output, false); },
+      [](DialectRegistry &registry) { registerDialects(registry); }
+  );
+  TranslateFromMLIRRegistration generateLayoutPipeline(
+      "llzk-generate-layout", "monomorphize LLZK and export the logical signal layout",
+      [](Operation *op, llvm::raw_ostream &output) { return generateLayout(op, output, true); },
+      [](DialectRegistry &registry) { registerDialects(registry); }
+  );
   r1cs::registerR1CSTranslation();
-  smt::registerSmtTranslation();
+  llzk::smt::registerSmtTranslation();
   zklean::registerZKLeanTranslation();
 #if LLZK_WITH_PCL
   pcl::registerPclTranslation();
 #endif
 
   // Run 'mlir-translate'
-  return failed(mlir::mlirTranslateMain(argc, argv, "LLZK Translation tool"));
+  return failed(mlirTranslateMain(argc, argv, "LLZK Translation tool"));
 }

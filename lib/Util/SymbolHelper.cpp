@@ -26,6 +26,7 @@
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/AsmParser/AsmParser.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Operation.h>
@@ -331,7 +332,7 @@ FailureOr<SymbolRefAttr> getPathRelativeToAncestor(
             << "symbol and supplied module are the same operation";
       } else {
         diagnostic << " is not visible from module \""
-                   << ancestor.getSymName().value_or("<unnamed>") << '\"';
+                   << ancestor.getSymName().value_or("<unnamed>") << '"';
         diagnostic.attachNote(definition->getLoc())
             << "symbol is defined outside the supplied module";
         diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
@@ -437,6 +438,51 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
   } else {
     return success(nullptr);
   }
+}
+
+FailureOr<SymbolLookupResult<StructDefOp>>
+getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef symbolPath) {
+  symbolPath = symbolPath.trim();
+  if (symbolPath.empty()) {
+    return getMainInstanceDef(tables, lookupFrom);
+  }
+  std::string symbolText = symbolPath.str();
+  if (symbolText.front() != '@') {
+    symbolText.insert(symbolText.begin(), '@');
+  }
+  SymbolRefAttr symbol;
+  std::string parseError;
+  {
+    // Report parser details at the caller's location instead of the temporary buffer.
+    ScopedDiagnosticHandler handler(lookupFrom->getContext(), [&](Diagnostic &diagnostic) {
+      if (diagnostic.getSeverity() == DiagnosticSeverity::Error) {
+        parseError = diagnostic.str();
+      }
+      return success();
+    });
+    symbol = dyn_cast_or_null<SymbolRefAttr>(parseAttribute(symbolText, lookupFrom->getContext()));
+  }
+  if (!symbol) {
+    auto diagnostic = lookupFrom->emitError();
+    diagnostic << "invalid root struct symbol path '" << symbolPath << '\'';
+    if (!parseError.empty()) {
+      diagnostic << ": " << parseError;
+    }
+    return diagnostic;
+  }
+  auto found = lookupTopLevelSymbol(tables, symbol, lookupFrom, false);
+  if (failed(found)) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' does not resolve to a symbol";
+  }
+  Operation *definition = found->get();
+  SymbolLookupResult<StructDefOp> root(std::move(*found));
+  if (!root) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' references a '"
+           << definition->getName() << "'; expected a 'struct.def'";
+  }
+  return root;
 }
 
 FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {

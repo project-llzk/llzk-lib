@@ -140,7 +140,7 @@ public:
     }
 
     if (dest->empty()) {
-      return incOp->emitOpError() << "failed to inline the module. No operation was written.";
+      return incOp->emitOpError("failed to inline the module. No operation was written.");
     }
 
     auto &op = dest->front();

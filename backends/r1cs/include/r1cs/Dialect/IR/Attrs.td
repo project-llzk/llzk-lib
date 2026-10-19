@@ -12,21 +12,18 @@
 
 include "r1cs/Dialect/IR/Dialect.td"
 include "mlir/IR/AttrTypeBase.td"
+include "llzk/Dialect/LLZK/IR/AttributeHelper.td"
 
 def FeltAttr : AttrDef<R1CSDialect, "Felt"> {
   let summary = "Field element represented as an arbitrary precision integer";
   let cppClassName = "FeltAttr";
   let mnemonic = "felt";
-  let parameters = (ins "::mlir::IntegerAttr":$value);
-
+  let description = [{
+    An exact signed mathematical coefficient, independent of storage width.
+    Binary export reduces coefficients modulo the selected field prime.
+  }];
+  let parameters = (ins DynamicAPIntParameter<"signed coefficient">:$value);
   let assemblyFormat = "$value";
-
-  let builders = [AttrBuilder<(ins "const ::llvm::APInt &":$v), [{
-      return $_get(context, ::mlir::IntegerAttr::get(::mlir::IntegerType::get(context, v.getBitWidth()), v));
-    }]>,
-                  AttrBuilder<(ins "const ::llvm::APSInt &":$v), [{
-      return $_get(context, ::mlir::IntegerAttr::get(::mlir::IntegerType::get(context, v.getBitWidth()), v));
-    }]>];
 }
 
 def PublicAttr : AttrDef<R1CSDialect, "Public"> {

@@ -13,9 +13,36 @@ using namespace mlir;
 
 namespace llzk::felt {
 
+LogicalResult FieldSpecAttr::verify(
+    llvm::function_ref<InFlightDiagnostic()> emitError, StringAttr,
+    // TableGen requires this parameter to be passed by value.
+    llzk::DynamicAPIntValue primeWrapper // NOLINT(performance-unnecessary-value-param)
+) {
+  const llvm::DynamicAPInt &prime = primeWrapper; // implict unwrap
+  if (prime < 2) {
+    return emitError() << "field modulus must be at least 2";
+  }
+  return success();
+}
+
 StringAttr FeltConstAttr::getFieldName() const {
-  auto ft = getType();
+  FeltType ft = getType();
   return ft ? ft.getFieldName() : StringAttr();
+}
+
+std::optional<llvm::DynamicAPInt> FeltConstAttr::getReducedValue() const {
+  FeltType type = getType();
+  if (!type || !type.hasField()) {
+    return std::nullopt;
+  }
+  return type.getField().reduce(getRawValue());
+}
+
+llvm::DynamicAPInt FeltConstAttr::getReducedValueOrRaw() const {
+  if (auto reduced = getReducedValue()) {
+    return *reduced;
+  }
+  return getRawValue();
 }
 
 } // namespace llzk::felt
