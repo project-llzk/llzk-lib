@@ -21,6 +21,7 @@
 
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Shared/ValueCopy.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <llvm/ADT/SmallVector.h>
@@ -270,6 +271,13 @@ bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(Value v1, Value 
   auto podRead2 = dyn_cast<ReadPodOp>(o2);
   if (podRead1 || podRead2) {
     if (!podRead1 || !podRead2) {
+      return false;
+    }
+    // A POD read of a mutable aggregate creates an independent snapshot. Matching
+    // the source record does not prove those snapshots equivalent after either
+    // result is mutated, so leave such values to a mutation-aware analysis.
+    if (llzk::requiresValueCopy(podRead1.getType()) ||
+        llzk::requiresValueCopy(podRead2.getType())) {
       return false;
     }
     std::optional<PodObservation> obs1 = normalizePodRead(podRead1);

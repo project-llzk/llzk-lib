@@ -457,3 +457,51 @@ module attributes {llzk.lang} {
 // CHECK:           function.call @AliasedMemberWrite::@compute(
 // CHECK:           struct.writem
 // CHECK:           function.call @AliasedMemberWrite::@constrain(
+
+// -----
+
+!Values = !array.type<1 x !felt.type>
+!Inputs = !pod.type<[@values: !Values]>
+
+module attributes {llzk.lang} {
+  struct.def @MutableSnapshot {
+    function.def @compute(%input: !Values) -> !struct.type<@MutableSnapshot> {
+      %self = struct.new : !struct.type<@MutableSnapshot>
+      function.return %self : !struct.type<@MutableSnapshot>
+    }
+    function.def @constrain(%self: !struct.type<@MutableSnapshot>, %input: !Values) {
+      function.return
+    }
+  }
+
+  struct.def @Root {
+    struct.member @saved : !Inputs
+    struct.member @child : !struct.type<@MutableSnapshot>
+    function.def @compute(
+        %inputs: !Inputs, %index: index,
+        %replacement: !felt.type) -> !struct.type<@Root> {
+      %self = struct.new : !struct.type<@Root>
+      %input = pod.read %inputs[@values] : !Inputs, !Values
+      struct.writem %self[@saved] = %inputs : !struct.type<@Root>, !Inputs
+      array.write %input[%index] = %replacement : !Values, !felt.type
+      %child = function.call @MutableSnapshot::@compute(%input) : (!Values) -> !struct.type<@MutableSnapshot>
+      struct.writem %self[@child] = %child : !struct.type<@Root>, !struct.type<@MutableSnapshot>
+      function.return %self : !struct.type<@Root>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Root>, %inputs: !Inputs, %index: index,
+        %replacement: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@Root>, !struct.type<@MutableSnapshot>
+      %copy = struct.readm %self[@saved] : !struct.type<@Root>, !Inputs
+      %input = pod.read %copy[@values] : !Inputs, !Values
+      function.call @MutableSnapshot::@constrain(%child, %input) : (!struct.type<@MutableSnapshot>, !Values) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Root {
+// CHECK:         function.def @product
+// CHECK-NOT:       function.call @MutableSnapshot::@product(
+// CHECK:           function.call @MutableSnapshot::@compute(
+// CHECK:           function.call @MutableSnapshot::@constrain(

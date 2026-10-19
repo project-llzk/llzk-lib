@@ -26,8 +26,10 @@ namespace llzk {
 ///
 /// POD snapshots copied through POD records and struct members are followed
 /// recursively. Unknown uses, offset-bearing struct-member reads, and control-flow
-/// crossings are handled conservatively and do not establish equivalence. Only
-/// successful queries are cached.
+/// crossings are handled conservatively and do not establish equivalence. POD reads
+/// whose results require an independent mutable copy are also rejected because this
+/// analysis does not track mutations of the returned snapshots. Only successful
+/// queries are cached.
 class LightweightSignalEquivalenceAnalysis {
   llvm::EquivalenceClasses<mlir::Value> equivalentSignals;
 
