@@ -100,9 +100,9 @@ Source updates replace recognized FileCheck directives only for the selected pre
 unrelated source text and comments. The generated checks are not authoritative: verify that they
 cover the relevant behavior, and retain complete transformed output for transformation tests.
 
-LLZK tests should have `// RUN:` on the first line(s), followed by a blank line. Each individual
-test in a multi-test file should have a brief description before the test input, the necessary
-check block after the input but before the next `// -----` separator. Keep the generated
+LLZK tests should have `// RUN:` on the first line(s) followed by a blank line. Each individual
+test in a multi-test file should have a brief description before the test input and any necessary
+check lines after the input but before the next `// -----` separator. Keep the generated
 indentation and SSA substitutions, with no blank lines or prose inside a check block. These
 layout adjustments must not omit any transformed output.
 
