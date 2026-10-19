@@ -276,7 +276,10 @@ bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(Value v1, Value 
     // A POD read of a mutable aggregate creates an independent snapshot. Matching
     // the source record does not prove those snapshots equivalent after either
     // result is mutated, so leave such values to a mutation-aware analysis.
-    if (llzk::requiresValueCopy(podRead1.getType()) ||
+    // Struct handles preserve identity, but their component state can change
+    // without modifying the POD record. They require mutation tracking too.
+    if (isa<StructType>(podRead1.getType()) || isa<StructType>(podRead2.getType()) ||
+        llzk::requiresValueCopy(podRead1.getType()) ||
         llzk::requiresValueCopy(podRead2.getType())) {
       return false;
     }
