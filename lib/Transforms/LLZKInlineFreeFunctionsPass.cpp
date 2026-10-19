@@ -19,6 +19,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -85,16 +86,30 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
     // A normal MLIR call uses nearest-symbol lookup after cloning, so a struct
     // method can capture a callee that originally resolved at the root. Keep
     // such helpers in place until general symbol rebasing is implemented.
-    bool hasFuncCall = false;
-    func.walk([&hasFuncCall](func::CallOp) { hasFuncCall = true; });
+    bool hasFuncCall = walkContains<func::CallOp>(func);
+    LLVM_DEBUG({
+      if (hasFuncCall) {
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline " << func.getSymName() << " at "
+                     << func.getLoc()
+                     << ": body contains func.call whose callee could be captured after cloning\n";
+      }
+    });
     return !hasFuncCall;
   }
 
   // Struct methods are handled by the struct inliner, not this pass. Also
   // reject functions that are not owned by this module, such as definitions
   // resolved through include.from.
-  if (!llvm::isa<ModuleOp, polymorphic::TemplateOp>(parent) ||
-      !root->isAncestor(func.getOperation())) {
+  if (!llvm::isa<ModuleOp, polymorphic::TemplateOp>(parent)) {
+    // Don't bother with debug message in this case. It's just checking the very
+    // basic case of whether the function is a free function.
+    return false;
+  }
+  if (!root->isAncestor(func.getOperation())) {
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline " << func.getSymName() << " at "
+                     << func.getLoc() << ": function is defined outside the root module\n"
+    );
     return false;
   }
 
@@ -104,12 +119,22 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
   // cross-symbol-table inlining must rebase symbol references in the cloned
   // body so that they continue to resolve to the same definitions.
   bool hasUnsupportedSymbolRef = false;
-  func.walk([&tables, &hasUnsupportedSymbolRef, root](Operation *op) {
-    auto detectUnsupportedSymbolRef = [&hasUnsupportedSymbolRef](SymbolRefAttr) {
+  func.walk([&](Operation *op) {
+    auto detectUnsupportedSymbolRef = [&](SymbolRefAttr ref) {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline " << func.getSymName()
+                       << ": unsupported scope-sensitive symbol reference " << ref << " in "
+                       << op->getName() << " at " << op->getLoc() << '\n'
+      );
       hasUnsupportedSymbolRef = true;
     };
-    auto detectMissingRootSymbolRef = [&tables, &hasUnsupportedSymbolRef, root](SymbolRefAttr ref) {
+    auto detectMissingRootSymbolRef = [&](SymbolRefAttr ref) {
       if (!tables.lookupSymbolIn(root, ref)) {
+        LLVM_DEBUG(
+            llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline " << func.getSymName()
+                         << ": symbol reference " << ref << " in " << op->getName() << " at "
+                         << op->getLoc() << " does not resolve in the root module\n"
+        );
         hasUnsupportedSymbolRef = true;
       }
     };
@@ -136,7 +161,9 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
           usesRootLookup = name == globalRef.getNameRefAttrName();
         }
         if (usesRootLookup) {
-          property.getValue().walk(detectMissingRootSymbolRef);
+          // Check the complete path, not its nested FlatSymbolRefAttr components:
+          // those resolve within the preceding symbol, not from the root.
+          detectMissingRootSymbolRef(llvm::cast<SymbolRefAttr>(property.getValue()));
         } else {
           walkAttrSymbolRefs(
               property.getValue(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef
@@ -162,7 +189,21 @@ static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root, SymbolTableCo
 /// namespace. Calls in nested modules or other function-like operations (such
 /// as contracts) are outside this pass's scope.
 static bool isInlinableCallSite(CallOp call, ModuleOp root) {
-  return call->getParentOfType<FuncDefOp>() && call->getParentOfType<ModuleOp>() == root;
+  if (!call->getParentOfType<FuncDefOp>()) {
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee() << " at "
+                     << call.getLoc() << ": call is outside a function.def body\n"
+    );
+    return false;
+  }
+  if (call->getParentOfType<ModuleOp>() != root) {
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee() << " at "
+                     << call.getLoc() << ": call is in a nested module\n"
+    );
+    return false;
+  }
+  return true;
 }
 
 /// Free functions that participate in a call cycle: inlining one would
@@ -177,6 +218,12 @@ static llvm::DenseSet<Operation *> collectRecursiveFunctions(const llzk::CallGra
     }
     for (const llzk::CallGraphNode *node : *scc) {
       if (!node->isExternal()) {
+        LLVM_DEBUG(
+            llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline "
+                         << SymbolTable::getSymbolName(node->getCalledFunction().getOperation())
+                         << " at " << node->getCalledFunction().getLoc()
+                         << ": function participates in a call cycle\n"
+        );
         recursive.insert(node->getCalledFunction().getOperation());
       }
     }
@@ -192,11 +239,29 @@ static FuncDefOp resolveFreeCallee(
 ) {
   auto tgtRes = call.getCalleeTarget(tables);
   if (failed(tgtRes)) {
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee() << " at "
+                     << call.getLoc() << ": callee target resolution failed\n"
+    );
     return nullptr;
   }
   FuncDefOp callee = tgtRes->get();
-  if (!isInlinableFreeFunction(callee, root, tables) || callee.isExternal() ||
-      skippedCallees.contains(callee)) {
+  if (!isInlinableFreeFunction(callee, root, tables)) {
+    return nullptr;
+  }
+  if (callee.isExternal()) {
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee() << " at "
+                     << call.getLoc() << ": callee is external and has no body\n"
+    );
+    return nullptr;
+  }
+  if (skippedCallees.contains(callee)) {
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee() << " at "
+                     << call.getLoc() << ": callee was skipped due to a call cycle or an earlier "
+                     << "inlining failure\n"
+    );
     return nullptr;
   }
   return callee;
@@ -225,21 +290,20 @@ static SmallVector<FreeFunctionCall> collectFreeFunctionCalls(
   return calls;
 }
 
-/// Collect every non-external free function in `mod` whose symbol has no
-/// remaining uses anywhere in the symbol-use graph, including uses in nested
-/// symbol tables.
+/// Collect every non-external free function within `mod` whose symbol has no remaining
+/// uses anywhere in the symbol-use graph, including uses in nested symbol tables.
 static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
   SymbolUseGraph useGraph(mod.getOperation());
   SmallVector<FuncDefOp> unusedFunctions;
-  for (FuncDefOp func : mod.getOps<FuncDefOp>()) {
-    if (func.isExternal()) {
-      continue;
+  mod.walk([&](FuncDefOp func) {
+    if (func.isExternal() || !llvm::isa<ModuleOp, polymorphic::TemplateOp>(func->getParentOp())) {
+      return;
     }
     const SymbolUseGraphNode *node = useGraph.lookupNode(func);
     if (!node || !node->hasPredecessor()) {
       unusedFunctions.push_back(func);
     }
-  }
+  });
   return unusedFunctions;
 }
 
@@ -273,20 +337,33 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
     InlinerConfig inlinerConfig;
     SmallVector<FreeFunctionCall> callsToInline =
         collectFreeFunctionCalls(mod, tables, skippedCallees);
-    while (!callsToInline.empty()) {
+    for (;;) {
       LLVM_DEBUG({
         llvm::dbgs() << "[" DEBUG_TYPE "] round found " << callsToInline.size()
                      << " free-function call site(s) to inline\n";
       });
 
+      if (callsToInline.empty()) {
+        break;
+      }
+
       for (auto [call, callee] : callsToInline) {
         if (skippedCallees.contains(callee)) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee()
+                           << " at " << call.getLoc()
+                           << ": an earlier inlining attempt for this callee failed\n"
+          );
           continue;
         }
         if (failed(inlineCall(
                 inliner, inlinerConfig.getCloneCallback(), call, callee, callee.getCallableRegion(),
                 true
             ))) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[" DEBUG_TYPE "] cannot inline call to " << call.getCallee()
+                           << " at " << call.getLoc() << ": MLIR inlineCall failed\n"
+          );
           call.emitWarning("failed to inline free function call; skipping this callee");
           skippedCallees.insert(callee);
           continue;
