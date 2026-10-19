@@ -376,19 +376,19 @@ LogicalResult StructDefOp::verifyRegions() {
     }
 
     if (!foundCompute.has_value() && foundConstrain.has_value()) {
-      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_CONSTRAIN
-                                                << "\", missing \"@" << FUNC_NAME_COMPUTE << '\"';
+      return structFuncDefError(getOperation())
+             << "found \"@" << FUNC_NAME_CONSTRAIN << "\", missing \"@" << FUNC_NAME_COMPUTE << '"';
     }
     if (!foundConstrain.has_value() && foundCompute.has_value()) {
-      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_COMPUTE
-                                                << "\", missing \"@" << FUNC_NAME_CONSTRAIN << '\"';
+      return structFuncDefError(getOperation())
+             << "found \"@" << FUNC_NAME_COMPUTE << "\", missing \"@" << FUNC_NAME_CONSTRAIN << '"';
     }
   }
 
   if (!foundCompute.has_value() && !foundConstrain.has_value() && !foundProduct.has_value()) {
     return structFuncDefError(getOperation())
            << "could not find \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
-           << "\", or \"@" << FUNC_NAME_CONSTRAIN << '\"';
+           << "\", or \"@" << FUNC_NAME_CONSTRAIN << '"';
   }
 
   // Check which funcs are present and not marked with {llzk.derived}
@@ -419,7 +419,7 @@ LogicalResult StructDefOp::verifyRegions() {
     return attachDerivedNotes(
         structFuncDefError(getOperation())
         << "could not find non-derived \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
-        << "\", or \"@" << FUNC_NAME_CONSTRAIN << '\"'
+        << "\", or \"@" << FUNC_NAME_CONSTRAIN << '"'
     );
   }
 

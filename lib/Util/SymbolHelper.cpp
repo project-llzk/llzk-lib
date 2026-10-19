@@ -332,7 +332,7 @@ FailureOr<SymbolRefAttr> getPathRelativeToAncestor(
             << "symbol and supplied module are the same operation";
       } else {
         diagnostic << " is not visible from module \""
-                   << ancestor.getSymName().value_or("<unnamed>") << '\"';
+                   << ancestor.getSymName().value_or("<unnamed>") << '"';
         diagnostic.attachNote(definition->getLoc())
             << "symbol is defined outside the supplied module";
         diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
