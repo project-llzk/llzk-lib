@@ -39,11 +39,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617>} {
 // CHECK-NEXT:    func.func @Main(%[[INPUT:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt) {
-// CHECK-NEXT:      %[[OUT_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "out_0" true
-// CHECK-NEXT:      %[[OUT_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "out_1" true
-// CHECK-NEXT:      %[[CACHE_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_2" false
-// CHECK-NEXT:      %[[CACHE_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_3" false
-// CHECK-NEXT:      %[[CACHE_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CACHE_ZERO]], %[[INPUT]]
+// Independent variable declarations may be emitted in either order.
+// CHECK-DAG:      %[[OUT_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "out_0" true
+// CHECK-DAG:      %[[OUT_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "out_1" true
+// CHECK-DAG:      %[[CACHE_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_2" false
+// CHECK-DAG:      %[[CACHE_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_3" false
+// CHECK:      %[[CACHE_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CACHE_ZERO]], %[[INPUT]]
 // CHECK-NEXT:      pcl.assert %[[CACHE_ZERO_EQ]]
 // CHECK-NEXT:      %[[OUT_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[OUT_ZERO]], %[[CACHE_ZERO]]
 // CHECK-NEXT:      pcl.assert %[[OUT_ZERO_EQ]]
