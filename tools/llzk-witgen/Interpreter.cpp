@@ -590,7 +590,7 @@ private:
         return feltValue.takeError();
       }
       llvm::DynamicAPInt maxMask =
-          (llvm::DynamicAPInt(1) << llvm::DynamicAPInt(field.bitWidth())) - llvm::DynamicAPInt(1);
+          (llvm::DynamicAPInt(1) << field.bitWidth()) - llvm::DynamicAPInt(1);
       return bind({WitnessVal(field.reduce(maxMask ^ *feltValue))});
     }
     // Reduces signed integers to unsigned field elements using Field::reduce.

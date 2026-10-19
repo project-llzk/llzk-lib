@@ -262,8 +262,11 @@ INSTANTIATE_TEST_SUITE_P(
 struct DynamicAPIntShiftTest : public testing::TestWithParam<std::pair<DynamicAPInt, unsigned>> {
   static const std::vector<std::pair<DynamicAPInt, unsigned>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, unsigned>> vals = {
-        {DynamicAPInt(-1), 0}, {getBN254(), 0},         {getBN254(), 32},
-        {getBN254(), 100},     {DynamicAPInt(100), 32}, {DynamicAPInt(100), 100},
+        {DynamicAPInt(-1), 0},   {getBN254(), 0},
+        {getBN254(), 32},        {getBN254(), 100},
+        {DynamicAPInt(100), 32}, {DynamicAPInt(100), 100},
+        {-getBN254(), 32},       {DynamicAPInt(std::numeric_limits<int64_t>::min()), 64},
+        {DynamicAPInt(-3), 1},   {DynamicAPInt(APInt(256, 3)), 1},
     };
     return vals;
   }
@@ -275,7 +278,9 @@ TEST_P(DynamicAPIntShiftTest, ShiftLeft) {
   APSInt base = toAPSInt(a);
   base = base.extend(base.getBitWidth() + b);
 
-  ASSERT_EQ(a << toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(base << b));
+  DynamicAPInt expected = toDynamicAPInt(base << b);
+  ASSERT_EQ(a << b, expected);
+  ASSERT_EQ(a << DynamicAPInt(b), expected);
 }
 
 TEST_P(DynamicAPIntShiftTest, ShiftRight) {
@@ -284,7 +289,9 @@ TEST_P(DynamicAPIntShiftTest, ShiftRight) {
   APSInt base = toAPSInt(a);
   base = base.extend(max(base.getBitWidth(), b));
 
-  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(base >> b));
+  DynamicAPInt expected = toDynamicAPInt(base >> b);
+  ASSERT_EQ(a >> b, expected);
+  ASSERT_EQ(a >> DynamicAPInt(b), expected);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -434,8 +441,8 @@ TEST(DynamicAPIntSafetyTest, HugeRightShiftAndSignedLeftShift) {
   auto huge = toDynamicAPInt("184467440737095516160000");
   EXPECT_EQ(DynamicAPInt(42) >> huge, DynamicAPInt(0));
   EXPECT_EQ(DynamicAPInt(-42) >> huge, DynamicAPInt(-1));
-  EXPECT_EQ(DynamicAPInt(-3) << DynamicAPInt(100), -3 * (DynamicAPInt(1) << DynamicAPInt(100)));
-  EXPECT_EQ(DynamicAPInt(-3) >> DynamicAPInt(1), DynamicAPInt(-2));
+  EXPECT_EQ(DynamicAPInt(-3) << 100, -3 * (DynamicAPInt(1) << 100));
+  EXPECT_EQ(DynamicAPInt(-3) >> 1, DynamicAPInt(-2));
   const DynamicAPInt unsignedMax(std::numeric_limits<unsigned>::max());
   EXPECT_EQ(DynamicAPInt(42) >> unsignedMax, DynamicAPInt(0));
   EXPECT_EQ(DynamicAPInt(-42) >> unsignedMax, DynamicAPInt(-1));
@@ -446,9 +453,70 @@ TEST(DynamicAPIntSafetyTest, HugeRightShiftAndSignedLeftShift) {
   EXPECT_EQ(DynamicAPInt(-3) >> wideCount, DynamicAPInt(-2));
 }
 
+/// Native counts preserve saturation and reject invalid shifts before narrowing or allocation.
+TEST(DynamicAPIntSafetyTest, NativeShiftCountBoundaries) {
+  for (int64_t count : std::vector<int64_t> {
+           63, 64, 65, std::numeric_limits<unsigned>::max(), std::numeric_limits<int64_t>::max()
+       }) {
+    SCOPED_TRACE(count);
+    EXPECT_EQ(DynamicAPInt(42) >> count, DynamicAPInt(0));
+    EXPECT_EQ(DynamicAPInt(-42) >> count, DynamicAPInt(-1));
+    EXPECT_EQ(DynamicAPInt(0) >> count, DynamicAPInt(0));
+    EXPECT_EQ(DynamicAPInt(42) >> DynamicAPInt(count), DynamicAPInt(0));
+    EXPECT_EQ(DynamicAPInt(-42) >> DynamicAPInt(count), DynamicAPInt(-1));
+  }
+  for (int64_t count : {int64_t(-1), std::numeric_limits<int64_t>::min()}) {
+    EXPECT_DEATH(DynamicAPInt(1) << count, "invalid or unrepresentable left shift");
+    EXPECT_DEATH(DynamicAPInt(1) >> count, "negative right shift");
+    EXPECT_DEATH(DynamicAPInt(1) << DynamicAPInt(count), "invalid or unrepresentable left shift");
+    EXPECT_DEATH(DynamicAPInt(1) >> DynamicAPInt(count), "negative right shift");
+  }
+  int64_t unsignedMax = std::numeric_limits<unsigned>::max();
+  EXPECT_EQ(DynamicAPInt(0) << (unsignedMax - 1), DynamicAPInt(0));
+  EXPECT_DEATH(DynamicAPInt(0) << unsignedMax, "invalid or unrepresentable left shift");
+  EXPECT_DEATH(
+      DynamicAPInt(1) << std::numeric_limits<int64_t>::max(),
+      "invalid or unrepresentable left shift"
+  );
+}
+
+/// Counts outside int64_t must be handled before delegating to the native overloads.
+TEST(DynamicAPIntSafetyTest, ShiftCountOutsideInt64) {
+  auto count = toDynamicAPInt("9223372036854775808");
+  EXPECT_EQ(DynamicAPInt(42) >> count, DynamicAPInt(0));
+  EXPECT_EQ(DynamicAPInt(-42) >> count, DynamicAPInt(-1));
+  EXPECT_EQ(DynamicAPInt(0) >> count, DynamicAPInt(0));
+  EXPECT_DEATH(DynamicAPInt(1) << count, "invalid or unrepresentable left shift");
+  auto negativeCount = -count - 1;
+  EXPECT_DEATH(DynamicAPInt(1) << negativeCount, "invalid or unrepresentable left shift");
+  EXPECT_DEATH(DynamicAPInt(1) >> negativeCount, "negative right shift");
+}
+
 TEST(DynamicAPIntSafetyTest, ModularExponentiationNormalizesInputs) {
   EXPECT_EQ(modExp(DynamicAPInt(-3), DynamicAPInt(3), DynamicAPInt(17)), DynamicAPInt(7));
   EXPECT_EQ(modExp(DynamicAPInt(3), DynamicAPInt(0), DynamicAPInt(1)), DynamicAPInt(0));
+}
+
+/// Preserve exponent bits across compaction, including initially wide-stored small values.
+TEST(DynamicAPIntSafetyTest, ModularExponentiationCompactsExponent) {
+  // Powers of 3 modulo 17 repeat every 16 exponents.
+  for (const auto &[text, expected] : std::vector<std::pair<StringRef, int64_t>> {
+           {"0", 1},
+           {"1", 3},
+           {"2", 9},
+           {"65537", 3},
+           {"9223372036854775807", 6},
+           {"9223372036854775808", 1},
+           {"9223372036854775809", 3},
+           {"18446744073709551615", 6},
+           {"18446744073709551616", 1}
+       }) {
+    SCOPED_TRACE(text.str());
+    for (const DynamicAPInt &exponent :
+         {toDynamicAPInt(text), DynamicAPInt(APInt(256, text, 10))}) {
+      EXPECT_EQ(modExp(DynamicAPInt(3), exponent, DynamicAPInt(17)), DynamicAPInt(expected));
+    }
+  }
 }
 
 // Negative representatives must pass the inverse postcondition in assertion-enabled builds.

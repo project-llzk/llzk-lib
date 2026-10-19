@@ -58,10 +58,21 @@ llvm::Expected<size_t> checkedToSize(const llvm::DynamicAPInt &value, const llvm
 llvm::DynamicAPInt operator&(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator|(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator^(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
-/// Exact left shift; negative or unrepresentable counts are fatal programming errors.
+
+/// Exact left shift. Negative \p rhs or a required signed result width exceeding
+/// UINT_MAX is a fatal programming error, even when \p lhs is zero.
 llvm::DynamicAPInt operator<<(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
-/// Arithmetic right shift; arbitrarily large nonnegative counts saturate to 0 or -1.
+/// Exact left shift. Negative \p rhs or a required signed result width exceeding
+/// UINT_MAX is a fatal programming error, even when \p lhs is zero.
+llvm::DynamicAPInt operator<<(const llvm::DynamicAPInt &lhs, int64_t rhs);
+/// Arithmetic right shift. Negative \p rhs is a fatal programming error.
+/// Sufficiently large nonnegative \p rhs yields 0 for nonnegative \p lhs,
+/// or -1 for negative \p lhs.
 llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
+/// Arithmetic right shift. Negative \p rhs is a fatal programming error.
+/// Sufficiently large nonnegative \p rhs yields 0 for nonnegative \p lhs,
+/// or -1 for negative \p lhs.
+llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, int64_t rhs);
 
 /// Parse trusted decimal text; invalid text is a fatal programming error.
 /// Use parseDynamicAPInt for external input.
