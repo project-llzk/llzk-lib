@@ -157,8 +157,10 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     Local arrays and PODs exist only as concrete paths bound to scalar SSA
     values. Reads resolve bindings; writes and aggregate assignments update
     local bindings without emitting allocations, copies, or writes. Aggregate
-    arguments are read-only snapshots, and returned aggregates receive fresh
-    local roots. Component handles preserve identity. Every array access index
+    arguments preserve identity and remain read-only during each call. Returned
+    aggregates alias their original roots: caller-local roots remain shared and
+    writable after the call, while function inputs and original storage remain
+    read-only. Component handles preserve identity. Every array access index
     must resolve at compile time and be in bounds. Reads of uninitialized local
     leaves and writes to function inputs or original storage are diagnosed.
 

@@ -70,7 +70,7 @@ class ConstraintElaborator {
   static Value scalar(Value source, const Environment &frame) {
     auto found = frame.find(source);
     assert(found != frame.end() && "missing source binding");
-    auto value = std::get_if<Value>(&found->second);
+    const auto *value = std::get_if<Value>(&found->second);
     assert(value && *value && "expected a scalar SSA binding");
     return *value;
   }
@@ -134,7 +134,7 @@ class ConstraintElaborator {
 
   /// Copy scalar bindings under a new root; never emit aggregate copies.
   FailureOr<BoundValue> copy(BoundValue source, Operation *site, Value input = {}) {
-    auto path = std::get_if<AccessPath>(&source);
+    auto *path = std::get_if<AccessPath>(&source);
     if (!path) {
       return source;
     }
@@ -156,7 +156,7 @@ class ConstraintElaborator {
 
   /// Assign a scalar binding or snapshot an aggregate subtree.
   LogicalResult assign(AccessPath target, BoundValue source, Operation *site) {
-    if (auto value = std::get_if<Value>(&source)) {
+    if (auto *value = std::get_if<Value>(&source)) {
       bindings.store(target, *value);
       return success();
     }
@@ -356,7 +356,8 @@ class ConstraintElaborator {
     if (equality && !isa<felt::FeltType>(op.getOperand(0).getType())) {
       return error(&op, "equality constraints require scalar felt operands");
     }
-    bool structural = op.hasTrait<function::NotFieldNative>() || isa<boolean::CmpOp>(op);
+    bool structural =
+        op.hasTrait<function::NotFieldNative>() || isa<boolean::CmpOp, arith::CmpIOp>(op);
     bool expression =
         isMemoryEffectFree(&op) && (isa<felt::FeltDialect, arith::ArithDialect>(op.getDialect()) ||
                                     isa<cast::IntToFeltOp, ApplyMapOp>(op));
@@ -404,7 +405,7 @@ class ConstraintElaborator {
     Environment frame;
     for (auto [parameter, argument] : llvm::zip_equal(callee.getArguments(), arguments)) {
       frame[parameter] = argument;
-      if (auto path = std::get_if<AccessPath>(&argument)) {
+      if (const auto *path = std::get_if<AccessPath>(&argument)) {
         bindings.protect(*path);
       }
     }
@@ -412,7 +413,7 @@ class ConstraintElaborator {
     auto status = expand(callee.getBody().front(), frame, results);
     activeCalls.pop_back();
     for (const auto &argument : arguments) {
-      if (auto path = std::get_if<AccessPath>(&argument)) {
+      if (const auto *path = std::get_if<AccessPath>(&argument)) {
         bindings.unprotect(*path);
       }
     }
