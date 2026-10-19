@@ -567,7 +567,7 @@ OptimizedNonNativeStrategy::OptimizedNonNativeStrategy(
     const StructIntervals *intervals
 )
     : reasoner(selectedField, dataflowSolver, intervals),
-      emitter(std::make_unique<SMTIntTheoryEmitter>(context, reasoner.getPrime())) {}
+      emitter(std::make_unique<SMTIntTheoryEmitter>(context, toAPSInt(reasoner.getPrime()))) {}
 
 bool OptimizedNonNativeStrategy::isScalarFeltType(Type type) const {
   return reasoner.isScalarFeltType(type);
