@@ -96,8 +96,7 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
         const auto &idxVals = idxIt->second;
 
-        auto constantIndex = idxVals.isSingleValue() ? idxVals.getSingleValue().getConstantValue()
-                                                     : FailureOr<DynamicAPInt>();
+        auto constantIndex = idxVals.getConstantValue();
         if (succeeded(constantIndex)) {
           indices.emplace_back(*constantIndex);
         } else {
@@ -305,8 +304,7 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     const auto &idxVals = idxIt->second->getValue();
 
-    auto constantIndex = idxVals.isSingleValue() ? idxVals.getSingleValue().getConstantValue()
-                                                 : FailureOr<DynamicAPInt>();
+    auto constantIndex = idxVals.getConstantValue();
     if (succeeded(constantIndex)) {
       indices.emplace_back(*constantIndex);
     } else {
