@@ -104,6 +104,14 @@ def LLZK_FeltConstantOp
     When the field is unspecified, reduction is deferred until the field is
     known, and canonicalization leaves the stored integer unchanged.
 
+    Some analyses or transformations may supply an explicit prime modulus `q`
+    for their arithmetic, such as interval analysis with its `field` option.
+    The constant retains its declared-field meaning: its value is first
+    interpreted as `N mod p`, then reduced modulo `q`, yielding `(N mod p) mod q`.
+    For example, a literal `8` declared in a field of modulus `7` contributes `1`
+    when analyzed with modulus `5`, both before and after canonicalization.
+    If the constant's field is unspecified, it is reduced directly as `N mod q`.
+
     Example:
 
     ```llzk
@@ -117,10 +125,6 @@ def LLZK_FeltConstantOp
   let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
   let hasCanonicalizeMethod = 1;
-  let extraClassDeclaration = [{
-    /// Returns the field representative, or the raw integer if the field is unspecified.
-    ::llvm::APInt getValueAPInt() { return getValue().getReducedValue(); }
-  }];
 }
 
 //===------------------------------------------------------------------===//

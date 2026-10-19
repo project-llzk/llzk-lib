@@ -125,7 +125,7 @@ void SymbolLookupResultUntyped::pushNamespace(llvm::StringRef symName) {
 void SymbolLookupResultUntyped::prependNamespace(llvm::ArrayRef<llvm::StringRef> ns) {
   std::vector<llvm::StringRef> newNamespace = ns;
   newNamespace.insert(newNamespace.end(), namespaceStack.begin(), namespaceStack.end());
-  namespaceStack = newNamespace;
+  namespaceStack = std::move(newNamespace);
 }
 
 //===------------------------------------------------------------------===//

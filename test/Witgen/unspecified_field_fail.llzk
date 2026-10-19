@@ -1,0 +1,31 @@
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=interpreter 2>&1 | FileCheck %s
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+
+// A single explicit field does not supply a default for unspecified felt types.
+// Field collection rejects this module before either backend evaluates constants.
+
+// CHECK-LABEL: warning: felt type is unspecified, which may cause some passes to fail
+// CHECK-LABEL: llzk-witgen error: llzk-witgen failed collecting 'felt.type' fields
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @specified : !felt.type<"babybear"> {llzk.pub}
+    struct.member @unspecified : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %specified = felt.const 7 : !felt.type<"babybear">
+      %unspecified = felt.const 2013265928 : !felt.type
+      struct.writem %self[@specified] = %specified : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@unspecified] = %unspecified : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}

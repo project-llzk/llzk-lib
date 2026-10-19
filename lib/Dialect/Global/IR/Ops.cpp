@@ -43,7 +43,7 @@ static inline FailureOr<NormalizedGlobalInitializer>
 normalizeGlobalInitializer(IndexType expectedType, Attribute value, EmitErrorFn emitError) {
   if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
     if (!llvm::isa<BoolAttr>(value)) {
-      APInt intValueBits = intValue.getValue();
+      const APInt &intValueBits = intValue.getValue();
       if (intValue.getType().isSignlessInteger() && intValueBits.isNegative() &&
           intValueBits.getBitWidth() < IndexType::kInternalStorageBitWidth) {
         return emitError().append(
@@ -63,7 +63,8 @@ normalizeGlobalInitializer(IndexType expectedType, Attribute value, EmitErrorFn 
 static inline FailureOr<NormalizedGlobalInitializer>
 normalizeGlobalInitializer(FeltType expectedType, Attribute value, EmitErrorFn) {
   if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-    value = FeltConstAttr::get(value.getContext(), intValue.getValue(), expectedType);
+    value =
+        FeltConstAttr::get(value.getContext(), integerAttrToDynamicAPInt(intValue), expectedType);
   } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
     FeltType valueType = feltValue.getType();
     if (!expectedType.hasField() && valueType.hasField()) {
@@ -141,7 +142,7 @@ normalizeGlobalInitializer(Type expectedType, Attribute value, EmitErrorFn emitE
     return normalizeGlobalInitializer(stringType, value, emitError);
   } else if (expectedType.isSignlessInteger(1)) {
     if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      APInt intValueBits = intValue.getValue();
+      const APInt &intValueBits = intValue.getValue();
       if (!intValueBits.isZero() && !intValueBits.isOne()) {
         return emitError().append("integer constant out of range for attribute");
       }
@@ -316,7 +317,7 @@ static LogicalResult ensureAttrTypeMatch(
   }
   if (type.isSignlessInteger(1)) {
     if (IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(valAttr)) {
-      APInt val = ia.getValue();
+      const APInt &val = ia.getValue();
       if (!val.isZero() && !val.isOne()) {
         return errFn().append("integer constant out of range for attribute");
       }

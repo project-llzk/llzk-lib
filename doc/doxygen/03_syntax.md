@@ -34,7 +34,7 @@ module attributes {llzk.lang = "circom"} {
 - `index`: (MLIR builtin) Machine integer.
 - `felt.type`: Finite field element.
 - `array.type<N x E>`: Aggregate type with indexed [pseudo-homogeneous](\ref pseudo-homogeneous) elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes. Each dimension size can be specified as an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when creating arrays within a loop where the dimension size depends on the loop iteration variable).
-- `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated `struct.def` where each parameter can be an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), a type used to instantiate a `poly.tvar<@N>` (see below), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when the parameter of a templated `struct.type` depends on a loop iteration variable).
+- `struct.type<[..]>`: Identity-bearing, pointer-like handle to a mutable component instance defined by a `struct.def`, rather than a bag of member values. Copying a struct value preserves the identity of the referenced component and does not duplicate its members, signals, or tables. Structs generally correlate to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated `struct.def` where each parameter can be an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), a type used to instantiate a `poly.tvar<@N>` (see below), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when the parameter of a templated `struct.type` depends on a loop iteration variable).
 - `pod.type<..>`: Plain Old Data aggregate type with named heterogeneous elements. Unlike `struct.type`, there is no associated named declaration, the type itself specifies all constituent element types. It can be used more freely than `struct.type` since it has fewer restrictions on modifications.
 - `poly.tvar<@N>`: Placeholder type variable within a templated `struct.def` that may be instantiated with different types.
 - `string.type`: Sequence of characters.
@@ -45,6 +45,7 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 
 ## Semantic Rules
 
+- A type in an included function or contract signature resolves under the `include.from` alias, even if its printed path matches a type in the caller.
 - Each `array.new` operation creates a fresh mutable array allocation. Two identical `array.new` operations are not interchangeable when either result may be read or written. The same is true for `pod.new`.
 - A `function.def` argument may have `function.arg_name = "..."` to preserve the source-level argument name independently from the SSA name printed by MLIR. The value must be a non-empty, untyped string attribute; typed string attributes such as `"x" : i1` are rejected. Attached argument names must be unique within the function. Argument-splitting transforms derive names for generated arguments, such as `input[0]` for array elements or `self.member` for struct members.
 - Ops marked with the `WitnessGen` trait can only be used in functions with the `allow_witness` attribute (`compute()` within `struct.def` has this by default). Similarly, ops marked with the `ConstraintGen` trait can only be used in functions with the `allow_constraint` attribute (`constrain()` within `struct.def` has this by default).
@@ -62,3 +63,54 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 - All references to functions and types must use fully-qualified paths.
 
 [circomlib-and-gate]: https://github.com/iden3/circomlib/blob/master/circuits/gates.circom#L29-L35
+
+### Mathematical integers and fixed-width encodings
+
+LLZK's arbitrary-precision arithmetic uses signed mathematical integers. Bitwise
+AND, OR, and XOR use infinite two's-complement sign extension. Field reduction
+maps an integer into `[0, p)`; signed field operations interpret that representative
+using the field's signed threshold. A storage width is not part of an integer's
+numeric identity.
+
+Conversions to machine integers, MLIR integer values, and binary encodings must
+specify the signed interpretation and check that the value fits. C++ clients can
+use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, and `checkedToUInt64`
+to report invalid input and overflow without depending on assertions.
+`toSignedDynamicAPInt(ArrayRef<uint64_t>)` decodes 64-bit limbs in
+least-significant-first order as a signed two's-complement integer. The top bit of
+the highest (last) limb is the sign bit; an empty array represents zero.
+`FeltConstAttr::get` and `FieldSpecAttr::get` accept this same signed limb format.
+To represent a positive value whose highest data limb has its top bit set, append
+a zero limb at the most-significant end of the array. For example, `{UINT64_MAX}`
+represents `-1`, while `{UINT64_MAX, 0}` represents `2^64 - 1`. A field modulus
+below two is invalid: `FieldSpecAttr::get` requires a valid modulus, while
+`FieldSpecAttr::getChecked` emits a diagnostic and returns a null attribute for
+an invalid modulus.
+
+Felt constant attributes store the exact signed literal, including when their
+field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
+modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
+compares the literal and type, so `-1` and `p - 1` need not be the same attribute.
+
+The C API accepts signed decimal `MlirStringRef` values for felt constants, field
+moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
+attribute. Numeric getters deliver the complete decimal value to an
+`MlirStringCallback`; callers must copy the callback text if they need to retain
+it. Native `int64_t` felt convenience constructors are also available.
+
+Numeric bytecode payloads for felt constants, field specifications, and loop bounds
+use minimal signed two's-complement encodings. Only payload tags corresponding to
+these signed encodings are accepted.
+
+C++ mathematical-integer builders accept `DynamicAPInt`. The owning
+`DynamicAPIntValue` storage adapter supplies canonical numeric hashing to MLIR
+while public accessors return `DynamicAPInt` directly.
+`APInt`/`APSInt` uses implement MLIR, LLVM bitvector, parser, and binary encoding
+boundaries. Boolean and explicitly unsigned MLIR integers decode as nonnegative;
+other signless integers and index values use signed interpretation.
+
+Arithmetic right shift uses sign extension and handles arbitrarily large counts.
+Exact left shift rejects negative or unrepresentable counts; allocation remains
+proportional to the result size. Felt left shifts compute a modular power of two,
+so their memory usage does not scale with the numeric shift count. Binary field
+encoders require nonnegative, fitting values and return errors on overflow.

@@ -173,15 +173,6 @@ static std::string formatOperationCall(Operation &op, llvm::DenseMap<Value, std:
   return call;
 }
 
-// Render a felt constant as a decimal literal.
-// Uses a base-10 string conversion for readability.
-static std::string formatFeltConstant(llzk::felt::FeltConstantOp constOp) {
-  auto value = constOp.getValueAttr().getReducedValue();
-  llvm::SmallString<32> buffer;
-  value.toString(buffer, 10, false, false, false, false);
-  return std::string(buffer);
-}
-
 // Assign vN names to SSA results for readable Lean output.
 // Updates `valueNames` and advances `nextValueId` for later allocations.
 static llvm::SmallVector<std::string, 4> assignResultNames(
@@ -268,13 +259,15 @@ static std::optional<std::string> formatLeanStatement(
       return std::nullopt;
     }
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := ");
+    std::string line;
+    llvm::raw_string_ostream os(line);
+    os << "  let " << wrapResultNames(resultNames) << " := ";
     if (auto constOp = litValue.getDefiningOp<llzk::felt::FeltConstantOp>()) {
-      line.append(formatFeltConstant(constOp));
+      // Use the reduced representative for a specified field; a raw unspecified-field
+      // value is later interpreted by the target Lean Field instance.
+      os << constOp.getValueAttr().getReducedValueOrRaw();
     } else {
-      line.append(lookupValueName(litValue, valueNames));
+      os << lookupValueName(litValue, valueNames);
     }
     return line;
   }

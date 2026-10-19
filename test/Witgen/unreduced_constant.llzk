@@ -1,23 +1,33 @@
 // RUN: split-file %s %t
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json > %t/actual.json
-// RUN: diff -w %t/expected.json %t/actual.json
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine > %t/actual.json
-// RUN: diff -w %t/expected.json %t/actual.json
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/expected.json
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --check-output %t/expected.json
 
 //--- test.llzk
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @negative : !felt.type<"babybear"> {llzk.pub}
+    struct.member @zero : !felt.type<"babybear"> {llzk.pub}
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %constant = felt.const 2013265928 : !felt.type<"babybear">
       struct.writem %self[@out] = %constant : !struct.type<@Main>, !felt.type<"babybear">
+      %negative = felt.const -2013265922 : !felt.type<"babybear">
+      %zero = felt.const 2013265921 : !felt.type<"babybear">
+      struct.writem %self[@negative] = %negative : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@zero] = %zero : !struct.type<@Main>, !felt.type<"babybear">
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
       %seven = felt.const 7 : !felt.type<"babybear">
       constrain.eq %out, %seven : !felt.type<"babybear">
+      %negative = struct.readm %self[@negative] : !struct.type<@Main>, !felt.type<"babybear">
+      %zero = struct.readm %self[@zero] : !struct.type<@Main>, !felt.type<"babybear">
+      %minus_one = felt.const 2013265920 : !felt.type<"babybear">
+      %zero_value = felt.const 0 : !felt.type<"babybear">
+      constrain.eq %negative, %minus_one : !felt.type<"babybear">
+      constrain.eq %zero, %zero_value : !felt.type<"babybear">
       function.return
     }
   }
@@ -28,5 +38,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 //--- expected.json
 {
-  "out": "7"
+  "out": "7",
+  "negative": "2013265920",
+  "zero": "0"
 }

@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Bool/IR/Utils.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -119,20 +120,21 @@ OpFoldResult NotBoolOp::fold(FoldAdaptor adaptor) {
 // CmpOp
 //===------------------------------------------------------------------===//
 
-inline static bool eval(FeltCmpPredicate pred, const llvm::APInt &lval, const llvm::APInt &rval) {
+inline static bool
+eval(FeltCmpPredicate pred, const llvm::DynamicAPInt &lval, const llvm::DynamicAPInt &rval) {
   switch (pred) {
   case FeltCmpPredicate::EQ:
     return lval == rval;
   case FeltCmpPredicate::NE:
     return lval != rval;
   case FeltCmpPredicate::LT:
-    return lval.ult(rval);
+    return lval < rval;
   case FeltCmpPredicate::LE:
-    return lval.ule(rval);
+    return lval <= rval;
   case FeltCmpPredicate::GT:
-    return lval.ugt(rval);
+    return lval > rval;
   case FeltCmpPredicate::GE:
-    return lval.uge(rval);
+    return lval >= rval;
   }
   llvm_unreachable("invalid FeltCmpPredicate");
 }
@@ -140,21 +142,17 @@ inline static bool eval(FeltCmpPredicate pred, const llvm::APInt &lval, const ll
 OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getLhs());
   auto rhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getRhs());
-  if (!lhsAttr || !rhsAttr) {
+  if (!lhsAttr || !rhsAttr || lhsAttr.getFieldName() != rhsAttr.getFieldName()) {
     return {};
   }
 
-  // Normalize to a common bit width for unsigned comparison.
-  llvm::APInt lval = lhsAttr.getReducedValue();
-  llvm::APInt rval = rhsAttr.getReducedValue();
-  unsigned w = std::max(lval.getBitWidth(), rval.getBitWidth());
-  if (lval.getBitWidth() < w) {
-    lval = lval.zext(w);
+  auto lhs = lhsAttr.getReducedValue();
+  auto rhs = rhsAttr.getReducedValue();
+  if (!lhs || !rhs) {
+    return {};
   }
-  if (rval.getBitWidth() < w) {
-    rval = rval.zext(w);
-  }
-  return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
+
+  return makeBoolAttr(getContext(), eval(getPredicate(), *lhs, *rhs));
 }
 
 //===------------------------------------------------------------------===//
@@ -169,7 +167,7 @@ namespace {
 template <typename Op> LogicalResult verifyQuantOp(Op op) {
   auto *block = op.getBody();
   if (!block || block->getNumArguments() != 1) {
-    return op->emitOpError() << "must have one block argument";
+    return op->emitOpError("must have one block argument");
   }
   auto argType = block->getArgument(0).getType();
   auto eltType = getQuantifierOpDomainIterType(op.getSort().getType());
@@ -180,7 +178,7 @@ template <typename Op> LogicalResult verifyQuantOp(Op op) {
 
   auto termOp = block->getTerminator();
   if (!llvm::dyn_cast_if_present<YieldOp>(termOp)) {
-    return op->emitOpError() << "expects 'bool.yield' terminator op";
+    return op->emitOpError() << "expects '" << YieldOp::getOperationName() << "' terminator op";
   }
   return success();
 }

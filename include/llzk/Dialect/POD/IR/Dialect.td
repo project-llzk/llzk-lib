@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_DIALECT
-#define LLZK_DIALECT
+#ifndef LLZK_POD_DIALECT
+#define LLZK_POD_DIALECT
 
 include "mlir/IR/DialectBase.td"
 
@@ -22,4 +22,4 @@ def PODDialect : Dialect {
   let useDefaultTypePrinterParser = true;
 }
 
-#endif // LLZK_DIALECT
+#endif // LLZK_POD_DIALECT

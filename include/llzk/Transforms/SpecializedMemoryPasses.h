@@ -17,10 +17,12 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Analysis/DataLayoutAnalysis.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Interfaces/MemorySlotInterfaces.h>

@@ -1,0 +1,55 @@
+// RUN: llzk-opt --convert-llzk-to-zklean --mlir-print-op-generic %s | llzk-translate --zklean-to-lean | FileCheck %s
+
+// Without prior canonicalization, check literals emitted in the Lean constrain
+// function for explicit BabyBear and fieldless types, with positive and negative
+// raw values. BabyBear reduces 2013265928 to 7 and -1 to 2013265920; fieldless
+// literals retain 2013265928 and -1 for interpretation by the Lean Field instance.
+module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
+  struct.def @ReducedConstant {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @negative : !felt.type<"babybear"> {llzk.pub}
+    struct.member @fieldless : !felt.type {llzk.pub}
+    struct.member @fieldless_negative : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@ReducedConstant> {
+      %self = struct.new : !struct.type<@ReducedConstant>
+      %out = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %negative = felt.const -1 : !felt.type<"babybear">
+      struct.writem %self[@negative] = %negative : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %fieldless = felt.const 2013265928 : !felt.type
+      struct.writem %self[@fieldless] = %fieldless : !struct.type<@ReducedConstant>, !felt.type
+      %fieldless_negative = felt.const -1 : !felt.type
+      struct.writem %self[@fieldless_negative] = %fieldless_negative : !struct.type<@ReducedConstant>, !felt.type
+      function.return %self : !struct.type<@ReducedConstant>
+    }
+    function.def @constrain(%self: !struct.type<@ReducedConstant>) {
+      %out = struct.readm %self[@out] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %out_constant = felt.const 2013265928 : !felt.type<"babybear">
+      constrain.eq %out, %out_constant : !felt.type<"babybear">
+      %negative = struct.readm %self[@negative] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %negative_constant = felt.const -1 : !felt.type<"babybear">
+      constrain.eq %negative, %negative_constant : !felt.type<"babybear">
+      %fieldless = struct.readm %self[@fieldless] : !struct.type<@ReducedConstant>, !felt.type
+      %fieldless_constant = felt.const 2013265928 : !felt.type
+      constrain.eq %fieldless, %fieldless_constant : !felt.type
+      %fieldless_negative = struct.readm %self[@fieldless_negative] : !struct.type<@ReducedConstant>, !felt.type
+      %fieldless_negative_constant = felt.const -1 : !felt.type
+      constrain.eq %fieldless_negative, %fieldless_negative_constant : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: def ReducedConstant__constrain [Field f] (strct : ReducedConstant f) : ZKBuilder f PUnit := do
+// CHECK-NEXT:    let v0 := strct.out
+// CHECK-NEXT:    let v1 := 7
+// CHECK-NEXT:    constrainEq v0 v1
+// CHECK-NEXT:    let v3 := strct.negative
+// CHECK-NEXT:    let v4 := 2013265920
+// CHECK-NEXT:    constrainEq v3 v4
+// CHECK-NEXT:    let v6 := strct.fieldless
+// CHECK-NEXT:    let v7 := 2013265928
+// CHECK-NEXT:    constrainEq v6 v7
+// CHECK-NEXT:    let v9 := strct.fieldless_negative
+// CHECK-NEXT:    let v10 := -1
+// CHECK-NEXT:    constrainEq v9 v10

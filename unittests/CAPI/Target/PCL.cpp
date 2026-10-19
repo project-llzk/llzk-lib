@@ -47,7 +47,7 @@ TEST_F(CAPITest, exportPclModule) {
   llvm::raw_string_ostream ss(output_text);
   auto *ctx = unwrap(context);
   mlir::DialectRegistry registry;
-  pcl::registerAllDialects(registry);
+  pcl::registerDialects(registry);
   ctx->appendDialectRegistry(registry);
   ctx->loadAllAvailableDialects();
 
@@ -56,7 +56,7 @@ TEST_F(CAPITest, exportPclModule) {
   auto module = mlir::ModuleOp::create(builder, builder.getUnknownLoc());
   module->setDiscardableAttr(
       builder.getStringAttr(PCL_PRIME_ATTR_NAME),
-      pcl::PrimeAttr::get(ctx, llvm::APInt(/*numBits=*/4, /*val=*/SEVEN))
+      pcl::PrimeAttr::get(ctx, llvm::DynamicAPInt(SEVEN))
   );
   {
     mlir::OpBuilder::InsertionGuard guard(builder);

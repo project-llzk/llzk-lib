@@ -314,6 +314,8 @@ public:
 
   /* Getter methods */
 
+  /// Provide the template body for ModuleLikeBuilder's CRTP dispatch.
+  // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
   mlir::Region &getBodyRegion() { return myTemplate.getBodyRegion(); }
 
   /// Get the associated template of this builder.
@@ -423,6 +425,8 @@ public:
 
   /* Getter methods */
 
+  /// Provide the module body for ModuleLikeBuilder's CRTP dispatch.
+  // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
   mlir::Region &getBodyRegion() { return myModule.getBodyRegion(); }
 
   /// Get the associated module of this builder.

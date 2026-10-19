@@ -72,12 +72,12 @@ struct LoweredValue {
 static FailureOr<std::reference_wrapper<const Field>> getModuleField(ModuleOp moduleOp) {
   FieldSet fields;
   if (failed(collectFields(moduleOp.getOperation(), fields, false))) {
-    moduleOp.emitError("failed to collect fields for llzk-witgen lowering");
-    return failure();
+    return moduleOp.emitError(
+        "llzk-witgen execution-engine lowering failed collecting 'felt.type' fields"
+    );
   }
   if (fields.size() != 1) {
-    moduleOp.emitError("llzk-witgen execution-engine lowering requires exactly one field");
-    return failure();
+    return moduleOp.emitError("llzk-witgen execution-engine lowering requires exactly one field");
   }
   return *fields.begin();
 }
@@ -179,8 +179,7 @@ static LogicalResult flattenTypeLeaves(
   if (auto structType = dyn_cast<component::StructType>(type)) {
     auto def = structType.getDefinition(tables, origin);
     if (failed(def)) {
-      origin->emitError("could not resolve struct type during witgen lowering");
-      return failure();
+      return origin->emitError("could not resolve struct type during witgen lowering");
     }
     for (component::MemberDefOp member : def->get().getMemberDefs()) {
       if (failed(
@@ -192,8 +191,7 @@ static LogicalResult flattenTypeLeaves(
     return success();
   }
 
-  origin->emitError("unsupported type in llzk-witgen lowering: ") << type;
-  return failure();
+  return origin->emitError("unsupported type in llzk-witgen lowering: ") << type;
 }
 
 /// Return a strided memref type for one internal aggregate ABI leaf.
@@ -254,8 +252,7 @@ static LogicalResult flattenABILeafTypes(
   if (auto structType = dyn_cast<component::StructType>(type)) {
     auto def = structType.getDefinition(tables, origin);
     if (failed(def)) {
-      origin->emitError("could not resolve struct type during witgen lowering");
-      return failure();
+      return origin->emitError("could not resolve struct type during witgen lowering");
     }
     for (component::MemberDefOp member : def->get().getMemberDefs()) {
       if (failed(
@@ -267,8 +264,7 @@ static LogicalResult flattenABILeafTypes(
     return success();
   }
 
-  origin->emitError("unsupported type in llzk-witgen lowering: ") << type;
-  return failure();
+  return origin->emitError("unsupported type in llzk-witgen lowering: ") << type;
 }
 
 /// Return the number of flattened lowered leaves for one LLZK type.
@@ -323,8 +319,7 @@ static FailureOr<std::pair<size_t, size_t>> getNamedLeafSpan(
   if (auto structType = dyn_cast<component::StructType>(ownerType)) {
     auto def = structType.getDefinition(tables, origin);
     if (failed(def)) {
-      origin->emitError("could not resolve struct type during witgen lowering");
-      return failure();
+      return origin->emitError("could not resolve struct type during witgen lowering");
     }
     size_t running = 0;
     for (component::MemberDefOp member : def->get().getMemberDefs()) {
@@ -339,8 +334,7 @@ static FailureOr<std::pair<size_t, size_t>> getNamedLeafSpan(
     }
   }
 
-  origin->emitError("could not resolve aggregate member/record @") << name;
-  return failure();
+  return origin->emitError("could not resolve aggregate member/record @") << name;
 }
 
 /// Return the type of one pod record or struct member.
@@ -356,8 +350,7 @@ getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, O
   if (auto structType = dyn_cast<component::StructType>(ownerType)) {
     auto def = structType.getDefinition(tables, origin);
     if (failed(def)) {
-      origin->emitError("could not resolve struct type during witgen lowering");
-      return failure();
+      return origin->emitError("could not resolve struct type during witgen lowering");
     }
     for (component::MemberDefOp member : def->get().getMemberDefs()) {
       if (member.getSymName() == name) {
@@ -365,16 +358,14 @@ getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, O
       }
     }
   }
-  origin->emitError("could not resolve aggregate member/record @") << name;
-  return failure();
+  return origin->emitError("could not resolve aggregate member/record @") << name;
 }
 
 /// Create one static memref filled with zeros.
 static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType) {
   auto elementCount = getStaticElementCount(memrefType, "witgen zero memref");
   if (!elementCount) {
-    emitError(loc) << llvm::toString(elementCount.takeError());
-    return failure();
+    return emitError(loc) << llvm::toString(elementCount.takeError());
   }
   Value alloc = memref::AllocOp::create(builder, loc, memrefType);
   auto elementType = memrefType.getElementType();
@@ -390,8 +381,7 @@ static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRe
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     auto flatSigned = checkedCast<int64_t>(flat);
     if (!flatSigned) {
-      emitError(loc) << llvm::toString(flatSigned.takeError());
-      return failure();
+      return emitError(loc) << llvm::toString(flatSigned.takeError());
     }
     SmallVector<Value> indices;
     for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
@@ -409,8 +399,7 @@ static FailureOr<Value> createRandomMemRef(
 ) {
   auto elementCount = getStaticElementCount(memrefType, "witgen random memref");
   if (!elementCount) {
-    emitError(loc) << llvm::toString(elementCount.takeError());
-    return failure();
+    return emitError(loc) << llvm::toString(elementCount.takeError());
   }
   Value alloc = memref::AllocOp::create(builder, loc, memrefType);
   auto elementType = memrefType.getElementType();
@@ -418,8 +407,7 @@ static FailureOr<Value> createRandomMemRef(
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     auto flatSigned = checkedCast<int64_t>(flat);
     if (!flatSigned) {
-      emitError(loc) << llvm::toString(flatSigned.takeError());
-      return failure();
+      return emitError(loc) << llvm::toString(flatSigned.takeError());
     }
     SmallVector<Value> indices;
     for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
@@ -448,7 +436,9 @@ static FailureOr<Value> createRandomMemRef(
         builder, loc,
         arith::ConstantOp::create(
             builder, loc,
-            IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
+            IntegerAttr::get(
+                intType, cantFail(checkedToAPInt(candidate, intType.getWidth(), false))
+            )
         ),
         alloc, indices
     );
@@ -468,11 +458,10 @@ static FailureOr<LoweredValue> createDefaultValue(
   }
   for (Type leafType : *leafTypes) {
     if (behavior == UninitializedBehavior::Fail) {
-      origin->emitError(
+      return origin->emitError(
           "fail-mode default materialization is unsupported in witgen lowering because it would "
           "hide uninitialized reads"
       );
-      return failure();
     }
     if (behavior == UninitializedBehavior::Random) {
       if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
@@ -502,7 +491,9 @@ static FailureOr<LoweredValue> createDefaultValue(
       lowered.leaves.push_back(
           arith::ConstantOp::create(
               builder, loc,
-              IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
+              IntegerAttr::get(
+                  intType, cantFail(checkedToAPInt(candidate, intType.getWidth(), false))
+              )
           )
       );
       continue;
@@ -571,7 +562,7 @@ lowerFeltToSignedWide(OpBuilder &builder, Location loc, Value operand, const Fie
   Value prime =
       arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
   Value half = arith::ConstantOp::create(
-      builder, loc, IntegerAttr::get(feltType, toExactWidthAPInt(field.half(), width))
+      builder, loc, IntegerAttr::get(feltType, cantFail(checkedToAPInt(field.half(), width, false)))
   );
   Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::uge, operand, half);
   Value signedOperand = arith::SubIOp::create(builder, loc, operandWide, prime);
@@ -639,7 +630,7 @@ lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
 
 /// Lower a field inversion through exponentiation by `p - 2`.
 static Value lowerFeltInv(OpBuilder &builder, Location loc, Value operand, const Field &field) {
-  llvm::APInt exponent = toExactWidthAPInt(field.prime() - 2, field.bitWidth());
+  llvm::APInt exponent = cantFail(checkedToAPInt(field.prime() - 2, field.bitWidth(), false));
   Value result = makeOneFelt(builder, loc, field);
   Value base = operand;
   for (unsigned bit = 0; bit < exponent.getBitWidth(); ++bit) {
@@ -815,8 +806,7 @@ static LogicalResult copyIntoStorage(
     return failure();
   }
   if (destLeaves.size() != sourceLeaves.size() || destLeaves.size() != leafTypes->size()) {
-    origin->emitError("flattened leaf mismatch while copying aggregate storage");
-    return failure();
+    return origin->emitError("flattened leaf mismatch while copying aggregate storage");
   }
   for (auto [leafType, destLeaf, srcLeaf] : llvm::zip(*leafTypes, destLeaves, sourceLeaves)) {
     if (isa<MemRefType>(leafType)) {
@@ -885,8 +875,7 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   SmallVector<OpFoldResult> mixedStrides;
   auto indexedRank = checkedCast<int64_t>(outerIndices.size());
   if (!indexedRank) {
-    emitError(loc) << llvm::toString(indexedRank.takeError());
-    return failure();
+    return emitError(loc) << llvm::toString(indexedRank.takeError());
   }
   mixedOffsets.reserve(sourceType.getRank());
   mixedSizes.reserve(sourceType.getRank());
@@ -909,15 +898,13 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   SmallVector<int64_t> desiredShape;
   auto reserveSize = checkedCast<size_t>(sourceType.getRank() - *indexedRank);
   if (!reserveSize) {
-    emitError(loc) << llvm::toString(reserveSize.takeError());
-    return failure();
+    return emitError(loc) << llvm::toString(reserveSize.takeError());
   }
   desiredShape.reserve(*reserveSize);
   for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
     auto dimIndex = checkedCast<size_t>(dim);
     if (!dimIndex) {
-      emitError(loc) << llvm::toString(dimIndex.takeError());
-      return failure();
+      return emitError(loc) << llvm::toString(dimIndex.takeError());
     }
     if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[*dimIndex])) {
       desiredShape.push_back(llvm::cast<IntegerAttr>(attr).getInt());
@@ -990,8 +977,7 @@ static LogicalResult appendFlatLeavesToTypes(
     SmallVectorImpl<Value> &out, Operation *origin
 ) {
   if (targetLeafTypes.size() != value.leaves.size()) {
-    origin->emitError("flattened leaf mismatch during call lowering");
-    return failure();
+    return origin->emitError("flattened leaf mismatch during call lowering");
   }
   for (auto [leafValue, leafType] : llvm::zip(value.leaves, targetLeafTypes)) {
     if (leafValue.getType() == leafType) {
@@ -1002,8 +988,7 @@ static LogicalResult appendFlatLeavesToTypes(
       out.push_back(memref::CastOp::create(builder, loc, leafType, leafValue));
       continue;
     }
-    origin->emitError("lowered leaf type mismatch during call lowering");
-    return failure();
+    return origin->emitError("lowered leaf type mismatch during call lowering");
   }
   return success();
 }
@@ -1022,12 +1007,10 @@ public:
   /// Lower one LLZK function into `func.func`.
   FailureOr<func::FuncOp> lowerFunction(function::FuncDefOp funcOp) {
     if (funcOp.isExternal()) {
-      funcOp.emitError("execution-engine backend does not lower extern functions");
-      return failure();
+      return funcOp.emitError("execution-engine backend does not lower extern functions");
     }
     if (!funcOp.getBody().hasOneBlock()) {
-      funcOp.emitError("execution-engine backend only supports single-block functions");
-      return failure();
+      return funcOp.emitError("execution-engine backend only supports single-block functions");
     }
 
     SmallVector<Type> loweredArgTypes;
@@ -1093,8 +1076,7 @@ private:
   lookup(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
     auto it = valueMap.find(value);
     if (it == valueMap.end()) {
-      origin->emitError("failed to find lowered SSA value");
-      return failure();
+      return origin->emitError("failed to find lowered SSA value");
     }
     return it->second;
   }
@@ -1105,8 +1087,7 @@ private:
     auto lowered = lookup(value, valueMap, origin);
     if (failed(lowered) || lowered->leaves.size() != 1 ||
         isa<MemRefType>(lowered->leaves.front().getType())) {
-      origin->emitError("expected scalar lowered value");
-      return failure();
+      return origin->emitError("expected scalar lowered value");
     }
     return lowered->leaves.front();
   }
@@ -1221,11 +1202,15 @@ private:
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
+      auto constVal = feltConst.getValue().getReducedValue();
+      if (!constVal) {
+        return feltConst.emitError(
+            "felt constant requires a specified field for witness generation"
+        );
+      }
       auto intType = IntegerType::get(builder.getContext(), field.bitWidth());
-      // Reduce into the field first, then build an APInt with the exact storage width.
-      auto constVal = toDynamicAPInt(feltConst.getValue().getReducedValue());
-      auto modVal = constVal % field.prime();
-      auto intVal = llzk::toExactWidthAPInt(modVal, field.bitWidth());
+      // Store the field representative in an APInt with the exact storage width.
+      auto intVal = cantFail(checkedToAPInt(*constVal, field.bitWidth(), false));
       Value lowered = arith::ConstantOp::create(builder, loc, IntegerAttr::get(intType, intVal));
       return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
     }
@@ -1515,25 +1500,25 @@ private:
       if (isa<IndexType>((*operand).getType())) {
         Value zero = makeIndexConstant(builder, loc, 0);
         Value isNonNegative =
-            builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::sge, *operand, zero);
-        builder.create<cf::AssertOp>(loc, isNonNegative, "cast.tofelt input must be non-negative");
+            arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::sge, *operand, zero);
+        cf::AssertOp::create(builder, loc, isNonNegative, "cast.tofelt input must be non-negative");
 
         // Widen before checking so that a small field does not truncate an
         // otherwise out-of-range index before the comparison.
         unsigned wideWidth = std::max(field.bitWidth(), IndexType::kInternalStorageBitWidth);
-        Value widened = builder.create<arith::IndexCastUIOp>(
-            loc, IntegerType::get(builder.getContext(), wideWidth), *operand
+        Value widened = arith::IndexCastUIOp::create(
+            builder, loc, IntegerType::get(builder.getContext(), wideWidth), *operand
         );
-        Value modulus = builder.create<arith::ConstantOp>(
-            loc, field.getPrimeAttr(builder.getContext(), wideWidth)
+        Value modulus = arith::ConstantOp::create(
+            builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth)
         );
         Value fitsField =
-            builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ult, widened, modulus);
-        builder.create<cf::AssertOp>(loc, fitsField, "cast.tofelt input does not fit in felt");
+            arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::ult, widened, modulus);
+        cf::AssertOp::create(builder, loc, fitsField, "cast.tofelt input does not fit in felt");
 
         lowered = wideWidth == dstType.getWidth()
                       ? widened
-                      : builder.create<arith::TruncIOp>(loc, dstType, widened).getResult();
+                      : arith::TruncIOp::create(builder, loc, dstType, widened).getResult();
       } else {
         auto intType = llvm::cast<IntegerType>((*operand).getType());
         if (intType.getWidth() < dstType.getWidth()) {
@@ -1560,14 +1545,14 @@ private:
       auto wideType = IntegerType::get(builder.getContext(), wideWidth);
       Value widened = *operand;
       if (field.bitWidth() < wideWidth) {
-        widened = builder.create<arith::ExtUIOp>(loc, wideType, widened);
+        widened = arith::ExtUIOp::create(builder, loc, wideType, widened);
       }
-      Value maxIndex = builder.create<arith::ConstantOp>(
-          loc, IntegerAttr::get(wideType, std::numeric_limits<int64_t>::max())
+      Value maxIndex = arith::ConstantOp::create(
+          builder, loc, IntegerAttr::get(wideType, std::numeric_limits<int64_t>::max())
       );
       Value fitsIndex =
-          builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ule, widened, maxIndex);
-      builder.create<cf::AssertOp>(loc, fitsIndex, "cast.toindex input does not fit in index");
+          arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::ule, widened, maxIndex);
+      cf::AssertOp::create(builder, loc, fitsIndex, "cast.toindex input does not fit in index");
       return bind(
           feltToIndex.getResult(),
           LoweredValue {
@@ -1671,12 +1656,12 @@ private:
       if (!arrayNewOp.getElements().empty()) {
         auto elementCount = checkedCast<size_t>(arrayNewOp.getType().getNumElements());
         if (!elementCount) {
-          arrayNewOp.emitError() << llvm::toString(elementCount.takeError());
-          return failure();
+          return arrayNewOp.emitError(llvm::toString(elementCount.takeError()));
         }
         if (arrayNewOp.getElements().size() != *elementCount) {
-          arrayNewOp.emitError("expected one explicit element per array slot in witgen lowering");
-          return failure();
+          return arrayNewOp.emitError(
+              "expected one explicit element per array slot in witgen lowering"
+          );
         }
         auto shape = arrayNewOp.getType().getShape();
         for (auto [flatIndex, operand] : llvm::enumerate(arrayNewOp.getElements())) {
@@ -1688,8 +1673,7 @@ private:
           auto strides = mlir::computeStrides(shape);
           auto flatSigned = checkedCast<int64_t>(flatIndex);
           if (!flatSigned) {
-            arrayNewOp.emitError() << llvm::toString(flatSigned.takeError());
-            return failure();
+            return arrayNewOp.emitError(llvm::toString(flatSigned.takeError()));
           }
           for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
@@ -1798,14 +1782,14 @@ private:
 
     if (auto callOp = dyn_cast<function::CallOp>(op)) {
       if (callOp.getTemplateParams() || !callOp.getMapOperands().empty()) {
-        callOp.emitError("execution-engine backend encountered an unflattened function.call");
-        return failure();
+        return callOp.emitError(
+            "execution-engine backend encountered an unflattened function.call"
+        );
       }
       auto *callable = callOp.resolveCallableInTable(&tables);
       auto callee = dyn_cast_or_null<function::FuncDefOp>(callable);
       if (!callee) {
-        callOp.emitError("failed to resolve callee during execution-engine lowering");
-        return failure();
+        return callOp.emitError("failed to resolve callee during execution-engine lowering");
       }
       SmallVector<Type> resultTypes;
       for (Type resultType : callOp.getResultTypes()) {
@@ -1839,8 +1823,7 @@ private:
         bool overflow = false;
         size_t nextCursor = llvm::SaturatingAdd(cursor, *leafCount, &overflow);
         if (overflow || nextCursor > totalResults) {
-          callOp.emitError("leaf count overflow while lowering function call results");
-          return failure();
+          return callOp.emitError("leaf count overflow while lowering function call results");
         }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
@@ -1893,8 +1876,7 @@ private:
           bool overflow = false;
           size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
           if (overflow || nextCursor > totalArgs) {
-            whileOp.emitError(overflowMessage);
-            return failure();
+            return whileOp.emitError(overflowMessage);
           }
           LoweredValue lowered {oldType, {}};
           lowered.leaves.append(
@@ -1944,8 +1926,7 @@ private:
         bool overflow = false;
         size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
         if (overflow || nextCursor > totalResults) {
-          whileOp.emitError("leaf count overflow while lowering while-loop results");
-          return failure();
+          return whileOp.emitError("leaf count overflow while lowering while-loop results");
         }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
@@ -2004,8 +1985,7 @@ private:
         bool overflow = false;
         size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
         if (overflow || nextCursor > totalResults) {
-          ifOp.emitError("leaf count overflow while lowering if-op results");
-          return failure();
+          return ifOp.emitError("leaf count overflow while lowering if-op results");
         }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
@@ -2060,8 +2040,7 @@ private:
           bool overflow = false;
           size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
           if (overflow || nextCursor > totalIterArgs) {
-            forOp.emitError("leaf count overflow while lowering for-loop region iter args");
-            return failure();
+            return forOp.emitError("leaf count overflow while lowering for-loop region iter args");
           }
           LoweredValue lowered {oldType, {}};
           lowered.leaves.append(
@@ -2088,8 +2067,7 @@ private:
           bool overflow = false;
           size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
           if (overflow || nextCursor > totalForResults) {
-            forOp.emitError("leaf count overflow while lowering for-loop results");
-            return failure();
+            return forOp.emitError("leaf count overflow while lowering for-loop results");
           }
           LoweredValue lowered {oldType, {}};
           lowered.leaves.append(
@@ -2103,8 +2081,7 @@ private:
       return success();
     }
 
-    op.emitError("unsupported operation in execution-engine lowering: ") << op.getName();
-    return failure();
+    return op.emitError("unsupported operation in execution-engine lowering: ") << op.getName();
   }
 };
 
@@ -2320,8 +2297,7 @@ public:
             return self(path.drop_front(), member.getType(), slice, self);
           }
         }
-        computeFunc.emitError("failed to find struct member while wiring witgen outputs");
-        return failure();
+        return computeFunc.emitError("failed to find struct member while wiring witgen outputs");
       }
       if (auto podType = dyn_cast<pod::PodType>(currentType)) {
         unsigned localCursor = 0;
@@ -2337,11 +2313,9 @@ public:
             return self(path.drop_front(), record.getType(), slice, self);
           }
         }
-        computeFunc.emitError("failed to find POD record while wiring witgen outputs");
-        return failure();
+        return computeFunc.emitError("failed to find POD record while wiring witgen outputs");
       }
-      computeFunc.emitError("extra witness path components for non-aggregate output");
-      return failure();
+      return computeFunc.emitError("extra witness path components for non-aggregate output");
     };
 
     auto outputArgs = entry->getArguments().drop_front(computeFunc.getNumArguments());

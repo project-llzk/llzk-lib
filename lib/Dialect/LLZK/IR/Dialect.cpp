@@ -44,7 +44,7 @@ namespace {
 
 /// Denotes which dialect attribute is serialized.
 enum class LLZKAttrEncoding : uint8_t {
-  LoopBounds = 0,
+  LoopBounds = 1,
 };
 
 struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LLZKDialect> {
@@ -56,15 +56,15 @@ struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LL
       return {};
     }
     if (encoding > std::numeric_limits<uint8_t>::max()) {
-      reader.emitError() << "unknown LLZK attribute encoding: " << encoding;
+      reader.emitError("unknown LLZK attribute encoding: ") << encoding;
       return {};
     }
 
     switch (static_cast<LLZKAttrEncoding>(encoding)) {
     case LLZKAttrEncoding::LoopBounds: {
-      FailureOr<APInt> lower = readAPInt(reader);
-      FailureOr<APInt> upper = readAPInt(reader);
-      FailureOr<APInt> step = readAPInt(reader);
+      FailureOr<llvm::DynamicAPInt> lower = readDynamicAPInt(reader);
+      FailureOr<llvm::DynamicAPInt> upper = readDynamicAPInt(reader);
+      FailureOr<llvm::DynamicAPInt> step = readDynamicAPInt(reader);
       if (failed(lower) || failed(upper) || failed(step)) {
         return {};
       }
@@ -72,16 +72,16 @@ struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LL
     }
     }
 
-    reader.emitError() << "unknown LLZK attribute encoding: " << encoding;
+    reader.emitError("unknown LLZK attribute encoding: ") << encoding;
     return {};
   }
 
   LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &writer) const final {
     if (auto loopBounds = dyn_cast<LoopBoundsAttr>(attr)) {
       writer.writeVarInt(static_cast<uint64_t>(LLZKAttrEncoding::LoopBounds));
-      writeAPInt(writer, loopBounds.getLower());
-      writeAPInt(writer, loopBounds.getUpper());
-      writeAPInt(writer, loopBounds.getStep());
+      writeDynamicAPInt(writer, loopBounds.getLower());
+      writeDynamicAPInt(writer, loopBounds.getUpper());
+      writeDynamicAPInt(writer, loopBounds.getStep());
       return success();
     }
     return failure();

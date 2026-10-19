@@ -14,11 +14,10 @@
 
 #include "pcl/Conversion/ConversionPasses.h" // IWYU pragma: keep
 
-#include <mlir/CAPI/Pass.h>
+#include "llzk-c/Target/PCL.h"
 
-#include "pcl/Conversion/ConversionPasses.capi.h.inc"
+#include <mlir/CAPI/Pass.h>
 
 using namespace pcl;
 
-// Impl
 #include "pcl/Conversion/ConversionPasses.capi.cpp.inc"

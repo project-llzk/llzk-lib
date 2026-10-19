@@ -747,10 +747,9 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
           return failure();
         }
         if (newElementValueTy != newElemTy) {
-          createOp.emitError() << "cannot rewrite initialized array.new: initializer " << index
-                               << " converts to " << newElementValueTy << ", but expected "
-                               << newElemTy;
-          return failure();
+          return createOp.emitError()
+                 << "cannot rewrite initialized array.new: initializer " << index << " converts to "
+                 << newElementValueTy << ", but expected " << newElemTy;
         }
         newElementValueTypes.push_back(newElementValueTy);
       }

@@ -14,6 +14,7 @@
 /// * The `before` block has an argument %arg (the "induction variable") such that:
 ///   * The scf.condition condition has the form `bool.cmp lt(%arg, %upper_bound)`
 ///   * The value yielded from the after block has the form `felt.add %arg, %step`
+///     or is a constant that makes a constant-bound loop execute exactly once
 /// * `%upper_bound` and `%step` do not depend on any loop-carried variables
 /// * The final yielded value of the induction variable does not have uses outside the loop
 ///
@@ -30,10 +31,15 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/Field.h"
+
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/Support/Debug.h>
 
 #include <algorithm>
+#include <cassert>
+#include <limits>
 
 namespace llzk {
 #define GEN_PASS_DEF_WHILETOFORPASS
@@ -66,7 +72,7 @@ struct ForOpInfo {
 
 static inline ForOpInfo parseInfo(WhileOp op) {
   auto reportFailureReason = [&op](Twine reason) {
-    return op.emitWarning() << "failed to transform op: " << reason;
+    return op.emitWarning("'llzk-while-to-for' failed to transform loop: ") << reason;
   };
 
   ForOpInfo info;
@@ -121,26 +127,23 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     return info;
   }
 
+  OpBuilder builder(op);
+  // Materialize a felt bound before the loop in the supplied induction variable type.
+  auto createBound = [&builder, &op](const llvm::DynamicAPInt &value, FeltType type) -> Value {
+    auto attr = FeltConstAttr::get(builder.getContext(), value, type);
+    return FeltConstantOp::create(builder, op.getLoc(), attr).getResult();
+  };
+
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
-    auto ctx = op->getContext();
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
     auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
 
-    OpBuilder builder {ctx};
-    builder.setInsertionPoint(op);
-
     // Make these constant felts for now; the actual for op builder will later clean it up
-    auto createBound = [&builder, &op, &ivarType](const auto &value) -> Value {
-      return FeltConstantOp::create(
-                 builder, op->getLoc(), FeltConstAttr::get(op->getContext(), value, ivarType)
-      )
-          .getResult();
-    };
-    info.lb = createBound(bounds.getLower());
-    info.ub = createBound(bounds.getUpper());
-    info.step = createBound(bounds.getStep());
+    info.lb = createBound(bounds.getLower(), ivarType);
+    info.ub = createBound(bounds.getUpper(), ivarType);
+    info.step = createBound(bounds.getStep(), ivarType);
     return info;
   }
 
@@ -156,6 +159,50 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       info.step = incOp.getLhs();
     } else if (incOp.getLhs() == ivarAfter) {
       info.step = incOp.getRhs();
+    }
+  }
+
+  // Constant propagation can replace the final increment of a one-iteration loop
+  // with a constant. Only accept it when the initial condition is true and the
+  // yielded value makes the next condition false; otherwise it may loop forever.
+  if (!info.step.has_value()) {
+    if (auto type = dyn_cast<FeltType>(ivarAfter.getType()); type && type.hasField()) {
+      auto lower = info.lb->getDefiningOp<FeltConstantOp>();
+      auto upper = info.ub->getDefiningOp<FeltConstantOp>();
+      auto next = nextIvar.getDefiningOp<FeltConstantOp>();
+      if (lower && upper && next) {
+        // In valid IR, all 3 constants must have the same type as the induction variable
+        // and we checked above that it has a field so they can all be reduced via the field.
+        assert(lower.getType() == type && "lower bound type must match induction variable");
+        assert(upper.getType() == type && "upper bound type must match induction variable");
+        assert(next.getType() == type && "yielded constant type must match induction variable");
+        const llzk::Field &field = type.getField();
+        auto lo = field.reduce(lower.getValue().getRawValue());
+        auto hi = field.reduce(upper.getValue().getRawValue());
+        auto end = field.reduce(next.getValue().getRawValue());
+        if (lo < hi && end >= hi) {
+          // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
+          // bounding hi also bounds lo and hi - lo.
+          if (hi > llvm::DynamicAPInt(std::numeric_limits<int64_t>::max())) {
+            reportFailureReason("upper bound cannot be represented as a nonnegative index");
+            return info;
+          }
+          // A while loop also executes the condition region on its final check.
+          // Dropping that execution is only safe for pure preamble operations.
+          bool purePreamble =
+              llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
+            return mlir::isPure(&preambleOp);
+          });
+          if (!purePreamble) {
+            reportFailureReason("condition region contains operations that are not pure");
+            return info;
+          }
+          // Use canonical representatives, including when source literals are negative.
+          info.lb = createBound(lo, type);
+          info.ub = createBound(hi, type);
+          info.step = createBound(hi - lo, type);
+        }
+      }
     }
   }
 

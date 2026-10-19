@@ -24,7 +24,7 @@ buildSafeIndexConstant(mlir::OpBuilder &builder, mlir::Location loc, const llvm:
   constexpr unsigned safeBitWidth = mlir::IndexType::kInternalStorageBitWidth - 1;
   llvm::APInt truncated =
       value.isNegative() ? value.sextOrTrunc(safeBitWidth) : value.zextOrTrunc(safeBitWidth);
-  return builder.create<mlir::arith::ConstantIndexOp>(loc, truncated.getZExtValue());
+  return mlir::arith::ConstantIndexOp::create(builder, loc, truncated.getZExtValue());
 }
 
 template <typename OpClass, typename... Args>

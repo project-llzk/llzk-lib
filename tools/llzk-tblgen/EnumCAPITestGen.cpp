@@ -20,6 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CAPIGenRegistration.h"
 #include "CommonCAPIGen.h"
 
 #include <mlir/TableGen/EnumInfo.h>
@@ -91,7 +92,8 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
   /// @param enumInfo The enum attribute definition
   void genCompleteRecord(const EnumInfo &enumInfo) {
     // EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.
-    if (!DialectName.empty() && !enumInfo.getCppNamespace().contains_insensitive(DialectName)) {
+    if (!getDialectName().empty() &&
+        !enumInfo.getCppNamespace().contains_insensitive(getDialectName())) {
       return;
     }
 
@@ -101,7 +103,7 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
     }
 
     // Get enum name
-    std::string cEnumName = toPascalCase(FunctionPrefix) + toPascalCase(DialectName) +
+    std::string cEnumName = toPascalCase(getFunctionPrefix()) + toPascalCase(getDialectName()) +
                             toPascalCase(enumInfo.getEnumClassName());
 
     // Get first enum case for testing
@@ -138,5 +140,8 @@ static bool emitEnumCAPITests(const llvm::RecordKeeper &records, raw_ostream &os
   return false;
 }
 
-static mlir::GenRegistration
-    genEnumCAPITests("gen-enum-capi-tests", "Generate enum C API unit tests", &emitEnumCAPITests);
+void llzk::registerEnumCAPITestGenerator() {
+  static mlir::GenRegistration genEnumCAPITests(
+      "gen-enum-capi-tests", "Generate enum C API unit tests", &emitEnumCAPITests
+  );
+}

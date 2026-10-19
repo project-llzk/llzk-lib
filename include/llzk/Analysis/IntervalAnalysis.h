@@ -503,9 +503,9 @@ struct IntervalAnalysisContext {
 template <> struct std::hash<llzk::IntervalAnalysisContext> {
   size_t operator()(const llzk::IntervalAnalysisContext &c) const {
     return llvm::hash_combine(
+        llzk::Field::Hash {}(c.getField()),
         std::hash<const llzk::IntervalDataFlowAnalysis *> {}(c.intervalDFA),
         std::hash<const llvm::SMTSolver *> {}(c.smtSolver.get()),
-        std::hash<const llzk::Field *> {}(&c.getField()),
         std::hash<bool> {}(c.propagateInputConstraints),
         std::hash<bool> {}(c.trackUnreducedIntervals)
     );
@@ -514,8 +514,6 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
 
 namespace llzk {
 
-// Suppress false positive from `clang-tidy`
-// NOLINTNEXTLINE(bugprone-exception-escape)
 class StructIntervals {
 public:
   /// @brief Compute the struct intervals.

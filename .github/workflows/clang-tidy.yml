@@ -1,0 +1,70 @@
+name: Clang-tidy check
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  run-clang-tidy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.35.2/install
+          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Set Git credentials
+        run: |
+          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
+          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
+          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
+      - uses: cachix/cachix-action@v17
+        with:
+          name: veridise-public
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      - name: Configure
+        # Use Nix's package version because the shallow checkout has no version tags.
+        run: |
+          # Expand version inside the Nix environment.
+          # shellcheck disable=SC2016
+          nix develop .#debugClang --command bash -c 'cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug -DLLZK_BUILD_DEVTOOLS=ON \
+            -DLLZK_VERSION_OVERRIDE="${version:?}"'
+      - name: Generate headers
+        # Generate TableGen headers before analyzing the compilation database.
+        run: nix develop .#debugClang --command bash -c 'cmake --build build --target llzk-headers'
+      - name: Locate Nix clang tools
+        id: clang
+        run: |
+          # Resolve the executable inside the Nix environment.
+          # shellcheck disable=SC2016
+          nix develop .#debugClang --command bash -c \
+            'printf "bin=%s\n" "$(dirname "$(command -v clang-tidy)")"' \
+            >> "$GITHUB_OUTPUT"
+      - name: Run clang-tidy
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ steps.clang.outputs.bin }}
+          database: build
+          style: '' # Disable clang-format; it has a separate workflow.
+          tidy-checks: '' # Use .clang-tidy.
+          files-changed-only: true
+          lines-changed-only: true
+          ignore: 'build|result|third-party'
+          step-summary: true
+          file-annotations: true
+          # comments do not work on PRs from forked repos
+          thread-comments: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'update' || 'false' }}
+          no-lgtm: false
+      - name: Fail on diagnostics
+        # cpp-linter reports findings without failing the action itself.
+        if: steps.linter.outputs.checks-failed > 0
+        run: exit 1

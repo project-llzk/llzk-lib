@@ -33,19 +33,19 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def private @use_index(index)
 // CHECK-NEXT:    function.def private @use_felt(!felt.type)
 // CHECK-NEXT:    function.def private @use_felt_bb(!felt.type<"babybear">)
-// CHECK-NEXT:    function.def @field_specified_casts(%[[VAL_0:[0-9a-zA-Z_\.-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  2 : <"babybear">
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:    function.def @field_specified_casts(%[[VAL_0:[0-9a-zA-Z_\.\-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = felt.const  2 : <"babybear">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = arith.constant 1 : index
 // CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_felt_bb(%[[VAL_1]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @unspecified_0_casts(%[[VAL_3:[0-9a-zA-Z_\.-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = felt.const  0
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    function.def @unspecified_0_casts(%[[VAL_3:[0-9a-zA-Z_\.\-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_5]] : !felt.type
 // CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_7]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -144,81 +144,85 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-// CHECK-LABEL:   function.def @default() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = felt.const  -1
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_3]] : !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_felt(!felt.type)
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_3]] : !felt.type
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_7]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @assert() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = felt.const  -1
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_3]] : !felt.type
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type) -> ()
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_7]]) : (index) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @sat() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.-]+]] = felt.const  -1
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.-]+]] = cast.tofelt sat %[[VAL_8]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.-]+]] = cast.tofelt sat %[[VAL_9]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.-]+]] = cast.toindex sat %[[VAL_10]] : !felt.type
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.-]+]] = cast.toindex sat %[[VAL_11]] : !felt.type
+// CHECK-NEXT:    function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_9]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_10]] : !felt.type
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_11]] : !felt.type
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_12]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_13]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_14]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_15]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @wrap() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
-// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775820
-// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.-]+]] = felt.const  -1
-// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.-]+]] = cast.tofelt wrap %[[VAL_16]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.-]+]] = cast.tofelt wrap %[[VAL_17]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.-]+]] = cast.toindex wrap %[[VAL_18]] : !felt.type
-// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.-]+]] = cast.toindex wrap %[[VAL_19]] : !felt.type
+// CHECK-NEXT:    function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775808
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.\-]+]] = cast.tofelt sat %[[VAL_16]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.\-]+]] = cast.tofelt sat %[[VAL_17]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.\-]+]] = cast.toindex sat %[[VAL_18]] : !felt.type
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.\-]+]] = cast.toindex sat %[[VAL_19]] : !felt.type
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_20]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_21]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_22]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_23]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.-]+]] = arith.constant 2147483648 : index
-// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775820
-// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.-]+]] = felt.const  -1
-// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.-]+]] = cast.tofelt trunc %[[VAL_24]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.-]+]] = cast.tofelt trunc %[[VAL_25]] : index, !felt.type
-// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.-]+]] = cast.toindex trunc %[[VAL_26]] : !felt.type
-// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.-]+]] = cast.toindex trunc %[[VAL_27]] : !felt.type
+// CHECK-NEXT:    function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775820
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.\-]+]] = cast.tofelt wrap %[[VAL_24]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.\-]+]] = cast.tofelt wrap %[[VAL_25]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.\-]+]] = cast.toindex wrap %[[VAL_26]] : !felt.type
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.\-]+]] = cast.toindex wrap %[[VAL_27]] : !felt.type
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_28]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_29]]) : (!felt.type) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_30]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_31]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_\.\-]+]] = arith.constant 2147483648 : index
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775820
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.\-]+]] = cast.tofelt trunc %[[VAL_32]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.\-]+]] = cast.tofelt trunc %[[VAL_33]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.\-]+]] = cast.toindex trunc %[[VAL_34]] : !felt.type
+// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.\-]+]] = cast.toindex trunc %[[VAL_35]] : !felt.type
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_36]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_37]]) : (!felt.type) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_38]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_39]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 !F = !felt.type<"babybear">
@@ -318,65 +322,69 @@ module attributes {llzk.lang} {
 // COM: 1592717042 ≡ 2^63 mod p
 // COM: 1592717054 ≡ (2^63 + 12) mod p
 //
-// CHECK-LABEL:   function.def @default() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:       %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
-// CHECK-DAG:       %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-DAG:       %[[VAL_2:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717042 : index
-// CHECK-DAG:       %[[VAL_3:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type<"babybear">
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_felt(!felt.type<"babybear">)
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = arith.constant 1592717042 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_2]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_3]] : index, !felt.type<"babybear">
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_1]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_0]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @assert() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:       %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265921 : index
-// CHECK-DAG:       %[[VAL_1:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-DAG:       %[[VAL_2:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717042 : index
-// CHECK-DAG:       %[[VAL_3:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type<"babybear">
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_4]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_5]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:    function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.\-]+]] = arith.constant 1592717042 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_9]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_10]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_11]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_7]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_6]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @sat() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:       %[[VAL_8:[0-9a-zA-Z_\.-]+]] = felt.const  2013265920 : <"babybear">
-// CHECK-DAG:       %[[VAL_9:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"babybear">
-// CHECK-DAG:       %[[VAL_10:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717042 : index
-// CHECK-DAG:       %[[VAL_11:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_8]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_9]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_10]]) : (index) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_11]]) : (index) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @wrap() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:       %[[VAL_12:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"babybear">
-// CHECK-DAG:       %[[VAL_13:[0-9a-zA-Z_\.-]+]] = felt.const  2013265920 : <"babybear">
-// CHECK-DAG:       %[[VAL_14:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717054 : index
-// CHECK-DAG:       %[[VAL_15:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:    function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.\-]+]] = felt.const  2013265920 : <"babybear">
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.\-]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.\-]+]] = arith.constant 1592717042 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265920 : index
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_12]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_13]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_14]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_15]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:       %[[VAL_16:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"babybear">
-// CHECK-DAG:       %[[VAL_17:[0-9a-zA-Z_\.-]+]] = felt.const  2147483647 : <"babybear">
-// CHECK-DAG:       %[[VAL_18:[0-9a-zA-Z_\.-]+]] = arith.constant 1592717054 : index
-// CHECK-DAG:       %[[VAL_19:[0-9a-zA-Z_\.-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:    function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.\-]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.\-]+]] = felt.const  2013265920 : <"babybear">
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.\-]+]] = arith.constant 1592717054 : index
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265920 : index
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_16]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_17]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_18]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_19]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.\-]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.\-]+]] = felt.const  134217726 : <"babybear">
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.\-]+]] = arith.constant 1592717054 : index
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_20]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_21]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_22]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_23]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 // Note: There is no `index` constant too large for the grumpkin field so
@@ -464,55 +472,59 @@ module attributes {llzk.lang} {
 // COM: 4332616871279656262 ≡ p-1 mod 2^63
 // COM: 28948022309329048855892746252171976963317496166410141009864396001978282409983 ≡ 2^254 - 1
 //
-// CHECK-LABEL: function.def @default() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:     %[[VAL_0:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-DAG:     %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808 : <"grumpkin">
-// CHECK-DAG:     %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  -1 : <"grumpkin">
-// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"grumpkin">
-// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_1]] : !felt.type<"grumpkin">
-// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_2]] : !felt.type<"grumpkin">
-// CHECK-NEXT:    function.call @use_felt(%[[VAL_3]]) : (!felt.type<"grumpkin">) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_4]]) : (index) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_5]]) : (index) -> ()
-// CHECK-NEXT:    function.return
-// CHECK-NEXT:  }
-// CHECK-LABEL: function.def @assert() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:     %[[VAL_6:[0-9a-zA-Z_\.-]+]] = arith.constant -1 : index
-// CHECK-DAG:     %[[VAL_7:[0-9a-zA-Z_\.-]+]] = felt.const  9223372036854775808 : <"grumpkin">
-// CHECK-DAG:     %[[VAL_8:[0-9a-zA-Z_\.-]+]] = felt.const  -1 : <"grumpkin">
-// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.-]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"grumpkin">
-// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_7]] : !felt.type<"grumpkin">
-// CHECK-NEXT:    %[[VAL_11:[0-9a-zA-Z_\.-]+]] = cast.toindex %[[VAL_8]] : !felt.type<"grumpkin">
-// CHECK-NEXT:    function.call @use_felt(%[[VAL_9]]) : (!felt.type<"grumpkin">) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_10]]) : (index) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_11]]) : (index) -> ()
-// CHECK-NEXT:    function.return
-// CHECK-NEXT:  }
-// CHECK-LABEL: function.def @sat() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:     %[[VAL_12:[0-9a-zA-Z_\.-]+]] = felt.const  0 : <"grumpkin">
-// CHECK-DAG:     %[[VAL_13:[0-9a-zA-Z_\.-]+]] = arith.constant 9223372036854775807 : index
-// CHECK-NEXT:    function.call @use_felt(%[[VAL_12]]) : (!felt.type<"grumpkin">) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_13]]) : (index) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_13]]) : (index) -> ()
-// CHECK-NEXT:    function.return
-// CHECK-NEXT:  }
-// CHECK-LABEL: function.def @wrap() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:     %[[VAL_14:[0-9a-zA-Z_\.-]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208582 : <"grumpkin">
-// CHECK-DAG:     %[[VAL_15:[0-9a-zA-Z_\.-]+]] = arith.constant 12 : index
-// CHECK-DAG:     %[[VAL_16:[0-9a-zA-Z_\.-]+]] = arith.constant 4332616871279656262 : index
-// CHECK-NEXT:    function.call @use_felt(%[[VAL_14]]) : (!felt.type<"grumpkin">) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_15]]) : (index) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_16]]) : (index) -> ()
-// CHECK-NEXT:    function.return
-// CHECK-NEXT:  }
-// CHECK-LABEL: function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-DAG:     %[[VAL_17:[0-9a-zA-Z_\.-]+]] = felt.const  28948022309329048855892746252171976963317496166410141009864396001978282409983 : <"grumpkin">
-// CHECK-DAG:     %[[VAL_18:[0-9a-zA-Z_\.-]+]] = arith.constant 12 : index
-// CHECK-DAG:     %[[VAL_19:[0-9a-zA-Z_\.-]+]] = arith.constant 4332616871279656262 : index
-// CHECK-NEXT:    function.call @use_felt(%[[VAL_17]]) : (!felt.type<"grumpkin">) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_18]]) : (index) -> ()
-// CHECK-NEXT:    function.call @use_index(%[[VAL_19]]) : (index) -> ()
-// CHECK-NEXT:    function.return
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_felt(!felt.type<"grumpkin">)
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def @default() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775808 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208582 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"grumpkin">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_1]] : !felt.type<"grumpkin">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_2]] : !felt.type<"grumpkin">
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_3]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_4]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_5]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @assert() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775808 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.\-]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208582 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"grumpkin">
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_7]] : !felt.type<"grumpkin">
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_8]] : !felt.type<"grumpkin">
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_9]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_10]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_11]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @sat() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.\-]+]] = felt.const  0 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.\-]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_12]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_13]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_13]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wrap() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.\-]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208582 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.\-]+]] = arith.constant 12 : index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.\-]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_14]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_15]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_16]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.\-]+]] = felt.const  7059779437489773633646340506914701874621185009112317347175358107333056201400 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.\-]+]] = arith.constant 12 : index
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.\-]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_17]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_18]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_19]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
 
@@ -532,21 +544,28 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-// CHECK-LABEL: function.def @fold_true()
-// CHECK-NEXT:    %[[ONE:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"babybear">
-// CHECK-COUNT-3: function.call @use_felt(%[[ONE]]) : (!felt.type<"babybear">) -> ()
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_felt(!felt.type<"babybear">)
+// CHECK-NEXT:    function.def @fold_true() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  1 : <"babybear">
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
     function.def private @use_index(%i: index) -> ()
 
     function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
-        %fmax = felt.const 9223372036854775807
-        %ftoo_large = felt.const 9223372036854775808
+        %fmax = felt.const 9223372036854775807 : !felt.type<"bn254">
+        %ftoo_large = felt.const 9223372036854775808 : !felt.type<"bn254">
         %fnegative = felt.const -1
 
-        %cmax = cast.toindex %fmax
-        %ctoo_large = cast.toindex %ftoo_large
+        %cmax = cast.toindex %fmax : !felt.type<"bn254">
+        %ctoo_large = cast.toindex %ftoo_large : !felt.type<"bn254">
         %cnegative = cast.toindex %fnegative
 
         function.call @use_index(%cmax) : (index) -> ()
@@ -556,4 +575,42 @@ module attributes {llzk.lang} {
         function.return
     }
 }
-// CHECK: TODO
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @use_index(index)
+// CHECK-NEXT:    function.def @func(%[[VAL_0:[0-9a-zA-Z_\.\-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = felt.const  9223372036854775808 : <"bn254">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.\-]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn254">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = cast.toindex %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_4]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_5]]) : (index) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Booleans are unsigned, but index constants preserve their signed value.
+module attributes {llzk.lang} {
+    function.def @signed_constants() -> (!felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+        %true = arith.constant true
+        %index = arith.constant -1 : index
+        %boolean = cast.tofelt %true : i1, !felt.type
+        %boolean_bb = cast.tofelt %true : i1, !felt.type<"babybear">
+        %index_felt = cast.tofelt %index : index, !felt.type
+        %index_bb = cast.tofelt %index : index, !felt.type<"babybear">
+        function.return %boolean, %boolean_bb, %index_felt, %index_bb : !felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">
+    }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @signed_constants() -> (!felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  1 : <"babybear">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.\-]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_1]] : i1, !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_2]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = cast.tofelt %[[VAL_2]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[VAL_3]], %[[VAL_0]], %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type<"babybear">, !felt.type, !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

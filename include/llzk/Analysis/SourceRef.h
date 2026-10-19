@@ -48,11 +48,17 @@ public:
   explicit SourceRefIndex(SymbolLookupResult<component::MemberDefOp> f) : index(f) {}
   explicit SourceRefIndex(mlir::StringAttr recordName) : index(recordName) {}
   explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
-  explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
   explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
-  SourceRefIndex(const llvm::APInt &low, const llvm::APInt &high)
-      : index(IndexRange {toDynamicAPInt(low), toDynamicAPInt(high)}) {}
+  /// Construct a half-open range; a high bound of ShapedType::kDynamic means unbounded.
+  SourceRefIndex(const llvm::DynamicAPInt &low, const llvm::DynamicAPInt &high)
+      : index(IndexRange {low, high}) {}
   explicit SourceRefIndex(IndexRange r) : index(r) {}
+
+  /// Select every nonnegative index in a static or dynamic array dimension.
+  static SourceRefIndex forArrayDimension(int64_t size);
+
+  /// Whether this range has no finite upper bound.
+  bool hasUnboundedUpperBound() const;
 
   bool isMember() const {
     return std::holds_alternative<SymbolLookupResult<component::MemberDefOp>>(index) ||
@@ -193,6 +199,9 @@ private:
   Path &getPathMut() { return path; }
   const void *getAsOpaquePointer() const { return value.getAsOpaquePointer(); }
   SortCategory getSortCategory() const;
+  /// Numeric identity key: field representatives for specified fields, raw storage otherwise.
+  /// Only valid for constant felt or index references; not a fieldless semantic evaluation.
+  llvm::DynamicAPInt getConstantIdentityValue() const;
   llvm::StringRef getTemplateConstantName() const;
   std::strong_ordering compareWithinCategory(const SourceRef &rhs, SortCategory category) const;
 
@@ -295,11 +304,13 @@ public:
   bool isCallResult() const { return succeeded(getCallOp()); }
   mlir::FailureOr<function::CallOp> getCallOp() const { return getDefiningOp<function::CallOp>(); }
 
+  /// Return the field representative, or failure for a nonconstant or unspecified field.
   mlir::FailureOr<llvm::DynamicAPInt> getConstantFeltValue() const {
     auto feltConst = getDefiningOp<felt::FeltConstantOp>();
     if (succeeded(feltConst)) {
-      llvm::APInt i = feltConst->getValue().getReducedValue();
-      return toDynamicAPInt(i);
+      if (auto reduced = feltConst->getValue().getReducedValue()) {
+        return *reduced;
+      }
     }
     return mlir::failure();
   }
@@ -310,6 +321,11 @@ public:
     }
     return mlir::failure();
   }
+  /// Reduce a felt constant's declared-field representative into the supplied analysis field.
+  /// Fieldless constants use their raw literals instead. Index constants retain integer semantics.
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantValue(const Field &field) const;
+
+  /// Return a known numeric value, failing for fieldless felt constants.
   mlir::FailureOr<llvm::DynamicAPInt> getConstantValue() const {
     auto feltVal = getConstantFeltValue();
     if (succeeded(feltVal)) {

@@ -284,6 +284,8 @@ def LLZK_MemberReadOp
   let description = [{
     This operation copies the value of a named member in a struct/component.
     The result is a value copy, not a pointer or alias to the member's storage.
+    When the member itself has `struct.type`, the copied value is an
+    identity-bearing handle to the same component instance.
 
     A struct can read its own members regardless of whether they are marked as
     public (i.e., with the `llzk.pub` attribute) or private (members without the
@@ -355,7 +357,8 @@ def LLZK_MemberWriteOp
   let description = [{
     This operation copies a value to a named member in a struct/component.
     It does not create a pointer or alias between the source value and the member's
-    storage.
+    storage. When the value has `struct.type`, the copied value is an
+    identity-bearing handle to the same component instance.
 
     A struct can write its own members. However, writing members of other components
     is not allowed.

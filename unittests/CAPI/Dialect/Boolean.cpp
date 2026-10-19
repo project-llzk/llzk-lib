@@ -171,10 +171,10 @@ template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
 
   /// Generates an array for passing it to the quantifier op.
   MlirValue generateArrayValue(mlir::OpBuilder &builder, mlir::Location location) {
-    auto consts = llvm::map_to_vector(llvm::seq(10), [&](uint64_t v) -> mlir::Value {
+    auto consts = llvm::map_to_vector(llvm::seq(10), [&](int64_t v) -> mlir::Value {
       return llzk::felt::FeltConstantOp::create(
           builder, location,
-          llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, v))
+          llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::DynamicAPInt(v))
       );
     });
     return wrap(
@@ -194,7 +194,8 @@ template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
     auto arg = block.addArgument(llzk::felt::FeltType::get(builder.getContext()), location);
     builder.setInsertionPointToStart(&block);
     auto zero = llzk::felt::FeltConstantOp::create(
-        builder, location, llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, 0))
+        builder, location,
+        llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::DynamicAPInt(0))
     );
     auto cmpOp = llzk::boolean::CmpOp::create(
         builder, location,

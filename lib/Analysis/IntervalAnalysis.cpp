@@ -690,12 +690,11 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
     SourceRefLatticeValue idxVals = getSourceRefState(idxOperand);
 
     // Only exact constant indices get tracked precisely.
-    if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+    auto constantIndex = idxVals.getConstantValue(field.get());
+    if (succeeded(constantIndex)) {
+      indices.emplace_back(*constantIndex);
     } else {
-      auto lower = APInt::getZero(64);
-      APInt upper(64, arrayType.getDimSize(i));
-      indices.emplace_back(lower, upper);
+      indices.push_back(SourceRefIndex::forArrayDimension(arrayType.getDimSize(i)));
     }
   }
 
@@ -722,7 +721,7 @@ Interval IntervalDataFlowAnalysis::getRefInterval(const SourceRef &ref) {
   }
 
   if (ref.isConstantInt()) {
-    auto constVal = ref.getConstantValue();
+    auto constVal = ref.getConstantValue(field.get());
     if (succeeded(constVal)) {
       return Interval::Degenerate(field.get(), *constVal);
     }
@@ -763,7 +762,7 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
   }
 
   if (ref.isConstantInt()) {
-    auto constVal = ref.getConstantValue();
+    auto constVal = ref.getConstantValue(field.get());
     if (succeeded(constVal)) {
       return UnreducedInterval(*constVal, *constVal);
     }
@@ -1137,7 +1136,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         for (Attribute attr : *maybeIndices) {
           auto idxAttr = llvm::dyn_cast<IntegerAttr>(attr);
           ensure(idxAttr != nullptr, "array.new delinearize should produce integer attributes");
-          path.emplace_back(idxAttr.getValue());
+          path.emplace_back(integerAttrToDynamicAPInt(idxAttr));
         }
 
         recordRefWrite(SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue());
@@ -1152,12 +1151,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         if (!elementRefs.isSingleValue()) {
           continue;
         }
-        auto maybeIndices = indexGen.delinearize(llzk::checkedCast<int64_t>(i), op->getContext());
+        auto maybeIndices = indexGen.delinearize(checkedCast<int64_t>(i), op->getContext());
         ensure(maybeIndices.has_value(), "could not delinearize aggregate array.new index");
         SourceRef elementTarget = arrayRoot;
         for (Attribute attr : *maybeIndices) {
-          auto child =
-              elementTarget.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
+          auto child = elementTarget.createChild(
+              SourceRefIndex(integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(attr)))
+          );
           ensure(succeeded(child), "could not create aggregate array element SourceRef");
           elementTarget = *child;
         }
@@ -1335,8 +1335,9 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   // clang-format off
   llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
       .Case<FeltConstantOp>([&](auto feltConst) {
-        llvm::APSInt constOpVal(feltConst.getValue().getReducedValue());
-        return field.get().reduce(constOpVal);
+        // Preserve felt.const's declared-field meaning before reduction in the analysis field.
+        // Fieldless literals instead use the raw fallback, as in SourceRef::getConstantValue.
+        return field.get().reduce(feltConst.getValue().getReducedValueOrRaw());
       })
       .Case<arith::ConstantIndexOp>([&](auto indexConst) {
         return DynamicAPInt(indexConst.value());
@@ -1344,7 +1345,7 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
       .Case<arith::ConstantIntOp>([&](auto intConst) {
         auto valAttr = dyn_cast<IntegerAttr>(intConst.getValue());
         ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
-        return toDynamicAPInt(valAttr.getValue());
+        return integerAttrToDynamicAPInt(valAttr);
       })
       .Default([](auto *illegalOp) {
         std::string err;
@@ -1572,9 +1573,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   auto mulCase = [&](MulFeltOp mulOp) {
     // We check for the constant case first.
     auto constCase = [&](FeltConstantOp constOperand, Value multiplicand) {
-      auto latVal = getLatticeElement(multiplicand)->getValue().getScalarValue();
-      APInt constVal = constOperand.getValue().getReducedValue();
-      if (constVal.isZero()) {
+      DynamicAPInt constVal = getConst(constOperand);
+      if (constVal == 0) {
         // There's no inverse for zero, so we do nothing.
         return;
       }
@@ -1820,8 +1820,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
       if (failed(handleRefValue())) {
         return failure();
       }
-      auto constInt = APSInt(c.getValue().getReducedValue());
-      consts.push_back(field.get().reduce(constInt));
+      consts.push_back(getConst(c));
       continue;
     } else if (m_RefValue(&signalVal).match(v)) {
       if (failed(handleRefValue())) {
@@ -1890,7 +1889,7 @@ LogicalResult StructIntervals::computeIntervals(
       if (existing != memberRanges.end()) {
         Interval mergedInterval = existing->second.intersect(interval);
         bool intervalChanged = mergedInterval != existing->second;
-        existing->second = mergedInterval;
+        existing->second = std::move(mergedInterval);
 
         if (unreducedInterval.has_value()) {
           auto *existingUnreduced = memberUnreducedRanges.find(ref);
@@ -2061,8 +2060,8 @@ LogicalResult StructIntervals::computeIntervals(
         // existing parent intervals before merging back into each translated parent ref.
         llvm::EquivalenceClasses<SourceRef> directEqRefs =
             collectDirectEqualityRefs(solver, calledFn);
-        for (auto leaderIt = directEqRefs.begin(); leaderIt != directEqRefs.end(); ++leaderIt) {
-          if (!(*leaderIt)->isLeader()) {
+        for (const auto *leader : directEqRefs) {
+          if (!leader->isLeader()) {
             continue;
           }
 
@@ -2071,21 +2070,20 @@ LogicalResult StructIntervals::computeIntervals(
           bool hasInterval = false;
           bool ambiguousTranslation = false;
 
-          for (auto memberIt = directEqRefs.member_begin(**leaderIt);
-               memberIt != directEqRefs.member_end(); ++memberIt) {
+          for (const SourceRef &member : directEqRefs.members(*leader)) {
             Interval memberInterval = Interval::Entire(ctx.getField());
-            if (const auto *childIntervalIt = constrainIntervals.find(*memberIt);
+            if (const auto *childIntervalIt = constrainIntervals.find(member);
                 childIntervalIt != constrainIntervals.end()) {
               memberInterval = memberInterval.intersect(childIntervalIt->second);
             }
-            if (auto *callOperandIt = callOperandIntervals.find(*memberIt);
+            if (auto *callOperandIt = callOperandIntervals.find(member);
                 callOperandIt != callOperandIntervals.end()) {
               memberInterval = memberInterval.intersect(callOperandIt->second);
               contextualInterval = contextualInterval.intersect(memberInterval);
               hasInterval = true;
             }
 
-            auto translatedRefs = translateRef(*memberIt, identityTranslations);
+            auto translatedRefs = translateRef(member, identityTranslations);
             if (failed(translatedRefs)) {
               continue;
             }

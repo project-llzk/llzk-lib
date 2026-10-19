@@ -89,7 +89,6 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
 
   return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
-    APInt value = toAPInt(constOp.value());
     felt::FeltType resultType = op.getType();
 
     // A field-less felt defers its field selection, so its overflow behavior
@@ -99,23 +98,14 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
     }
 
     const Field &field = resultType.getField();
-    // An i1 is a boolean, not a signed one-bit integer: its set bit denotes
-    // the unsigned value 1 rather than -1.
-    DynamicAPInt signedValue = [&constOp, &value] {
-      if (auto integerType = dyn_cast<IntegerType>(constOp.getType());
-          integerType && integerType.getWidth() == 1) {
-        return DynamicAPInt(value.isZero() ? 0 : 1);
-      } else {
-        return toSignedDynamicAPInt(value);
-      }
-    }();
+    DynamicAPInt signedValue =
+        integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(constOp.getValue()));
     auto result = applyIntToFeltOverflow(signedValue, field, op.getOverflow());
     if (!result) {
       return failure();
     }
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op,
-        felt::FeltConstAttr::get(op->getContext(), toAPInt(*result, field.bitWidth()), resultType)
+        op, felt::FeltConstAttr::get(op->getContext(), *result, resultType)
     );
     return success();
   }).Default([](auto) { return failure(); });
@@ -135,20 +125,17 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    // A field-less felt defers its field selection, so it cannot be reduced
-    // and thus not canonicalized here.
-    auto f = constOp.getType();
-    if (!llvm::cast<felt::FeltType>(constOp.getType()).hasField()) {
+    // A fieldless felt has no representative until its field is known.
+    auto reduced = constOp.getValue().getReducedValue();
+    if (!reduced) {
       return failure();
-    };
-    auto result = applyFeltToIndexOverflow(
-        toSignedDynamicAPInt(constOp.getValue().getReducedValue()),
-        IndexType::kInternalStorageBitWidth, op.getOverflow()
-    );
+    }
+    auto result =
+        applyFeltToIndexOverflow(*reduced, IndexType::kInternalStorageBitWidth, op.getOverflow());
     if (!result) {
       return failure();
     }
-    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, toAPSInt(*result).getZExtValue());
+    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, cantFail(checkedToInt64(*result)));
     return success();
   }
   return failure();

@@ -10,7 +10,7 @@
 #pragma once
 
 #include "llzk-c/Builder.h"
-#include "llzk-c/InitDialects.h"
+#include "llzk-c/DialectRegistration.h"
 
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
@@ -36,7 +36,7 @@ protected:
   CAPITest() : context(mlirContextCreate()) {
     auto registry = mlirDialectRegistryCreate();
     mlirRegisterAllDialects(registry);
-    llzkRegisterAllDialects(registry);
+    llzkRegisterCoreDialects(registry);
     mlirContextAppendDialectRegistry(context, registry);
     mlirContextLoadAllAvailableDialects(context);
     mlirDialectRegistryDestroy(registry);
@@ -117,7 +117,8 @@ public:
   static mlir::Value cppGenFeltConstant(MlirOpBuilder builder, MlirLocation location) {
     mlir::OpBuilder *cppBuilder = unwrap(builder);
     return llzk::felt::FeltConstantOp::create(
-        *cppBuilder, unwrap(location), cppBuilder->getAttr<llzk::felt::FeltConstAttr>(llvm::APInt())
+        *cppBuilder, unwrap(location),
+        cppBuilder->getAttr<llzk::felt::FeltConstAttr>(llvm::DynamicAPInt())
     );
   }
 

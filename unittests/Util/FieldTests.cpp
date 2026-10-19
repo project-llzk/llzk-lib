@@ -13,15 +13,19 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <unordered_set>
 
 using namespace llvm;
 using namespace llzk;
 
-static const Field &f = Field::getField("babybear");
-
 struct FieldTests : public testing::TestWithParam<DynamicAPInt> {
+  const Field &f = Field::getField("babybear");
+
   static const std::vector<DynamicAPInt> &TestingValues() {
-    static std::vector<DynamicAPInt> vals = {f.zero(), f.one(), f.half(), f.maxVal(), f.prime()};
+    const Field &field = Field::getField("babybear");
+    static std::vector<DynamicAPInt> vals = {
+        field.zero(), field.one(), field.half(), field.maxVal(), field.prime()
+    };
     return vals;
   }
 };
@@ -61,6 +65,28 @@ TEST(FieldAliasTests, BuiltinAliasesUseExpectedPrimes) {
   );
 }
 
+// Hashing follows prime equality even for aliases and independently copied fields.
+TEST(FieldAliasTests, HashUsesPrimeIdentity) {
+  const Field &bn128 = Field::getField("bn128");
+  const Field &bn254 = Field::getField("bn254");
+  const Field &grumpkin = Field::getField("grumpkin");
+  const Field copy = bn128;
+  const Field::Hash hash;
+
+  EXPECT_EQ(bn128, bn254);
+  EXPECT_EQ(bn128, copy);
+  EXPECT_NE(bn128, grumpkin);
+  EXPECT_EQ(hash(bn128), hash(bn254));
+  EXPECT_EQ(hash(bn128), hash(copy));
+
+  std::unordered_set<Field, Field::Hash> fields;
+  EXPECT_TRUE(fields.insert(bn128).second);
+  EXPECT_FALSE(fields.insert(bn254).second);
+  EXPECT_FALSE(fields.insert(copy).second);
+  EXPECT_TRUE(fields.insert(grumpkin).second);
+  EXPECT_EQ(fields.size(), 2U);
+}
+
 //===------------------------------------------------------------------===//
 // Suite of tests over all `TestingValues()`
 //===------------------------------------------------------------------===//
@@ -80,3 +106,43 @@ TEST_P(FieldTests, ReducedToSignedInverses) {
 }
 
 INSTANTIATE_TEST_SUITE_P(FieldValSuite, FieldTests, testing::ValuesIn(FieldTests::TestingValues()));
+
+TEST(FieldBoundaryTests, InvalidModuliReportErrorsWithoutRegistration) {
+  // Exercise both public overloads directly, bypassing FieldSpecAttr validation.
+  mlir::MLIRContext ctx;
+  for (int64_t prime : {-7, 0, 1}) {
+    SCOPED_TRACE(prime);
+    for (bool useString : {false, true}) {
+      SCOPED_TRACE(useString ? "string overload" : "DynamicAPInt overload");
+      StringRef name = useString ? "field-test-invalid-string" : "field-test-invalid-integer";
+      ASSERT_TRUE(failed(Field::tryGetField(name)));
+      unsigned callbacks = 0;
+      std::vector<std::string> diagnostics;
+      mlir::ScopedDiagnosticHandler handler(&ctx, [&](mlir::Diagnostic &diag) {
+        diagnostics.push_back(diag.str());
+        return mlir::success();
+      });
+      auto errFn = [&]() {
+        ++callbacks;
+        return InFlightDiagnosticWrapper(mlir::emitError(mlir::UnknownLoc::get(&ctx)));
+      };
+      if (useString) {
+        Field::addField(name, std::to_string(prime), errFn);
+      } else {
+        Field::addField(name, DynamicAPInt(prime), errFn);
+      }
+      EXPECT_EQ(callbacks, 1U);
+      EXPECT_EQ(diagnostics, (std::vector<std::string> {"field modulus must be at least 2"}));
+      EXPECT_TRUE(failed(Field::tryGetField(name)));
+    }
+  }
+}
+
+TEST(FieldBoundaryTests, TwoElementFieldEncodesItsModulus) {
+  Field::addField("dynamic-apint-test-two", DynamicAPInt(2), nullptr);
+  const auto &field = Field::getField("dynamic-apint-test-two");
+  EXPECT_EQ(field.bitWidth(), 2U);
+  EXPECT_EQ(field.half(), DynamicAPInt(1));
+  EXPECT_EQ(field.toSigned(DynamicAPInt(1)), DynamicAPInt(-1));
+  EXPECT_EQ(field.reduce(DynamicAPInt(-1)), DynamicAPInt(1));
+}

@@ -1,0 +1,23 @@
+// RUN: llzk-opt -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  module @Local {
+    function.def @accept(%value: index) {
+      function.return
+    }
+
+    verif.contract @Base for @Local::@accept (%value: index) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @reject_local_module(%value: !felt.type) {
+    function.return
+  }
+
+  verif.contract @RejectLocalModule for @reject_local_module (%value: !felt.type) {
+    // expected-error@+1 {{'verif.include' op operand type mismatch: expected type 'index', but found '!felt.type' for operand number 0}}
+    verif.include @Local::@Base(%value) : (!felt.type) -> ()
+  }
+}

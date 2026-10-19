@@ -1,0 +1,322 @@
+//===-- LLZKLayout.cpp ----------------------------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#include "llzk/Util/LLZKLayout.h"
+
+#include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/Util/StructSpecialization.h"
+#include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Compare.h"
+#include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
+
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/SymbolTable.h>
+
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/Support/raw_ostream.h>
+
+#include <cassert>
+
+using namespace mlir;
+using namespace llzk::polymorphic;
+
+namespace {
+
+/// Return whether a family entry has a struct type, nonnegative concrete indices,
+/// and a nonnegative specialization ID representable in signed 64 bits.
+bool isValidFamilyEntry(TypeAttr type, ArrayAttr indices, IntegerAttr id) {
+  if (!type || !isa<llzk::component::StructType>(type.getValue()) || !indices || !id ||
+      !id.getValue().isSignedIntN(64) || id.getInt() < 0) {
+    return false;
+  }
+  return llvm::all_of(indices, [](Attribute attr) {
+    auto index = dyn_cast<IntegerAttr>(attr);
+    return index && index.getType().isIndex() && index.getInt() >= 0;
+  });
+}
+
+/// Enumerate declared signal leaves reachable from the main interface.
+class LayoutBuilder {
+public:
+  explicit LayoutBuilder(ModuleOp module) : builder(module.getContext()) {}
+
+  FailureOr<llzk::LLZKLayout> build(ModuleOp module) {
+    auto mainType = llzk::getMainInstanceType(module);
+    if (failed(mainType)) {
+      return failure();
+    }
+    if (*mainType && mainType->getParams() && !mainType->getParams().empty()) {
+      return module.emitError("LLZK layout requires a monomorphized llzk.main");
+    }
+    auto main = llzk::getMainInstanceDef(tables, module);
+    if (failed(main)) {
+      return failure();
+    }
+    if (!*main) {
+      return module.emitError("LLZK layout requires a concrete llzk.main");
+    }
+    if (main->viaInclude()) {
+      return module.emitError("inline includes before exporting an LLZK layout");
+    }
+
+    auto root = llzk::getTopRootModule(module);
+    if (failed(root)) {
+      return failure();
+    }
+    specializations.emplace(*root);
+
+    auto constrain = main->get().getConstrainFuncOp();
+    if (!constrain) {
+      return main->get().emitError("LLZK layout requires a main constrain function");
+    }
+
+    SmallVector<Attribute> path;
+    // Arguments to main's constrain come before the member defs in the layout.
+    layout.argumentNames.resize(constrain.getNumArguments());
+    for (unsigned index = 1; index < constrain.getNumArguments(); ++index) {
+      if (auto name = constrain.getArgNameAttr(index)) {
+        layout.argumentNames[index] = *name;
+      }
+      path.assign(
+          {builder.getStringAttr(llzk::LAYOUT_ARGUMENT_ROOT), builder.getI64IntegerAttr(index)}
+      );
+      if (failed(visitType(constrain.getFunctionType().getInput(index), constrain, path, true))) {
+        return failure();
+      }
+    }
+
+    path.assign({builder.getStringAttr(llzk::LAYOUT_MAIN_ROOT)});
+    if (failed(visitStruct(main->get(), path, true))) {
+      return failure();
+    }
+
+    return std::move(layout);
+  }
+
+private:
+  LogicalResult visitStruct(
+      llzk::component::StructDefOp definition, SmallVectorImpl<Attribute> &path, bool isMain = false
+  ) {
+    if (llzk::polymorphic::isInTemplate(definition)) {
+      return definition.emitError("LLZK layout requires monomorphized struct types");
+    }
+    if (!activeStructs.insert(definition).second) {
+      return definition.emitError("recursive struct storage has no finite LLZK layout");
+    }
+    for (auto member : definition.getMemberDefs()) {
+      path.push_back(member.getSymNameAttr());
+      bool isSignal = member.getSignal() || (isMain && member.hasPublicAttr());
+      if (failed(visitType(member.getType(), member, path, isSignal))) {
+        return failure();
+      }
+      path.pop_back();
+    }
+    activeStructs.erase(definition);
+    return success();
+  }
+
+  /// Index family entries once per declaration; lookup remains independent of
+  /// array size and distinguishes different rolled struct fields in a POD.
+  LogicalResult loadFamily(Operation *site) {
+    if (families.contains(site)) {
+      return success();
+    }
+    auto &entries = families[site];
+    Attribute metadata = site->getAttr(FAMILY_ATTR);
+    if (!metadata) {
+      return success();
+    }
+    auto records = dyn_cast<ArrayAttr>(metadata);
+    if (!records) {
+      return site->emitError("invalid poly.family metadata for LLZK layout");
+    }
+    for (Attribute record : records) {
+      auto dict = dyn_cast<DictionaryAttr>(record);
+      auto type = dict ? dict.getAs<TypeAttr>(FAMILY_TYPE_KEY) : TypeAttr();
+      auto indices = dict ? dict.getAs<ArrayAttr>(FAMILY_INDICES_KEY) : ArrayAttr();
+      auto id = dict ? dict.getAs<IntegerAttr>(FAMILY_SPECIALIZATION_KEY) : IntegerAttr();
+      if (!isValidFamilyEntry(type, indices, id)) {
+        return site->emitError("invalid poly.family entry for LLZK layout");
+      }
+      if (!entries.try_emplace(std::make_pair(type.getValue(), indices), id.getInt()).second) {
+        return site->emitError("duplicate poly.family entry for LLZK layout");
+      }
+    }
+    return success();
+  }
+
+  LogicalResult visitType(
+      Type type, Operation *site, SmallVectorImpl<Attribute> &path, bool isSignal,
+      ArrayRef<int64_t> indices = {}
+  ) {
+    // Unmarked expressions are not signals, but component storage can contain
+    // members with their own signal annotations.
+    if (!isSignal && !walkContains<llzk::component::StructType>(type)) {
+      return success();
+    }
+    if (isa<llzk::felt::FeltType>(type)) {
+      auto signalPath = builder.getArrayAttr(path);
+      layout.signalIds.try_emplace(signalPath, layout.signalPaths.size());
+      layout.signalPaths.push_back(signalPath);
+      return success();
+    }
+    if (auto array = dyn_cast<llzk::array::ArrayType>(type)) {
+      for (int64_t size : array.getShape()) {
+        if (size < 0) {
+          return site->emitError("LLZK layout requires concrete array dimensions");
+        }
+      }
+      SmallVector<int64_t> elementIndices;
+      return visitArray(array, site, path, isSignal, elementIndices, 0);
+    }
+    if (auto pod = dyn_cast<llzk::pod::PodType>(type)) {
+      for (auto record : pod.getRecords()) {
+        path.push_back(record.getName());
+        if (failed(visitType(record.getType(), site, path, isSignal, indices))) {
+          return failure();
+        }
+        path.pop_back();
+      }
+      return success();
+    }
+    if (auto structure = dyn_cast<llzk::component::StructType>(type)) {
+      if (auto params = structure.getParams(); params && !params.empty()) {
+        SmallVector<Attribute> indexAttrs;
+        for (int64_t index : indices) {
+          indexAttrs.push_back(builder.getIndexAttr(index));
+        }
+        if (failed(loadFamily(site))) {
+          return failure();
+        }
+        auto found = families[site].find({structure, builder.getArrayAttr(indexAttrs)});
+        if (found == families[site].end()) {
+          return site->emitError("missing concrete struct family element for LLZK layout");
+        }
+        auto definition =
+            specializations->resolve(tables, structure, found->second, site, "LLZK layout");
+        if (failed(definition)) {
+          return failure();
+        }
+        return visitStruct(*definition, path);
+      }
+      auto definition = structure.getDefinition(tables, site);
+      if (failed(definition)) {
+        return failure();
+      }
+      if (!*definition) {
+        return site->emitError() << "cannot resolve struct type " << structure
+                                 << " for LLZK layout";
+      }
+      if (definition->viaInclude()) {
+        return site->emitError("inline includes before exporting an LLZK layout");
+      }
+      if (llzk::polymorphic::isInTemplate(definition->get())) {
+        return site->emitError("LLZK layout requires monomorphized struct types");
+      }
+      return visitStruct(definition->get(), path);
+    }
+    if (type.isIndex() || isa<IntegerType, llzk::string::StringType>(type)) {
+      return success();
+    }
+    return site->emitError() << "unsupported or unresolved type " << type << " in LLZK layout";
+  }
+
+  LogicalResult visitArray(
+      llzk::array::ArrayType array, Operation *site, SmallVectorImpl<Attribute> &path,
+      bool isSignal, SmallVectorImpl<int64_t> &indices, unsigned dimension
+  ) {
+    if (dimension == array.getRank()) {
+      return visitType(array.getElementType(), site, path, isSignal, indices);
+    }
+    for (int64_t index = 0; index < array.getShape()[dimension]; ++index) {
+      path.push_back(builder.getIndexAttr(index));
+      indices.push_back(index);
+      if (failed(visitArray(array, site, path, isSignal, indices, dimension + 1))) {
+        return failure();
+      }
+      path.pop_back();
+      indices.pop_back();
+    }
+    return success();
+  }
+
+  Builder builder;
+  SymbolTableCollection tables;
+  /// Lazily resolves referenced family IDs in the outermost module.
+  std::optional<StructSpecializationResolver> specializations;
+  llvm::DenseMap<Operation *, llvm::DenseMap<std::pair<Type, ArrayAttr>, int64_t>> families;
+  llvm::DenseSet<Operation *> activeStructs;
+  llzk::LLZKLayout layout;
+};
+
+/// Render a structural path, using optional argument names as display labels.
+void printPath(ArrayAttr path, ArrayRef<StringAttr> names, llvm::raw_ostream &output) {
+  // buildLLZKLayout prefixes paths with main, or arg followed by an argument position.
+  assert(path && !path.empty() && isa<StringAttr>(path[0]) && "expected a layout path root");
+  auto root = cast<StringAttr>(path[0]).getValue();
+  bool isMain = root == llzk::LAYOUT_MAIN_ROOT;
+  assert((isMain || root == llzk::LAYOUT_ARGUMENT_ROOT) && "unexpected layout path root");
+  if (isMain) {
+    output << llzk::LAYOUT_MAIN_ROOT;
+  } else {
+    assert(path.size() >= 2 && isa<IntegerAttr>(path[1]) && "expected an argument position");
+    auto argument = cast<IntegerAttr>(path[1]).getInt();
+    assert(argument > 0 && "self is excluded from the layout");
+    if (llzk::checkedCast<size_t>(argument) < names.size() && names[argument]) {
+      output << llzk::LAYOUT_ARGUMENT_ROOT << '[';
+      names[argument].print(output);
+      output << ']';
+    } else {
+      output << llzk::LAYOUT_ARGUMENT_ROOT << argument;
+    }
+  }
+  for (Attribute segment : path.getValue().drop_front(isMain ? 1 : 2)) {
+    output << '[';
+    if (auto name = dyn_cast<StringAttr>(segment)) {
+      name.print(output);
+    } else {
+      output << cast<IntegerAttr>(segment).getInt();
+    }
+    output << ']';
+  }
+}
+
+} // namespace
+
+FailureOr<llzk::LLZKLayout> llzk::buildLLZKLayout(ModuleOp module) {
+  return LayoutBuilder(module).build(module);
+}
+
+std::optional<uint64_t> llzk::LLZKLayout::getSignalId(ArrayAttr path) const {
+  if (!path) {
+    return std::nullopt;
+  }
+  auto found = signalIds.find(path);
+  if (found == signalIds.end()) {
+    return std::nullopt;
+  }
+  return found->second;
+}
+
+void llzk::printLLZKLayout(const LLZKLayout &layout, llvm::raw_ostream &output) {
+  output << "# LLZK layout map v1\n# signals\n";
+  for (auto [id, path] : llvm::enumerate(layout.signalPaths)) {
+    output << "signal " << id << '\t';
+    printPath(path, layout.argumentNames, output);
+    output << '\n';
+  }
+}

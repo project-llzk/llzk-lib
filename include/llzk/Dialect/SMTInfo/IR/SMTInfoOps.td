@@ -10,7 +10,7 @@
 #ifndef LLZK_DIALECT_SMTINFO_IR_SMTINFOOPS_TD
 #define LLZK_DIALECT_SMTINFO_IR_SMTINFOOPS_TD
 
-include "SMTInfoAttributes.td"
+include "llzk/Dialect/SMTInfo/IR/SMTInfoAttributes.td"
 include "mlir/IR/OpBase.td"
 
 class SMTInfoOp<string mnemonic, list<Trait> traits = []>
