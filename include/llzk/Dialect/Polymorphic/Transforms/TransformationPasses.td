@@ -172,8 +172,8 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
 
     Diagnose symbolic control flow, recursion, unsupported effects, and
     non-native constraint arithmetic (including division and inversion). Static
-    index/i1 casts and comparisons are evaluated only
-    as structural facts. Expansion work is bounded across calls, iterations,
+    index/i1 arithmetic, casts, and comparisons are evaluated only as structural
+    facts; symbolic results must be dead after expansion. Expansion work is bounded across calls, iterations,
     and aggregate traversal. Failure preserves the original body.
 
     Equality constraints currently require scalar felt operands; array equality

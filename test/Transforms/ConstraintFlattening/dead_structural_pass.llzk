@@ -18,6 +18,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %both = arith.andi %cmp, %cmp : i1
       %index = cast.toindex %x : !felt.type
       %integerCmp = arith.cmpi slt, %index, %index : index
+      %sum = arith.addi %index, %index : index
+      %product = arith.muli %sum, %index : index
+      %bits = arith.xori %both, %cmp : i1
       constrain.eq %x, %y : !felt.type, !felt.type
       function.return
     }

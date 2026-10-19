@@ -1,0 +1,149 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: i1, %j: i1, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: i1, %j: i1, %x: !felt.type) attributes {llzk.derived} {
+      // Symbolic integer arithmetic must not escape into a field constraint.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %result = arith.andi %i, %j : i1
+      %value = cast.tofelt %result : i1
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: i1, %j: i1, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: i1, %j: i1, %x: !felt.type) attributes {llzk.derived} {
+      // Symbolic integer arithmetic must not escape into a field constraint.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %result = arith.ori %i, %j : i1
+      %value = cast.tofelt %result : i1
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: i1, %j: i1, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: i1, %j: i1, %x: !felt.type) attributes {llzk.derived} {
+      // Symbolic integer arithmetic must not escape into a field constraint.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %result = arith.xori %i, %j : i1
+      %value = cast.tofelt %result : i1
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // Symbolic integer arithmetic must not escape into a field constraint.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %result = arith.addi %i, %j : index
+      %value = cast.tofelt %result : index
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // Symbolic integer arithmetic must not escape into a field constraint.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %result = arith.subi %i, %j : index
+      %value = cast.tofelt %result : index
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // Symbolic integer arithmetic must not escape into a field constraint.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %result = arith.muli %i, %j : index
+      %value = cast.tofelt %result : index
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

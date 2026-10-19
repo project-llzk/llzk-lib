@@ -321,7 +321,7 @@ class ConstraintElaborator {
     return mapping;
   }
 
-  /// Static non-native comparisons/casts are control facts, not constraints.
+  /// Integer expressions and non-native casts are structural facts, not constraints.
   LogicalResult emitStructural(Operation &op, IRMapping &mapping, Environment &frame) {
     if (op.getNumResults() != 1 || !isMemoryEffectFree(&op)) {
       return error(&op, "lower non-native operations before constraint flattening");
@@ -356,8 +356,12 @@ class ConstraintElaborator {
     if (equality && !isa<felt::FeltType>(op.getOperand(0).getType())) {
       return error(&op, "equality constraints require scalar felt operands");
     }
+    bool integerExpression = isa<arith::ArithDialect>(op.getDialect()) &&
+                             llvm::any_of(op.getResultTypes(), [](Type type) {
+      return type.isIndex() || type.isInteger(1);
+    });
     bool structural =
-        op.hasTrait<function::NotFieldNative>() || isa<boolean::CmpOp, arith::CmpIOp>(op);
+        op.hasTrait<function::NotFieldNative>() || isa<boolean::CmpOp>(op) || integerExpression;
     bool expression =
         isMemoryEffectFree(&op) && (isa<felt::FeltDialect, arith::ArithDialect>(op.getDialect()) ||
                                     isa<cast::IntToFeltOp, ApplyMapOp>(op));
