@@ -1,5 +1,14 @@
 var NAVTREEINDEX38 =
 {
+"classllzk_1_1felt_1_1NegFeltOp.html#aece324df8167da6694c20c5e3dec231c":[13,0,1,7,22,1],
+"classllzk_1_1felt_1_1NegFeltOp.html#af04036d3142ca87dd55d6ed54d768753":[11,0,3,10,22,8],
+"classllzk_1_1felt_1_1NegFeltOp.html#af04036d3142ca87dd55d6ed54d768753":[13,0,1,7,22,8],
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html":[11,0,3,10,23],
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html":[13,0,1,7,23],
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a453238432b1d168b94e62751d7b622d5":[11,0,3,10,23,5],
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a453238432b1d168b94e62751d7b622d5":[13,0,1,7,23,5],
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a45c34a377c1444ad6aaccb9e3055109a":[11,0,3,10,23,0],
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a45c34a377c1444ad6aaccb9e3055109a":[13,0,1,7,23,0],
 "classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a71264860697f2f4609e805d637f5fbde":[11,0,3,10,23,3],
 "classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a71264860697f2f4609e805d637f5fbde":[13,0,1,7,23,3],
 "classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a75cedc8ef51bfb9ddfd1402c8dcf79b2":[11,0,3,10,23,2],
@@ -240,14 +249,5 @@ var NAVTREEINDEX38 =
 "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html":[13,0,1,7,33],
 "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a1654bdde0279298150fb9dae2f2d7111":[11,0,3,10,33,9],
 "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a1654bdde0279298150fb9dae2f2d7111":[13,0,1,7,33,9],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a395982adade158ca23b339530afec4e0":[11,0,3,10,33,0],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a395982adade158ca23b339530afec4e0":[13,0,1,7,33,0],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a975410b270c162140e24c5410721e247":[11,0,3,10,33,4],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a975410b270c162140e24c5410721e247":[13,0,1,7,33,4],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a9d0ab465c2329106c54908b613e3b792":[11,0,3,10,33,3],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a9d0ab465c2329106c54908b613e3b792":[13,0,1,7,33,3],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#ac62cf0c78570de230ae2ba953a75abc5":[11,0,3,10,33,2],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#ac62cf0c78570de230ae2ba953a75abc5":[13,0,1,7,33,2],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#acba963489a09736f156c3abeb2deef7e":[11,0,3,10,33,7],
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#acba963489a09736f156c3abeb2deef7e":[13,0,1,7,33,7]
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a395982adade158ca23b339530afec4e0":[11,0,3,10,33,0]
 };

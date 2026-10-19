@@ -155,14 +155,16 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a6200c0d9246ad116142602bb53a0430a" id="r_a6200c0d9246ad116142602bb53a0430a"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a6200c0d9246ad116142602bb53a0430a">llzkAttributeIsA_Felt_FeltConstAttr</a> (MlirAttribute inp)</td></tr>
 <tr class="memdesc:a6200c0d9246ad116142602bb53a0430a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::felt::FeltConstAttr.  <br /></td></tr>
-<tr class="memitem:af62753031a6fa7490d414b35f88e4f41" id="r_af62753031a6fa7490d414b35f88e4f41"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#af62753031a6fa7490d414b35f88e4f41">llzkFelt_FeltConstAttrGet</a> (MlirContext ctx, MlirStringRef value, MlirType type)</td></tr>
-<tr class="memdesc:af62753031a6fa7490d414b35f88e4f41"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a ::llzk::felt::FeltConstAttr Attribute with the given parameters.  <br /></td></tr>
-<tr class="memitem:a79f0243d89f7205bc860a226afb1dae7" id="r_a79f0243d89f7205bc860a226afb1dae7"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a79f0243d89f7205bc860a226afb1dae7">llzkFelt_FeltConstAttrGetValue</a> (MlirAttribute inp, MlirStringCallback callback, void *userData)</td></tr>
-<tr class="memdesc:a79f0243d89f7205bc860a226afb1dae7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'value' value. The callback must copy the text to retain it.  <br /></td></tr>
+<tr class="memitem:a8ab10417155bd33085e61d9be800ffe6" id="r_a8ab10417155bd33085e61d9be800ffe6"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a8ab10417155bd33085e61d9be800ffe6">llzkFelt_FeltConstAttrGet</a> (MlirContext ctx, MlirStringRef rawValue, MlirType type)</td></tr>
+<tr class="memdesc:a8ab10417155bd33085e61d9be800ffe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a ::llzk::felt::FeltConstAttr Attribute with the given parameters.  <br /></td></tr>
+<tr class="memitem:ab60f1a9895f03be99b17ac2af2ce3ebf" id="r_ab60f1a9895f03be99b17ac2af2ce3ebf"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab60f1a9895f03be99b17ac2af2ce3ebf">llzkFelt_FeltConstAttrGetRawValue</a> (MlirAttribute inp, MlirStringCallback callback, void *userData)</td></tr>
+<tr class="memdesc:ab60f1a9895f03be99b17ac2af2ce3ebf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'rawValue' value. The callback must copy the text to retain it.  <br /></td></tr>
 <tr class="memitem:a128e994795696bd13407ebdc2a9cf6ad" id="r_a128e994795696bd13407ebdc2a9cf6ad"><td class="memItemLeft">MlirType&#160;</td><td class="memItemRight"><a class="el" href="#a128e994795696bd13407ebdc2a9cf6ad">llzkFelt_FeltConstAttrGetType</a> (MlirAttribute inp)</td></tr>
 <tr class="memdesc:a128e994795696bd13407ebdc2a9cf6ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'type' parameter from a ::llzk::felt::FeltConstAttr Attribute.  <br /></td></tr>
 <tr class="memitem:a6c50f4031697aadfc3e33058db6a4770" id="r_a6c50f4031697aadfc3e33058db6a4770"><td class="memItemLeft">MlirIdentifier&#160;</td><td class="memItemRight"><a class="el" href="#a6c50f4031697aadfc3e33058db6a4770">llzkFelt_FeltConstAttrGetFieldName</a> (MlirAttribute inp)</td></tr>
 <tr class="memdesc:a6c50f4031697aadfc3e33058db6a4770"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the field name from the stored FeltType, or a null StringAttr if no type is stored.  <br /></td></tr>
+<tr class="memitem:ac04a0f5d2b3d7ed10fee094ff3f51dfe" id="r_ac04a0f5d2b3d7ed10fee094ff3f51dfe"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac04a0f5d2b3d7ed10fee094ff3f51dfe">llzkFelt_FeltConstAttrGetReducedValueOrRaw</a> (MlirAttribute inp, MlirStringCallback callback, void *userData)</td></tr>
+<tr class="memdesc:ac04a0f5d2b3d7ed10fee094ff3f51dfe"><td class="mdescLeft">&#160;</td><td class="mdescRight">If the type specifies a field, returns <span class="tt">getReducedValue()</span>; otherwise <span class="tt">getRawValue()</span>.  <br /></td></tr>
 <tr class="memitem:a3d31b7c36d91a3c49bff8aca97a2c521" id="r_a3d31b7c36d91a3c49bff8aca97a2c521"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a3d31b7c36d91a3c49bff8aca97a2c521">llzkAttributeIsA_Felt_FieldSpecAttr</a> (MlirAttribute inp)</td></tr>
 <tr class="memdesc:a3d31b7c36d91a3c49bff8aca97a2c521"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::felt::FieldSpecAttr.  <br /></td></tr>
 <tr class="memitem:a69e737de35b546bdc0e71f27046adcdd" id="r_a69e737de35b546bdc0e71f27046adcdd"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a69e737de35b546bdc0e71f27046adcdd">llzkFelt_FieldSpecAttrGet</a> (MlirContext ctx, MlirIdentifier fieldName, MlirStringRef prime)</td></tr>
@@ -211,12 +213,12 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Attribute is a ::llzk::felt::FieldSpecAttr. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00046">46</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00052">52</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="af62753031a6fa7490d414b35f88e4f41" name="af62753031a6fa7490d414b35f88e4f41"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af62753031a6fa7490d414b35f88e4f41">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGet()</h2>
+<a id="a8ab10417155bd33085e61d9be800ffe6" name="a8ab10417155bd33085e61d9be800ffe6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ab10417155bd33085e61d9be800ffe6">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGet()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -229,7 +231,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>rawValue</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -266,6 +268,67 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab60f1a9895f03be99b17ac2af2ce3ebf" name="ab60f1a9895f03be99b17ac2af2ce3ebf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab60f1a9895f03be99b17ac2af2ce3ebf">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetRawValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkFelt_FeltConstAttrGetRawValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Print the exact signed decimal 'rawValue' value. The callback must copy the text to retain it. </p>
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac04a0f5d2b3d7ed10fee094ff3f51dfe" name="ac04a0f5d2b3d7ed10fee094ff3f51dfe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac04a0f5d2b3d7ed10fee094ff3f51dfe">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetReducedValueOrRaw()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkFelt_FeltConstAttrGetReducedValueOrRaw </td>
+          <td>(</td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If the type specifies a field, returns <span class="tt">getReducedValue()</span>; otherwise <span class="tt">getRawValue()</span>. </p>
+<p>Use getReducedValue() when folding requires a known field representative. </p>
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00046">46</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a128e994795696bd13407ebdc2a9cf6ad" name="a128e994795696bd13407ebdc2a9cf6ad"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a128e994795696bd13407ebdc2a9cf6ad">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetType()</h2>
 
@@ -284,36 +347,6 @@ Functions</h2></td></tr>
 <p>Get 'type' parameter from a ::llzk::felt::FeltConstAttr Attribute. </p>
 
 <p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00038">38</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
-
-</div>
-</div>
-<a id="a79f0243d89f7205bc860a226afb1dae7" name="a79f0243d89f7205bc860a226afb1dae7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79f0243d89f7205bc860a226afb1dae7">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetValue()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void llzkFelt_FeltConstAttrGetValue </td>
-          <td>(</td>
-          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Print the exact signed decimal 'value' value. The callback must copy the text to retain it. </p>
-
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -343,7 +376,7 @@ Functions</h2></td></tr>
 
 <p>Create a ::llzk::felt::FieldSpecAttr Attribute with the given parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00050">50</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00056">56</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -364,7 +397,7 @@ Functions</h2></td></tr>
 
 <p>Get 'fieldName' parameter from a ::llzk::felt::FieldSpecAttr Attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00057">57</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00063">63</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -394,7 +427,7 @@ Functions</h2></td></tr>
 
 <p>Print the exact signed decimal 'prime' value. The callback must copy the text to retain it. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00061">61</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00067">67</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

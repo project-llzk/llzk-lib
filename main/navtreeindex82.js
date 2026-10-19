@@ -1,5 +1,14 @@
 var NAVTREEINDEX82 =
 {
+"tools.html#autotoc_md-llzk-monomorphize-templates":[3,0,0,1,19],
+"tools.html#autotoc_md-llzk-pod-to-scalar":[3,0,0,1,15],
+"tools.html#autotoc_md-llzk-poly-lowering-pass":[3,0,0,1,6],
+"tools.html#autotoc_md-llzk-print-call-graph":[3,0,0,0,0],
+"tools.html#autotoc_md-llzk-print-call-graph-sccs":[3,0,0,0,1],
+"tools.html#autotoc_md-llzk-print-constraint-dependency-graphs":[3,0,0,0,2],
+"tools.html#autotoc_md-llzk-print-interval-analysis":[3,0,0,0,3],
+"tools.html#autotoc_md-llzk-print-predecessors":[3,0,0,0,4],
+"tools.html#autotoc_md-llzk-print-symbol-def-tree":[3,0,0,0,5],
 "tools.html#autotoc_md-llzk-print-symbol-use-graph":[3,0,0,0,6],
 "tools.html#autotoc_md-llzk-product-program":[3,0,0,3,2],
 "tools.html#autotoc_md-llzk-r1cs-lowering":[3,0,0,1,23],

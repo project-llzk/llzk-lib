@@ -185,14 +185,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Attr
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">struct </span>FeltConstAttrStorage : <span class="keyword">public</span> ::mlir::AttributeStorage {</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">using </span>KeyTy = std::tuple&lt;::llzk::DynamicAPIntValue, FeltType&gt;;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  FeltConstAttrStorage(::llzk::DynamicAPIntValue value, FeltType type) : value(std::move(value)), type(std::move(type)) {}</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  FeltConstAttrStorage(::llzk::DynamicAPIntValue rawValue, FeltType type) : rawValue(std::move(rawValue)), type(std::move(type)) {}</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  KeyTy getAsKey()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="keywordflow">return</span> KeyTy(value, type);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="keywordflow">return</span> KeyTy(rawValue, type);</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  }</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordtype">bool</span> operator==(<span class="keyword">const</span> KeyTy &amp;tblgenKey)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">return</span> (value == std::get&lt;0&gt;(tblgenKey)) &amp;&amp; (type == std::get&lt;1&gt;(tblgenKey));</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">return</span> (rawValue == std::get&lt;0&gt;(tblgenKey)) &amp;&amp; (type == std::get&lt;1&gt;(tblgenKey));</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  static ::llvm::hash_code hashKey(<span class="keyword">const</span> KeyTy &amp;tblgenKey) {</div>
@@ -200,30 +200,30 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Attr
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">static</span> FeltConstAttrStorage *construct(::mlir::AttributeStorageAllocator &amp;allocator, KeyTy &amp;&amp;tblgenKey) {</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keyword">auto</span> value = std::move(std::get&lt;0&gt;(tblgenKey));</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keyword">auto</span> rawValue = std::move(std::get&lt;0&gt;(tblgenKey));</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keyword">auto</span> type = std::move(std::get&lt;1&gt;(tblgenKey));</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">return</span> <span class="keyword">new</span> (allocator.allocate&lt;FeltConstAttrStorage&gt;()) FeltConstAttrStorage(std::move(value), std::move(type));</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">return</span> <span class="keyword">new</span> (allocator.allocate&lt;FeltConstAttrStorage&gt;()) FeltConstAttrStorage(std::move(rawValue), std::move(type));</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  }</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  ::llzk::DynamicAPIntValue value;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  ::llzk::DynamicAPIntValue rawValue;</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  FeltType type;</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>};</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>} <span class="comment">// namespace detail</span></div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, ::llzk::DynamicAPIntValue value, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> type) {</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">return</span> Base::get(context, std::move(value), std::move(type));</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, ::llzk::DynamicAPIntValue rawValue, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> type) {</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">return</span> Base::get(context, std::move(rawValue), std::move(type));</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>}</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, const ::llvm::DynamicAPInt &amp;value, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> ty) {</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keywordflow">return</span> Base::get(context, ::llzk::DynamicAPIntValue(value), ty); </div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, const ::llvm::DynamicAPInt &amp;rawValue, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> ty) {</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keywordflow">return</span> Base::get(context, ::llzk::DynamicAPIntValue(rawValue), ty); </div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>}</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, const ::llvm::DynamicAPInt &amp;value) {</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordflow">return</span> get(context, value, <a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(context)); </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, const ::llvm::DynamicAPInt &amp;rawValue) {</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordflow">return</span> get(context, rawValue, <a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(context)); </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>}</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, const ::llvm::DynamicAPInt &amp;value, ::llvm::StringRef fieldName) {</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordflow">return</span> get(context, value, <a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(context, fieldName)); </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, const ::llvm::DynamicAPInt &amp;rawValue, ::llvm::StringRef fieldName) {</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordflow">return</span> get(context, rawValue, <a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(context, fieldName)); </div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>}</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>FeltConstAttr FeltConstAttr::get(::mlir::MLIRContext *context, ::llvm::ArrayRef&lt;uint64_t&gt; parts, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> ty) {</div>
@@ -238,8 +238,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Attr
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keywordflow">return</span> get(context, <a class="code hl_function" href="namespacellzk.html#ab5e8bcab27fe2d39365a0726c9154f85">::llzk::toSignedDynamicAPInt</a>(parts), fieldName); </div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>const ::llvm::DynamicAPInt &amp;FeltConstAttr::getValue()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordflow">return</span> getImpl()-&gt;value;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>const ::llvm::DynamicAPInt &amp;FeltConstAttr::getRawValue()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordflow">return</span> getImpl()-&gt;rawValue;</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>}</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span><a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> FeltConstAttr::getType()<span class="keyword"> const </span>{</div>

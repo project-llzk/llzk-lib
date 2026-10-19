@@ -1998,7 +1998,9 @@ Results:</h4>
 <p><em>Field element constant</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `felt.const` $value attr-dict</div>
-</div><!-- fragment --><p>This operation produces a felt-typed SSA value holding an integer constant.</p>
+</div><!-- fragment --><p>This operation produces a constant finite field element. <span class="tt">felt.const N : !felt.type&lt;F&gt;</span> denotes <span class="tt">N mod p</span>, where <span class="tt">p</span> is the prime modulus of field <span class="tt">F</span>. This meaning does not depend on whether the operation has been canonicalized: raw values congruent modulo <span class="tt">p</span> denote the same field element.</p>
+<p>The stored integer need not be in <span class="tt">[0, p)</span>. Canonicalization replaces it with the unique representative in that range without changing its meaning. When the field is unspecified, reduction is deferred until the field is known, and canonicalization leaves the stored integer unchanged.</p>
+<p>Some analyses or transformations may supply an explicit prime modulus <span class="tt">q</span> for their arithmetic, such as interval analysis with its <span class="tt">field</span> option. The constant retains its declared-field meaning: its value is first interpreted as <span class="tt">N mod p</span>, then reduced modulo <span class="tt">q</span>, yielding <span class="tt">(N mod p) mod q</span>. For example, a literal <span class="tt">8</span> declared in a field of modulus <span class="tt">7</span> contributes <span class="tt">1</span> when analyzed with modulus <span class="tt">5</span>, both before and after canonicalization. If the constant's field is unspecified, it is reduced directly as <span class="tt">N mod q</span>.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">%0 = felt.const 42</div>
 <div class="line">%0 = felt.const 99 &lt;&quot;bn254&quot;&gt;</div>
@@ -2382,14 +2384,16 @@ Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="feltconstattr"></a>
 FeltConstAttr</h3>
 <p><em>Finite field element</em></p>
-<p>A felt attribute stores an exact signed integer literal and its field type. Its value is independent of storage width. Consumers reduce the literal modulo the field prime before applying field operations; an unspecified field does not cause the literal to be reduced during construction. Builders accepting ArrayRef&lt;uint64_t&gt; decode 64-bit parts in least-significant-first order as a two's-complement signed integer. The most significant bit of the last part is the sign bit; an empty array is zero. Callers should append a zero part to represent a positive value whose highest data bit would otherwise be interpreted as the sign bit.</p>
+<p>A felt attribute stores an exact signed integer literal and its field type.</p>
+<p>For a specified field with prime modulus <span class="tt">p</span>, the attribute denotes <span class="tt">rawValue mod p</span>, regardless of its stored representation (i.e. the raw value). Use <span class="tt">getReducedValue()</span> to obtain the representative in <span class="tt">[0, p)</span> when the type specifies a field; gives <span class="tt">std::nullopt</span> otherwise.</p>
+<p>Builders accepting ArrayRef&lt;uint64_t&gt; decode 64-bit parts in least-significant-first order as a two's-complement signed integer. The most significant bit of the last part is the sign bit; an empty array is zero. Callers should append a zero part to represent a positive value whose highest data bit would otherwise be interpreted as the sign bit.</p>
 <h4 class="doxsection"><a class="anchor" id="parameters-3"></a>
 Parameters:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Parameter  </th><th class="markdownTableHeadCenter">C++ type  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">The felt constant value  </td></tr>
+<td class="markdownTableBodyCenter">rawValue  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">The unreduced felt constant value  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter">type  </td><td class="markdownTableBodyCenter"><span class="tt">FeltType</span>  </td><td class="markdownTableBodyNone"></td></tr>
 </table>

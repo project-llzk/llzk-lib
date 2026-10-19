@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Dial
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &amp;writer) <span class="keyword">const</span> <span class="keyword">final</span> {</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> feltConst = dyn_cast&lt;llzk::felt::FeltConstAttr&gt;(attr)) {</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      writer.writeVarInt(<span class="keyword">static_cast&lt;</span>uint64_t<span class="keyword">&gt;</span>(FeltAttrEncoding::FeltConst));</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      <a class="code hl_function" href="namespacellzk.html#afb3131a62a62678ca6664eb3c22c9c3e">llzk::writeDynamicAPInt</a>(writer, feltConst.getValue());</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      <a class="code hl_function" href="namespacellzk.html#afb3131a62a62678ca6664eb3c22c9c3e">llzk::writeDynamicAPInt</a>(writer, feltConst.getRawValue());</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>      writer.writeType(feltConst.getType());</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>      <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    }</div>
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Dial
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="keywordflow">if</span> (failed(valueRes)) {</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    odsParser.emitError(</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>        odsParser.getCurrentLocation(),</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>        <span class="stringliteral">&quot;failed to parse LLZK_FeltConstAttr parameter &#39;value&#39; which is to be an integer&quot;</span></div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>        <span class="stringliteral">&quot;failed to parse LLZK_FeltConstAttr parameter &#39;rawValue&#39; which is to be an integer&quot;</span></div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    );</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    <span class="keywordflow">return</span> {};</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  }</div>
@@ -371,64 +371,65 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Dial
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><span class="comment">// Same as tablegen would generate to serialize version 2 IR.</span></div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span><span class="keywordtype">void</span> FeltConstAttr::print(AsmPrinter &amp;odsPrinter)<span class="keyword"> const </span>{</div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  odsPrinter &lt;&lt; <span class="charliteral">&#39; &#39;</span>;</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  odsPrinter.printStrippedAttrOrType(getValue());</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <span class="keywordflow">if</span> (getType() != <a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(getContext())) {</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    odsPrinter &lt;&lt; <span class="stringliteral">&quot; : &quot;</span>;</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    odsPrinter.printStrippedAttrOrType(getType());</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  }</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>}</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span><span class="comment">// FeltType</span></div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span> </div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno"><a class="line" href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">  254</a></span><span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1Field.html">Field</a> &amp;<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">FeltType::getField</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1Field.html#ae2df03a056e5ffabd26768c63cd5a1bf">Field::getField</a>(<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a9b1c0f99388d828cbfd28fc7b8a4eb8a">getFieldName</a>().getValue()); }</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>llvm::LogicalResult</div>
-<div class="foldopen" id="foldopen00257" data-start="{" data-end="}">
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno"><a class="line" href="classllzk_1_1felt_1_1FeltType.html#a36e93365a365940c002f78bd1dd55eb4">  257</a></span><a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a36e93365a365940c002f78bd1dd55eb4">FeltType::verify</a>(llvm::function_ref&lt;InFlightDiagnostic()&gt; errFn, StringAttr fieldName) {</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  <span class="keywordflow">return</span> fieldName ? <a class="code hl_function" href="classllzk_1_1Field.html#ad3c4c2d4c639559756f71ed461792791">Field::verifyFieldDefined</a>(</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>                         fieldName.getValue(), <a class="code hl_function" href="namespacellzk.html#aa6d8949a060ab0cbc09f4670adda40b0">wrapNonNullableInFlightDiagnostic</a>(errFn)</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>                     )</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>                   : success();</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>}</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  odsPrinter.printStrippedAttrOrType(getRawValue());</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> ty = getType();</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  <span class="keywordflow">if</span> (ty != <a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(getContext())) {</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    odsPrinter &lt;&lt; <span class="stringliteral">&quot; : &quot;</span>;</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    odsPrinter.printStrippedAttrOrType(ty);</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  }</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>}</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span><span class="comment">// FeltType</span></div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span> </div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno"><a class="line" href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">  255</a></span><span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1Field.html">Field</a> &amp;<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">FeltType::getField</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1Field.html#ae2df03a056e5ffabd26768c63cd5a1bf">Field::getField</a>(<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a9b1c0f99388d828cbfd28fc7b8a4eb8a">getFieldName</a>().getValue()); }</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>llvm::LogicalResult</div>
+<div class="foldopen" id="foldopen00258" data-start="{" data-end="}">
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno"><a class="line" href="classllzk_1_1felt_1_1FeltType.html#a36e93365a365940c002f78bd1dd55eb4">  258</a></span><a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a36e93365a365940c002f78bd1dd55eb4">FeltType::verify</a>(llvm::function_ref&lt;InFlightDiagnostic()&gt; errFn, StringAttr fieldName) {</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>  <span class="keywordflow">return</span> fieldName ? <a class="code hl_function" href="classllzk_1_1Field.html#ad3c4c2d4c639559756f71ed461792791">Field::verifyFieldDefined</a>(</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>                         fieldName.getValue(), <a class="code hl_function" href="namespacellzk.html#aa6d8949a060ab0cbc09f4670adda40b0">wrapNonNullableInFlightDiagnostic</a>(errFn)</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>                     )</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>                   : success();</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>}</div>
 </div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span> </div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><span class="comment">// FeltDialect</span></div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>Operation *</div>
-<div class="foldopen" id="foldopen00269" data-start="{" data-end="}">
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno"><a class="line" href="classllzk_1_1felt_1_1FeltDialect.html#a4df47f8e607d6cb32d20669aa2ccb883">  269</a></span><a class="code hl_function" href="classllzk_1_1felt_1_1FeltDialect.html#a4df47f8e607d6cb32d20669aa2ccb883">FeltDialect::materializeConstant</a>(OpBuilder &amp;builder, Attribute value, Type, Location loc) {</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> attr = llvm::dyn_cast&lt;FeltConstAttr&gt;(value)) {</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1felt_1_1FeltConstantOp.html#a973d7683a4d6f1d7b8a4fabb124f3223">FeltConstantOp::create</a>(builder, loc, attr);</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  }</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>}</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span><span class="comment">// FeltDialect</span></div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span> </div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>Operation *</div>
+<div class="foldopen" id="foldopen00270" data-start="{" data-end="}">
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno"><a class="line" href="classllzk_1_1felt_1_1FeltDialect.html#a4df47f8e607d6cb32d20669aa2ccb883">  270</a></span><a class="code hl_function" href="classllzk_1_1felt_1_1FeltDialect.html#a4df47f8e607d6cb32d20669aa2ccb883">FeltDialect::materializeConstant</a>(OpBuilder &amp;builder, Attribute value, Type, Location loc) {</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> attr = llvm::dyn_cast&lt;FeltConstAttr&gt;(value)) {</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1felt_1_1FeltConstantOp.html#a973d7683a4d6f1d7b8a4fabb124f3223">FeltConstantOp::create</a>(builder, loc, attr);</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  }</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>}</div>
 </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span> </div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span><span class="keyword">auto</span> FeltDialect::initialize() -&gt; <span class="keywordtype">void</span> {</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  addOperations&lt;</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span><span class="preprocessor">    #define GET_OP_LIST</span></div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Felt/IR/Ops.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  &gt;();</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span> </div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  addTypes&lt;</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span><span class="preprocessor">    #define GET_TYPEDEF_LIST</span></div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Types_8cpp_8inc.html">llzk/Dialect/Felt/IR/Types.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  &gt;();</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  addAttributes&lt;</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Felt/IR/Attrs.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  &gt;();</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  addInterfaces&lt;FeltDialectBytecodeInterface&gt;();</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>}</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>} <span class="comment">// namespace llzk::felt</span></div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span><span class="keyword">auto</span> FeltDialect::initialize() -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  addOperations&lt;</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span><span class="preprocessor">    #define GET_OP_LIST</span></div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Felt/IR/Ops.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  &gt;();</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  addTypes&lt;</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span><span class="preprocessor">    #define GET_TYPEDEF_LIST</span></div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Types_8cpp_8inc.html">llzk/Dialect/Felt/IR/Types.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  &gt;();</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span> </div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  addAttributes&lt;</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Felt/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  &gt;();</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  addInterfaces&lt;FeltDialectBytecodeInterface&gt;();</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>}</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>} <span class="comment">// namespace llzk::felt</span></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aErrorHelper_8h_html"><div class="ttname"><a href="ErrorHelper_8h.html">ErrorHelper.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Attrs_8cpp_8inc_html"><div class="ttname"><a href="Felt_2IR_2Attrs_8cpp_8inc.html">Attrs.cpp.inc</a></div></div>
@@ -447,10 +448,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Dial
 <div class="ttc" id="aclassllzk_1_1Field_html_ae2df03a056e5ffabd26768c63cd5a1bf"><div class="ttname"><a href="classllzk_1_1Field.html#ae2df03a056e5ffabd26768c63cd5a1bf">llzk::Field::getField</a></div><div class="ttdeci">static const Field &amp; getField(llvm::StringRef fieldName, EmitErrorFn errFn)</div><div class="ttdoc">Get a Field from a given field name string.</div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltConstantOp_html_a973d7683a4d6f1d7b8a4fabb124f3223"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltConstantOp.html#a973d7683a4d6f1d7b8a4fabb124f3223">llzk::felt::FeltConstantOp::create</a></div><div class="ttdeci">static FeltConstantOp create(::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::Type result, ::llzk::felt::FeltConstAttr value)</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Ops_8cpp_8inc_source.html#l01274">Ops.cpp.inc:1274</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltDialect_html"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltDialect.html">llzk::felt::FeltDialect</a></div><div class="ttdoc">LLZK felt (Field ELemenT) type and operations.</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
-<div class="ttc" id="aclassllzk_1_1felt_1_1FeltDialect_html_a4df47f8e607d6cb32d20669aa2ccb883"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltDialect.html#a4df47f8e607d6cb32d20669aa2ccb883">llzk::felt::FeltDialect::materializeConstant</a></div><div class="ttdeci">::mlir::Operation * materializeConstant(::mlir::OpBuilder &amp;builder, ::mlir::Attribute value, ::mlir::Type type, ::mlir::Location loc) override</div><div class="ttdoc">Materialize a single constant operation from a given attribute value with the desired resultant type.</div><div class="ttdef"><b>Definition</b> <a href="#l00269">Dialect.cpp:269</a></div></div>
+<div class="ttc" id="aclassllzk_1_1felt_1_1FeltDialect_html_a4df47f8e607d6cb32d20669aa2ccb883"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltDialect.html#a4df47f8e607d6cb32d20669aa2ccb883">llzk::felt::FeltDialect::materializeConstant</a></div><div class="ttdeci">::mlir::Operation * materializeConstant(::mlir::OpBuilder &amp;builder, ::mlir::Attribute value, ::mlir::Type type, ::mlir::Location loc) override</div><div class="ttdoc">Materialize a single constant operation from a given attribute value with the desired resultant type.</div><div class="ttdef"><b>Definition</b> <a href="#l00270">Dialect.cpp:270</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Types_8h_8inc_source.html#l00044">Types.h.inc:44</a></div></div>
-<div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a36e93365a365940c002f78bd1dd55eb4"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a36e93365a365940c002f78bd1dd55eb4">llzk::felt::FeltType::verify</a></div><div class="ttdeci">::llvm::LogicalResult verify(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::StringAttr fieldName)</div><div class="ttdef"><b>Definition</b> <a href="#l00257">Dialect.cpp:257</a></div></div>
-<div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a6770fd0e74196859ed6e7c9ec0358780"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">llzk::felt::FeltType::getField</a></div><div class="ttdeci">const ::llzk::Field &amp; getField() const</div><div class="ttdef"><b>Definition</b> <a href="#l00254">Dialect.cpp:254</a></div></div>
+<div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a36e93365a365940c002f78bd1dd55eb4"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a36e93365a365940c002f78bd1dd55eb4">llzk::felt::FeltType::verify</a></div><div class="ttdeci">::llvm::LogicalResult verify(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::StringAttr fieldName)</div><div class="ttdef"><b>Definition</b> <a href="#l00258">Dialect.cpp:258</a></div></div>
+<div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a6770fd0e74196859ed6e7c9ec0358780"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">llzk::felt::FeltType::getField</a></div><div class="ttdeci">const ::llzk::Field &amp; getField() const</div><div class="ttdef"><b>Definition</b> <a href="#l00255">Dialect.cpp:255</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a9b1c0f99388d828cbfd28fc7b8a4eb8a"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a9b1c0f99388d828cbfd28fc7b8a4eb8a">llzk::felt::FeltType::getFieldName</a></div><div class="ttdeci">::mlir::StringAttr getFieldName() const</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Types_8cpp_8inc_source.html#l00133">Types.cpp.inc:133</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_af0cd82b1465e6ad9c1272637203c0e22"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">llzk::felt::FeltType::get</a></div><div class="ttdeci">static FeltType get(::mlir::MLIRContext *context, ::mlir::StringAttr fieldName)</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Types_8cpp_8inc_source.html#l00069">Types.cpp.inc:69</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1felt_html"><div class="ttname"><a href="namespacellzk_1_1felt.html">llzk::felt</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Attrs_8cpp_source.html#l00014">Attrs.cpp:14</a></div></div>

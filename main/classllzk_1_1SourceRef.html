@@ -185,8 +185,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3586b3715b8dddd6dae28a5bc9a0f464" id="r_a3586b3715b8dddd6dae28a5bc9a0f464"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a3586b3715b8dddd6dae28a5bc9a0f464">isCallResult</a> () const</td></tr>
 <tr class="memitem:a2acf521196646fb74d634c124caff830" id="r_a2acf521196646fb74d634c124caff830"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a2acf521196646fb74d634c124caff830">getCallOp</a> () const</td></tr>
 <tr class="memitem:a659a6da8915e4e5d7acec048304c55d5" id="r_a659a6da8915e4e5d7acec048304c55d5"><td class="memItemLeft">mlir::FailureOr&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a659a6da8915e4e5d7acec048304c55d5">getConstantFeltValue</a> () const</td></tr>
+<tr class="memdesc:a659a6da8915e4e5d7acec048304c55d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the field representative, or failure for a nonconstant or unspecified field.  <br /></td></tr>
 <tr class="memitem:aba06904eac1359e97d4a94a679345228" id="r_aba06904eac1359e97d4a94a679345228"><td class="memItemLeft">mlir::FailureOr&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aba06904eac1359e97d4a94a679345228">getConstantIndexValue</a> () const</td></tr>
+<tr class="memitem:aa8270f55750dc07f9ca61d69224ecbf3" id="r_aa8270f55750dc07f9ca61d69224ecbf3"><td class="memItemLeft">mlir::FailureOr&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa8270f55750dc07f9ca61d69224ecbf3">getConstantValue</a> (const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field) const</td></tr>
+<tr class="memdesc:aa8270f55750dc07f9ca61d69224ecbf3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reduce a felt constant's declared-field representative into the supplied analysis field.  <br /></td></tr>
 <tr class="memitem:a7528b036e8f0149b1286e6dbd7e572cb" id="r_a7528b036e8f0149b1286e6dbd7e572cb"><td class="memItemLeft">mlir::FailureOr&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a7528b036e8f0149b1286e6dbd7e572cb">getConstantValue</a> () const</td></tr>
+<tr class="memdesc:a7528b036e8f0149b1286e6dbd7e572cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a known numeric value, failing for fieldless felt constants.  <br /></td></tr>
 <tr class="memitem:a5a16d57e6a81bd4547806bfdda713dd2" id="r_a5a16d57e6a81bd4547806bfdda713dd2"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a5a16d57e6a81bd4547806bfdda713dd2">isValidPrefix</a> (const SourceRef &amp;prefix) const</td></tr>
 <tr class="memdesc:a5a16d57e6a81bd4547806bfdda713dd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true iff <span class="tt">prefix</span> is a valid prefix of this reference.  <br /></td></tr>
 <tr class="memitem:a0960f96d359b2ee6beb071f9e3d61348" id="r_a0960f96d359b2ee6beb071f9e3d61348"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a0960f96d359b2ee6beb071f9e3d61348">overlaps</a> (const SourceRef &amp;rhs) const</td></tr>
@@ -278,7 +282,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00221">221</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00224">224</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -309,7 +313,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00223">223</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00226">226</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -340,7 +344,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00225">225</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00228">228</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -371,7 +375,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00227">227</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00230">230</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -398,7 +402,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00232">232</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00235">235</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -425,7 +429,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00234">234</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00237">237</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -452,7 +456,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00236">236</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00239">239</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -480,7 +484,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00382">382</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00393">393</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -507,7 +511,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00373">373</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00384">384</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -534,7 +538,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00400">400</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00411">411</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -559,7 +563,7 @@ Friends</h2></td></tr>
 
 <p>Get all direct children of this <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a>, assuming this ref is not a scalar. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00531">531</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00542">542</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -593,7 +597,7 @@ Friends</h2></td></tr>
 <p>Produce all possible SourceRefs from a specific member in a struct. </p>
 <p>May produce multiple if the given member is of an aggregate type. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00330">330</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00341">341</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -626,7 +630,7 @@ Friends</h2></td></tr>
 
 <p>Produce all possible SourceRefs that are present from given struct function. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00301">301</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00312">312</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -689,7 +693,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00279">279</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00282">282</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -716,7 +720,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00302">302</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00305">305</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -743,7 +747,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00273">273</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00276">276</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -770,7 +774,9 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00304">304</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p>Return the field representative, or failure for a nonconstant or unspecified field. </p>
+
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00308">308</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -797,12 +803,12 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00311">311</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00317">317</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
 <a id="a7528b036e8f0149b1286e6dbd7e572cb" name="a7528b036e8f0149b1286e6dbd7e572cb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7528b036e8f0149b1286e6dbd7e572cb">&#9670;&#160;</a></span>getConstantValue()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a7528b036e8f0149b1286e6dbd7e572cb">&#9670;&#160;</a></span>getConstantValue() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -824,7 +830,31 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00318">318</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p>Return a known numeric value, failing for fieldless felt constants. </p>
+
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00329">329</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+
+</div>
+</div>
+<a id="aa8270f55750dc07f9ca61d69224ecbf3" name="aa8270f55750dc07f9ca61d69224ecbf3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8270f55750dc07f9ca61d69224ecbf3">&#9670;&#160;</a></span>getConstantValue() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">FailureOr&lt; DynamicAPInt &gt; llzk::SourceRef::getConstantValue </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>field</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reduce a felt constant's declared-field representative into the supplied analysis field. </p>
+<p>Fieldless constants use their raw literals instead. Index constants retain integer semantics. </p>
+
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00672">672</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -851,7 +881,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00294">294</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00297">297</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -878,7 +908,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00285">285</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00288">288</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -905,7 +935,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00299">299</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00302">302</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -934,7 +964,7 @@ Friends</h2></td></tr>
 
 <p>Create a new reference that is the immediate prefix of this reference if possible. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00360">360</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00371">371</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -961,7 +991,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00395">395</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00406">406</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -988,7 +1018,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00392">392</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00403">403</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1015,7 +1045,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00267">267</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00270">270</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1043,7 +1073,7 @@ Friends</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the suffix </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00447">447</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00458">458</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1062,7 +1092,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00349">349</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00360">360</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1089,7 +1119,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00266">266</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00269">269</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1116,7 +1146,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00301">301</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00304">304</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1143,7 +1173,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00253">253</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00256">256</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1170,7 +1200,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00241">241</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00244">244</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1197,7 +1227,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00244">244</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00247">247</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1224,7 +1254,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00254">254</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00257">257</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1251,7 +1281,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00293">293</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00296">296</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1278,7 +1308,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00256">256</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00259">259</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1305,7 +1335,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00257">257</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00260">260</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1332,7 +1362,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00258">258</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00261">261</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1359,7 +1389,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00298">298</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00301">301</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1386,7 +1416,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00264">264</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00267">267</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1413,7 +1443,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00260">260</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00263">263</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1442,7 +1472,7 @@ Friends</h2></td></tr>
 
 <p>Return whether this reference originates from a template constant read. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00249">249</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00252">252</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1469,7 +1499,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00259">259</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00262">262</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1490,7 +1520,7 @@ Friends</h2></td></tr>
 
 <p>Returns true iff <span class="tt">prefix</span> is a valid prefix of this reference. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00376">376</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00387">387</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1512,7 +1542,7 @@ Friends</h2></td></tr>
 <p>Return a copy with ranged array indices narrowed by concrete indices from <span class="tt">rhs</span>. </p>
 <p>Array indices are paired by dimension order; member and POD-record path components are ignored when pairing dimensions. A range is replaced only when the corresponding component in <span class="tt">rhs</span> is a concrete index contained in that range. Other path components remain unchanged. For example, narrowing <span class="tt">self.out[0:4].values[0:8]</span> with <span class="tt">arg0[2][5]</span> produces <span class="tt">self.out[2].values[5]</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00426">426</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00437">437</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1539,7 +1569,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00404">404</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00415">415</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -1558,7 +1588,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00671">671</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00702">702</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1577,7 +1607,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00661">661</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00692">692</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1598,7 +1628,7 @@ Friends</h2></td></tr>
 
 <p>Return true when both references select overlapping storage at the same path depth. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00394">394</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00405">405</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1620,7 +1650,7 @@ Friends</h2></td></tr>
 <p>Print this reference using source-style names. </p>
 <p>The entry self argument of a struct constrain function is printed as <span class="tt">self</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00601">601</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00612">612</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1653,7 +1683,7 @@ Friends</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00461">461</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00472">472</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -1678,7 +1708,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00407">407</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00418">418</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>

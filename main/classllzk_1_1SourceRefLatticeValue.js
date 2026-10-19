@@ -10,6 +10,8 @@ var classllzk_1_1SourceRefLatticeValue =
     [ "elementwiseTransform", "classllzk_1_1SourceRefLatticeValue.html#aa8eea1fe3e47b3d4dcf03ec18c187c44", null ],
     [ "extract", "classllzk_1_1SourceRefLatticeValue.html#ad2f0505aa8214df17ad4bea2ba680f2f", null ],
     [ "getArrayShape", "classllzk_1_1SourceRefLatticeValue.html#a9652ad11b1df8edd8dfa296f60542725", null ],
+    [ "getConstantValue", "classllzk_1_1SourceRefLatticeValue.html#a62f1534b7b58126a8298594446eaa70a", null ],
+    [ "getConstantValue", "classllzk_1_1SourceRefLatticeValue.html#a64218966e2f541b562cc8efb81c63939", null ],
     [ "getSingleValue", "classllzk_1_1SourceRefLatticeValue.html#ab984f151d8a9b39183bdbe5739d3518b", null ],
     [ "insert", "classllzk_1_1SourceRefLatticeValue.html#ac05ebb2f0fe7801dcb75c8fcad998f17", null ],
     [ "operator=", "classllzk_1_1SourceRefLatticeValue.html#a4b0bb21d7996e8ff92c0edeb579a7839", null ],

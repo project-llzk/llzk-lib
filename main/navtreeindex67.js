@@ -1,5 +1,14 @@
 var NAVTREEINDEX67 =
 {
+"dialects.html#operands":[7,0,0,0,0],
+"dialects.html#operands-1":[7,0,0,1,0],
+"dialects.html#operands-10":[7,1,0,4,0],
+"dialects.html#operands-11":[7,1,0,5,0],
+"dialects.html#operands-12":[7,1,0,6,0],
+"dialects.html#operands-13":[7,1,0,7,0],
+"dialects.html#operands-14":[7,1,0,8,0],
+"dialects.html#operands-15":[7,2,0,0,1],
+"dialects.html#operands-16":[7,2,0,1,1],
 "dialects.html#operands-17":[7,3,0,0,0],
 "dialects.html#operands-18":[7,3,0,1,0],
 "dialects.html#operands-19":[7,4,0,0,0],
@@ -240,14 +249,5 @@ var NAVTREEINDEX67 =
 "dir_9974b83b0995057b3a0e4c3a1512f715.html":[14,0,3,3,9,0],
 "dir_9d14be5a172af950d5e1f20f160a8912.html":[14,0,2,0,2,10,1],
 "dir_9d4146aac843c6e959ee110bf077a0cc.html":[14,0,3,3,1,0],
-"dir_9e0ce141a5c4b3476821e51f20e69dd1.html":[14,0,0,0,0,2,10,1],
-"dir_9f56ffaf3d8f8de92886e7fdaecbdb83.html":[14,0,3,1],
-"dir_a1032e1e3fb0c9b71cb4391fb0557a1c.html":[14,0,0,0,0,2,11],
-"dir_a25db018342d3ae6c7e6779086c18378.html":[14,0,3,0],
-"dir_a2a2a66feccb98b434158531e2b48a1c.html":[14,0,2,0,2,5],
-"dir_a3f8af85014e8b0ec6a08d8e7687de76.html":[14,0,0,0,0,2,6,0],
-"dir_a4ecb6207c3d43e1ad8263ab0f1e1e92.html":[14,0,0,0,0,2,9],
-"dir_a72932e0778af28115095468f6286ff8.html":[14,0,3,4],
-"dir_ab47e255c3567e409be62448ab8ecc9f.html":[14,0,0,0,0,2,8],
-"dir_ab86c770cc1b90d5a9908a326f6abfa8.html":[14,0,2,0,2,8]
+"dir_9e0ce141a5c4b3476821e51f20e69dd1.html":[14,0,0,0,0,2,10,1]
 };

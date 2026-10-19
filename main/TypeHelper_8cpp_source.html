@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeHelper_8cp
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    ia.getValue().print(ss, !isUnsigned);</div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> fa = llvm::dyn_cast&lt;FeltConstAttr&gt;(a)) {</div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    ss &lt;&lt; <span class="stringliteral">&quot;f&lt;&quot;</span>;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    fa.getValue().print(ss);</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    fa.getRawValue().print(ss);</div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="keywordflow">if</span> (StringAttr fieldName = fa.getFieldName()) {</div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>      <span class="comment">// The byte length prevents field delimiters from colliding with adjacent parameters. For</span></div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>      <span class="comment">// example, `a&gt;_f&lt;36:b` followed by 37 and `a` followed by `b&gt;_f&lt;37` would otherwise render</span></div>

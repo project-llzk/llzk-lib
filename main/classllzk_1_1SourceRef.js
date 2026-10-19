@@ -19,6 +19,7 @@ var classllzk_1_1SourceRef =
     [ "getConstantFeltValue", "classllzk_1_1SourceRef.html#a659a6da8915e4e5d7acec048304c55d5", null ],
     [ "getConstantIndexValue", "classllzk_1_1SourceRef.html#aba06904eac1359e97d4a94a679345228", null ],
     [ "getConstantValue", "classllzk_1_1SourceRef.html#a7528b036e8f0149b1286e6dbd7e572cb", null ],
+    [ "getConstantValue", "classllzk_1_1SourceRef.html#aa8270f55750dc07f9ca61d69224ecbf3", null ],
     [ "getCreateStructOp", "classllzk_1_1SourceRef.html#a3c931689ae7095fa151f277aa51d58ba", null ],
     [ "getInputNum", "classllzk_1_1SourceRef.html#a8321b7d77e4c239809d8d10f86c2e405", null ],
     [ "getNonDetOp", "classllzk_1_1SourceRef.html#a9017da6bb82ee4947a5f427a602a9ad0", null ],
