@@ -1,0 +1,126 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @index : index
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = struct.readm %self[@index] : !struct.type<@Main>, index
+      %local = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path requires compile-time indices}}
+      %read = array.read %local[%index] : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @index : index
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = struct.readm %self[@index] : !struct.type<@Main>, index
+      %local = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path requires compile-time indices}}
+      array.write %local[%index] = %x : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @index : index
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = struct.readm %self[@index] : !struct.type<@Main>, index
+      %local = array.new : !array.type<2,2 x !felt.type>
+      // expected-error @+1 {{array path requires compile-time indices}}
+      %read = array.extract %local[%index] : !array.type<2,2 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @index : index
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = struct.readm %self[@index] : !struct.type<@Main>, index
+      %local = array.new : !array.type<2,2 x !felt.type>
+      %row = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path requires compile-time indices}}
+      array.insert %local[%index] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = arith.constant 2 : index
+      %local = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path index is out of bounds}}
+      %read = array.read %local[%index] : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = arith.constant 2 : index
+      %local = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path index is out of bounds}}
+      array.write %local[%index] = %x : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %index = arith.constant 2 : index
+      %local = array.new : !array.type<2,2 x !felt.type>
+      %row = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path index is out of bounds}}
+      array.insert %local[%index] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      function.return
+    }
+  }
+}

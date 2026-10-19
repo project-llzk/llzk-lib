@@ -139,7 +139,19 @@ void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConf
 // Pipeline registration.
 //===----------------------------------------------------------------------===//
 
+void buildConstraintFlatteningPipeline(OpPassManager &pm) {
+  pm.addPass(polymorphic::createTemplateMonomorphizationPass());
+  pm.addPass(component::createExposeChildMembersPass());
+  pm.addPass(polymorphic::createConstraintFlatteningPass());
+}
+
 void registerTransformationPassPipelines() {
+  PassPipelineRegistration<>(
+      "llzk-constraint-flattening",
+      "Monomorphize templates, expose child members, and expand main constrain",
+      buildConstraintFlatteningPipeline
+  );
+
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops",
       "Remove unnecessary operations, such as redundant reads or repeated constraints",

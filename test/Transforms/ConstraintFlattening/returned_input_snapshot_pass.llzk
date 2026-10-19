@@ -1,0 +1,46 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+
+// Both equalities must use the exact same SSA operand twice. Mutating either
+// the caller root or its returned snapshot must not change the other root.
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @identity(%input: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+    function.return %input : !array.type<1 x !felt.type>
+  }
+  struct.def @Main {
+
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %zero = arith.constant 0 : index
+      %local = array.new %x : !array.type<1 x !felt.type>
+      %returned = function.call @identity(%local) : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+      array.write %local[%zero] = %y : !array.type<1 x !felt.type>, !felt.type
+      %old = array.read %returned[%zero] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %old, %x : !felt.type, !felt.type
+      array.write %returned[%zero] = %x : !array.type<1 x !felt.type>, !felt.type
+      %new = array.read %local[%zero] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %new, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

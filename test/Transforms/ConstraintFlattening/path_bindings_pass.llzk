@@ -1,0 +1,156 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+
+// Oracle: each emitted equality must use exactly the same SSA operand twice.
+// Distinct inputs x and y make aliasing and stale-binding errors observable.
+
+// Subtree snapshots and whole self-assignment preserve the same leaf SSA.
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+
+  struct.def @Main {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %row = array.new %x, %y : !array.type<2 x !felt.type>
+      %matrix = array.new : !array.type<2,2 x !felt.type>
+      array.insert %matrix[%zero] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      %snapshot = array.extract %matrix[%zero] : !array.type<2,2 x !felt.type>
+      array.write %row[%zero] = %y : !array.type<2 x !felt.type>, !felt.type
+      array.insert %matrix[%one] = %snapshot : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      array.insert %matrix[] = %matrix : !array.type<2,2 x !felt.type>, !array.type<2,2 x !felt.type>
+      array.write %matrix[%zero, %zero] = %y : !array.type<2,2 x !felt.type>, !felt.type
+      %old = array.read %snapshot[%zero] : !array.type<2 x !felt.type>, !felt.type
+      %second = array.read %matrix[%one, %zero] : !array.type<2,2 x !felt.type>, !felt.type
+      constrain.eq %old, %x : !felt.type, !felt.type
+      constrain.eq %second, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+
+
+// -----
+
+// Reading and replacing a POD array record both have copy semantics.
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+
+  struct.def @Main {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %row = array.new %x, %y : !array.type<2 x !felt.type>
+      %pod = pod.new { @row = %row } : !pod.type<[@row: !array.type<2 x !felt.type>]>
+      %copy = pod.read %pod[@row] : !pod.type<[@row: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      array.write %copy[%zero] = %y : !array.type<2 x !felt.type>, !felt.type
+      %original = pod.read %pod[@row] : !pod.type<[@row: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      %old = array.read %original[%zero] : !array.type<2 x !felt.type>, !felt.type
+      pod.write %pod[@row] = %copy : !pod.type<[@row: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      array.write %copy[%zero] = %x : !array.type<2 x !felt.type>, !felt.type
+      %replacement = pod.read %pod[@row] : !pod.type<[@row: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      %new = array.read %replacement[%zero] : !array.type<2 x !felt.type>, !felt.type
+      constrain.eq %old, %x : !felt.type, !felt.type
+      constrain.eq %new, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+
+
+// -----
+
+// Carried roots persist; allocations in separate iterations are independent.
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+
+  struct.def @Main {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      %matrix = array.new : !array.type<2,2 x !felt.type>
+      %row = array.new %y, %y : !array.type<2 x !felt.type>
+      %result:2 = scf.for %i = %zero to %two step %one iter_args(%carried = %matrix, %previous = %row) -> (!array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>) {
+        %isFirst = arith.cmpi eq, %i, %zero : index
+        %value = arith.select %isFirst, %x, %y : !felt.type
+        %expected = arith.select %isFirst, %y, %x : !felt.type
+        %fresh = array.new %x, %y : !array.type<2 x !felt.type>
+        array.write %fresh[%zero] = %value : !array.type<2 x !felt.type>, !felt.type
+        array.insert %carried[%i] = %fresh : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+        %prior = array.read %previous[%zero] : !array.type<2 x !felt.type>, !felt.type
+        constrain.eq %prior, %expected : !felt.type, !felt.type
+        scf.yield %carried, %fresh : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      }
+      %first = array.read %result#0[%zero, %zero] : !array.type<2,2 x !felt.type>, !felt.type
+      %second = array.read %result#0[%one, %zero] : !array.type<2,2 x !felt.type>, !felt.type
+      constrain.eq %first, %x : !felt.type, !felt.type
+      constrain.eq %second, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

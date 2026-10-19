@@ -1,0 +1,43 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+
+// The i64 IV must stay i64 so addi and the last-iteration condition verify.
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+
+  struct.def @Main {
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : i64
+      %one = arith.constant 1 : i64
+      %two = arith.constant 2 : i64
+      scf.for %i = %zero to %two step %one : i64 {
+        %next = arith.addi %i, %one : i64
+        %last = arith.cmpi eq, %next, %two : i64
+        scf.if %last {
+          constrain.eq %x, %x : !felt.type, !felt.type
+        }
+      }
+      function.return
+    }
+  }
+}

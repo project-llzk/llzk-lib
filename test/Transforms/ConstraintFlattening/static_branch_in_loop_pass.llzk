@@ -1,0 +1,49 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+
+
+
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"test">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"test">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_2]], %[[VAL_3]] : !felt.type<"test">, !felt.type<"test">
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@out] : <@Main>, !felt.type<"test">
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_4]] : !felt.type<"test">, !felt.type<"test">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
+// NOLOCAL-LABEL: struct.def @Main {
+// NOLOCAL: function.def @constrain{{.*}}
+// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
+// NOLOCAL: function.return
+
+module attributes {llzk.lang, llzk.fields = [#felt.field<"test", 101>], llzk.main = !struct.type<@Main>} {
+  global.def const @upper : index = 2
+  struct.def @Main {
+    struct.member @out : !felt.type<"test"> {signal}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %upper = global.read const @upper : index
+      %two = felt.const 2 <"test">
+      %three = felt.const 3 <"test">
+      // Ordinary field arithmetic stays SSA even when all operands are constant.
+      %sum = felt.add %two, %three : !felt.type<"test">, !felt.type<"test">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"test">
+      scf.for %i = %zero to %upper step %one {
+        %condition = arith.cmpi eq, %i, %zero : index
+        scf.if %condition {
+          constrain.eq %out, %sum : !felt.type<"test">, !felt.type<"test">
+        }
+      }
+      function.return
+    }
+  }
+}
