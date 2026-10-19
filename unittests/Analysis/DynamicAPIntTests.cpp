@@ -74,6 +74,43 @@ INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntUnaryTest, testing::ValuesIn(DynamicAPIntUnaryTest::TestingValues())
 );
 
+/// Check signed values and output widths at the native-integer conversion boundary.
+TEST(DynamicAPIntSafetyTest, APSIntConversionPreservesSignedValuesAndWidths) {
+  for (const auto &[text, width] : std::vector<std::pair<StringRef, unsigned>> {
+           {"0", 64},
+           {"-1", 64},
+           {"9223372036854775807", 64},
+           {"9223372036854775808", 65},
+           {"-9223372036854775808", 64},
+           {"-9223372036854775809", 66},
+           {"18446744073709551615", 65},
+           {"18446744073709551616", 66},
+           {"-18446744073709551616", 66},
+           {"-18446744073709551617", 67}
+       }) {
+    SCOPED_TRACE(text.str());
+    APInt expected(width, text, 10);
+    APSInt actual = toAPSInt(DynamicAPInt(expected));
+    EXPECT_TRUE(actual.isSigned());
+    ASSERT_EQ(actual.getBitWidth(), width);
+    EXPECT_EQ(static_cast<const APInt &>(actual), expected);
+  }
+}
+
+/// Check both signs across the field-size and inline decimal-buffer boundaries.
+TEST(DynamicAPIntSafetyTest, APSIntConversionAcrossDecimalBufferBoundaries) {
+  for (unsigned digits : {77, 78, 95, 96, 97}) {
+    for (bool negative : {false, true}) {
+      std::string text = (negative ? "-" : "") + std::string(digits, '9');
+      SCOPED_TRACE(text);
+      APSInt expected(APInt(digits * 4 + 1, text, 10), false);
+      APSInt actual = toAPSInt(DynamicAPInt(expected));
+      EXPECT_TRUE(actual.isSigned());
+      EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+    }
+  }
+}
+
 struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
   static const std::vector<std::string> &TestingValues() {
     static std::vector<std::string> vals = {

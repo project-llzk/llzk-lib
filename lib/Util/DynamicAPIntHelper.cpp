@@ -148,19 +148,20 @@ APSInt toAPSInt(const DynamicAPInt &i) {
     return APSInt::get(int64_t(i));
   }
 
-  // Else, convert to string and parse back as an APSInt.
-  // This may not be the most efficient implementation, but it is the cleanest
-  // due to the lack of direct conversions between DynamicAPInt and APInts.
-  SmallString<64> repr;
+  // DynamicAPInt has no direct APInt conversion. A signed 254-bit magnitude needs
+  // at most 77 decimal digits plus a minus sign; 96 inline characters cover this
+  // with headroom for larger intermediates. Can still grow for larger strings.
+  SmallString<96> repr;
   raw_svector_ostream(repr) << i;
 
-  APSInt res(repr);
-  // For consistency, we add a bit and mark these as signed integers, since
-  // DynamicAPInts are inherently signed.
-  res = res.extend(res.getBitWidth() + 1);
-  res.setIsSigned(true);
-
-  return res;
+  // Use APSInt's conservative decimal width estimate, then resize only once.
+  unsigned parseWidth = ((repr.size() * 64) / 19) + 2;
+  APInt bits(parseWidth, repr, /*radix=*/10);
+  // Preserve the previous APSInt parse-and-extend width, including its extra bit
+  // for negative values, while interpreting the result as signed.
+  unsigned finalWidth =
+      (repr.front() == '-' ? bits.getSignificantBits() : bits.getActiveBits()) + 1;
+  return APSInt(bits.sextOrTrunc(finalWidth), /*isUnsigned=*/false);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
