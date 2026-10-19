@@ -5,9 +5,6 @@
 // Field-valued induction stays in scf.while until constraint expansion.
 // Ordinary arithmetic remains SSA; only structural control is evaluated.
 
-
-
-
 // CHECK-LABEL: struct.def @Main {
 // CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">

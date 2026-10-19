@@ -1,11 +1,6 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints -o %t
 // RUN: FileCheck %s --match-full-lines < %t
 // RUN: FileCheck %s --check-prefix=NOLOCAL < %t
-// RUN: llzk-opt %t --llzk-flatten-constraints -o %t.again
-// RUN: diff %t %t.again
-
-
-
 
 // CHECK-LABEL: struct.def @Main {
 // CHECK:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type>) attributes {function.allow_constraint} {

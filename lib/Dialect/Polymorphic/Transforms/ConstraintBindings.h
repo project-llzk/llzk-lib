@@ -96,7 +96,7 @@ public:
     if (!type || !name) {
       return site->emitError("constraint flattening: invalid POD path");
     }
-    auto record = type.getRecord(name.getValue(), [&] { return site->emitError(); });
+    auto record = type.getRecord(name.getValue(), [site] { return site->emitError(); });
     if (mlir::failed(record)) {
       return mlir::failure();
     }
@@ -136,7 +136,9 @@ public:
       return mlir::success();
     }
     if (llvm::isa<array::ArrayType>(path.type)) {
-      return elements(path, site, [&](AccessPath item) { return walk(item, site, visit); });
+      return elements(path, site, [this, site, visit](AccessPath item) {
+        return walk(item, site, visit);
+      });
     }
     if (auto type = llvm::dyn_cast<pod::PodType>(path.type)) {
       for (auto record : type.getRecords()) {
@@ -201,7 +203,8 @@ public:
   transfer(AccessPath destination, AccessPath source, mlir::Operation *site, StorageReader read) {
     llvm::SmallVector<std::pair<mlir::ArrayAttr, mlir::Value>> snapshot;
     bool original = bool(roots[source.root].storage);
-    auto collect = [&](AccessPath leaf) -> mlir::LogicalResult {
+    auto collect = [this, original, site, read, destination, source,
+                    &snapshot](AccessPath leaf) -> mlir::LogicalResult {
       const auto &leaves = roots[leaf.root].leaves;
       if (!leaves.contains(leaf.steps) && !original) {
         return mlir::success();
@@ -226,7 +229,7 @@ public:
     }
     // Visit only the overwritten subtree, rather than scanning unrelated leaves
     // in the root on every array.insert. The snapshot makes overlap safe.
-    if (mlir::failed(walk(destination, site, [&](AccessPath leaf) {
+    if (mlir::failed(walk(destination, site, [this](AccessPath leaf) {
       roots[leaf.root].leaves.erase(leaf.steps);
       return mlir::success();
     }))) {

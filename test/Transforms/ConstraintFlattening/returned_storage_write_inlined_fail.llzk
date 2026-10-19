@@ -1,0 +1,3 @@
+// RUN: llzk-opt %S/returned_storage_write_fail.llzk --llzk-inline-free-functions --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+// Inlining cannot make original component storage writable through a return value.

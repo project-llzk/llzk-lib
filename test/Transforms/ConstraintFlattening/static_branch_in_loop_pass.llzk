@@ -2,9 +2,6 @@
 // RUN: FileCheck %s --match-full-lines < %t
 // RUN: FileCheck %s --check-prefix=NOLOCAL < %t
 
-
-
-
 // CHECK-LABEL: struct.def @Main {
 // CHECK:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"test">

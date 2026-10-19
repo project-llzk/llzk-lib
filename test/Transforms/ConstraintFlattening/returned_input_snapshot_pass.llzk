@@ -1,8 +1,6 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints -o %t
 // RUN: FileCheck %s --match-full-lines < %t
 // RUN: FileCheck %s --check-prefix=NOLOCAL < %t
-// RUN: llzk-opt %s --llzk-inline-free-functions --llzk-flatten-constraints -o %t.inline
-// RUN: FileCheck %s --match-full-lines < %t.inline
 
 // Returned arrays retain caller identity. Both pipelines must constrain x == y.
 

@@ -1,5 +1,4 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
-// RUN: llzk-opt %s --llzk-inline-free-functions --llzk-flatten-constraints --verify-diagnostics -o /dev/null
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @get(%self: !struct.type<@Main>) -> !array.type<1 x !felt.type> {

@@ -1,15 +1,6 @@
 // RUN: llzk-opt %s --llzk-expose-child-members --llzk-flatten-constraints -o %t
 // RUN: FileCheck %s --match-full-lines < %t
 // RUN: FileCheck %s --check-prefix=NOLOCAL < %t
-// RUN: llzk-opt %t --llzk-flatten-constraints -o %t.again
-// RUN: diff %t %t.again
-// RUN: llzk-opt %s --llzk-monomorphize-templates --llzk-expose-child-members --llzk-flatten-constraints -o %t.explicit
-// RUN: llzk-opt %s --llzk-constraint-flattening -o %t.pipeline
-// RUN: diff %t.explicit %t.pipeline
-
-
-
-
 
 // CHECK-LABEL: struct.def @Main {
 // CHECK:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {

@@ -1,6 +1,5 @@
 // RUN: not llzk-opt %s --llzk-flatten-constraints --mlir-disable-threading --mlir-print-ir-after-failure --mlir-print-ir-module-scope -o /dev/null 2> %t
 // RUN: FileCheck %s --match-full-lines < %t
-// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
 
 // Preserve the original body when expansion validation fails.
 // CHECK-LABEL: struct.def @Main {

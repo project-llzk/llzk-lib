@@ -102,7 +102,7 @@ class ConstraintElaborator {
       if (!podType || !name) {
         return error(site, "invalid POD storage path");
       }
-      auto recordType = podType.getRecord(name.getValue(), [&] { return site->emitError(); });
+      auto recordType = podType.getRecord(name.getValue(), [site] { return site->emitError(); });
       if (failed(recordType)) {
         return failure();
       }
@@ -124,7 +124,7 @@ class ConstraintElaborator {
 
   FailureOr<Value> load(AccessPath path, Operation *site) {
     return bindings.load(
-        path, site, [&](Value root, ArrayRef<Attribute> pathSteps, Type type, Operation *at) {
+        path, site, [this](Value root, ArrayRef<Attribute> pathSteps, Type type, Operation *at) {
       return readStorage(root, pathSteps, type, at);
     }
     );
@@ -146,7 +146,7 @@ class ConstraintElaborator {
   LogicalResult transfer(AccessPath target, AccessPath source, Operation *site) {
     return bindings.transfer(
         target, source, site,
-        [&](Value root, ArrayRef<Attribute> pathSteps, Type type, Operation *at) {
+        [this](Value root, ArrayRef<Attribute> pathSteps, Type type, Operation *at) {
       return readStorage(root, pathSteps, type, at);
     }
     );
@@ -219,7 +219,7 @@ class ConstraintElaborator {
       return success();
     }
     unsigned next = 0;
-    return bindings.elements(path, op, [&](AccessPath item) {
+    return bindings.elements(path, op, [this, &op, &frame, &next](AccessPath item) {
       return assign(item, frame.lookup(op.getElements()[next++]), op);
     });
   }
@@ -283,7 +283,7 @@ class ConstraintElaborator {
     auto path = bindings.create(op.getType());
     frame[op.getResult()] = path;
     unsigned next = 0;
-    return bindings.walk(path, op, [&](AccessPath item) -> LogicalResult {
+    return bindings.walk(path, op, [this, &op, values, &next](AccessPath item) -> LogicalResult {
       if (next >= values.size()) {
         return error(op, "global initializer does not match aggregate leaves");
       }
@@ -601,34 +601,35 @@ class ConstraintElaborator {
   /// expressions use the common emitter and never see aggregate operands.
   LogicalResult dispatch(Operation &op, Environment &frame) {
     return llvm::TypeSwitch<Operation *, LogicalResult>(&op)
-        .Case<scf::IfOp>([&](auto control) { return branch(control, frame); })
-        .Case<scf::ForOp>([&](auto control) { return forLoop(control, frame); })
-        .Case<scf::WhileOp>([&](auto control) { return whileLoop(control, frame); })
-        .Case<CallOp>([&](auto function) { return call(function, frame); })
-        .Case<arith::SelectOp>([&](auto choice) { return select(choice, frame); })
-        .Case<UnifiableCastOp>([&](auto conversion) {
+        .Case<scf::IfOp>([this, &frame](auto control) { return branch(control, frame); })
+        .Case<scf::ForOp>([this, &frame](auto control) { return forLoop(control, frame); })
+        .Case<scf::WhileOp>([this, &frame](auto control) { return whileLoop(control, frame); })
+        .Case<CallOp>([this, &frame](auto function) { return call(function, frame); })
+        .Case<arith::SelectOp>([this, &frame](auto choice) { return select(choice, frame); })
+        .Case<UnifiableCastOp>([&frame](auto conversion) {
       frame[conversion.getResult()] = frame.lookup(conversion.getInput());
       return success();
     })
-        .Case<global::GlobalReadOp>([&](auto read) { return globalRead(read, frame); })
-        .Case<MemberReadOp>([&](auto read) { return memberRead(read, frame); })
-        .Case<MemberWriteOp>([&](auto write) {
+        .Case<global::GlobalReadOp>([this, &frame](auto read) { return globalRead(read, frame); })
+        .Case<MemberReadOp>([this, &frame](auto read) { return memberRead(read, frame); })
+        .Case<MemberWriteOp>([this](auto write) {
       return error(write, "cannot write to original component storage");
     })
-        .Case<array::CreateArrayOp>([&](auto allocation) { return arrayNew(allocation, frame); })
-        .Case<pod::NewPodOp>([&](auto allocation) { return podNew(allocation, frame); })
-        .Case<array::ReadArrayOp, array::ExtractArrayOp>([&](auto read) {
+        .Case<array::CreateArrayOp>([this, &frame](auto allocation) {
+      return arrayNew(allocation, frame);
+    })
+        .Case<pod::NewPodOp>([this, &frame](auto allocation) { return podNew(allocation, frame); })
+        .Case<array::ReadArrayOp, array::ExtractArrayOp>([this, &frame](auto read) {
       return arrayRead(read, frame);
     })
-        .Case<array::WriteArrayOp, array::InsertArrayOp>([&](auto write) {
+        .Case<array::WriteArrayOp, array::InsertArrayOp>([this, &frame](auto write) {
       return arrayWrite(write, frame);
-    }).Case<pod::ReadPodOp>([&](auto read) {
-      return podRead(read, frame);
-    }).Case<pod::WritePodOp>([&](auto write) {
-      return podWrite(write, frame);
-    }).Case<array::ArrayLengthOp>([&](auto length) {
+    })
+        .Case<pod::ReadPodOp>([this, &frame](auto read) { return podRead(read, frame); })
+        .Case<pod::WritePodOp>([this, &frame](auto write) { return podWrite(write, frame); })
+        .Case<array::ArrayLengthOp>([this, &frame](auto length) {
       return arrayLength(length, frame);
-    }).Default([&](Operation *ordinary) { return emit(*ordinary, frame); });
+    }).Default([this, &frame](Operation *ordinary) { return emit(*ordinary, frame); });
   }
 
   /// Visit source operations once per execution; all ordinary values remain SSA.

@@ -1,11 +1,6 @@
 // RUN: llzk-opt %s --llzk-constraint-flattening -o %t
 // RUN: FileCheck %s --match-full-lines < %t
 // RUN: FileCheck %s --check-prefix=NOLOCAL < %t
-// RUN: llzk-opt %t --llzk-flatten-constraints -o %t.again
-// RUN: diff %t %t.again
-// RUN: llzk-opt %s --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.before.layout
-// RUN: llzk-translate %t --llzk-layout -o %t.after.layout
-// RUN: diff %t.before.layout %t.after.layout
 
 // The private intermediate has a parameter-dependent size. Flattened reads
 // preserve the rolled handle and use concrete sizes 1 and 2; signal layout

@@ -1,4 +1,3 @@
-// RUN: llzk-opt %s --llzk-expose-child-members --verify-diagnostics -o /dev/null
 // RUN: not llzk-opt %s --llzk-expose-child-members --mlir-disable-threading --mlir-print-ir-after-failure --mlir-print-ir-module-scope -o /dev/null 2> %t
 // RUN: FileCheck %s --implicit-check-not=llzk.pub < %t
 

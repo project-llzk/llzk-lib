@@ -1,0 +1,3 @@
+// RUN: llzk-opt %S/failure_preserves_body_fail.llzk --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+// Validate the diagnostic independently of the failure-body dump.
