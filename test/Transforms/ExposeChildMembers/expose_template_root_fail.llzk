@@ -1,8 +1,9 @@
 // RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Template::@Root" --verify-diagnostics -o /dev/null
+
 module attributes {llzk.lang} {
   poly.template @Template {
     poly.param @N : index
-    // expected-error @+1 {{child-member visibility requires monomorphized struct types}}
+    // expected-error @+1 {{llzk-expose-child-members requires monomorphized struct types}}
     struct.def @Root {
       function.def @product() -> !struct.type<@Template::@Root<[@N]>> {
         %self = struct.new : <@Template::@Root<[@N]>>

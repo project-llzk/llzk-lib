@@ -1,10 +1,11 @@
 // RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Root" --split-input-file --verify-diagnostics -o /dev/null
-// expected-error @+1 {{references unknown symbol}}
+
+// expected-error @+1 {{root struct symbol path '@Root' does not resolve to a symbol}}
 module attributes {llzk.lang} {}
 
 // -----
 
-// expected-error @+1 {{expected a 'struct.def'}}
+// expected-error @+1 {{root struct symbol path '@Root' references a 'function.def'; expected a 'struct.def'}}
 module attributes {llzk.lang} {
   function.def @Root() { function.return }
 }

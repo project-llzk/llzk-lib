@@ -2,6 +2,7 @@
 // RUN: FileCheck %s --match-full-lines < %t
 // RUN: llzk-opt %t --llzk-expose-child-members="root-struct=@Helpers::@Root" -o %t.again
 // RUN: diff %t %t.again
+
 // An explicit nested root works without llzk.main and distinguishes same-named roots.
 
 module attributes {llzk.lang} {

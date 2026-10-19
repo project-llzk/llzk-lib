@@ -464,13 +464,25 @@ getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef
   }
   if (!symbol) {
     auto diagnostic = lookupFrom->emitError();
-    diagnostic << "invalid root struct symbol path '" << symbolPath << "'";
+    diagnostic << "invalid root struct symbol path '" << symbolPath << '\'';
     if (!parseError.empty()) {
       diagnostic << ": " << parseError;
     }
-    return failure();
+    return diagnostic;
   }
-  return lookupTopLevelSymbol<StructDefOp>(tables, symbol, lookupFrom);
+  auto found = lookupTopLevelSymbol(tables, symbol, lookupFrom, false);
+  if (failed(found)) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' does not resolve to a symbol";
+  }
+  Operation *definition = found->get();
+  SymbolLookupResult<StructDefOp> root(std::move(*found));
+  if (!root) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' references a '"
+           << definition->getName() << "'; expected a 'struct.def'";
+  }
+  return root;
 }
 
 FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {

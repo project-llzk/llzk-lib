@@ -1,4 +1,4 @@
-//===-- ExposeChildMembersPass.cpp -----------------------------------------===//
+//===-- ExposeChildMembersPass.cpp ----------------------------------------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
@@ -65,7 +66,7 @@ private:
   /// Visit each concrete storage definition once, preserving the selected root itself.
   LogicalResult visitStruct(StructDefOp definition) {
     if (isInTemplate(definition)) {
-      return definition.emitError("child-member visibility requires monomorphized struct types");
+      return definition.emitError("llzk-expose-child-members requires monomorphized struct types");
     }
     if (!visited.insert(definition).second) {
       return success();
@@ -86,53 +87,54 @@ private:
   LogicalResult visitFamily(StructType structure, Operation *site) {
     Attribute metadata = site->getAttr(FAMILY_ATTR);
     if (!metadata) {
-      return site->emitError("missing concrete struct family element for child-member visibility");
+      return site->emitError(
+          "missing concrete struct family element for llzk-expose-child-members"
+      );
     }
     auto records = dyn_cast<ArrayAttr>(metadata);
     if (!records) {
-      return site->emitError("invalid poly.family metadata for child-member visibility");
+      return site->emitError("invalid poly.family metadata for llzk-expose-child-members");
     }
     llvm::DenseSet<int64_t> seenIds;
     for (Attribute record : records) {
       auto dict = dyn_cast<DictionaryAttr>(record);
       auto type = dict ? dict.getAs<TypeAttr>(FAMILY_TYPE_KEY) : TypeAttr();
       if (!type || !isa<StructType>(type.getValue())) {
-        return site->emitError("invalid poly.family entry for child-member visibility");
+        return site->emitError("invalid poly.family entry for llzk-expose-child-members");
       }
       if (type.getValue() != structure) {
         continue;
       }
       auto id = dict.getAs<IntegerAttr>(FAMILY_SPECIALIZATION_KEY);
       if (!id || !id.getValue().isSignedIntN(64) || id.getInt() < 0) {
-        return site->emitError("invalid poly.family entry for child-member visibility");
+        return site->emitError("invalid poly.family entry for llzk-expose-child-members");
       }
       if (!seenIds.insert(id.getInt()).second) {
         continue;
       }
-      auto definition =
-          specializations.resolve(tables, structure, id.getInt(), site, "child-member visibility");
+      auto definition = specializations.resolve(
+          tables, structure, id.getInt(), site, "llzk-expose-child-members"
+      );
       if (failed(definition) || failed(visitStruct(*definition))) {
         return failure();
       }
     }
     if (seenIds.empty()) {
-      return site->emitError("missing concrete struct family element for child-member visibility");
+      return site->emitError(
+          "missing concrete struct family element for llzk-expose-child-members"
+      );
     }
     return success();
   }
 
   /// Follow storage wrappers and resolve concrete or rolled component types.
   LogicalResult visitType(Type type, Operation *site) {
-    bool containsStruct = false;
-    type.walk([&](StructType) { containsStruct = true; });
-    if (!containsStruct) {
+    if (!walkContains<StructType>(type)) {
       return success();
     }
     if (auto array = dyn_cast<array::ArrayType>(type)) {
-      for (int64_t size : array.getShape()) {
-        if (size < 0) {
-          return site->emitError("child-member visibility requires concrete array dimensions");
-        }
+      if (!array.hasStaticShape()) {
+        return site->emitError("llzk-expose-child-members requires concrete array dimensions");
       }
       if (llvm::is_contained(array.getShape(), 0)) {
         return success();
@@ -176,14 +178,14 @@ class PassImpl : public llzk::component::impl::ExposeChildMembersPassBase<PassIm
     }
     if (!*root) {
       getOperation().emitError(
-          "child-member visibility requires llzk.main or an explicit root-struct"
+          "llzk-expose-child-members requires llzk.main or an explicit root-struct"
       );
       signalPassFailure();
       return;
     }
     if (root->viaInclude()) {
       getOperation().emitError(
-          "child-member visibility requires a local root struct; inline includes first"
+          "llzk-expose-child-members requires a local root struct; inline includes first"
       );
       signalPassFailure();
       return;

@@ -339,8 +339,9 @@ TEST_F(SymbolHelperTests, test_getRootStructDef_rejectsInvalidSymbols) {
   const std::pair<StringRef, StringRef> cases[] = {
       {"[]", "invalid root struct symbol path"},
       {"@Root::", "expected nested symbol reference"},
-      {"@Missing", "references unknown symbol"},
-      {"@Other", "expected a 'struct.def'"},
+      {"@Missing", "root struct symbol path '@Missing' does not resolve to a symbol"},
+      {"@Other",
+       "root struct symbol path '@Other' references a 'function.def'; expected a 'struct.def'"},
   };
   for (auto [symbol, message] : cases) {
     SCOPED_TRACE(symbol.str());

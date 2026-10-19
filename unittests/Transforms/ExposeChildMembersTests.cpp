@@ -1,4 +1,4 @@
-//===-- ExposeChildMembersTests.cpp ----------------------------------------===//
+//===-- ExposeChildMembersTests.cpp ---------------------------------------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -60,7 +60,7 @@ TEST_F(ExposeChildMembersTests, FailureDoesNotExposePreviouslyCollectedChildren)
   unsigned errors = 0;
   ScopedDiagnosticHandler handler(&ctx, [&](Diagnostic &diagnostic) {
     EXPECT_EQ(
-        diagnostic.str(), "missing concrete struct family element for child-member visibility"
+        diagnostic.str(), "missing concrete struct family element for llzk-expose-child-members"
     );
     ++errors;
     return success();
