@@ -147,269 +147,371 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKInlineFree
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Ops_8h.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinOps.h&gt;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/IR/SymbolTable.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/Transforms/Inliner.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/Transforms/InliningUtils.h&gt;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;llvm/ADT/DenseSet.h&gt;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;llvm/ADT/SCCIterator.h&gt;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;llvm/ADT/STLExtras.h&gt;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;llvm/Support/Debug.h&gt;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="LLZKInlineFreeFunctionsPass_8cpp.html#a2d70ec42ea18feac835b4c584bce76b1">   36</a></span><span class="preprocessor">#define GEN_PASS_DEF_INLINEFREEFUNCTIONSPASS</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="LLZKInlineFreeFunctionsPass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">   40</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-inline-free-functions&quot;</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">llzk::function</a>;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keyword">static</span> <span class="keywordtype">void</span> walkTypeSymbolRefs(</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    Type type, function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; rootRef,</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; unsupportedRef</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span></div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">static</span> <span class="keywordtype">void</span> walkAttrSymbolRefs(</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    Attribute attr, function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; rootRef,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; unsupportedRef</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>) {</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  attr.walk&lt;WalkOrder::PreOrder&gt;([rootRef, unsupportedRef](TypeAttr typeAttr) {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    walkTypeSymbolRefs(typeAttr.getValue(), rootRef, unsupportedRef);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">return</span> WalkResult::skip();</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>}</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">static</span> <span class="keywordtype">void</span> walkTypeSymbolRefs(</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    Type type, function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; rootRef,</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; unsupportedRef</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>) {</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  type.walk&lt;WalkOrder::PreOrder&gt;([rootRef, unsupportedRef](<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> structType) {</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    rootRef(structType.getNameRef());</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">if</span> (ArrayAttr params = structType.getParams()) {</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>      walkAttrSymbolRefs(params, rootRef, unsupportedRef);</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    }</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keywordflow">return</span> WalkResult::skip();</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>}</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span></div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="keyword">static</span> <span class="keywordtype">bool</span> isInlinableFreeFunction(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func, ModuleOp root, SymbolTableCollection &amp;tables) {</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  Operation *parent = func-&gt;getParentOp();</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordflow">if</span> (parent == root) {</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    <span class="comment">// A normal MLIR call uses nearest-symbol lookup after cloning, so a struct</span></div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    <span class="comment">// method can capture a callee that originally resolved at the root. Keep</span></div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    <span class="comment">// such helpers in place until general symbol rebasing is implemented.</span></div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="keywordtype">bool</span> hasFuncCall = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    func.walk([&amp;hasFuncCall](func::CallOp) { hasFuncCall = <span class="keyword">true</span>; });</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <span class="keywordflow">return</span> !hasFuncCall;</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  }</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="comment">// Struct methods are handled by the struct inliner, not this pass. Also</span></div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="comment">// reject functions that are not owned by this module, such as definitions</span></div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="comment">// resolved through include.from.</span></div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keywordflow">if</span> (!llvm::isa&lt;ModuleOp, polymorphic::TemplateOp&gt;(parent) ||</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      !root-&gt;isAncestor(func.getOperation())) {</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  }</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="comment">// TODO: This is a temporary allowance for a common frontend pattern: a</span></div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="comment">// helper nested in a namespace-like template or module whose symbol</span></div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="comment">// references can all be resolved from the root module. General</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="comment">// cross-symbol-table inlining must rebase symbol references in the cloned</span></div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="comment">// body so that they continue to resolve to the same definitions.</span></div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keywordtype">bool</span> hasUnsupportedSymbolRef = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  func.walk([&amp;tables, &amp;hasUnsupportedSymbolRef, root](Operation *op) {</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="keyword">auto</span> detectUnsupportedSymbolRef = [&amp;hasUnsupportedSymbolRef](SymbolRefAttr) {</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>      hasUnsupportedSymbolRef = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    };</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keyword">auto</span> detectMissingRootSymbolRef = [&amp;tables, &amp;hasUnsupportedSymbolRef, root](SymbolRefAttr ref) {</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      <span class="keywordflow">if</span> (!tables.lookupSymbolIn(root, ref)) {</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        hasUnsupportedSymbolRef = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      }</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    };</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    walkAttrSymbolRefs(</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        op-&gt;getDiscardableAttrDictionary(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    );</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keywordflow">if</span> (Attribute properties = op-&gt;getPropertiesAsAttribute()) {</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>      <span class="keywordflow">for</span> (NamedAttribute property : llvm::cast&lt;DictionaryAttr&gt;(properties)) {</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>        StringAttr name = <span class="keyword">property</span>.getName();</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>        <span class="comment">// Member names resolve through the component&#39;s StructType, not the</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>        <span class="comment">// surrounding symbol table. The StructType itself is scanned below.</span></div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> memberRef = llvm::dyn_cast&lt;component::MemberRefOpInterface&gt;(op)) {</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>          <span class="keywordflow">if</span> (name == memberRef.getMemberNameAttrName()) {</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>            <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>          }</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>        }</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>        <span class="comment">// LLZK calls and global references intentionally resolve these</span></div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>        <span class="comment">// properties from the root module. Other properties, including</span></div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>        <span class="comment">// template parameters, retain their ordinary scope-sensitive checks.</span></div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>        <span class="keywordtype">bool</span> usesRootLookup = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> call = llvm::dyn_cast&lt;CallOp&gt;(op)) {</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>          usesRootLookup = name == call.getCalleeAttrName();</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> globalRef = llvm::dyn_cast&lt;global::GlobalRefOpInterface&gt;(op)) {</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>          usesRootLookup = name == globalRef.getNameRefAttrName();</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>        }</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>        <span class="keywordflow">if</span> (usesRootLookup) {</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>          <span class="keyword">property</span>.getValue().walk(detectMissingRootSymbolRef);</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>          walkAttrSymbolRefs(</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>              property.getValue(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>          );</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>        }</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>      }</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    }</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    <span class="keywordflow">for</span> (Type type : llvm::concat&lt;Type&gt;(op-&gt;getOperandTypes(), op-&gt;getResultTypes())) {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>      walkTypeSymbolRefs(type, detectMissingRootSymbolRef, detectUnsupportedSymbolRef);</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    }</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    <span class="keywordflow">for</span> (Region &amp;region : op-&gt;getRegions()) {</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>      <span class="keywordflow">for</span> (Block &amp;block : region) {</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        <span class="keywordflow">for</span> (BlockArgument arg : block.getArguments()) {</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>          walkTypeSymbolRefs(arg.getType(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef);</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>        }</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>      }</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    }</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  });</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="keywordflow">return</span> !hasUnsupportedSymbolRef;</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>}</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span></div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span><span class="keyword">static</span> <span class="keywordtype">bool</span> isInlinableCallSite(<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call, ModuleOp root) {</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="keywordflow">return</span> call-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;() &amp;&amp; call-&gt;getParentOfType&lt;ModuleOp&gt;() == root;</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>}</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span></div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span><span class="keyword">static</span> llvm::DenseSet&lt;Operation *&gt; collectRecursiveFunctions(<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1CallGraph.html">llzk::CallGraph</a> &amp;cg) {</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  llvm::DenseSet&lt;Operation *&gt; recursive;</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> scc = llvm::scc_begin(&amp;cg); !scc.isAtEnd(); ++scc) {</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    <span class="keywordflow">if</span> (scc-&gt;size() == 1 &amp;&amp; !scc.hasCycle()) {</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    }</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a> *node : *scc) {</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      <span class="keywordflow">if</span> (!node-&gt;isExternal()) {</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>        recursive.insert(node-&gt;getCalledFunction().getOperation());</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      }</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    }</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  }</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  <span class="keywordflow">return</span> recursive;</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>}</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span></div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span><span class="keyword">static</span> <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> resolveFreeCallee(</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call, ModuleOp root, SymbolTableCollection &amp;tables,</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    <span class="keyword">const</span> llvm::DenseSet&lt;Operation *&gt; &amp;skippedCallees</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>) {</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  <span class="keyword">auto</span> tgtRes = call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af459db514098e5cbdaa007b6516d959c">getCalleeTarget</a>(tables);</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <span class="keywordflow">if</span> (failed(tgtRes)) {</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  }</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callee = tgtRes-&gt;get();</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="keywordflow">if</span> (!isInlinableFreeFunction(callee, root, tables) || callee.isExternal() ||</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>      skippedCallees.contains(callee)) {</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  }</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keywordflow">return</span> callee;</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>}</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span></div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span><span class="keyword">struct </span>FreeFunctionCall {</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call;</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callee;</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>};</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span></div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span><span class="keyword">static</span> SmallVector&lt;FreeFunctionCall&gt; collectFreeFunctionCalls(</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, SymbolTableCollection &amp;tables, <span class="keyword">const</span> llvm::DenseSet&lt;Operation *&gt; &amp;skippedCallees</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>) {</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  SmallVector&lt;FreeFunctionCall&gt; calls;</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.walk([&amp;](<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call) {</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    <span class="keywordflow">if</span> (!isInlinableCallSite(call, <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>)) {</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    }</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callee = resolveFreeCallee(call, <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, skippedCallees)) {</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>      calls.push_back({call, callee});</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    }</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  });</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  <span class="keywordflow">return</span> calls;</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>}</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span></div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span><span class="keyword">static</span> SmallVector&lt;FuncDefOp&gt; collectUnusedHelpers(ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  <a class="code hl_class" href="classllzk_1_1SymbolUseGraph.html">SymbolUseGraph</a> useGraph(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.getOperation());</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  SmallVector&lt;FuncDefOp&gt; unusedFunctions;</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <span class="keywordflow">for</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func : <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.getOps&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>    <span class="keywordflow">if</span> (func.isExternal()) {</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    }</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SymbolUseGraphNode.html">SymbolUseGraphNode</a> *node = useGraph.<a class="code hl_function" href="classllzk_1_1SymbolUseGraph.html#af43118f514a8e6b3eb4cf26106496adf">lookupNode</a>(func);</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    <span class="keywordflow">if</span> (!node || !node-&gt;<a class="code hl_function" href="classllzk_1_1SymbolUseGraphNode.html#a5c44a964376df20232444d22b3a4a638">hasPredecessor</a>()) {</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>      unusedFunctions.push_back(func);</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    }</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  }</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  <span class="keywordflow">return</span> unusedFunctions;</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>}</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html">llzk::impl::InlineFreeFunctionsPassBase</a>&lt;PassImpl&gt; {</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="keyword">using </span>Base = InlineFreeFunctionsPassBase&lt;PassImpl&gt;;</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <span class="keyword">using </span>Base::Base;</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a> = getOperation();</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    SymbolTableCollection tables;</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    InlinerInterface inliner(&amp;getContext());</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="comment">// Seeded with recursive functions; grows with callees that cannot be</span></div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="comment">// inlined.</span></div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    llvm::DenseSet&lt;Operation *&gt; skippedCallees =</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>        collectRecursiveFunctions(getAnalysis&lt;CallGraphAnalysis&gt;().getCallGraph());</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    inlineCalls(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, inliner, skippedCallees);</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    removeUnusedFunctions(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  }</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span></div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  <span class="keywordtype">void</span> inlineCalls(</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>      ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, SymbolTableCollection &amp;tables, InlinerInterface &amp;inliner,</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>      llvm::DenseSet&lt;Operation *&gt; &amp;skippedCallees</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  ) {</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    InlinerConfig inlinerConfig;</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    SmallVector&lt;FreeFunctionCall&gt; callsToInline =</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>        collectFreeFunctionCalls(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, skippedCallees);</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    <span class="keywordflow">while</span> (!callsToInline.empty()) {</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] round found &quot;</span> &lt;&lt; callsToInline.size()</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>                     &lt;&lt; <span class="stringliteral">&quot; free-function call site(s) to inline\n&quot;</span>;</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>      });</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [call, callee] : callsToInline) {</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>        <span class="keywordflow">if</span> (skippedCallees.contains(callee)) {</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>          <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>        }</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>        <span class="keywordflow">if</span> (failed(inlineCall(</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>                inliner, inlinerConfig.getCloneCallback(), call, callee, callee.getCallableRegion(),</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>                <span class="keyword">true</span></div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>            ))) {</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>          call.emitWarning(<span class="stringliteral">&quot;failed to inline free function call; skipping this callee&quot;</span>);</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>          skippedCallees.insert(callee);</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>          <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>        }</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>        call.erase();</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>      }</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>      callsToInline = collectFreeFunctionCalls(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, skippedCallees);</div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    }</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  }</div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span></div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  <span class="keywordtype">void</span> removeUnusedFunctions(ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>    SmallVector&lt;FuncDefOp&gt; toErase = collectUnusedHelpers(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    <span class="keywordflow">while</span> (!toErase.empty()) {</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>      <span class="keywordflow">for</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func : toErase) {</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>        func.erase();</div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>      }</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>      toErase = collectUnusedHelpers(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>    }</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  }</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>};</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="Walk_8h.html">llzk/Util/Walk.h</a>&quot;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinOps.h&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/IR/SymbolTable.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/Transforms/Inliner.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/Transforms/InliningUtils.h&gt;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;llvm/ADT/DenseSet.h&gt;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;llvm/ADT/SCCIterator.h&gt;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;llvm/ADT/STLExtras.h&gt;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;llvm/Support/Debug.h&gt;</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="LLZKInlineFreeFunctionsPass_8cpp.html#a2d70ec42ea18feac835b4c584bce76b1">   37</a></span><span class="preprocessor">#define GEN_PASS_DEF_INLINEFREEFUNCTIONSPASS</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="LLZKInlineFreeFunctionsPass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">   41</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-inline-free-functions&quot;</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">llzk::function</a>;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">static</span> <span class="keywordtype">void</span> walkTypeSymbolRefs(</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    Type type, function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; rootRef,</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; unsupportedRef</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="keyword">static</span> <span class="keywordtype">void</span> walkAttrSymbolRefs(</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    Attribute attr, function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; rootRef,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; unsupportedRef</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>) {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  attr.walk&lt;WalkOrder::PreOrder&gt;([rootRef, unsupportedRef](TypeAttr typeAttr) {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    walkTypeSymbolRefs(typeAttr.getValue(), rootRef, unsupportedRef);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keywordflow">return</span> WalkResult::skip();</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="keyword">static</span> <span class="keywordtype">void</span> walkTypeSymbolRefs(</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    Type type, function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; rootRef,</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    function_ref&lt;<span class="keywordtype">void</span>(SymbolRefAttr)&gt; unsupportedRef</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>) {</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  type.walk&lt;WalkOrder::PreOrder&gt;([rootRef, unsupportedRef](<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> structType) {</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    rootRef(structType.getNameRef());</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    <span class="keywordflow">if</span> (ArrayAttr params = structType.getParams()) {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>      walkAttrSymbolRefs(params, rootRef, unsupportedRef);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    }</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <span class="keywordflow">return</span> WalkResult::skip();</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  }, [unsupportedRef](SymbolRefAttr ref) { unsupportedRef(ref); });</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>}</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span></div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span><span class="keyword">static</span> <span class="keywordtype">bool</span> isInlinableFreeFunction(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func, ModuleOp root, SymbolTableCollection &amp;tables) {</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  Operation *parent = func-&gt;getParentOp();</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordflow">if</span> (parent == root) {</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    <span class="comment">// A normal MLIR call uses nearest-symbol lookup after cloning, so a struct</span></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    <span class="comment">// method can capture a callee that originally resolved at the root. Keep</span></div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="comment">// such helpers in place until general symbol rebasing is implemented.</span></div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keywordtype">bool</span> hasFuncCall = walkContains&lt;func::CallOp&gt;(func);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    LLVM_DEBUG({</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>      <span class="keywordflow">if</span> (hasFuncCall) {</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline &quot;</span> &lt;&lt; func.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2">getSymName</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                     &lt;&lt; func.getLoc()</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                     &lt;&lt; <span class="stringliteral">&quot;: body contains func.call whose callee could be captured after cloning\n&quot;</span>;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      }</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    });</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keywordflow">return</span> !hasFuncCall;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  }</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="comment">// Struct methods are handled by the struct inliner, not this pass. Also</span></div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="comment">// reject functions that are not owned by this module, such as definitions</span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="comment">// resolved through include.from.</span></div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="keywordflow">if</span> (!llvm::isa&lt;ModuleOp, polymorphic::TemplateOp&gt;(parent)) {</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="comment">// Don&#39;t bother with debug message in this case. It&#39;s just checking the very</span></div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="comment">// basic case of whether the function is a free function.</span></div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  }</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keywordflow">if</span> (!root-&gt;isAncestor(func.getOperation())) {</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline &quot;</span> &lt;&lt; func.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2">getSymName</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                     &lt;&lt; func.getLoc() &lt;&lt; <span class="stringliteral">&quot;: function is defined outside the root module\n&quot;</span></div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    );</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  }</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="comment">// TODO: This is a temporary allowance for a common frontend pattern: a</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="comment">// helper nested in a namespace-like template or module whose symbol</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="comment">// references can all be resolved from the root module. General</span></div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="comment">// cross-symbol-table inlining must rebase symbol references in the cloned</span></div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="comment">// body so that they continue to resolve to the same definitions.</span></div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordtype">bool</span> hasUnsupportedSymbolRef = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  func.walk([&amp;](Operation *op) {</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="keyword">auto</span> detectUnsupportedSymbolRef = [&amp;](SymbolRefAttr ref) {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>      LLVM_DEBUG(</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline &quot;</span> &lt;&lt; func.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2">getSymName</a>()</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>                       &lt;&lt; <span class="stringliteral">&quot;: unsupported scope-sensitive symbol reference &quot;</span> &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span></div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>                       &lt;&lt; op-&gt;getName() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span> &lt;&lt; op-&gt;getLoc() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      );</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>      hasUnsupportedSymbolRef = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    };</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    <span class="keyword">auto</span> detectMissingRootSymbolRef = [&amp;](SymbolRefAttr ref) {</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>      <span class="keywordflow">if</span> (!tables.lookupSymbolIn(root, ref)) {</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>            llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline &quot;</span> &lt;&lt; func.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2">getSymName</a>()</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>                         &lt;&lt; <span class="stringliteral">&quot;: symbol reference &quot;</span> &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span> &lt;&lt; op-&gt;getName() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>                         &lt;&lt; op-&gt;getLoc() &lt;&lt; <span class="stringliteral">&quot; does not resolve in the root module\n&quot;</span></div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>        );</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>        hasUnsupportedSymbolRef = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>      }</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    };</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    walkAttrSymbolRefs(</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>        op-&gt;getDiscardableAttrDictionary(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    );</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <span class="keywordflow">if</span> (Attribute properties = op-&gt;getPropertiesAsAttribute()) {</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>      <span class="keywordflow">for</span> (NamedAttribute property : llvm::cast&lt;DictionaryAttr&gt;(properties)) {</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>        StringAttr name = <span class="keyword">property</span>.getName();</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>        <span class="comment">// Member names resolve through the component&#39;s StructType, not the</span></div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>        <span class="comment">// surrounding symbol table. The StructType itself is scanned below.</span></div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> memberRef = llvm::dyn_cast&lt;component::MemberRefOpInterface&gt;(op)) {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>          <span class="keywordflow">if</span> (name == memberRef.getMemberNameAttrName()) {</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>            <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>          }</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>        }</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>        <span class="comment">// LLZK calls and global references intentionally resolve these</span></div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>        <span class="comment">// properties from the root module. Other properties, including</span></div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>        <span class="comment">// template parameters, retain their ordinary scope-sensitive checks.</span></div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>        <span class="keywordtype">bool</span> usesRootLookup = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> call = llvm::dyn_cast&lt;CallOp&gt;(op)) {</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>          usesRootLookup = name == call.getCalleeAttrName();</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> globalRef = llvm::dyn_cast&lt;global::GlobalRefOpInterface&gt;(op)) {</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>          usesRootLookup = name == globalRef.getNameRefAttrName();</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>        }</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>        <span class="keywordflow">if</span> (usesRootLookup) {</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>          <span class="comment">// Check the complete path, not its nested FlatSymbolRefAttr components:</span></div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>          <span class="comment">// those resolve within the preceding symbol, not from the root.</span></div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>          detectMissingRootSymbolRef(llvm::cast&lt;SymbolRefAttr&gt;(property.getValue()));</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>          walkAttrSymbolRefs(</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>              property.getValue(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>          );</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>        }</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      }</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    }</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    <span class="keywordflow">for</span> (Type type : llvm::concat&lt;Type&gt;(op-&gt;getOperandTypes(), op-&gt;getResultTypes())) {</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      walkTypeSymbolRefs(type, detectMissingRootSymbolRef, detectUnsupportedSymbolRef);</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    }</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    <span class="keywordflow">for</span> (Region &amp;region : op-&gt;getRegions()) {</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      <span class="keywordflow">for</span> (Block &amp;block : region) {</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>        <span class="keywordflow">for</span> (BlockArgument arg : block.getArguments()) {</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>          walkTypeSymbolRefs(arg.getType(), detectMissingRootSymbolRef, detectUnsupportedSymbolRef);</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>        }</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>      }</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    }</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  });</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  <span class="keywordflow">return</span> !hasUnsupportedSymbolRef;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>}</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span></div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span><span class="keyword">static</span> <span class="keywordtype">bool</span> isInlinableCallSite(<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call, ModuleOp root) {</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <span class="keywordflow">if</span> (!call-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>                     &lt;&lt; call.getLoc() &lt;&lt; <span class="stringliteral">&quot;: call is outside a function.def body\n&quot;</span></div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    );</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  }</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="keywordflow">if</span> (call-&gt;getParentOfType&lt;ModuleOp&gt;() != root) {</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>                     &lt;&lt; call.getLoc() &lt;&lt; <span class="stringliteral">&quot;: call is in a nested module\n&quot;</span></div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    );</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  }</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>}</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span></div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span><span class="keyword">static</span> llvm::DenseSet&lt;Operation *&gt; collectRecursiveFunctions(<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1CallGraph.html">llzk::CallGraph</a> &amp;cg) {</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  llvm::DenseSet&lt;Operation *&gt; recursive;</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> scc = llvm::scc_begin(&amp;cg); !scc.isAtEnd(); ++scc) {</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    <span class="keywordflow">if</span> (scc-&gt;size() == 1 &amp;&amp; !scc.hasCycle()) {</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    }</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a> *node : *scc) {</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>      <span class="keywordflow">if</span> (!node-&gt;isExternal()) {</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>            llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline &quot;</span></div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>                         &lt;&lt; SymbolTable::getSymbolName(node-&gt;getCalledFunction().getOperation())</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>                         &lt;&lt; <span class="stringliteral">&quot; at &quot;</span> &lt;&lt; node-&gt;getCalledFunction().getLoc()</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                         &lt;&lt; <span class="stringliteral">&quot;: function participates in a call cycle\n&quot;</span></div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>        );</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        recursive.insert(node-&gt;getCalledFunction().getOperation());</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>      }</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    }</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  }</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  <span class="keywordflow">return</span> recursive;</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>}</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span></div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="keyword">static</span> <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> resolveFreeCallee(</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call, ModuleOp root, SymbolTableCollection &amp;tables,</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    <span class="keyword">const</span> llvm::DenseSet&lt;Operation *&gt; &amp;skippedCallees</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>) {</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  <span class="keyword">auto</span> tgtRes = call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af459db514098e5cbdaa007b6516d959c">getCalleeTarget</a>(tables);</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  <span class="keywordflow">if</span> (failed(tgtRes)) {</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>                     &lt;&lt; call.getLoc() &lt;&lt; <span class="stringliteral">&quot;: callee target resolution failed\n&quot;</span></div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    );</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  }</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callee = tgtRes-&gt;get();</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  <span class="keywordflow">if</span> (!isInlinableFreeFunction(callee, root, tables)) {</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  }</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  <span class="keywordflow">if</span> (callee.isExternal()) {</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>                     &lt;&lt; call.getLoc() &lt;&lt; <span class="stringliteral">&quot;: callee is external and has no body\n&quot;</span></div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    );</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  }</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>  <span class="keywordflow">if</span> (skippedCallees.contains(callee)) {</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>() &lt;&lt; <span class="stringliteral">&quot; at &quot;</span></div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>                     &lt;&lt; call.getLoc() &lt;&lt; <span class="stringliteral">&quot;: callee was skipped due to a call cycle or an earlier &quot;</span></div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>                     &lt;&lt; <span class="stringliteral">&quot;inlining failure\n&quot;</span></div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    );</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  }</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  <span class="keywordflow">return</span> callee;</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>}</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span></div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="keyword">struct </span>FreeFunctionCall {</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call;</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callee;</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>};</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span></div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span><span class="keyword">static</span> SmallVector&lt;FreeFunctionCall&gt; collectFreeFunctionCalls(</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, SymbolTableCollection &amp;tables, <span class="keyword">const</span> llvm::DenseSet&lt;Operation *&gt; &amp;skippedCallees</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>) {</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  SmallVector&lt;FreeFunctionCall&gt; calls;</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.walk([&amp;](<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> call) {</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    <span class="keywordflow">if</span> (!isInlinableCallSite(call, <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>)) {</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>    }</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>    <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callee = resolveFreeCallee(call, <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, skippedCallees)) {</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>      calls.push_back({call, callee});</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>    }</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  });</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>  <span class="keywordflow">return</span> calls;</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>}</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span></div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span><span class="keyword">static</span> SmallVector&lt;FuncDefOp&gt; collectUnusedHelpers(ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  <a class="code hl_class" href="classllzk_1_1SymbolUseGraph.html">SymbolUseGraph</a> useGraph(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.getOperation());</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  SmallVector&lt;FuncDefOp&gt; unusedFunctions;</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>  <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.walk([&amp;](<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func) {</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>    <span class="keywordflow">if</span> (func.isExternal() || !llvm::isa&lt;ModuleOp, polymorphic::TemplateOp&gt;(func-&gt;getParentOp())) {</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>    }</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>    <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1SymbolUseGraphNode.html">SymbolUseGraphNode</a> *node = useGraph.<a class="code hl_function" href="classllzk_1_1SymbolUseGraph.html#af43118f514a8e6b3eb4cf26106496adf">lookupNode</a>(func);</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>    <span class="keywordflow">if</span> (!node || !node-&gt;<a class="code hl_function" href="classllzk_1_1SymbolUseGraphNode.html#a5c44a964376df20232444d22b3a4a638">hasPredecessor</a>()) {</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>      unusedFunctions.push_back(func);</div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    }</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  });</div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  <span class="keywordflow">return</span> unusedFunctions;</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>}</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span> </div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html">llzk::impl::InlineFreeFunctionsPassBase</a>&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  <span class="keyword">using </span>Base = InlineFreeFunctionsPassBase&lt;PassImpl&gt;;</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span> </div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="foldopen" id="foldopen00315" data-start="{" data-end="};">
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html">  315</a></span>    ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a> = getOperation();</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    SymbolTableCollection tables;</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#acc4ce0da677985011e53ef62fac51a2a">  317</a></span>    InlinerInterface inliner(&amp;getContext());</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    <span class="comment">// Seeded with recursive functions; grows with callees that cannot be</span></div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#ac7e0e9efe38de01700ab2fc6b680915f">  319</a></span>    <span class="comment">// inlined.</span></div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a448359326b2f9b8a8d4db50ff7da2dcc">  320</a></span>    llvm::DenseSet&lt;Operation *&gt; skippedCallees =</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a53647dc48c378ab99f3b13f20927cc48">  321</a></span>        collectRecursiveFunctions(getAnalysis&lt;CallGraphAnalysis&gt;().getCallGraph());</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a2905c345ea59f400987aaf1a1f43db0a">  322</a></span> </div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#ad94bb13ea689dcc02b37cbdeac9eac0f">  323</a></span>    inlineCalls(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, inliner, skippedCallees);</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a368acdc3478c0e02ac33f01f3c108956">  324</a></span>    removeUnusedFunctions(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  }</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span></div>
+<div class="foldopen" id="foldopen00327" data-start="{" data-end="}">
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a5cea5cb6b3bf26395524f442570913a4">  327</a></span><span class="comment">  /// Collects the current free-function call sites, then inlines them.</span></div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span><span class="comment">  /// Iterates until no inlinable calls remain: inlined bodies can expose new</span></div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span><span class="comment">  /// calls, but skipped callees are excluded, so every exposed call chain is</span></div>
+</div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a484c6ccbe4b8f801a4a4881d7d404f65">  330</a></span><span class="comment">  /// finite. Best effort: a callee whose inlining fails is skipped with a</span></div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span><span class="comment">  /// warning, leaving its remaining call sites in place while processing</span></div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a0d74191a0797751c1b1e36affe2634fc">  332</a></span><span class="comment">  /// continues with other callees.</span></div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  <span class="keywordtype">void</span> inlineCalls(</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>      ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, SymbolTableCollection &amp;tables, InlinerInterface &amp;inliner,</div>
+<div class="foldopen" id="foldopen00335" data-start="{" data-end="}">
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a68e786be857def7d95df6234d2030784">  335</a></span>      llvm::DenseSet&lt;Operation *&gt; &amp;skippedCallees</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  ) {</div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>    InlinerConfig inlinerConfig;</div>
+</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#ab2ecf085a49103dc569145029ee938d1">  338</a></span>    SmallVector&lt;FreeFunctionCall&gt; callsToInline =</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>        collectFreeFunctionCalls(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, skippedCallees);</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    <span class="keywordflow">for</span> (;;) {</div>
+<div class="foldopen" id="foldopen00341" data-start="{" data-end="}">
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#afc5b41c6495c38aeb2fe800868fc9c96">  341</a></span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] round found &quot;</span> &lt;&lt; callsToInline.size()</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>                     &lt;&lt; <span class="stringliteral">&quot; free-function call site(s) to inline\n&quot;</span>;</div>
+</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>      });</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span> </div>
+<div class="foldopen" id="foldopen00346" data-start="{" data-end="}">
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#a27045fb7654b7f0afb62f1c508fdea8d">  346</a></span>      <span class="keywordflow">if</span> (callsToInline.empty()) {</div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>        <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>      }</div>
+</div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span> </div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [call, callee] : callsToInline) {</div>
+<div class="foldopen" id="foldopen00351" data-start="{" data-end="}">
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#aa3d48a3081d52d7e77f3c33126849f54">  351</a></span>        <span class="keywordflow">if</span> (skippedCallees.contains(callee)) {</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>          LLVM_DEBUG(</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>              llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>()</div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>                           &lt;&lt; <span class="stringliteral">&quot; at &quot;</span> &lt;&lt; call.getLoc()</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>                           &lt;&lt; <span class="stringliteral">&quot;: an earlier inlining attempt for this callee failed\n&quot;</span></div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>          );</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>          <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>        }</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>        <span class="keywordflow">if</span> (failed(inlineCall(</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>                inliner, inlinerConfig.getCloneCallback(), call, callee, callee.getCallableRegion(),</div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>                <span class="keyword">true</span></div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>            ))) {</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>          LLVM_DEBUG(</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>              llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> <span class="stringliteral">&quot;] cannot inline call to &quot;</span> &lt;&lt; call.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>()</div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>                           &lt;&lt; <span class="stringliteral">&quot; at &quot;</span> &lt;&lt; call.getLoc() &lt;&lt; <span class="stringliteral">&quot;: MLIR inlineCall failed\n&quot;</span></div>
+</div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>          );</div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>          call.emitWarning(<span class="stringliteral">&quot;failed to inline free function call; skipping this callee&quot;</span>);</div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>          skippedCallees.insert(callee);</div>
+<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>          <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>        }</div>
+<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>        call.erase();</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>      }</div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span> </div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>      callsToInline = collectFreeFunctionCalls(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>, tables, skippedCallees);</div>
+<div class="foldopen" id="foldopen00375" data-start="{" data-end="}">
+<div class="line"><a id="l00375" name="l00375"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html#aae07598c32f36ee2cc2f5d120d73b70d">  375</a></span>    }</div>
+<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>  }</div>
+<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span></div>
+</div>
+<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span></div>
+</div>
+<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span></div>
+<div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>  <span class="keywordtype">void</span> removeUnusedFunctions(ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
+<div class="foldopen" id="foldopen00381" data-start="{" data-end="}">
+<div class="line"><a id="l00381" name="l00381"></a><span class="lineno"><a class="line" href="namespacellzk.html#a2a13d34dbb912890632e93c572cd8450">  381</a></span>    SmallVector&lt;FuncDefOp&gt; toErase = collectUnusedHelpers(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>    <span class="keywordflow">while</span> (!toErase.empty()) {</div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>      <span class="keywordflow">for</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func : toErase) {</div>
+</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>        func.erase();</div>
+<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>      }</div>
+<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>      toErase = collectUnusedHelpers(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>    }</div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>  }</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>};</div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aCallGraphAnalyses_8h_html"><div class="ttname"><a href="CallGraphAnalyses_8h.html">CallGraphAnalyses.h</a></div></div>
 <div class="ttc" id="aConstraintDependencyGraph_8cpp_html_ad78e062f62e0d6e453941fb4ca843e4d"><div class="ttname"><a href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a></div><div class="ttdeci">#define DEBUG_TYPE</div><div class="ttdef"><b>Definition</b> <a href="ConstraintDependencyGraph_8cpp_source.html#l00031">ConstraintDependencyGraph.cpp:31</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -419,6 +521,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKInlineFree
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Ops_8h_html"><div class="ttname"><a href="Struct_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aSymbolUseGraph_8h_html"><div class="ttname"><a href="SymbolUseGraph_8h.html">SymbolUseGraph.h</a></div></div>
+<div class="ttc" id="aWalk_8h_html"><div class="ttname"><a href="Walk_8h.html">Walk.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1CallGraphNode_html"><div class="ttname"><a href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a></div><div class="ttdoc">This is a simple port of the mlir::CallGraphNode with llzk::CallGraph as a friend class,...</div><div class="ttdef"><b>Definition</b> <a href="CallGraph_8h_source.html#l00036">CallGraph.h:36</a></div></div>
 <div class="ttc" id="aclassllzk_1_1CallGraph_html"><div class="ttname"><a href="classllzk_1_1CallGraph.html">llzk::CallGraph</a></div><div class="ttdoc">This is a port of mlir::CallGraph that has been adapted to use the custom symbol lookup helpers (see ...</div><div class="ttdef"><b>Definition</b> <a href="CallGraph_8h_source.html#l00162">CallGraph.h:162</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SymbolUseGraphNode_html"><div class="ttname"><a href="classllzk_1_1SymbolUseGraphNode.html">llzk::SymbolUseGraphNode</a></div><div class="ttdef"><b>Definition</b> <a href="SymbolUseGraph_8h_source.html#l00027">SymbolUseGraph.h:27</a></div></div>
@@ -427,8 +530,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKInlineFree
 <div class="ttc" id="aclassllzk_1_1SymbolUseGraph_html_af43118f514a8e6b3eb4cf26106496adf"><div class="ttname"><a href="classllzk_1_1SymbolUseGraph.html#af43118f514a8e6b3eb4cf26106496adf">llzk::SymbolUseGraph::lookupNode</a></div><div class="ttdeci">const SymbolUseGraphNode * lookupNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path) const</div><div class="ttdoc">Return the existing node for the symbol reference relative to the given module, else nullptr.</div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructType_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructType.html">llzk::component::StructType</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Types_8h_8inc_source.html#l00052">Types.h.inc:52</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00340">Ops.h.inc:340</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_a4fc4f9a38b124a0829e71e09f3f9c101"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">llzk::function::CallOp::getCallee</a></div><div class="ttdeci">::mlir::SymbolRefAttr getCallee()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l00566">Ops.cpp.inc:566</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_af459db514098e5cbdaa007b6516d959c"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#af459db514098e5cbdaa007b6516d959c">llzk::function::CallOp::getCalleeTarget</a></div><div class="ttdeci">::mlir::FailureOr&lt;::llzk::SymbolLookupResult&lt;::llzk::function::FuncDefOp &gt; &gt; getCalleeTarget(::mlir::SymbolTableCollection &amp;tables)</div><div class="ttdoc">Resolve and return the target FuncDefOp for this CallOp.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l01038">Ops.cpp:1038</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00801">Ops.h.inc:801</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a9a43c5dd639761a506dc33983b9234b2"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2">llzk::function::FuncDefOp::getSymName</a></div><div class="ttdeci">::llvm::StringRef getSymName()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l01224">Ops.cpp.inc:1224</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1InlineFreeFunctionsPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html">llzk::impl::InlineFreeFunctionsPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00315">LLZKInlineFreeFunctionsPass.cpp:315</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1function_html"><div class="ttname"><a href="namespacellzk_1_1function.html">llzk::function</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00050">Ops.cpp:50</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
