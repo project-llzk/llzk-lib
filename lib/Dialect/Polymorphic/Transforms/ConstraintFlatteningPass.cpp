@@ -57,8 +57,6 @@ class ConstraintElaborator {
   /// Live unresolved scalar storage reads are rejected after dead SSA removal.
   llvm::DenseSet<Operation *> nonSignalReads;
   SmallVector<FuncDefOp> activeCalls;
-  /// Structural expressions may survive expansion only when dead.
-  llvm::DenseSet<Operation *> structuralOps;
 
   LogicalResult error(Operation *op, const Twine &message) {
     return op->emitError("constraint flattening: ") << message;
@@ -321,33 +319,41 @@ class ConstraintElaborator {
     return mapping;
   }
 
-  /// Integer expressions and non-native casts are structural facts, not constraints.
+  /// Only these scalar field expressions can remain in flattened constraints.
+  /// Purity or dialect membership alone does not establish field semantics.
+  static bool isFieldExpression(Operation &op) {
+    return isa<
+        felt::FeltConstantOp, felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::NegFeltOp>(
+        op
+    );
+  }
+
+  /// Recognize integer computations by shape, independently of their dialect.
+  /// These may be evaluated temporarily, but are never approved output operations.
+  static bool isIntegerExpression(Operation &op) {
+    return !op.getNumRegions() && op.getNumResults() && isMemoryEffectFree(&op) &&
+           llvm::all_of(op.getResultTypes(), [](Type type) {
+      return isa<IndexType, IntegerType>(type);
+    });
+  }
+
+  /// Evaluate pure integer results when possible; symbolic results must become dead.
   LogicalResult emitStructural(Operation &op, IRMapping &mapping, Environment &frame) {
-    if (op.getNumResults() != 1 || !isMemoryEffectFree(&op)) {
-      return error(&op, "lower non-native operations before constraint flattening");
-    }
-    Type type = op.getResult(0).getType();
-    if (!type.isIndex() && !type.isInteger(1)) {
-      return error(&op, "lower non-native operations before constraint flattening");
-    }
     Operation *emitted = builder.clone(op, mapping);
-    if (auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(emitted->getResult(0)))) {
-      frame[op.getResult(0)] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
-      facts.forget(emitted->getResult(0));
-      emitted->erase();
-    } else {
-      frame[op.getResult(0)] = emitted->getResult(0);
-      structuralOps.insert(emitted);
+    for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
+      if (auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(result))) {
+        frame[source] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
+      } else {
+        frame[source] = result;
+      }
     }
+    // Keep the temporary operation until final dead-code removal: other folded
+    // results may still depend on it, and the facts cache retains its SSA keys.
     return success();
   }
 
-  /// Emit ordinary scalar expressions without folding constraint arithmetic.
+  /// Emit explicitly supported constraints, or evaluate temporary integer facts.
   LogicalResult emit(Operation &op, Environment &frame) {
-    StringRef name = op.getName().getStringRef();
-    if (isa<felt::DivFeltOp>(op)) {
-      return error(&op, "lower non-native operations before constraint flattening");
-    }
     if (auto assertion = dyn_cast<boolean::AssertOp>(op)) {
       auto condition = facts.integer(scalar(assertion.getCondition(), frame));
       return condition && *condition ? success() : error(&op, "assertion must be statically true");
@@ -356,17 +362,12 @@ class ConstraintElaborator {
     if (equality && !isa<felt::FeltType>(op.getOperand(0).getType())) {
       return error(&op, "equality constraints require scalar felt operands");
     }
-    bool integerExpression = isa<arith::ArithDialect>(op.getDialect()) &&
-                             llvm::any_of(op.getResultTypes(), [](Type type) {
-      return type.isIndex() || type.isInteger(1);
-    });
-    bool structural =
-        op.hasTrait<function::NotFieldNative>() || isa<boolean::CmpOp>(op) || integerExpression;
-    bool expression =
-        isMemoryEffectFree(&op) && (isa<felt::FeltDialect, arith::ArithDialect>(op.getDialect()) ||
-                                    isa<cast::IntToFeltOp, ApplyMapOp>(op));
-    if (op.getNumRegions() || !(equality || expression || structural)) {
-      return error(&op, "unsupported operation '" + name + "'");
+    bool structural = isIntegerExpression(op);
+    if (!(isFieldExpression(op) || equality || isa<cast::IntToFeltOp>(op) || structural)) {
+      if (op.hasTrait<function::NotFieldNative>() || isa<felt::DivFeltOp>(op)) {
+        return error(&op, "lower non-native operations before constraint flattening");
+      }
+      return error(&op, "unsupported operation '" + op.getName().getStringRef() + "'");
     }
     auto mapping = scalarMapping(op, frame);
     if (failed(mapping)) {
@@ -649,7 +650,62 @@ class ConstraintElaborator {
     return error(block.getParentOp(), "missing supported terminator");
   }
 
-  /// Remove dead scalar/control expressions, then reject live non-signal reads.
+  /// Check every surviving operation against the flattened-output contract.
+  /// This check does not depend on how an operation reached the output region.
+  LogicalResult validateOperation(Operation &op) {
+    if (op.getNumRegions()) {
+      return error(&op, "regions are unsupported in flattened constraints");
+    }
+    if (isFieldExpression(op) || isa<constrain::EmitEqualityOp>(op)) {
+      auto fieldType = [](Type type) { return isa<felt::FeltType>(type); };
+      if (llvm::all_of(op.getOperandTypes(), fieldType) &&
+          llvm::all_of(op.getResultTypes(), fieldType)) {
+        return success();
+      }
+      return error(&op, "constraint expressions require scalar felt operands and results");
+    }
+    if (auto constant = dyn_cast<arith::ConstantOp>(op)) {
+      Type type = constant.getType();
+      if (type.isIndex() || type.isInteger(1)) {
+        return success();
+      }
+    }
+    if (auto conversion = dyn_cast<cast::IntToFeltOp>(op)) {
+      Attribute literal;
+      if (matchPattern(conversion.getValue(), m_Constant(&literal)) && isa<IntegerAttr>(literal)) {
+        return success();
+      }
+      return error(&op, "field conversion requires a compile-time integer");
+    }
+    if (isa<array::ReadArrayOp, array::ExtractArrayOp>(op)) {
+      ValueRange indices = isa<array::ReadArrayOp>(op)
+                               ? llvm::cast<array::ReadArrayOp>(op).getIndices()
+                               : llvm::cast<array::ExtractArrayOp>(op).getIndices();
+      for (Value index : indices) {
+        if (!index.getDefiningOp<arith::ConstantOp>()) {
+          return error(&op, "array path requires compile-time indices");
+        }
+      }
+      return success();
+    }
+    if (auto read = dyn_cast<MemberReadOp>(op)) {
+      if (read.getTableOffset()) {
+        return error(&op, "member read requires concrete non-column component storage");
+      }
+      return success();
+    }
+    if (isa<pod::ReadPodOp>(op)) {
+      return success();
+    }
+    if (isIntegerExpression(op)) {
+      return error(&op, "structural operation requires a compile-time value");
+    }
+    return error(
+        &op, "unsupported operation in flattened constraints: '" + op.getName().getStringRef() + "'"
+    );
+  }
+
+  /// Remove dead facts, enforce the output contract, and reject non-signal reads.
   LogicalResult validateOutput() {
     for (Operation &op : llvm::make_early_inc_range(llvm::reverse(output.front()))) {
       if (op.use_empty() &&
@@ -659,8 +715,8 @@ class ConstraintElaborator {
       }
     }
     for (Operation &op : output.front()) {
-      if (structuralOps.contains(&op)) {
-        return error(&op, "structural operation requires a compile-time value");
+      if (failed(validateOperation(op))) {
+        return failure();
       }
       if (nonSignalReads.contains(&op)) {
         return error(

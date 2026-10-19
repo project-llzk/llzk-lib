@@ -103,9 +103,6 @@ public:
     }
     return attr.getInt();
   }
-
-  /// Forget a disposable result before its operation is erased.
-  void forget(mlir::Value value) { constants.erase(value); }
 };
 
 } // namespace llzk::polymorphic::detail

@@ -21,6 +21,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %sum = arith.addi %index, %index : index
       %product = arith.muli %sum, %index : index
       %bits = arith.xori %both, %cmp : i1
+      %map = poly.applymap(%index) affine_map<(d) -> (d + 1)>
+      %wide = arith.index_cast %map : index to i64
+      %unused = cast.tofelt %index : index
       constrain.eq %x, %y : !felt.type, !felt.type
       function.return
     }
