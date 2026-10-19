@@ -39,6 +39,7 @@
 #include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/BuiltinDialect.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Parser/Parser.h>
 
@@ -50,6 +51,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
+#include <llvm/Support/SourceMgr.h>
 
 #include <cstdlib>
 #include <exception>
@@ -127,8 +129,11 @@ static int runMain(int argc, char **argv) {
   }
 
   ParserConfig parserConfig(&context);
-  OwningOpRef<ModuleOp> moduleOp =
-      parseSourceString<ModuleOp>(sourceBuffer.get()->getBuffer(), parserConfig, InputFilename);
+  llvm::SourceMgr sourceMgr;
+  sourceMgr.AddNewSourceBuffer(std::move(*sourceBuffer), llvm::SMLoc());
+  // Keep source diagnostics active through preprocessing and witness generation.
+  SourceMgrDiagnosticHandler diagnosticHandler(sourceMgr, &context);
+  OwningOpRef<ModuleOp> moduleOp = parseSourceFile<ModuleOp>(sourceMgr, parserConfig);
   if (!moduleOp) {
     return EXIT_FAILURE;
   }

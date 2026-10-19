@@ -101,7 +101,7 @@ createSMTModPrimeExpr(OpBuilder &builder, Location loc, Value value, IntegerAttr
 class NaiveNonNativeStrategy {
 public:
   /// Store the field prime and cache its integer attribute in the lowering context.
-  NaiveNonNativeStrategy(llvm::DynamicAPInt fieldPrime, MLIRContext *ctx);
+  NaiveNonNativeStrategy(const llvm::DynamicAPInt &fieldPrime, MLIRContext *ctx);
 
   mlir::smt::IntConstantOp
   createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
@@ -350,8 +350,10 @@ class NaiveBoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
 /// Bundle the naive non-native lowering policy. This keeps the original
 /// modulo-based encoding explicit while making the lowering strategy visible as
 /// a separate concept from the SMT integer operations used to materialize it.
-NaiveNonNativeStrategy::NaiveNonNativeStrategy(llvm::DynamicAPInt fieldPrime, MLIRContext *ctx)
-    : prime(std::move(fieldPrime)), primeAttr(IntegerAttr::get(ctx, toAPSInt(prime))) {}
+NaiveNonNativeStrategy::NaiveNonNativeStrategy(
+    const llvm::DynamicAPInt &fieldPrime, MLIRContext *ctx
+)
+    : prime(fieldPrime), primeAttr(IntegerAttr::get(ctx, toAPSInt(prime))) {}
 
 mlir::smt::IntConstantOp NaiveNonNativeStrategy::createZeroConstant(
     OpBuilder &builder, Location loc, MLIRContext *ctx
