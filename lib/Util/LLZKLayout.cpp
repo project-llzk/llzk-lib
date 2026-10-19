@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/Util/StructSpecialization.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Compare.h"
@@ -76,7 +77,7 @@ public:
     if (failed(root)) {
       return failure();
     }
-    topRoot = *root;
+    specializations.emplace(*root);
 
     auto constrain = main->get().getConstrainFuncOp();
     if (!constrain) {
@@ -158,41 +159,6 @@ private:
     return success();
   }
 
-  /// Resolve only family specializations needed by the visited storage. Ignore
-  /// malformed IDs on unrelated definitions; duplicate IDs matter only when used.
-  FailureOr<llzk::component::StructDefOp>
-  resolveSpecialization(llzk::component::StructType type, int64_t id, Operation *site) {
-    if (!specializationsIndexed) {
-      topRoot.walk([this](llzk::component::StructDefOp definition) {
-        auto metadata = definition->getAttrOfType<IntegerAttr>(SPECIALIZATION_ID_ATTR);
-        if (metadata && metadata.getValue().isSignedIntN(64) && metadata.getInt() >= 0) {
-          specializations[metadata.getInt()].push_back(definition);
-        }
-      });
-      specializationsIndexed = true;
-    }
-    auto target = specializations.find(id);
-    if (target == specializations.end()) {
-      return site->emitError("unknown struct specialization in LLZK layout family");
-    }
-    if (target->second.size() != 1) {
-      return site->emitError("ambiguous struct specialization in LLZK layout family");
-    }
-    auto definition = target->second.front();
-    auto source = type.getDefinition(tables, site);
-    if (failed(source)) {
-      return failure();
-    }
-    if (!*source || source->viaInclude()) {
-      return site->emitError("cannot resolve LLZK layout family source; inline includes first");
-    }
-    auto origin = llzk::getPathRelativeToAncestor(source->get(), topRoot);
-    if (failed(origin) || definition->getAttr(SPECIALIZATION_ORIGIN_ATTR) != *origin) {
-      return site->emitError("struct specialization origin does not match LLZK layout family");
-    }
-    return definition;
-  }
-
   LogicalResult visitType(
       Type type, Operation *site, SmallVectorImpl<Attribute> &path, bool isSignal,
       ArrayRef<int64_t> indices = {}
@@ -240,7 +206,8 @@ private:
         if (found == families[site].end()) {
           return site->emitError("missing concrete struct family element for LLZK layout");
         }
-        auto definition = resolveSpecialization(structure, found->second, site);
+        auto definition =
+            specializations->resolve(tables, structure, found->second, site, "LLZK layout");
         if (failed(definition)) {
           return failure();
         }
@@ -289,9 +256,8 @@ private:
 
   Builder builder;
   SymbolTableCollection tables;
-  ModuleOp topRoot;
-  bool specializationsIndexed = false;
-  llvm::DenseMap<int64_t, SmallVector<llzk::component::StructDefOp, 1>> specializations;
+  /// Lazily resolves referenced family IDs in the outermost module.
+  std::optional<StructSpecializationResolver> specializations;
   llvm::DenseMap<Operation *, llvm::DenseMap<std::pair<Type, ArrayAttr>, int64_t>> families;
   llvm::DenseSet<Operation *> activeStructs;
   llzk::LLZKLayout layout;

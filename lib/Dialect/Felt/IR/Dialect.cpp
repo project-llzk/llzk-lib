@@ -51,7 +51,7 @@ struct FeltDialectBytecodeInterface
       return {};
     }
     if (encoding > std::numeric_limits<uint8_t>::max()) {
-      reader.emitError() << "unknown felt attribute encoding: " << encoding;
+      reader.emitError("unknown felt attribute encoding: ") << encoding;
       return {};
     }
 
@@ -90,14 +90,14 @@ struct FeltDialectBytecodeInterface
     }
     }
 
-    reader.emitError() << "unknown felt attribute encoding: " << encoding;
+    reader.emitError("unknown felt attribute encoding: ") << encoding;
     return {};
   }
 
   LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &writer) const final {
     if (auto feltConst = dyn_cast<llzk::felt::FeltConstAttr>(attr)) {
       writer.writeVarInt(static_cast<uint64_t>(FeltAttrEncoding::FeltConst));
-      llzk::writeDynamicAPInt(writer, feltConst.getValue());
+      llzk::writeDynamicAPInt(writer, feltConst.getRawValue());
       writer.writeType(feltConst.getType());
       return success();
     }
@@ -199,7 +199,7 @@ Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
   if (failed(valueRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FeltConstAttr parameter 'value' which is to be an integer"
+        "failed to parse LLZK_FeltConstAttr parameter 'rawValue' which is to be an integer"
     );
     return {};
   }
@@ -240,10 +240,11 @@ Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
 // Same as tablegen would generate to serialize version 2 IR.
 void FeltConstAttr::print(AsmPrinter &odsPrinter) const {
   odsPrinter << ' ';
-  odsPrinter.printStrippedAttrOrType(getValue());
-  if (getType() != FeltType::get(getContext())) {
+  odsPrinter.printStrippedAttrOrType(getRawValue());
+  FeltType ty = getType();
+  if (ty != FeltType::get(getContext())) {
     odsPrinter << " : ";
-    odsPrinter.printStrippedAttrOrType(getType());
+    odsPrinter.printStrippedAttrOrType(ty);
   }
 }
 

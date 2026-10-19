@@ -613,8 +613,7 @@ public:
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (!strategy->isScalarFeltType(op.getVal().getType())) {
-      op.emitError("SMT lowering currently only supports felt-valued struct.writem");
-      return failure();
+      return op.emitError("SMT lowering currently only supports felt-valued struct.writem");
     }
 
     auto it = symbols.find(adaptor.getMemberName());
@@ -1156,7 +1155,7 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
       auto smtFunc =
           dyn_cast_or_null<func::FuncOp>(SymbolTable::lookupSymbolIn(symbolTableOp, smtFuncName));
       if (!smtFunc) {
-        mod.emitError() << "failed to locate lowered SMT function \"" << smtFuncName << "\"";
+        mod.emitError() << "failed to locate lowered SMT function \"" << smtFuncName << '"';
         signalPassFailure();
         return;
       }

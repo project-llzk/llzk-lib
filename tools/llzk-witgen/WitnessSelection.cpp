@@ -79,8 +79,9 @@ static LogicalResult appendSignalLeafBindings(
     return success();
   }
 
-  origin->emitError("signal members in llzk-witgen must be felts, felt arrays, or PODs of felts");
-  return failure();
+  return origin->emitError(
+      "signal members in llzk-witgen must be felts, felt arrays, or PODs of felts"
+  );
 }
 
 /// Append recursively selected signal leaves from one struct container.
@@ -112,8 +113,7 @@ static LogicalResult appendStructSignalBindings(
 
     auto structType = dyn_cast<component::StructType>(member.getType());
     if (!structType) {
-      member.emitError("non-struct signal container is unsupported in llzk-witgen");
-      return failure();
+      return member.emitError("non-struct signal container is unsupported in llzk-witgen");
     }
     auto defLookup = structType.getDefinition(tables, origin);
     if (failed(defLookup)) {

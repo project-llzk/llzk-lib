@@ -26,8 +26,23 @@ LogicalResult FieldSpecAttr::verify(
 }
 
 StringAttr FeltConstAttr::getFieldName() const {
-  auto ft = getType();
+  FeltType ft = getType();
   return ft ? ft.getFieldName() : StringAttr();
+}
+
+std::optional<llvm::DynamicAPInt> FeltConstAttr::getReducedValue() const {
+  FeltType type = getType();
+  if (!type || !type.hasField()) {
+    return std::nullopt;
+  }
+  return type.getField().reduce(getRawValue());
+}
+
+llvm::DynamicAPInt FeltConstAttr::getReducedValueOrRaw() const {
+  if (auto reduced = getReducedValue()) {
+    return *reduced;
+  }
+  return getRawValue();
 }
 
 } // namespace llzk::felt

@@ -1,0 +1,76 @@
+// RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Helpers::@Root" -o %t
+// RUN: FileCheck %s --match-full-lines < %t
+// RUN: llzk-opt %t --llzk-expose-child-members="root-struct=@Helpers::@Root" -o %t.again
+// RUN: diff %t %t.again
+
+// An explicit nested root works without llzk.main and distinguishes same-named roots.
+
+module attributes {llzk.lang} {
+  struct.def @Root {
+    struct.member @private : !felt.type {signal}
+    function.def @product() -> !struct.type<@Root> {
+      %self = struct.new : <@Root>
+      function.return %self : !struct.type<@Root>
+    }
+  }
+  module @Helpers {
+    struct.def @Leaf {
+      struct.member @value : !felt.type {signal, tag = "keep"}
+      function.def @product() -> !struct.type<@Helpers::@Leaf> {
+        %self = struct.new : <@Helpers::@Leaf>
+        function.return %self : !struct.type<@Helpers::@Leaf>
+      }
+    }
+    struct.def @Child {
+      struct.member @leaf : !struct.type<@Helpers::@Leaf>
+      function.def @product() -> !struct.type<@Helpers::@Child> {
+        %self = struct.new : <@Helpers::@Child>
+        function.return %self : !struct.type<@Helpers::@Child>
+      }
+    }
+    struct.def @Root {
+      struct.member @child : !struct.type<@Helpers::@Child>
+      struct.member @shared : !struct.type<@Helpers::@Child>
+      struct.member @private : !felt.type {signal}
+      function.def @product() -> !struct.type<@Helpers::@Root> {
+        %self = struct.new : <@Helpers::@Root>
+        function.return %self : !struct.type<@Helpers::@Root>
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Root {
+// CHECK-NEXT:      struct.member @private : !felt.type {signal}
+// CHECK-NEXT:      function.def @product() -> !struct.type<@Root> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Root>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Root>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @Helpers {
+// CHECK-NEXT:      struct.def @Leaf {
+// CHECK-NEXT:        struct.member @value : !felt.type {llzk.pub, signal, tag = "keep"}
+// CHECK-NEXT:        function.def @product() -> !struct.type<@Helpers::@Leaf> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Helpers::@Leaf>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Helpers::@Leaf>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        struct.member @leaf : !struct.type<@Helpers::@Leaf> {llzk.pub}
+// CHECK-NEXT:        function.def @product() -> !struct.type<@Helpers::@Child> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Helpers::@Child>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@Helpers::@Child>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Root {
+// CHECK-NEXT:        struct.member @child : !struct.type<@Helpers::@Child>
+// CHECK-NEXT:        struct.member @shared : !struct.type<@Helpers::@Child>
+// CHECK-NEXT:        struct.member @private : !felt.type {signal}
+// CHECK-NEXT:        function.def @product() -> !struct.type<@Helpers::@Root> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Helpers::@Root>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@Helpers::@Root>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

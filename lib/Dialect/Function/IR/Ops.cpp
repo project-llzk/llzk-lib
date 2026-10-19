@@ -565,8 +565,7 @@ LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationSta
       return failure();
     }
     if (attr.size() > static_cast<int64_t>(sizeof(propStorage) / sizeof(int32_t))) {
-      reader.emitError("size mismatch for operand/result_segment_size");
-      return failure();
+      return reader.emitError("size mismatch for operand/result_segment_size");
     }
     llvm::copy(ArrayRef<int32_t>(attr), propStorage.begin());
   }
