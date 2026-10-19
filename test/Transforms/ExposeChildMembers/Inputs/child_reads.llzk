@@ -69,9 +69,6 @@ module @Top attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %child = struct.readm %self[@child] : <@Main>, !struct.type<@Child>
-      %leaf = struct.readm %child[@leaf] : <@Child>, !struct.type<@Leaf>
-      %out = struct.readm %leaf[@out] : <@Leaf>, !felt.type
-      constrain.eq %out, %out : !felt.type
       function.return
     }
   }
