@@ -32,7 +32,11 @@ class ConstraintScalarFacts {
     // nonnegative, signed-64 representability rule for structural indices.
     if (auto conversion = llvm::dyn_cast<llzk::cast::FeltToIndexOp>(producer)) {
       if (auto constant = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operands.front())) {
-        auto converted = checkedToInt64(constant.getValue());
+        auto reduced = constant.getReducedValue();
+        if (!reduced) {
+          return;
+        }
+        auto converted = checkedToInt64(*reduced);
         if (converted && *converted >= 0) {
           constants[current] = builder.getIndexAttr(*converted);
         } else if (!converted) {

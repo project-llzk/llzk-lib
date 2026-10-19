@@ -35,7 +35,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   } {poly.specialization_id = 1 : i64, poly.origin = @Child::@Child, poly.arguments = [0 : index]}
   struct.def @Main {
     struct.member @ok : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {poly.family = [{indices = [0 : index], specialization = 1 : i64, type = !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>}]}
-    // expected-error @+1 {{unknown struct specialization in child-member visibility family}}
+    // expected-error @+1 {{unknown struct specialization in llzk-expose-child-members family}}
     struct.member @items : !array.type<1 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>> {poly.family = [{indices = [0 : index], specialization = 2 : i64, type = !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>}]}
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : <@Main>
