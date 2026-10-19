@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Dial
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>      <span class="keywordflow">return</span> {};</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    }</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">if</span> (encoding &gt; std::numeric_limits&lt;uint8_t&gt;::max()) {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      reader.emitError() &lt;&lt; <span class="stringliteral">&quot;unknown felt attribute encoding: &quot;</span> &lt;&lt; encoding;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      reader.emitError(<span class="stringliteral">&quot;unknown felt attribute encoding: &quot;</span>) &lt;&lt; encoding;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      <span class="keywordflow">return</span> {};</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    }</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Dial
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    }</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    }</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    reader.emitError() &lt;&lt; <span class="stringliteral">&quot;unknown felt attribute encoding: &quot;</span> &lt;&lt; encoding;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    reader.emitError(<span class="stringliteral">&quot;unknown felt attribute encoding: &quot;</span>) &lt;&lt; encoding;</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    <span class="keywordflow">return</span> {};</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  }</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
