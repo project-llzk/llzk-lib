@@ -104,6 +104,11 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
     if (!result) {
       return failure();
     }
+    // Truncation can leave low bits outside the field range. A felt.const
+    // reduces modulo the prime, so it cannot preserve that cast result.
+    if (*result >= field.prime()) {
+      return failure();
+    }
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
         op, felt::FeltConstAttr::get(op->getContext(), *result, resultType)
     );
