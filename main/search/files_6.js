@@ -15,5 +15,7 @@ var searchData=
   ['errorhelper_2eh_12',['ErrorHelper.h',['../ErrorHelper_8h.html',1,'']]],
   ['errors_2eh_13',['Errors.h',['../Errors_8h.html',1,'']]],
   ['executionenginebackend_2ecpp_14',['ExecutionEngineBackend.cpp',['../ExecutionEngineBackend_8cpp.html',1,'']]],
-  ['executionenginebackend_2eh_15',['ExecutionEngineBackend.h',['../ExecutionEngineBackend_8h.html',1,'']]]
+  ['executionenginebackend_2eh_15',['ExecutionEngineBackend.h',['../ExecutionEngineBackend_8h.html',1,'']]],
+  ['exposechildmemberspass_2ecpp_16',['ExposeChildMembersPass.cpp',['../ExposeChildMembersPass_8cpp.html',1,'']]],
+  ['exposechildmemberspass_2eh_17',['ExposeChildMembersPass.h',['../ExposeChildMembersPass_8h.html',1,'']]]
 ];

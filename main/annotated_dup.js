@@ -142,11 +142,13 @@ var annotated_dup =
           [ "StructTypeStorage", "structllzk_1_1component_1_1detail_1_1StructTypeStorage.html", "structllzk_1_1component_1_1detail_1_1StructTypeStorage" ]
         ] ],
         [ "impl", "namespacellzk_1_1component_1_1impl.html", [
+          [ "ExposeChildMembersPassBase", "classllzk_1_1component_1_1impl_1_1ExposeChildMembersPassBase.html", "classllzk_1_1component_1_1impl_1_1ExposeChildMembersPassBase" ],
           [ "InlineStructsPassBase", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase" ]
         ] ],
         [ "CreateStructOp", "classllzk_1_1component_1_1CreateStructOp.html", "classllzk_1_1component_1_1CreateStructOp" ],
         [ "CreateStructOpAdaptor", "classllzk_1_1component_1_1CreateStructOpAdaptor.html", "classllzk_1_1component_1_1CreateStructOpAdaptor" ],
         [ "CreateStructOpGenericAdaptor", "classllzk_1_1component_1_1CreateStructOpGenericAdaptor.html", "classllzk_1_1component_1_1CreateStructOpGenericAdaptor" ],
+        [ "ExposeChildMembersPassOptions", "structllzk_1_1component_1_1ExposeChildMembersPassOptions.html", "structllzk_1_1component_1_1ExposeChildMembersPassOptions" ],
         [ "InlineStructsPassOptions", "structllzk_1_1component_1_1InlineStructsPassOptions.html", "structllzk_1_1component_1_1InlineStructsPassOptions" ],
         [ "InStructFunctionNamed", "structllzk_1_1component_1_1InStructFunctionNamed.html", "structllzk_1_1component_1_1InStructFunctionNamed" ],
         [ "MemberDefOp", "classllzk_1_1component_1_1MemberDefOp.html", "classllzk_1_1component_1_1MemberDefOp" ],
@@ -424,6 +426,7 @@ var annotated_dup =
         [ "ConstReadOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor" ],
         [ "FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1FlatteningPassOptions" ],
         [ "PolymorphicDialect", "classllzk_1_1polymorphic_1_1PolymorphicDialect.html", "classllzk_1_1polymorphic_1_1PolymorphicDialect" ],
+        [ "StructSpecializationResolver", "classllzk_1_1polymorphic_1_1StructSpecializationResolver.html", "classllzk_1_1polymorphic_1_1StructSpecializationResolver" ],
         [ "TemplateExprOp", "classllzk_1_1polymorphic_1_1TemplateExprOp.html", "classllzk_1_1polymorphic_1_1TemplateExprOp" ],
         [ "TemplateExprOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor" ],
         [ "TemplateExprOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor" ],

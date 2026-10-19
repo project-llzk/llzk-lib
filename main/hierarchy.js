@@ -442,6 +442,7 @@ var hierarchy =
       ] ],
       [ "llzk::boolean::ExistsOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::component::ExposeChildMembersPassOptions", "structllzk_1_1component_1_1ExposeChildMembersPassOptions.html", null ],
     [ "llzk::ExpressionValue", "classllzk_1_1ExpressionValue.html", null ],
     [ "llzk::array::detail::ExtractArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1ExtractArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::ExtractArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1ExtractArrayOpGenericAdaptor.html", null ],
@@ -832,6 +833,7 @@ var hierarchy =
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
       [ "llzk::array::impl::StraightLineStaticArrayPromotionPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1StraightLineStaticArrayPromotionPassBase.html", null ],
       [ "llzk::boolean::impl::LowerBoolQuantifiersPassBase< DerivedT >", "classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html", null ],
+      [ "llzk::component::impl::ExposeChildMembersPassBase< DerivedT >", "classllzk_1_1component_1_1impl_1_1ExposeChildMembersPassBase.html", null ],
       [ "llzk::component::impl::InlineStructsPassBase< DerivedT >", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", null ],
       [ "llzk::global::impl::ConstGlobalPropagationPassBase< DerivedT >", "classllzk_1_1global_1_1impl_1_1ConstGlobalPropagationPassBase.html", null ],
       [ "llzk::impl::CallGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", null ],
@@ -1078,6 +1080,7 @@ var hierarchy =
     [ "llzk::StructIntervals", "classllzk_1_1StructIntervals.html", null ],
     [ "llzk::polymorphic::detail::StructSpecializationDiscovery", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html", null ],
     [ "llzk::polymorphic::detail::StructSpecializationRequest", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html", null ],
+    [ "llzk::polymorphic::StructSpecializationResolver", "classllzk_1_1polymorphic_1_1StructSpecializationResolver.html", null ],
     [ "llzk::witgen::StructValue", "structllzk_1_1witgen_1_1StructValue.html", null ],
     [ "llzk::felt::detail::SubFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1SubFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::SubFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1SubFeltOpGenericAdaptor.html", null ],

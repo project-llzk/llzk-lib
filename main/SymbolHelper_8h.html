@@ -149,7 +149,7 @@ Include dependency graph for SymbolHelper.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8h__dep__incl.svg" width="9034" height="663"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8h__dep__incl.svg" width="9279" height="680"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="SymbolHelper_8h_source.html">Go to the source code of this file.</a></p>
@@ -209,6 +209,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ad6a62477b5882627ae96efae86033e0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lookup the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a></span> of the main instance.  <br /></td></tr>
 <tr class="memitem:af2ee56cf8771e642184d08d9864f6d8d" id="r_af2ee56cf8771e642184d08d9864f6d8d"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#af2ee56cf8771e642184d08d9864f6d8d">llzk::getMainInstanceDef</a> (mlir::SymbolTableCollection &amp;symbolTable, mlir::Operation *lookupFrom)</td></tr>
 <tr class="memdesc:af2ee56cf8771e642184d08d9864f6d8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lookup the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> of the main instance.  <br /></td></tr>
+<tr class="memitem:a3d7a8c21ebb443d7f422ed7013469ee1" id="r_a3d7a8c21ebb443d7f422ed7013469ee1"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a3d7a8c21ebb443d7f422ed7013469ee1">llzk::getRootStructDef</a> (mlir::SymbolTableCollection &amp;tables, mlir::Operation *lookupFrom, mlir::StringRef symbolPath={})</td></tr>
+<tr class="memdesc:a3d7a8c21ebb443d7f422ed7013469ee1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolve symbolPath (MLIR syntax or a bare name), defaulting to llzk.main.  <br /></td></tr>
 <tr class="memitem:a76f6ee502fe0bb6ab1986e1ad9090c77" id="r_a76f6ee502fe0bb6ab1986e1ad9090c77"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:a76f6ee502fe0bb6ab1986e1ad9090c77 template"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; T &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a76f6ee502fe0bb6ab1986e1ad9090c77">llzk::resolveCallable</a> (mlir::SymbolTableCollection &amp;symbolTable, mlir::CallOpInterface call)</td></tr>
 <tr class="memdesc:a76f6ee502fe0bb6ab1986e1ad9090c77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers.  <br /></td></tr>

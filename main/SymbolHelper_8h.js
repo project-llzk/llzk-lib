@@ -26,6 +26,7 @@ var SymbolHelper_8h =
     [ "llzk::getPieces", "namespacellzk.html#a2e5122183c36be89ee3a9b8df87b5223", null ],
     [ "llzk::getPrefixAsSymbolRefAttr", "namespacellzk.html#a0cc045d4128ed47c170ca4c017bf02f0", null ],
     [ "llzk::getRootModule", "namespacellzk.html#a6c6b23d251765a4ab382acebfd6138fd", null ],
+    [ "llzk::getRootStructDef", "namespacellzk.html#a3d7a8c21ebb443d7f422ed7013469ee1", null ],
     [ "llzk::getTailAsSymbolRefAttr", "namespacellzk.html#ab8be495092bcd4acc4f4064a0e8ee703", null ],
     [ "llzk::getTopRootModule", "namespacellzk.html#a6982559aa99cea04c0cf47ee38166ce2", null ],
     [ "llzk::replaceLeaf", "namespacellzk.html#a1971dcef957ffd67e7ee350f8841c34c", null ],

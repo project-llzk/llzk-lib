@@ -21,6 +21,7 @@ var SymbolHelper_8cpp =
     [ "llzk::getPathRelativeToAncestor", "namespacellzk.html#acbba3e4d36321d28df3b55ba06166375", null ],
     [ "llzk::getPieces", "namespacellzk.html#aefd24a67a7806996a53b63a5014c82a2", null ],
     [ "llzk::getRootModule", "namespacellzk.html#a44fd8ecd88f8e6b80079bf6c1328412a", null ],
+    [ "llzk::getRootStructDef", "namespacellzk.html#aeffd65314f06aac04ebbb1f3270cf2f4", null ],
     [ "llzk::getTopRootModule", "namespacellzk.html#a858ad75166540367bf85ae38bc875707", null ],
     [ "llzk::replaceLeaf", "namespacellzk.html#a6233c90d2afb42113aa36eddeebd8f76", null ],
     [ "llzk::verifyParamOfType", "namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3", null ],

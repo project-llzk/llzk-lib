@@ -1,5 +1,10 @@
 var NAVTREEINDEX13 =
 {
+"String_2IR_2Ops_8capi_8h_8inc.html#a4cce874c251e61a38d922727fbcd9f22":[14,0,0,0,0,2,14,0,4,2],
+"String_2IR_2Ops_8capi_8h_8inc.html#aaca96ae9173a1d8091be134b0d313f27":[14,0,0,0,0,2,14,0,4,3],
+"String_2IR_2Ops_8capi_8h_8inc.html#aae9eecde79c9b0569e2ac3a1cda43f5c":[14,0,0,0,0,2,14,0,4,0],
+"String_2IR_2Ops_8capi_8h_8inc.html#acfb85bb50b2694bd5f58f4b936aae518":[14,0,0,0,0,2,14,0,4,4],
+"String_2IR_2Ops_8capi_8h_8inc.html#ad8d555d4cbf3b1a63cc47e590c50c9b0":[14,0,0,0,0,2,14,0,4,1],
 "String_2IR_2Ops_8capi_8h_8inc_source.html":[14,0,0,0,0,2,14,0,4],
 "String_2IR_2Ops_8capi_8test_8cpp_8inc.html":[14,0,0,0,0,2,14,0,5],
 "String_2IR_2Ops_8capi_8test_8cpp_8inc.html#a0dd798c70076e2a8e0399a74ea07fb26":[14,0,0,0,0,2,14,0,5,5],
@@ -51,6 +56,10 @@ var NAVTREEINDEX13 =
 "StructSpecializationDiscovery_8cpp_source.html":[14,0,3,3,10,1,4],
 "StructSpecializationDiscovery_8h.html":[14,0,3,3,10,1,5],
 "StructSpecializationDiscovery_8h_source.html":[14,0,3,3,10,1,5],
+"StructSpecialization_8cpp.html":[14,0,3,3,10,2,0],
+"StructSpecialization_8cpp_source.html":[14,0,3,3,10,2,0],
+"StructSpecialization_8h.html":[14,0,2,0,2,10,2,0],
+"StructSpecialization_8h_source.html":[14,0,2,0,2,10,2,0],
 "Struct_2IR_2Dialect_8capi_8test_8cpp_8inc.html":[14,0,0,0,0,2,15,0,0],
 "Struct_2IR_2Dialect_8capi_8test_8cpp_8inc.html#a1948f46355fd84d6f891a79d0c0186ec":[14,0,0,0,0,2,15,0,0,1],
 "Struct_2IR_2Dialect_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,15,0,0],
@@ -240,14 +249,5 @@ var NAVTREEINDEX13 =
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#afbb8f48c6afeba66fc0d35ba1dac8862":[14,0,0,0,0,2,15,0,7,18],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#afbfdca680a95ce3c83261165863d449a":[14,0,0,0,0,2,15,0,7,46],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,15,0,7],
-"Struct_2IR_2Ops_8cpp.html":[14,0,3,3,15,0,1],
-"Struct_2IR_2Ops_8cpp.html#a52c883a38e577b8b12282ff70c95a16d":[14,0,3,3,15,0,1,0],
-"Struct_2IR_2Ops_8cpp_8inc.html":[14,0,0,0,0,2,15,0,8],
-"Struct_2IR_2Ops_8cpp_8inc_source.html":[14,0,0,0,0,2,15,0,8],
-"Struct_2IR_2Ops_8cpp_source.html":[14,0,3,3,15,0,1],
-"Struct_2IR_2Ops_8h.html":[14,0,2,0,2,15,0,4],
-"Struct_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d":[14,0,2,0,2,15,0,4,3],
-"Struct_2IR_2Ops_8h_8inc.html":[14,0,0,0,0,2,15,0,9],
-"Struct_2IR_2Ops_8h_8inc_source.html":[14,0,0,0,0,2,15,0,9],
-"Struct_2IR_2Ops_8h_source.html":[14,0,2,0,2,15,0,4]
+"Struct_2IR_2Ops_8cpp.html":[14,0,3,3,15,0,1]
 };

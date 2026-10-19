@@ -348,6 +348,8 @@ var namespacellzk =
     [ "getPrefixAsSymbolRefAttr", "namespacellzk.html#a0cc045d4128ed47c170ca4c017bf02f0", null ],
     [ "getRootModule", "namespacellzk.html#a6c6b23d251765a4ab382acebfd6138fd", null ],
     [ "getRootModule", "namespacellzk.html#a44fd8ecd88f8e6b80079bf6c1328412a", null ],
+    [ "getRootStructDef", "namespacellzk.html#a3d7a8c21ebb443d7f422ed7013469ee1", null ],
+    [ "getRootStructDef", "namespacellzk.html#aeffd65314f06aac04ebbb1f3270cf2f4", null ],
     [ "getSelfOrParentOfType", "namespacellzk.html#ad55d77a77dc0f2d6c27bc7b6bedbc952", null ],
     [ "getStructDef", "namespacellzk.html#aeeff538232cefaed065163beccfe7014", null ],
     [ "getSymbolName", "namespacellzk.html#a3d8de77a26a8e9454e2506ec5beb7e4f", null ],

@@ -1,12 +1,19 @@
 var Struct_2Transforms_2TransformationPasses_8h =
 [
+    [ "llzk::component::ExposeChildMembersPassOptions", "structllzk_1_1component_1_1ExposeChildMembersPassOptions.html", "structllzk_1_1component_1_1ExposeChildMembersPassOptions" ],
     [ "llzk::component::InlineStructsPassOptions", "structllzk_1_1component_1_1InlineStructsPassOptions.html", "structllzk_1_1component_1_1InlineStructsPassOptions" ],
     [ "GEN_PASS_DECL", "Struct_2Transforms_2TransformationPasses_8h.html#ab89199f50939908fa0581f7323f23e14", null ],
+    [ "GEN_PASS_DECL_EXPOSECHILDMEMBERSPASS", "Struct_2Transforms_2TransformationPasses_8h.html#a4e7bab4789b19fc022ec334e9ff51da0", null ],
     [ "GEN_PASS_DECL_INLINESTRUCTSPASS", "Struct_2Transforms_2TransformationPasses_8h.html#a4df1e81c57874a13f8e925b5f4ca404a", null ],
     [ "GEN_PASS_REGISTRATION", "Struct_2Transforms_2TransformationPasses_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede", null ],
+    [ "GEN_PASS_REGISTRATION_EXPOSECHILDMEMBERSPASS", "Struct_2Transforms_2TransformationPasses_8h.html#a4213a70820b3754775c5db6d0964a88a", null ],
     [ "GEN_PASS_REGISTRATION_INLINESTRUCTSPASS", "Struct_2Transforms_2TransformationPasses_8h.html#a0ff8847468b229b29932912904b7a16a", null ],
+    [ "llzk::component::createExposeChildMembersPass", "namespacellzk_1_1component.html#a64e7d121bd194737a24fa04c4362500f", null ],
+    [ "llzk::component::createExposeChildMembersPass", "namespacellzk_1_1component.html#aeaceebcc15039f63992ad8e49e81d863", null ],
     [ "llzk::component::createInlineStructsPass", "namespacellzk_1_1component.html#ab8f9c24c24400370b1481c20e26702a1", null ],
     [ "llzk::component::createInlineStructsPass", "namespacellzk_1_1component.html#a009a8e21a023cee8577ff5cec5cec264", null ],
+    [ "llzk::component::registerExposeChildMembersPass", "namespacellzk_1_1component.html#a5117f0e96f35a17027153d94bc5412d8", null ],
+    [ "llzk::component::registerExposeChildMembersPassPass", "namespacellzk_1_1component.html#af5179218fcd47bb8126498d13f497688", null ],
     [ "llzk::component::registerInlineStructsPass", "namespacellzk_1_1component.html#a5f901319771d25894d331aa098b7fab2", null ],
     [ "llzk::component::registerInlineStructsPassPass", "namespacellzk_1_1component.html#a4ab0864d518c0db730004516b55b4372", null ],
     [ "llzk::component::registerTransformationPasses", "namespacellzk_1_1component.html#a408210e204109af2a394a935195c4002", null ]

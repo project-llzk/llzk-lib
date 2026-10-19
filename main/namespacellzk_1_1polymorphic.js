@@ -10,6 +10,7 @@ var namespacellzk_1_1polymorphic =
     [ "ConstReadOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor" ],
     [ "FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1FlatteningPassOptions" ],
     [ "PolymorphicDialect", "classllzk_1_1polymorphic_1_1PolymorphicDialect.html", "classllzk_1_1polymorphic_1_1PolymorphicDialect" ],
+    [ "StructSpecializationResolver", "classllzk_1_1polymorphic_1_1StructSpecializationResolver.html", "classllzk_1_1polymorphic_1_1StructSpecializationResolver" ],
     [ "TemplateExprOp", "classllzk_1_1polymorphic_1_1TemplateExprOp.html", "classllzk_1_1polymorphic_1_1TemplateExprOp" ],
     [ "TemplateExprOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor" ],
     [ "TemplateExprOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor" ],

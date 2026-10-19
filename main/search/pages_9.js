@@ -11,7 +11,8 @@ var searchData=
   ['eq_20_3a_3allzk_3a_3aconstrain_3a_3aemitequalityop_8',['&lt;span class=&quot;tt&quot;&gt;constrain.eq&lt;/span&gt; (llzk::constrain::EmitEqualityOp)',['../dialects.html#constraineq-llzkconstrainemitequalityop',1,'']]],
   ['eq_20_3a_3apcl_3a_3acmpeqop_9',['&lt;span class=&quot;tt&quot;&gt;pcl.eq&lt;/span&gt; (pcl::CmpEqOp)',['../pcl-backend.html#pcleq-pclcmpeqop',1,'']]],
   ['exists_20_3a_3allzk_3a_3aboolean_3a_3aexistsop_10',['&lt;span class=&quot;tt&quot;&gt;bool.exists&lt;/span&gt; (llzk::boolean::ExistsOp)',['../dialects.html#boolexists-llzkbooleanexistsop',1,'']]],
-  ['expr_20_3a_3allzk_3a_3apolymorphic_3a_3atemplateexprop_11',['&lt;span class=&quot;tt&quot;&gt;poly.expr&lt;/span&gt; (llzk::polymorphic::TemplateExprOp)',['../dialects.html#polyexpr-llzkpolymorphictemplateexprop',1,'']]],
-  ['expression_20size_12',['&lt;span class=&quot;tt&quot;&gt;-pcl-trim-expression-size&lt;/span&gt;',['../tools.html#autotoc_md-pcl-trim-expression-size',1,'']]],
-  ['extract_20_3a_3allzk_3a_3aarray_3a_3aextractarrayop_13',['&lt;span class=&quot;tt&quot;&gt;array.extract&lt;/span&gt; (llzk::array::ExtractArrayOp)',['../dialects.html#arrayextract-llzkarrayextractarrayop',1,'']]]
+  ['expose_20child_20members_11',['&lt;span class=&quot;tt&quot;&gt;-llzk-expose-child-members&lt;/span&gt;',['../tools.html#autotoc_md-llzk-expose-child-members',1,'']]],
+  ['expr_20_3a_3allzk_3a_3apolymorphic_3a_3atemplateexprop_12',['&lt;span class=&quot;tt&quot;&gt;poly.expr&lt;/span&gt; (llzk::polymorphic::TemplateExprOp)',['../dialects.html#polyexpr-llzkpolymorphictemplateexprop',1,'']]],
+  ['expression_20size_13',['&lt;span class=&quot;tt&quot;&gt;-pcl-trim-expression-size&lt;/span&gt;',['../tools.html#autotoc_md-pcl-trim-expression-size',1,'']]],
+  ['extract_20_3a_3allzk_3a_3aarray_3a_3aextractarrayop_14',['&lt;span class=&quot;tt&quot;&gt;array.extract&lt;/span&gt; (llzk::array::ExtractArrayOp)',['../dialects.html#arrayextract-llzkarrayextractarrayop',1,'']]]
 ];
