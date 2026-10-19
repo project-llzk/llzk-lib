@@ -1618,7 +1618,7 @@ private:
       if (!arrayNewOp.getElements().empty()) {
         auto elementCount = checkedCast<size_t>(arrayNewOp.getType().getNumElements());
         if (!elementCount) {
-          return arrayNewOp.emitError() << llvm::toString(elementCount.takeError());
+          return arrayNewOp.emitError(llvm::toString(elementCount.takeError()));
         }
         if (arrayNewOp.getElements().size() != *elementCount) {
           return arrayNewOp.emitError(
@@ -1635,7 +1635,7 @@ private:
           auto strides = mlir::computeStrides(shape);
           auto flatSigned = checkedCast<int64_t>(flatIndex);
           if (!flatSigned) {
-            return arrayNewOp.emitError() << llvm::toString(flatSigned.takeError());
+            return arrayNewOp.emitError(llvm::toString(flatSigned.takeError()));
           }
           for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
