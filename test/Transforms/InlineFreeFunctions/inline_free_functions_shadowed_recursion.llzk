@@ -40,9 +40,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @lib {
-// CHECK-NEXT:      function.def @f(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-// CHECK-NEXT:        function.return %[[VAL_2]] : !felt.type
-// CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @g(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @f(%[[VAL_3]]) : (!felt.type) -> !felt.type
 // CHECK-NEXT:        function.return %[[VAL_4]] : !felt.type

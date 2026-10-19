@@ -96,16 +96,15 @@ unchanged.
 
 Run the utility's unit tests with `python3 -m unittest scripts/generate-test-checks.py -v`.
 
-Repeated runs replace the generator's note. They replace recognized FileCheck directives only for
-the selected prefix and preserve unrelated source text and comments. The generated checks are not
-authoritative: verify that they cover the relevant behavior, and retain complete transformed output
-for transformation tests.
+Source updates replace recognized FileCheck directives only for the selected prefix and preserve
+unrelated source text and comments. The generated checks are not authoritative: verify that they
+cover the relevant behavior, and retain complete transformed output for transformation tests.
 
-The generator places checks before source segments and adds a generated notice. Before committing
-an LLZK test, remove the notice and its explanatory banner, keep `// RUN:` on the first line, and
-place each complete check block after its input and before the next `// -----` separator. Keep
-the generated indentation and SSA substitutions, with no blank lines or prose inside a check
-block. These layout adjustments must not omit any transformed output.
+LLZK tests should have `// RUN:` on the first line(s) followed by a blank line. Each individual
+test in a multi-test file should have a brief description before the test input and any necessary
+check lines after the input but before the next `// -----` separator. Keep the generated
+indentation and SSA substitutions, with no blank lines or prose inside a check block. These
+layout adjustments must not omit any transformed output.
 
 ### Commit your update
 

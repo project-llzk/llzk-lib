@@ -690,9 +690,7 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
     SourceRefLatticeValue idxVals = getSourceRefState(idxOperand);
 
     // Only exact constant indices get tracked precisely.
-    auto constantIndex = idxVals.isSingleValue()
-                             ? idxVals.getSingleValue().getConstantValue(field.get())
-                             : FailureOr<DynamicAPInt>();
+    auto constantIndex = idxVals.getConstantValue(field.get());
     if (succeeded(constantIndex)) {
       indices.emplace_back(*constantIndex);
     } else {

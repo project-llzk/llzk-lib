@@ -1,0 +1,75 @@
+module @Top attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Leaf {
+    struct.member @scratch : !felt.type {tag = "keep"}
+    struct.member @out : !felt.type {signal}
+    function.def @compute() -> !struct.type<@Leaf> {
+      %self = struct.new : <@Leaf>
+      %value = felt.const 42
+      struct.writem %self[@out] = %value : <@Leaf>, !felt.type
+      function.return %self : !struct.type<@Leaf>
+    }
+    function.def @constrain(%self: !struct.type<@Leaf>) {
+      %out = struct.readm %self[@out] : <@Leaf>, !felt.type
+      %value = felt.const 42
+      constrain.eq %out, %value : !felt.type
+      function.return
+    }
+  }
+  struct.def @ArrayLeaf {
+    struct.member @value : !felt.type {signal}
+    function.def @compute() -> !struct.type<@ArrayLeaf> {
+      %self = struct.new : <@ArrayLeaf>
+      function.return %self : !struct.type<@ArrayLeaf>
+    }
+    function.def @constrain(%self: !struct.type<@ArrayLeaf>) { function.return }
+  }
+  struct.def @PodLeaf {
+    struct.member @value : !felt.type {signal}
+    function.def @compute() -> !struct.type<@PodLeaf> {
+      %self = struct.new : <@PodLeaf>
+      function.return %self : !struct.type<@PodLeaf>
+    }
+    function.def @constrain(%self: !struct.type<@PodLeaf>) { function.return }
+  }
+  struct.def @EmptyOnly {
+    struct.member @value : !felt.type {signal}
+    function.def @compute() -> !struct.type<@EmptyOnly> {
+      %self = struct.new : <@EmptyOnly>
+      function.return %self : !struct.type<@EmptyOnly>
+    }
+    function.def @constrain(%self: !struct.type<@EmptyOnly>) { function.return }
+  }
+  struct.def @Child {
+    struct.member @leaf : !struct.type<@Leaf>
+    struct.member @many : !array.type<2 x !struct.type<@ArrayLeaf>>
+    struct.member @pod : !pod.type<[@a: !struct.type<@PodLeaf>, @b: !felt.type]>
+    function.def @compute() -> !struct.type<@Child> {
+      %self = struct.new : <@Child>
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>) { function.return }
+  }
+  struct.def @Unused {
+    struct.member @private : !felt.type {signal}
+    function.def @compute() -> !struct.type<@Unused> {
+      %self = struct.new : <@Unused>
+      function.return %self : !struct.type<@Unused>
+    }
+    function.def @constrain(%self: !struct.type<@Unused>) { function.return }
+  } {poly.specialization_id = "malformed"}
+  struct.def @Main {
+    struct.member @child : !struct.type<@Child>
+    struct.member @shared : !struct.type<@Child>
+    struct.member @empty : !array.type<0 x !struct.type<@EmptyOnly>>
+    struct.member @private : !felt.type {signal}
+    struct.member @output : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %child = struct.readm %self[@child] : <@Main>, !struct.type<@Child>
+      function.return
+    }
+  }
+}
