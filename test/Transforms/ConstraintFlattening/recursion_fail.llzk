@@ -1,4 +1,5 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @recur(%x: !felt.type) {
     // expected-error @+1 {{recursive calls are unsupported}}

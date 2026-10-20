@@ -1,6 +1,6 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
-module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@Main> {
       %self = struct.new : <@Main>

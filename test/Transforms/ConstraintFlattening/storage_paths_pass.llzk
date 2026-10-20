@@ -1,19 +1,6 @@
-// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file -o %t
-// RUN: FileCheck %s --match-full-lines < %t
-// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file | FileCheck %s --match-full-lines
 
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
-
+// Use a constant global array element as a static loop bound.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   global.def const @values : !array.type<2 x index> = [1 : index, 2 : index]
   struct.def @Main {
@@ -35,26 +22,17 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
-// -----
-
 // CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@input] : <@Main>, !pod.type<[@rows: !array.type<2,3 x !felt.type>]>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_4]][@rows] : <[@rows: !array.type<2,3 x !felt.type>]>, !array.type<2,3 x !felt.type>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_6]], %[[VAL_7]]] : <2,3 x !felt.type>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
+// -----
 
+// Resolve a multidimensional signal array nested in a POD record.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-
   struct.def @Main {
     struct.member @input : !pod.type<[@rows: !array.type<2,3 x !felt.type>]> {signal}
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -76,25 +54,21 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
-// -----
-
 // CHECK-LABEL: struct.def @Main {
 // CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@input] : <@Main>, !array.type<2 x !pod.type<[@value: !felt.type]>>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]]] : <2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_6]][@value] : <[@value: !felt.type]>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@input] : <@Main>, !pod.type<[@rows: !array.type<2,3 x !felt.type>]>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_4]][@rows] : <[@rows: !array.type<2,3 x !felt.type>]>, !array.type<2,3 x !felt.type>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_6]], %[[VAL_7]]] : <2,3 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
+// -----
 
+// Resolve a scalar record in an array of signal PODs.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-
   struct.def @Main {
     struct.member @input : !array.type<2 x !pod.type<[@value: !felt.type]>> {signal}
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -113,3 +87,13 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@input] : <@Main>, !array.type<2 x !pod.type<[@value: !felt.type]>>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]]] : <2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_6]][@value] : <[@value: !felt.type]>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

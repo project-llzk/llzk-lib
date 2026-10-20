@@ -1,20 +1,6 @@
-// RUN: llzk-opt %s --llzk-flatten-constraints -o %t
-// RUN: FileCheck %s --match-full-lines < %t
-// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
 
 // Returned arrays retain caller identity. Both pipelines must constrain x == y.
-
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @identity(%input: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
@@ -40,3 +26,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

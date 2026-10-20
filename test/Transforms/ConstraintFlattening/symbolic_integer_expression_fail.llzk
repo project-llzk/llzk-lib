@@ -1,5 +1,6 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
 
+// Reject symbolic arith.andi used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -25,6 +26,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject symbolic arith.ori used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -50,6 +52,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject symbolic arith.xori used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -75,6 +78,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject symbolic arith.addi used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -100,6 +104,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject symbolic arith.subi used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -125,6 +130,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject symbolic arith.muli used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public

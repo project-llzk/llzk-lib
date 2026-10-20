@@ -1,4 +1,6 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+// Reject a symbolic scalar array read index.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @index : index
@@ -17,6 +19,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // -----
+
+// Reject a symbolic scalar array write index.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @index : index
@@ -35,6 +39,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // -----
+
+// Reject a symbolic array extraction index.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @index : index
@@ -53,6 +59,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // -----
+
+// Reject a symbolic array insertion index.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @index : index
@@ -72,6 +80,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // -----
+
+// Reject an out-of-bounds scalar read.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -90,6 +100,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject an out-of-bounds scalar write.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -108,6 +119,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject an out-of-bounds array insertion.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {

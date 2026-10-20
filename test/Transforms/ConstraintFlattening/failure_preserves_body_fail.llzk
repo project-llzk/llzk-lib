@@ -1,20 +1,8 @@
-// RUN: not llzk-opt %s --llzk-flatten-constraints --mlir-disable-threading --mlir-print-ir-after-failure --mlir-print-ir-module-scope -o /dev/null 2> %t
-// RUN: FileCheck %s --match-full-lines < %t
+// RUN: not llzk-opt %s --llzk-flatten-constraints --mlir-disable-threading --mlir-print-ir-after-failure --mlir-print-ir-module-scope -o /dev/null 2>&1 | FileCheck %s --match-full-lines
 
 // Preserve the original body when expansion validation fails.
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        scf.if %[[VAL_4]] {
-// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
-// CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@intermediate] : <@Main>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_3]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-
   struct.def @Main {
     struct.member @intermediate : !felt.type
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -33,3 +21,14 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        scf.if %[[VAL_4]] {
+// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@intermediate] : <@Main>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

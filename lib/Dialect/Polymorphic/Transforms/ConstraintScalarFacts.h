@@ -1,9 +1,13 @@
 //===-- ConstraintScalarFacts.h ---------------------------------*- C++ -*-===//
+//
 // Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
-#ifndef LLZK_CONSTRAINT_SCALAR_FACTS_H
-#define LLZK_CONSTRAINT_SCALAR_FACTS_H
+#pragma once
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
@@ -106,4 +110,3 @@ public:
 };
 
 } // namespace llzk::polymorphic::detail
-#endif

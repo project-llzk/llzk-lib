@@ -1,8 +1,14 @@
 //===-- ConstraintFlatteningPass.cpp -----------------------------*- C++ -*-===//
+//
 // Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
 #include "ConstraintBindings.h"
+#include "ConstraintDiagnostics.h"
 #include "ConstraintScalarFacts.h"
 #include "ConstraintStorage.h"
 
@@ -58,10 +64,6 @@ class ConstraintElaborator {
   llvm::DenseSet<Operation *> nonSignalReads;
   SmallVector<FuncDefOp> activeCalls;
 
-  LogicalResult error(Operation *op, const Twine &message) {
-    return op->emitError("constraint flattening: ") << message;
-  }
-
   static bool aggregate(Type type) { return isa<array::ArrayType, pod::PodType>(type); }
 
   /// Scalar-typed source operands must already have emitted SSA bindings.
@@ -79,13 +81,13 @@ class ConstraintElaborator {
       if (auto arrayType = dyn_cast<array::ArrayType>(value.getType())) {
         unsigned rank = arrayType.getShape().size();
         if (path.size() < rank) {
-          return error(site, "storage path does not identify a scalar leaf");
+          return constraintError(site, "storage path does not identify a scalar leaf");
         }
         SmallVector<Value> indices;
         for (Attribute step : path.take_front(rank)) {
           auto index = dyn_cast<IntegerAttr>(step);
           if (!index) {
-            return error(site, "invalid array storage path");
+            return constraintError(site, "invalid array storage path");
           }
           indices.push_back(
               arith::ConstantIndexOp::create(builder, site->getLoc(), index.getInt())
@@ -100,7 +102,7 @@ class ConstraintElaborator {
       auto podType = dyn_cast<pod::PodType>(value.getType());
       auto name = dyn_cast<StringAttr>(path.front());
       if (!podType || !name) {
-        return error(site, "invalid POD storage path");
+        return constraintError(site, "invalid POD storage path");
       }
       auto recordType = podType.getRecord(name.getValue(), [site] { return site->emitError(); });
       if (failed(recordType)) {
@@ -110,7 +112,7 @@ class ConstraintElaborator {
       path = path.drop_front();
     }
     if (value.getType() != type) {
-      return error(site, "storage leaf type mismatch");
+      return constraintError(site, "storage leaf type mismatch");
     }
     auto info = storage->describe(value, site);
     if (failed(info)) {
@@ -168,7 +170,7 @@ class ConstraintElaborator {
     for (Value index : indices) {
       auto coordinate = facts.integer(scalar(index, frame));
       if (!coordinate) {
-        return error(site, "array path requires compile-time indices");
+        return constraintError(site, "array path requires compile-time indices");
       }
       auto selected = bindings.select(path, builder.getIndexAttr(*coordinate), site);
       if (failed(selected)) {
@@ -240,7 +242,7 @@ class ConstraintElaborator {
   /// Preserve original component reads; aggregate results become immutable paths.
   LogicalResult memberRead(MemberReadOp op, Environment &frame) {
     if (op.getTableOffset()) {
-      return error(op, "member read requires concrete non-column component storage");
+      return constraintError(op, "member read requires concrete non-column component storage");
     }
     IRMapping mapping;
     mapping.map(op.getComponent(), scalar(op.getComponent(), frame));
@@ -265,7 +267,7 @@ class ConstraintElaborator {
     auto definition = lookupTopLevelSymbol<global::GlobalDefOp>(tables, op.getNameRefAttr(), op);
     if (failed(definition) || !definition->get().isConstant() ||
         !definition->get().getInitialValue()) {
-      return error(op, "global read requires an initialized constant");
+      return constraintError(op, "global read requires an initialized constant");
     }
     Attribute initial = definition->get().getInitialValue();
     if (!aggregate(op.getType())) {
@@ -278,14 +280,14 @@ class ConstraintElaborator {
     }
     auto values = dyn_cast<ArrayAttr>(initial);
     if (!values || !isa<array::ArrayType>(op.getType())) {
-      return error(op, "unsupported aggregate global initializer");
+      return constraintError(op, "unsupported aggregate global initializer");
     }
     auto path = bindings.create(op.getType());
     frame[op.getResult()] = path;
     unsigned next = 0;
     return bindings.walk(path, op, [this, &op, values, &next](AccessPath item) -> LogicalResult {
       if (next >= values.size()) {
-        return error(op, "global initializer does not match aggregate leaves");
+        return constraintError(op, "global initializer does not match aggregate leaves");
       }
       auto value = constant(values[next++], op);
       if (failed(value)) {
@@ -304,7 +306,7 @@ class ConstraintElaborator {
     if (auto integer = dyn_cast<IntegerAttr>(attribute)) {
       return Value(arith::ConstantOp::create(builder, site->getLoc(), integer));
     }
-    return error(site, "unsupported scalar global initializer");
+    return constraintError(site, "unsupported scalar global initializer");
   }
 
   /// Remap scalar operands after the operation's handler has checked support.
@@ -312,7 +314,7 @@ class ConstraintElaborator {
     IRMapping mapping;
     for (Value operand : op.getOperands()) {
       if (aggregate(operand.getType())) {
-        return error(&op, "unsupported aggregate operand");
+        return constraintError(&op, "unsupported aggregate operand");
       }
       mapping.map(operand, scalar(operand, frame));
     }
@@ -356,18 +358,19 @@ class ConstraintElaborator {
   LogicalResult emit(Operation &op, Environment &frame) {
     if (auto assertion = dyn_cast<boolean::AssertOp>(op)) {
       auto condition = facts.integer(scalar(assertion.getCondition(), frame));
-      return condition && *condition ? success() : error(&op, "assertion must be statically true");
+      return condition && *condition ? success()
+                                     : constraintError(&op, "assertion must be statically true");
     }
     bool equality = isa<constrain::EmitEqualityOp>(op);
     if (equality && !isa<felt::FeltType>(op.getOperand(0).getType())) {
-      return error(&op, "equality constraints require scalar felt operands");
+      return constraintError(&op, "equality constraints require scalar felt operands");
     }
     bool structural = isIntegerExpression(op);
     if (!(isFieldExpression(op) || equality || isa<cast::IntToFeltOp>(op) || structural)) {
       if (op.hasTrait<function::NotFieldNative>() || isa<felt::DivFeltOp>(op)) {
-        return error(&op, "lower non-native operations before constraint flattening");
+        return constraintError(&op, "lower non-native operations before constraint flattening");
       }
-      return error(&op, "unsupported operation '" + op.getName().getStringRef() + "'");
+      return constraintError(&op, "unsupported operation '" + op.getName().getStringRef() + "'");
     }
     auto mapping = scalarMapping(op, frame);
     if (failed(mapping)) {
@@ -396,16 +399,16 @@ class ConstraintElaborator {
       SmallVectorImpl<BoundValue> &results
   ) {
     if (!callee || !llvm::hasSingleElement(callee.getBody()) || isInTemplate(callee)) {
-      return error(site, "callee must be concrete, defined, and single-block");
+      return constraintError(site, "callee must be concrete, defined, and single-block");
     }
     if (llvm::is_contained(activeCalls, callee)) {
-      return error(site, "recursive calls are unsupported");
+      return constraintError(site, "recursive calls are unsupported");
     }
     if (callee.getNumArguments() != arguments.size()) {
-      return error(site, "callee argument arity mismatch");
+      return constraintError(site, "callee argument arity mismatch");
     }
     if (activeCalls.size() >= 256) {
-      return error(site, "call nesting limit exceeded");
+      return constraintError(site, "call nesting limit exceeded");
     }
     Environment frame;
     for (auto [parameter, argument] : llvm::zip_equal(callee.getArguments(), arguments)) {
@@ -452,7 +455,7 @@ class ConstraintElaborator {
       return failure();
     }
     if (results.size() != op.getNumResults()) {
-      return error(op, "callee result arity mismatch");
+      return constraintError(op, "callee result arity mismatch");
     }
     bind(op.getResults(), results, frame);
     return success();
@@ -462,7 +465,9 @@ class ConstraintElaborator {
   LogicalResult branch(scf::IfOp op, Environment &frame) {
     auto condition = facts.integer(scalar(op.getCondition(), frame));
     if (!condition) {
-      return error(op, "symbolic i1 condition requires an explicit field selector representation");
+      return constraintError(
+          op, "symbolic i1 condition requires an explicit field selector representation"
+      );
     }
     auto &region = *condition ? op.getThenRegion() : op.getElseRegion();
     SmallVector<BoundValue> results;
@@ -479,7 +484,7 @@ class ConstraintElaborator {
     auto upper = facts.integer(scalar(op.getUpperBound(), frame));
     auto step = facts.integer(scalar(op.getStep(), frame));
     if (op.getUnsignedCmp() || !lower || !upper || !step || *step <= 0) {
-      return error(op, "requires signed static for bounds and a positive step");
+      return constraintError(op, "requires signed static for bounds and a positive step");
     }
     SmallVector<BoundValue> carried;
     for (Value value : op.getInitArgs()) {
@@ -519,7 +524,7 @@ class ConstraintElaborator {
       }
       auto test = facts.integer(std::get<Value>(condition.front()));
       if (!test) {
-        return error(op, "while condition must be statically known");
+        return constraintError(op, "while condition must be statically known");
       }
       carried.assign(condition.begin() + 1, condition.end());
       if (!*test) {
@@ -577,11 +582,11 @@ class ConstraintElaborator {
     auto type = dyn_cast<array::ArrayType>(path.type);
     auto dimension = facts.integer(scalar(op.getDim(), frame));
     if (!type || !dimension || *dimension < 0 || uint64_t(*dimension) >= type.getShape().size()) {
-      return error(op, "array dimension must be statically known and in bounds");
+      return constraintError(op, "array dimension must be statically known and in bounds");
     }
     int64_t size = type.getShape()[*dimension];
     if (size < 0) {
-      return error(op, "aggregate shape must be static");
+      return constraintError(op, "aggregate shape must be static");
     }
     frame[op.getResult()] = Value(arith::ConstantIndexOp::create(builder, op.getLoc(), size));
     return success();
@@ -591,7 +596,9 @@ class ConstraintElaborator {
   LogicalResult select(arith::SelectOp op, Environment &frame) {
     auto condition = facts.integer(scalar(op.getCondition(), frame));
     if (!condition) {
-      return error(op, "symbolic select requires an explicit field selector representation");
+      return constraintError(
+          op, "symbolic select requires an explicit field selector representation"
+      );
     }
     frame[op.getResult()] = frame.lookup(*condition ? op.getTrueValue() : op.getFalseValue());
     return success();
@@ -612,8 +619,8 @@ class ConstraintElaborator {
     })
         .Case<global::GlobalReadOp>([this, &frame](auto read) { return globalRead(read, frame); })
         .Case<MemberReadOp>([this, &frame](auto read) { return memberRead(read, frame); })
-        .Case<MemberWriteOp>([this](auto write) {
-      return error(write, "cannot write to original component storage");
+        .Case<MemberWriteOp>([](auto write) {
+      return constraintError(write, "cannot write to original component storage");
     })
         .Case<array::CreateArrayOp>([this, &frame](auto allocation) {
       return arrayNew(allocation, frame);
@@ -636,7 +643,7 @@ class ConstraintElaborator {
   LogicalResult expand(Block &block, Environment &frame, SmallVectorImpl<BoundValue> &results) {
     for (Operation &op : block) {
       if (++steps > limit) {
-        return error(&op, "evaluation step limit exceeded");
+        return constraintError(&op, "evaluation step limit exceeded");
       }
       if (isa<ReturnOp, scf::YieldOp, scf::ConditionOp>(op)) {
         for (Value value : op.getOperands()) {
@@ -648,14 +655,14 @@ class ConstraintElaborator {
         return failure();
       }
     }
-    return error(block.getParentOp(), "missing supported terminator");
+    return constraintError(block.getParentOp(), "missing supported terminator");
   }
 
   /// Check every surviving operation against the flattened-output contract.
   /// This check does not depend on how an operation reached the output region.
   LogicalResult validateOperation(Operation &op) {
     if (op.getNumRegions()) {
-      return error(&op, "regions are unsupported in flattened constraints");
+      return constraintError(&op, "regions are unsupported in flattened constraints");
     }
     if (isFieldExpression(op) || isa<constrain::EmitEqualityOp>(op)) {
       auto fieldType = [](Type type) { return isa<felt::FeltType>(type); };
@@ -663,7 +670,9 @@ class ConstraintElaborator {
           llvm::all_of(op.getResultTypes(), fieldType)) {
         return success();
       }
-      return error(&op, "constraint expressions require scalar felt operands and results");
+      return constraintError(
+          &op, "constraint expressions require scalar felt operands and results"
+      );
     }
     if (auto constant = dyn_cast<arith::ConstantOp>(op)) {
       Type type = constant.getType();
@@ -676,22 +685,20 @@ class ConstraintElaborator {
       if (matchPattern(conversion.getValue(), m_Constant(&literal)) && isa<IntegerAttr>(literal)) {
         return success();
       }
-      return error(&op, "field conversion requires a compile-time integer");
+      return constraintError(&op, "field conversion requires a compile-time integer");
     }
     if (isa<array::ReadArrayOp, array::ExtractArrayOp>(op)) {
-      ValueRange indices = isa<array::ReadArrayOp>(op)
-                               ? llvm::cast<array::ReadArrayOp>(op).getIndices()
-                               : llvm::cast<array::ExtractArrayOp>(op).getIndices();
+      ValueRange indices = llvm::cast<array::ArrayAccessOpInterface>(op).getIndices();
       for (Value index : indices) {
         if (!index.getDefiningOp<arith::ConstantOp>()) {
-          return error(&op, "array path requires compile-time indices");
+          return constraintError(&op, "array path requires compile-time indices");
         }
       }
       return success();
     }
     if (auto read = dyn_cast<MemberReadOp>(op)) {
       if (read.getTableOffset()) {
-        return error(&op, "member read requires concrete non-column component storage");
+        return constraintError(&op, "member read requires concrete non-column component storage");
       }
       return success();
     }
@@ -699,9 +706,9 @@ class ConstraintElaborator {
       return success();
     }
     if (isIntegerExpression(op)) {
-      return error(&op, "structural operation requires a compile-time value");
+      return constraintError(&op, "structural operation requires a compile-time value");
     }
-    return error(
+    return constraintError(
         &op, "unsupported operation in flattened constraints: '" + op.getName().getStringRef() + "'"
     );
   }
@@ -720,7 +727,7 @@ class ConstraintElaborator {
         return failure();
       }
       if (nonSignalReads.contains(&op)) {
-        return error(
+        return constraintError(
             &op, "live unresolved non-signal scalar storage; algebraic elimination is required"
         );
       }
@@ -753,13 +760,13 @@ public:
       return failure();
     }
     if (!*root) {
-      return error(module, "requires llzk.main");
+      return constraintError(module, "requires llzk.main");
     }
     main = root->get();
     storage.emplace(module, main, builder, tables, facts);
     auto source = dyn_cast_or_null<FuncDefOp>(SymbolTable::lookupSymbolIn(main, "constrain"));
     if (isInTemplate(main) || !source || !llvm::hasSingleElement(source.getBody())) {
-      return error(main, "main must have a concrete single-block constrain function");
+      return constraintError(main, "main must have a concrete single-block constrain function");
     }
     output.push_back(new Block());
     SmallVector<BoundValue> arguments;

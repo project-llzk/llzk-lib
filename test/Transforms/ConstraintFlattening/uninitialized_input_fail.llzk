@@ -1,4 +1,5 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @read(%input: !array.type<1 x !felt.type>) attributes {function.allow_constraint} {
     %zero = arith.constant 0 : index

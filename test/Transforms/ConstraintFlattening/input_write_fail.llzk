@@ -1,4 +1,5 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @identity(%input: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
     function.return %input : !array.type<2 x !felt.type>

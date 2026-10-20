@@ -1,31 +1,4 @@
-// RUN: llzk-opt %s --llzk-expose-child-members --llzk-flatten-constraints -o %t
-// RUN: FileCheck %s --match-full-lines < %t
-// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
-
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@children] : <@Main>, !array.type<2 x !struct.type<@Child>>
-// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_17]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_19]]] : <2 x !struct.type<@Child>>, !struct.type<@Child>
-// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_20]][@signal] : <@Child>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_21]], %[[VAL_15]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_22]]] : <2 x !struct.type<@Child>>, !struct.type<@Child>
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_23]][@signal] : <@Child>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_24]], %[[VAL_18]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@out] : <@Main>, !felt.type
-// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_26]], %[[VAL_15]] : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_25]], %[[VAL_27]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
+// RUN: llzk-opt %s --llzk-expose-child-members --llzk-flatten-constraints | FileCheck %s --match-full-lines
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @select(%x: !felt.type, %flag: i1) -> !felt.type {
@@ -99,3 +72,23 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@children] : <@Main>, !array.type<2 x !struct.type<@Child>>
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_19]]] : <2 x !struct.type<@Child>>, !struct.type<@Child>
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_20]][@signal] : <@Child>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_21]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_22]]] : <2 x !struct.type<@Child>>, !struct.type<@Child>
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_23]][@signal] : <@Child>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_24]], %[[VAL_18]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_26]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_25]], %[[VAL_27]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

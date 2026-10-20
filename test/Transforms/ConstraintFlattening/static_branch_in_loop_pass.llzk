@@ -1,21 +1,4 @@
-// RUN: llzk-opt %s --llzk-flatten-constraints -o %t
-// RUN: FileCheck %s --match-full-lines < %t
-// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
-
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"test">
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"test">
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_2]], %[[VAL_3]] : !felt.type<"test">, !felt.type<"test">
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@out] : <@Main>, !felt.type<"test">
-// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_4]] : !felt.type<"test">, !felt.type<"test">
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
 
 module attributes {llzk.lang, llzk.fields = [#felt.field<"test", 101>], llzk.main = !struct.type<@Main>} {
   global.def const @upper : index = 2
@@ -44,3 +27,13 @@ module attributes {llzk.lang, llzk.fields = [#felt.field<"test", 101>], llzk.mai
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"test">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"test">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_2]], %[[VAL_3]] : !felt.type<"test">, !felt.type<"test">
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@out] : <@Main>, !felt.type<"test">
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_4]] : !felt.type<"test">, !felt.type<"test">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

@@ -1,6 +1,7 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
-module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
+// Reject a symbolic branch condition.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @condition : i1
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -19,8 +20,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // -----
-module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
+// Reject a symbolic loop bound.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @bound : index
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
@@ -40,6 +42,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject a symbolic felt-to-index conversion used as an array coordinate.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%x: !felt.type) -> !struct.type<@Main> {

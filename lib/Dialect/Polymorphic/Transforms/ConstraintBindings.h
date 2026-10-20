@@ -1,9 +1,15 @@
 //===-- ConstraintBindings.h ------------------------------------*- C++ -*-===//
+//
 // Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
-#ifndef LLZK_CONSTRAINT_BINDINGS_H
-#define LLZK_CONSTRAINT_BINDINGS_H
+#pragma once
+
+#include "ConstraintDiagnostics.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
@@ -83,18 +89,18 @@ public:
     if (auto index = llvm::dyn_cast<mlir::IntegerAttr>(step)) {
       auto type = llvm::dyn_cast<array::ArrayType>(path.type);
       if (!type || type.getShape().front() < 0) {
-        return site->emitError("constraint flattening: aggregate shape must be static");
+        return constraintError(site, "aggregate shape must be static");
       }
       int64_t coordinate = index.getInt();
       if (coordinate < 0 || coordinate >= type.getShape().front()) {
-        return site->emitError("constraint flattening: array path index is out of bounds");
+        return constraintError(site, "array path index is out of bounds");
       }
       return element(path, coordinate);
     }
     auto type = llvm::dyn_cast<pod::PodType>(path.type);
     auto name = llvm::dyn_cast<mlir::StringAttr>(step);
     if (!type || !name) {
-      return site->emitError("constraint flattening: invalid POD path");
+      return constraintError(site, "invalid POD path");
     }
     auto record = type.getRecord(name.getValue(), [site] { return site->emitError(); });
     if (mlir::failed(record)) {
@@ -114,11 +120,11 @@ public:
     }
     int64_t size = type.getShape().front();
     if (size < 0) {
-      return site->emitError("constraint flattening: aggregate shape must be static");
+      return constraintError(site, "aggregate shape must be static");
     }
     for (int64_t i = 0; i < size; ++i) {
       if (++steps > limit) {
-        return site->emitError("constraint flattening: evaluation step limit exceeded");
+        return constraintError(site, "evaluation step limit exceeded");
       }
       if (mlir::failed(elements(element(path, i), site, visit))) {
         return mlir::failure();
@@ -143,7 +149,7 @@ public:
     if (auto type = llvm::dyn_cast<pod::PodType>(path.type)) {
       for (auto record : type.getRecords()) {
         if (++steps > limit) {
-          return site->emitError("constraint flattening: evaluation step limit exceeded");
+          return constraintError(site, "evaluation step limit exceeded");
         }
         auto field = child(path, record.getName(), record.getType());
         if (mlir::failed(walk(field, site, visit))) {
@@ -169,12 +175,11 @@ public:
       leaves[path.steps] = *value;
       return *value;
     }
-    site->emitError(
-        (roots[path.root].input || roots[path.root].protections)
-            ? "constraint flattening: read of uninitialized function input storage"
-            : "constraint flattening: read of uninitialized local storage"
+    return constraintError(
+        site, (roots[path.root].input || roots[path.root].protections)
+                  ? "read of uninitialized function input storage"
+                  : "read of uninitialized local storage"
     );
-    return mlir::failure();
   }
 
   /// Temporarily make an argument root read-only without copying its identity.
@@ -187,9 +192,7 @@ public:
   mlir::LogicalResult writable(AccessPath path, mlir::Operation *site) const {
     const Root &root = roots[path.root];
     if (root.input || root.storage || root.protections) {
-      return site->emitError(
-          "constraint flattening: cannot write to function input or original storage"
-      );
+      return constraintError(site, "cannot write to function input or original storage");
     }
     return mlir::success();
   }
@@ -244,4 +247,3 @@ public:
 };
 
 } // namespace llzk::polymorphic::detail
-#endif

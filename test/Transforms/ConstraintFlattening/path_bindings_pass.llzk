@@ -1,26 +1,11 @@
-// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file -o %t
-// RUN: FileCheck %s --match-full-lines < %t
-// RUN: FileCheck %s --check-prefix=NOLOCAL < %t
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file | FileCheck %s --match-full-lines
 
 // Oracle: each emitted equality must use exactly the same SSA operand twice.
 // Distinct inputs x and y make aliasing and stale-binding errors observable.
 
 // Subtree snapshots and whole self-assignment preserve the same leaf SSA.
 
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
-
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-
   struct.def @Main {
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
       %self = struct.new : <@Main>
@@ -47,24 +32,18 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+
 // -----
 
 // Reading and replacing a POD array record both have copy semantics.
 
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
-
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-
   struct.def @Main {
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
       %self = struct.new : <@Main>
@@ -91,26 +70,18 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
-// -----
-
-// Carried roots persist; allocations in separate iterations are independent.
-
 // CHECK-LABEL: struct.def @Main {
 // CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 
-// NOLOCAL-LABEL: struct.def @Main {
-// NOLOCAL: function.def @constrain{{.*}}
-// NOLOCAL-NOT: {{array\.(new|write|insert|extract)|pod\.(new|write)|scf\.|function\.call}}
-// NOLOCAL: function.return
+// -----
+
+// Carried roots persist; allocations in separate iterations are independent.
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-
   struct.def @Main {
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
       %self = struct.new : <@Main>
@@ -141,3 +112,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

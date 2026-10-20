@@ -151,7 +151,7 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
   let description = [{
     After template monomorphization and child-member visibility preparation,
     expand main's constrain function and reachable single-block callees.
-    Resolve static branches, signed for loops with positive steps, and while
+    Resolve static branches, signed `for` loops with positive steps, and `while`
     loops directly, including field-valued iterators and comparisons.
 
     Local arrays and PODs exist only as concrete paths bound to scalar SSA
@@ -178,7 +178,10 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     felt add/subtract/multiply/negate expressions, felt equalities, original
     storage reads, index/i1 constants, and conversions of constant integers to
     felt are permitted. Expansion work is bounded across calls, iterations,
-    and aggregate traversal. Failure preserves the original body.
+    and aggregate traversal. Any failed expansion or validation fails the entire
+    pass. A candidate body is built separately and committed only after validation,
+    preserving the original input in failure diagnostics and IR dumps; this does
+    not provide per-function recovery.
 
     Equality constraints currently require scalar felt operands; array equality
     and constrain.in are unsupported. Symbolic if/select conditions are rejected.

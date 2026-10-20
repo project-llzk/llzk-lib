@@ -1,5 +1,6 @@
 // RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
 
+// Reject a symbolic affine map used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -24,6 +25,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject a direct symbolic index-to-felt conversion.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -48,6 +50,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject symbolic wider-integer intermediates used by a field constraint.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public
@@ -74,6 +77,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
+// Reject a direct symbolic boolean-to-felt conversion.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     // Derived methods can carry internal index parameters, while the public

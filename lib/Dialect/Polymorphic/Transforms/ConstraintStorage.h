@@ -1,10 +1,15 @@
 //===-- ConstraintStorage.h -------------------------------------*- C++ -*-===//
+//
 // Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
-#ifndef LLZK_CONSTRAINT_STORAGE_H
-#define LLZK_CONSTRAINT_STORAGE_H
+#pragma once
 
+#include "ConstraintDiagnostics.h"
 #include "ConstraintScalarFacts.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
@@ -31,10 +36,6 @@ class ConstraintStorage {
   ConstraintScalarFacts &facts;
   StructSpecializationResolver specializations;
 
-  static mlir::LogicalResult error(mlir::Operation *site, const llvm::Twine &message) {
-    return site->emitError("constraint flattening: ") << message;
-  }
-
   /// Resolve a rolled family handle using concrete storage coordinates.
   mlir::LogicalResult
   resolveFamily(component::StructType type, StorageDescription &info, mlir::Operation *site) {
@@ -55,7 +56,7 @@ class ConstraintStorage {
       }
       auto id = entry.getAs<mlir::IntegerAttr>(FAMILY_SPECIALIZATION_KEY);
       if (!id || !id.getValue().isSignedIntN(64) || id.getInt() < 0) {
-        return error(site, "invalid family specialization ID");
+        return constraintError(site, "invalid family specialization ID");
       }
       auto target =
           specializations.resolve(tables, type, id.getInt(), site, "constraint flattening");
@@ -63,7 +64,7 @@ class ConstraintStorage {
         return mlir::failure();
       }
       if (info.definition && info.definition != *target) {
-        return error(site, "ambiguous concrete struct family element");
+        return constraintError(site, "ambiguous concrete struct family element");
       }
       info.definition = *target;
     }
@@ -88,7 +89,7 @@ class ConstraintStorage {
       return mlir::failure();
     }
     if (isInTemplate(target->get()) || (type.getParams() && !type.getParams().empty())) {
-      return error(site, "requires a concrete struct or matching poly.family element");
+      return constraintError(site, "requires a concrete struct or matching poly.family element");
     }
     info.definition = target->get();
     return mlir::success();
@@ -103,14 +104,14 @@ class ConstraintStorage {
     }
     auto parent = *resolved;
     if (!parent.definition || read.getTableOffset()) {
-      return error(site, "member read requires concrete non-column component storage");
+      return constraintError(site, "member read requires concrete non-column component storage");
     }
     auto member = parent.definition.getMemberDef(builder.getStringAttr(read.getMemberName()));
     if (!member || member.getColumn()) {
-      return error(site, "unknown or unsupported column member");
+      return constraintError(site, "unknown or unsupported column member");
     }
     if (parent.definition != main && !member.hasPublicAttr()) {
-      return error(site, "run llzk-expose-child-members before reading child storage");
+      return constraintError(site, "run llzk-expose-child-members before reading child storage");
     }
     auto rolled = lookupTopLevelSymbol<component::StructDefOp>(
         tables, llvm::cast<component::StructType>(read.getComponent().getType()).getNameRef(), site
@@ -119,13 +120,13 @@ class ConstraintStorage {
       return mlir::failure();
     }
     if (!typesUnify(read.getType(), member.getType())) {
-      return error(site, "member read type does not match the concrete specialization");
+      return constraintError(site, "member read type does not match the concrete specialization");
     }
     auto declared = rolled->get().getMemberDef(builder.getStringAttr(read.getMemberName()));
     if (rolled->get() != parent.definition &&
         (!declared || !declared.hasPublicAttr() ||
          !typesUnify(read.getType(), declared.getType(), rolled->getNamespace()))) {
-      return error(
+      return constraintError(
           site, "concrete family member cannot be represented through the rolled storage type"
       );
     }
@@ -166,7 +167,7 @@ public:
         for (mlir::Value index : element.getIndices()) {
           auto coordinate = facts.integer(index);
           if (!coordinate) {
-            return error(site, "array path requires compile-time indices");
+            return constraintError(site, "array path requires compile-time indices");
           }
           info.indices.push_back(*coordinate);
         }
@@ -191,4 +192,3 @@ public:
 };
 
 } // namespace llzk::polymorphic::detail
-#endif
