@@ -1,2 +1,4 @@
 added:
   - Documentation for the new `OverflowSemantics` enum attribute in the cast dialect.
+fixed:
+  - Preserve failing assert casts through optimization while keeping non-assert casts side-effect-free and speculatable.

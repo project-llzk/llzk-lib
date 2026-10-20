@@ -1,0 +1,45 @@
+// RUN: llzk-opt --canonicalize --cse %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Unused assertions still have observable failure behavior.
+  function.def @unused_asserts(%i: index, %f: !felt.type<"bn254">)
+      attributes {function.allow_non_native_field_ops} {
+    %tofelt = cast.tofelt %i : index, !felt.type<"babybear">
+    %toindex = cast.toindex assert %f : !felt.type<"bn254">
+    function.return
+  }
+
+  // Every non-assert mode remains eligible for dead-code elimination.
+  function.def @unused_nonasserts(%i: index, %f: !felt.type<"bn254">)
+      attributes {function.allow_non_native_field_ops} {
+    %a = cast.tofelt sat %i : index, !felt.type<"babybear">
+    %b = cast.tofelt wrap %i : index, !felt.type<"babybear">
+    %c = cast.tofelt trunc %i : index, !felt.type<"babybear">
+    %d = cast.toindex sat %f : !felt.type<"bn254">
+    %e = cast.toindex wrap %f : !felt.type<"bn254">
+    %f0 = cast.toindex trunc %f : !felt.type<"bn254">
+    function.return
+  }
+
+  // An assertion proven safe by constant folding can still disappear.
+  function.def @safe_constant_asserts() attributes {function.allow_non_native_field_ops} {
+    %i = arith.constant 1 : index
+    %f = felt.const 1 : !felt.type<"babybear">
+    %a = cast.tofelt %i : index, !felt.type<"babybear">
+    %b = cast.toindex %f : !felt.type<"babybear">
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @unused_asserts(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn254">
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unused_nonasserts(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @safe_constant_asserts() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

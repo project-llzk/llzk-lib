@@ -23,20 +23,42 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 class CastOp<string mnemonic, list<Trait> traits = []>
-    : NaryOpBase<CastDialect, mnemonic, LLZK_FeltType.builderCall, traits>;
+    : NaryOpBase<
+          CastDialect, mnemonic, LLZK_FeltType.builderCall,
+          traits#[DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
+                  DeclareOpInterfaceMethods<ConditionallySpeculatable>]> {
+  let extraClassDefinition = [{
+    /// Model possible assertion failure as program termination, like bool.assert.
+    void $cppClass::getEffects(
+        ::llvm::SmallVectorImpl<::mlir::MemoryEffects::EffectInstance> &effects
+    ) {
+      if (getOverflow() == OverflowSemantics::ASSERT) {
+        effects.emplace_back(::mlir::MemoryEffects::Write::get());
+      }
+    }
+
+    /// Only non-assert casts may execute on paths where they were not present.
+    ::mlir::Speculation::Speculatability $cppClass::getSpeculatability() {
+      return getOverflow() == OverflowSemantics::ASSERT
+                 ? ::mlir::Speculation::NotSpeculatable
+                 : ::mlir::Speculation::Speculatable;
+    }
+  }];
+}
 
 def LLZK_IntToFeltOp
     : CastOp<
-          "tofelt", [Pure,
-                     DeclareOpInterfaceMethods<
-                         InferTypeOpInterface, ["isCompatibleReturnTypes"]>]> {
+          "tofelt", [DeclareOpInterfaceMethods<
+                        InferTypeOpInterface, ["isCompatibleReturnTypes"]>]> {
   let summary = "convert an integer into a field element";
   let description = [{
     This operation converts a supported integer type value into a field element value.
     Boolean (`i1`) values map to zero or one, while `index` values are interpreted
-    as signed integers. Constant folding preserves the signed literal, including
-    when the result field is unspecified. Once a field is selected, the integer
-    is reduced modulo its prime.
+    as signed integers. The overflow mode determines how values outside the
+    target field's safe range are handled. The default `assert` mode fails on
+    such values, even when the result is unused, and cannot be speculated.
+    The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
+    Constant folding defers casts whose result field is unspecified.
 
     Example:
 
@@ -73,11 +95,15 @@ def LLZK_IntToFeltOp
   let hasCanonicalizeMethod = 1;
 }
 
-def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
+def LLZK_FeltToIndexOp : CastOp<"toindex", [NotFieldNative]> {
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow use
     as an array index or loop bound.
+
+    The default `assert` overflow mode fails when the value is outside the
+    index safe range, even when the result is unused, and cannot be speculated.
+    The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
 
     Example:
     ```llzk
