@@ -436,7 +436,7 @@ TEST(DynamicAPIntSafetyTest, HugeRightShiftAndSignedLeftShift) {
   EXPECT_EQ(DynamicAPInt(-42) >> huge, DynamicAPInt(-1));
   EXPECT_EQ(DynamicAPInt(-3) << DynamicAPInt(100), -3 * (DynamicAPInt(1) << DynamicAPInt(100)));
   EXPECT_EQ(DynamicAPInt(-3) >> DynamicAPInt(1), DynamicAPInt(-2));
-  auto unsignedMax = toDynamicAPInt(APSInt::getUnsigned(std::numeric_limits<unsigned>::max()));
+  const DynamicAPInt unsignedMax(std::numeric_limits<unsigned>::max());
   EXPECT_EQ(DynamicAPInt(42) >> unsignedMax, DynamicAPInt(0));
   EXPECT_EQ(DynamicAPInt(-42) >> unsignedMax, DynamicAPInt(-1));
   EXPECT_DEATH(DynamicAPInt(1) << unsignedMax, "invalid or unrepresentable left shift");
