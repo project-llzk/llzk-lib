@@ -256,19 +256,18 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
 
 /// Render one field element buffer entry as the stable JSON decimal string form.
 static llvm::Expected<llvm::json::Value>
-feltElementToJSON(const BufferPack &buffer, size_t flatIndex) {
+feltElementToJSON(const BufferPack &buffer, size_t flatIndex, const Field &field) {
   auto element = loadElement(buffer, flatIndex);
   if (!element) {
     return element.takeError();
   }
-  std::string rendered;
-  llvm::raw_string_ostream(rendered) << *element;
-  return llvm::json::Value(rendered);
+  return serializeFeltToJSON(*element, field);
 }
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
-static llvm::Expected<llvm::json::Value>
-bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) {
+static llvm::Expected<llvm::json::Value> bufferToJSONArray(
+    const BufferPack &buffer, const Field &field, size_t dimIndex, size_t flatOffset
+) {
   if (dimIndex == SIZE_MAX) {
     return makeError("execution-engine JSON output would overflow size_t");
   }
@@ -284,7 +283,7 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
       if (overflow) {
         return makeError("execution-engine JSON output would overflow size_t");
       }
-      auto element = feltElementToJSON(buffer, elementOffset);
+      auto element = feltElementToJSON(buffer, elementOffset, field);
       if (!element) {
         return element.takeError();
       }
@@ -307,7 +306,7 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
     if (overflow) {
       return makeError("execution-engine JSON output would overflow size_t");
     }
-    auto subArray = bufferToJSONArray(buffer, dimIndex + 1, nextOffset);
+    auto subArray = bufferToJSONArray(buffer, field, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();
     }
@@ -317,11 +316,12 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
 }
 
 /// Serialize one public output buffer into the user-facing JSON value.
-static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) {
+static llvm::Expected<llvm::json::Value>
+bufferToJSON(const BufferPack &buffer, const Field &field) {
   if (isa<felt::FeltType>(buffer.originalType)) {
-    return feltElementToJSON(buffer, 0);
+    return feltElementToJSON(buffer, 0, field);
   }
-  return bufferToJSONArray(buffer, 0, 0);
+  return bufferToJSONArray(buffer, field, 0, 0);
 }
 
 /// Lower the module through the shared LLZK-to-core witgen passes.
@@ -530,7 +530,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   llvm::SmallVector<llvm::json::Value> serializedOutputs;
   serializedOutputs.reserve(outputBuffers.size());
   for (const BufferPack &buffer : outputBuffers) {
-    auto serialized = bufferToJSON(buffer);
+    auto serialized = bufferToJSON(buffer, field);
     if (!serialized) {
       return serialized.takeError();
     }

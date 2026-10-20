@@ -159,7 +159,9 @@ form used by the witgen tests, namely JSON integers or decimal strings.
   - The output JSON contains only the public outputs of the main component.
   - Public struct members become JSON object fields.
   - Public felt arrays become JSON arrays.
-  - Field element leaves are rendered as decimal strings.
+  - Field element leaves are reduced to canonical representatives in `[0, p-1]`
+    and rendered as decimal strings. This applies only at the output boundary;
+    raw runtime values, such as truncation results, are unchanged during execution.
 - `--output-scope=full-witness`
   - The output JSON contains two top-level objects: `inputs` and `signals`.
   - `inputs` records the main `compute()` arguments using their
@@ -169,8 +171,8 @@ form used by the witgen tests, namely JSON integers or decimal strings.
     struct, including both public and private signals.
   - Non-signal leaves are omitted, though non-signal struct containers may
     still appear when needed to reach nested signals.
-  - Felt arrays remain JSON arrays and field element leaves remain decimal
-    strings.
+  - Felt arrays remain JSON arrays and field element leaves use the same
+    canonical decimal strings as public outputs.
 
 #### Backends
 

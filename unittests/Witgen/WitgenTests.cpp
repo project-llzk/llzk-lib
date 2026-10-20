@@ -13,6 +13,7 @@
 #include "ValueModel.h"
 #include "WitgenDriver.h"
 #include "WitgenUtils.h"
+#include "Wtns.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
@@ -23,6 +24,9 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Parser/Parser.h>
+
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/FileUtilities.h>
 
 #include <climits>
 #include <limits>
@@ -222,10 +226,11 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
   auto field = Field::getField(GetParam());
-  arrayValue->elements.push_back(field.reduce(1));
-  arrayValue->elements.push_back(field.reduce(2));
-  arrayValue->elements.push_back(field.reduce(3));
-  arrayValue->elements.push_back(field.reduce(4));
+  // Canonicalization must reach every leaf of nested aggregate outputs.
+  arrayValue->elements.push_back(field.prime() + 1);
+  arrayValue->elements.push_back(-field.prime() + 2);
+  arrayValue->elements.push_back(-field.prime() * 2 + 3);
+  arrayValue->elements.push_back(field.prime() * 2 + 4);
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -246,6 +251,36 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   EXPECT_EQ((*second)[1].getAsString(), "4");
 }
 
+TEST_P(WitgenFieldTests, SerializeFeltCanonicalizesWithoutChangingRuntimeValue) {
+  auto feltType = felt::FeltType::get(&ctx, GetParam());
+  const Field &field = Field::getField(GetParam());
+  std::string maxText;
+  llvm::raw_string_ostream(maxText) << field.maxVal();
+  const std::pair<llvm::DynamicAPInt, std::string> cases[] = {
+      {field.maxVal(), maxText},
+      {field.prime(), "0"},
+      {field.prime() + 1, "1"},
+      {llvm::DynamicAPInt(-1), maxText}
+  };
+
+  SymbolTableCollection tables;
+  for (const auto &[raw, expected] : cases) {
+    witgen::WitnessVal runtimeValue = raw;
+    auto json = witgen::serializeJSONValue(runtimeValue, feltType, tables, nullptr);
+    ASSERT_TRUE(json) << llvm::toString(json.takeError());
+    EXPECT_EQ(json->getAsString(), expected);
+    EXPECT_EQ(std::get<llvm::DynamicAPInt>(runtimeValue), raw);
+  }
+}
+
+TEST_F(WitgenTests, SerializeFeltRequiresDeclaredField) {
+  SymbolTableCollection tables;
+  auto json =
+      witgen::serializeJSONValue(llvm::DynamicAPInt(0), felt::FeltType::get(&ctx), tables, nullptr);
+  ASSERT_FALSE(json);
+  EXPECT_EQ(llvm::toString(json.takeError()), "felt JSON output requires a declared field");
+}
+
 TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
   llvm::DynamicAPInt value = llzk::toDynamicAPInt(
       llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
@@ -254,6 +289,58 @@ TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
   auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test overflow");
   ASSERT_FALSE(static_cast<bool>(checked));
   EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
+}
+
+TEST_P(WitgenFieldTests, WtnsRejectsNoncanonicalWitnessValues) {
+  auto source = substituteFieldName(
+      R"mlir(
+    module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+      struct.def @Main {
+        struct.member @out : !felt.type<"babybear"> {llzk.pub}
+        function.def @compute(%input: !felt.type<"babybear"> {function.arg_name = "input"})
+            -> !struct.type<@Main> {
+          %self = struct.new : !struct.type<@Main>
+          struct.writem %self[@out] = %input : !struct.type<@Main>, !felt.type<"babybear">
+          function.return %self : !struct.type<@Main>
+        }
+        function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) {
+          function.return
+        }
+      }
+    }
+  )mlir",
+      GetParam()
+  );
+  auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(module);
+  const Field &field = Field::getField(GetParam());
+  llvm::SmallString<128> outputPath;
+  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile("llzk-noncanonical", "wtns", outputPath));
+  llvm::FileRemover removeOutput(outputPath);
+
+  // Even values that fit the field's storage width must be rejected at this
+  // boundary. Canonicalization belongs to the producer, not the WTNS writer.
+  for (const auto &value :
+       {llvm::DynamicAPInt(-1), field.prime(), field.prime() + 1,
+        (field.one() << llvm::DynamicAPInt(field.bitWidth())) - 1}) {
+    std::string text;
+    llvm::raw_string_ostream(text) << value;
+    SCOPED_TRACE(text);
+    for (bool invalidInput : {false, true}) {
+      const std::string key = invalidInput ? "input" : "out";
+      SCOPED_TRACE(key);
+      llvm::json::Value witness = llvm::json::Object {
+          {"inputs", llvm::json::Object {{"input", invalidInput ? text : "0"}}},
+          {"signals", llvm::json::Object {{"out", invalidInput ? "0" : text}}}
+      };
+      auto error = witgen::writeWtns(*module, witness, field, outputPath);
+      EXPECT_EQ(
+          llvm::toString(std::move(error)),
+          "full witness value '" + key +
+              (value < 0 ? "' is not a non-negative integer" : "' is outside the field")
+      );
+    }
+  }
 }
 
 TEST_F(WitgenTests, JSONDiffReportsScalarMismatchAtPath) {
