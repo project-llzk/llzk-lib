@@ -21,10 +21,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433>} {
 // CHECK-NEXT:    func.func @ZeroIndex() -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 0
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
-// CHECK-NEXT:      pcl.assert %[[VAL_2]]
-// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -49,10 +50,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433>} {
 // CHECK-NEXT:    func.func @MaxFieldValue() -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 2130706432
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
-// CHECK-NEXT:      pcl.assert %[[VAL_2]]
-// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 2130706432
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -77,10 +79,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617>} {
 // CHECK-NEXT:    func.func @PositiveIndex() -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 9223372036854775807
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
-// CHECK-NEXT:      pcl.assert %[[VAL_2]]
-// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 9223372036854775807
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -105,7 +108,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433>} {
 // CHECK-NEXT:    func.func @True() -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
@@ -134,7 +137,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433>} {
 // CHECK-NEXT:    func.func @False() -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.false
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 0
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]

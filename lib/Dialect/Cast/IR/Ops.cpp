@@ -12,18 +12,15 @@
 #include "llzk/Dialect/Cast/IR/Enums.h"
 #include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
-#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/TypeSwitch.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -81,39 +78,26 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
   });
 }
 
-LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter &rewriter) {
-  // Instead of casting an arith.constant to felt, just generate a felt.const
-  if (!op.getValue().getDefiningOp()) {
-    return failure();
+OpFoldResult IntToFeltOp::fold(FoldAdaptor adaptor) {
+  auto value = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getValue());
+  felt::FeltType resultType = getType();
+  // A fieldless felt defers its field selection and overflow behavior.
+  if (!value || !resultType.hasField()) {
+    return {};
   }
 
-  return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
-      .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
-    felt::FeltType resultType = op.getType();
-
-    // A field-less felt defers its field selection, so its overflow behavior
-    // cannot be resolved while canonicalizing. Cannot canonicalize in this case.
-    if (!resultType.hasField()) {
-      return failure();
-    }
-
-    const Field &field = resultType.getField();
-    DynamicAPInt signedValue =
-        integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(constOp.getValue()));
-    auto result = applyIntToFeltOverflow(signedValue, field, op.getOverflow());
-    if (!result) {
-      return failure();
-    }
-    // Truncation can leave low bits outside the field range. A felt.const
-    // reduces modulo the prime, so it cannot preserve that cast result.
-    if (*result >= field.prime()) {
-      return failure();
-    }
-    rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, felt::FeltConstAttr::get(op->getContext(), *result, resultType)
-    );
-    return success();
-  }).Default([](auto) { return failure(); });
+  const Field &field = resultType.getField();
+  DynamicAPInt signedValue = integerAttrToDynamicAPInt(value);
+  auto result = applyIntToFeltOverflow(signedValue, field, getOverflow());
+  if (!result) {
+    return {};
+  }
+  // Truncation can leave low bits outside the field range. A felt.const
+  // reduces modulo the prime, so it cannot preserve that cast result.
+  if (*result >= field.prime()) {
+    return {};
+  }
+  return felt::FeltConstAttr::get(getContext(), *result, resultType);
 }
 
 ParseResult

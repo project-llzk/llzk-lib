@@ -58,7 +58,9 @@ def LLZK_IntToFeltOp
     target field's safe range are handled. The default `assert` mode fails on
     such values, even when the result is unused, and cannot be speculated.
     The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
-    Constant folding defers casts whose result field is unspecified.
+    Constant folding defers casts whose result field is unspecified, whose
+    `assert` range check fails, or whose `trunc` result is outside the field
+    range and therefore cannot be represented by a felt constant.
 
     Example:
 
@@ -92,7 +94,7 @@ def LLZK_IntToFeltOp
     );
   }];
 
-  let hasCanonicalizeMethod = 1;
+  let hasFolder = 1;
 }
 
 def LLZK_FeltToIndexOp : CastOp<"toindex", [NotFieldNative]> {
