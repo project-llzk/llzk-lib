@@ -51,12 +51,21 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
 using namespace mlir;
 
 namespace llzk::witgen {
 
 namespace {
+
+/// Flush buffered JIT assertion diagnostics before aborting the process.
+[[noreturn]] static void abortWithFlushedStdout() {
+  // cf.assert lowers to puts followed by abort, which may not flush stdout.
+  std::fflush(stdout);
+  std::abort();
+}
 
 /// Hold one raw memref descriptor and its backing storage bytes.
 struct BufferPack {
@@ -492,6 +501,9 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     llvm::orc::SymbolMap symbolMap;
     symbolMap[interner("memrefCopy")] = {
         llvm::orc::ExecutorAddr::fromPtr(&memrefCopy), llvm::JITSymbolFlags::Exported
+    };
+    symbolMap[interner("abort")] = {
+        llvm::orc::ExecutorAddr::fromPtr(&abortWithFlushedStdout), llvm::JITSymbolFlags::Exported
     };
     return symbolMap;
   });
