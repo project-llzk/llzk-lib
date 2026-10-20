@@ -1206,7 +1206,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   ) {
     // Non-assert casts can change the value non-monotonically. Forget the operand
     // relation, but initialize the result so sparse dataflow visits its users.
-    propagateIfChanged(results[0], results[0]->setValue(createUnknownValue(op->getResult(0))));
+    ExpressionValue result = createUnknownValue(intToFelt.getResult());
+    if (trackUnreducedIntervals && intToFelt.getOverflow() == cast::OverflowSemantics::TRUNCATE) {
+      // Keeping the low bits can produce values above p-1. The reduced interval
+      // remains Entire, while the unreduced interval must include every bit pattern.
+      const auto maxTruncated =
+          (field.get().one() << llvm::DynamicAPInt(field.get().bitWidth())) - field.get().one();
+      result = result.withUnreducedInterval(UnreducedInterval(field.get().zero(), maxTruncated));
+    }
+    propagateIfChanged(results[0], results[0]->setValue(result));
   } else if (
       auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
       feltToIndex && feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT

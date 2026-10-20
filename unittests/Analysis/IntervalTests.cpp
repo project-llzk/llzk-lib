@@ -633,6 +633,9 @@ module attributes {llzk.lang} {
   static constexpr auto kDynamicNonAssertCastModule = R"mlir(
 module attributes {llzk.lang} {
   struct.def @DynamicNonAssertCasts {
+    struct.member @truncated : !felt.type<"babybear">
+    struct.member @sum : !felt.type<"babybear">
+
     function.def @compute(%index: index, %felt: !felt.type<"babybear">)
         -> !struct.type<@DynamicNonAssertCasts>
         attributes {function.allow_non_native_field_ops, function.allow_witness} {
@@ -643,6 +646,10 @@ module attributes {llzk.lang} {
       %sat_to_index = cast.toindex sat %felt : !felt.type<"babybear">
       %wrap_to_index = cast.toindex wrap %felt : !felt.type<"babybear">
       %trunc_to_index = cast.toindex trunc %felt : !felt.type<"babybear">
+      %one = felt.const 1 : !felt.type<"babybear">
+      %sum = felt.add %trunc_to_felt, %one : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@truncated] = %trunc_to_felt : <@DynamicNonAssertCasts>, !felt.type<"babybear">
+      struct.writem %self[@sum] = %sum : <@DynamicNonAssertCasts>, !felt.type<"babybear">
       function.return %self : !struct.type<@DynamicNonAssertCasts>
     }
 
@@ -695,8 +702,70 @@ TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) 
     const ExpressionValue &value = lattice->getValue().getScalarValue();
     EXPECT_NE(value.getExpr(), nullptr);
     EXPECT_EQ(value.getInterval(), Interval::Entire(field));
+    EXPECT_FALSE(value.hasUnreducedInterval());
   });
   EXPECT_EQ(dynamicCastCount, 6U);
+}
+
+// Truncating -1 to babybear's low 31 bits can produce 2147483647, above p-1.
+// Preserve that endpoint in SSA arithmetic and stored member summaries.
+TEST_F(IntervalAnalysisAPITests, DynamicTruncationPreservesUnreducedRanges) {
+  auto mod = parseModule(kDynamicNonAssertCastModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  unsigned toFeltCount = 0;
+  computeFn.walk([&](cast::IntToFeltOp op) {
+    ++toFeltCount;
+    SCOPED_TRACE(cast::stringifyOverflowSemantics(op.getOverflow()).str());
+    const auto *lattice = lookupLattice(analysis, op.getResult());
+    ASSERT_NE(lattice, nullptr);
+    const auto &value = lattice->getValue().getScalarValue();
+    EXPECT_NE(value.getExpr(), nullptr);
+    EXPECT_EQ(value.getInterval(), Interval::Entire(field));
+    ASSERT_TRUE(value.hasUnreducedInterval());
+    // Saturation and wrapping still produce only canonical field values.
+    auto expected = op.getOverflow() == cast::OverflowSemantics::TRUNCATE
+                        ? UnreducedInterval(0, 2147483647)
+                        : UnreducedInterval(field.zero(), field.maxVal());
+    AssertUnreducedIntervalEq(expected, value.getUnreducedInterval());
+  });
+  EXPECT_EQ(toFeltCount, 3U);
+
+  felt::AddFeltOp sumOp;
+  computeFn.walk([&](felt::AddFeltOp op) { sumOp = op; });
+  ASSERT_TRUE(sumOp != nullptr);
+  const auto *sumLattice = lookupLattice(analysis, sumOp.getResult());
+  ASSERT_NE(sumLattice, nullptr);
+  const auto &sumValue = sumLattice->getValue().getScalarValue();
+  EXPECT_EQ(sumValue.getInterval(), Interval::Entire(field));
+  ASSERT_TRUE(sumValue.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(UnreducedInterval(1, 2147483648), sumValue.getUnreducedInterval());
+
+  const auto &intervals = analysis.getResult(structDef).getComputeUnreducedIntervals();
+  unsigned memberCount = 0;
+  for (auto member : structDef.getOps<MemberDefOp>()) {
+    ++memberCount;
+    SCOPED_TRACE(member.getName().str());
+    SourceRef ref(
+        llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(member)}
+    );
+    const auto *it = intervals.find(ref);
+    ASSERT_NE(it, intervals.end());
+    auto expected = member.getName() == "truncated" ? UnreducedInterval(0, 2147483647)
+                                                    : UnreducedInterval(1, 2147483648);
+    AssertUnreducedIntervalEq(expected, it->second);
+  }
+  EXPECT_EQ(memberCount, 2U);
 }
 
 TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
