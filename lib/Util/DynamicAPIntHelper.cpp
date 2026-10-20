@@ -132,7 +132,8 @@ DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   if (lhs == 0) {
     return DynamicAPInt(0);
   }
-  unsigned amount = checkedCast<unsigned>(cantFail(checkedToUInt64(rhs)));
+  // The bounded count fits int64_t; signed extraction avoids an APSInt conversion.
+  unsigned amount = checkedCast<unsigned>(cantFail(checkedToInt64(rhs)));
   return DynamicAPInt(bits.sextOrTrunc(width + amount).shl(amount));
 }
 
@@ -144,7 +145,8 @@ DynamicAPInt operator>>(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   if (rhs >= toDynamicAPInt(APSInt::getUnsigned(bits.getSignificantBits()))) {
     return DynamicAPInt(lhs < 0 ? -1 : 0);
   }
-  return DynamicAPInt(bits.ashr(checkedCast<unsigned>(cantFail(checkedToUInt64(rhs)))));
+  // The bounded count fits int64_t; signed extraction avoids an APSInt conversion.
+  return DynamicAPInt(bits.ashr(checkedCast<unsigned>(cantFail(checkedToInt64(rhs)))));
 }
 
 DynamicAPInt toDynamicAPInt(StringRef str) { return cantFail(parseDynamicAPInt(str)); }
