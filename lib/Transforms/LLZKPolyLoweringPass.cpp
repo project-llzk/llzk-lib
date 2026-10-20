@@ -92,13 +92,6 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
   unsigned auxCounter = 0;
 
-  static void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
-    modOp.walk([&structDefs](StructDefOp structDef) {
-      structDefs.push_back(structDef);
-      return WalkResult::skip();
-    });
-  }
-
   /// Records a dependency from the current aux assignment to a prerequisite.
   static void addAuxDependency(
       unsigned dep, unsigned owner, DenseSet<unsigned> &seenDeps, SmallVectorImpl<unsigned> &deps
