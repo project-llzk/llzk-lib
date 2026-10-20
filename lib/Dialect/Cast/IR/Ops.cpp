@@ -127,23 +127,22 @@ void IntToFeltOp::printOptionalOverflowSemantics(
   ::printOptionalOverflowSemantics(printer, overflow);
 }
 
-LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
-  // Instead of casting a felt.const to index, just generate an arith.constant
-  if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    // A fieldless felt has no representative until its field is known.
-    auto reduced = constOp.getValue().getReducedValue();
-    if (!reduced) {
-      return failure();
-    }
-    auto result =
-        applyFeltToIndexOverflow(*reduced, IndexType::kInternalStorageBitWidth, op.getOverflow());
-    if (!result) {
-      return failure();
-    }
-    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, cantFail(checkedToInt64(*result)));
-    return success();
+OpFoldResult FeltToIndexOp::fold(FoldAdaptor adaptor) {
+  auto value = llvm::dyn_cast_if_present<felt::FeltConstAttr>(adaptor.getValue());
+  if (!value) {
+    return {};
   }
-  return failure();
+  // A fieldless felt has no representative until its field is known.
+  auto reduced = value.getReducedValue();
+  if (!reduced) {
+    return {};
+  }
+  auto result =
+      applyFeltToIndexOverflow(*reduced, IndexType::kInternalStorageBitWidth, getOverflow());
+  if (!result) {
+    return {};
+  }
+  return IntegerAttr::get(getType(), cantFail(checkedToInt64(*result)));
 }
 
 ParseResult FeltToIndexOp::parseOptionalOverflowSemantics(

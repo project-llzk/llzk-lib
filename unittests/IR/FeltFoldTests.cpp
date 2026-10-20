@@ -24,6 +24,7 @@
 
 #include <array>
 #include <gtest/gtest.h>
+#include <limits>
 
 using namespace mlir;
 using namespace llzk;
@@ -84,6 +85,25 @@ protected:
       return {};
     }
     return llvm::dyn_cast_or_null<FeltConstAttr>(llvm::dyn_cast_if_present<Attribute>(results[0]));
+  }
+
+  /// Fold a cast from a block argument using only the supplied constant attribute.
+  IntegerAttr foldToIndex(
+      FeltConstAttr operandAttr,
+      llzk::cast::OverflowSemantics overflow = llzk::cast::OverflowSemantics::ASSERT
+  ) {
+    Block block;
+    OpBuilder builder(&ctx);
+    builder.setInsertionPointToEnd(&block);
+    auto type = operandAttr ? operandAttr.getType() : FeltType::get(&ctx, BB_FIELD);
+    auto operand = block.addArgument(type, loc);
+    auto op = llzk::cast::FeltToIndexOp::create(builder, loc, overflow, operand);
+    SmallVector<Attribute, 1> operands = {operandAttr};
+    SmallVector<OpFoldResult, 1> results;
+    if (failed(op->fold(operands, results)) || results.empty()) {
+      return {};
+    }
+    return llvm::dyn_cast_or_null<IntegerAttr>(llvm::dyn_cast_if_present<Attribute>(results[0]));
   }
 
   /// Assert that fold produced the expected unsigned integer value in babybear.
@@ -430,17 +450,52 @@ TEST_F(BabyBearFoldTest, FoldsReduceUncanonicalizedOperands) {
 // constant to be canonicalized first.
 TEST_F(BabyBearFoldTest, CastToIndexReducesWithoutCanonicalizingConstant) {
   Block block;
-  PatternRewriter rewriter(&ctx);
-  rewriter.setInsertionPointToEnd(&block);
-  auto constant = FeltConstantOp::create(rewriter, loc, babyBearConst(BB_PRIME + 7));
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto constant = FeltConstantOp::create(builder, loc, babyBearConst(BB_PRIME + 7));
   ASSERT_TRUE(constant.getValue().getReducedValue());
   EXPECT_EQ(*constant.getValue().getReducedValue(), 7U);
-  auto cast = llzk::cast::FeltToIndexOp::create(rewriter, loc, constant.getResult());
-  ASSERT_TRUE(succeeded(llzk::cast::FeltToIndexOp::canonicalize(cast, rewriter)));
-  auto index = dyn_cast<arith::ConstantIndexOp>(block.back());
+  Value folded = builder.createOrFold<llzk::cast::FeltToIndexOp>(loc, constant.getResult());
+  auto index = folded.getDefiningOp<arith::ConstantIndexOp>();
   ASSERT_TRUE(index);
   EXPECT_EQ(index.value(), 7);
   EXPECT_EQ(constant.getValue().getRawValue(), toDynamicAPInt(BB_PRIME + 7));
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexFoldsAdaptorConstant) {
+  auto result = foldToIndex(babyBearConst(BB_PRIME + 7));
+  ASSERT_TRUE(result);
+  EXPECT_TRUE(result.getType().isIndex());
+  EXPECT_EQ(result.getInt(), 7);
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexDefersUnknownConstants) {
+  for (auto mode :
+       {llzk::cast::OverflowSemantics::ASSERT, llzk::cast::OverflowSemantics::SATURATE,
+        llzk::cast::OverflowSemantics::WRAP, llzk::cast::OverflowSemantics::TRUNCATE}) {
+    EXPECT_FALSE(foldToIndex({}, mode));
+    EXPECT_FALSE(foldToIndex(unspecifiedConst(0), mode));
+    EXPECT_FALSE(foldToIndex(unspecifiedConst(BB_PRIME + 7), mode));
+  }
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexFoldPreservesOverflowSemantics) {
+  const int64_t maxIndex = std::numeric_limits<int64_t>::max();
+  auto maxValue = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(maxIndex), "bn254");
+  auto tooLarge = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(maxIndex) + 13, "bn254");
+  auto result = foldToIndex(maxValue);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result.getInt(), maxIndex);
+  EXPECT_FALSE(foldToIndex(tooLarge));
+
+  result = foldToIndex(tooLarge, llzk::cast::OverflowSemantics::SATURATE);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result.getInt(), maxIndex);
+  for (auto mode : {llzk::cast::OverflowSemantics::WRAP, llzk::cast::OverflowSemantics::TRUNCATE}) {
+    result = foldToIndex(tooLarge, mode);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(result.getInt(), 12);
+  }
 }
 
 // Exercise the fold hook directly so constant canonicalization cannot mask regressions.

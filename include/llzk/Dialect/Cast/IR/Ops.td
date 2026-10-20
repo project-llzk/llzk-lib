@@ -105,6 +105,10 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [NotFieldNative]> {
     index safe range, even when the result is unused, and cannot be speculated.
     The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
 
+    Constant folding reduces the operand in its field before applying the
+    overflow mode and returns an index constant. Folding defers when the field
+    is unspecified or the `assert` range check fails.
+
     Example:
     ```llzk
     %0 = cast.toindex %a
@@ -132,7 +136,7 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [NotFieldNative]> {
     );
   }];
 
-  let hasCanonicalizeMethod = 1;
+  let hasFolder = 1;
 }
 
 #endif // LLZK_CAST_OPS

@@ -28,6 +28,13 @@
 // CastDialect
 //===------------------------------------------------------------------===//
 
+/// Materialize folded index attributes using the arithmetic dialect.
+mlir::Operation *llzk::cast::CastDialect::materializeConstant(
+    mlir::OpBuilder &builder, mlir::Attribute value, mlir::Type type, mlir::Location loc
+) {
+  return mlir::arith::ConstantOp::materialize(builder, value, type, loc);
+}
+
 auto llzk::cast::CastDialect::initialize() -> void {
   // clang-format off
   addOperations<
