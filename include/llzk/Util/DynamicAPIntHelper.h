@@ -77,6 +77,8 @@ inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
   return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));
 }
 
+/// Convert to a signed APSInt with the same numeric value (bit width is unspecified).
+/// Reports a fatal error if the decimal parsing width cannot be represented by APInt.
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
 /// Modular exponentiation for a nonnegative exponent and positive modulus.

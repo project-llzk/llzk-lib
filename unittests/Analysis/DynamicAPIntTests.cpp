@@ -74,26 +74,39 @@ INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntUnaryTest, testing::ValuesIn(DynamicAPIntUnaryTest::TestingValues())
 );
 
-/// Check signed values and output widths at the native-integer conversion boundary.
-TEST(DynamicAPIntSafetyTest, APSIntConversionPreservesSignedValuesAndWidths) {
-  for (const auto &[text, width] : std::vector<std::pair<StringRef, unsigned>> {
-           {"0", 64},
-           {"-1", 64},
-           {"9223372036854775807", 64},
-           {"9223372036854775808", 65},
-           {"-9223372036854775808", 64},
-           {"-9223372036854775809", 66},
-           {"18446744073709551615", 65},
-           {"18446744073709551616", 66},
-           {"-18446744073709551616", 66},
-           {"-18446744073709551617", 67}
-       }) {
+/// Check signed values at the native-integer conversion boundary, independent of width.
+TEST(DynamicAPIntSafetyTest, APSIntConversionPreservesSignedValues) {
+  for (StringRef text :
+       {"0", "-1", "9223372036854775807", "9223372036854775808", "-9223372036854775808",
+        "-9223372036854775809", "18446744073709551615", "18446744073709551616",
+        "-18446744073709551616", "-18446744073709551617"}) {
     SCOPED_TRACE(text.str());
-    APInt expected(width, text, 10);
+    APSInt expected(APInt(128, text, 10), false);
     APSInt actual = toAPSInt(DynamicAPInt(expected));
     EXPECT_TRUE(actual.isSigned());
-    ASSERT_EQ(actual.getBitWidth(), width);
-    EXPECT_EQ(static_cast<const APInt &>(actual), expected);
+    EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+  }
+}
+
+/// Check both signs around powers of two without retaining redundant storage words.
+TEST(DynamicAPIntSafetyTest, APSIntConversionAtWordBoundaries) {
+  for (unsigned exponent : {63,  64,  65,  127, 128, 129, 191, 192,  193,  253,
+                            254, 255, 256, 257, 319, 320, 321, 1023, 1024, 1025}) {
+    APInt power = APInt::getOneBitSet(exponent + 3, exponent);
+    for (int offset : {-1, 0, 1}) {
+      APInt magnitude = power + APInt(power.getBitWidth(), offset, /*isSigned=*/true);
+      for (bool negative : {false, true}) {
+        SCOPED_TRACE(
+            testing::Message() << "exponent=" << exponent << ", offset=" << offset
+                               << ", negative=" << negative
+        );
+        APSInt expected(negative ? -magnitude : magnitude, false);
+        APSInt actual = toAPSInt(DynamicAPInt(expected));
+        EXPECT_TRUE(actual.isSigned());
+        EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+        EXPECT_EQ(actual.getNumWords(), APInt::getNumWords(expected.getSignificantBits()));
+      }
+    }
   }
 }
 
