@@ -458,10 +458,9 @@ public:
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (!isFeltOrArrayOfFelt(op.getVal().getType())) {
-      op.emitError(
+      return op.emitError(
           "SMT lowering currently only supports felt- or array-of-felt-valued struct.writem"
       );
-      return failure();
     }
 
     auto it = symbols.find(adaptor.getMemberName());
@@ -745,7 +744,7 @@ void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
     }
     // If the arrays are dynamically sized, just emit a warning and fall back to asserting the whole
     // thing equal (outside the if-statement)
-    mlir::emitWarning(loc) << "dynamically sized arrays not fully supported in SMT lowering";
+    mlir::emitError(loc) << "dynamically sized arrays not fully supported in SMT lowering";
   }
 
   Value predicate =
@@ -1027,20 +1026,17 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
               strategy.getWitnessMemberRange(memberDef.getSymName())
           );
         } else if (auto arrType = dyn_cast<array::ArrayType>(memberDef.getType())) {
-          SmallVector<size_t> extents;
-          for (auto extent : arrType.getShape()) {
-            if (extent < 0) {
-              mod.emitError("SMT lowering does not support dynamically-shaped arrays\n");
-              return signalPassFailure();
-            }
-            extents.push_back(extent);
+          auto extents = getExtents(arrType);
+          if (failed(extents)) {
+            mod.emitError("SMT lowering does not support dynamically-shaped arrays\n");
+            return signalPassFailure();
           }
           strategy.emitArrayRangeConstraint(
-              rewriter, memberDef.getLoc(), constraintSym.getResult(), extents,
+              rewriter, memberDef.getLoc(), constraintSym.getResult(), *extents,
               strategy.getConstraintMemberRange(memberDef.getSymName())
           );
           strategy.emitArrayRangeConstraint(
-              rewriter, memberDef.getLoc(), witnessSym.getResult(), extents,
+              rewriter, memberDef.getLoc(), witnessSym.getResult(), *extents,
               strategy.getWitnessMemberRange(memberDef.getSymName())
           );
         }

@@ -250,6 +250,7 @@ Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
 }
 
 static inline Type smtArrayOfRank(MLIRContext *ctx, int64_t rank, Type elementType) {
+  assert(rank >= 0);
   if (rank == 0) {
     return elementType;
   }
@@ -388,8 +389,9 @@ LogicalResult MemberReadConverter::matchAndRewrite(
     component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
   if (!isFeltOrArrayOfFelt(op.getResult().getType())) {
-    op.emitError("SMT lowering currently only supports felt- or array-of-felt-valued struct.readm");
-    return failure();
+    return op.emitError(
+        "SMT lowering currently only supports felt- or array-of-felt-valued struct.readm"
+    );
   }
 
   auto it = symbols.find(adaptor.getMemberName());
