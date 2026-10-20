@@ -1,3 +1,0 @@
-// RUN: llzk-opt %S/expose_family_atomic_fail.llzk --llzk-expose-child-members --verify-diagnostics -o /dev/null
-
-// Validate the failed family resolution diagnostic independently of atomicity.

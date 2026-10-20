@@ -104,7 +104,9 @@ class ConstraintElaborator {
       if (!podType || !name) {
         return constraintError(site, "invalid POD storage path");
       }
-      auto recordType = podType.getRecord(name.getValue(), [site] { return site->emitError(); });
+      auto recordType = podType.getRecord(name.getValue(), [site] {
+        return site->emitError(CONSTRAINT_DIAGNOSTIC_PREFIX);
+      });
       if (failed(recordType)) {
         return failure();
       }
@@ -366,11 +368,26 @@ class ConstraintElaborator {
       return constraintError(&op, "equality constraints require scalar felt operands");
     }
     bool structural = isIntegerExpression(op);
-    if (!(isFieldExpression(op) || equality || isa<cast::IntToFeltOp>(op) || structural)) {
+    if (!(equality || structural || isFieldExpression(op) || isa<cast::IntToFeltOp>(op))) {
       if (op.hasTrait<function::NotFieldNative>() || isa<felt::DivFeltOp>(op)) {
         return constraintError(&op, "lower non-native operations before constraint flattening");
       }
-      return constraintError(&op, "unsupported operation '" + op.getName().getStringRef() + "'");
+      if (isa<constrain::EmitContainmentOp>(op)) {
+        return constraintError(
+            &op, "unsupported operation 'constrain.in': containment constraints require lowering "
+                 "before constraint flattening"
+        );
+      }
+      if (llvm::any_of(op.getResultTypes(), [](Type type) { return isa<FloatType>(type); })) {
+        return constraintError(
+            &op, "unsupported operation '" + op.getName().getStringRef() +
+                     "': floating-point results are not supported in flattened constraints"
+        );
+      }
+      return constraintError(
+          &op, "unsupported operation '" + op.getName().getStringRef() +
+                   "': expected a supported field expression or pure integer computation"
+      );
     }
     auto mapping = scalarMapping(op, frame);
     if (failed(mapping)) {
@@ -435,14 +452,13 @@ class ConstraintElaborator {
       arguments.push_back(frame.lookup(argument));
     }
     FuncDefOp target;
-    if (op.calleeIsStructConstrain() && !arguments.empty()) {
+    if (!arguments.empty() && op.calleeIsStructConstrain()) {
       auto info = storage->describe(std::get<Value>(arguments.front()), op);
       if (failed(info)) {
         return failure();
       }
       auto owner = info->definition;
-      target = owner ? dyn_cast_or_null<FuncDefOp>(SymbolTable::lookupSymbolIn(owner, "constrain"))
-                     : FuncDefOp();
+      target = owner ? owner.getConstrainFuncOp() : FuncDefOp();
     } else {
       auto found = lookupTopLevelSymbol<FuncDefOp>(tables, op.getCalleeAttr(), op);
       if (failed(found)) {
@@ -483,7 +499,7 @@ class ConstraintElaborator {
     auto lower = facts.integer(scalar(op.getLowerBound(), frame));
     auto upper = facts.integer(scalar(op.getUpperBound(), frame));
     auto step = facts.integer(scalar(op.getStep(), frame));
-    if (op.getUnsignedCmp() || !lower || !upper || !step || *step <= 0) {
+    if (!lower || !upper || !step || *step <= 0 || op.getUnsignedCmp()) {
       return constraintError(op, "requires signed static for bounds and a positive step");
     }
     SmallVector<BoundValue> carried;
@@ -764,7 +780,7 @@ public:
     }
     main = root->get();
     storage.emplace(module, main, builder, tables, facts);
-    auto source = dyn_cast_or_null<FuncDefOp>(SymbolTable::lookupSymbolIn(main, "constrain"));
+    auto source = main.getConstrainFuncOp();
     if (isInTemplate(main) || !source || !llvm::hasSingleElement(source.getBody())) {
       return constraintError(main, "main must have a concrete single-block constrain function");
     }

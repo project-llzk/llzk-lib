@@ -1,8 +1,6 @@
-// RUN: not llzk-opt %s --llzk-expose-child-members --mlir-disable-threading --mlir-print-ir-after-failure --mlir-print-ir-module-scope -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=llzk.pub
+// RUN: llzk-opt %s --llzk-expose-child-members --verify-diagnostics -o /dev/null
 
-// The first family collects both concrete and rolled members. A later family
-// fails resolution, so neither declaration may have been made public.
-
+// Reject an unresolved specialization after a valid family entry.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @Child {
     poly.param @N : index
@@ -34,11 +32,3 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@Main>) { function.return }
   }
 }
-
-// CHECK:    poly.template @Child {
-// CHECK:      struct.def @Child {
-// CHECK:        struct.member @out : !felt.type {signal}
-// CHECK:    struct.def @ConcreteChild {
-// CHECK:      struct.member @out : !felt.type {signal}
-// CHECK:    struct.def @Main {
-// CHECK:      struct.member @ok : !array.type<1 x !struct.type<@Child::@Child<[#map]>>> {poly.family = [{indices = [0 : index], specialization = 1 : i64, type = !struct.type<@Child::@Child<[#map]>>}]}

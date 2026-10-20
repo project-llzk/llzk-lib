@@ -102,7 +102,9 @@ public:
     if (!type || !name) {
       return constraintError(site, "invalid POD path");
     }
-    auto record = type.getRecord(name.getValue(), [site] { return site->emitError(); });
+    auto record = type.getRecord(name.getValue(), [site] {
+      return site->emitError(CONSTRAINT_DIAGNOSTIC_PREFIX);
+    });
     if (mlir::failed(record)) {
       return mlir::failure();
     }

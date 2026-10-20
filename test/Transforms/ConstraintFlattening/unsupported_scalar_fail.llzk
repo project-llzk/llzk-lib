@@ -7,7 +7,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
-      // expected-error @+1 {{unsupported operation 'arith.constant'}}
+      // expected-error @+1 {{llzk-flatten-constraints: unsupported operation 'arith.constant': floating-point results are not supported in flattened constraints}}
       %float = arith.constant 1.0 : f32
       function.return
     }

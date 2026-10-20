@@ -179,9 +179,7 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     storage reads, index/i1 constants, and conversions of constant integers to
     felt are permitted. Expansion work is bounded across calls, iterations,
     and aggregate traversal. Any failed expansion or validation fails the entire
-    pass. A candidate body is built separately and committed only after validation,
-    preserving the original input in failure diagnostics and IR dumps; this does
-    not provide per-function recovery.
+    pass.
 
     Equality constraints currently require scalar felt operands; array equality
     and constrain.in are unsupported. Symbolic if/select conditions are rejected.

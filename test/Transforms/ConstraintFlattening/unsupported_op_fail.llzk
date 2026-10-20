@@ -10,7 +10,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %array = array.new %x : !array.type<1 x !felt.type>
       %zero = arith.constant 0 : index
       array.write %array[%zero] = %x : !array.type<1 x !felt.type>, !felt.type
-      // expected-error @+1 {{unsupported operation 'constrain.in'}}
+      // Array storage is supported; the containment constraint itself needs lowering.
+      // expected-error @+1 {{llzk-flatten-constraints: unsupported operation 'constrain.in': containment constraints require lowering before constraint flattening}}
       constrain.in %array, %x : !array.type<1 x !felt.type>, !felt.type
       function.return
     }

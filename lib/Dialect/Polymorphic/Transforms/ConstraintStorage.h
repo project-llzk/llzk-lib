@@ -43,7 +43,7 @@ class ConstraintStorage {
       auto entry = llvm::dyn_cast<mlir::DictionaryAttr>(record);
       auto origin = entry ? entry.getAs<mlir::TypeAttr>(FAMILY_TYPE_KEY) : mlir::TypeAttr();
       auto indices = entry ? entry.getAs<mlir::ArrayAttr>(FAMILY_INDICES_KEY) : mlir::ArrayAttr();
-      if (!origin || origin.getValue() != type || !indices ||
+      if (!origin || !indices || origin.getValue() != type ||
           indices.size() != info.indices.size()) {
         continue;
       }

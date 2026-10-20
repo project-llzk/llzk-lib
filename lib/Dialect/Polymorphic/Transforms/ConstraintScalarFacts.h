@@ -34,7 +34,7 @@ class ConstraintScalarFacts {
     }
     // Casts expose canonicalization rather than fold hooks. Match the same
     // nonnegative, signed-64 representability rule for structural indices.
-    if (auto conversion = llvm::dyn_cast<llzk::cast::FeltToIndexOp>(producer)) {
+    if (llvm::isa<llzk::cast::FeltToIndexOp>(producer)) {
       if (auto constant = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operands.front())) {
         auto reduced = constant.getReducedValue();
         if (!reduced) {

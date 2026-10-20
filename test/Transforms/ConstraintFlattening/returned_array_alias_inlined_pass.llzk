@@ -1,3 +1,0 @@
-// RUN: llzk-opt %S/returned_input_snapshot_pass.llzk --llzk-inline-free-functions --llzk-flatten-constraints | FileCheck %S/returned_input_snapshot_pass.llzk --match-full-lines
-
-// Inlining before flattening preserves the same returned-array aliasing constraints.
