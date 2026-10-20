@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
+#include <tuple>
 
 using namespace llvm;
 using namespace llzk;
@@ -75,54 +76,81 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 /// Check signed values at the native-integer conversion boundary, independent of width.
-TEST(DynamicAPIntSafetyTest, APSIntConversionPreservesSignedValues) {
-  for (StringRef text :
-       {"0", "-1", "9223372036854775807", "9223372036854775808", "-9223372036854775808",
-        "-9223372036854775809", "18446744073709551615", "18446744073709551616",
-        "-18446744073709551616", "-18446744073709551617"}) {
-    SCOPED_TRACE(text.str());
-    APSInt expected(APInt(128, text, 10), false);
-    APSInt actual = toAPSInt(DynamicAPInt(expected));
-    EXPECT_TRUE(actual.isSigned());
-    EXPECT_TRUE(APSInt::isSameValue(actual, expected));
-  }
+struct DynamicAPIntSignedConversionTest : public testing::TestWithParam<std::string> {};
+
+TEST_P(DynamicAPIntSignedConversionTest, APSIntConversionPreservesSignedValues) {
+  APSInt expected(APInt(128, GetParam(), 10), false);
+  APSInt actual = toAPSInt(DynamicAPInt(expected));
+  EXPECT_TRUE(actual.isSigned());
+  EXPECT_TRUE(APSInt::isSameValue(actual, expected));
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntSignedConversionTest,
+    testing::Values(
+        "0", "-1", "9223372036854775807", "9223372036854775808", "-9223372036854775808",
+        "-9223372036854775809", "18446744073709551615", "18446744073709551616",
+        "-18446744073709551616", "-18446744073709551617"
+    ),
+    [](const testing::TestParamInfo<DynamicAPIntSignedConversionTest::ParamType> &info) {
+      const std::string &text = info.param;
+      return text.front() == '-' ? "Negative" + text.substr(1) : "NonNegative" + text;
+    }
+);
 
 /// Check both signs around powers of two without retaining redundant storage words.
-TEST(DynamicAPIntSafetyTest, APSIntConversionAtWordBoundaries) {
-  for (unsigned exponent : {63,  64,  65,  127, 128, 129, 191, 192,  193,  253,
-                            254, 255, 256, 257, 319, 320, 321, 1023, 1024, 1025}) {
-    APInt power = APInt::getOneBitSet(exponent + 3, exponent);
-    for (int offset : {-1, 0, 1}) {
-      APInt magnitude = power + APInt(power.getBitWidth(), offset, /*isSigned=*/true);
-      for (bool negative : {false, true}) {
-        SCOPED_TRACE(
-            testing::Message() << "exponent=" << exponent << ", offset=" << offset
-                               << ", negative=" << negative
-        );
-        APSInt expected(negative ? -magnitude : magnitude, false);
-        APSInt actual = toAPSInt(DynamicAPInt(expected));
-        EXPECT_TRUE(actual.isSigned());
-        EXPECT_TRUE(APSInt::isSameValue(actual, expected));
-        EXPECT_EQ(actual.getNumWords(), APInt::getNumWords(expected.getSignificantBits()));
-      }
-    }
-  }
+struct DynamicAPIntWordBoundaryTest
+    : public testing::TestWithParam<std::tuple<unsigned, int, bool>> {};
+
+TEST_P(DynamicAPIntWordBoundaryTest, APSIntConversionAtWordBoundaries) {
+  auto [exponent, offset, negative] = GetParam();
+  APInt power = APInt::getOneBitSet(exponent + 3, exponent);
+  APInt magnitude = power + APInt(power.getBitWidth(), offset, /*isSigned=*/true);
+  APSInt expected(negative ? -magnitude : magnitude, false);
+  APSInt actual = toAPSInt(DynamicAPInt(expected));
+  EXPECT_TRUE(actual.isSigned());
+  EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+  EXPECT_EQ(actual.getNumWords(), APInt::getNumWords(expected.getSignificantBits()));
 }
 
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntWordBoundaryTest,
+    testing::Combine(
+        testing::Values(
+            63, 64, 65, 127, 128, 129, 191, 192, 193, 253, 254, 255, 256, 257, 319, 320, 321, 1023,
+            1024, 1025
+        ),
+        testing::Values(-1, 0, 1), testing::Bool()
+    ),
+    ([](const testing::TestParamInfo<DynamicAPIntWordBoundaryTest::ParamType> &info) {
+      auto [exponent, offset, negative] = info.param;
+      const char *offsetName = offset < 0 ? "MinusOne" : (offset > 0 ? "PlusOne" : "Zero");
+      return "Exponent" + std::to_string(exponent) + "Offset" + offsetName +
+             (negative ? "Negative" : "Positive");
+    })
+);
+
 /// Check both signs across the field-size and inline decimal-buffer boundaries.
-TEST(DynamicAPIntSafetyTest, APSIntConversionAcrossDecimalBufferBoundaries) {
-  for (unsigned digits : {77, 78, 95, 96, 97}) {
-    for (bool negative : {false, true}) {
-      std::string text = (negative ? "-" : "") + std::string(digits, '9');
-      SCOPED_TRACE(text);
-      APSInt expected(APInt(digits * 4 + 1, text, 10), false);
-      APSInt actual = toAPSInt(DynamicAPInt(expected));
-      EXPECT_TRUE(actual.isSigned());
-      EXPECT_TRUE(APSInt::isSameValue(actual, expected));
-    }
-  }
+struct DynamicAPIntDecimalBufferBoundaryTest
+    : public testing::TestWithParam<std::tuple<unsigned, bool>> {};
+
+TEST_P(DynamicAPIntDecimalBufferBoundaryTest, APSIntConversionAcrossDecimalBufferBoundaries) {
+  auto [digits, negative] = GetParam();
+  std::string text = (negative ? "-" : "") + std::string(digits, '9');
+  APSInt expected(APInt(digits * 4 + 1, text, 10), false);
+  APSInt actual = toAPSInt(DynamicAPInt(expected));
+  EXPECT_TRUE(actual.isSigned());
+  EXPECT_TRUE(APSInt::isSameValue(actual, expected));
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntDecimalBufferBoundaryTest,
+    testing::Combine(testing::Values(77, 78, 95, 96, 97), testing::Bool()),
+    ([](const testing::TestParamInfo<DynamicAPIntDecimalBufferBoundaryTest::ParamType> &info) {
+      auto [digits, negative] = info.param;
+      return "Digits" + std::to_string(digits) + (negative ? "Negative" : "Positive");
+    })
+);
 
 struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
   static const std::vector<std::string> &TestingValues() {
