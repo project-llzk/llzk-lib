@@ -153,10 +153,13 @@ static LLVM_ATTRIBUTE_NOINLINE APSInt toAPSIntSlow(const DynamicAPInt &i) {
   SmallString<96> repr;
   raw_svector_ostream(repr) << i;
 
-  // Use the conservative estimate from `APSInt(StringRef)`. Bound the digit count before
-  // multiplying or narrowing to APInt's unsigned bit width.
+  // This is based on `APSInt(StringRef)` and uses its conservative size estimate of 64/19 bits per
+  // decimal digit. However, we take some additional precautions to allocate space for the sign bit
+  // from the start, avoid truncating when a bitwidth change would not reduce the number of words
+  // required, and move the final result into the return value to avoid unnecessary copies.
   size_t digits = repr.size() - (repr.front() == '-');
   constexpr uint64_t maxDigits = ((uint64_t(numeric_limits<unsigned>::max()) - 2) * 19) / 64;
+  // Bound the digit count before multiplying or narrowing to APInt's unsigned bit width.
   if (digits > maxDigits) {
     llvm::report_fatal_error("decimal integer exceeds APInt's maximum parse width");
   }
