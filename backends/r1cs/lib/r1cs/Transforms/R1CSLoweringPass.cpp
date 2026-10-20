@@ -707,6 +707,19 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         signalPassFailure();
         return;
       }
+      if (walkContains<cast::FeltToIndexOp>(constrainFunc, [](cast::FeltToIndexOp op) {
+        if (op.getOverflow() != cast::OverflowSemantics::ASSERT) {
+          return false;
+        }
+        op.emitError(
+            "R1CS lowering does not support residual cast.toindex assert operations; "
+            "cannot preserve the index range check"
+        );
+        return true;
+      })) {
+        signalPassFailure();
+        return;
+      }
 
       DenseMap<Value, unsigned> degreeMemo;
       DenseMap<Value, Value> rewrites;
