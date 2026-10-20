@@ -236,7 +236,7 @@ Value SMTIntTheoryEmitter::emitQuantifiedAssertion(
     antecedents.reserve(2 * extents.size());
     for (auto [index, extent] : zip(indices, extents)) {
       auto [lo, hi] = getRangeBoundAssertions(
-          b, l, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
+          b, l, index, UnreducedInterval {0, checkedCast<int64_t>(extent) - 1}
       );
       antecedents.push_back(lo);
       antecedents.push_back(hi);
