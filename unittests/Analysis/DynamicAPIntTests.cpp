@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
+#include <tuple>
 
 using namespace llvm;
 using namespace llzk;
@@ -72,6 +73,83 @@ TEST_P(DynamicAPIntUnaryTest, Conversions) {
 
 INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntUnaryTest, testing::ValuesIn(DynamicAPIntUnaryTest::TestingValues())
+);
+
+/// Check signed values at the native-integer conversion boundary, independent of width.
+struct DynamicAPIntSignedConversionTest : public testing::TestWithParam<std::string> {};
+
+TEST_P(DynamicAPIntSignedConversionTest, APSIntConversionPreservesSignedValues) {
+  APSInt expected(APInt(128, GetParam(), 10), false);
+  APSInt actual = toAPSInt(DynamicAPInt(expected));
+  EXPECT_TRUE(actual.isSigned());
+  EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntSignedConversionTest,
+    testing::Values(
+        "0", "-1", "9223372036854775807", "9223372036854775808", "-9223372036854775808",
+        "-9223372036854775809", "18446744073709551615", "18446744073709551616",
+        "-18446744073709551616", "-18446744073709551617"
+    ),
+    [](const testing::TestParamInfo<DynamicAPIntSignedConversionTest::ParamType> &paramInfo) {
+      const std::string &text = paramInfo.param;
+      return text.front() == '-' ? "Negative" + text.substr(1) : "NonNegative" + text;
+    }
+);
+
+/// Check both signs around powers of two without retaining redundant storage words.
+struct DynamicAPIntWordBoundaryTest
+    : public testing::TestWithParam<std::tuple<unsigned, int, bool>> {};
+
+TEST_P(DynamicAPIntWordBoundaryTest, APSIntConversionAtWordBoundaries) {
+  auto [exponent, offset, negative] = GetParam();
+  APInt power = APInt::getOneBitSet(exponent + 3, exponent);
+  APInt magnitude = power + APInt(power.getBitWidth(), offset, /*isSigned=*/true);
+  APSInt expected(negative ? -magnitude : magnitude, false);
+  APSInt actual = toAPSInt(DynamicAPInt(expected));
+  EXPECT_TRUE(actual.isSigned());
+  EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+  EXPECT_EQ(actual.getNumWords(), APInt::getNumWords(expected.getSignificantBits()));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntWordBoundaryTest,
+    testing::Combine(
+        testing::Values(
+            63, 64, 65, 127, 128, 129, 191, 192, 193, 253, 254, 255, 256, 257, 319, 320, 321, 1023,
+            1024, 1025
+        ),
+        testing::Values(-1, 0, 1), testing::Bool()
+    ),
+    ([](const testing::TestParamInfo<DynamicAPIntWordBoundaryTest::ParamType> &paramInfo) {
+      auto [exponent, offset, negative] = paramInfo.param;
+      const char *offsetName = offset < 0 ? "MinusOne" : (offset > 0 ? "PlusOne" : "Zero");
+      return "Exponent" + std::to_string(exponent) + "Offset" + offsetName +
+             (negative ? "Negative" : "Positive");
+    })
+);
+
+/// Check both signs across the field-size and inline decimal-buffer boundaries.
+struct DynamicAPIntDecimalBufferBoundaryTest
+    : public testing::TestWithParam<std::tuple<unsigned, bool>> {};
+
+TEST_P(DynamicAPIntDecimalBufferBoundaryTest, APSIntConversionAcrossDecimalBufferBoundaries) {
+  auto [digits, negative] = GetParam();
+  std::string text = (negative ? "-" : "") + std::string(digits, '9');
+  APSInt expected(APInt(digits * 4 + 1, text, 10), false);
+  APSInt actual = toAPSInt(DynamicAPInt(expected));
+  EXPECT_TRUE(actual.isSigned());
+  EXPECT_TRUE(APSInt::isSameValue(actual, expected));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntDecimalBufferBoundaryTest,
+    testing::Combine(testing::Values(77, 78, 95, 96, 97), testing::Bool()),
+    ([](const testing::TestParamInfo<DynamicAPIntDecimalBufferBoundaryTest::ParamType> &paramInfo) {
+      auto [digits, negative] = paramInfo.param;
+      return "Digits" + std::to_string(digits) + (negative ? "Negative" : "Positive");
+    })
 );
 
 struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
@@ -287,7 +365,7 @@ TEST(DynamicAPIntSafetyTest, HugeRightShiftAndSignedLeftShift) {
   EXPECT_EQ(DynamicAPInt(-42) >> huge, DynamicAPInt(-1));
   EXPECT_EQ(DynamicAPInt(-3) << DynamicAPInt(100), -3 * (DynamicAPInt(1) << DynamicAPInt(100)));
   EXPECT_EQ(DynamicAPInt(-3) >> DynamicAPInt(1), DynamicAPInt(-2));
-  auto unsignedMax = toDynamicAPInt(APSInt::getUnsigned(std::numeric_limits<unsigned>::max()));
+  const DynamicAPInt unsignedMax(std::numeric_limits<unsigned>::max());
   EXPECT_EQ(DynamicAPInt(42) >> unsignedMax, DynamicAPInt(0));
   EXPECT_EQ(DynamicAPInt(-42) >> unsignedMax, DynamicAPInt(-1));
   EXPECT_DEATH(DynamicAPInt(1) << unsignedMax, "invalid or unrepresentable left shift");
