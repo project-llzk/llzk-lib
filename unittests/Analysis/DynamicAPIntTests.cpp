@@ -92,8 +92,8 @@ INSTANTIATE_TEST_SUITE_P(
         "-9223372036854775809", "18446744073709551615", "18446744073709551616",
         "-18446744073709551616", "-18446744073709551617"
     ),
-    [](const testing::TestParamInfo<DynamicAPIntSignedConversionTest::ParamType> &info) {
-      const std::string &text = info.param;
+    [](const testing::TestParamInfo<DynamicAPIntSignedConversionTest::ParamType> &paramInfo) {
+      const std::string &text = paramInfo.param;
       return text.front() == '-' ? "Negative" + text.substr(1) : "NonNegative" + text;
     }
 );
@@ -122,8 +122,8 @@ INSTANTIATE_TEST_SUITE_P(
         ),
         testing::Values(-1, 0, 1), testing::Bool()
     ),
-    ([](const testing::TestParamInfo<DynamicAPIntWordBoundaryTest::ParamType> &info) {
-      auto [exponent, offset, negative] = info.param;
+    ([](const testing::TestParamInfo<DynamicAPIntWordBoundaryTest::ParamType> &paramInfo) {
+      auto [exponent, offset, negative] = paramInfo.param;
       const char *offsetName = offset < 0 ? "MinusOne" : (offset > 0 ? "PlusOne" : "Zero");
       return "Exponent" + std::to_string(exponent) + "Offset" + offsetName +
              (negative ? "Negative" : "Positive");
@@ -146,8 +146,8 @@ TEST_P(DynamicAPIntDecimalBufferBoundaryTest, APSIntConversionAcrossDecimalBuffe
 INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntDecimalBufferBoundaryTest,
     testing::Combine(testing::Values(77, 78, 95, 96, 97), testing::Bool()),
-    ([](const testing::TestParamInfo<DynamicAPIntDecimalBufferBoundaryTest::ParamType> &info) {
-      auto [digits, negative] = info.param;
+    ([](const testing::TestParamInfo<DynamicAPIntDecimalBufferBoundaryTest::ParamType> &paramInfo) {
+      auto [digits, negative] = paramInfo.param;
       return "Digits" + std::to_string(digits) + (negative ? "Negative" : "Positive");
     })
 );
