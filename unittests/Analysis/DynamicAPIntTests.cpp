@@ -321,40 +321,75 @@ TEST(DynamicAPIntSafetyTest, CheckedParsing) {
 }
 
 /// Cover both native extraction paths, including values with redundant sign bits.
-TEST(DynamicAPIntSafetyTest, CheckedToSizeAcceptsBoundaryValues) {
-  constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
-  for (size_t value : {size_t(0), size_t(1), sizeMax / 2, sizeMax / 2 + 1, sizeMax - 1, sizeMax}) {
-    SCOPED_TRACE(value);
-    for (const llvm::DynamicAPInt &input :
-         {llzk::toDynamicAPInt(value), llvm::DynamicAPInt(llvm::APInt(256, value))}) {
-      auto checked = checkedToSize(input, "unit-test boundary");
-      ASSERT_TRUE(static_cast<bool>(checked)) << llvm::toString(checked.takeError());
-      EXPECT_EQ(*checked, value);
-    }
+struct DynamicAPIntCheckedToSizeBoundaryTest : public testing::TestWithParam<size_t> {
+  /// Return values around the signed and unsigned native-integer boundaries.
+  static const std::vector<size_t> &TestingValues() {
+    constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
+    static const std::vector<size_t> vals = {0,           1,      sizeMax / 2, sizeMax / 2 + 1,
+                                             sizeMax - 1, sizeMax};
+    return vals;
   }
+};
+
+TEST_P(DynamicAPIntCheckedToSizeBoundaryTest, NativeRepresentation) {
+  size_t value = GetParam();
+  auto checked = checkedToSize(llzk::toDynamicAPInt(value), "unit-test boundary");
+  ASSERT_TRUE(static_cast<bool>(checked)) << llvm::toString(checked.takeError());
+  EXPECT_EQ(*checked, value);
 }
+
+TEST_P(DynamicAPIntCheckedToSizeBoundaryTest, RedundantSignBits) {
+  size_t value = GetParam();
+  auto checked = checkedToSize(llvm::DynamicAPInt(llvm::APInt(256, value)), "unit-test boundary");
+  ASSERT_TRUE(static_cast<bool>(checked)) << llvm::toString(checked.takeError());
+  EXPECT_EQ(*checked, value);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntCheckedToSizeBoundaryTest,
+    testing::ValuesIn(DynamicAPIntCheckedToSizeBoundaryTest::TestingValues()),
+    testing::PrintToStringParamName()
+);
 
 /// Preserve overflow diagnostics for near-boundary and arbitrarily large values.
-TEST(DynamicAPIntSafetyTest, CheckedToSizeRejectsOverflow) {
-  // Leave a zero sign bit above SIZE_MAX + 1.
-  llvm::APInt justTooLarge =
-      llvm::APInt::getOneBitSet(sizeof(size_t) * CHAR_BIT + 2, std::numeric_limits<size_t>::digits);
-  for (const llvm::APInt &bits : {justTooLarge, llvm::APInt::getOneBitSet(256, 200)}) {
-    auto checked = checkedToSize(llvm::DynamicAPInt(bits), "unit-test overflow");
-    ASSERT_FALSE(static_cast<bool>(checked));
-    EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test overflow would overflow size_t");
-  }
+struct DynamicAPIntCheckedToSizeOverflowTest : public testing::TestWithParam<DynamicAPInt> {};
+
+TEST_P(DynamicAPIntCheckedToSizeOverflowTest, RejectsOverflow) {
+  auto checked = checkedToSize(GetParam(), "unit-test overflow");
+  ASSERT_FALSE(static_cast<bool>(checked));
+  EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test overflow would overflow size_t");
 }
 
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntCheckedToSizeOverflowTest,
+    testing::Values(
+        // Leave a zero sign bit above SIZE_MAX + 1.
+        llvm::DynamicAPInt(
+            llvm::APInt::getOneBitSet(
+                sizeof(size_t) * CHAR_BIT + 2, std::numeric_limits<size_t>::digits
+            )
+        ),
+        llvm::DynamicAPInt(llvm::APInt::getOneBitSet(256, 200))
+    ),
+    testing::PrintToStringParamName()
+);
+
 /// Negative values retain the underflow diagnostic regardless of their magnitude.
-TEST(DynamicAPIntSafetyTest, CheckedToSizeRejectsUnderflow) {
-  for (const llvm::DynamicAPInt &value :
-       {llvm::DynamicAPInt(-1), -llvm::DynamicAPInt(llvm::APInt::getOneBitSet(256, 200))}) {
-    auto checked = checkedToSize(value, llvm::Twine("unit-test") + " underflow");
-    ASSERT_FALSE(static_cast<bool>(checked));
-    EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test underflow would underflow size_t");
-  }
+struct DynamicAPIntCheckedToSizeUnderflowTest : public testing::TestWithParam<DynamicAPInt> {};
+
+TEST_P(DynamicAPIntCheckedToSizeUnderflowTest, RejectsUnderflow) {
+  auto checked = checkedToSize(GetParam(), llvm::Twine("unit-test") + " underflow");
+  ASSERT_FALSE(static_cast<bool>(checked));
+  EXPECT_EQ(llvm::toString(checked.takeError()), "unit-test underflow would underflow size_t");
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntCheckedToSizeUnderflowTest,
+    testing::Values(
+        llvm::DynamicAPInt(-1), -llvm::DynamicAPInt(llvm::APInt::getOneBitSet(256, 200))
+    ),
+    testing::PrintToStringParamName()
+);
 
 TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   auto signedMax = checkedToInt64(DynamicAPInt(INT64_MAX));
