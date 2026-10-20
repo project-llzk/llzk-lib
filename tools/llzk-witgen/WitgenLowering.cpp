@@ -1488,14 +1488,15 @@ private:
     if (auto intToFelt = dyn_cast<cast::IntToFeltOp>(op)) {
       if (intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
         return intToFelt.emitError(
-            "witgen lowering does not support non-assert cast overflow semantics"
+            "witgen lowering does not currently support non-assert cast overflow semantics"
         );
       }
       auto operand = lookupScalar(intToFelt.getValue(), valueMap, intToFelt.getOperation());
       if (failed(operand)) {
         return failure();
       }
-      auto dstType = IntegerType::get(builder.getContext(), field.bitWidth());
+      const Field &resultField = intToFelt.getType().getField();
+      auto dstType = IntegerType::get(builder.getContext(), resultField.bitWidth());
       Value lowered;
       if (isa<IndexType>((*operand).getType())) {
         Value zero = makeIndexConstant(builder, loc, 0);
@@ -1505,12 +1506,12 @@ private:
 
         // Widen before checking so that a small field does not truncate an
         // otherwise out-of-range index before the comparison.
-        unsigned wideWidth = std::max(field.bitWidth(), IndexType::kInternalStorageBitWidth);
+        unsigned wideWidth = std::max(resultField.bitWidth(), IndexType::kInternalStorageBitWidth);
         Value widened = arith::IndexCastUIOp::create(
             builder, loc, IntegerType::get(builder.getContext(), wideWidth), *operand
         );
         Value modulus = arith::ConstantOp::create(
-            builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth)
+            builder, loc, resultField.getPrimeAttr(builder.getContext(), wideWidth)
         );
         Value fitsField =
             arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::ult, widened, modulus);
@@ -1520,21 +1521,16 @@ private:
                       ? widened
                       : arith::TruncIOp::create(builder, loc, dstType, widened).getResult();
       } else {
-        auto intType = llvm::cast<IntegerType>((*operand).getType());
-        if (intType.getWidth() < dstType.getWidth()) {
-          lowered = arith::ExtUIOp::create(builder, loc, dstType, *operand);
-        } else if (intType.getWidth() > dstType.getWidth()) {
-          lowered = normalizeWideValue(builder, loc, *operand, dstType.getWidth(), field);
-        } else {
-          lowered = *operand;
-        }
+        // The op verifier only permits index or i1. Booleans are unsigned 0/1
+        // and fit every field, so zero extension needs no runtime range check.
+        lowered = arith::ExtUIOp::create(builder, loc, dstType, *operand);
       }
       return bind(intToFelt.getResult(), LoweredValue {intToFelt.getType(), {lowered}});
     }
     if (auto feltToIndex = dyn_cast<cast::FeltToIndexOp>(op)) {
       if (feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT) {
         return feltToIndex.emitError(
-            "witgen lowering does not support non-assert cast overflow semantics"
+            "witgen lowering does not currently support non-assert cast overflow semantics"
         );
       }
       auto operand = lookupScalar(feltToIndex.getValue(), valueMap, feltToIndex.getOperation());

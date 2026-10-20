@@ -336,7 +336,17 @@ struct FunctionConverter {
     // Convert cast.tofelt to ZKLeanLean.call
     if (auto cast = dyn_cast<llzk::cast::IntToFeltOp>(op)) {
       if (cast.getOverflow() != llzk::cast::OverflowSemantics::ASSERT) {
-        cast.emitError("ZKLean conversion does not support non-assert cast overflow semantics")
+        cast.emitError(
+                "ZKLean conversion does not currently support non-assert cast overflow semantics"
+        )
+            .report();
+        state.hadError = true;
+        return;
+      }
+      // The Lean-side cast stub has no range check or field parameter. Only
+      // booleans are guaranteed to fit every field without such a check.
+      if (!cast.getValue().getType().isInteger(1)) {
+        cast.emitError("ZKLean conversion cannot preserve cast.tofelt assert for an index")
             .report();
         state.hadError = true;
         return;

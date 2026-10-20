@@ -1,0 +1,21 @@
+// RUN: llzk-opt --convert-llzk-to-zklean -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  function.def @index_cast(%value: index) attributes {function.allow_constraint} {
+    // expected-error@+1 {{ZKLean conversion cannot preserve cast.tofelt assert for an index}}
+    %unused = cast.tofelt %value : index, !felt.type<"babybear">
+    function.return
+  }
+}
+
+// -----
+
+// Both boolean values fit any field; dynamic booleans remain supported.
+module attributes {llzk.lang} {
+  function.def @bool_cast(%value: i1) attributes {function.allow_constraint} {
+    %felt = cast.tofelt %value : i1, !felt.type<"babybear">
+    %zero = felt.const 0 : !felt.type<"babybear">
+    constrain.eq %felt, %zero : !felt.type<"babybear">
+    function.return
+  }
+}

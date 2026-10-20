@@ -595,13 +595,15 @@ private:
       return bind({WitnessVal(field.reduce(maxMask ^ *feltValue))});
     }
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
+      const Field &resultField = intToFeltOp.getType().getField();
       auto operand = lookup(intToFeltOp.getValue(), scope);
       if (!operand) {
         return operand.takeError();
       }
       if (std::holds_alternative<bool>(*operand)) {
         auto result = cast::applyIntToFeltOverflow(
-            llvm::DynamicAPInt(std::get<bool>(*operand) ? 1 : 0), field, intToFeltOp.getOverflow()
+            llvm::DynamicAPInt(std::get<bool>(*operand) ? 1 : 0), resultField,
+            intToFeltOp.getOverflow()
         );
         if (!result) {
           return makeError("integer does not fit in felt");
@@ -613,7 +615,7 @@ private:
         return integer.takeError();
       }
       auto result = cast::applyIntToFeltOverflow(
-          llvm::DynamicAPInt(*integer), field, intToFeltOp.getOverflow()
+          llvm::DynamicAPInt(*integer), resultField, intToFeltOp.getOverflow()
       );
       if (!result) {
         return makeError("integer does not fit in felt");

@@ -18,6 +18,7 @@
 #include "r1cs/Transforms/TransformationPasses.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -689,6 +690,20 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       }
 
       if (failed(checkFuncBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
+        signalPassFailure();
+        return;
+      }
+
+      // Constraint extraction only visits equality operands. Reject residual
+      // casts explicitly so an unused ASSERT cannot disappear with the struct.
+      // Valid constant casts can be folded by canonicalization before this pass.
+      if (walkContains<cast::IntToFeltOp>(constrainFunc, [](cast::IntToFeltOp op) {
+        op.emitError(
+            "R1CS lowering does not support residual cast.tofelt operations; "
+            "cannot preserve the integer range check"
+        );
+        return true;
+      })) {
         signalPassFailure();
         return;
       }

@@ -20,7 +20,7 @@
 // Explicit wrapping in the interpreter must agree with signed constant folding for fields
 // narrower than, equal to, and wider than the 64-bit index representation.
 // The execution engine diagnoses runtime non-assert casts until it supports them.
-// EE-ERROR: witgen lowering does not support non-assert cast overflow semantics
+// EE-ERROR: witgen lowering does not currently support non-assert cast overflow semantics
 
 //--- babybear.llzk
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {

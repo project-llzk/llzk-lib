@@ -829,7 +829,7 @@ public:
 // RemoveIntToFeltOp
 //===----------------------------------------------------------------------===//
 
-/// Removes `cast.tofelt` ops since all numerical types in pcl are the same.
+/// Removes `cast.tofelt` after validateIntToFeltCasts has checked its range.
 struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
   using OpConversionPattern<IntToFeltOp>::OpConversionPattern;
 
@@ -837,7 +837,9 @@ struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
       IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (op.getOverflow() != OverflowSemantics::ASSERT) {
-      return op.emitError("PCL lowering does not support non-assert cast overflow semantics");
+      return op.emitError(
+          "PCL lowering does not currently support non-assert cast overflow semantics"
+      );
     }
     rewriter.replaceOp(op, adaptor.getOperands());
     return success();

@@ -1,0 +1,118 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt --llzk-to-pcl -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt --llzk-to-pcl="mode=stubbed" -split-input-file -verify-diagnostics %s
+
+// negative: an unused cast must still fail before modular conversion.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %value = arith.constant -1 : index
+      // expected-error@+1 {{cast.tofelt assert input is outside the field range [0, p-1]}}
+      %unused = cast.tofelt assert %value : index, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// minimum: an unused cast must still fail before modular conversion.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %value = arith.constant -9223372036854775808 : index
+      // expected-error@+1 {{cast.tofelt assert input is outside the field range [0, p-1]}}
+      %unused = cast.tofelt assert %value : index, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// prime: an unused cast must still fail before modular conversion.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %value = arith.constant 2130706433 : index
+      // expected-error@+1 {{cast.tofelt assert input is outside the field range [0, p-1]}}
+      %unused = cast.tofelt assert %value : index, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// maximum: an unused cast must still fail before modular conversion.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %value = arith.constant 9223372036854775807 : index
+      // expected-error@+1 {{cast.tofelt assert input is outside the field range [0, p-1]}}
+      %unused = cast.tofelt assert %value : index, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// inferred: an unused cast must still fail before modular conversion.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %value = arith.constant 2130706433 : index
+      // expected-error@+1 {{cast.tofelt assert input is outside the field range [0, p-1]}}
+      %unused = cast.tofelt assert %value : index, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @convert(%value: index) -> !felt.type<"koalabear"> attributes {function.allow_constraint} {
+    // expected-error@+1 {{PCL lowering cannot preserve cast.tofelt assert for a non-constant index}}
+    %felt = cast.tofelt %value : index, !felt.type<"koalabear">
+    function.return %felt : !felt.type<"koalabear">
+  }
+  struct.def @Main {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %zero = arith.constant 0 : index
+      %felt = function.call @convert(%zero) : (index) -> !felt.type<"koalabear">
+      function.return
+    }
+  }
+}

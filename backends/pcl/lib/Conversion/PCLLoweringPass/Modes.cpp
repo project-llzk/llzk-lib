@@ -14,11 +14,13 @@
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
@@ -28,6 +30,7 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/Dominance.h>
+#include <mlir/IR/Matchers.h>
 #include <mlir/Transforms/DialectConversion.h>
 
 #include <llvm/ADT/StringSet.h>
@@ -43,6 +46,29 @@ using namespace llzk;
 //===----------------------------------------------------------------------===//
 
 BaseMode::BaseMode(ModuleOp op) : module(op), usedFreeFunctions(op), temps(op) {}
+
+LogicalResult BaseMode::validateIntToFeltCasts(const llvm::DynamicAPInt &prime) {
+  auto res = getOperation()->walk([&](cast::IntToFeltOp op) -> WalkResult {
+    if (isStep1LegalOp(op) || op.getOverflow() != cast::OverflowSemantics::ASSERT ||
+        op.getValue().getType().isInteger(1)) {
+      return WalkResult::advance();
+    }
+    // PCL arithmetic is modular. A comparison after converting an index to a
+    // PCL felt cannot distinguish, for example, p from 0 or -1 from p - 1.
+    IntegerAttr constant;
+    if (!matchPattern(op.getValue(), m_Constant(&constant))) {
+      return op.emitError(
+          "PCL lowering cannot preserve cast.tofelt assert for a non-constant index"
+      );
+    }
+    auto value = integerAttrToDynamicAPInt(constant);
+    if (value < 0 || value >= prime) {
+      return op.emitError("cast.tofelt assert input is outside the field range [0, p-1]");
+    }
+    return WalkResult::advance();
+  });
+  return failure(res.wasInterrupted());
+}
 
 bool BaseMode::isStep1LegalOp(Operation *op) {
   if (auto structDefOp = op->getParentOfType<StructDefOp>()) {
@@ -70,22 +96,22 @@ void BaseMode::populateStep1ConversionTarget(ConversionTarget &target) {
   target.addDynamicallyLegalDialect<
       // clang-format off
       LLZKDialect,
-      array::ArrayDialect, 
-      boolean::BoolDialect, 
-      component::StructDialect, 
-      constrain::ConstrainDialect, 
-      function::FunctionDialect, 
+      array::ArrayDialect,
+      boolean::BoolDialect,
+      component::StructDialect,
+      constrain::ConstrainDialect,
+      function::FunctionDialect,
       global::GlobalDialect,
-      include::IncludeDialect, 
-      pod::PODDialect, 
-      polymorphic::PolymorphicDialect, 
+      include::IncludeDialect,
+      pod::PODDialect,
+      polymorphic::PolymorphicDialect,
       ram::RAMDialect,
       scf::SCFDialect,
       mlir::smt::SMTDialect,
-      string::StringDialect, 
-      verif::VerifDialect, 
+      string::StringDialect,
+      verif::VerifDialect,
       arith::ArithDialect,
-      cast::CastDialect, 
+      cast::CastDialect,
       felt::FeltDialect
       // clang-format on
       >([this](Operation *op) { return isStep1LegalOp(op); });

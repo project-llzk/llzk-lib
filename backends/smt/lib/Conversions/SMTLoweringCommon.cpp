@@ -10,6 +10,7 @@
 #include "SMTLoweringCommon.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Ops.h"
@@ -93,6 +94,9 @@ Operation *convertStructProductToFunc(Operation *op, MLIRContext *context) {
 }
 
 void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
+  // There is no encoding for the integer value and its range check yet.
+  // A residual cast must fail conversion, including when its result is unused.
+  target.addIllegalOp<cast::IntToFeltOp>();
   target.addIllegalDialect<felt::FeltDialect>();
   target.addIllegalDialect<constrain::ConstrainDialect>();
   target.addLegalDialect<mlir::smt::SMTDialect>();

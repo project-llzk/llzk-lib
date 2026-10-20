@@ -1,0 +1,37 @@
+// RUN: llzk-opt --llzk-r1cs-lowering -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt --llzk-full-r1cs-lowering -split-input-file -verify-diagnostics %s
+
+// Constraint extraction must not discard a failing cast whose result is unused.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %prime = arith.constant 2013265921 : index
+      // expected-error@+1 {{R1CS lowering does not support residual cast.tofelt operations; cannot preserve the integer range check}}
+      %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %prime = arith.constant -1 : index
+      // expected-error@+1 {{R1CS lowering does not support residual cast.tofelt operations; cannot preserve the integer range check}}
+      %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return
+    }
+  }
+}

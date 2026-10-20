@@ -1,0 +1,29 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt --llzk-to-smt-no-cf-naive -split-input-file -verify-diagnostics %s
+
+// An unused failing cast must not survive as an unchecked operation in SMT IR.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %prime = arith.constant 2013265921 : index
+      // expected-error@+1 {{failed to legalize operation 'cast.tofelt' that was explicitly marked illegal}}
+      %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %prime = arith.constant -1 : index
+      // expected-error@+1 {{failed to legalize operation 'cast.tofelt' that was explicitly marked illegal}}
+      %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}

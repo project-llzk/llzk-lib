@@ -15,6 +15,8 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
+
 namespace mlir {
 class TypeConverter;
 class RewritePatternSet;
@@ -44,6 +46,9 @@ protected:
   /// An operation is legal in Step 1 if its located outside the
   /// `constrain` function of a struct or a used free function.
   bool isStep1LegalOp(mlir::Operation *op);
+
+  /// Check ASSERT casts before conversion loses the original integer values.
+  mlir::LogicalResult validateIntToFeltCasts(const llvm::DynamicAPInt &prime);
 
   /// Populates step 1 patterns sharing a cache that must outlive the conversion.
   void populateStep1ConversionPatterns(
@@ -97,8 +102,11 @@ public:
 
   virtual ~BaseMode() = default;
 
-  mlir::LogicalResult lower() {
-    return llvm::failure(failed(runStep1()) || failed(runStep2()) || failed(runStep3()));
+  mlir::LogicalResult lower(const llvm::DynamicAPInt &prime) {
+    return llvm::failure(
+        failed(validateIntToFeltCasts(prime)) || failed(runStep1()) || failed(runStep2()) ||
+        failed(runStep3())
+    );
   }
 };
 
