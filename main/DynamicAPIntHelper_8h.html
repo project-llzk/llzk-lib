@@ -143,14 +143,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('DynamicAPIntHe
 <code>#include &lt;llvm/ADT/DynamicAPInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/Hashing.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/StringRef.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/Twine.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Error.h&gt;</code><br />
 <code>#include &lt;climits&gt;</code><br />
+<code>#include &lt;concepts&gt;</code><br />
 <code>#include &lt;cstddef&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
+<code>#include &lt;limits&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for DynamicAPIntHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="DynamicAPIntHelper_8h__incl.svg" width="1806" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="DynamicAPIntHelper_8h__incl.svg" width="2080" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -176,14 +179,23 @@ Functions</h2></td></tr>
 <tr class="memdesc:a74f5183a15c12532abf39df9f432fa8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to a native signed integer, rejecting values outside its range.  <br /></td></tr>
 <tr class="memitem:a345c8af476b04223346776123a9ae80d" id="r_a345c8af476b04223346776123a9ae80d"><td class="memItemLeft">llvm::Expected&lt; uint64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a345c8af476b04223346776123a9ae80d">llzk::checkedToUInt64</a> (const llvm::DynamicAPInt &amp;value)</td></tr>
 <tr class="memdesc:a345c8af476b04223346776123a9ae80d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to a native unsigned integer, rejecting negative values and overflow.  <br /></td></tr>
+<tr class="memitem:a020263e54bc8785acf17a204188c787c" id="r_a020263e54bc8785acf17a204188c787c"><td class="memItemLeft">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a020263e54bc8785acf17a204188c787c">llzk::checkedToSize</a> (const llvm::DynamicAPInt &amp;value, const llvm::Twine &amp;context)</td></tr>
+<tr class="memdesc:a020263e54bc8785acf17a204188c787c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to size_t, rejecting negative values and overflow.  <br /></td></tr>
 <tr class="memitem:a7d838b81c2874e5ce443ff1de91839d3" id="r_a7d838b81c2874e5ce443ff1de91839d3"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a7d838b81c2874e5ce443ff1de91839d3">llzk::operator&amp;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memdesc:a7d838b81c2874e5ce443ff1de91839d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bitwise operations use infinite two's-complement sign extension.  <br /></td></tr>
 <tr class="memitem:a82e0f350b35605a55c3383c14dbbdc2c" id="r_a82e0f350b35605a55c3383c14dbbdc2c"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a82e0f350b35605a55c3383c14dbbdc2c">llzk::operator|</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a0841c189e0c22cc4c75ab9a378029d4c" id="r_a0841c189e0c22cc4c75ab9a378029d4c"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a0841c189e0c22cc4c75ab9a378029d4c">llzk::operator^</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
 <tr class="memitem:a619bc971771be50cd90fe6219aa47aa2" id="r_a619bc971771be50cd90fe6219aa47aa2"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a619bc971771be50cd90fe6219aa47aa2">llzk::operator&lt;&lt;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
-<tr class="memdesc:a619bc971771be50cd90fe6219aa47aa2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact left shift; negative or unrepresentable counts are fatal programming errors.  <br /></td></tr>
+<tr class="memdesc:a619bc971771be50cd90fe6219aa47aa2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact left shift.  <br /></td></tr>
+<tr class="memitem:a0cbeccc61cdb64d39190baaf20e01f90" id="r_a0cbeccc61cdb64d39190baaf20e01f90"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a0cbeccc61cdb64d39190baaf20e01f90">llzk::operator&lt;&lt;</a> (const llvm::DynamicAPInt &amp;lhs, int64_t rhs)</td></tr>
+<tr class="memdesc:a0cbeccc61cdb64d39190baaf20e01f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact left shift.  <br /></td></tr>
 <tr class="memitem:a7d13a019e952052198f1b49196e67111" id="r_a7d13a019e952052198f1b49196e67111"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a7d13a019e952052198f1b49196e67111">llzk::operator&gt;&gt;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
-<tr class="memdesc:a7d13a019e952052198f1b49196e67111"><td class="mdescLeft">&#160;</td><td class="mdescRight">Arithmetic right shift; arbitrarily large nonnegative counts saturate to 0 or -1.  <br /></td></tr>
+<tr class="memdesc:a7d13a019e952052198f1b49196e67111"><td class="mdescLeft">&#160;</td><td class="mdescRight">Arithmetic right shift.  <br /></td></tr>
+<tr class="memitem:a4f5ecf9472b1feb8671ed0e68156c8ac" id="r_a4f5ecf9472b1feb8671ed0e68156c8ac"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a4f5ecf9472b1feb8671ed0e68156c8ac">llzk::operator&gt;&gt;</a> (const llvm::DynamicAPInt &amp;lhs, int64_t rhs)</td></tr>
+<tr class="memdesc:a4f5ecf9472b1feb8671ed0e68156c8ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Arithmetic right shift.  <br /></td></tr>
+<tr class="memitem:a08b1fcac60ccbf16785fad45c7c6c65b" id="r_a08b1fcac60ccbf16785fad45c7c6c65b"><td class="memTemplParams" colspan="2">template&lt;std::unsigned_integral T&gt; </td></tr>
+<tr class="memitem:a08b1fcac60ccbf16785fad45c7c6c65b template"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a08b1fcac60ccbf16785fad45c7c6c65b">llzk::operator&gt;&gt;</a> (const llvm::DynamicAPInt &amp;lhs, T rhs)</td></tr>
+<tr class="memdesc:a08b1fcac60ccbf16785fad45c7c6c65b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Arithmetic right shift by an unsigned count, checked before conversion to int64_t.  <br /></td></tr>
 <tr class="memitem:aee183fbf8efdb7074e4ae15d7a4029a4" id="r_aee183fbf8efdb7074e4ae15d7a4029a4"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#aee183fbf8efdb7074e4ae15d7a4029a4">llzk::toDynamicAPInt</a> (llvm::StringRef str)</td></tr>
 <tr class="memdesc:aee183fbf8efdb7074e4ae15d7a4029a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse trusted decimal text; invalid text is a fatal programming error.  <br /></td></tr>
 <tr class="memitem:a42ddc7147daa762ec4335b255dacd7b3" id="r_a42ddc7147daa762ec4335b255dacd7b3"><td class="memItemLeft">llvm::DynamicAPInt&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a42ddc7147daa762ec4335b255dacd7b3">llzk::toDynamicAPInt</a> (const llvm::APSInt &amp;i)</td></tr>

@@ -1,5 +1,11 @@
 var NAVTREEINDEX79 =
 {
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#a6818a35aeb25c41c3a01486f9105564e":[13,0,1,6,3,2],
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#a904ee9d85cafccb7d1aa2f5c6a54b33f":[11,0,3,9,3,6],
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#a904ee9d85cafccb7d1aa2f5c6a54b33f":[13,0,1,6,3,6],
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#abf78bd779b48b41c12660f644d167217":[11,0,3,9,3,0],
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#abf78bd779b48b41c12660f644d167217":[13,0,1,6,3,0],
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#afe3b5127fe2275308ecf911e32088714":[11,0,3,9,3,4],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#afe3b5127fe2275308ecf911e32088714":[13,0,1,6,3,4],
 "structllzk_1_1detail_1_1NestedTextualOptions.html":[11,0,3,9,4],
 "structllzk_1_1detail_1_1NestedTextualOptions.html":[13,0,1,6,4],
@@ -243,11 +249,5 @@ var NAVTREEINDEX79 =
 "structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a51ce917a55d51d5c02ef024192b9f619":[13,0,1,9,0,4,0,5],
 "structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a555ef42b2f98a7b0f4a48014c6af7ffe":[11,0,3,12,0,4,0,3],
 "structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a555ef42b2f98a7b0f4a48014c6af7ffe":[13,0,1,9,0,4,0,3],
-"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a830237ec2bfe44f24146f3ac7e8c1e38":[11,0,3,12,0,4,0,1],
-"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a830237ec2bfe44f24146f3ac7e8c1e38":[13,0,1,9,0,4,0,1],
-"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#aa4b51474c53b8ccaf5ea9a2d188effba":[11,0,3,12,0,4,0,4],
-"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#aa4b51474c53b8ccaf5ea9a2d188effba":[13,0,1,9,0,4,0,4],
-"structllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html":[11,0,3,14,0,0,0],
-"structllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html":[13,0,1,11,0,0,0],
-"structllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html#a0c9dfdb13f750dab7962d90ad2bd6eeb":[11,0,3,14,0,0,0,5]
+"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a830237ec2bfe44f24146f3ac7e8c1e38":[11,0,3,12,0,4,0,1]
 };

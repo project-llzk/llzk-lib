@@ -44,7 +44,6 @@ var namespacellzk_1_1witgen =
     [ "buildSignalsJSONObject", "namespacellzk_1_1witgen.html#a3de4283756198d16d65986747a4c6699", null ],
     [ "buildSignalsJSONObject", "namespacellzk_1_1witgen.html#abde194ee10905bdf691214c71da09953", null ],
     [ "checkedCast", "namespacellzk_1_1witgen.html#a04a272ab521ee001924704792f29f0c1", null ],
-    [ "checkedDynamicAPIntToSize", "namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a", null ],
     [ "checkedShapeDimToSize", "namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5", null ],
     [ "collectInputBindings", "namespacellzk_1_1witgen.html#a1f06d3a4be9069abde9e602783b8e0d8", null ],
     [ "collectOutputBindings", "namespacellzk_1_1witgen.html#a1f308b7ff71b3e5edf1d0b3a951a1c6c", null ],

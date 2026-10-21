@@ -140,13 +140,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('WitgenUtils_8c
 <code>#include &lt;mlir/IR/BuiltinTypes.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/Twine.h&gt;</code><br />
-<code>#include &lt;climits&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
 <code>#include &lt;random&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for WitgenUtils.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="WitgenUtils_8cpp__incl.svg" width="5126" height="804"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="WitgenUtils_8cpp__incl.svg" width="4834" height="804"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="WitgenUtils_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -158,8 +157,6 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:aaf2a9e39090cf207cbfa15acb8096c1a" id="r_aaf2a9e39090cf207cbfa15acb8096c1a"><td class="memItemLeft">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">llzk::witgen::checkedDynamicAPIntToSize</a> (const llvm::DynamicAPInt &amp;value, llvm::StringRef context)</td></tr>
-<tr class="memdesc:aaf2a9e39090cf207cbfa15acb8096c1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert a <span class="tt">DynamicAPInt</span> into <span class="tt">size_t</span> after validating its range.  <br /></td></tr>
 <tr class="memitem:ab60790824909c50e8aa2b661862d6cb5" id="r_ab60790824909c50e8aa2b661862d6cb5"><td class="memItemLeft">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">llzk::witgen::checkedShapeDimToSize</a> (int64_t dim, llvm::StringRef context)</td></tr>
 <tr class="memdesc:ab60790824909c50e8aa2b661862d6cb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert one static dimension to <span class="tt">size_t</span>, rejecting dynamic or invalid sizes.  <br /></td></tr>
 <tr class="memitem:a78a397cece314c79f6091556f25e9717" id="r_a78a397cece314c79f6091556f25e9717"><td class="memItemLeft">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">llzk::witgen::getStaticShapeElementCount</a> (llvm::ArrayRef&lt; int64_t &gt; shape, llvm::StringRef context)</td></tr>

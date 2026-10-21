@@ -502,15 +502,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Ops_
 <div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  <span class="comment">// One&#39;s complement at field.bitWidth() bits: maxMask = 2^bitWidth - 1,</span></div>
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  <span class="comment">// result = reduce(maxMask ^ val).  The operator&lt;&lt; here is llzk::operator&lt;&lt;</span></div>
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  <span class="comment">// on DynamicAPInt (defined in DynamicAPIntHelper.h).</span></div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  DynamicAPInt maxMask =</div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>      (DynamicAPInt(1) &lt;&lt; DynamicAPInt(data-&gt;field-&gt;bitWidth())) - DynamicAPInt(1);</div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>  <span class="keywordflow">return</span> buildFoldResult(</div>
-<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>      getContext(), data-&gt;field-&gt;reduce(maxMask ^ data-&gt;val), *data-&gt;field, data-&gt;fieldName</div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>  );</div>
-<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>}</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  DynamicAPInt maxMask = (DynamicAPInt(1) &lt;&lt; data-&gt;field-&gt;bitWidth()) - 1;</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>  <span class="keywordflow">return</span> buildFoldResult(</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>      getContext(), data-&gt;field-&gt;reduce(maxMask ^ data-&gt;val), *data-&gt;field, data-&gt;fieldName</div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>  );</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>}</div>
 </div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span> </div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>} <span class="comment">// namespace llzk::felt</span></div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span> </div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>} <span class="comment">// namespace llzk::felt</span></div>
 <div class="ttc" id="aDynamicAPIntHelper_8h_html"><div class="ttname"><a href="DynamicAPIntHelper_8h.html">DynamicAPIntHelper.h</a></div><div class="ttdoc">This file implements helpers for DynamicAPInt operations and conversions that LLVM does not provide.</div></div>
 <div class="ttc" id="aFelt_2IR_2OpInterfaces_8cpp_8inc_html"><div class="ttname"><a href="Felt_2IR_2OpInterfaces_8cpp_8inc.html">OpInterfaces.cpp.inc</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Ops_8cpp_8inc_html"><div class="ttname"><a href="Felt_2IR_2Ops_8cpp_8inc.html">Ops.cpp.inc</a></div></div>
@@ -603,7 +602,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Ops_
 <div class="ttc" id="aclassllzk_1_1felt_1_1XorFeltOp_html_a5aeba9f58a0702d8fa4b85d6b6db5aa3"><div class="ttname"><a href="classllzk_1_1felt_1_1XorFeltOp.html#a5aeba9f58a0702d8fa4b85d6b6db5aa3">llzk::felt::XorFeltOp::fold</a></div><div class="ttdeci">::mlir::OpFoldResult fold(FoldAdaptor adaptor)</div><div class="ttdef"><b>Definition</b> <a href="#l00275">Ops.cpp:275</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1felt_html"><div class="ttname"><a href="namespacellzk_1_1felt.html">llzk::felt</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Attrs_8cpp_source.html#l00014">Attrs.cpp:14</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ae716915c256b3e8259e0fd51d5a88b82"><div class="ttname"><a href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">llzk::modExp</a></div><div class="ttdeci">DynamicAPInt modExp(const DynamicAPInt &amp;base, const DynamicAPInt &amp;exp, const DynamicAPInt &amp;mod)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00187">DynamicAPIntHelper.cpp:187</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ae716915c256b3e8259e0fd51d5a88b82"><div class="ttname"><a href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">llzk::modExp</a></div><div class="ttdeci">DynamicAPInt modExp(const DynamicAPInt &amp;base, const DynamicAPInt &amp;exp, const DynamicAPInt &amp;mod)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00224">DynamicAPIntHelper.cpp:224</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="CommonCAPIGen_8h_source.html#l00050">CommonCAPIGen.h:50</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
