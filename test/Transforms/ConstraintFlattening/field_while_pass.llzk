@@ -1,0 +1,40 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+// Field-valued induction stays in scf.while until constraint expansion.
+// Ordinary arithmetic remains SSA; only structural control is evaluated.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      %c0 = arith.constant 0 : index
+      %zero = felt.const 0 : <"bn128">
+      %two = felt.const 2 : <"bn128">
+      %result = scf.while (%i = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+        %condition = bool.cmp lt(%i, %two) : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.condition(%condition) %i : !felt.type<"bn128">
+      } do {
+      ^bb0(%i: !felt.type<"bn128">):
+        %index = cast.toindex %i : !felt.type<"bn128">
+        %isFirst = arith.cmpi eq, %index, %c0 : index
+        scf.if %isFirst {
+          constrain.eq %x, %i : !felt.type<"bn128">, !felt.type<"bn128">
+        }
+        %one = felt.const 1 : <"bn128">
+        %next = felt.add %i, %one : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %next : !felt.type<"bn128">
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

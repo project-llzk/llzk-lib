@@ -1,0 +1,16 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %false = arith.constant false
+      // expected-error @+1 {{assertion must be statically true}}
+      bool.assert %false
+      function.return
+    }
+  }
+}

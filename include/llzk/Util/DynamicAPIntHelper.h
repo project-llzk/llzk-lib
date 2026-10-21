@@ -25,11 +25,14 @@
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/Hashing.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/Twine.h>
 #include <llvm/Support/Error.h>
 
 #include <climits>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 namespace llzk {
 
@@ -49,14 +52,39 @@ llvm::Expected<int64_t> checkedToInt64(const llvm::DynamicAPInt &value);
 /// Convert to a native unsigned integer, rejecting negative values and overflow.
 llvm::Expected<uint64_t> checkedToUInt64(const llvm::DynamicAPInt &value);
 
+/// Convert to size_t, rejecting negative values and overflow. Prefix errors with the supplied
+/// diagnostic context.
+llvm::Expected<size_t> checkedToSize(const llvm::DynamicAPInt &value, const llvm::Twine &context);
+
 /// Bitwise operations use infinite two's-complement sign extension.
 llvm::DynamicAPInt operator&(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator|(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
 llvm::DynamicAPInt operator^(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
-/// Exact left shift; negative or unrepresentable counts are fatal programming errors.
+
+/// Exact left shift. Negative \p rhs or a required signed result width exceeding
+/// UINT_MAX is a fatal programming error, even when \p lhs is zero.
 llvm::DynamicAPInt operator<<(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
-/// Arithmetic right shift; arbitrarily large nonnegative counts saturate to 0 or -1.
+/// Exact left shift. Negative \p rhs or a required signed result width exceeding
+/// UINT_MAX is a fatal programming error, even when \p lhs is zero.
+llvm::DynamicAPInt operator<<(const llvm::DynamicAPInt &lhs, int64_t rhs);
+/// Arithmetic right shift. Negative \p rhs is a fatal programming error.
+/// Sufficiently large nonnegative \p rhs yields 0 for nonnegative \p lhs,
+/// or -1 for negative \p lhs.
 llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);
+/// Arithmetic right shift. Negative \p rhs is a fatal programming error.
+/// Sufficiently large nonnegative \p rhs yields 0 for nonnegative \p lhs,
+/// or -1 for negative \p lhs.
+llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, int64_t rhs);
+
+/// Arithmetic right shift by an unsigned count, checked before conversion to int64_t.
+/// Sufficiently large \p rhs yields 0 for nonnegative \p lhs, or -1 for negative \p lhs.
+template <std::unsigned_integral T>
+llvm::DynamicAPInt operator>>(const llvm::DynamicAPInt &lhs, T rhs) {
+  if (rhs > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return llvm::DynamicAPInt(lhs < 0 ? -1 : 0);
+  }
+  return lhs >> static_cast<int64_t>(rhs);
+}
 
 /// Parse trusted decimal text; invalid text is a fatal programming error.
 /// Use parseDynamicAPInt for external input.
@@ -77,6 +105,8 @@ inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
   return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));
 }
 
+/// Convert to a signed APSInt with the same numeric value (bit width is unspecified).
+/// Reports a fatal error if the decimal parsing width cannot be represented by APInt.
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
 /// Modular exponentiation for a nonnegative exponent and positive modulus.

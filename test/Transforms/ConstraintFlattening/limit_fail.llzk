@@ -1,0 +1,20 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints="max-evaluation-steps=100" --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %upper = arith.constant 1000000 : index
+      // The implicit yield shares the loop's location, independent of the
+      // number of setup operations charged before the loop begins.
+      // expected-error @+1 {{evaluation step limit exceeded}}
+      scf.for %i = %zero to %upper step %one {}
+      function.return
+    }
+  }
+}

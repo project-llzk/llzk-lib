@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/Util/StaticLoop.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -476,8 +477,8 @@ class DiscoveryRun {
       if (failed(evaluateBlock(*loop.getBody(), std::move(local), results))) {
         return failure();
       }
-      if (i > std::numeric_limits<int64_t>::max() - *stride) {
-        return loop.emitError("specialization discovery loop induction overflow");
+      if (!hasNextStaticIteration(i, *upper, *stride)) {
+        break;
       }
       i += *stride;
     }

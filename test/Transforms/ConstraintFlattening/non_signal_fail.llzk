@@ -1,0 +1,17 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @intermediate : !felt.type
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      // expected-error @+1 {{live unresolved non-signal scalar storage}}
+      %read = struct.readm %self[@intermediate] : !struct.type<@Main>, !felt.type
+      constrain.eq %read, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
