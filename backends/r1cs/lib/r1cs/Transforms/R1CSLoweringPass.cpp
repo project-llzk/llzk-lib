@@ -698,23 +698,20 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       // casts explicitly so an unused ASSERT cannot disappear with the struct.
       // Valid constant casts can be folded by canonicalization before this pass.
       if (walkContains<cast::IntToFeltOp>(constrainFunc, [](cast::IntToFeltOp op) {
-        op.emitError(
-            "R1CS lowering does not support residual cast.tofelt operations; "
-            "cannot preserve the integer range check"
-        );
+        if (op.getOverflow() != cast::OverflowSemantics::ASSERT && op.getResult().use_empty()) {
+          return false;
+        }
+        op.emitError("R1CS lowering does not support effectful 'cast.tofelt' operations");
         return true;
       })) {
         signalPassFailure();
         return;
       }
       if (walkContains<cast::FeltToIndexOp>(constrainFunc, [](cast::FeltToIndexOp op) {
-        if (op.getOverflow() != cast::OverflowSemantics::ASSERT) {
+        if (op.getOverflow() != cast::OverflowSemantics::ASSERT && op.getResult().use_empty()) {
           return false;
         }
-        op.emitError(
-            "R1CS lowering does not support residual cast.toindex assert operations; "
-            "cannot preserve the index range check"
-        );
+        op.emitError("R1CS lowering does not support effectful 'cast.toindex' operations");
         return true;
       })) {
         signalPassFailure();
