@@ -24,6 +24,8 @@ namespace llzk::polymorphic::detail {
 /// Evaluate only scalar dependencies demanded by control flow and concrete paths.
 class ConstraintScalarFacts {
   mlir::Builder builder;
+  /// A null entry records an evaluated value that cannot be resolved. Emitted
+  /// SSA is immutable; calls and loop iterations produce fresh values.
   llvm::DenseMap<mlir::Value, mlir::Attribute> constants;
 
   /// Use fold hooks on a disposable operation; emitted scalar expressions stay SSA.
@@ -72,7 +74,7 @@ public:
     llvm::DenseSet<mlir::Value> examined;
     while (!pending.empty()) {
       auto [current, ready] = pending.pop_back_val();
-      if (constants.lookup(current)) {
+      if (constants.contains(current)) {
         continue;
       }
       mlir::Attribute literal;
@@ -82,6 +84,7 @@ public:
       }
       mlir::Operation *producer = current.getDefiningOp();
       if (!producer || producer->getNumRegions() || !mlir::isMemoryEffectFree(producer)) {
+        constants.try_emplace(current, mlir::Attribute());
         continue;
       }
       if (!ready) {
@@ -95,6 +98,7 @@ public:
         continue;
       }
       fold(producer, current);
+      constants.try_emplace(current, mlir::Attribute());
     }
     return constants.lookup(value);
   }
