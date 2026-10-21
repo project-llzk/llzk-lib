@@ -322,7 +322,7 @@ TEST(DynamicAPIntSafetyTest, CheckedParsing) {
   }
   for (StringRef text : {"0", "-0", "0001", "-3", "18446744073709551616"}) {
     auto value = parseDynamicAPInt(text);
-    ASSERT_TRUE(value);
+    ASSERT_TRUE(static_cast<bool>(value));
     EXPECT_EQ(*value, toDynamicAPInt(text));
   }
 }
@@ -400,13 +400,13 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   auto signedMax = checkedToInt64(DynamicAPInt(INT64_MAX));
-  ASSERT_TRUE(signedMax);
+  ASSERT_TRUE(static_cast<bool>(signedMax));
   EXPECT_EQ(*signedMax, INT64_MAX);
   auto unsignedMax = checkedToUInt64(toDynamicAPInt(SIZE_MAX));
-  ASSERT_TRUE(unsignedMax);
+  ASSERT_TRUE(static_cast<bool>(unsignedMax));
   EXPECT_EQ(*unsignedMax, SIZE_MAX);
   auto signedMin = checkedToInt64(DynamicAPInt(INT64_MIN));
-  ASSERT_TRUE(signedMin);
+  ASSERT_TRUE(static_cast<bool>(signedMin));
   EXPECT_EQ(*signedMin, INT64_MIN);
   auto tooBig = checkedToInt64(DynamicAPInt(INT64_MAX) + 1);
   EXPECT_FALSE(tooBig);
@@ -416,7 +416,7 @@ TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   consumeError(tooSmall.takeError());
   for (int64_t value : {INT64_MIN, int64_t(-1), int64_t(0), INT64_MAX}) {
     auto wide = checkedToInt64(DynamicAPInt(APInt(256, value, true)));
-    ASSERT_TRUE(wide);
+    ASSERT_TRUE(static_cast<bool>(wide));
     EXPECT_EQ(*wide, value);
   }
   auto negative = checkedToUInt64(DynamicAPInt(-1));
@@ -432,7 +432,7 @@ TEST(DynamicAPIntSafetyTest, CheckedNarrowing) {
   EXPECT_FALSE(signedOverflow);
   consumeError(signedOverflow.takeError());
   auto byte = checkedToAPInt(DynamicAPInt(255), 8, false);
-  ASSERT_TRUE(byte);
+  ASSERT_TRUE(static_cast<bool>(byte));
   EXPECT_EQ(byte->getBitWidth(), 8U);
   EXPECT_EQ(byte->getZExtValue(), 255U);
 }
