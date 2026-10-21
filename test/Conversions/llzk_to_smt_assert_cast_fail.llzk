@@ -1,5 +1,8 @@
-// RUN: llzk-opt --llzk-to-smt-no-cf -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt --llzk-to-smt-no-cf -split-input-file -verify-diagnostics=only-expected %s
 // RUN: llzk-opt --llzk-to-smt-no-cf-naive -split-input-file -verify-diagnostics %s
+
+// Only check expected diagnostics for the optimized strategy: interval analysis
+// also warns about the unrealized conversion producers.
 
 // An unused failing cast must not survive as an unchecked operation in SMT IR.
 module attributes {llzk.lang} {
@@ -23,6 +26,37 @@ module attributes {llzk.lang} {
       %prime = arith.constant -1 : index
       // expected-error@+1 {{failed to legalize operation 'cast.tofelt' that was explicitly marked illegal}}
       %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// -----
+
+// The producer is explicitly legal, so the unused asserting cast must itself
+// fail conversion instead of surviving into the cloned func.func unchecked.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product(%input: index) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@Main>
+      %felt = builtin.unrealized_conversion_cast %input : index to !felt.type<"bn254">
+      // expected-error@+1 {{failed to legalize operation 'cast.toindex' that was explicitly marked illegal}}
+      %unused = cast.toindex assert %felt : !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// -----
+
+// Omitting the overflow mode also asserts and must preserve the range check.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product(%input: index) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@Main>
+      %felt = builtin.unrealized_conversion_cast %input : index to !felt.type<"bn254">
+      // expected-error@+1 {{failed to legalize operation 'cast.toindex' that was explicitly marked illegal}}
+      %unused = cast.toindex %felt : !felt.type<"bn254">
       function.return %self : !struct.type<@Main>
     }
   }

@@ -94,9 +94,9 @@ Operation *convertStructProductToFunc(Operation *op, MLIRContext *context) {
 }
 
 void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
-  // There is no encoding for the integer value and its range check yet.
+  // There is currently no encoding for the integer value and its range check.
   // A residual cast must fail conversion, including when its result is unused.
-  target.addIllegalOp<cast::IntToFeltOp>();
+  target.addIllegalOp<cast::IntToFeltOp, cast::FeltToIndexOp>();
   target.addIllegalDialect<felt::FeltDialect>();
   target.addIllegalDialect<constrain::ConstrainDialect>();
   target.addLegalDialect<mlir::smt::SMTDialect>();
