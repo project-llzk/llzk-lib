@@ -1,0 +1,24 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+// RUN: llzk-opt %s --llzk-inline-free-functions --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+// COM: Inlining cannot make original component storage writable through a return value.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @get(%self: !struct.type<@Main>) -> !array.type<1 x !felt.type> {
+    %a = struct.readm %self[@a] : !struct.type<@Main>, !array.type<1 x !felt.type>
+    function.return %a : !array.type<1 x !felt.type>
+  }
+  struct.def @Main {
+    struct.member @a : !array.type<1 x !felt.type> {llzk.pub, signal}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %a = function.call @get(%self) : (!struct.type<@Main>) -> !array.type<1 x !felt.type>
+      // expected-error @+1 {{cannot write to function input or original storage}}
+      array.write %a[%zero] = %x : !array.type<1 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}

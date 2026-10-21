@@ -1,0 +1,80 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file | FileCheck %s --match-full-lines
+
+// Dispatch a free function named constrain with an array argument.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @constrain(%input: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+    function.return %input : !array.type<1 x !felt.type>
+  }
+  struct.def @Main {
+
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %zero = arith.constant 0 : index
+      %local = array.new %x : !array.type<1 x !felt.type>
+      %returned = function.call @constrain(%local) : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+      array.write %local[%zero] = %y : !array.type<1 x !felt.type>, !felt.type
+      %old = array.read %returned[%zero] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %old, %x : !felt.type, !felt.type
+      array.write %returned[%zero] = %x : !array.type<1 x !felt.type>, !felt.type
+      %new = array.read %local[%zero] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %new, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<1 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Dispatch a free function named constrain with a scalar argument.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @constrain(%x: !felt.type) -> !felt.type {
+    function.return %x : !felt.type
+  }
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %y = function.call @constrain(%x) : (!felt.type) -> !felt.type
+      constrain.eq %x, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

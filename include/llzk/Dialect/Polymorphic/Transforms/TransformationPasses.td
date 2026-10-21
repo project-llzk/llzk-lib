@@ -146,6 +146,55 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
               "discovery run">];
 }
 
+def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
+  let summary = "Expand main constrain into straight-line constraints";
+  let description = [{
+    After template monomorphization and child-member visibility preparation,
+    expand main's constrain function and reachable single-block callees.
+    Resolve static branches, signed `for` loops with positive steps, and `while`
+    loops directly, including field-valued iterators and comparisons.
+
+    Local arrays and PODs exist only as concrete paths bound to scalar SSA
+    values. Reads resolve bindings; writes and aggregate assignments update
+    local bindings without emitting allocations, copies, or writes. Aggregate
+    arguments preserve identity and remain read-only during each call. Returned
+    aggregates alias their original roots: caller-local roots remain shared and
+    writable after the call, while function inputs and original storage remain
+    read-only. Component handles preserve identity. Every array access index
+    must resolve at compile time and be in bounds. Reads of uninitialized local
+    leaves and writes to function inputs or original storage are diagnosed.
+
+    Replace only main's constrain body, retaining its signature, original
+    component storage, compute functions, and other definitions. Signal leaves
+    are read through paths rooted in the original arguments. Live non-signal
+    scalar storage is rejected; no witness variables or definitions are inferred
+    from equations or compute functions. Ordinary field arithmetic remains SSA.
+
+    Diagnose symbolic control flow, recursion, unsupported effects, and
+    non-native constraint arithmetic (including division and inversion). Static
+    integer arithmetic, affine maps, casts, and comparisons are evaluated only
+    as structural facts; symbolic computations must be dead after expansion.
+    Every surviving operation is checked independently: only felt constants,
+    felt add/subtract/multiply/negate expressions, felt equalities, original
+    storage reads, index/i1 constants, and conversions of constant integers to
+    felt are permitted. Expansion work is bounded across calls, iterations,
+    and aggregate traversal. Any failed expansion or validation fails the entire
+    pass.
+
+    Equality constraints currently require scalar felt operands; array equality
+    and constrain.in are unsupported. Symbolic if/select conditions are rejected.
+    Callees must be concrete, defined, and single-block. Recursion is unsupported
+    and call nesting is limited to 256. Signed integer and index induction
+    variables are supported. Original family handles retain their rolled types.
+    Member reads use the concrete specialization's field types, which must unify
+    with the exposed rolled declarations. Specialization selection and concrete
+    path validation stay inside the pass; no new handle operations are emitted.
+  }];
+  let options = [Option<
+      "evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
+      "Maximum expansion work across operations and aggregate paths">];
+}
+
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
   let summary = "Flatten structs and unroll loops";
   let description = [{

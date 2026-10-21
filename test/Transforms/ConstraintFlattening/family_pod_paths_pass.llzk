@@ -1,0 +1,86 @@
+// RUN: llzk-opt %s --llzk-constraint-flattening | FileCheck %s --match-full-lines
+
+// The inner family coordinates reset at the POD array record. The outer
+// array index is 1 and must not become part of the family tuple.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @out : !felt.type {llzk.pub, signal}
+      struct.member @intermediate : !array.type<@N x !felt.type> {signal}
+      function.def @compute(%x: !felt.type) -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>, %x: !felt.type) {
+        %zero = arith.constant 0 : index
+        %intermediate = struct.readm %self[@intermediate] : !struct.type<@Child::@Child<[@N]>>, !array.type<@N x !felt.type>
+        %value = array.read %intermediate[%zero] : !array.type<@N x !felt.type>, !felt.type
+        %square = felt.mul %x, %x : !felt.type, !felt.type
+        constrain.eq %value, %square : !felt.type, !felt.type
+        %out = struct.readm %self[@out] : !struct.type<@Child::@Child<[@N]>>, !felt.type
+        constrain.eq %out, %value : !felt.type, !felt.type
+        function.return
+      }
+    }
+  }
+  struct.def @Main {
+    struct.member @wrapped : !array.type<2 x !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>]>>
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      scf.for %i = %zero to %two step %one {
+        %child = function.call @Child::@Child::@compute(%x){(%i)} : (!felt.type) -> !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>
+      }
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %wrapped = struct.readm %self[@wrapped] : !struct.type<@Main>, !array.type<2 x !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>]>>
+      %outerIndex = arith.constant 1 : index
+      %record = array.read %wrapped[%outerIndex] : !array.type<2 x !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>]>>, !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>]>
+      %children = pod.read %record[@children] : !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>]>, !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      scf.for %i = %zero to %two step %one {
+        %child = array.read %children[%i] : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>, !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>
+        function.call @Child::@Child::@constrain(%child, %x) : (!struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>, !felt.type) -> ()
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 1)>
+// CHECK-LABEL: struct.def @Main__spec_0 {
+// CHECK:      function.def @constrain(%[[VAL_34:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_35:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_34]][@wrapped] : <@Main__spec_0>, !array.type<2 x !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>>{{.*}}
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_36]]{{\[}}%[[VAL_37]]] : <2 x !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>>, !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_38]][@children] : <[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>, !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_39]]{{\[}}%[[VAL_40]]] : <2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>, !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_36]]{{\[}}%[[VAL_42]]] : <2 x !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>>, !pod.type<[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_43]][@children] : <[@children: !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>]>, !array.type<2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_45]]] : <2 x !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>>, !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_41]][@intermediate] : <@Child::@Child<[#[[$ATTR_0]]]>>, !array.type<1 x !felt.type>
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_47]]{{\[}}%[[VAL_48]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_35]], %[[VAL_35]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_49]], %[[VAL_50]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_41]][@out] : <@Child::@Child<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_51]], %[[VAL_49]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_46]][@intermediate] : <@Child::@Child<[#[[$ATTR_0]]]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_52]]{{\[}}%[[VAL_53]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_55:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_35]], %[[VAL_35]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_54]], %[[VAL_55]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_56:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_46]][@out] : <@Child::@Child<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_56]], %[[VAL_54]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

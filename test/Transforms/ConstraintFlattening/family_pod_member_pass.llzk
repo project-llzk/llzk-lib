@@ -1,0 +1,110 @@
+// RUN: llzk-opt %s --llzk-expose-child-members --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+// Post-monomorphization fixture: concrete POD record shapes differ from the
+// rolled declaration, but ordinary typed member reads preserve storage identity.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @T {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @out : !felt.type {signal}
+      struct.member @row : !pod.type<[@values: !array.type<@N x !felt.type>]> {signal}
+      function.def @compute(%x: !felt.type) -> !struct.type<@T::@Child<[@N]>> {
+        %self = struct.new : <@T::@Child<[@N]>>
+        function.return %self : !struct.type<@T::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Child<[@N]>>, %x: !felt.type) {
+        %out = struct.readm %self[@out] : !struct.type<@T::@Child<[@N]>>, !felt.type
+        constrain.eq %out, %x : !felt.type, !felt.type
+        function.return
+      }
+    }
+  }
+  struct.def @A {
+    struct.member @out : !felt.type {signal}
+    struct.member @row : !pod.type<[@values: !array.type<1 x !felt.type>]> {signal}
+    function.def @compute(%x: !felt.type) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %x: !felt.type) {
+      %row = struct.readm %self[@row] : !struct.type<@A>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+      %values = pod.read %row[@values] : !pod.type<[@values: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %zero = arith.constant 0 : index
+      %value = array.read %values[%zero] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %value, %x : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@A>, !felt.type
+      %factor = felt.const 2
+      %expression = felt.mul %factor, %x : !felt.type, !felt.type
+      constrain.eq %out, %expression : !felt.type, !felt.type
+      function.return
+    }
+  } {poly.specialization_id = 0 : i64, poly.origin = @T::@Child, poly.arguments = [1 : index]}
+  struct.def @B {
+    struct.member @out : !felt.type {signal}
+    struct.member @row : !pod.type<[@values: !array.type<2 x !felt.type>]> {signal}
+    function.def @compute(%x: !felt.type) -> !struct.type<@B> {
+      %self = struct.new : <@B>
+      function.return %self : !struct.type<@B>
+    }
+    function.def @constrain(%self: !struct.type<@B>, %x: !felt.type) {
+      %row = struct.readm %self[@row] : !struct.type<@B>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+      %values = pod.read %row[@values] : !pod.type<[@values: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      %zero = arith.constant 0 : index
+      %value = array.read %values[%zero] : !array.type<2 x !felt.type>, !felt.type
+      constrain.eq %value, %x : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@B>, !felt.type
+      %factor = felt.const 3
+      %expression = felt.mul %factor, %x : !felt.type, !felt.type
+      constrain.eq %out, %expression : !felt.type, !felt.type
+      function.return
+    }
+  } {poly.specialization_id = 1 : i64, poly.origin = @T::@Child, poly.arguments = [2 : index]}
+  struct.def @Main {
+    struct.member @children : !array.type<2 x !struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>> {poly.family = [{indices = [0 : index], specialization = 0 : i64, type = !struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>}, {indices = [1 : index], specialization = 1 : i64, type = !struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>}]}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %children = struct.readm %self[@children] : !struct.type<@Main>, !array.type<2 x !struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>>
+      %zero = arith.constant 0 : index
+      %two = arith.constant 2 : index
+      %one = arith.constant 1 : index
+      scf.for %i = %zero to %two step %one {
+        %child = array.read %children[%i] : !array.type<2 x !struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>>, !struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>
+        function.call @T::@Child::@constrain(%child, %x) : (!struct.type<@T::@Child<[affine_map<(i) -> (i + 1)>]>>, !felt.type) -> ()
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 1)>
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_29:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_30:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_29]][@children] : <@Main>, !array.type<2 x !struct.type<@T::@Child<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_31]]{{\[}}%[[VAL_32]]] : <2 x !struct.type<@T::@Child<[#[[$ATTR_0]]]>>>, !struct.type<@T::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_33]][@row] : <@T::@Child<[#[[$ATTR_0]]]>>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:        %[[VAL_35:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_34]][@values] : <[@values: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_35]]{{\[}}%[[VAL_36]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_37]], %[[VAL_30]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_33]][@out] : <@T::@Child<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_39]], %[[VAL_30]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_38]], %[[VAL_40]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_31]]{{\[}}%[[VAL_41]]] : <2 x !struct.type<@T::@Child<[#[[$ATTR_0]]]>>>, !struct.type<@T::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_42]][@row] : <@T::@Child<[#[[$ATTR_0]]]>>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_43]][@values] : <[@values: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_45]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_46]], %[[VAL_30]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_42]][@out] : <@T::@Child<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = felt.const  3
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_48]], %[[VAL_30]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_47]], %[[VAL_49]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

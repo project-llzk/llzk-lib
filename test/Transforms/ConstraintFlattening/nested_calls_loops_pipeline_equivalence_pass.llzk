@@ -1,0 +1,5 @@
+// RUN: llzk-opt %S/nested_calls_loops_pass.llzk --llzk-monomorphize-templates --llzk-expose-child-members --llzk-flatten-constraints -o %t.explicit
+// RUN: llzk-opt %S/nested_calls_loops_pass.llzk --llzk-constraint-flattening -o %t.pipeline
+// RUN: diff %t.explicit %t.pipeline
+
+// The pipeline and its explicit pass sequence produce identical constraints.
