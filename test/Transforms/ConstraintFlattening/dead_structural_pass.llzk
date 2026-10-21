@@ -9,14 +9,15 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) attributes {function.allow_non_native_field_ops} {
       %cmp = bool.cmp lt(%x, %y) : !felt.type, !felt.type
       %both = arith.andi %cmp, %cmp : i1
-      %index = cast.toindex %x : !felt.type
+      // Only pure casts (i.e. non-assert) may disappear just because their results are unused.
+      %index = cast.toindex wrap %x : !felt.type
       %integerCmp = arith.cmpi slt, %index, %index : index
       %sum = arith.addi %index, %index : index
       %product = arith.muli %sum, %index : index
       %bits = arith.xori %both, %cmp : i1
       %map = poly.applymap(%index) affine_map<(d) -> (d + 1)>
       %wide = arith.index_cast %map : index to i64
-      %unused = cast.tofelt %index : index
+      %unused = cast.tofelt wrap %index : index
       constrain.eq %x, %y : !felt.type, !felt.type
       function.return
     }

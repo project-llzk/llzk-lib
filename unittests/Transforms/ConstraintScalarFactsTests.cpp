@@ -69,7 +69,7 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedChainIsEvaluatedOncePerOperation) {
   mlir::OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&body);
   mlir::Value value = body.addArgument(builder.getIndexType(), loc);
-  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
 
   constexpr unsigned length = 256;
   for (unsigned i = 0; i < length; ++i) {
@@ -88,7 +88,7 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedResultsDoNotPoisonFreshConstantBind
   mlir::OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&body);
   auto unknown = body.addArgument(builder.getIndexType(), loc);
-  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
   EXPECT_FALSE(facts.known(identity(builder, unknown)));
 
   for (int64_t i = 0; i < 8; ++i) {

@@ -1,0 +1,71 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+// An unused symbolic assert cast still has a range check to discharge.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %x : !felt.type<"bn128">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The first value beyond the signed index safe range must not disappear.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      %large = felt.const 9223372036854775808 : <"bn128">
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %large : !felt.type<"bn128">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Fieldless constants defer conversion until their representative is known.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) attributes {function.allow_non_native_field_ops} {
+      %zero = felt.const 0
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A failing integer-to-felt assertion cannot supply a structural constant.
+module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"small">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"small">) attributes {function.allow_non_native_field_ops} {
+      %outside = arith.constant 8 : index
+      %felt = cast.tofelt %outside : index, !felt.type<"small">
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %felt : !felt.type<"small">
+      function.return
+    }
+  }
+}

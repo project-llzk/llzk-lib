@@ -54,7 +54,7 @@ class ConstraintElaborator {
   SymbolTableCollection tables;
   /// Detached output is committed only after expansion and validation succeed.
   Region output;
-  /// Scalar facts requested by control flow and family coordinates only.
+  /// Scalar facts requested by structural control, paths, and assertions.
   ConstraintScalarFacts facts;
   std::optional<ConstraintStorage> storage;
   uint64_t steps = 0;
@@ -341,13 +341,18 @@ class ConstraintElaborator {
     });
   }
 
-  /// Evaluate pure integer results when possible; symbolic results must become dead.
+  /// Evaluate integer results; assert casts must fold and pure symbolic results
+  /// must become dead.
   LogicalResult emitStructural(Operation &op, IRMapping &mapping, Environment &frame) {
     Operation *emitted = builder.clone(op, mapping);
     for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
       if (auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(result))) {
         frame[source] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
       } else {
+        if (auto conversion = dyn_cast<cast::FeltToIndexOp>(op);
+            conversion && conversion.getOverflow() == cast::OverflowSemantics::ASSERT) {
+          return constraintError(&op, "assert cast requires a statically valid index conversion");
+        }
         frame[source] = result;
       }
     }
@@ -367,7 +372,7 @@ class ConstraintElaborator {
     if (equality && !isa<felt::FeltType>(op.getOperand(0).getType())) {
       return constraintError(&op, "equality constraints require scalar felt operands");
     }
-    bool structural = isIntegerExpression(op);
+    bool structural = isIntegerExpression(op) || isa<cast::FeltToIndexOp>(op);
     if (!(equality || structural || isFieldExpression(op) || isa<cast::IntToFeltOp>(op))) {
       if (op.hasTrait<function::NotFieldNative>() || isa<felt::DivFeltOp>(op)) {
         return constraintError(&op, "lower non-native operations before constraint flattening");
@@ -731,8 +736,11 @@ class ConstraintElaborator {
   /// Remove dead facts, enforce the output contract, and reject non-signal reads.
   LogicalResult validateOutput() {
     for (Operation &op : llvm::make_early_inc_range(llvm::reverse(output.front()))) {
+      // A successful cast fold proves its range assertion, so the temporary
+      // cast can be removed despite its conservative effect interface.
+      bool foldedIndexCast = isa<cast::FeltToIndexOp>(op) && facts.known(op.getResult(0));
       if (op.use_empty() &&
-          (isMemoryEffectFree(&op) ||
+          (foldedIndexCast || isMemoryEffectFree(&op) ||
            isa<MemberReadOp, array::ReadArrayOp, array::ExtractArrayOp, pod::ReadPodOp>(op))) {
         op.erase();
       }
@@ -765,7 +773,7 @@ class ConstraintElaborator {
 
 public:
   ConstraintElaborator(ModuleOp root, uint64_t maximum)
-      : module(root), builder(root.getContext()), facts(root.getContext()), limit(maximum),
+      : module(root), builder(root.getContext()), limit(maximum),
         bindings(root.getContext(), steps, maximum) {}
 
   /// Preserve main's signature and commit only the complete validated body.

@@ -1,0 +1,67 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">, %y: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">, %y: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      %values = array.new %y, %x : !array.type<2 x !felt.type<"bn128">>
+
+      // Valid assertions at both endpoints may disappear, even when unused.
+      %zero = felt.const 0 : <"bn128">
+      %unused = cast.toindex %zero : !felt.type<"bn128">
+      %limit = felt.const 9223372036854775807 : <"bn128">
+      %asserted = cast.toindex %limit : !felt.type<"bn128">
+      %expected = arith.constant 9223372036854775807 : index
+      %valid = arith.cmpi eq, %asserted, %expected : index
+      bool.assert %valid
+
+      // Saturation and wrapping must use the index safe range, not int64 casts.
+      %large = felt.const 9223372036854775809 : <"bn128">
+      %saturated = cast.toindex sat %large : !felt.type<"bn128">
+      %atLimit = arith.cmpi eq, %saturated, %expected : index
+      bool.assert %atLimit
+      %wrapped = cast.toindex wrap %large : !felt.type<"bn128">
+      %truncated = cast.toindex trunc %large : !felt.type<"bn128">
+      %a = array.read %values[%wrapped] : !array.type<2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %b = array.read %values[%truncated] : !array.type<2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      constrain.eq %a, %x : !felt.type<"bn128">, !felt.type<"bn128">
+      constrain.eq %b, %x : !felt.type<"bn128">, !felt.type<"bn128">
+
+      // Structural facts can depend on a valid assert-mode integer-to-felt cast.
+      %one = arith.constant 1 : index
+      %felt = cast.tofelt %one : index, !felt.type<"small">
+      %index = cast.toindex %felt : !felt.type<"small">
+      %c = array.read %values[%index] : !array.type<2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      constrain.eq %c, %x : !felt.type<"bn128">, !felt.type<"bn128">
+
+      // An assertion in a statically untaken branch never executes.
+      %false = arith.constant false
+      scf.if %false {
+        %unreached = cast.toindex %x : !felt.type<"bn128">
+      }
+
+      // Constant integer-to-felt assertions remain in the output contract,
+      // including failing or fieldless casts whose results are unused.
+      %outside = arith.constant 7 : index
+      %invalid = cast.tofelt %outside : index, !felt.type<"small">
+      %fieldless = cast.tofelt %one : index, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"small">
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"small">
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
