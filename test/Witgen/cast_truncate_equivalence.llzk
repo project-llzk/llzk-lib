@@ -13,10 +13,9 @@
 // RUN: FileCheck %s --check-prefix=FULL --match-full-lines < %t/full.json
 // RUN: od -An -v -t x1 %t/original.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS --match-full-lines
 
-// Truncation keeps the raw low 31 bits, even when they exceed babybear's prime.
-// Witness output materialization reduces them for both JSON and WTNS encoding.
+// Truncation keeps the low 31 bits, then reduces modulo babybear's prime.
 // Check folding equivalence and boundary values, including negative inputs.
-// A cast back to index must still observe the raw value during execution.
+// A cast back to index observes the reduced value.
 
 // FULL-LABEL: {
 // FULL-NEXT:    "inputs": {
@@ -71,11 +70,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %runtime_negative = arith.addi %base, %negative : index
       %h = cast.tofelt trunc %runtime_negative : index, !felt.type<"babybear">
       %index = cast.toindex %h : !felt.type<"babybear">
-      %raw_expected = arith.constant 2147483647 : index
-      %is_raw = arith.cmpi eq, %index, %raw_expected : index
-      bool.assert %is_raw
-      %reduced = arith.subi %index, %prime : index
-      %i = cast.tofelt %reduced : index, !felt.type<"babybear">
+      %expected = arith.constant 134217726 : index
+      %is_reduced = arith.cmpi eq, %index, %expected : index
+      bool.assert %is_reduced
+      %i = cast.tofelt %index : index, !felt.type<"babybear">
       struct.writem %self[@negative] = %a : !struct.type<@Main>, !felt.type<"babybear">
       struct.writem %self[@below_prime] = %b : !struct.type<@Main>, !felt.type<"babybear">
       struct.writem %self[@prime] = %c : !struct.type<@Main>, !felt.type<"babybear">

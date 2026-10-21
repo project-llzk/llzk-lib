@@ -160,8 +160,7 @@ form used by the witgen tests, namely JSON integers or decimal strings.
   - Public struct members become JSON object fields.
   - Public felt arrays become JSON arrays.
   - Field element leaves are reduced to canonical representatives in `[0, p-1]`
-    and rendered as decimal strings. This applies only at the output boundary;
-    raw runtime values, such as truncation results, are unchanged during execution.
+    and rendered as decimal strings.
 - `--output-scope=full-witness`
   - The output JSON contains two top-level objects: `inputs` and `signals`.
   - `inputs` records the main `compute()` arguments using their

@@ -305,7 +305,7 @@ module attributes {llzk.lang} {
     %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
     %felt_negative = felt.const -1 : !F
 
-    // The babybear prime requires 31 bits so truncation keeps low 31 bits.
+    // Truncation keeps the low 31 bits, then reduces modulo the babybear prime.
     %tofelt_too_large = cast.tofelt trunc %int_too_large : index, !F
     %tofelt_negative = cast.tofelt trunc %int_negative : index, !F
     %toindex_too_large = cast.toindex trunc %felt_too_large : !F
@@ -373,16 +373,15 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.call @use_index(%[[VAL_19]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.\-]+]] = arith.constant 2013265920 : index
-// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.\-]+]] = arith.constant 1592717054 : index
-// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.\-]+]] = felt.const  0 : <"babybear">
-// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.\-]+]] = cast.tofelt trunc %[[VAL_22]] : index, !felt.type<"babybear">
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_23]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_24]]) : (!felt.type<"babybear">) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_21]]) : (index) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_20]]) : (index) -> ()
+// CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  134217726 : <"babybear">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1592717054 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_1]]) : (!felt.type<"babybear">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_3]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -457,7 +456,7 @@ module attributes {llzk.lang} {
     %felt_too_large = felt.const 9223372036854775820 : !F // 2^63 + 12
     %felt_negative = felt.const -1 : !F
 
-    // The grumpkin prime requires 254 bits so truncation keeps low 254 bits.
+    // Truncation keeps the low 254 bits, then reduces modulo the grumpkin prime.
     %tofelt_negative = cast.tofelt trunc %int_negative : index, !F
     %toindex_too_large = cast.toindex trunc %felt_too_large : !F
     %toindex_negative = cast.toindex trunc %felt_negative : !F
@@ -517,14 +516,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.call @use_index(%[[VAL_16]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.\-]+]] = arith.constant 4332616871279656262 : index
-// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.\-]+]] = arith.constant 12 : index
-// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.\-]+]] = arith.constant -1 : index
-// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.\-]+]] = cast.tofelt trunc %[[VAL_19]] : index, !felt.type<"grumpkin">
-// CHECK-NEXT:      function.call @use_felt(%[[VAL_20]]) : (!felt.type<"grumpkin">) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_18]]) : (index) -> ()
-// CHECK-NEXT:      function.call @use_index(%[[VAL_17]]) : (index) -> ()
+// CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  7059779437489773633646340506914701874621185009112317347175358107333056201400 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"grumpkin">) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_1]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

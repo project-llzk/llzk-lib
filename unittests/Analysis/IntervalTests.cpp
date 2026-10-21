@@ -707,9 +707,9 @@ TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) 
   EXPECT_EQ(dynamicCastCount, 6U);
 }
 
-// Truncating -1 to babybear's low 31 bits can produce 2147483647, above p-1.
-// Preserve that endpoint in SSA arithmetic and stored member summaries.
-TEST_F(IntervalAnalysisAPITests, DynamicTruncationPreservesUnreducedRanges) {
+// Truncation reduces its low-bit result into [0, p). Subsequent unreduced
+// arithmetic and stored member summaries must start from that canonical range.
+TEST_F(IntervalAnalysisAPITests, DynamicTruncationReducesToFieldRange) {
   auto mod = parseModule(kDynamicNonAssertCastModule);
   auto structDef = *mod->getOps<StructDefOp>().begin();
   auto computeFn = structDef.getComputeFuncOp();
@@ -733,11 +733,9 @@ TEST_F(IntervalAnalysisAPITests, DynamicTruncationPreservesUnreducedRanges) {
     EXPECT_NE(value.getExpr(), nullptr);
     EXPECT_EQ(value.getInterval(), Interval::Entire(field));
     ASSERT_TRUE(value.hasUnreducedInterval());
-    // Saturation and wrapping still produce only canonical field values.
-    auto expected = op.getOverflow() == cast::OverflowSemantics::TRUNCATE
-                        ? UnreducedInterval(0, 2147483647)
-                        : UnreducedInterval(field.zero(), field.maxVal());
-    AssertUnreducedIntervalEq(expected, value.getUnreducedInterval());
+    AssertUnreducedIntervalEq(
+        UnreducedInterval(field.zero(), field.maxVal()), value.getUnreducedInterval()
+    );
   });
   EXPECT_EQ(toFeltCount, 3U);
 
@@ -749,7 +747,9 @@ TEST_F(IntervalAnalysisAPITests, DynamicTruncationPreservesUnreducedRanges) {
   const auto &sumValue = sumLattice->getValue().getScalarValue();
   EXPECT_EQ(sumValue.getInterval(), Interval::Entire(field));
   ASSERT_TRUE(sumValue.hasUnreducedInterval());
-  AssertUnreducedIntervalEq(UnreducedInterval(1, 2147483648), sumValue.getUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.one(), field.prime()), sumValue.getUnreducedInterval()
+  );
 
   const auto &intervals = analysis.getResult(structDef).getComputeUnreducedIntervals();
   unsigned memberCount = 0;
@@ -761,8 +761,9 @@ TEST_F(IntervalAnalysisAPITests, DynamicTruncationPreservesUnreducedRanges) {
     );
     const auto *it = intervals.find(ref);
     ASSERT_NE(it, intervals.end());
-    auto expected = member.getName() == "truncated" ? UnreducedInterval(0, 2147483647)
-                                                    : UnreducedInterval(1, 2147483648);
+    auto expected = member.getName() == "truncated"
+                        ? UnreducedInterval(field.zero(), field.maxVal())
+                        : UnreducedInterval(field.one(), field.prime());
     AssertUnreducedIntervalEq(expected, it->second);
   }
   EXPECT_EQ(memberCount, 2U);

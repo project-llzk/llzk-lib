@@ -92,11 +92,6 @@ OpFoldResult IntToFeltOp::fold(FoldAdaptor adaptor) {
   if (!result) {
     return {};
   }
-  // Truncation can leave low bits outside the field range. A felt.const
-  // reduces modulo the prime, so it cannot preserve that cast result.
-  if (*result >= field.prime()) {
-    return {};
-  }
   return felt::FeltConstAttr::get(getContext(), *result, resultType);
 }
 

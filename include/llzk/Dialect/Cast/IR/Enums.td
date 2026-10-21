@@ -31,11 +31,10 @@ def LLZK_OverflowSemantics
                       // `2^(N-1)` for `toindex`, keeping the result in the
                       // index safe range.
                       I32EnumAttrCase<"WRAP", 2, "wrap">,
-                      // Truncate: Keep the low bits. For `tofelt`, the bitwidth
-                      // of `p` determines the number of bits. For `toindex`,
-                      // `N-1` bits are preserved to keep the result in the
-                      // safe range (i.e. requiring the sign bit to be 0). A
-                      // truncated felt may be greater than or equal to `p`.
+                      // Truncate: Keep the low bits. For `tofelt`, keep
+                      // `bitwidth(p)` bits, then reduce modulo `p` to stay in
+                      // the safe range. For `toindex`, keep `N-1` bits so the
+                      // sign bit is zero.
                       I32EnumAttrCase<"TRUNCATE", 3, "trunc">,
 ]> {
   let genSpecializedAttr = 0;

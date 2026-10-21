@@ -58,9 +58,16 @@ def LLZK_IntToFeltOp
     target field's safe range are handled. The default `assert` mode fails on
     such values, even when the result is unused, and cannot be speculated.
     The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
+
+    The `trunc` mode keeps the low `k = bitwidth(p)` bits, then reduces modulo
+    the target field's prime `p`: `(value mod 2^k) mod p`, with nonnegative
+    remainders. The result is always in `[0, p)`. This differs from `wrap`,
+    which reduces the original integer directly modulo `p`. For example, with
+    `p = 7`, truncating `-1` keeps the bits `111` and reduces `7` to `0`, while
+    wrapping `-1` yields `6`.
+
     Constant folding defers casts whose result field is unspecified, whose
-    `assert` range check fails, or whose `trunc` result is outside the field
-    range and therefore cannot be represented by a felt constant.
+    operand is unknown, or whose `assert` range check fails.
 
     Example:
 

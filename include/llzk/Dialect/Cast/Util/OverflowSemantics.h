@@ -18,8 +18,8 @@
 
 namespace llzk::cast {
 
-/// Apply overflow semantics for an integer-to-felt conversion. Returns nullopt
-/// when assert semantics reject the input.
+/// Apply overflow semantics for an integer-to-felt conversion. Returns nullopt when
+/// assert semantics reject the input. Otherwise, the result is always in [0, p).
 std::optional<llvm::DynamicAPInt> applyIntToFeltOverflow(
     const llvm::DynamicAPInt &value, const Field &field, OverflowSemantics overflow
 );

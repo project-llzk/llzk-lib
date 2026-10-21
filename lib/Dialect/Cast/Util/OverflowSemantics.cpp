@@ -33,7 +33,7 @@ applyIntToFeltOverflow(const DynamicAPInt &value, const Field &field, OverflowSe
   case OverflowSemantics::WRAP:
     return field.reduce(value);
   case OverflowSemantics::TRUNCATE:
-    return positiveModulo(value, DynamicAPInt(1) << DynamicAPInt(field.bitWidth()));
+    return field.reduce(positiveModulo(value, DynamicAPInt(1) << DynamicAPInt(field.bitWidth())));
   }
   llvm_unreachable("unknown overflow semantics");
 }

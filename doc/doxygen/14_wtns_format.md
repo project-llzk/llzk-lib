@@ -27,10 +27,9 @@ Section 1 is the witness header:
 Section 2 contains `witness length` field elements, each encoded using the
 width declared by section 1. Witness values must be canonical representatives
 in `[0, p-1]`; the writer rejects values outside that range rather than reducing
-them during serialization. Witness output materialization reduces raw runtime
-field values, including integer-to-felt truncation results, before producing
-either JSON output or the full witness consumed by the WTNS writer. This leaves
-raw truncation semantics inside the computation unchanged.
+them during serialization. Witness output materialization ensures canonical
+field representatives before producing either JSON output or the full witness
+consumed by the WTNS writer.
 
 ## Wire ordering
 

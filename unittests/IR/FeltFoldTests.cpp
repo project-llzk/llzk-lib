@@ -569,9 +569,9 @@ TEST_F(BabyBearFoldTest, CastToFeltFoldPreservesOverflowSemantics) {
       ),
       1592717041
   );
-  expectNoFold(foldToFelt(negative, type, llzk::cast::OverflowSemantics::TRUNCATE));
-  expectNoFold(foldToFelt(prime, type, llzk::cast::OverflowSemantics::TRUNCATE));
-  expectNoFold(foldToFelt(abovePrime, type, llzk::cast::OverflowSemantics::TRUNCATE));
+  expectValue(foldToFelt(negative, type, llzk::cast::OverflowSemantics::TRUNCATE), 134217726);
+  expectValue(foldToFelt(prime, type, llzk::cast::OverflowSemantics::TRUNCATE), 0);
+  expectValue(foldToFelt(abovePrime, type, llzk::cast::OverflowSemantics::TRUNCATE), 1);
   expectValue(
       foldToFelt(builder.getIndexAttr(1ULL << 31U), type, llzk::cast::OverflowSemantics::TRUNCATE),
       0
@@ -582,9 +582,30 @@ TEST_F(BabyBearFoldTest, CastToFeltFoldPreservesOverflowSemantics) {
       ),
       1
   );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr((1ULL << 31U) + BB_PRIME), type,
+          llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      0
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr(std::numeric_limits<int64_t>::min()), type,
+          llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      0
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr(std::numeric_limits<int64_t>::max()), type,
+          llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      134217726
+  );
 }
 
-TEST_F(BabyBearFoldTest, CastToFeltCreateOrFoldMaterializesOnlyRepresentableResults) {
+TEST_F(BabyBearFoldTest, CastToFeltCreateOrFoldMaterializesValidResults) {
   Block block;
   OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&block);
@@ -599,13 +620,19 @@ TEST_F(BabyBearFoldTest, CastToFeltCreateOrFoldMaterializesOnlyRepresentableResu
   EXPECT_EQ(constant.getValue().getRawValue(), 7);
 
   auto negative = arith::ConstantIndexOp::create(builder, loc, -1);
-  for (auto mode :
-       {llzk::cast::OverflowSemantics::ASSERT, llzk::cast::OverflowSemantics::TRUNCATE}) {
-    Value retained = builder.createOrFold<llzk::cast::IntToFeltOp>(
-        loc, FeltType::get(&ctx, BB_FIELD), mode, negative.getResult()
-    );
-    EXPECT_TRUE(retained.getDefiningOp<llzk::cast::IntToFeltOp>());
-  }
+  Value retained = builder.createOrFold<llzk::cast::IntToFeltOp>(
+      loc, FeltType::get(&ctx, BB_FIELD), llzk::cast::OverflowSemantics::ASSERT,
+      negative.getResult()
+  );
+  EXPECT_TRUE(retained.getDefiningOp<llzk::cast::IntToFeltOp>());
+  Value truncated = builder.createOrFold<llzk::cast::IntToFeltOp>(
+      loc, FeltType::get(&ctx, BB_FIELD), llzk::cast::OverflowSemantics::TRUNCATE,
+      negative.getResult()
+  );
+  auto truncatedConstant = truncated.getDefiningOp<FeltConstantOp>();
+  ASSERT_TRUE(truncatedConstant);
+  EXPECT_EQ(truncatedConstant.getType(), FeltType::get(&ctx, BB_FIELD));
+  EXPECT_EQ(truncatedConstant.getValue().getRawValue(), 134217726);
 }
 
 // Exercise the fold hook directly so constant canonicalization cannot mask regressions.
