@@ -590,8 +590,7 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      llvm::DynamicAPInt maxMask =
-          (llvm::DynamicAPInt(1) << llvm::DynamicAPInt(field.bitWidth())) - llvm::DynamicAPInt(1);
+      llvm::DynamicAPInt maxMask = (llvm::DynamicAPInt(1) << field.bitWidth()) - 1;
       return bind({WitnessVal(field.reduce(maxMask ^ *feltValue))});
     }
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {

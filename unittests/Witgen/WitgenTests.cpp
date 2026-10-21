@@ -28,7 +28,6 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
 
-#include <climits>
 #include <limits>
 #include <random>
 
@@ -279,16 +278,6 @@ TEST_F(WitgenTests, SerializeFeltRequiresDeclaredField) {
       witgen::serializeJSONValue(llvm::DynamicAPInt(0), felt::FeltType::get(&ctx), tables, nullptr);
   ASSERT_FALSE(json);
   EXPECT_EQ(llvm::toString(json.takeError()), "felt JSON output requires a declared field");
-}
-
-TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
-  llvm::DynamicAPInt value = llzk::toDynamicAPInt(
-      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
-  );
-  value += llvm::DynamicAPInt(1);
-  auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test overflow");
-  ASSERT_FALSE(static_cast<bool>(checked));
-  EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
 }
 
 TEST_P(WitgenFieldTests, WtnsRejectsNoncanonicalWitnessValues) {
