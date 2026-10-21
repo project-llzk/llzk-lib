@@ -18,7 +18,7 @@
 #include <llvm/ADT/DenseSet.h>
 
 namespace llzk::polymorphic::detail {
-/// Evaluate scalar dependencies of control flow, concrete paths, and assertions.
+/// Evaluate scalar dependencies of structural decisions, assertions, and constant arithmetic.
 class ConstraintScalarFacts {
   /// A null entry records an evaluated value that cannot be resolved. Emitted
   /// SSA is immutable; calls and loop iterations produce fresh values.

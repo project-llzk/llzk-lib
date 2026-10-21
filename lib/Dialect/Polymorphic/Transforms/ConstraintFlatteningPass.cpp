@@ -361,6 +361,29 @@ class ConstraintElaborator {
     return success();
   }
 
+  /// Evaluate non-native field arithmetic under the given environment.
+  /// Require every result to fold to a field constant.
+  LogicalResult evaluateNonNative(Operation &op, Environment &frame) {
+    if (op.getNumRegions() || !op.getNumResults() || !isMemoryEffectFree(&op) ||
+        !llvm::all_of(op.getResultTypes(), [](Type type) { return isa<felt::FeltType>(type); })) {
+      return constraintError(&op, "lower non-native operations before constraint flattening");
+    }
+    auto mapping = scalarMapping(op, frame);
+    if (failed(mapping)) {
+      return failure();
+    }
+    Operation *emitted = builder.clone(op, *mapping);
+    for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
+      auto constant = dyn_cast_or_null<felt::FeltConstAttr>(facts.known(result));
+      if (!constant || constant.getType() != result.getType()) {
+        return constraintError(&op, "lower non-native operations before constraint flattening");
+      }
+      frame[source] = Value(felt::FeltConstantOp::create(builder, op.getLoc(), constant));
+    }
+    // As with structural computations, keep cached SSA keys alive until DCE.
+    return success();
+  }
+
   /// Emit explicitly supported constraints, or evaluate temporary integer facts.
   LogicalResult emit(Operation &op, Environment &frame) {
     if (auto assertion = dyn_cast<boolean::AssertOp>(op)) {
@@ -375,7 +398,7 @@ class ConstraintElaborator {
     bool structural = isIntegerExpression(op) || isa<cast::FeltToIndexOp>(op);
     if (!(equality || structural || isFieldExpression(op) || isa<cast::IntToFeltOp>(op))) {
       if (op.hasTrait<function::NotFieldNative>() || isa<felt::DivFeltOp>(op)) {
-        return constraintError(&op, "lower non-native operations before constraint flattening");
+        return evaluateNonNative(op, frame);
       }
       if (isa<constrain::EmitContainmentOp>(op)) {
         return constraintError(
