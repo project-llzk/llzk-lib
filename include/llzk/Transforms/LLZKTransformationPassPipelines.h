@@ -127,7 +127,7 @@ void buildFullStructInliningPipeline(mlir::OpPassManager &, const FullStructInli
 
 void buildFullInliningPipeline(mlir::OpPassManager &, const FullStructInliningConfig &);
 
-/// Monomorphize templates, expose child members, and expand main constrain.
+/// Canonicalize, monomorphize templates, expose child members, and expand main constrain.
 void buildConstraintFlatteningPipeline(mlir::OpPassManager &);
 
 void registerTransformationPassPipelines();
