@@ -45,6 +45,10 @@ def ExposeChildMembersPass : LLZKPass<"llzk-expose-child-members"> {
     This pass makes subcomponent fields public, allowing the constraint body to
     access felt leaves when flattening constraints without scalarizing struct members.
 
+    For family storage, matching member declarations on the rolled template are
+    also exposed. This legalizes ordinary reads through unchanged family handles;
+    template bodies are not traversed or expanded. Signal annotations are preserved.
+
     The root's own member visibility is preserved because changing it would change
     the circuit's public interface and hence its semantics.
 

@@ -1,0 +1,48 @@
+// RUN: llzk-opt %s --llzk-constraint-flattening --verify-diagnostics -o /dev/null
+
+// The rolled declaration accepts a unifiable result type, but coordinate zero
+// selects Child<1>, so a three-element read must be rejected by expansion.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      struct.member @out : !felt.type {llzk.pub, signal}
+      struct.member @intermediate : !array.type<@N x !felt.type> {llzk.pub, signal}
+      function.def @compute(%x: !felt.type) -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>, %x: !felt.type) {
+        %zero = arith.constant 0 : index
+        %intermediate = struct.readm %self[@intermediate] : !struct.type<@Child::@Child<[@N]>>, !array.type<@N x !felt.type>
+        %value = array.read %intermediate[%zero] : !array.type<@N x !felt.type>, !felt.type
+        %square = felt.mul %x, %x : !felt.type, !felt.type
+        constrain.eq %value, %square : !felt.type, !felt.type
+        %out = struct.readm %self[@out] : !struct.type<@Child::@Child<[@N]>>, !felt.type
+        constrain.eq %out, %value : !felt.type, !felt.type
+        function.return
+      }
+    }
+  }
+  struct.def @Main {
+    struct.member @children : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      scf.for %i = %zero to %two step %one {
+        %child = function.call @Child::@Child::@compute(%x){(%i)} : (!felt.type) -> !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>
+      }
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %children = struct.readm %self[@children] : !struct.type<@Main>, !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>
+      %zero = arith.constant 0 : index
+      %child = array.read %children[%zero] : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>, !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>
+      // expected-error @+1 {{member read type does not match the concrete specialization}}
+      %wrong = struct.readm %child[@intermediate] : !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>, !array.type<3 x !felt.type>
+      function.return
+    }
+  }
+}

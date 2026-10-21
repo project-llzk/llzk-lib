@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %two = arith.constant 2 : index
+      // expected-error @+1 {{cannot write to function input or original storage}}
+      array.write %input[%zero] = %x : !array.type<1 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}

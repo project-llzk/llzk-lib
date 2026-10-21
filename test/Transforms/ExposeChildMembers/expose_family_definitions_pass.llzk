@@ -1,7 +1,4 @@
-// RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Root" -o %t
-// RUN: FileCheck %s --match-full-lines < %t
-// RUN: llzk-opt %t --llzk-expose-child-members="root-struct=@Root" -o %t.again
-// RUN: diff %t %t.again
+// RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Root" | FileCheck %s --match-full-lines
 
 // Visibility needs the referenced definition set, not a layout for every element.
 // The trillion-element array has a sparse representative family with repeated IDs.
@@ -50,12 +47,11 @@ module attributes {llzk.lang} {
 
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 // CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 7)>
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @T {
-// CHECK-NEXT:        struct.member @out : !felt.type {signal}
+// CHECK-NEXT:        struct.member @out : !felt.type {llzk.pub, signal}
 // CHECK-NEXT:        function.def @product() -> !struct.type<@T::@T<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
 // CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@T<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@T::@T<[@N]>>

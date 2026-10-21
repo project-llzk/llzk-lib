@@ -1,0 +1,38 @@
+// RUN: llzk-opt %s --llzk-constraint-flattening | FileCheck %s --match-full-lines
+
+// Exercise both discovery and expansion: one near-max iteration and three
+// iterations across the entire signed range, without overflowing subtraction.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %lower = arith.constant 9223372036854775806 : index
+      %upper = arith.constant 9223372036854775807 : index
+      %step = arith.constant 2 : index
+      scf.for %i = %lower to %upper step %step {
+        constrain.eq %x, %x : !felt.type, !felt.type
+      }
+      // The mathematical signed distance also exceeds INT64_MAX here.
+      %negative = arith.constant -9223372036854775808 : index
+      %large = arith.constant 9223372036854775807 : index
+      scf.for %i = %negative to %large step %large {
+        constrain.eq %x, %x : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main__spec_0 {
+// CHECK:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
