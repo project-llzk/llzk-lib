@@ -838,8 +838,8 @@ struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
       IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (op.getOverflow() != OverflowSemantics::ASSERT) {
-      return op.emitError(
-          "PCL lowering does not currently support non-assert cast overflow semantics"
+      return rewriter.notifyMatchFailure(
+          op, "PCL lowering does not currently support non-assert cast overflow semantics"
       );
     }
     // Leave dynamic index assertions unsupported so analysis selects their
