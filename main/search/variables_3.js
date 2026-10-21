@@ -1,7 +1,7 @@
 var searchData=
 [
   ['default_5felts_0',['DEFAULT_ELTS',['../llzk_2CAPI_2Support_8h.html#a8c7cd80fe1af201ae88a93a1cbc46d86',1,'Support.h']]],
-  ['definition_1',['definition',['../LICENSE_8txt.html#a2a7e6052bfc8b1f68f10d7cf5d61c65c',1,'LICENSE.txt']]],
+  ['definition_1',['definition',['../structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#a56a563977c2ca27b6063587305918333',1,'llzk::polymorphic::detail::StorageDescription::definition'],['../LICENSE_8txt.html#a2a7e6052bfc8b1f68f10d7cf5d61c65c',1,'definition:&#160;LICENSE.txt']]],
   ['deftree_2',['defTree',['../classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a1b5439c6ebd8766b633d31bbc19ccb97',1,'llzk::polymorphic::detail::CleanupBase']]],
   ['derived_5fattr_5fname_3',['DERIVED_ATTR_NAME',['../namespacellzk.html#a5f5340f593130ab06a01b2458d243be7',1,'llzk']]],
   ['diagids_4',['diagIDs',['../structClangLexerContext_1_1Impl.html#abbc46387c906edb94ddb0bcde7a11398',1,'ClangLexerContext::Impl']]],

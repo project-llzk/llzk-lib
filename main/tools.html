@@ -298,10 +298,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-infer-tvar"><span class="tt">-llzk-infer-tvar</span> </a>
-              </li>
-              <li class="level4">
-                <a href="#autotoc_md-llzk-monomorphize-templates"><span class="tt">-llzk-monomorphize-templates</span> </a>
+                <a href="#autotoc_md-llzk-flatten-constraints"><span class="tt">-llzk-flatten-constraints</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-13">Options </a>
@@ -309,7 +306,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
+                <a href="#autotoc_md-llzk-infer-tvar"><span class="tt">-llzk-infer-tvar</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-monomorphize-templates"><span class="tt">-llzk-monomorphize-templates</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-14">Options </a>
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-expose-child-members"><span class="tt">-llzk-expose-child-members</span> </a>
+                <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-15">Options </a>
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
+                <a href="#autotoc_md-llzk-expose-child-members"><span class="tt">-llzk-expose-child-members</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-16">Options </a>
@@ -333,10 +333,18 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-to-pcl"><span class="tt">-llzk-to-pcl</span> </a>
+                <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-17">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-to-pcl"><span class="tt">-llzk-to-pcl</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-18">Options </a>
                   </li>
                 </ul>
               </li>
@@ -369,7 +377,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-full-struct-inlining"><span class="tt">-llzk-full-struct-inlining</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-18">Options </a>
+                    <a href="#options-19">Options </a>
                   </li>
                 </ul>
               </li>
@@ -380,12 +388,15 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-full-poly-lowering"><span class="tt">-llzk-full-poly-lowering</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-19">Options </a>
+                    <a href="#options-20">Options </a>
                   </li>
                 </ul>
               </li>
               <li class="level4">
                 <a href="#autotoc_md-llzk-full-r1cs-lowering"><span class="tt">-llzk-full-r1cs-lowering</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-constraint-flattening"><span class="tt">-llzk-constraint-flattening</span> </a>
               </li>
             </ul>
           </li>
@@ -687,6 +698,17 @@ Options</h5>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-flatten-constraints"></a>
+<span class="tt">-llzk-flatten-constraints</span></h4>
+<p><em>Expand main constrain into straight-line constraints</em></p>
+<p>After template monomorphization and child-member visibility preparation, expand main's constrain function and reachable single-block callees. Resolve static branches, signed <span class="tt">for</span> loops with positive steps, and <span class="tt">while</span> loops directly, including field-valued iterators and comparisons.</p>
+<p>Local arrays and PODs exist only as concrete paths bound to scalar SSA values. Reads resolve bindings; writes and aggregate assignments update local bindings without emitting allocations, copies, or writes. Aggregate arguments preserve identity and remain read-only during each call. Returned aggregates alias their original roots: caller-local roots remain shared and writable after the call, while function inputs and original storage remain read-only. Component handles preserve identity. Every array access index must resolve at compile time and be in bounds. Reads of uninitialized local leaves and writes to function inputs or original storage are diagnosed.</p>
+<p>Replace only main's constrain body, retaining its signature, original component storage, compute functions, and other definitions. Signal leaves are read through paths rooted in the original arguments. Live non-signal scalar storage is rejected; no witness variables or definitions are inferred from equations or compute functions. Ordinary field arithmetic remains SSA.</p>
+<p>Diagnose symbolic control flow, recursion, unsupported effects, and non-native constraint arithmetic (including division and inversion). Static integer arithmetic, affine maps, casts, and comparisons are evaluated only as structural facts; symbolic computations must be dead after expansion. Every surviving operation is checked independently: only felt constants, felt add/subtract/multiply/negate expressions, felt equalities, original storage reads, index/i1 constants, and conversions of constant integers to felt are permitted. Expansion work is bounded across calls, iterations, and aggregate traversal. Any failed expansion or validation fails the entire pass.</p>
+<p>Equality constraints currently require scalar felt operands; array equality and constrain.in are unsupported. Symbolic if/select conditions are rejected. Callees must be concrete, defined, and single-block. Recursion is unsupported and call nesting is limited to 256. Signed integer and index induction variables are supported. Original family handles retain their rolled types. Member reads use the concrete specialization's field types, which must unify with the exposed rolled declarations. Specialization selection and concrete path validation stay inside the pass; no new handle operations are emitted.</p>
+<h5 class="doxsection"><a class="anchor" id="options-13"></a>
+Options</h5>
+<div class="fragment"><div class="line">-max-evaluation-steps : Maximum expansion work across operations and aggregate paths</div>
 </div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-infer-tvar"></a>
 <span class="tt">-llzk-infer-tvar</span></h4>
 <p><em>Infer concrete function types for polymorphic type variables</em></p>
@@ -701,7 +723,7 @@ Options</h5>
 <p>Affine calls and array values retain their parameterized types. Their <span class="tt">poly.family_specializations</span> and <span class="tt">poly.family</span> attributes identify the concrete definitions needed by later elaboration; definitions carry <span class="tt">poly.specialization_id</span>, <span class="tt">poly.origin</span> and <span class="tt">poly.arguments</span> attributes. Free-function clones carry <span class="tt">poly.origin</span> and <span class="tt">poly.arguments</span>; their identities are separate from the struct IDs used by families. <span class="tt">poly.family</span> appears on members and operations producing an array value, including <span class="tt">struct.readm</span> and <span class="tt">array.new</span>. Each entry names the rolled struct type, the enclosing array's index tuple, and the matching specialization. The <span class="tt">type</span> entry retains the original affine-parameterized family type; it identifies which struct field is being specialized within a POD element. <span class="tt">specialization</span> identifies the concrete clone through its <span class="tt">poly.specialization_id</span>. For example, an element at index 2 of a Child<em> family retains Child<em> in <span class="tt">type</span> and names the clone whose <span class="tt">poly.arguments</span> are [2]. Concrete sibling fields have no family entry. On a rolled call, <span class="tt">poly.family_specializations</span> lists candidates collected from all matching arrays and affine calls in the source instance. The list may be empty only when a known array has an empty dimension. A consumer selects a target by evaluating the argument type's affine map using the value's affine inputs, often an array element's indices, and matching the resulting arguments to <span class="tt">poly.arguments</span>. <span class="tt">poly.origin</span> and every struct name nested in <span class="tt">poly.arguments</span> are relative to the outermost <span class="tt">llzk.lang</span> root, which is also the lookup anchor when reloading this metadata. Cache keys use the same argument spelling, so requests from different roots reuse the same specialization. Substitution re-spells type arguments relative to the clone's root; an argument whose definition is outside that root is diagnosed at the instantiation site. Arguments to typed <span class="tt">poly.param</span> declarations are converted to the declared type using the conversions below, before forming a cache key. An incompatible argument is diagnosed. Felt-to-index conversion requires a known field and a reduced representative in the nonnegative signed 64-bit index range. Fieldless felt literals cannot determine an index. Arguments to felt parameters with a known field are reduced modulo its prime before forming the cache key and substituting uses. A felt literal with no specified field acquires the parameter's declared field; a different explicit field is rejected. Equivalent field values therefore share a specialization. With no known field, index-to-felt conversion requires a nonnegative value and preserves it. Untyped parameters retain their input attributes, so differently spelled numeric values can create distinct specializations. An <span class="tt">i1</span> parameter accepts only boolean arguments or index zero and one, which become false and true. Other index values fail type conversion at the instantiation site. The normalized boolean binding determines specialization identity and is used for every read and forwarded argument. Forwarding that value to an index parameter produces zero or one. A felt binding must be read with its exact felt type, including its field, even for untyped parameters. Mismatched felt types are diagnosed at <span class="tt">poly.read_const</span>. Reading it as index or i1 is diagnosed at <span class="tt">poly.read_const</span>; use an explicit cast after a felt read for numeric conversion. Integer bindings read as i1 must be zero or one. Integer-to-felt reads use the same modular conversion as typed arguments, and negative values require a known field modulus. Reads whose type is a type variable use its concrete binding.</em></em></p>
 <p><em><em>Discovered methods and free functions must be defined and single-block. Supported regions are <span class="tt">scf.if</span>, signed <span class="tt">scf.for</span> with known bounds and positive steps, and <span class="tt">scf.while</span> with a known condition at every check. Unstructured branches are diagnosed. Constant evaluation uses template bindings and fold hooks; global and aggregate reads and call results remain unknown. Function arguments also begin unknown, even when a caller passes a constant. Required specialization arguments must resolve. External free functions retain their declared signatures. Calls with struct types rewritten to distinct clone types are diagnosed, including plain structs, because the declaration would otherwise have a mismatched type. Includes must be inlined before running this pass.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-13"></a>
+<h5 class="doxsection"><a class="anchor" id="options-14"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><div class="fragment"><div class="line">-max-specializations  : Maximum number of concrete struct and free-function definitions</div>
@@ -715,7 +737,7 @@ Options</h5>
 <p><em><em>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</em></em></p>
 <p><em><em>This pass is intended to run after <span class="tt">llzk-flatten</span>. It iterates to a fixpoint so newly-refined cast result types can enable further callable specialization in later iterations.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-14"></a>
+<h5 class="doxsection"><a class="anchor" id="options-15"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><div class="fragment"><div class="line">-max-iter : Maximum number of iterations before the pass gives up reaching a fixpoint.</div>
@@ -727,10 +749,11 @@ Options</h5>
 <p><em><em></em></em></p>
 <p><em><em><em>Expose members of concrete child storage reachable from a selected root.</em></em></em></p>
 <p><em><em>This pass makes subcomponent fields public, allowing the constraint body to access felt leaves when flattening constraints without scalarizing struct members.</em></em></p>
+<p><em><em>For family storage, matching member declarations on the rolled template are also exposed. This legalizes ordinary reads through unchanged family handles; template bodies are not traversed or expanded. Signal annotations are preserved.</em></em></p>
 <p><em><em>The root's own member visibility is preserved because changing it would change the circuit's public interface and hence its semantics.</em></em></p>
 <p><em><em>Use <span class="tt">root-struct</span> to select a root explicitly; otherwise the pass uses <span class="tt">llzk.main</span>.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-15"></a>
+<h5 class="doxsection"><a class="anchor" id="options-16"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><div class="fragment"><div class="line">-root-struct : Root struct symbol path (defaults to llzk.main)</div>
@@ -745,7 +768,7 @@ Options</h5>
 <p><em><em>This pass should be run after <span class="tt">llzk-flatten</span> to ensure structs do not have template parameters because structs with template parameters cannot (currently) be inlined. Inlining is also not (currently) supported for subcomponent structs stored in an array-type member.</em></em></p>
 <p><em><em>This pass also assumes that all subcomponents that are created by calling a struct "@compute" function are ultimately written to exactly one member within the current struct.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-16"></a>
+<h5 class="doxsection"><a class="anchor" id="options-17"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><div class="fragment"><div class="line">-max-merge-complexity : Maximum allowed constraint+multiplications in merged @constrain functions</div>
@@ -758,7 +781,7 @@ Options</h5>
 <p><em><em><em>Rewrite constraints to be compatible with PCL constraints used by Picus</em></em></em></p>
 <p><em><em>Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect. This pass currently expects the flattening and inlining passes to be run prior to its use.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-17"></a>
+<h5 class="doxsection"><a class="anchor" id="options-18"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><div class="fragment"><div class="line">-mode : Lowering mode (full or stubbed)</div>
@@ -836,7 +859,7 @@ Options</h5>
 <p></em></em></p>
 <p><em><em>POD scalarization precedes array scalarization because it can split <span class="tt">pod.type</span> array elements into parallel arrays. The pipeline defaults flattening cleanup to <span class="tt">main-as-root</span>; using another cleanup mode is not recommended because parameterized templates may survive flattening and cause <span class="tt">-llzk-inline-structs</span> to fail.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-18"></a>
+<h5 class="doxsection"><a class="anchor" id="options-19"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><ul>
@@ -867,7 +890,7 @@ Options</h5>
 <p></em></em></p>
 <p><em><em>The nested struct-inlining stage uses <span class="tt">main-as-root</span> cleanup by default for the same reason as <span class="tt">-llzk-full-struct-inlining</span>.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-19"></a>
+<h5 class="doxsection"><a class="anchor" id="options-20"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><ul>
@@ -887,7 +910,21 @@ Options</h5>
 <li>MLIR's <span class="tt">-cse</span></li>
 </ol>
 <p></em></em></p>
-<p><em><em>The polynomial-lowering stage prepares flattened, degree-two constraints for R1CS conversion. CSE then removes redundant <span class="tt">r1cs.to_linear</span> operations.  </em></em></p>
+<p><em><em>The polynomial-lowering stage prepares flattened, degree-two constraints for R1CS conversion. CSE then removes redundant <span class="tt">r1cs.to_linear</span> operations.</em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-constraint-flattening"></a>
+<em><em><span class="tt">-llzk-constraint-flattening</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Monomorphize templates and expand main constrain while retaining component storage.</em></em></em></p>
+<p><em><em>Runs these passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
+<li><span class="tt">-llzk-monomorphize-templates</span></li>
+<li><span class="tt">-llzk-expose-child-members</span></li>
+<li><span class="tt">-llzk-flatten-constraints</span></li>
+</ol>
+<p></em></em></p>
+<p><em><em>Inline includes and lower non-native constraint arithmetic before this pipeline. Frontend <span class="tt">scf.execute_region</span> wrappers currently require canonicalization before monomorphization. Control flow and all array indices must resolve statically; aggregate function inputs are read-only. The pass expands concrete constrain bodies and eliminates local aggregate storage while retaining the original component layout and ordinary scalar arithmetic. Family handles retain their rolled types, with concrete member read types validated against the selected specialization and exposed template declarations. Consumers must support these reads through rolled handles; <span class="tt">-llzk-array-to-scalar</span> currently does not.</em></em></p>
+<p><em><em>Only scalar felt equality constraints are supported. Array equality, <span class="tt">constrain.in</span>, live non-signal storage reads, recursion, and undefined or multi-block callees are rejected. See <span class="tt">-llzk-flatten-constraints</span> for the binding model, diagnostics, and expansion limits.  </em></em></p>
 <p><em><em></em></em></p>
 <h1 class="doxsection"><a class="anchor" id="llzk-translate"></a>
 <em><em>llzk-translate</em></em></h1>

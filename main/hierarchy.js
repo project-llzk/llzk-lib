@@ -27,6 +27,7 @@ var hierarchy =
       [ "llzk::IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", null ],
       [ "llzk::SourceRefLattice", "classllzk_1_1SourceRefLattice.html", null ]
     ] ],
+    [ "llzk::polymorphic::detail::AccessPath", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html", null ],
     [ "llzk::felt::detail::AddFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1AddFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::AddFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1AddFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::AddFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1AddFeltOpGenericAdaptor.html", [
@@ -303,9 +304,13 @@ var hierarchy =
     ] ],
     [ "llzk::verif::detail::ConditionOpInterfaceInterfaceTraits", "structllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::ConstantCapture", "structllzk_1_1ConstantCapture.html", null ],
+    [ "llzk::polymorphic::detail::ConstraintBindings", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings.html", null ],
     [ "llzk::ConstraintDependencyGraph", "classllzk_1_1ConstraintDependencyGraph.html", null ],
     [ "llzk::ConstraintDependencyGraphPrinterPassOptions", "structllzk_1_1ConstraintDependencyGraphPrinterPassOptions.html", null ],
+    [ "llzk::polymorphic::ConstraintFlatteningPassOptions", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html", null ],
     [ "llzk::constrain::detail::ConstraintOpInterfaceInterfaceTraits", "structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::polymorphic::detail::ConstraintScalarFacts", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html", null ],
+    [ "llzk::polymorphic::detail::ConstraintStorage", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html", null ],
     [ "llzk::polymorphic::detail::ConstReadOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html", [
       [ "llzk::polymorphic::ConstReadOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", null ],
       [ "llzk::polymorphic::ConstReadOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", [
@@ -830,6 +835,7 @@ var hierarchy =
       [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", null ]
     ] ],
     [ "mlir::OperationPass", null, [
+      [ "llzk::polymorphic::impl::ConstraintFlatteningPassBase< PassImpl >", "classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase.html", null ],
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
       [ "llzk::array::impl::StraightLineStaticArrayPromotionPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1StraightLineStaticArrayPromotionPassBase.html", null ],
       [ "llzk::boolean::impl::LowerBoolQuantifiersPassBase< DerivedT >", "classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html", null ],
@@ -856,6 +862,7 @@ var hierarchy =
       [ "llzk::impl::WhileToForPassBase< DerivedT >", "classllzk_1_1impl_1_1WhileToForPassBase.html", null ],
       [ "llzk::include::impl::InlineIncludesPassBase< DerivedT >", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html", null ],
       [ "llzk::pod::impl::PodToScalarPassBase< DerivedT >", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html", null ],
+      [ "llzk::polymorphic::impl::ConstraintFlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase.html", null ],
       [ "llzk::polymorphic::impl::EmptyTemplateRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", null ],
       [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ],
       [ "llzk::polymorphic::impl::TemplateMonomorphizationPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html", null ],
@@ -1056,6 +1063,7 @@ var hierarchy =
       ] ],
       [ "llzk::verif::StepYieldOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::polymorphic::detail::StorageDescription", "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html", null ],
     [ "llzk::ram::detail::StoreOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1StoreOpGenericAdaptorBase.html", [
       [ "llzk::ram::StoreOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", null ],
       [ "llzk::ram::StoreOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", [

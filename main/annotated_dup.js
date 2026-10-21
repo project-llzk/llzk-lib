@@ -391,14 +391,19 @@ var annotated_dup =
       ] ],
       [ "polymorphic", "namespacellzk_1_1polymorphic.html", [
         [ "detail", "namespacellzk_1_1polymorphic_1_1detail.html", [
+          [ "AccessPath", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath" ],
           [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
           [ "CleanupBase", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase" ],
+          [ "ConstraintBindings", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings" ],
+          [ "ConstraintScalarFacts", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts" ],
+          [ "ConstraintStorage", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage" ],
           [ "ConstReadOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase" ],
           [ "EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback" ],
           [ "FromEraseSet", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet" ],
           [ "InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout" ],
           [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
           [ "RolledCallTargets", "structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets.html", "structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets" ],
+          [ "StorageDescription", "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html", "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription" ],
           [ "StructSpecializationDiscovery", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery" ],
           [ "StructSpecializationRequest", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest" ],
           [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
@@ -412,6 +417,7 @@ var annotated_dup =
           [ "YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase" ]
         ] ],
         [ "impl", "namespacellzk_1_1polymorphic_1_1impl.html", [
+          [ "ConstraintFlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase" ],
           [ "EmptyTemplateRemovalPassBase", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase" ],
           [ "FlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase" ],
           [ "TemplateMonomorphizationPassBase", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase" ],
@@ -421,6 +427,7 @@ var annotated_dup =
         [ "ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", "classllzk_1_1polymorphic_1_1ApplyMapOp" ],
         [ "ApplyMapOpAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor" ],
         [ "ApplyMapOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor" ],
+        [ "ConstraintFlatteningPassOptions", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions" ],
         [ "ConstReadOp", "classllzk_1_1polymorphic_1_1ConstReadOp.html", "classllzk_1_1polymorphic_1_1ConstReadOp" ],
         [ "ConstReadOpAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpAdaptor" ],
         [ "ConstReadOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor" ],

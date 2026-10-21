@@ -206,6 +206,8 @@ var namespacellzk =
     [ "boolToFelt", "namespacellzk.html#a9161e4d7f33d7b28aea3635931a17570", null ],
     [ "boolXor", "namespacellzk.html#a9a5d035608b9efe5cccc5330a8f76c4c", null ],
     [ "boolXor", "namespacellzk.html#a536563485d7849982f0a5d6949cf8a4f", null ],
+    [ "buildConstraintFlatteningPipeline", "namespacellzk.html#aca7f73663be38b339bab03e1cb21a83a", null ],
+    [ "buildConstraintFlatteningPipeline", "namespacellzk.html#aa418aa873f7177afbe6b400293a8f052", null ],
     [ "buildFullInliningPipeline", "namespacellzk.html#aa95d88babf9e93912e0a3c7439c6e43b", null ],
     [ "buildFullInliningPipeline", "namespacellzk.html#af5f78e4799250d3737eddc75ea6b61d9", null ],
     [ "buildFullPolyLoweringPipeline", "namespacellzk.html#a55634b55f8fa13acd8346743d7ba9728", null ],

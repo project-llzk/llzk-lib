@@ -5,6 +5,7 @@ var LLZKTransformationPassPipelines_8h =
     [ "llzk::FullStructInliningOptions", "structllzk_1_1FullStructInliningOptions.html", "structllzk_1_1FullStructInliningOptions" ],
     [ "llzk::FullPolyLoweringConfig", "structllzk_1_1FullPolyLoweringConfig.html", "structllzk_1_1FullPolyLoweringConfig" ],
     [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", "structllzk_1_1FullPolyLoweringOptions" ],
+    [ "llzk::buildConstraintFlatteningPipeline", "namespacellzk.html#aca7f73663be38b339bab03e1cb21a83a", null ],
     [ "llzk::buildFullInliningPipeline", "namespacellzk.html#aa95d88babf9e93912e0a3c7439c6e43b", null ],
     [ "llzk::buildFullPolyLoweringPipeline", "namespacellzk.html#a55634b55f8fa13acd8346743d7ba9728", null ],
     [ "llzk::buildFullStructInliningPipeline", "namespacellzk.html#af64bf6226bffcb86733347072c5255e9", null ],

@@ -1,13 +1,18 @@
 var namespacellzk_1_1polymorphic_1_1detail =
 [
+    [ "AccessPath", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath" ],
     [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
     [ "CleanupBase", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase" ],
+    [ "ConstraintBindings", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings" ],
+    [ "ConstraintScalarFacts", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts" ],
+    [ "ConstraintStorage", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage" ],
     [ "ConstReadOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase" ],
     [ "EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback" ],
     [ "FromEraseSet", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet" ],
     [ "InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout" ],
     [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
     [ "RolledCallTargets", "structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets.html", "structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets" ],
+    [ "StorageDescription", "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html", "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription" ],
     [ "StructSpecializationDiscovery", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html", "classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery" ],
     [ "StructSpecializationRequest", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html", "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest" ],
     [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
@@ -19,10 +24,13 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "TypeVarTypeStorage", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage" ],
     [ "UnifiableCastOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase" ],
     [ "YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase" ],
+    [ "BoundValue", "namespacellzk_1_1polymorphic_1_1detail.html#a485c27e93beab672e7f6f5067efe0ea4", null ],
+    [ "Environment", "namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0", null ],
     [ "buildInstantiationLayout", "namespacellzk_1_1polymorphic_1_1detail.html#a5ffc185c7897fb342829c777267f42d1", null ],
     [ "buildInstantiationLayout", "namespacellzk_1_1polymorphic_1_1detail.html#aed0c25bf5a5e332d2f6ff0efa14bb1a2", null ],
     [ "buildOpaqueInstantiationName", "namespacellzk_1_1polymorphic_1_1detail.html#aa2c080b1b59715494eafe735b1081aec", null ],
     [ "buildOpaqueInstantiationName", "namespacellzk_1_1polymorphic_1_1detail.html#ade671d44eee1680030eb0f2324060457", null ],
+    [ "constraintError", "namespacellzk_1_1polymorphic_1_1detail.html#a391bf710898e11b1491070e91740eb63", null ],
     [ "convertCalleesInPlace", "namespacellzk_1_1polymorphic_1_1detail.html#a61f49a0d605e0a32907c033869c9d26c", null ],
     [ "convertCalleesInPlace", "namespacellzk_1_1polymorphic_1_1detail.html#acef0db0f683b8b501d7b6afd3ff47cc3", null ],
     [ "evaluateTemplateExprs", "namespacellzk_1_1polymorphic_1_1detail.html#ac2e791f15775aea6b58ee53d32df9d6c", null ],
@@ -46,5 +54,6 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "substituteFunctionBody", "namespacellzk_1_1polymorphic_1_1detail.html#a87a1ef6b9b3d15a0703954fd3df9d27e", null ],
     [ "substituteFunctionBody", "namespacellzk_1_1polymorphic_1_1detail.html#ad8b7265ed0aa29bb7287f66d56a34da7", null ],
     [ "substituteStructBody", "namespacellzk_1_1polymorphic_1_1detail.html#ab54324a7ce9d114a1a85ab74c453174e", null ],
-    [ "substituteStructBody", "namespacellzk_1_1polymorphic_1_1detail.html#a65ec5c47d8e8b96d6b01b0e12575af54", null ]
+    [ "substituteStructBody", "namespacellzk_1_1polymorphic_1_1detail.html#a65ec5c47d8e8b96d6b01b0e12575af54", null ],
+    [ "CONSTRAINT_DIAGNOSTIC_PREFIX", "namespacellzk_1_1polymorphic_1_1detail.html#a65ca84a437e6fea891384c2b3a7e9a7b", null ]
 ];

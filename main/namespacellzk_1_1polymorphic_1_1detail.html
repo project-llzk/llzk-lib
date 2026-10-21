@@ -129,7 +129,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('namespacellzk_
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">llzk::polymorphic::detail Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -139,9 +141,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('namespacellzk_
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:AccessPath" id="r_AccessPath"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A concrete subtree of one execution's storage.  <a href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html#details">More...</a><br /></td></tr>
 <tr class="memitem:ApplyMapOpGenericAdaptorBase" id="r_ApplyMapOpGenericAdaptorBase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html">ApplyMapOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:CleanupBase" id="r_CleanupBase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html">CleanupBase</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shared state for post-instantiation cleanup helpers.  <a href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#details">More...</a><br /></td></tr>
+<tr class="memitem:ConstraintBindings" id="r_ConstraintBindings"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings.html">ConstraintBindings</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind scalar leaves without constructing a shadow array or POD object.  <a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings.html#details">More...</a><br /></td></tr>
+<tr class="memitem:ConstraintScalarFacts" id="r_ConstraintScalarFacts"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html">ConstraintScalarFacts</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate only scalar dependencies demanded by control flow and concrete paths.  <a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#details">More...</a><br /></td></tr>
+<tr class="memitem:ConstraintStorage" id="r_ConstraintStorage"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html">ConstraintStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolve concrete components and signal provenance directly from original SSA.  <a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html#details">More...</a><br /></td></tr>
 <tr class="memitem:ConstReadOpGenericAdaptorBase" id="r_ConstReadOpGenericAdaptorBase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html">ConstReadOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:EmptyLegalityCheckCallback" id="r_EmptyLegalityCheckCallback"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html">EmptyLegalityCheckCallback</a></td></tr>
 <tr class="memitem:FromEraseSet" id="r_FromEraseSet"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html">FromEraseSet</a></td></tr>
@@ -151,6 +161,8 @@ Classes</h2></td></tr>
 <tr class="memitem:LegalityCheckCallback" id="r_LegalityCheckCallback"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">LegalityCheckCallback</a></td></tr>
 <tr class="memitem:RolledCallTargets" id="r_RolledCallTargets"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets.html">RolledCallTargets</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A rolled method call and the concrete specializations it may target.  <a href="structllzk_1_1polymorphic_1_1detail_1_1RolledCallTargets.html#details">More...</a><br /></td></tr>
+<tr class="memitem:StorageDescription" id="r_StorageDescription"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html">StorageDescription</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transient description derived from immutable storage accesses, not an environment.  <a href="structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#details">More...</a><br /></td></tr>
 <tr class="memitem:StructSpecializationDiscovery" id="r_StructSpecializationDiscovery"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html">StructSpecializationDiscovery</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine which concrete struct definitions are needed when instantiating a struct or free function with the supplied template arguments.  <a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#details">More...</a><br /></td></tr>
 <tr class="memitem:StructSpecializationRequest" id="r_StructSpecializationRequest"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html">StructSpecializationRequest</a></td></tr>
@@ -166,8 +178,16 @@ Classes</h2></td></tr>
 <tr class="memitem:UnifiableCastOpGenericAdaptorBase" id="r_UnifiableCastOpGenericAdaptorBase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html">UnifiableCastOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:YieldOpGenericAdaptorBase" id="r_YieldOpGenericAdaptorBase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html">YieldOpGenericAdaptorBase</a></td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a485c27e93beab672e7f6f5067efe0ea4" id="r_a485c27e93beab672e7f6f5067efe0ea4"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a485c27e93beab672e7f6f5067efe0ea4">BoundValue</a> = std::variant&lt;mlir::Value, <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a>&gt;</td></tr>
+<tr class="memdesc:a485c27e93beab672e7f6f5067efe0ea4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scalar expressions are SSA; aggregates are paths, never emitted allocations.  <br /></td></tr>
+<tr class="memitem:a8148e70847cad27318c1c86948e10ae0" id="r_a8148e70847cad27318c1c86948e10ae0"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a8148e70847cad27318c1c86948e10ae0">Environment</a> = llvm::DenseMap&lt;mlir::Value, <a class="el" href="#a485c27e93beab672e7f6f5067efe0ea4">BoundValue</a>&gt;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a391bf710898e11b1491070e91740eb63" id="r_a391bf710898e11b1491070e91740eb63"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a391bf710898e11b1491070e91740eb63">constraintError</a> (mlir::Operation *site, const llvm::Twine &amp;message)</td></tr>
+<tr class="memdesc:a391bf710898e11b1491070e91740eb63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emit the common diagnostic prefix for constraint expansion and storage helpers.  <br /></td></tr>
 <tr class="memitem:a5ffc185c7897fb342829c777267f42d1" id="r_a5ffc185c7897fb342829c777267f42d1"><td class="memItemLeft">FailureOr&lt; <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5ffc185c7897fb342829c777267f42d1">buildInstantiationLayout</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> parentTemplate, ArrayAttr callParams, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete)</td></tr>
 <tr class="memitem:ad3400673bd26d76f297ba9baeadc2405" id="r_ad3400673bd26d76f297ba9baeadc2405"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ad3400673bd26d76f297ba9baeadc2405">setInstantiationNamePattern</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, ArrayAttr namePattern)</td></tr>
 <tr class="memitem:ade671d44eee1680030eb0f2324060457" id="r_ade671d44eee1680030eb0f2324060457"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#ade671d44eee1680030eb0f2324060457">buildOpaqueInstantiationName</a> (StringRef baseName, ArrayRef&lt; Attribute &gt; concreteAttrs)</td></tr>
@@ -218,10 +238,50 @@ Functions</h2></td></tr>
 <tr class="memdesc:ab54324a7ce9d114a1a85ab74c453174e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Substitute bindings and self-type references in an already inserted struct clone.  <br /></td></tr>
 <tr class="memitem:ad8b7265ed0aa29bb7287f66d56a34da7" id="r_ad8b7265ed0aa29bb7287f66d56a34da7"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ad8b7265ed0aa29bb7287f66d56a34da7">substituteFunctionBody</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> clone, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;diagnostics)</td></tr>
 <tr class="memdesc:ad8b7265ed0aa29bb7287f66d56a34da7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Substitute bindings in a function clone, including constants and array accesses.  <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a65ca84a437e6fea891384c2b3a7e9a7b" id="r_a65ca84a437e6fea891384c2b3a7e9a7b"><td class="memItemLeft">constexpr llvm::StringLiteral&#160;</td><td class="memItemRight"><a class="el" href="#a65ca84a437e6fea891384c2b3a7e9a7b">CONSTRAINT_DIAGNOSTIC_PREFIX</a> = &quot;llzk-flatten-constraints: &quot;</td></tr>
+<tr class="memdesc:a65ca84a437e6fea891384c2b3a7e9a7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Identify expansion diagnostics separately from IR verifier errors.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Common interface for constant parameter-like symbol operations that can be defined within a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a></span>. </p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
+<a id="a485c27e93beab672e7f6f5067efe0ea4" name="a485c27e93beab672e7f6f5067efe0ea4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a485c27e93beab672e7f6f5067efe0ea4">&#9670;&#160;</a></span>BoundValue</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#a485c27e93beab672e7f6f5067efe0ea4">llzk::polymorphic::detail::BoundValue</a> = std::variant&lt;mlir::Value, <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a>&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Scalar expressions are SSA; aggregates are paths, never emitted allocations. </p>
+
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00035">35</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+
+</div>
+</div>
+<a id="a8148e70847cad27318c1c86948e10ae0" name="a8148e70847cad27318c1c86948e10ae0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8148e70847cad27318c1c86948e10ae0">&#9670;&#160;</a></span>Environment</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#a8148e70847cad27318c1c86948e10ae0">llzk::polymorphic::detail::Environment</a> = llvm::DenseMap&lt;mlir::Value, <a class="el" href="#a485c27e93beab672e7f6f5067efe0ea4">BoundValue</a>&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00036">36</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a5ffc185c7897fb342829c777267f42d1" name="a5ffc185c7897fb342829c777267f42d1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5ffc185c7897fb342829c777267f42d1">&#9670;&#160;</a></span>buildInstantiationLayout() <span class="overload">[1/2]</span></h2>
 
@@ -322,6 +382,39 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00160">160</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a391bf710898e11b1491070e91740eb63" name="a391bf710898e11b1491070e91740eb63"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a391bf710898e11b1491070e91740eb63">&#9670;&#160;</a></span>constraintError()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::polymorphic::detail::constraintError </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>site</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::Twine &amp;</td>          <td class="paramname"><span class="paramname"><em>message</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Emit the common diagnostic prefix for constraint expansion and storage helpers. </p>
+
+<p class="definition">Definition at line <a class="el" href="ConstraintDiagnostics_8h_source.html#l00023">23</a> of file <a class="el" href="ConstraintDiagnostics_8h_source.html">ConstraintDiagnostics.h</a>.</p>
 
 </div>
 </div>
@@ -993,6 +1086,33 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00587">587</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-var-members" id="doc-var-members"></a><h2 id="header-doc-var-members" class="groupheader">Variable Documentation</h2>
+<a id="a65ca84a437e6fea891384c2b3a7e9a7b" name="a65ca84a437e6fea891384c2b3a7e9a7b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a65ca84a437e6fea891384c2b3a7e9a7b">&#9670;&#160;</a></span>CONSTRAINT_DIAGNOSTIC_PREFIX</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::StringLiteral llzk::polymorphic::detail::CONSTRAINT_DIAGNOSTIC_PREFIX = &quot;llzk-flatten-constraints: &quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Identify expansion diagnostics separately from IR verifier errors. </p>
+
+<p class="definition">Definition at line <a class="el" href="ConstraintDiagnostics_8h_source.html#l00020">20</a> of file <a class="el" href="ConstraintDiagnostics_8h_source.html">ConstraintDiagnostics.h</a>.</p>
 
 </div>
 </div>

@@ -195,7 +195,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ac9dfdd995d5452e941a71128bbb97d89 template"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ac9dfdd995d5452e941a71128bbb97d89">verifyInStructFunctionNamed</a> (mlir::Operation *op, llvm::function_ref&lt; llvm::SmallString&lt; PrefixLen &gt;()&gt; prefix)</td></tr>
 <tr class="memdesc:ac9dfdd995d5452e941a71128bbb97d89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the given Operation is contained within a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given name that is itself contained within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>, producing an error if not.  <br /></td></tr>
 <tr class="memitem:a3293c1f0d2f285b1700ee9b82315fd4c" id="r_a3293c1f0d2f285b1700ee9b82315fd4c"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a3293c1f0d2f285b1700ee9b82315fd4c">exposeChildMembers</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> root)</td></tr>
-<tr class="memdesc:a3293c1f0d2f285b1700ee9b82315fd4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make reachable concrete child members public while preserving root's visibility.  <br /></td></tr>
+<tr class="memdesc:a3293c1f0d2f285b1700ee9b82315fd4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make reachable concrete child members and matching rolled family declarations public while preserving root's visibility and all signal annotations.  <br /></td></tr>
 <tr class="memitem:a5117f0e96f35a17027153d94bc5412d8" id="r_a5117f0e96f35a17027153d94bc5412d8"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a5117f0e96f35a17027153d94bc5412d8">registerExposeChildMembersPass</a> ()</td></tr>
 <tr class="memitem:af5179218fcd47bb8126498d13f497688" id="r_af5179218fcd47bb8126498d13f497688"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#af5179218fcd47bb8126498d13f497688">registerExposeChildMembersPassPass</a> ()</td></tr>
 <tr class="memitem:a5f901319771d25894d331aa098b7fab2" id="r_a5f901319771d25894d331aa098b7fab2"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a5f901319771d25894d331aa098b7fab2">registerInlineStructsPass</a> ()</td></tr>
@@ -370,10 +370,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Make reachable concrete child members public while preserving root's visibility. </p>
+<p>Make reachable concrete child members and matching rolled family declarations public while preserving root's visibility and all signal annotations. </p>
 <p>Root must be attached to an LLZK module, with templates monomorphized and includes inlined. Emit diagnostics on failure without changing member visibility. </p>
 
-<p class="definition">Definition at line <a class="el" href="ExposeChildMembersPass_8cpp_source.html#l00200">200</a> of file <a class="el" href="ExposeChildMembersPass_8cpp_source.html">ExposeChildMembersPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ExposeChildMembersPass_8cpp_source.html#l00227">227</a> of file <a class="el" href="ExposeChildMembersPass_8cpp_source.html">ExposeChildMembersPass.cpp</a>.</p>
 
 </div>
 </div>

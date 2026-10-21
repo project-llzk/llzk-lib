@@ -149,6 +149,7 @@ Classes</h2></td></tr>
 <tr class="memitem:ApplyMapOp" id="r_ApplyMapOp"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a></td></tr>
 <tr class="memitem:ApplyMapOpAdaptor" id="r_ApplyMapOpAdaptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor.html">ApplyMapOpAdaptor</a></td></tr>
 <tr class="memitem:ApplyMapOpGenericAdaptor" id="r_ApplyMapOpGenericAdaptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html">ApplyMapOpGenericAdaptor</a></td></tr>
+<tr class="memitem:ConstraintFlatteningPassOptions" id="r_ConstraintFlatteningPassOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a></td></tr>
 <tr class="memitem:ConstReadOp" id="r_ConstReadOp"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">ConstReadOp</a></td></tr>
 <tr class="memitem:ConstReadOpAdaptor" id="r_ConstReadOpAdaptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOpAdaptor.html">ConstReadOpAdaptor</a></td></tr>
 <tr class="memitem:ConstReadOpGenericAdaptor" id="r_ConstReadOpGenericAdaptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html">ConstReadOpGenericAdaptor</a></td></tr>
@@ -197,6 +198,8 @@ Enumerations</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:ab5469bc7217002d28ae18f0742d7f562" id="r_ab5469bc7217002d28ae18f0742d7f562"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ab5469bc7217002d28ae18f0742d7f562">isInTemplate</a> (Operation *op)</td></tr>
 <tr class="memitem:acc78f558f10c87ee61ca2699793ebbb1" id="r_acc78f558f10c87ee61ca2699793ebbb1"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#acc78f558f10c87ee61ca2699793ebbb1">verifyInTemplate</a> (Operation *op)</td></tr>
+<tr class="memitem:a49b95dc6d7ecfc230e540fbdac12d924" id="r_a49b95dc6d7ecfc230e540fbdac12d924"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a49b95dc6d7ecfc230e540fbdac12d924">createConstraintFlatteningPass</a> ()</td></tr>
+<tr class="memitem:ad0262d4689aabc32f9f74c54ba154487" id="r_ad0262d4689aabc32f9f74c54ba154487"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad0262d4689aabc32f9f74c54ba154487">createConstraintFlatteningPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a> options)</td></tr>
 <tr class="memitem:a4167d219fba917ab844dcf3b9814c544" id="r_a4167d219fba917ab844dcf3b9814c544"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4167d219fba917ab844dcf3b9814c544">createEmptyTemplateRemovalPass</a> ()</td></tr>
 <tr class="memitem:ab875e94fd92641f81305cf2406f52c7b" id="r_ab875e94fd92641f81305cf2406f52c7b"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab875e94fd92641f81305cf2406f52c7b">createFlatteningPass</a> ()</td></tr>
 <tr class="memitem:ad393f359fc8e0f9993c776221b5d31fd" id="r_ad393f359fc8e0f9993c776221b5d31fd"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad393f359fc8e0f9993c776221b5d31fd">createFlatteningPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a> options)</td></tr>
@@ -218,6 +221,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:abfc0e81b570f916984553856b44142ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true iff the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>.  <br /></td></tr>
 <tr class="memitem:ae1ebee7870d5849df2129690ed3fd0ed" id="r_ae1ebee7870d5849df2129690ed3fd0ed"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ae1ebee7870d5849df2129690ed3fd0ed">verifyInTemplate</a> (mlir::Operation *op)</td></tr>
 <tr class="memdesc:ae1ebee7870d5849df2129690ed3fd0ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">If the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>, return a success result containing that <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>.  <br /></td></tr>
+<tr class="memitem:a0a69ba2f112b362cc53cff90ed0a1ab4" id="r_a0a69ba2f112b362cc53cff90ed0a1ab4"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a0a69ba2f112b362cc53cff90ed0a1ab4">registerConstraintFlatteningPass</a> ()</td></tr>
+<tr class="memitem:a030df136ff00cac12bc0031501cad43d" id="r_a030df136ff00cac12bc0031501cad43d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a030df136ff00cac12bc0031501cad43d">registerConstraintFlatteningPassPass</a> ()</td></tr>
 <tr class="memitem:a701cdc0a80b6262758b8c7863da288e4" id="r_a701cdc0a80b6262758b8c7863da288e4"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a701cdc0a80b6262758b8c7863da288e4">registerEmptyTemplateRemovalPass</a> ()</td></tr>
 <tr class="memitem:af3e6bd4fd9d374d353819b1906c21a91" id="r_af3e6bd4fd9d374d353819b1906c21a91"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#af3e6bd4fd9d374d353819b1906c21a91">registerEmptyTemplateRemovalPassPass</a> ()</td></tr>
 <tr class="memitem:a04ac74004f60ea0b82cce0b453d838f8" id="r_a04ac74004f60ea0b82cce0b453d838f8"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a04ac74004f60ea0b82cce0b453d838f8">registerFlatteningPass</a> ()</td></tr>
@@ -229,6 +234,8 @@ Functions</h2></td></tr>
 <tr class="memitem:ad65d2782d8402b08fab510fc1b60b844" id="r_ad65d2782d8402b08fab510fc1b60b844"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ad65d2782d8402b08fab510fc1b60b844">registerWildcardArraySpecializationPass</a> ()</td></tr>
 <tr class="memitem:afef387130f95becad67e7e438d377142" id="r_afef387130f95becad67e7e438d377142"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#afef387130f95becad67e7e438d377142">registerWildcardArraySpecializationPassPass</a> ()</td></tr>
 <tr class="memitem:ac756baa8d3f96f499ebf79ef4c91d018" id="r_ac756baa8d3f96f499ebf79ef4c91d018"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac756baa8d3f96f499ebf79ef4c91d018">registerTransformationPasses</a> ()</td></tr>
+<tr class="memitem:a5e3b7f67fa2f2d8234665c4a71fa5862" id="r_a5e3b7f67fa2f2d8234665c4a71fa5862"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a5e3b7f67fa2f2d8234665c4a71fa5862">hasNextStaticIteration</a> (int64_t current, int64_t upper, int64_t step)</td></tr>
+<tr class="memdesc:a5e3b7f67fa2f2d8234665c4a71fa5862"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether another signed iteration exists after current, for current &lt; upper and a positive step.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -278,6 +285,44 @@ Variables</h2></td></tr>
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a49b95dc6d7ecfc230e540fbdac12d924" name="a49b95dc6d7ecfc230e540fbdac12d924"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49b95dc6d7ecfc230e540fbdac12d924">&#9670;&#160;</a></span>createConstraintFlatteningPass() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::polymorphic::createConstraintFlatteningPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00112">112</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad0262d4689aabc32f9f74c54ba154487" name="ad0262d4689aabc32f9f74c54ba154487"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0262d4689aabc32f9f74c54ba154487">&#9670;&#160;</a></span>createConstraintFlatteningPass() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::polymorphic::createConstraintFlatteningPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00116">116</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a4167d219fba917ab844dcf3b9814c544" name="a4167d219fba917ab844dcf3b9814c544"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4167d219fba917ab844dcf3b9814c544">&#9670;&#160;</a></span>createEmptyTemplateRemovalPass()</h2>
 
@@ -293,7 +338,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html#l00095">95</a> of file <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html">EmptyTemplateRemovalPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html#l00203">203</a> of file <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html">EmptyTemplateRemovalPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -312,7 +357,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00217">217</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00325">325</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -331,7 +376,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00221">221</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00329">329</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -350,7 +395,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateMonomorphization_8cpp_source.html#l00327">327</a> of file <a class="el" href="TemplateMonomorphization_8cpp_source.html">TemplateMonomorphization.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateMonomorphization_8cpp_source.html#l00435">435</a> of file <a class="el" href="TemplateMonomorphization_8cpp_source.html">TemplateMonomorphization.cpp</a>.</p>
 
 </div>
 </div>
@@ -369,7 +414,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateMonomorphization_8cpp_source.html#l00331">331</a> of file <a class="el" href="TemplateMonomorphization_8cpp_source.html">TemplateMonomorphization.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateMonomorphization_8cpp_source.html#l00439">439</a> of file <a class="el" href="TemplateMonomorphization_8cpp_source.html">TemplateMonomorphization.cpp</a>.</p>
 
 </div>
 </div>
@@ -388,7 +433,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeVarInferencePass_8cpp_source.html#l00418">418</a> of file <a class="el" href="TypeVarInferencePass_8cpp_source.html">TypeVarInferencePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeVarInferencePass_8cpp_source.html#l00526">526</a> of file <a class="el" href="TypeVarInferencePass_8cpp_source.html">TypeVarInferencePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -407,7 +452,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00521">521</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00629">629</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -426,7 +471,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00525">525</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00633">633</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -454,6 +499,45 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00024">24</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a5e3b7f67fa2f2d8234665c4a71fa5862" name="a5e3b7f67fa2f2d8234665c4a71fa5862"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e3b7f67fa2f2d8234665c4a71fa5862">&#9670;&#160;</a></span>hasNextStaticIteration()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::polymorphic::hasNextStaticIteration </td>
+          <td>(</td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>current</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>upper</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>step</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Whether another signed iteration exists after current, for current &lt; upper and a positive step. </p>
+<p>Unsigned subtraction represents the full mathematical distance even when the signed difference would overflow. If another iteration exists, current + step is strictly below upper and cannot overflow. </p>
+
+<p class="definition">Definition at line <a class="el" href="StaticLoop_8h_source.html#l00019">19</a> of file <a class="el" href="StaticLoop_8h_source.html">StaticLoop.h</a>.</p>
 
 </div>
 </div>
@@ -495,6 +579,60 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a0a69ba2f112b362cc53cff90ed0a1ab4" name="a0a69ba2f112b362cc53cff90ed0a1ab4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0a69ba2f112b362cc53cff90ed0a1ab4">&#9670;&#160;</a></span>registerConstraintFlatteningPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::polymorphic::registerConstraintFlatteningPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00653">653</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a030df136ff00cac12bc0031501cad43d" name="a030df136ff00cac12bc0031501cad43d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a030df136ff00cac12bc0031501cad43d">&#9670;&#160;</a></span>registerConstraintFlatteningPassPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::polymorphic::registerConstraintFlatteningPassPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00660">660</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
 <a id="a701cdc0a80b6262758b8c7863da288e4" name="a701cdc0a80b6262758b8c7863da288e4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a701cdc0a80b6262758b8c7863da288e4">&#9670;&#160;</a></span>registerEmptyTemplateRemovalPass()</h2>
 
@@ -518,7 +656,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00544">544</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00674">674</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -545,7 +683,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00551">551</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00681">681</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -572,7 +710,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00565">565</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00695">695</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -599,7 +737,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00572">572</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00702">702</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -626,7 +764,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00586">586</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00716">716</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -653,7 +791,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00593">593</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00723">723</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -680,7 +818,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00649">649</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00779">779</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -707,7 +845,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00607">607</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00737">737</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -734,7 +872,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00614">614</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00744">744</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -761,7 +899,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00628">628</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00758">758</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -788,7 +926,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00635">635</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00765">765</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
