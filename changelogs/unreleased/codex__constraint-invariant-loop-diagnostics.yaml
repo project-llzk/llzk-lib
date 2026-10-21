@@ -1,0 +1,2 @@
+fixed:
+  - Diagnose while loops whose conditions are provably always true without loop-carried bindings, preventing unbounded specialization discovery and constraint expansion.

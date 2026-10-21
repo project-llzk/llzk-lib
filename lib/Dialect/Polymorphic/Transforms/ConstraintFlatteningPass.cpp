@@ -570,6 +570,9 @@ class ConstraintElaborator {
 
   /// Recheck the scalar condition and carry SSA yields between iterations.
   LogicalResult whileLoop(scf::WhileOp op, Environment &frame) {
+    if (isInvariantTrueCondition(op.getConditionOp().getCondition())) {
+      return constraintError(op, "cannot execute an always-true while loop");
+    }
     SmallVector<BoundValue> carried;
     for (Value value : op.getInits()) {
       carried.push_back(frame.lookup(value));

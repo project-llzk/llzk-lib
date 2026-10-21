@@ -9,8 +9,8 @@
 
 #include "StructSpecializationDiscovery.h"
 
+#include "ConstraintScalarFacts.h"
 #include "DiscoveryStorage.h"
-#include "ScalarEvaluation.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -490,6 +490,9 @@ class DiscoveryRun {
   /// conditions collect iteration-independent requests without inferring results.
   LogicalResult
   evaluateWhile(scf::WhileOp loop, const Environment &env, SmallVector<DiscoveryValue> &results) {
+    if (isInvariantTrueCondition(loop.getConditionOp().getCondition())) {
+      return loop.emitError("specialization discovery cannot execute an always-true while loop");
+    }
     SmallVector<DiscoveryValue> carried;
     for (Value initial : loop.getInits()) {
       carried.push_back(env.lookup(initial));
