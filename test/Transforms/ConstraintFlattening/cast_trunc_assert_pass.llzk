@@ -2,7 +2,7 @@
 // RUN: llzk-opt %s --canonicalize --llzk-flatten-constraints | FileCheck %s --match-full-lines
 
 // Truncation keeps the low three bits of -1, then reduces 7 modulo 7 to zero.
-// The following assert cast must select y from the first array element.
+// The following assert cast must select x from the first array element.
 module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     function.def @compute(%x: !felt.type<"small">, %y: !felt.type<"small">) -> !struct.type<@Main> {
