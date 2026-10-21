@@ -57,10 +57,12 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [Symbol, IsolatedFromAbove,
   }];
 }
 
-def R1CS_SignalDefOp : R1CS_Op<"def", [Pure]> {
+def R1CS_SignalDefOp : R1CS_Op<"def", [MemoryEffects<[MemAlloc]>]> {
   let summary = "Define a signal with label and optional public visibility";
   let description = [{
-    The `def` op creates a new signal associated with a numeric label.
+    The `def` op allocates a distinct signal associated with a numeric label.
+    Unused signals remain part of the circuit interface and wire layout, so
+    their declarations must survive common subexpression elimination.
 
     If the optional `public` keyword is present, the signal is treated as a public output
     of the circuit. Otherwise, it is considered private/internal.
