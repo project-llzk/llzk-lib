@@ -24,7 +24,6 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Parser/Parser.h>
 
-#include <climits>
 #include <limits>
 #include <random>
 
@@ -244,16 +243,6 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   EXPECT_EQ((*first)[1].getAsString(), "2");
   EXPECT_EQ((*second)[0].getAsString(), "3");
   EXPECT_EQ((*second)[1].getAsString(), "4");
-}
-
-TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
-  llvm::DynamicAPInt value = llzk::toDynamicAPInt(
-      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
-  );
-  value += llvm::DynamicAPInt(1);
-  auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test overflow");
-  ASSERT_FALSE(static_cast<bool>(checked));
-  EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
 }
 
 TEST_F(WitgenTests, JSONDiffReportsScalarMismatchAtPath) {

@@ -70,22 +70,22 @@ void BaseMode::populateStep1ConversionTarget(ConversionTarget &target) {
   target.addDynamicallyLegalDialect<
       // clang-format off
       LLZKDialect,
-      array::ArrayDialect, 
-      boolean::BoolDialect, 
-      component::StructDialect, 
-      constrain::ConstrainDialect, 
-      function::FunctionDialect, 
+      array::ArrayDialect,
+      boolean::BoolDialect,
+      component::StructDialect,
+      constrain::ConstrainDialect,
+      function::FunctionDialect,
       global::GlobalDialect,
-      include::IncludeDialect, 
-      pod::PODDialect, 
-      polymorphic::PolymorphicDialect, 
+      include::IncludeDialect,
+      pod::PODDialect,
+      polymorphic::PolymorphicDialect,
       ram::RAMDialect,
       scf::SCFDialect,
       mlir::smt::SMTDialect,
-      string::StringDialect, 
-      verif::VerifDialect, 
+      string::StringDialect,
+      verif::VerifDialect,
       arith::ArithDialect,
-      cast::CastDialect, 
+      cast::CastDialect,
       felt::FeltDialect
       // clang-format on
       >([this](Operation *op) { return isStep1LegalOp(op); });

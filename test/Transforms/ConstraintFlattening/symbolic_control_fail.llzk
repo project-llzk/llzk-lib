@@ -1,0 +1,60 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+// Reject a symbolic branch condition.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @condition : i1
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %condition = struct.readm %self[@condition] : !struct.type<@Main>, i1
+      // expected-error @+1 {{symbolic i1 condition requires an explicit field selector representation}}
+      scf.if %condition {
+        constrain.eq %x, %x : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject a symbolic loop bound.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @bound : index
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %bound = struct.readm %self[@bound] : !struct.type<@Main>, index
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      // expected-error @+1 {{requires signed static for bounds and a positive step}}
+      scf.for %i = %zero to %bound step %one {}
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject a symbolic felt-to-index conversion used as an array coordinate.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) attributes {function.allow_non_native_field_ops} {
+      %index = cast.toindex %x : !felt.type
+      %local = array.new %x, %x : !array.type<2 x !felt.type>
+      // expected-error @+1 {{array path requires compile-time indices}}
+      %read = array.read %local[%index] : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}

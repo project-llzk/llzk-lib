@@ -1,0 +1,30 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+// Both 8 and -6 represent 1 modulo 7, so both reads select x.
+module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"small">, %y: !felt.type<"small">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"small">, %y: !felt.type<"small">) attributes {function.allow_non_native_field_ops} {
+      %values = array.new %y, %x : !array.type<2 x !felt.type<"small">>
+      %large = felt.const 8 : <"small">
+      %negative = felt.const -6 : <"small">
+      %i = cast.toindex %large : !felt.type<"small">
+      %j = cast.toindex %negative : !felt.type<"small">
+      %a = array.read %values[%i] : !array.type<2 x !felt.type<"small">>, !felt.type<"small">
+      %b = array.read %values[%j] : !array.type<2 x !felt.type<"small">>, !felt.type<"small">
+      constrain.eq %a, %x : !felt.type<"small">, !felt.type<"small">
+      constrain.eq %b, %x : !felt.type<"small">, !felt.type<"small">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"small">, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"small">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"small">, !felt.type<"small">
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"small">, !felt.type<"small">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
