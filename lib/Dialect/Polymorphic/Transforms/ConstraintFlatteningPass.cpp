@@ -19,6 +19,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Util/StaticLoop.h"
@@ -681,6 +682,14 @@ class ConstraintElaborator {
     })
         .Case<array::CreateArrayOp>([this, &frame](auto allocation) {
       return arrayNew(allocation, frame);
+    })
+        .Case<NonDetOp>([this, &frame](auto allocation) {
+      if (!aggregate(allocation.getType())) {
+        return emit(*allocation, frame);
+      }
+      // Uninitialized aggregate leaves may be overwritten but never read.
+      frame[allocation.getResult()] = bindings.create(allocation.getType());
+      return success();
     })
         .Case<pod::NewPodOp>([this, &frame](auto allocation) { return podNew(allocation, frame); })
         .Case<array::ReadArrayOp, array::ExtractArrayOp>([this, &frame](auto read) {
