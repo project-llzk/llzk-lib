@@ -1,0 +1,154 @@
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+
+// Struct substitution must recurse through POD records and array elements,
+// including template expressions, empty PODs and the renamed self type.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[2]>>, test.scenario = "struct_pods"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %sum = arith.addi %n, %one : index
+      poly.yield %sum : index
+    }
+    struct.def @Parent {
+      struct.member @state : !pod.type<[@first: !struct.type<@Child::@Child<[@N]>>, @nested: !pod.type<[@items: !array.type<@N x !pod.type<[@next: !struct.type<@Child::@Child<[@Next]>>]>>, @empty: !pod.type<[]>]>]>
+      function.def @compute() -> !struct.type<@Parent::@Parent<[@N]>> {
+        %state = pod.new : !pod.type<[@first: !struct.type<@Child::@Child<[@N]>>, @nested: !pod.type<[@items: !array.type<@N x !pod.type<[@next: !struct.type<@Child::@Child<[@Next]>>]>>, @empty: !pod.type<[]>]>]>
+        %self = struct.new : <@Parent::@Parent<[@N]>>
+        struct.writem %self[@state] = %state : <@Parent::@Parent<[@N]>>, !pod.type<[@first: !struct.type<@Child::@Child<[@N]>>, @nested: !pod.type<[@items: !array.type<@N x !pod.type<[@next: !struct.type<@Child::@Child<[@Next]>>]>>, @empty: !pod.type<[]>]>]>
+        %owner = pod.new { @self = %self } : <[@self: !struct.type<@Parent::@Parent<[@N]>>]>
+        %same = pod.read %owner[@self] : <[@self: !struct.type<@Parent::@Parent<[@N]>>]>, !struct.type<@Parent::@Parent<[@N]>>
+        function.return %same : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Parent__spec_0>, test.scenario = "struct_pods"} {
+// CHECK:    struct.def @Parent__spec_0 {
+// CHECK-NEXT:      struct.member @state : !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = pod.new : <[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        struct.writem %[[VAL_11]][@state] = %[[VAL_10]] : <@Parent__spec_0>, !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = pod.new { @self = %[[VAL_11]] }  : <[@self: !struct.type<@Parent__spec_0>]>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_12]][@self] : <[@self: !struct.type<@Parent__spec_0>]>, !struct.type<@Parent__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_13]] : !struct.type<@Parent__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_15]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_2 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_2>
+// CHECK-NEXT:        function.return %[[VAL_17]] : !struct.type<@Child__spec_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Child::@Child, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:  }
+
+// -----
+
+
+
+// Free-function signatures and bodies use the other template type converter.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "function_pods"} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %self = struct.new : <@Child::@Child<[@N]>>
+        function.return %self : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Helpers {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %sum = arith.addi %n, %one : index
+      poly.yield %sum : index
+    }
+    function.def @make() -> !pod.type<[@first: !struct.type<@Child::@Child<[@N]>>, @nested: !pod.type<[@items: !array.type<@N x !pod.type<[@next: !struct.type<@Child::@Child<[@Next]>>]>>, @empty: !pod.type<[]>]>]> {
+      %state = pod.new : !pod.type<[@first: !struct.type<@Child::@Child<[@N]>>, @nested: !pod.type<[@items: !array.type<@N x !pod.type<[@next: !struct.type<@Child::@Child<[@Next]>>]>>, @empty: !pod.type<[]>]>]>
+      function.return %state : !pod.type<[@first: !struct.type<@Child::@Child<[@N]>>, @nested: !pod.type<[@items: !array.type<@N x !pod.type<[@next: !struct.type<@Child::@Child<[@Next]>>]>>, @empty: !pod.type<[]>]>]>
+    }
+  }
+  struct.def @Main {
+    struct.member @state : !pod.type<[@first: !struct.type<@Child::@Child<[2]>>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child::@Child<[3]>>]>>, @empty: !pod.type<[]>]>]>
+    function.def @compute() -> !struct.type<@Main> {
+      %state = function.call @Helpers::@make<[2]>() : () -> !pod.type<[@first: !struct.type<@Child::@Child<[2]>>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child::@Child<[3]>>]>>, @empty: !pod.type<[]>]>]>
+      %self = struct.new : <@Main>
+      struct.writem %self[@state] = %state : <@Main>, !pod.type<[@first: !struct.type<@Child::@Child<[2]>>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child::@Child<[3]>>]>>, @empty: !pod.type<[]>]>]>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "function_pods"} {
+// CHECK:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @state : !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @make__spec_0() : () -> !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@state] = %[[VAL_9]] : <@Main__spec_0>, !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [], poly.origin = @Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_12]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_2 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_2>
+// CHECK-NEXT:        function.return %[[VAL_14]] : !struct.type<@Child__spec_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Child::@Child, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:    function.def @make__spec_0() -> !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]> attributes {poly.arguments = [2 : index], poly.origin = @Helpers::@make} {
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = pod.new : <[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:      function.return %[[VAL_16]] : !pod.type<[@first: !struct.type<@Child__spec_1>, @nested: !pod.type<[@items: !array.type<2 x !pod.type<[@next: !struct.type<@Child__spec_2>]>>, @empty: !pod.type<[]>]>]>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
