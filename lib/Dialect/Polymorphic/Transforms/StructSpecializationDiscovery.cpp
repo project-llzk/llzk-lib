@@ -475,7 +475,8 @@ class DiscoveryRun {
   }
 
   /// Recheck the condition after each body yield and carry the condition's
-  /// forwarded values either into the body or out as the loop results.
+  /// forwarded values either into the body or out as the loop results. Unknown
+  /// conditions collect iteration-independent requests without inferring results.
   LogicalResult
   evaluateWhile(scf::WhileOp loop, const Environment &env, SmallVector<Attribute> &results) {
     SmallVector<Attribute> carried;
@@ -494,7 +495,24 @@ class DiscoveryRun {
       }
       auto known = dyn_cast_or_null<IntegerAttr>(condition);
       if (!known || !known.getType().isInteger(1)) {
-        return loop.emitError("specialization discovery requires a known while condition");
+        // Runtime loops need no execution when specialization requests are
+        // independent of their carried values. Visit both regions with unknown
+        // arguments; dependent affine requests still fail in discoverCallTypes.
+        for (Region *region : {&loop.getBefore(), &loop.getAfter()}) {
+          auto local = env;
+          for (BlockArgument argument : region->front().getArguments()) {
+            local[argument] = {};
+          }
+          SmallVector<Attribute> ignored;
+          Attribute ignoredCondition;
+          if (failed(
+                  evaluateBlock(region->front(), std::move(local), ignored, &ignoredCondition)
+              )) {
+            return failure();
+          }
+        }
+        results.assign(loop.getNumResults(), Attribute());
+        return success();
       }
       if (known.getValue().isZero()) {
         results = std::move(forwarded);
