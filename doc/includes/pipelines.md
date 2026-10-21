@@ -109,15 +109,18 @@ _Monomorphize templates and expand main constrain while retaining component stor
 
 Runs these passes in order:
 
-1. `-llzk-monomorphize-templates`
-2. `-llzk-expose-child-members`
-3. `-llzk-flatten-constraints`
+1. MLIR's `-canonicalize`
+2. `-llzk-monomorphize-templates`
+3. `-llzk-expose-child-members`
+4. MLIR's `-canonicalize`
+5. `-llzk-flatten-constraints`
 
 Inline includes and lower symbolic non-native constraint arithmetic before this
 pipeline. Constant non-native arithmetic is evaluated during expansion using
 the current call and loop bindings.
-Frontend `scf.execute_region` wrappers currently require canonicalization before
-monomorphization. Control flow and all array indices must resolve statically;
+Canonicalization removes frontend `scf.execute_region` wrappers before
+monomorphization and folds specialized constants before expansion.
+Control flow and all array indices must resolve statically;
 aggregate function inputs are read-only. The pass expands concrete constrain
 bodies and eliminates local aggregate storage while retaining the original
 component layout and ordinary scalar arithmetic. Family handles retain their

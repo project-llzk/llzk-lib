@@ -1,5 +1,127 @@
-// RUN: llzk-opt %S/nested_calls_loops_pass.llzk --llzk-monomorphize-templates --llzk-expose-child-members --llzk-flatten-constraints -o %t.explicit
+// RUN: llzk-opt %S/nested_calls_loops_pass.llzk --canonicalize --llzk-monomorphize-templates --llzk-expose-child-members --canonicalize --llzk-flatten-constraints -o %t.explicit
 // RUN: llzk-opt %S/nested_calls_loops_pass.llzk --llzk-constraint-flattening -o %t.pipeline
 // RUN: diff %t.explicit %t.pipeline
+// RUN: FileCheck %s --match-full-lines < %t.pipeline
 
 // The pipeline and its explicit pass sequence produce identical constraints.
+
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// CHECK-NEXT:    function.def @select(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_1]] -> (!felt.type) {
+// CHECK-NEXT:        scf.yield %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_0]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_4]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Child {
+// CHECK-NEXT:      struct.member @signal : !felt.type {signal}
+// CHECK-NEXT:      struct.member @intermediate : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Child> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Child>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@signal] = %[[VAL_5]] : <@Child>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@intermediate] = %[[VAL_5]] : <@Child>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Child>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Child>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@signal] : <@Child>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @children : !array.type<2 x !struct.type<@Child>>
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@children] : <@Main>, !array.type<2 x !struct.type<@Child>>
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = function.call @select(%[[VAL_13]], %[[VAL_15]]) : (!felt.type, i1) -> !felt.type
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = function.call @select(%[[VAL_13]], %[[VAL_14]]) : (!felt.type, i1) -> !felt.type
+// CHECK-NEXT:        scf.for %[[VAL_22:[0-9a-zA-Z_\.]+]] = %[[VAL_18]] to %[[VAL_17]] step %[[VAL_16]] {
+// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_22]], %[[VAL_18]] : index
+// CHECK-NEXT:          %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.select %[[VAL_23]], %[[VAL_20]], %[[VAL_21]] : !felt.type
+// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_22]]] : <2 x !struct.type<@Child>>, !struct.type<@Child>
+// CHECK-NEXT:          function.call @Child::@constrain(%[[VAL_25]], %[[VAL_24]]) : (!struct.type<@Child>, !felt.type) -> ()
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_28:[0-9a-zA-Z_\.]+]] = %[[VAL_18]] to %[[VAL_17]] step %[[VAL_16]] iter_args(%[[VAL_29:[0-9a-zA-Z_\.]+]] = %[[VAL_13]]) -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_30:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_29]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_30]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_32:[0-9a-zA-Z_\.]+]] = %[[VAL_18]]) : (index) -> index {
+// CHECK-NEXT:          %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[VAL_32]], %[[VAL_17]] : index
+// CHECK-NEXT:          scf.condition(%[[VAL_33]]) %[[VAL_32]] : index
+// CHECK-NEXT:        } do {
+// CHECK-NEXT:        ^bb0(%[[VAL_34:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:          %[[VAL_35:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_34]], %[[VAL_16]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_35]] : index
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_31]], %[[VAL_17]] : index
+// CHECK-NEXT:        bool.assert %[[VAL_36]]
+// CHECK-NEXT:        constrain.eq %[[VAL_26]], %[[VAL_27]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @children : !array.type<2 x !struct.type<@Child__spec_1>>
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_37:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_38]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_40:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@children] : <@Main__spec_0>, !array.type<2 x !struct.type<@Child__spec_1>>
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_40]], %[[VAL_42]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_41]]{{\[}}%[[VAL_44]]] : <2 x !struct.type<@Child__spec_1>>, !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_45]][@signal] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_46]], %[[VAL_40]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_41]]{{\[}}%[[VAL_47]]] : <2 x !struct.type<@Child__spec_1>>, !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_48]][@signal] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_49]], %[[VAL_43]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@out] : <@Main__spec_0>, !felt.type
+// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_40]], %[[VAL_40]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_51]], %[[VAL_40]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_50]], %[[VAL_52]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [], poly.origin = @Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      struct.member @signal : !felt.type {llzk.pub, signal}
+// CHECK-NEXT:      struct.member @intermediate : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_53:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        struct.writem %[[VAL_54]][@signal] = %[[VAL_53]] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_54]][@intermediate] = %[[VAL_53]] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_54]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_55:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>, %[[VAL_56:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_55]][@signal] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_57]], %[[VAL_56]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [], poly.origin = @Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    function.def @select__spec_0(%[[VAL_58:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_59:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type attributes {poly.arguments = [], poly.origin = @select} {
+// CHECK-NEXT:      %[[VAL_60:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_61:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_59]] -> (!felt.type) {
+// CHECK-NEXT:        scf.yield %[[VAL_58]] : !felt.type
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_62:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_58]], %[[VAL_60]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_62]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_61]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
