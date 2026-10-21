@@ -1,0 +1,5 @@
+// RUN: llzk-opt %S/aggregates_pass.llzk --llzk-flatten-constraints -o %t
+// RUN: llzk-opt %t --llzk-flatten-constraints -o %t.again
+// RUN: diff %t %t.again
+
+// Reapplying flattening does not change aggregate constraints.

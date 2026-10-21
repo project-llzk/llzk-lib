@@ -1,0 +1,38 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %true = arith.constant true
+      %false = arith.constant false
+      %and = arith.andi %true, %false : i1
+      %or = arith.ori %and, %true : i1
+      %xor = arith.xori %or, %false : i1
+      %sum = arith.addi %one, %one : index
+      %product = arith.muli %sum, %sum : index
+      %difference = arith.subi %product, %one : index
+      %boolean = cast.tofelt %xor : i1
+      %integer = cast.tofelt %difference : index
+      constrain.eq %boolean, %x : !felt.type, !felt.type
+      constrain.eq %integer, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : i1, !felt.type
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_5]] : index, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

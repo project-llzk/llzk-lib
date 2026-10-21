@@ -1,0 +1,5 @@
+// RUN: llzk-opt %S/expose_family_definitions_pass.llzk --llzk-expose-child-members="root-struct=@Root" -o %t
+// RUN: llzk-opt %t --llzk-expose-child-members="root-struct=@Root" -o %t.again
+// RUN: diff %t %t.again
+
+// Exposing the referenced family definitions is idempotent.
