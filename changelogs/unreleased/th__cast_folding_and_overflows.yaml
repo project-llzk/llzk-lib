@@ -1,5 +1,8 @@
 added:
-  - Documentation for the new `OverflowSemantics` enum attribute in the cast dialect.
+  - Documentation for cast overflow modes and their safe ranges.
+  - Shared `applyIntToFeltOverflow` and `applyFeltToIndexOverflow` helpers for applying cast overflow semantics.
 fixed:
-  - Preserve failing assert casts through optimization while keeping non-assert casts side-effect-free and speculatable.
-  - Check integer-to-felt assertion ranges before PCL lowering and reject unsupported range checks in ZKLean, SMT, and R1CS lowering instead of discarding them.
+  - Assert casts are no longer side-effect-free and speculatable but the other cast kinds remain so.
+  - Honor `assert`, `sat`, `wrap`, and `trunc` in cast constant folding and witness interpretation, using reduced felt operands and deferring folding when the field is unspecified.
+  - Respect cast overflow semantics in interval analysis, constraint folding, and backends.
+  - Reject unsupported cast modes and range checks in PCL, ZKLean, SMT, and R1CS lowering instead of discarding or misinterpreting them.
