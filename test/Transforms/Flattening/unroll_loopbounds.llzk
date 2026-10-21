@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   // Unknown bounds and step: the annotation supplies induction values 2, 5, 8.
@@ -302,5 +302,221 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        scf.yield %[[VAL_7]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // Two body executions and three condition-region executions, despite a dynamic condition.
+  function.def @dynamic(%seed: index, %cond: i1) -> index {
+    %one = arith.constant 1 : index
+    %two = arith.constant 2 : index
+    %result = scf.while (%state = %seed) : (index) -> index {
+      %checked = arith.addi %state, %one : index
+      scf.condition(%cond) %checked : index
+    } do {
+    ^bb0(%checked: index):
+      %next = arith.muli %checked, %two : index
+      scf.yield %next : index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<2 to 8 step 3>}
+    function.return %result : index
+  }
+// CHECK-LABEL:   function.def @dynamic(
+// CHECK-SAME:                          %[[VAL_0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                          %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.muli %[[VAL_4]], %[[VAL_3]] : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_5]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.muli %[[VAL_6]], %[[VAL_3]] : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_7]], %[[VAL_2]] : index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
+// CHECK-NEXT:    }
+
+  // A zero-trip annotation still executes the before region and returns its forwarded value.
+  function.def @zero(%seed: index, %a: !felt.type, %b: !felt.type) -> index attributes {function.allow_constraint} {
+    %true = arith.constant true
+    %one = arith.constant 1 : index
+    %result = scf.while (%state = %seed) : (index) -> index {
+      constrain.eq %a, %b : !felt.type
+      %checked = arith.addi %state, %one : index
+      scf.condition(%true) %checked : index
+    } do {
+    ^bb0(%checked: index):
+      constrain.eq %b, %a : !felt.type
+      scf.yield %checked : index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<3 to 3 step 1>}
+    function.return %result : index
+  }
+// CHECK-LABEL:   function.def @zero(
+// CHECK-SAME:                       %[[VAL_0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                       %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:                       %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> index attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_3]] : index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+
+  // Trust the annotation over a statically false condition. Preserve interleaved side effects
+  // and the final before execution even when there are no arguments or results.
+  function.def @side_effects(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %false = arith.constant false
+    // expected-warning @+1 {{llzk.loopbounds trip count 2 does not match computed trip count 0; using llzk.loopbounds}}
+    scf.while : () -> () {
+      constrain.eq %a, %b : !felt.type
+      scf.condition(%false)
+    } do {
+      constrain.eq %b, %a : !felt.type
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 2 step 1>}
+    function.return
+  }
+// CHECK-LABEL:   function.def @side_effects(
+// CHECK-SAME:                               %[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:                               %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_0]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_0]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+
+  // The before and after regions may differ in both argument count and type.
+  function.def @different_signatures(%lhs: index, %rhs: index, %cond: i1) -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
+    %result = scf.while (%x = %lhs, %y = %rhs) : (index, index) -> !felt.type<"babybear"> {
+      %sum = arith.addi %x, %y : index
+      %felt = cast.tofelt %sum : index, !felt.type<"babybear">
+      scf.condition(%cond) %felt : !felt.type<"babybear">
+    } do {
+    ^bb0(%checked: !felt.type<"babybear">):
+      %index = cast.toindex %checked : !felt.type<"babybear">
+      scf.yield %index, %lhs : index, index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<10 to 11 step 3>}
+    function.return %result : !felt.type<"babybear">
+  }
+// CHECK-LABEL:   function.def @different_signatures(
+// CHECK-SAME:                                       %[[VAL_0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                                       %[[VAL_1:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                                       %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_3]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_4]] : !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_5]], %[[VAL_0]] : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+
+  // Reordering forwarded values must update them simultaneously, including the final forwarding.
+  function.def @swap(%a: index, %b: index, %cond: i1) -> (index, index) {
+    %result:2 = scf.while (%x = %a, %y = %b) : (index, index) -> (index, index) {
+      scf.condition(%cond) %y, %x : index, index
+    } do {
+    ^bb0(%x: index, %y: index):
+      scf.yield %x, %y : index, index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 2 step 1>}
+    function.return %result#0, %result#1 : index, index
+  }
+// CHECK-LABEL:   function.def @swap(
+// CHECK-SAME:                       %[[VAL_0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                       %[[VAL_1:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                       %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> (index, index) {
+// CHECK-NEXT:      function.return %[[VAL_1]], %[[VAL_0]] : index, index
+// CHECK-NEXT:    }
+
+  // There need not be an integer induction variable. The annotation determines the count;
+  // felt values are computed by the regions, not replaced by the annotation's bounds.
+  function.def @felt_carried(%seed: !felt.type<"babybear">, %step: !felt.type<"babybear">, %cond: i1) -> !felt.type<"babybear"> {
+    %result = scf.while (%state = %seed) : (!felt.type<"babybear">) -> !felt.type<"babybear"> {
+      scf.condition(%cond) %state : !felt.type<"babybear">
+    } do {
+    ^bb0(%state: !felt.type<"babybear">):
+      %next = felt.add %state, %step : !felt.type<"babybear">, !felt.type<"babybear">
+      scf.yield %next : !felt.type<"babybear">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<7 to 0 step -3>}
+    function.return %result : !felt.type<"babybear">
+  }
+// CHECK-LABEL:   function.def @felt_carried(
+// CHECK-SAME:                               %[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">,
+// CHECK-SAME:                               %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">,
+// CHECK-SAME:                               %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_3]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_4]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+
+  // Nested annotated loops preserve captures of their containing regions' arguments.
+  function.def @nested(%seed: index, %cond: i1) -> index {
+    %result = scf.while (%outer = %seed) : (index) -> index {
+      scf.condition(%cond) %outer : index
+    } do {
+    ^bb0(%outer: index):
+      %inner_result = scf.while (%inner = %outer) : (index) -> index {
+        scf.condition(%cond) %inner : index
+      } do {
+      ^bb1(%inner: index):
+        %next = arith.addi %inner, %outer : index
+        scf.yield %next : index
+      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 2 step 1>}
+      scf.yield %inner_result : index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 2 step 1>}
+    function.return %result : index
+  }
+// CHECK-LABEL:   function.def @nested(
+// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                         %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_0]] : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_0]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_3]], %[[VAL_3]] : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]], %[[VAL_3]] : index
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
+// CHECK-NEXT:    }
+
+  // Even when no body executes, result types need not match the initial-value types.
+  function.def @zero_different_types(%seed: index) -> !felt.type<"babybear"> {
+    %false = arith.constant false
+    %result = scf.while (%state = %seed) : (index) -> !felt.type<"babybear"> {
+      %felt = cast.tofelt %state : index, !felt.type<"babybear">
+      scf.condition(%false) %felt : !felt.type<"babybear">
+    } do {
+    ^bb0(%checked: !felt.type<"babybear">):
+      scf.yield %seed : index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 0 step 1>}
+    function.return %result : !felt.type<"babybear">
+  }
+// CHECK-LABEL:   function.def @zero_different_types(
+// CHECK-SAME:                                       %[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+
+  // Without an annotation, the while loop remains rolled.
+  function.def @unannotated(%seed: index, %cond: i1) -> index {
+    %one = arith.constant 1 : index
+    %result = scf.while (%state = %seed) : (index) -> index {
+      scf.condition(%cond) %state : index
+    } do {
+    ^bb0(%state: index):
+      %next = arith.addi %state, %one : index
+      scf.yield %next : index
+    }
+    function.return %result : index
+  }
+// CHECK-LABEL:   function.def @unannotated(
+// CHECK-SAME:                              %[[VAL_0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:                              %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) : (index) -> index {
+// CHECK-NEXT:        scf.condition(%[[VAL_1]]) %[[VAL_4]] : index
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_5]], %[[VAL_2]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_6]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
 }

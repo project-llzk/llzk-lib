@@ -45,6 +45,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/IRMapping.h>
+#include <mlir/IR/Matchers.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Support/LLVM.h>
@@ -1193,6 +1194,10 @@ namespace Step3_Unroll {
 
 /// Compute the trip count from the loop itself, independently of any trusted annotation.
 static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
+  if (auto whileOp = dyn_cast<scf::WhileOp>(loopOp.getOperation());
+      whileOp && matchPattern(whileOp.getConditionOp().getCondition(), m_Zero())) {
+    return APInt(64, 0);
+  }
   std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
   std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
   std::optional<OpFoldResult> stepVal = loopOp.getSingleStep();
@@ -1206,7 +1211,7 @@ static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
   return constantTripCount(*lbVal, *ubVal, *stepVal, isSigned, scf::computeUbMinusLb);
 }
 
-/// Fully expand annotated loops using the trusted bounds, including their induction values.
+/// Fully expand annotated loops using the trusted trip count and, for for loops, induction values.
 /// Run before folding so zero- and single-trip loops cannot discard conflicting annotations.
 template <HasInterface<LoopLikeOpInterface> OpClass>
 class AnnotatedLoopUnrollPattern : public OpRewritePattern<OpClass> {
@@ -1245,6 +1250,22 @@ public:
       );
     }
 
+    if (failed(unroll(loopOp, rewriter, bounds, *tripCount))) {
+      return failure();
+    }
+    tracker.updateModifiedFlag(true);
+    return success();
+  }
+
+private:
+  /// Expand a for loop with induction values supplied by the annotation.
+  template <typename ForOp>
+  static LogicalResult
+  unroll(ForOp loopOp, PatternRewriter &rewriter, LoopBoundsAttr bounds, uint64_t tripCount) {
+    const llvm::DynamicAPInt &lower = bounds.getLower();
+    const llvm::DynamicAPInt &step = bounds.getStep();
+    llvm::DynamicAPInt count = toDynamicAPInt(tripCount);
+
     Value iv = loopOp.getInductionVar();
     Type ivType = iv.getType();
     unsigned width =
@@ -1254,7 +1275,7 @@ public:
       isSigned = !forOp.getUnsignedCmp();
     }
     // Check the endpoints before mutating IR; all intermediate induction values lie between them.
-    if (*tripCount != 0 && !iv.use_empty()) {
+    if (tripCount != 0 && !iv.use_empty()) {
       for (const auto &value : {lower, lower + (count - 1) * step}) {
         auto encoded = checkedToAPInt(value, width, isSigned);
         if (!encoded) {
@@ -1268,7 +1289,7 @@ public:
 
     SmallVector<Value> results(loopOp.getInits());
     llvm::DynamicAPInt inductionValue = lower;
-    for (uint64_t i = 0; i < *tripCount; ++i, inductionValue += step) {
+    for (uint64_t i = 0; i < tripCount; ++i, inductionValue += step) {
       IRMapping mapping;
       mapping.map(loopOp.getRegionIterArgs(), results);
       if (!iv.use_empty()) {
@@ -1286,11 +1307,34 @@ public:
       }
     }
     rewriter.replaceOp(loopOp, results);
-    tracker.updateModifiedFlag(true);
     return success();
   }
 
-private:
+  /// Expand both while regions, including the final condition-region execution. The annotation
+  /// controls how often the after region executes; the regions themselves compute carried values.
+  static LogicalResult
+  unroll(scf::WhileOp loopOp, PatternRewriter &rewriter, LoopBoundsAttr, uint64_t tripCount) {
+    auto cloneBlock = [&](Block *block, ValueRange arguments, ValueRange forwarded) {
+      IRMapping mapping;
+      mapping.map(block->getArguments(), arguments);
+      for (Operation &op : block->without_terminator()) {
+        rewriter.clone(op, mapping);
+      }
+      return llvm::map_to_vector(forwarded, [&](Value value) {
+        return mapping.lookupOrDefault(value);
+      });
+    };
+
+    SmallVector<Value> values(loopOp.getInits());
+    for (uint64_t i = 0; i < tripCount; ++i) {
+      values = cloneBlock(loopOp.getBeforeBody(), values, loopOp.getConditionOp().getArgs());
+      values = cloneBlock(loopOp.getAfterBody(), values, loopOp.getYieldOp().getResults());
+    }
+    values = cloneBlock(loopOp.getBeforeBody(), values, loopOp.getConditionOp().getArgs());
+    rewriter.replaceOp(loopOp, values);
+    return success();
+  }
+
   ConversionTracker &tracker;
 };
 
@@ -1322,6 +1366,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   // Must unroll via `LoopBoundsAttr` if present
   RewritePatternSet annotatedPatterns(ctx);
   annotatedPatterns.add<AnnotatedLoopUnrollPattern<scf::ForOp>>(ctx, tracker);
+  annotatedPatterns.add<AnnotatedLoopUnrollPattern<scf::WhileOp>>(ctx, tracker);
   annotatedPatterns.add<AnnotatedLoopUnrollPattern<affine::AffineForOp>>(ctx, tracker);
   MatchFailureListener failureListener;
   walkAndApplyPatterns(modOp, std::move(annotatedPatterns), &failureListener);
