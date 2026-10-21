@@ -13,10 +13,12 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallString.h>
+#include <llvm/Support/Compiler.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <limits>
+#include <utility>
 
 using namespace llvm;
 using namespace std;
@@ -107,7 +109,8 @@ DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   if (lhs == 0) {
     return DynamicAPInt(0);
   }
-  unsigned amount = checkedCast<unsigned>(cantFail(checkedToUInt64(rhs)));
+  // The bounded count fits int64_t; signed extraction avoids an APSInt conversion.
+  unsigned amount = checkedCast<unsigned>(cantFail(checkedToInt64(rhs)));
   return DynamicAPInt(bits.sextOrTrunc(width + amount).shl(amount));
 }
 
@@ -119,7 +122,8 @@ DynamicAPInt operator>>(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
   if (rhs >= toDynamicAPInt(APSInt::getUnsigned(bits.getSignificantBits()))) {
     return DynamicAPInt(lhs < 0 ? -1 : 0);
   }
-  return DynamicAPInt(bits.ashr(checkedCast<unsigned>(cantFail(checkedToUInt64(rhs)))));
+  // The bounded count fits int64_t; signed extraction avoids an APSInt conversion.
+  return DynamicAPInt(bits.ashr(checkedCast<unsigned>(cantFail(checkedToInt64(rhs)))));
 }
 
 DynamicAPInt toDynamicAPInt(StringRef str) { return cantFail(parseDynamicAPInt(str)); }
@@ -142,25 +146,42 @@ DynamicAPInt toDynamicAPInt(const APInt &i) {
   }
 }
 
+/// DynamicAPInt has no direct APInt conversion so convert values outside `int64_t` via string.
+///
+/// Ensure this function doesn't inline so the fast path avoids its stack and register overhead.
+static LLVM_ATTRIBUTE_NOINLINE APSInt toAPSIntSlow(const DynamicAPInt &i) {
+  // 254-bit magnitude needs at most 77 decimal digits plus a minus sign; 96 inline characters cover
+  // this with headroom for larger intermediates so the pre-defined primes don't require resizing.
+  SmallString<96> repr;
+  raw_svector_ostream(repr) << i;
+
+  // This is based on `APSInt(StringRef)` and uses its conservative size estimate of 64/19 bits per
+  // decimal digit. However, we take some additional precautions to allocate space for the sign bit
+  // from the start, avoid truncating when a bitwidth change would not reduce the number of words
+  // required, and move the final result into the return value to avoid unnecessary copies.
+  size_t digits = repr.size() - (repr.front() == '-');
+  constexpr uint64_t maxDigits = ((uint64_t(numeric_limits<unsigned>::max()) - 2) * 19) / 64;
+  // Bound the digit count before multiplying or narrowing to APInt's unsigned bit width.
+  if (digits > maxDigits) {
+    llvm::report_fatal_error("decimal integer exceeds APInt's maximum parse width");
+  }
+  unsigned parseWidth = static_cast<unsigned>((uint64_t(digits) * 64) / 19 + 2);
+  APInt bits(parseWidth, repr, /*radix=*/10);
+  // getSignificantBits() includes the sign bit for either sign. Truncation
+  // allocates a new APInt, so only do it when it saves a storage word.
+  unsigned minWidth = bits.getSignificantBits();
+  if (APInt::getNumWords(minWidth) < bits.getNumWords()) {
+    bits = bits.trunc(minWidth);
+  }
+  return APSInt(std::move(bits), /*isUnsigned=*/false);
+}
+
 APSInt toAPSInt(const DynamicAPInt &i) {
   if (numeric_limits<int64_t>::min() <= i && i <= numeric_limits<int64_t>::max()) {
     // Fast path for smaller values, just use the int64_t conversion
     return APSInt::get(int64_t(i));
   }
-
-  // Else, convert to string and parse back as an APSInt.
-  // This may not be the most efficient implementation, but it is the cleanest
-  // due to the lack of direct conversions between DynamicAPInt and APInts.
-  SmallString<64> repr;
-  raw_svector_ostream(repr) << i;
-
-  APSInt res(repr);
-  // For consistency, we add a bit and mark these as signed integers, since
-  // DynamicAPInts are inherently signed.
-  res = res.extend(res.getBitWidth() + 1);
-  res.setIsSigned(true);
-
-  return res;
+  return toAPSIntSlow(i);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
