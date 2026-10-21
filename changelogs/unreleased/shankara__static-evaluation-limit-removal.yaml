@@ -1,0 +1,2 @@
+fixed:
+  - Remove the max-evaluation-steps options and shared work budgets from specialization discovery and constraint flattening so finite static executions are not rejected by fixed step caps; retain specialization and call-depth limits.

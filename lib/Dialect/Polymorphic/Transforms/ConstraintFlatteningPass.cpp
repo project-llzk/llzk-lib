@@ -57,8 +57,6 @@ class ConstraintElaborator {
   /// Scalar facts requested by structural control, paths, and assertions.
   ConstraintScalarFacts facts;
   std::optional<ConstraintStorage> storage;
-  uint64_t steps = 0;
-  uint64_t limit;
   ConstraintBindings bindings;
   /// Live unresolved scalar storage reads are rejected after dead SSA removal.
   llvm::DenseSet<Operation *> nonSignalReads;
@@ -685,9 +683,6 @@ class ConstraintElaborator {
   /// Visit source operations once per execution; all ordinary values remain SSA.
   LogicalResult expand(Block &block, Environment &frame, SmallVectorImpl<BoundValue> &results) {
     for (Operation &op : block) {
-      if (++steps > limit) {
-        return constraintError(&op, "evaluation step limit exceeded");
-      }
       if (isa<ReturnOp, scf::YieldOp, scf::ConditionOp>(op)) {
         for (Value value : op.getOperands()) {
           results.push_back(frame.lookup(value));
@@ -798,9 +793,8 @@ class ConstraintElaborator {
   }
 
 public:
-  ConstraintElaborator(ModuleOp root, uint64_t maximum)
-      : module(root), builder(root.getContext()), limit(maximum),
-        bindings(root.getContext(), steps, maximum) {}
+  explicit ConstraintElaborator(ModuleOp root)
+      : module(root), builder(root.getContext()), bindings(root.getContext()) {}
 
   /// Preserve main's signature and commit only the complete validated body.
   LogicalResult run() {
@@ -842,7 +836,7 @@ class PassImpl : public llzk::polymorphic::impl::ConstraintFlatteningPassBase<Pa
   using Base::Base;
 
   void runOnOperation() override {
-    if (failed(ConstraintElaborator(getOperation(), evaluationLimit).run())) {
+    if (failed(ConstraintElaborator(getOperation()).run())) {
       signalPassFailure();
     }
   }
