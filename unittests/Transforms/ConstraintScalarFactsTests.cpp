@@ -41,8 +41,8 @@ public:
 class FactTestDialect : public mlir::Dialect {
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(FactTestDialect)
-  explicit FactTestDialect(mlir::MLIRContext *context)
-      : Dialect(getDialectNamespace(), context, mlir::TypeID::get<FactTestDialect>()) {
+  explicit FactTestDialect(mlir::MLIRContext *ctx)
+      : Dialect(getDialectNamespace(), ctx, mlir::TypeID::get<FactTestDialect>()) {
     addOperations<CountedIdentityOp>();
   }
   static llvm::StringRef getDialectNamespace() { return "fact_test"; }
