@@ -380,8 +380,7 @@ class ConstraintElaborator {
       }
       if (llvm::any_of(op.getResultTypes(), [](Type type) { return isa<FloatType>(type); })) {
         return constraintError(
-            &op, "unsupported operation '" + op.getName().getStringRef() +
-                     "': floating-point results are not supported in flattened constraints"
+            &op, "unsupported: floating-point results are not supported in flattened constraints"
         );
       }
       return constraintError(
