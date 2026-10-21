@@ -365,6 +365,27 @@ class ConstraintElaborator {
     if (failed(mapping)) {
       return failure();
     }
+    // A field left shift with a known amount is multiplication by 2^amount.
+    // Fold that factor using the shift's own modular semantics, including large
+    // unsigned shift representatives. Right shifts retain integer semantics.
+    if (auto shift = dyn_cast<felt::ShlFeltOp>(op); shift &&
+                                                    !facts.known(mapping->lookup(shift.getLhs())) &&
+                                                    facts.known(mapping->lookup(shift.getRhs()))) {
+      Value lhs = mapping->lookup(shift.getLhs());
+      auto one = felt::FeltConstAttr::get(
+          op.getContext(), llvm::DynamicAPInt(1), llvm::cast<felt::FeltType>(shift.getType())
+      );
+      mapping->map(shift.getLhs(), felt::FeltConstantOp::create(builder, op.getLoc(), one));
+      Operation *factor = builder.clone(op, *mapping);
+      auto constant = dyn_cast_or_null<felt::FeltConstAttr>(facts.known(factor->getResult(0)));
+      if (!constant) {
+        return constraintError(&op, "lower non-native operations before constraint flattening");
+      }
+      Value multiplier = felt::FeltConstantOp::create(builder, op.getLoc(), constant);
+      frame[shift.getResult()] =
+          Value(felt::MulFeltOp::create(builder, op.getLoc(), lhs, multiplier));
+      return success();
+    }
     Operation *emitted = builder.clone(op, *mapping);
     for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
       auto constant = dyn_cast_or_null<felt::FeltConstAttr>(facts.known(result));
