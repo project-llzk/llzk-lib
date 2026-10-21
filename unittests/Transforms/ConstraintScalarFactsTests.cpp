@@ -131,4 +131,50 @@ TEST_F(ConstraintScalarFactsTests, IntegerToFeltPreservesBooleanAndSignedIndexVa
   EXPECT_EQ(index.getRawValue(), -1);
 }
 
+TEST_F(ConstraintScalarFactsTests, ScalarEvaluationUsesSuppliedBindingsWithoutRewritingIR) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      function.def @convert(%n: index) -> index attributes {function.allow_non_native_field_ops} {
+        %field = cast.tofelt %n : index, !felt.type<"bn128">
+        %index = cast.toindex %field : !felt.type<"bn128">
+        function.return %index : index
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  llzk::cast::IntToFeltOp toField;
+  llzk::cast::FeltToIndexOp toIndex;
+  module->walk([&toField](llzk::cast::IntToFeltOp op) { toField = op; });
+  module->walk([&toIndex](llzk::cast::FeltToIndexOp op) { toIndex = op; });
+  ASSERT_TRUE(toField);
+  ASSERT_TRUE(toIndex);
+
+  mlir::Builder builder(&ctx);
+  llvm::SmallVector<mlir::Attribute> operands {builder.getIndexAttr(7)};
+  llvm::SmallVector<mlir::OpFoldResult> results;
+  ASSERT_TRUE(
+      mlir::succeeded(
+          llzk::polymorphic::detail::evaluateScalarOperation(toField, operands, results)
+      )
+  );
+  ASSERT_EQ(results.size(), 1U);
+  operands[0] = llvm::cast<mlir::Attribute>(results[0]);
+  results.clear();
+  ASSERT_TRUE(
+      mlir::succeeded(
+          llzk::polymorphic::detail::evaluateScalarOperation(toIndex, operands, results)
+      )
+  );
+  ASSERT_EQ(results.size(), 1U);
+  EXPECT_EQ(llvm::cast<mlir::Attribute>(results[0]), builder.getIndexAttr(7));
+  EXPECT_TRUE(llvm::isa<mlir::BlockArgument>(toField.getValue()));
+  EXPECT_EQ(toIndex.getValue(), toField.getResult());
+
+  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  EXPECT_FALSE(facts.known(toIndex.getResult()));
+}
+
 } // namespace

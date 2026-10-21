@@ -1,0 +1,75 @@
+// RUN: llzk-opt %s --llzk-constraint-flattening | FileCheck %s
+
+// Discovery must evaluate casts using known template bindings before rewriting
+// the template. Expansion must use the same conversions for each loop iteration.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main::@Main<[3]>>} {
+  poly.template @Main {
+    poly.param @n : index
+    struct.def @Main {
+      function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main::@Main<[@n]>> attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : <@Main::@Main<[@n]>>
+        function.return %self : !struct.type<@Main::@Main<[@n]>>
+      }
+      function.def @constrain(%self: !struct.type<@Main::@Main<[@n]>>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+        %n = poly.read_const @n : index
+        %bound = cast.tofelt %n : index, !felt.type<"bn128">
+        %index = cast.toindex %bound : !felt.type<"bn128">
+        %limit = cast.tofelt %index : index, !felt.type<"bn128">
+        %zero = felt.const 0 : <"bn128">
+        %one = felt.const 1 : <"bn128">
+        %end = scf.while (%i = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+          %continue = bool.cmp lt(%i, %limit) : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.condition(%continue) %i : !felt.type<"bn128">
+        } do {
+        ^bb0(%i: !felt.type<"bn128">):
+          constrain.eq %x, %x : !felt.type<"bn128">, !felt.type<"bn128">
+          %next = felt.add %i, %one : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.yield %next : !felt.type<"bn128">
+        }
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// CHECK-NEXT:    poly.template @Main {
+// CHECK-NEXT:      poly.param @n : index
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main::@Main<[@n]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main::@Main<[@n]>>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Main::@Main<[@n]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main::@Main<[@n]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @n : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_7]] : !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_11:[0-9a-zA-Z_\.]+]] = %[[VAL_5]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:            %[[VAL_12:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_11]], %[[VAL_9]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:            scf.condition(%[[VAL_12]]) %[[VAL_11]] : !felt.type<"bn128">
+// CHECK-NEXT:          } do {
+// CHECK-NEXT:          ^bb0(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:            constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:            %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_13]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:            scf.yield %[[VAL_14]] : !felt.type<"bn128">
+// CHECK-NEXT:          }
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      function.def @compute(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main__spec_0> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_16]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_18]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_18]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_18]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Main::@Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:  }

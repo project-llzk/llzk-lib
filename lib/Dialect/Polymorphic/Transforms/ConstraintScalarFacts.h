@@ -9,10 +9,7 @@
 
 #pragma once
 
-#include "llzk/Dialect/Cast/IR/Ops.h"
-#include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
-#include "llzk/Util/DynamicAPIntHelper.h"
+#include "ScalarEvaluation.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Matchers.h>
@@ -24,58 +21,28 @@
 namespace llzk::polymorphic::detail {
 /// Evaluate scalar dependencies demanded by structural decisions and constant arithmetic.
 class ConstraintScalarFacts {
-  mlir::Builder builder;
   /// A null entry records an evaluated value that cannot be resolved. Emitted
   /// SSA is immutable; calls and loop iterations produce fresh values.
   llvm::DenseMap<mlir::Value, mlir::Attribute> constants;
 
   /// Use fold hooks on a disposable operation; emitted scalar expressions stay SSA.
-  void fold(mlir::Operation *producer, mlir::Value current) {
+  void fold(mlir::Operation *producer) {
     llvm::SmallVector<mlir::Attribute> operands;
     for (mlir::Value operand : producer->getOperands()) {
       operands.push_back(constants.lookup(operand));
     }
-    // Casts expose canonicalization rather than fold hooks. Use the same
-    // signed-index and zero-or-one boolean conversion as cast.tofelt.
-    if (auto conversion = llvm::dyn_cast<llzk::cast::IntToFeltOp>(producer)) {
-      if (auto constant = llvm::dyn_cast_or_null<mlir::IntegerAttr>(operands.front())) {
-        constants[current] = felt::FeltConstAttr::get(
-            producer->getContext(), integerAttrToDynamicAPInt(constant), conversion.getType()
-        );
-      }
-      return;
-    }
-    // Structural indices must be nonnegative and representable as signed-64 values.
-    if (llvm::isa<llzk::cast::FeltToIndexOp>(producer)) {
-      if (auto constant = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operands.front())) {
-        auto reduced = constant.getReducedValue();
-        if (!reduced) {
-          return;
-        }
-        auto converted = checkedToInt64(*reduced);
-        if (converted && *converted >= 0) {
-          constants[current] = builder.getIndexAttr(*converted);
-        } else if (!converted) {
-          llvm::consumeError(converted.takeError());
-        }
-      }
-      return;
-    }
-    mlir::Operation *temporary = producer->clone();
     llvm::SmallVector<mlir::OpFoldResult> results;
-    if (mlir::succeeded(temporary->fold(operands, results)) &&
-        results.size() == producer->getNumResults()) {
+    if (mlir::succeeded(evaluateScalarOperation(producer, operands, results))) {
       for (auto [result, folded] : llvm::zip_equal(producer->getResults(), results)) {
         constants[result] = llvm::isa<mlir::Attribute>(folded)
                                 ? llvm::cast<mlir::Attribute>(folded)
                                 : constants.lookup(llvm::cast<mlir::Value>(folded));
       }
     }
-    temporary->destroy();
   }
 
 public:
-  explicit ConstraintScalarFacts(mlir::MLIRContext *context) : builder(context) {}
+  explicit ConstraintScalarFacts(mlir::MLIRContext * /*context*/) {}
 
   /// Evaluate only the pure SSA dependencies of a requested structural value.
   /// An explicit worklist also handles long iteration-dependent expression chains.
@@ -107,7 +74,7 @@ public:
         }
         continue;
       }
-      fold(producer, current);
+      fold(producer);
       constants.try_emplace(current, mlir::Attribute());
     }
     return constants.lookup(value);
