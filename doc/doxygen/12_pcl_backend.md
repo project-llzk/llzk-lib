@@ -27,6 +27,11 @@ main component with no public outputs still require separate handling.
 
 Use `--llzk-to-pcl` directly when the input has already been prepared.
 
+When PCL is enabled, C clients can append the pipeline to a module pass manager
+with `llzkBuildFullPCLLoweringPipeline`. Alternatively, call
+`llzkRegisterPCLConversionPassPipelines` and parse
+`builtin.module(llzk-full-pcl-lowering)` with `mlirParsePassPipeline`.
+
 ## Integer values
 
 PCL felt constants and prime moduli use signed arbitrary-precision integers.
