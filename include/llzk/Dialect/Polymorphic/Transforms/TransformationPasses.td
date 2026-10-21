@@ -171,8 +171,10 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     from equations or compute functions. Ordinary field arithmetic remains SSA.
 
     Diagnose symbolic control flow, recursion, unsupported effects, and
-    non-native constraint arithmetic (including division and inversion). Static
-    integer arithmetic, affine maps, casts, and comparisons are evaluated only
+    non-native constraint arithmetic that cannot be constant evaluated (including
+    division and inversion). Non-native field operations are evaluated using the
+    current call and iteration bindings and replaced with constants when foldable.
+    Static integer arithmetic, affine maps, casts, and comparisons are evaluated only
     as structural facts; symbolic computations must be dead after expansion.
     Every surviving operation is checked independently: only felt constants,
     felt add/subtract/multiply/negate expressions, felt equalities, original

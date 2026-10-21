@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <mlir/IR/Builders.h>
@@ -21,7 +22,7 @@
 #include <llvm/ADT/DenseSet.h>
 
 namespace llzk::polymorphic::detail {
-/// Evaluate only scalar dependencies demanded by control flow and concrete paths.
+/// Evaluate scalar dependencies demanded by structural decisions and constant arithmetic.
 class ConstraintScalarFacts {
   mlir::Builder builder;
   /// A null entry records an evaluated value that cannot be resolved. Emitted
@@ -34,8 +35,17 @@ class ConstraintScalarFacts {
     for (mlir::Value operand : producer->getOperands()) {
       operands.push_back(constants.lookup(operand));
     }
-    // Casts expose canonicalization rather than fold hooks. Match the same
-    // nonnegative, signed-64 representability rule for structural indices.
+    // Casts expose canonicalization rather than fold hooks. Use the same
+    // signed-index and zero-or-one boolean conversion as cast.tofelt.
+    if (auto conversion = llvm::dyn_cast<llzk::cast::IntToFeltOp>(producer)) {
+      if (auto constant = llvm::dyn_cast_or_null<mlir::IntegerAttr>(operands.front())) {
+        constants[current] = felt::FeltConstAttr::get(
+            producer->getContext(), integerAttrToDynamicAPInt(constant), conversion.getType()
+        );
+      }
+      return;
+    }
+    // Structural indices must be nonnegative and representable as signed-64 values.
     if (llvm::isa<llzk::cast::FeltToIndexOp>(producer)) {
       if (auto constant = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operands.front())) {
         auto reduced = constant.getReducedValue();

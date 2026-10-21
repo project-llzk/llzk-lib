@@ -113,7 +113,9 @@ Runs these passes in order:
 2. `-llzk-expose-child-members`
 3. `-llzk-flatten-constraints`
 
-Inline includes and lower non-native constraint arithmetic before this pipeline.
+Inline includes and lower symbolic non-native constraint arithmetic before this
+pipeline. Constant non-native arithmetic is evaluated during expansion using
+the current call and loop bindings.
 Frontend `scf.execute_region` wrappers currently require canonicalization before
 monomorphization. Control flow and all array indices must resolve statically;
 aggregate function inputs are read-only. The pass expands concrete constrain

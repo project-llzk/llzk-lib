@@ -11,9 +11,11 @@
 #include "../LLZKTestBase.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dialect.h>
 #include <mlir/IR/OpDefinition.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
+#include <mlir/Parser/Parser.h>
 
 namespace {
 
@@ -98,6 +100,35 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedResultsDoNotPoisonFreshConstantBind
     EXPECT_EQ(facts.known(result), builder.getIndexAttr(i));
   }
   EXPECT_EQ(CountedIdentityOp::foldCalls, 9U);
+}
+
+TEST_F(ConstraintScalarFactsTests, IntegerToFeltPreservesBooleanAndSignedIndexValues) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      function.def @convert() -> (!felt.type, !felt.type) {
+        %true = arith.constant true
+        %negative = arith.constant -1 : index
+        %boolean = cast.tofelt %true : i1, !felt.type
+        %index = cast.tofelt %negative : index, !felt.type
+        function.return %boolean, %index : !felt.type, !felt.type
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  llvm::SmallVector<mlir::Value> values;
+  module->walk([&values](llzk::cast::IntToFeltOp op) { values.push_back(op.getResult()); });
+  ASSERT_EQ(values.size(), 2U);
+
+  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  auto boolean = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(facts.known(values[0]));
+  auto index = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(facts.known(values[1]));
+  ASSERT_TRUE(boolean);
+  ASSERT_TRUE(index);
+  EXPECT_EQ(boolean.getRawValue(), 1);
+  EXPECT_EQ(index.getRawValue(), -1);
 }
 
 } // namespace
