@@ -1,14 +1,4 @@
-// RUN: llzk-opt --convert-llzk-to-zklean -split-input-file -verify-diagnostics %s
-
-module attributes {llzk.lang} {
-  function.def @index_cast(%value: index) attributes {function.allow_constraint} {
-    // expected-error@+1 {{ZKLean conversion cannot preserve cast.tofelt assert for an index}}
-    %unused = cast.tofelt %value : index, !felt.type<"babybear">
-    function.return
-  }
-}
-
-// -----
+// RUN: llzk-opt --convert-llzk-to-zklean %s | FileCheck %s
 
 // Both boolean values fit any field; dynamic booleans remain supported.
 module attributes {llzk.lang} {
@@ -19,3 +9,12 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+// CHECK-LABEL: module @ZKLean attributes {llzk.lang} {
+// CHECK-NEXT:    func.func @bool_cast(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = ZKLeanLean.call @cast.tofelt(%[[VAL_0]]) : (i1) -> !ZKExpr.zkexpr
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = ZKExpr.Literal %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = ZKBuilder.ConstrainEq %[[VAL_1]] %[[VAL_3]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
