@@ -98,20 +98,15 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @convert(%value: index) -> !felt.type<"koalabear"> attributes {function.allow_constraint} {
-    // expected-error@+1 {{PCL lowering cannot preserve cast.tofelt assert for a non-constant index}}
-    %felt = cast.tofelt %value : index, !felt.type<"koalabear">
-    function.return %felt : !felt.type<"koalabear">
-  }
   struct.def @Main {
     struct.member @out : !felt.type<"koalabear"> {llzk.pub}
-    function.def @compute() -> !struct.type<@Main> {
+    function.def @compute(%value: index) -> !struct.type<@Main> {
       %self = struct.new : <@Main>
       function.return %self : !struct.type<@Main>
     }
-    function.def @constrain(%self: !struct.type<@Main>) {
-      %zero = arith.constant 0 : index
-      %felt = function.call @convert(%zero) : (index) -> !felt.type<"koalabear">
+    function.def @constrain(%self: !struct.type<@Main>, %value: index) {
+      // expected-error@+1 {{PCL lowering cannot preserve cast.tofelt assert for a non-constant index}}
+      %unused = cast.tofelt assert %value : index, !felt.type<"koalabear">
       function.return
     }
   }

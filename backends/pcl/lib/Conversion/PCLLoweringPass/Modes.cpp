@@ -186,7 +186,11 @@ DupVarsReplacements BaseMode::collectDupVarsReplacements() {
 // FullLoweringMode
 //===----------------------------------------------------------------------===//
 
-LogicalResult FullLoweringMode::runStep1() {
+LogicalResult FullLoweringMode::runStep1(const llvm::DynamicAPInt &prime) {
+  if (failed(validateIntToFeltCasts(prime))) {
+    return failure();
+  }
+
   ConversionTarget target(getContext());
   // Step 1 preserves symbol definitions. Discard the cache before step 2.
   SymbolTableCollection tables;
@@ -202,11 +206,17 @@ LogicalResult FullLoweringMode::runStep1() {
 // StubbedLoweringMode
 //===----------------------------------------------------------------------===//
 
-LogicalResult StubbedLoweringMode::runStep1() {
+LogicalResult StubbedLoweringMode::runStep1(const llvm::DynamicAPInt &prime) {
   if (failed(analyze())) {
     return failure();
   }
   checkAnalysisResult();
+
+  // Unsupported free functions are now stubs. Validate the remaining casts
+  // before conversion loses their original integer values.
+  if (failed(validateIntToFeltCasts(prime))) {
+    return failure();
+  }
 
   // After the analysis, do the conversion as normal.
   ConversionTarget target(getContext());
