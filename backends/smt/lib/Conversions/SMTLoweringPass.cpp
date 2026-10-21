@@ -323,7 +323,9 @@ public:
       const UnreducedInterval &lhsRange, Value rhs, const UnreducedInterval &rhsRange,
       StringRef prefix
   ) const;
-  void emitCongruenceEqualityAssertion(
+
+  // This one can fail if the values being asserted are dynamically shaped arrays
+  LogicalResult emitCongruenceEqualityAssertion(
       OpBuilder &builder, Type type, Location loc, Value lhs, const UnreducedInterval &lhsRange,
       Value rhs, const UnreducedInterval &rhsRange, StringRef prefix
   ) const;
@@ -471,10 +473,12 @@ public:
     auto [_, witness] = it->second;
     auto witnessRange = strategy->getWitnessMemberRange(adaptor.getMemberName());
     auto valueRange = strategy->getScalarValueRange(op.getVal());
-    strategy->emitCongruenceEqualityAssertion(
-        rewriter, op.getVal().getType(), op.getLoc(), witness, witnessRange, adaptor.getVal(),
-        valueRange, "member_write"
-    );
+    if (failed(strategy->emitCongruenceEqualityAssertion(
+            rewriter, op.getVal().getType(), op.getLoc(), witness, witnessRange, adaptor.getVal(),
+            valueRange, "member_write"
+        ))) {
+      return failure();
+    }
     rewriter.eraseOp(op);
 
     return success();
@@ -499,10 +503,12 @@ public:
   ) const override {
     auto lhsRange = strategy->getScalarValueRange(op.getLhs());
     auto rhsRange = strategy->getScalarValueRange(op.getRhs());
-    strategy->emitCongruenceEqualityAssertion(
-        rewriter, op.getLhs().getType(), op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(),
-        rhsRange, "constrain_eq"
-    );
+    if (failed(strategy->emitCongruenceEqualityAssertion(
+            rewriter, op.getLhs().getType(), op.getLoc(), adaptor.getLhs(), lhsRange,
+            adaptor.getRhs(), rhsRange, "constrain_eq"
+        ))) {
+      return failure();
+    };
     rewriter.eraseOp(op);
     return success();
   }
@@ -723,7 +729,7 @@ Value OptimizedNonNativeStrategy::emitOrderedComparisonPredicate(
   return emitter->emitOrderedComparison(builder, loc, predicate, lhsToCompare, rhsToCompare);
 }
 
-void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
+LogicalResult OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
     OpBuilder &builder, Type type, Location loc, Value lhs, const UnreducedInterval &lhsRange,
     Value rhs, const UnreducedInterval &rhsRange, StringRef prefix
 ) const {
@@ -740,17 +746,18 @@ void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
     if (succeeded(extents)) {
       Value predicate = emitter->emitQuantifiedAssertion(loc, *extents, equalAtPosition, builder);
       mlir::smt::AssertOp::create(builder, loc, predicate);
-      return;
+      return success();
     }
     // If the arrays are dynamically sized, just emit a warning and fall back to asserting the whole
     // thing equal (outside the if-statement)
-    mlir::emitError(loc) << "dynamically sized arrays not fully supported in SMT lowering";
+    return mlir::emitError(loc) << "dynamically sized arrays not fully supported in SMT lowering";
   }
 
   Value predicate =
       buildCongruenceEqualityPredicate(builder, loc, lhs, lhsRange, rhs, rhsRange, prefix);
   // Assert lhs ≡ rhs (mod p) using the selected congruence encoding plan.
   mlir::smt::AssertOp::create(builder, loc, predicate);
+  return success();
 }
 
 Value OptimizedNonNativeStrategy::emitDivisionValue(
