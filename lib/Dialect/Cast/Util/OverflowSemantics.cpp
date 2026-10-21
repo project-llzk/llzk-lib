@@ -33,7 +33,7 @@ applyIntToFeltOverflow(const DynamicAPInt &value, const Field &field, OverflowSe
   case OverflowSemantics::WRAP:
     return field.reduce(value);
   case OverflowSemantics::TRUNCATE:
-    return field.reduce(positiveModulo(value, DynamicAPInt(1) << DynamicAPInt(field.bitWidth())));
+    return field.reduce(positiveModulo(value, DynamicAPInt(1) << field.bitWidth()));
   }
   llvm_unreachable("unknown overflow semantics");
 }
@@ -41,8 +41,7 @@ applyIntToFeltOverflow(const DynamicAPInt &value, const Field &field, OverflowSe
 std::optional<DynamicAPInt> applyFeltToIndexOverflow(
     const DynamicAPInt &value, unsigned indexBitWidth, OverflowSemantics overflow
 ) {
-  const DynamicAPInt safeUpperBound =
-      (DynamicAPInt(1) << DynamicAPInt(indexBitWidth - 1)) - DynamicAPInt(1);
+  const DynamicAPInt safeUpperBound = (DynamicAPInt(1) << (indexBitWidth - 1)) - 1;
   switch (overflow) {
   case OverflowSemantics::ASSERT:
     return value < 0 || value > safeUpperBound ? std::nullopt : std::optional(value);
@@ -50,7 +49,7 @@ std::optional<DynamicAPInt> applyFeltToIndexOverflow(
     return value < 0 ? DynamicAPInt(0) : (value < safeUpperBound ? value : safeUpperBound);
   case OverflowSemantics::WRAP:
   case OverflowSemantics::TRUNCATE:
-    return positiveModulo(value, safeUpperBound + DynamicAPInt(1));
+    return positiveModulo(value, safeUpperBound + 1);
   }
   llvm_unreachable("unknown overflow semantics");
 }
