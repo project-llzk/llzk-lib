@@ -137,13 +137,9 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     structs, because the declaration would otherwise have a mismatched type.
     Includes must be inlined before running this pass.
   }];
-  let options =
-      [Option<
-           "specializationLimit", "max-specializations", "unsigned", "1000",
-           "Maximum number of concrete struct and free-function definitions">,
-       Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
-              "Maximum steps shared by template expressions and methods in one "
-              "discovery run">];
+  let options = [Option<
+      "specializationLimit", "max-specializations", "unsigned", "1000",
+      "Maximum number of concrete struct and free-function definitions">];
 }
 
 def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
@@ -179,9 +175,7 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     Every surviving operation is checked independently: only felt constants,
     felt add/subtract/multiply/negate expressions, felt equalities, original
     storage reads, index/i1 constants, and conversions of constant integers to
-    felt are permitted. Expansion work is bounded across calls, iterations,
-    and aggregate traversal. Any failed expansion or validation fails the entire
-    pass.
+    felt are permitted. Any failed expansion or validation fails the entire pass.
 
     Equality constraints currently require scalar felt operands; array equality
     and constrain.in are unsupported. Symbolic if/select conditions are rejected.
@@ -192,9 +186,6 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     with the exposed rolled declarations. Specialization selection and concrete
     path validation stay inside the pass; no new handle operations are emitted.
   }];
-  let options = [Option<
-      "evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
-      "Maximum expansion work across operations and aggregate paths">];
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {

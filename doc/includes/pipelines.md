@@ -128,4 +128,4 @@ reads through rolled handles; `-llzk-array-to-scalar` currently does not.
 Only scalar felt equality constraints are supported. Array equality,
 `constrain.in`, live non-signal storage reads, recursion, and undefined or
 multi-block callees are rejected. See `-llzk-flatten-constraints` for the binding
-model, diagnostics, and expansion limits.
+model, diagnostics, and supported control flow.
