@@ -1,0 +1,43 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  function.def @zero_step(%lb: index, %ub: index, %step: index, %seed: index) -> index {
+    // expected-error @+1 {{llzk.loopbounds requires a nonzero step for unrolling}}
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed) -> index {
+      %next = arith.addi %acc, %iv : index
+      scf.yield %next : index
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 0>}
+    function.return %result : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @trip_count_overflow(%lb: index, %ub: index, %step: index, %seed: index) -> index {
+    // expected-error @+1 {{llzk.loopbounds trip count does not fit in uint64_t}}
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed) -> index {
+      %next = arith.addi %acc, %iv : index
+      scf.yield %next : index
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
+    function.return %result : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @induction_overflow(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
+    %lb = arith.index_cast %lb_index : index to i8
+    %ub = arith.index_cast %ub_index : index to i8
+    %step = arith.index_cast %step_index : index to i8
+    %seed_int = arith.index_cast %seed : index to i8
+    // expected-error @+1 {{llzk.loopbounds induction value does not fit the loop induction type}}
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed_int) -> i8 : i8 {
+      %next = arith.addi %acc, %iv : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<127 to 129 step 1>}
+    %result_index = arith.index_cast %result : i8 to index
+    function.return %result_index : index
+  }
+}
