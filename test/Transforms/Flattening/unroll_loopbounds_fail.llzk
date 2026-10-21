@@ -41,3 +41,31 @@ module attributes {llzk.lang} {
     function.return %result_index : index
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @while_zero_step(%cond: i1) {
+    // expected-error @+1 {{llzk.loopbounds requires a nonzero step for unrolling}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 0>}
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @while_trip_count_overflow(%cond: i1) {
+    // expected-error @+1 {{llzk.loopbounds trip count does not fit in uint64_t}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
+    function.return
+  }
+}
