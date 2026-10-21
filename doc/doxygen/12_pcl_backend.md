@@ -16,7 +16,9 @@ Allows LLZK to be lowered to PCL (Picus Constraint Language) for use with the [P
 Run `llzk-opt input.llzk --llzk-full-pcl-lowering` to normalize while loops,
 canonicalize loop bounds, flatten templates and unroll loops rooted at `llzk.main`,
 then scalarize PODs and arrays before converting to PCL. Canonicalization also
-runs after flattening and scalarization.
+runs after flattening and scalarization. Common subexpression elimination runs
+before and after POD/array scalarization, followed by redundant read/write
+elimination before PCL conversion.
 
 This pipeline preserves component boundaries; it does not inline structs or free
 functions. Existing PCL restrictions still apply, including the requirement that

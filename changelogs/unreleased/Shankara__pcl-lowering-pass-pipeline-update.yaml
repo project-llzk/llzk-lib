@@ -1,2 +1,2 @@
 added:
-  - Add `llzk-full-pcl-lowering` to normalize while loops, flatten templates, and scalarize PODs and arrays before PCL conversion while preserving component boundaries.
+  - Add `llzk-full-pcl-lowering` to normalize while loops, flatten templates, scalarize PODs and arrays, and eliminate common subexpressions and redundant reads/writes before PCL conversion while preserving component boundaries.

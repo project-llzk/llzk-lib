@@ -45,11 +45,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@C::@D::@A>} {
   }
 }
 
+// Independent variable declarations may be emitted in either order.
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
 // CHECK-NEXT:    func.func @"C::D::B"(%[[CHILD_INPUT:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
-// CHECK-NEXT:      %[[CHILD_OUTPUT:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
-// CHECK-NEXT:      %[[CHILD_SECRET:[0-9a-zA-Z_\.]+]] = pcl.var "secret" false
-// CHECK-NEXT:      %[[CHILD_SECRET_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CHILD_SECRET]], %[[CHILD_INPUT]]
+// CHECK-DAG:      %[[CHILD_OUTPUT:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
+// CHECK-DAG:      %[[CHILD_SECRET:[0-9a-zA-Z_\.]+]] = pcl.var "secret" false
+// CHECK:      %[[CHILD_SECRET_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CHILD_SECRET]], %[[CHILD_INPUT]]
 // CHECK-NEXT:      pcl.assert %[[CHILD_SECRET_EQ]]
 // CHECK-NEXT:      %[[CHILD_OUTPUT_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CHILD_OUTPUT]], %[[CHILD_SECRET]]
 // CHECK-NEXT:      pcl.assert %[[CHILD_OUTPUT_EQ]]
@@ -57,12 +58,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@C::@D::@A>} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @"C::D::A"(%[[PARENT_INPUT:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
 // CHECK-NEXT:      %[[CHILD_RESULT:[0-9a-zA-Z_\.]+]] = call @"C::D::B"(%[[PARENT_INPUT]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[CHILD_MEMBER:[0-9a-zA-Z_\.]+]] = pcl.var "b.foo" false
-// CHECK-NEXT:      %[[CHILD_MEMBER_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CHILD_MEMBER]], %[[CHILD_RESULT]]
+// CHECK-DAG:      %[[CHILD_MEMBER:[0-9a-zA-Z_\.]+]] = pcl.var "b.foo" false
+// CHECK:      %[[CHILD_MEMBER_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CHILD_MEMBER]], %[[CHILD_RESULT]]
 // CHECK-NEXT:      pcl.assert %[[CHILD_MEMBER_EQ]]
-// CHECK-NEXT:      %[[PARENT_FOO:[0-9a-zA-Z_\.]+]] = pcl.var "foo" false
-// CHECK-NEXT:      %[[PARENT_OUTPUT:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
-// CHECK-NEXT:      %[[PARENT_FOO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[PARENT_FOO]], %[[CHILD_MEMBER]]
+// CHECK-DAG:      %[[PARENT_FOO:[0-9a-zA-Z_\.]+]] = pcl.var "foo" false
+// CHECK-DAG:      %[[PARENT_OUTPUT:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK:      %[[PARENT_FOO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[PARENT_FOO]], %[[CHILD_MEMBER]]
 // CHECK-NEXT:      pcl.assert %[[PARENT_FOO_EQ]]
 // CHECK-NEXT:      %[[PARENT_OUTPUT_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[PARENT_OUTPUT]], %[[PARENT_FOO]]
 // CHECK-NEXT:      pcl.assert %[[PARENT_OUTPUT_EQ]]

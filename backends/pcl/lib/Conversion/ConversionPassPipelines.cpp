@@ -37,10 +37,13 @@ void buildFullPCLLoweringPipeline(mlir::OpPassManager &pm) {
   );
   // Unrolling exposes constant array indices needed by scalarization.
   pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createCSEPass());
   // Split PODs before arrays so arrays of PODs become parallel scalar arrays.
   pm.addPass(llzk::pod::createPodToScalarPass());
   pm.addPass(llzk::array::createArrayToScalarPass());
   pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createCSEPass());
+  pm.addPass(llzk::createRedundantReadAndWriteEliminationPass());
   pm.addPass(createPCLLoweringPass());
 }
 
