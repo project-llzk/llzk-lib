@@ -28,6 +28,7 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -43,6 +44,7 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/IRMapping.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Support/LLVM.h>
@@ -56,6 +58,7 @@
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 
@@ -1188,17 +1191,121 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step3_Unroll {
 
-// TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
+/// Compute the trip count from the loop itself, independently of any trusted annotation.
+static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
+  std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
+  std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
+  std::optional<OpFoldResult> stepVal = loopOp.getSingleStep();
+  if (!lbVal || !ubVal || !stepVal) {
+    return std::nullopt;
+  }
+  bool isSigned = true;
+  if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
+    isSigned = !forOp.getUnsignedCmp();
+  }
+  return constantTripCount(*lbVal, *ubVal, *stepVal, isSigned, scf::computeUbMinusLb);
+}
+
+/// Fully expand annotated loops using the trusted bounds, including their induction values.
+/// Run before folding so zero- and single-trip loops cannot discard conflicting annotations.
 template <HasInterface<LoopLikeOpInterface> OpClass>
-class LoopUnrollPattern : public OpRewritePattern<OpClass> {
+class AnnotatedLoopUnrollPattern : public OpRewritePattern<OpClass> {
+public:
+  AnnotatedLoopUnrollPattern(MLIRContext *ctx, ConversionTracker &t)
+      : OpRewritePattern<OpClass>(ctx), tracker(t) {}
+
+  LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
+    auto bounds = loopOp->template getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name);
+    if (!bounds) {
+      return failure();
+    }
+    const llvm::DynamicAPInt &lower = bounds.getLower();
+    const llvm::DynamicAPInt &upper = bounds.getUpper();
+    const llvm::DynamicAPInt &step = bounds.getStep();
+    if (step == 0) {
+      return rewriter.notifyMatchFailure(
+          loopOp, "llzk.loopbounds requires a nonzero step for unrolling"
+      );
+    }
+    llvm::DynamicAPInt count = llvm::ceilDiv(upper - lower, step);
+    if (count < 0) {
+      count = llvm::DynamicAPInt(0);
+    }
+    if (auto computed = getConstantTripCount(loopOp);
+        computed && toDynamicAPInt(*computed) != count) {
+      loopOp.emitWarning() << "llzk.loopbounds trip count " << llvm::toString(toAPSInt(count), 10)
+                           << " does not match computed trip count "
+                           << llvm::toString(*computed, 10, false) << "; using llzk.loopbounds";
+    }
+    auto tripCount = checkedToUInt64(count);
+    if (!tripCount) {
+      llvm::consumeError(tripCount.takeError());
+      return rewriter.notifyMatchFailure(
+          loopOp, "llzk.loopbounds trip count does not fit in uint64_t"
+      );
+    }
+
+    Value iv = loopOp.getInductionVar();
+    Type ivType = iv.getType();
+    unsigned width =
+        ivType.isIndex() ? IndexType::kInternalStorageBitWidth : ivType.getIntOrFloatBitWidth();
+    bool isSigned = true;
+    if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
+      isSigned = !forOp.getUnsignedCmp();
+    }
+    // Check the endpoints before mutating IR; all intermediate induction values lie between them.
+    if (*tripCount != 0 && !iv.use_empty()) {
+      for (const auto &value : {lower, lower + (count - 1) * step}) {
+        auto encoded = checkedToAPInt(value, width, isSigned);
+        if (!encoded) {
+          llvm::consumeError(encoded.takeError());
+          return rewriter.notifyMatchFailure(
+              loopOp, "llzk.loopbounds induction value does not fit the loop induction type"
+          );
+        }
+      }
+    }
+
+    SmallVector<Value> results(loopOp.getInits());
+    llvm::DynamicAPInt inductionValue = lower;
+    for (uint64_t i = 0; i < *tripCount; ++i, inductionValue += step) {
+      IRMapping mapping;
+      mapping.map(loopOp.getRegionIterArgs(), results);
+      if (!iv.use_empty()) {
+        Value constant = arith::ConstantOp::create(
+            rewriter, loopOp.getLoc(),
+            rewriter.getIntegerAttr(ivType, toAPSInt(inductionValue).sextOrTrunc(width))
+        );
+        mapping.map(iv, constant);
+      }
+      for (Operation &op : loopOp.getBody()->without_terminator()) {
+        rewriter.clone(op, mapping);
+      }
+      for (auto [result, yielded] : llvm::zip_equal(results, loopOp.getYieldedValues())) {
+        result = mapping.lookupOrDefault(yielded);
+      }
+    }
+    rewriter.replaceOp(loopOp, results);
+    tracker.updateModifiedFlag(true);
+    return success();
+  }
+
+private:
+  ConversionTracker &tracker;
+};
+
+// Unroll via computed trip count
+template <HasInterface<LoopLikeOpInterface> OpClass>
+class ComputedLoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
   using OpRewritePattern<OpClass>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
-    if (auto maybeConstant = getConstantTripCount(loopOp)) {
-      uint64_t tripCount = *maybeConstant;
+    if (auto maybeConstant = getConstantTripCount(loopOp);
+        maybeConstant && maybeConstant->getActiveBits() <= 64) {
+      uint64_t tripCount = maybeConstant->getZExtValue();
       if (tripCount == 0) {
-        rewriter.eraseOp(loopOp);
+        rewriter.replaceOp(loopOp, loopOp.getInits());
         return success();
       } else if (tripCount == 1) {
         return loopOp.promoteIfSingleIteration(rewriter);
@@ -1207,36 +1314,28 @@ public:
     }
     return failure();
   }
-
-private:
-  /// Returns the statically-known trip count of the loop-like op, `nullopt` otherwise. Trip count
-  /// is computed as ceilDiv(highBound - lowBound, step).
-  static std::optional<int64_t> getConstantTripCount(LoopLikeOpInterface loopOp) {
-    std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
-    std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
-    std::optional<OpFoldResult> stepVal = loopOp.getSingleStep();
-    if (!lbVal.has_value() || !ubVal.has_value() || !stepVal.has_value()) {
-      return std::nullopt;
-    }
-    bool isSigned = true;
-    if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
-      isSigned = !forOp.getUnsignedCmp();
-    }
-    std::optional<APInt> result = constantTripCount(
-        lbVal.value(), ubVal.value(), stepVal.value(), isSigned, scf::computeUbMinusLb
-    );
-    return result.has_value() ? std::optional<int64_t>(result->getZExtValue()) : std::nullopt;
-  }
 };
 
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
-  RewritePatternSet patterns(ctx);
-  patterns.add<LoopUnrollPattern<scf::ForOp>>(ctx);
-  patterns.add<LoopUnrollPattern<affine::AffineForOp>>(ctx);
 
+  // Must unroll via `LoopBoundsAttr` if present
+  RewritePatternSet annotatedPatterns(ctx);
+  annotatedPatterns.add<AnnotatedLoopUnrollPattern<scf::ForOp>>(ctx, tracker);
+  annotatedPatterns.add<AnnotatedLoopUnrollPattern<affine::AffineForOp>>(ctx, tracker);
+  MatchFailureListener failureListener;
+  walkAndApplyPatterns(modOp, std::move(annotatedPatterns), &failureListener);
+  if (failureListener.hadFailure) {
+    return failure();
+  }
+
+  // Otherwise, fall through to computed trip count unrolling
+  RewritePatternSet patterns(ctx);
+  patterns.add<ComputedLoopUnrollPattern<scf::ForOp>>(ctx);
+  patterns.add<ComputedLoopUnrollPattern<affine::AffineForOp>>(ctx);
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
+
 } // namespace Step3_Unroll
 
 namespace Step4_InstantiateAffineMaps {
