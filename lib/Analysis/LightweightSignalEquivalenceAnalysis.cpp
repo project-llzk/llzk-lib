@@ -221,11 +221,12 @@ static std::optional<PodObservation> normalizePodRead(ReadPodOp read) {
   return result;
 }
 
-/// Forward an exact, non-offset member read to its reaching write. POD-valued
-/// reads are normalized separately so their copy point remains visible.
+/// Forward an exact, non-offset member read only when copying preserves identity.
+/// Mutable aggregates are snapshots and cannot be replaced by the write source.
+/// POD-valued reads are normalized separately so their copy point remains visible.
 static Value forwardScalarMemberRead(Value value) {
   auto read = value.getDefiningOp<MemberReadOp>();
-  if (!read || isa<PodType>(read.getType())) {
+  if (!read || llzk::requiresValueCopy(read.getType())) {
     return value;
   }
   if (MemberWriteOp write = findReachingMemberWrite(read)) {
