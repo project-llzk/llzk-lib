@@ -309,9 +309,27 @@ Operation *convertStructProductToFunc(Operation *op, MLIRContext *context) {
   return op;
 }
 
+namespace {
+
+/// Erase unused casts whose overflow mode cannot cause assertion failure.
+template <typename CastOp> class DeadNonAssertCastPattern : public OpRewritePattern<CastOp> {
+  using OpRewritePattern<CastOp>::OpRewritePattern;
+
+public:
+  LogicalResult matchAndRewrite(CastOp op, PatternRewriter &rewriter) const override {
+    if (op.getOverflow() == cast::OverflowSemantics::ASSERT || !op->use_empty()) {
+      return failure();
+    }
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+} // namespace
+
 void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
-  // There is currently no encoding for the integer value and its range check.
-  // A residual cast must fail conversion, including when its result is unused.
+  // There is currently no encoding for cast values or assert-mode range checks.
+  // Only unused non-assert casts can be legalized, by erasing them.
   target.addIllegalOp<cast::IntToFeltOp, cast::FeltToIndexOp>();
   target.addIllegalDialect<felt::FeltDialect>();
   target.addIllegalDialect<constrain::ConstrainDialect>();
@@ -343,6 +361,11 @@ applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatte
   if (op == nullptr) {
     return op;
   }
+
+  patterns.add<
+      DeadNonAssertCastPattern<cast::IntToFeltOp>, DeadNonAssertCastPattern<cast::FeltToIndexOp>>(
+      op->getContext()
+  );
 
   ConversionConfig config;
   config.buildMaterializations = false;
