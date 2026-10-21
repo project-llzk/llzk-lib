@@ -573,11 +573,12 @@ TEST_F(BabyBearFoldTest, CastToFeltFoldPreservesOverflowSemantics) {
   expectNoFold(foldToFelt(prime, type, llzk::cast::OverflowSemantics::TRUNCATE));
   expectNoFold(foldToFelt(abovePrime, type, llzk::cast::OverflowSemantics::TRUNCATE));
   expectValue(
-      foldToFelt(builder.getIndexAttr(1LL << 31), type, llzk::cast::OverflowSemantics::TRUNCATE), 0
+      foldToFelt(builder.getIndexAttr(1ULL << 31U), type, llzk::cast::OverflowSemantics::TRUNCATE),
+      0
   );
   expectValue(
       foldToFelt(
-          builder.getIndexAttr((1LL << 31) + 1), type, llzk::cast::OverflowSemantics::TRUNCATE
+          builder.getIndexAttr((1ULL << 31U) + 1), type, llzk::cast::OverflowSemantics::TRUNCATE
       ),
       1
   );
