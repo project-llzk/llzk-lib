@@ -218,6 +218,11 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
               "is true as well. Thus, the pass will run multiple times "
               "until no further changes can be made or the upper limit "
               "provided in this option is reached.">,
+       Option<"unrollIterationLimit", "max-unroll", "uint64_t",
+              /* default */ "10000",
+              "Maximum trip count for each loop unrolled, including annotated "
+              "loops. Exceeding this limit fails the pass; zero only permits "
+              "zero-trip unrolling.">,
        Option<"cleanupMode", "cleanup",
               "::llzk::polymorphic::FlatteningCleanupMode",
               /* default */

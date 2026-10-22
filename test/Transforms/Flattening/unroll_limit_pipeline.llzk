@@ -1,0 +1,31 @@
+// RUN: llzk-opt -llzk-full-struct-inlining="flattening={max-unroll=2}" -verify-diagnostics %s -o /dev/null
+// RUN: llzk-opt -llzk-full-inlining="flattening={max-unroll=2}" -verify-diagnostics %s -o /dev/null
+// RUN: llzk-opt -llzk-full-poly-lowering="flatten-inline={flattening={max-unroll=2}}" -verify-diagnostics %s -o /dev/null
+
+// Enclosing pipelines must forward the unrolling limit to flattening.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @a : !felt.type
+    struct.member @b : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      struct.writem %self[@a] = %a : !struct.type<@Main>, !felt.type
+      struct.writem %self[@b] = %b : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>, %input_a: !felt.type, %input_b: !felt.type) {
+      %a = struct.readm %self[@a] : !struct.type<@Main>, !felt.type
+      %b = struct.readm %self[@b] : !struct.type<@Main>, !felt.type
+      %zero = arith.constant 0 : index
+      %three = arith.constant 3 : index
+      %one = arith.constant 1 : index
+      // expected-error @+1 {{loop trip count 3 exceeds max-unroll limit of 2}}
+      scf.for %iv = %zero to %three step %one {
+        constrain.eq %a, %b : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
