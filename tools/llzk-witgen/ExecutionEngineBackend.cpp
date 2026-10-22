@@ -123,9 +123,9 @@ static llvm::Error buildDescriptor(BufferPack &buffer) {
   if (!rank) {
     return rank.takeError();
   }
-  auto descriptorSize = llvm::DynamicAPInt(sizeof(void *)) * 2;
+  constexpr int64_t descriptorSize = sizeof(void *) * 2;
   auto shapeAndStrideCount = llvm::DynamicAPInt(1) + *rank + *rank;
-  auto dynamicPart = llvm::DynamicAPInt(sizeof(int64_t)) * shapeAndStrideCount;
+  auto dynamicPart = static_cast<int64_t>(sizeof(int64_t)) * shapeAndStrideCount;
   auto totalSize = descriptorSize + dynamicPart;
   auto checkedTotalSize = checkedToSize(totalSize, "execution-engine memref descriptor");
   if (!checkedTotalSize) {

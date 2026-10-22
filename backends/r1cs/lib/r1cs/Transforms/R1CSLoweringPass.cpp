@@ -63,7 +63,8 @@ struct LinearCombination {
 
   LinearCombination() : constant() {}
 
-  void addTerm(Value v, const DynamicAPInt &coeff) {
+  /// Add a term, preserving native coefficients for arithmetic overload selection.
+  template <typename CoeffT> void addTerm(Value v, const CoeffT &coeff) {
     if (coeff == 0) {
       return;
     }
@@ -73,11 +74,6 @@ struct LinearCombination {
     }
   }
 
-  void addTerm(Value v, int64_t coeff) {
-    DynamicAPInt dynamicCoeff(coeff);
-    return addTerm(v, dynamicCoeff);
-  }
-
   void negate() {
     for (auto &kv : terms) {
       kv.second = -kv.second;
@@ -85,7 +81,8 @@ struct LinearCombination {
     constant = -constant;
   };
 
-  LinearCombination scaled(const DynamicAPInt &factor) const {
+  /// Scale all coefficients, preserving native factors for arithmetic overload selection.
+  template <typename FactorT> LinearCombination scaled(const FactorT &factor) const {
     LinearCombination result;
     if (factor == 0) {
       return result;
@@ -96,11 +93,6 @@ struct LinearCombination {
     }
     result.constant = constant * factor;
     return result;
-  }
-
-  LinearCombination scaled(int64_t factor) const {
-    DynamicAPInt dynamicFactor(factor);
-    return scaled(dynamicFactor);
   }
 
   LinearCombination add(const LinearCombination &other) const {

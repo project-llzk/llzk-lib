@@ -183,7 +183,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
         if (lo < hi && end >= hi) {
           // The for loop casts its bounds and step to index. Since 0 <= lo < hi,
           // bounding hi also bounds lo and hi - lo.
-          if (hi > llvm::DynamicAPInt(std::numeric_limits<int64_t>::max())) {
+          if (hi > std::numeric_limits<int64_t>::max()) {
             reportFailureReason("upper bound cannot be represented as a nonnegative index");
             return info;
           }

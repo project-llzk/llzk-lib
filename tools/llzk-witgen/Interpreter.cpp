@@ -531,7 +531,7 @@ private:
         return rhs.takeError();
       }
       llvm::DynamicAPInt result(0);
-      if (*rhs < llvm::DynamicAPInt(field.bitWidth())) {
+      if (*rhs < field.bitWidth()) {
         result = *lhs >> *rhs;
       }
       return bind({WitnessVal(result)});
