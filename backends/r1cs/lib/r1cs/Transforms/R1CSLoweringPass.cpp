@@ -34,11 +34,14 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Matchers.h>
+#include <mlir/IR/Verifier.h>
+#include <mlir/Support/FileUtilities.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/ToolOutputFile.h>
 
 #include <cstdint>
 #include <deque>
@@ -607,6 +610,26 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     return mapping;
   }
 
+  /// Write each signal path and its LLZK and R1CS IDs directly from the lowering maps.
+  void
+  emitLayoutCSV(const LLZKLayout &layout, const R1CSWireMap &mapping, llvm::raw_ostream &output) {
+    output << "access_path,llzk_layout_id,r1cs_wire_id\n";
+    for (auto [layoutId, path] : llvm::enumerate(layout.signalPaths)) {
+      std::string accessPath;
+      llvm::raw_string_ostream stream(accessPath);
+      printLLZKLayoutPath(path, layout.argumentNames, stream);
+      // CSV escapes embedded quotes by doubling them, and quotes fields with commas.
+      output << '\"';
+      for (char character : accessPath) {
+        if (character == '\"') {
+          output << '\"';
+        }
+        output << character;
+      }
+      output << "\"," << layoutId << ',' << mapping.wireIdsByLayout[layoutId] << '\n';
+    }
+  }
+
   /// Create wires from the R1CS map and retain the reverse lookup by LLZK layout ID.
   FailureOr<r1cs::CircuitDefOp>
   createR1CSWires(ModuleOp module, const LLZKLayout &layout, const R1CSWireMap &mapping) {
@@ -752,6 +775,63 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     registry.insert<r1cs::R1CSDialect>();
   }
 
+  /// Check side-output paths before modifying the input module.
+  LogicalResult validateOutputOptions(ModuleOp module) {
+    StringRef llzkPath = outputLLZK.getValue();
+    StringRef layoutPath = outputLayout.getValue();
+    if (llzkPath.empty() && layoutPath.empty()) {
+      return success();
+    }
+    if (llzkPath == "-" || layoutPath == "-") {
+      return module.emitError(
+          "output-llzk and output-layout require file paths, not standard output"
+      );
+    }
+    if (!llzkPath.empty() && llzkPath == layoutPath) {
+      return module.emitError("output-llzk and output-layout require distinct file paths");
+    }
+    return success();
+  }
+
+  /// Write the LLZK snapshot and CSV only after R1CS conversion succeeds.
+  LogicalResult emitOutputs(
+      ModuleOp module, StringRef llzkIR, const LLZKLayout &layout, const R1CSWireMap &mapping
+  ) {
+    std::string csv;
+    if (!outputLayout.getValue().empty()) {
+      llvm::raw_string_ostream stream(csv);
+      emitLayoutCSV(layout, mapping, stream);
+    }
+    SmallVector<std::pair<StringRef, StringRef>> outputs;
+    if (!outputLLZK.getValue().empty()) {
+      outputs.emplace_back(outputLLZK.getValue(), llzkIR);
+    }
+    if (!outputLayout.getValue().empty()) {
+      outputs.emplace_back(outputLayout.getValue(), csv);
+    }
+    SmallVector<std::unique_ptr<llvm::ToolOutputFile>> files;
+    for (auto [path, contents] : outputs) {
+      std::string error;
+      auto file = mlir::openOutputFile(path, &error);
+      if (!file) {
+        return module.emitError() << "cannot open R1CS lowering output '" << path << "': " << error;
+      }
+      file->os() << contents;
+      file->os().flush();
+      if (file->os().has_error()) {
+        std::string message = file->os().error().message();
+        file->os().clear_error();
+        return module.emitError() << "cannot write R1CS lowering output '" << path
+                                  << "': " << message;
+      }
+      files.push_back(std::move(file));
+    }
+    for (auto &file : files) {
+      file->keep();
+    }
+    return success();
+  }
+
   void runOnOperation() override {
     // Pass instances may be reused for multiple modules.
     degrees.clear();
@@ -764,6 +844,9 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     wires.clear();
     auxCounter = 0;
     ModuleOp module = getOperation();
+    if (failed(validateOutputOptions(module))) {
+      return signalPassFailure();
+    }
     SymbolTableCollection tables;
     auto definition = getMainInstanceDef(tables, module);
     if (failed(definition) || !*definition) {
@@ -789,6 +872,16 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     if (failed(wireMap)) {
       return signalPassFailure();
     }
+    std::string llzkIR;
+    if (!outputLLZK.getValue().empty()) {
+      OwningOpRef<ModuleOp> snapshot = cast<ModuleOp>(module->clone());
+      if (failed(verify(*snapshot))) {
+        return signalPassFailure();
+      }
+      llvm::raw_string_ostream stream(llzkIR);
+      snapshot->print(stream);
+      stream << '\n';
+    }
     auto circuit = createR1CSWires(module, *layout, *wireMap);
     if (failed(circuit)) {
       return signalPassFailure();
@@ -804,6 +897,9 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     }
     module->removeAttr(MAIN_ATTR_NAME);
     module->setAttr(LANG_ATTR_NAME, StringAttr::get(module.getContext(), "r1cs"));
+    if (failed(emitOutputs(module, llzkIR, *layout, *wireMap))) {
+      return signalPassFailure();
+    }
   }
 };
 
