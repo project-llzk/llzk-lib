@@ -1202,11 +1202,12 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     }
   } else if (
       auto intToFelt = dyn_cast<IntToFeltOp>(op);
-      intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT
+      intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT &&
+      !intToFelt.getValue().getType().isInteger(1)
   ) {
-    // Non-assert casts can change the value non-monotonically. Forget the operand
+    // Non-assert casts can change the value non-monotonically (other than boolean inputs which
+    // cannot overflow and retain their relation in the cast case below). Forget the operand
     // relation, but initialize the result so sparse dataflow visits its users.
-    // All modes, including truncation followed by reduction, return values in [0, p).
     propagateIfChanged(results[0], results[0]->setValue(createUnknownValue(intToFelt.getResult())));
   } else if (
       auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
@@ -1732,10 +1733,12 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
-  // For casts, just pass the interval along to the cast's operand.
+  // Pass the interval to the operand when the cast preserves its value.
+  // Boolean inputs cannot overflow in any IntToFeltOp mode.
   auto castCase = [&](Operation *op) {
     if (auto intToFelt = dyn_cast<IntToFeltOp>(op);
-        intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+        intToFelt && intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT &&
+        !intToFelt.getValue().getType().isInteger(1)) {
       return;
     }
     if (auto feltToIndex = dyn_cast<FeltToIndexOp>(op);
