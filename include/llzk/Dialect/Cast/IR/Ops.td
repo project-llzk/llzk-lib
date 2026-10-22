@@ -29,17 +29,19 @@ class CastOp<string mnemonic, list<Trait> traits = []>
                   DeclareOpInterfaceMethods<ConditionallySpeculatable>]> {
   let extraClassDefinition = [{
     /// Model possible assertion failure as program termination, like bool.assert.
+    /// Since field primes must be at least 2, casts from boolean inputs cannot fail.
     void $cppClass::getEffects(
         ::llvm::SmallVectorImpl<::mlir::MemoryEffects::EffectInstance> &effects
     ) {
-      if (getOverflow() == OverflowSemantics::ASSERT) {
+      if (getOverflow() == OverflowSemantics::ASSERT && !getValue().getType().isInteger(1)) {
         effects.emplace_back(::mlir::MemoryEffects::Write::get());
       }
     }
 
-    /// Only non-assert casts may execute on paths where they were not present.
+    /// Only infallible casts may execute on paths where they were not present.
+    /// Since field primes must be at least 2, casts from boolean inputs cannot fail.
     ::mlir::Speculation::Speculatability $cppClass::getSpeculatability() {
-      return getOverflow() == OverflowSemantics::ASSERT
+      return getOverflow() == OverflowSemantics::ASSERT && !getValue().getType().isInteger(1)
                  ? ::mlir::Speculation::NotSpeculatable
                  : ::mlir::Speculation::Speculatable;
     }
@@ -55,8 +57,11 @@ def LLZK_IntToFeltOp
     This operation converts a supported integer type value into a field element value.
     Boolean (`i1`) values map to zero or one, while `index` values are interpreted
     as signed integers. The overflow mode determines how values outside the
-    target field's safe range are handled. The default `assert` mode fails on
-    such values, even when the result is unused, and cannot be speculated.
+    target field's safe range are handled. For `index` inputs, the default
+    `assert` mode fails on such values, even when the result is unused, and
+    cannot be speculated. Boolean inputs always fit in every field, so their
+    casts are side-effect-free and speculatable in every mode, even when the
+    result field is unspecified.
     The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
 
     The `trunc` mode keeps the low `k = bitwidth(p)` bits, then reduces modulo

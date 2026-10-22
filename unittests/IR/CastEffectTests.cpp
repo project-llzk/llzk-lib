@@ -67,4 +67,40 @@ TEST_F(CastEffectTests, OverflowModeControlsEliminationAndSpeculation) {
   EXPECT_EQ(count, 8U);
 }
 
+// Dynamic booleans fit in every field, including one that has not been selected yet.
+TEST_F(CastEffectTests, BooleanCastsAreAlwaysPure) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      function.def @casts(%flag: i1) {
+        %a = cast.tofelt %flag : i1, !felt.type<"babybear">
+        %b = cast.tofelt assert %flag : i1, !felt.type<"babybear">
+        %c = cast.tofelt sat %flag : i1, !felt.type<"babybear">
+        %d = cast.tofelt wrap %flag : i1, !felt.type<"babybear">
+        %e = cast.tofelt trunc %flag : i1, !felt.type<"babybear">
+        %f = cast.tofelt %flag : i1
+        %g = cast.tofelt assert %flag : i1
+        %h = cast.tofelt sat %flag : i1
+        %i = cast.tofelt wrap %flag : i1
+        %j = cast.tofelt trunc %flag : i1
+        function.return
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+
+  unsigned count = 0;
+  module->walk([&](llzk::cast::IntToFeltOp op) {
+    ++count;
+    SCOPED_TRACE(count);
+    EXPECT_TRUE(mlir::isMemoryEffectFree(op));
+    EXPECT_TRUE(mlir::isSpeculatable(op));
+    EXPECT_TRUE(mlir::isPure(op));
+    EXPECT_TRUE(mlir::isOpTriviallyDead(op));
+  });
+  EXPECT_EQ(count, 10U);
+}
+
 } // namespace

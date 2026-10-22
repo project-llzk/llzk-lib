@@ -29,6 +29,15 @@ module attributes {llzk.lang} {
     %b = cast.toindex %f : !felt.type<"babybear">
     function.return
   }
+
+  // Dynamic booleans cannot overflow, including when the field is unspecified.
+  function.def @unused_boolean_asserts(%flag: i1) {
+    %implicit = cast.tofelt %flag : i1, !felt.type<"babybear">
+    %explicit = cast.tofelt assert %flag : i1, !felt.type<"babybear">
+    %fieldless = cast.tofelt %flag : i1
+    %fieldless_explicit = cast.tofelt assert %flag : i1
+    function.return
+  }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @unused_asserts(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
@@ -40,6 +49,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @safe_constant_asserts() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unused_boolean_asserts(%[[VAL_6:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

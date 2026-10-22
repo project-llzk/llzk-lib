@@ -21,6 +21,6 @@ bit width; the exporter derives the fixed byte width required by the R1CS format
 
 R1CS lowering rejects residual `cast.tofelt` operations and `cast.toindex`
 operations with `assert` overflow semantics in `constrain` functions. An assert
-cast must be preserved even when its result is unused, but the current lowering
-does not encode its range check. Valid constant assertions can be folded by
-canonicalization before lowering (the full R1CS pipeline includes this).
+cast that can fail must be preserved even when its result is unused (current
+lowering does not encode its range check). Valid constant assertions can be
+folded by canonicalization before lowering (the full R1CS pipeline includes this).
