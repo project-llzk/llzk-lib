@@ -32,7 +32,10 @@ struct StructInliningFlatteningOptions
 
   Option<uint64_t> unrollIterationLimit {
       *this, "max-unroll",
-      llvm::cl::desc("maximum trip count for each loop unrolled; exceeding it fails flattening"),
+      llvm::cl::desc(
+          "maximum trip count for each loop unrolled; exceeding it warns and leaves the loop "
+          "unchanged"
+      ),
       llvm::cl::init(10000)
   };
 

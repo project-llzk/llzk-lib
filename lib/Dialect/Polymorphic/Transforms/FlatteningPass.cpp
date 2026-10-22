@@ -33,6 +33,7 @@
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Affine/IR/AffineOps.h>
 #include <mlir/Dialect/Affine/LoopUtils.h>
@@ -88,6 +89,64 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
+/// Compute the trip count from the loop itself, independently of any trusted annotation.
+static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
+  if (auto whileOp = dyn_cast<scf::WhileOp>(loopOp.getOperation());
+      whileOp && matchPattern(whileOp.getConditionOp().getCondition(), m_Zero())) {
+    return APInt(64, 0);
+  }
+  std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
+  std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
+  std::optional<OpFoldResult> stepVal = loopOp.getSingleStep();
+  if (!lbVal || !ubVal || !stepVal) {
+    return std::nullopt;
+  }
+  bool isSigned = true;
+  if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
+    isSigned = !forOp.getUnsignedCmp();
+  }
+  return constantTripCount(*lbVal, *ubVal, *stepVal, isSigned, scf::computeUbMinusLb);
+}
+
+/// Explain why a supported loop must remain rolled, using annotations before computed bounds.
+static std::optional<std::string> getUnrollSkipReason(Operation *op, uint64_t limit) {
+  if (!isa<scf::ForOp, scf::WhileOp, affine::AffineForOp>(op)) {
+    return std::nullopt;
+  }
+  uint64_t tripCount;
+  if (auto bounds = op->getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name)) {
+    if (bounds.getStep() == 0) {
+      return std::nullopt; // The annotated unroller diagnoses invalid steps separately.
+    }
+    llvm::DynamicAPInt count =
+        llvm::ceilDiv(bounds.getUpper() - bounds.getLower(), bounds.getStep());
+    auto checked = checkedToUInt64(std::max(count, llvm::DynamicAPInt(0)));
+    if (!checked) {
+      llvm::consumeError(checked.takeError());
+      return "llzk.loopbounds trip count does not fit in uint64_t; leaving loop unchanged";
+    }
+    tripCount = *checked;
+  } else {
+    if (isa<scf::WhileOp>(op)) {
+      return std::nullopt;
+    }
+    auto count = getConstantTripCount(llvm::cast<LoopLikeOpInterface>(op));
+    if (!count) {
+      return std::nullopt;
+    }
+    if (count->getActiveBits() > 64) {
+      return "computed loop trip count does not fit in uint64_t; leaving loop unchanged";
+    }
+    tripCount = count->getZExtValue();
+  }
+  if (tripCount > limit) {
+    return ("loop trip count " + Twine(tripCount) + " exceeds max-unroll limit of " + Twine(limit) +
+            "; leaving loop unchanged")
+        .str();
+  }
+  return std::nullopt;
+}
+
 class ConversionTracker {
   /// Published result of one successful partial-function conversion.
   ///
@@ -114,8 +173,56 @@ class ConversionTracker {
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
+  /// The per-loop expansion limit shared by unrolling and folding guards.
+  uint64_t unrollIterationLimit;
+  /// Avoid repeating a warning at the same source location across clones and fixpoint rounds.
+  DenseSet<std::pair<Location, StringAttr>> unrollWarnings;
 
 public:
+  /// Initialize the expansion limit for this invocation of the flattening pass.
+  explicit ConversionTracker(uint64_t limit) : modified(false), unrollIterationLimit(limit) {}
+
+  /// Warn once per source location and reason when a loop cannot safely be expanded.
+  bool shouldSkipUnroll(Operation *op) {
+    auto reason = getUnrollSkipReason(op, unrollIterationLimit);
+    if (!reason) {
+      return false;
+    }
+    if (unrollWarnings.insert({op->getLoc(), StringAttr::get(op->getContext(), *reason)}).second) {
+      op->emitWarning(*reason);
+    }
+    return true;
+  }
+
+  /// Preserve skipped loops, their bodies, and enclosing control flow that could erase them.
+  bool mustPreserveLoop(Operation *op) {
+    for (Operation *p = op; p && !isa<SymbolOpInterface>(p); p = p->getParentOp()) {
+      if (shouldSkipUnroll(p)) {
+        return true;
+      }
+    }
+    return walkContains<Operation *>(*op, [this](Operation *nested) {
+      return shouldSkipUnroll(nested);
+    });
+  }
+
+  /// Collect operations excluded from greedy folding, DCE, and pattern rewriting in this round.
+  DenseSet<Operation *> getPreservedLoopOps(ModuleOp modOp) {
+    DenseSet<Operation *> preserved;
+    modOp.walk<WalkOrder::PreOrder>([&](Operation *op) {
+      if (!shouldSkipUnroll(op)) {
+        return WalkResult::advance();
+      }
+      op->walk([&preserved](Operation *nested) { preserved.insert(nested); });
+      for (Operation *p = op->getParentOp(); p && !isa<SymbolOpInterface>(p);
+           p = p->getParentOp()) {
+        preserved.insert(p);
+      }
+      return WalkResult::skip();
+    });
+    return preserved;
+  }
+
   bool isModified() const { return modified; }
   void resetModifiedFlag() { modified = false; }
   void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
@@ -286,11 +393,26 @@ static LogicalResult
 applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternSet &&patterns) {
   bool currStepModified = false;
   MatchFailureListener failureListener;
-  LogicalResult result = applyPatternsGreedily(
-      modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig().enableFolding().setMaxIterations(20).setListener(&failureListener),
-      &currStepModified
-  );
+  auto greedyRewriteConfig =
+      GreedyRewriteConfig().enableFolding().setMaxIterations(20).setListener(&failureListener);
+  DenseSet<Operation *> preserved = tracker.getPreservedLoopOps(modOp);
+  LogicalResult result = success();
+  if (preserved.empty()) {
+    result = applyPatternsGreedily(
+        modOp->getRegion(0), std::move(patterns), greedyRewriteConfig, &currStepModified
+    );
+  } else {
+    // The greedy worklist is LIFO: visit loop bodies before helpers that replace their loops.
+    auto candidates = walkCollect<Operation *, WalkOrder::PreOrder>(
+        modOp.getBodyRegion(), [&preserved](Operation *op) { return !preserved.contains(op); }
+    );
+    // New operations are reconsidered in the next outer round, after checking their loop bounds.
+    // Strictness also prevents operand/user updates from re-enqueuing a preserved loop.
+    result = applyOpPatternsGreedily(
+        candidates, std::move(patterns),
+        greedyRewriteConfig.setStrictness(GreedyRewriteStrictness::ExistingOps), &currStepModified
+    );
+  }
   tracker.updateModifiedFlag(currStepModified);
   return failure(result.failed() || failureListener.hadFailure);
 }
@@ -1192,47 +1314,17 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step3_Unroll {
 
-/// Reject excessive trip counts before any annotated or computed loop expansion.
-static LogicalResult
-checkUnrollLimit(Operation *loopOp, PatternRewriter &rewriter, uint64_t tripCount, uint64_t limit) {
-  if (tripCount > limit) {
-    return rewriter.notifyMatchFailure(loopOp, [&](Diagnostic &diag) {
-      diag << "loop trip count " << tripCount << " exceeds max-unroll limit of " << limit;
-    });
-  }
-  return success();
-}
-
-/// Compute the trip count from the loop itself, independently of any trusted annotation.
-static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
-  if (auto whileOp = dyn_cast<scf::WhileOp>(loopOp.getOperation());
-      whileOp && matchPattern(whileOp.getConditionOp().getCondition(), m_Zero())) {
-    return APInt(64, 0);
-  }
-  std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
-  std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
-  std::optional<OpFoldResult> stepVal = loopOp.getSingleStep();
-  if (!lbVal || !ubVal || !stepVal) {
-    return std::nullopt;
-  }
-  bool isSigned = true;
-  if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
-    isSigned = !forOp.getUnsignedCmp();
-  }
-  return constantTripCount(*lbVal, *ubVal, *stepVal, isSigned, scf::computeUbMinusLb);
-}
-
 /// Fully expand annotated loops using the trusted trip count and, for for loops, induction values.
 /// Run before folding so zero- and single-trip loops cannot discard conflicting annotations.
 template <HasInterface<LoopLikeOpInterface> OpClass>
 class AnnotatedLoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
-  AnnotatedLoopUnrollPattern(MLIRContext *ctx, ConversionTracker &t, uint64_t limit)
-      : OpRewritePattern<OpClass>(ctx), tracker(t), unrollIterationLimit(limit) {}
+  AnnotatedLoopUnrollPattern(MLIRContext *ctx, ConversionTracker &t)
+      : OpRewritePattern<OpClass>(ctx), tracker(t) {}
 
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     auto bounds = loopOp->template getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name);
-    if (!bounds) {
+    if (!bounds || tracker.mustPreserveLoop(loopOp)) {
       return failure();
     }
     const llvm::DynamicAPInt &lower = bounds.getLower();
@@ -1254,15 +1346,9 @@ public:
                            << llvm::toString(*computed, 10, false) << "; using llzk.loopbounds";
     }
     auto tripCount = checkedToUInt64(count);
-    if (!tripCount) {
-      llvm::consumeError(tripCount.takeError());
-      return rewriter.notifyMatchFailure(
-          loopOp, "llzk.loopbounds trip count does not fit in uint64_t"
-      );
-    }
+    assert(tripCount && "unrepresentable trip counts must be preserved");
 
-    if (failed(checkUnrollLimit(loopOp, rewriter, *tripCount, unrollIterationLimit)) ||
-        failed(unroll(loopOp, rewriter, bounds, *tripCount))) {
+    if (failed(unroll(loopOp, rewriter, bounds, *tripCount))) {
       return failure();
     }
     tracker.updateModifiedFlag(true);
@@ -1348,27 +1434,24 @@ private:
   }
 
   ConversionTracker &tracker;
-  uint64_t unrollIterationLimit;
 };
 
 /// Unroll loops with a constant computed trip count within the configured limit.
 template <HasInterface<LoopLikeOpInterface> OpClass>
 class ComputedLoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
-  ComputedLoopUnrollPattern(MLIRContext *ctx, uint64_t limit)
-      : OpRewritePattern<OpClass>(ctx), unrollIterationLimit(limit) {}
+  ComputedLoopUnrollPattern(MLIRContext *ctx, ConversionTracker &t)
+      : OpRewritePattern<OpClass>(ctx), tracker(t) {}
 
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
+    if (loopOp->hasAttr(LoopBoundsAttr::name) || tracker.mustPreserveLoop(loopOp)) {
+      return failure();
+    }
     if (auto maybeConstant = getConstantTripCount(loopOp)) {
-      if (maybeConstant->getActiveBits() > 64) {
-        return rewriter.notifyMatchFailure(
-            loopOp, "computed loop trip count does not fit in uint64_t"
-        );
-      }
+      assert(
+          maybeConstant->getActiveBits() <= 64 && "unrepresentable trip counts must be preserved"
+      );
       uint64_t tripCount = maybeConstant->getZExtValue();
-      if (failed(checkUnrollLimit(loopOp, rewriter, tripCount, unrollIterationLimit))) {
-        return failure();
-      }
       if (tripCount == 0) {
         rewriter.replaceOp(loopOp, loopOp.getInits());
         return success();
@@ -1381,17 +1464,17 @@ public:
   }
 
 private:
-  uint64_t unrollIterationLimit;
+  ConversionTracker &tracker;
 };
 
-LogicalResult run(ModuleOp modOp, ConversionTracker &tracker, uint64_t unrollIterationLimit) {
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
 
   // Must unroll via `LoopBoundsAttr` if present
   RewritePatternSet annotatedPatterns(ctx);
   annotatedPatterns.add<
       AnnotatedLoopUnrollPattern<scf::ForOp>, AnnotatedLoopUnrollPattern<scf::WhileOp>,
-      AnnotatedLoopUnrollPattern<affine::AffineForOp>>(ctx, tracker, unrollIterationLimit);
+      AnnotatedLoopUnrollPattern<affine::AffineForOp>>(ctx, tracker);
   MatchFailureListener failureListener;
   walkAndApplyPatterns(modOp, std::move(annotatedPatterns), &failureListener);
   if (failureListener.hadFailure) {
@@ -1402,7 +1485,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker, uint64_t unrollIte
   RewritePatternSet patterns(ctx);
   patterns
       .add<ComputedLoopUnrollPattern<scf::ForOp>, ComputedLoopUnrollPattern<affine::AffineForOp>>(
-          ctx, unrollIterationLimit
+          ctx, tracker
       );
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
@@ -2311,7 +2394,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
       return failure();
     }
 
-    ConversionTracker tracker;
+    ConversionTracker tracker(unrollIterationLimit);
     if (failed(Step1_InstantiateStructs::instantiateMainStruct(modOp, tracker))) {
       llvm::errs() << DEBUG_TYPE << " failed while instantiating the main struct\n";
       return failure();
@@ -2349,7 +2432,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
                      << ")] Running step 2: loop unrolling\n";
       });
       // Unroll loops with known iterations.
-      if (failed(Step3_Unroll::run(modOp, tracker, unrollIterationLimit))) {
+      if (failed(Step3_Unroll::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
         return failure();
       }
