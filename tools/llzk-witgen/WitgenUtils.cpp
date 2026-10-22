@@ -41,6 +41,10 @@ llvm::Expected<size_t>
 getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef context) {
   llvm::DynamicAPInt count(1);
   for (int64_t dim : shape) {
+    auto dimSize = checkedShapeDimToSize(dim, context);
+    if (!dimSize) {
+      return dimSize.takeError();
+    }
     count *= dim;
   }
   return checkedToSize(count, context);
