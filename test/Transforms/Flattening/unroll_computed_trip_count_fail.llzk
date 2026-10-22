@@ -1,0 +1,47 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s -o /dev/null
+
+// Computed trip-count overflow is a hard error, just like annotated overflow.
+module attributes {llzk.lang} {
+  function.def @signed_trip_count_overflow(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : i128
+    %bound = arith.constant 18446744073709551616 : i128
+    %one = arith.constant 1 : i128
+    // expected-error @+1 {{computed loop trip count does not fit in uint64_t}}
+    scf.for %iv = %zero to %bound step %one : i128 {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @unsigned_trip_count_overflow(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : i128
+    %bound = arith.constant 18446744073709551616 : i128
+    %one = arith.constant 1 : i128
+    // expected-error @+1 {{computed loop trip count does not fit in uint64_t}}
+    scf.for unsigned %iv = %zero to %bound step %one : i128 {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}
+
+// -----
+
+// A wide induction type alone is not overflow: UINT64_MAX fits and is subject
+// to the ordinary expansion limit instead.
+module attributes {llzk.lang} {
+  function.def @trip_count_fits_uint64(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : i128
+    %bound = arith.constant 18446744073709551615 : i128
+    %one = arith.constant 1 : i128
+    // expected-error @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
+    scf.for %iv = %zero to %bound step %one : i128 {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}
