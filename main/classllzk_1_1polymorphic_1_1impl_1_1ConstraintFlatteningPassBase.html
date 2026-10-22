@@ -131,7 +131,6 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1p
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="#friends">Friends</a> &#124;
 <a href="classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::polymorphic::impl::ConstraintFlatteningPassBase&lt; DerivedT &gt; Class Template Reference</div></div>
@@ -167,8 +166,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:abd0bb519c5f62c090ed811fe90d75e3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">A clone method to create a copy of this pass.  <br /></td></tr>
 <tr class="memitem:ab696389bf3060213d282b1b4f1bb501d" id="r_ab696389bf3060213d282b1b4f1bb501d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab696389bf3060213d282b1b4f1bb501d">getDependentDialects</a> (::mlir::DialectRegistry &amp;registry) const override</td></tr>
 <tr class="memdesc:ab696389bf3060213d282b1b4f1bb501d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the dialect that must be loaded in the context before this pass.  <br /></td></tr>
-<tr class="memitem:a9ea51bca3f2a0d5c81c69e298d9d245a" id="r_a9ea51bca3f2a0d5c81c69e298d9d245a"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a9ea51bca3f2a0d5c81c69e298d9d245a">ConstraintFlatteningPassBase</a> (<a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a> options)</td></tr>
-<tr class="memdesc:a9ea51bca3f2a0d5c81c69e298d9d245a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -179,19 +176,15 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a29972e18bff5871df91445dd91e9579c" id="r_a29972e18bff5871df91445dd91e9579c"><td class="memItemLeft">static bool&#160;</td><td class="memItemRight"><a class="el" href="#a29972e18bff5871df91445dd91e9579c">classof</a> (const ::mlir::Pass *pass)</td></tr>
 <tr class="memdesc:a29972e18bff5871df91445dd91e9579c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Support isa/dyn_cast functionality for the derived pass class.  <br /></td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
-Protected Attributes</h2></td></tr>
-<tr class="memitem:ada5786ffbb5904665829902821a06c05" id="r_ada5786ffbb5904665829902821a06c05"><td class="memItemLeft">::mlir::Pass::Option&lt; uint64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ada5786ffbb5904665829902821a06c05">evaluationLimit</a> {*this, &quot;max-evaluation-steps&quot;, ::llvm::cl::desc(R&quot;PO(Maximum expansion <a class="el" href="LICENSE_8txt.html#a614be97c4dfc1228ddea941d28165f01">work</a> across operations <a class="el" href="LICENSE_8txt.html#a44310e8a4338596c818c9c8cc6af8d1e">and</a> aggregate paths)PO&quot;), ::llvm::cl::init(1000000)}</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a8b23317075302ef0315e654443ae456e" id="r_a8b23317075302ef0315e654443ae456e"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a8b23317075302ef0315e654443ae456e">createConstraintFlatteningPass</a> ()</td></tr>
-<tr class="memitem:a3c19bfc77c6c4c28fe1ff1bd057cba63" id="r_a3c19bfc77c6c4c28fe1ff1bd057cba63"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a3c19bfc77c6c4c28fe1ff1bd057cba63">createConstraintFlatteningPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a> options)</td></tr>
+<tr class="memdesc:a8b23317075302ef0315e654443ae456e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::polymorphic::impl::ConstraintFlatteningPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00038">38</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00030">30</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="af88bfd7183fffe4f26771fb6364750cb" name="af88bfd7183fffe4f26771fb6364750cb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af88bfd7183fffe4f26771fb6364750cb">&#9670;&#160;</a></span>Base</h2>
@@ -207,13 +200,13 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00040">40</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00032">32</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
 <a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="af86b758f131b11f743a0b830fcff56ce" name="af86b758f131b11f743a0b830fcff56ce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af86b758f131b11f743a0b830fcff56ce">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[1/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af86b758f131b11f743a0b830fcff56ce">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -237,12 +230,12 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00042">42</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00034">34</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a97fb64eff82ee74ea12c2228a0ef3019" name="a97fb64eff82ee74ea12c2228a0ef3019"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a97fb64eff82ee74ea12c2228a0ef3019">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[2/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a97fb64eff82ee74ea12c2228a0ef3019">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -266,12 +259,12 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00043">43</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00035">35</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a845c3186eeffbcd9ca4692bee31349ce" name="a845c3186eeffbcd9ca4692bee31349ce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a845c3186eeffbcd9ca4692bee31349ce">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[3/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a845c3186eeffbcd9ca4692bee31349ce">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -324,37 +317,6 @@ template&lt;typename DerivedT&gt; </div>
 
 </div>
 </div>
-<a id="a9ea51bca3f2a0d5c81c69e298d9d245a" name="a9ea51bca3f2a0d5c81c69e298d9d245a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9ea51bca3f2a0d5c81c69e298d9d245a">&#9670;&#160;</a></span>ConstraintFlatteningPassBase() <span class="overload">[4/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename DerivedT&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase.html">llzk::polymorphic::impl::ConstraintFlatteningPassBase</a>&lt; DerivedT &gt;::ConstraintFlatteningPassBase </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
-
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00095">95</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
-
-</div>
-</div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a29972e18bff5871df91445dd91e9579c" name="a29972e18bff5871df91445dd91e9579c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a29972e18bff5871df91445dd91e9579c">&#9670;&#160;</a></span>classof()</h2>
@@ -383,7 +345,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00064">64</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00056">56</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -414,7 +376,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00069">69</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00061">61</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -443,7 +405,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00053">53</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00045">45</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -474,7 +436,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00050">50</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00042">42</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -505,7 +467,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00074">74</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00066">66</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -534,7 +496,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00055">55</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00047">47</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -563,7 +525,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00061">61</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00053">53</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -594,7 +556,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00058">58</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00050">50</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -654,7 +616,7 @@ template&lt;typename DerivedT&gt; </div>
 </div>
 <a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
 <a id="a8b23317075302ef0315e654443ae456e" name="a8b23317075302ef0315e654443ae456e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b23317075302ef0315e654443ae456e">&#9670;&#160;</a></span>createConstraintFlatteningPass <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b23317075302ef0315e654443ae456e">&#9670;&#160;</a></span>createConstraintFlatteningPass</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -678,63 +640,9 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00102">102</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p>Explicitly declare the TypeID for this class. We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-</div>
-</div>
-<a id="a3c19bfc77c6c4c28fe1ff1bd057cba63" name="a3c19bfc77c6c4c28fe1ff1bd057cba63"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c19bfc77c6c4c28fe1ff1bd057cba63">&#9670;&#160;</a></span>createConstraintFlatteningPass <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename DerivedT&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createConstraintFlatteningPass </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html">ConstraintFlatteningPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00106">106</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
-
-</div>
-</div>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
-<a id="ada5786ffbb5904665829902821a06c05" name="ada5786ffbb5904665829902821a06c05"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada5786ffbb5904665829902821a06c05">&#9670;&#160;</a></span>evaluationLimit</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename DerivedT&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">::mlir::Pass::Option&lt;uint64_t&gt; <a class="el" href="classllzk_1_1polymorphic_1_1impl_1_1ConstraintFlatteningPassBase.html">llzk::polymorphic::impl::ConstraintFlatteningPassBase</a>&lt; DerivedT &gt;::evaluationLimit {*this, &quot;max-evaluation-steps&quot;, ::llvm::cl::desc(R&quot;PO(Maximum expansion <a class="el" href="LICENSE_8txt.html#a614be97c4dfc1228ddea941d28165f01">work</a> across operations <a class="el" href="LICENSE_8txt.html#a44310e8a4338596c818c9c8cc6af8d1e">and</a> aggregate paths)PO&quot;), ::llvm::cl::init(1000000)}</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00099">99</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintFlatteningPass_8cpp_source.html#l00090">90</a> of file <a class="el" href="ConstraintFlatteningPass_8cpp_source.html">ConstraintFlatteningPass.cpp</a>.</p>
 
 </div>
 </div>

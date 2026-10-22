@@ -1,6 +1,5 @@
 var Polymorphic_2Transforms_2TransformationPasses_8h =
 [
-    [ "llzk::polymorphic::ConstraintFlatteningPassOptions", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions" ],
     [ "llzk::polymorphic::FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1FlatteningPassOptions" ],
     [ "llzk::polymorphic::TemplateMonomorphizationPassOptions", "structllzk_1_1polymorphic_1_1TemplateMonomorphizationPassOptions.html", "structllzk_1_1polymorphic_1_1TemplateMonomorphizationPassOptions" ],
     [ "llzk::polymorphic::WildcardArraySpecializationPassOptions", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions" ],
@@ -19,7 +18,6 @@ var Polymorphic_2Transforms_2TransformationPasses_8h =
     [ "GEN_PASS_REGISTRATION_TYPEVARINFERENCEPASS", "Polymorphic_2Transforms_2TransformationPasses_8h.html#aa4beed7485f52ef7aee0b4edd36868b7", null ],
     [ "GEN_PASS_REGISTRATION_WILDCARDARRAYSPECIALIZATIONPASS", "Polymorphic_2Transforms_2TransformationPasses_8h.html#a79f4d65e4bba716f36ed013918e5b8c0", null ],
     [ "llzk::polymorphic::createConstraintFlatteningPass", "namespacellzk_1_1polymorphic.html#a49b95dc6d7ecfc230e540fbdac12d924", null ],
-    [ "llzk::polymorphic::createConstraintFlatteningPass", "namespacellzk_1_1polymorphic.html#ad0262d4689aabc32f9f74c54ba154487", null ],
     [ "llzk::polymorphic::createEmptyTemplateRemovalPass", "namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544", null ],
     [ "llzk::polymorphic::createFlatteningPass", "namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b", null ],
     [ "llzk::polymorphic::createFlatteningPass", "namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd", null ],

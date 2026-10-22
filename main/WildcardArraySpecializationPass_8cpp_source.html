@@ -643,140 +643,140 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('WildcardArrayS
 <div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span> </div>
 <div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span><span class="keyword">static</span> SymbolRefAttr replaceLeafReference(SymbolRefAttr symRef, StringRef newLeafName) {</div>
 <div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>  SmallVector&lt;FlatSymbolRefAttr&gt; pieces = <a class="code hl_function" href="namespacellzk.html#aefd24a67a7806996a53b63a5014c82a2">getPieces</a>(symRef);</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>  assert(!pieces.empty() &amp;&amp; <span class="stringliteral">&quot;symbol reference must have at least one piece&quot;</span>);</div>
+<div class="foldopen" id="foldopen00532" data-start="{" data-end="};">
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html">  532</a></span>  assert(!pieces.empty() &amp;&amp; <span class="stringliteral">&quot;symbol reference must have at least one piece&quot;</span>);</div>
 <div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>  pieces.back() = FlatSymbolRefAttr::get(StringAttr::get(symRef.getContext(), newLeafName));</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#ab1ef6741a40f7e02fc0b94c979c8b3be">asSymbolRefAttr</a>(pieces);</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a955806099031eecb50f2e5b6a75de10d">  534</a></span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#ab1ef6741a40f7e02fc0b94c979c8b3be">asSymbolRefAttr</a>(pieces);</div>
 <div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>}</div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span></div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span><span class="keyword">static</span> std::string</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>buildWildcardSpecializationName(StringRef baseName, <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info) {</div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ade671d44eee1680030eb0f2324060457">buildOpaqueInstantiationName</a>(baseName, info.getConcreteTypeAttrs());</div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>}</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a4f5c460b8e5cd549de80a86d4af0768d">  536</a></span></div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a7317fd1b1b2b98754aa2d05ac07b2c24">  538</a></span><span class="keyword">static</span> std::string</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#ac4f4ca4c8b6cd958440b68221b96ede5">  539</a></span>buildWildcardSpecializationName(StringRef baseName, <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info) {</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#aaaa0b1c5eff6f6e282bd56dbb7ad00d1">  540</a></span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ade671d44eee1680030eb0f2324060457">buildOpaqueInstantiationName</a>(baseName, info.getConcreteTypeAttrs());</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a5b9be0e715600555b5f59796dc2ba62d">  541</a></span>}</div>
 <div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span></div>
+<div class="foldopen" id="foldopen00544" data-start="{" data-end="}">
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#af343020a3e8824c64530dcab5fd7fad3">  544</a></span><span class="comment">/// specialized struct member definition.</span></div>
 <div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span><span class="keyword">class </span>CallStructFuncPattern : <span class="keyword">public</span> OpConversionPattern&lt;CallOp&gt; {</div>
 <div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>  CallStructFuncPattern(TypeConverter &amp;converter, MLIRContext *ctx)</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>      : OpConversionPattern&lt;CallOp&gt;(converter, ctx, <span class="comment">/*benefit=*/</span>1) {}</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span> </div>
+</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#ada527fe08818f6683157245973d18b0f">  547</a></span>  CallStructFuncPattern(TypeConverter &amp;converter, MLIRContext *ctx)</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>      : OpConversionPattern&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(converter, ctx, <span class="comment">/*benefit=*/</span>1) {}</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#abcca731d8234ed5ef06ee0dacc5e0df7">  549</a></span> </div>
 <div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>  LogicalResult matchAndRewrite(</div>
 <div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>      <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> op, OpAdaptor adapter, ConversionPatternRewriter &amp;rewriter</div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>  )<span class="keyword"> const override </span>{</div>
+<div class="foldopen" id="foldopen00552" data-start="{" data-end="}">
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a2fa9d9242fcb6a021df9ed9504f2af78">  552</a></span>  )<span class="keyword"> const override </span>{</div>
 <div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    SmallVector&lt;Type&gt; newResultTypes;</div>
 <div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    <span class="keywordflow">if</span> (failed(getTypeConverter()-&gt;convertTypes(op.getResultTypes(), newResultTypes))) {</div>
-<div class="foldopen" id="foldopen00555" data-start="{" data-end="};">
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html">  555</a></span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    }</div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a955806099031eecb50f2e5b6a75de10d">  557</a></span> </div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    SymbolRefAttr calleeAttr = op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a22a16e4a71340e8f79dfea5e726ba2dc">getCalleeAttr</a>();</div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a4f5c460b8e5cd549de80a86d4af0768d">  559</a></span>    <span class="keywordflow">if</span> (op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a3d5497b458dab3daed12a8caec656159">calleeIsStructCompute</a>()) {</div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a9990695bd2827f6e3763fd4e3285fbf3">  560</a></span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStTy = <a class="code hl_function" href="namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c">getIfSingleton&lt;StructType&gt;</a>(newResultTypes)) {</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a7317fd1b1b2b98754aa2d05ac07b2c24">  561</a></span>        calleeAttr = <a class="code hl_function" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">appendLeaf</a>(newStTy.getNameRef(), calleeAttr.getLeafReference());</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#ac4f4ca4c8b6cd958440b68221b96ede5">  562</a></span>      }</div>
-<div class="line"><a id="l00563" name="l00563"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#aaaa0b1c5eff6f6e282bd56dbb7ad00d1">  563</a></span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">calleeIsStructConstrain</a>()) {</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a5b9be0e715600555b5f59796dc2ba62d">  564</a></span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStTy = <a class="code hl_function" href="namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7">getAtIndex&lt;StructType&gt;</a>(adapter.getArgOperands().getTypes(), 0)) {</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>        calleeAttr = <a class="code hl_function" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">appendLeaf</a>(newStTy.getNameRef(), calleeAttr.getLeafReference());</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      }</div>
-<div class="foldopen" id="foldopen00567" data-start="{" data-end="}">
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#af343020a3e8824c64530dcab5fd7fad3">  567</a></span>    }</div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span> </div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;CallOp&gt;</a>(</div>
 </div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#ada527fe08818f6683157245973d18b0f">  570</a></span>        rewriter, op, newResultTypes, calleeAttr, adapter.getMapOperands(),</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a8f295eef5e456f7dbece01eb7bf217e9">  555</a></span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    }</div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span> </div>
+<div class="foldopen" id="foldopen00558" data-start="{" data-end="}">
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#aeffc8ab6873b31c9fdd52744d4265ac7">  558</a></span>    SymbolRefAttr calleeAttr = op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a22a16e4a71340e8f79dfea5e726ba2dc">getCalleeAttr</a>();</div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>    <span class="keywordflow">if</span> (op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a3d5497b458dab3daed12a8caec656159">calleeIsStructCompute</a>()) {</div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStTy = <a class="code hl_function" href="namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c">getIfSingleton&lt;StructType&gt;</a>(newResultTypes)) {</div>
+</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>        calleeAttr = <a class="code hl_function" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">appendLeaf</a>(newStTy.getNameRef(), calleeAttr.getLeafReference());</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>      }</div>
+<div class="foldopen" id="foldopen00563" data-start="{" data-end="}">
+<div class="line"><a id="l00563" name="l00563"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#ad73a1f8b480f1f51e825b032c7510937">  563</a></span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">calleeIsStructConstrain</a>()) {</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStTy = <a class="code hl_function" href="namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7">getAtIndex&lt;StructType&gt;</a>(adapter.getArgOperands().getTypes(), 0)) {</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>        calleeAttr = <a class="code hl_function" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">appendLeaf</a>(newStTy.getNameRef(), calleeAttr.getLeafReference());</div>
+</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      }</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>    }</div>
+<div class="foldopen" id="foldopen00568" data-start="{" data-end="}">
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a2ac5d2515b17dc5de21ac0bd9f1e5cdd">  568</a></span> </div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;CallOp&gt;</a>(</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>        rewriter, op, newResultTypes, calleeAttr, adapter.getMapOperands(),</div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>        op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af8f08106bd89bc2ec8abf876bf46ad32">getNumDimsPerMapAttr</a>(), adapter.getArgOperands()</div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#abcca731d8234ed5ef06ee0dacc5e0df7">  572</a></span>    );</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>    );</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>    <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  }</div>
-<div class="foldopen" id="foldopen00575" data-start="{" data-end="}">
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a2fa9d9242fcb6a021df9ed9504f2af78">  575</a></span>};</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>};</div>
 <div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span></div>
-</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span></div>
 <div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span><span class="keyword">class </span>MemberDefOpPattern : <span class="keyword">public</span> OpConversionPattern&lt;MemberDefOp&gt; {</div>
 <div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span><span class="keyword">public</span>:</div>
-<div class="foldopen" id="foldopen00581" data-start="{" data-end="}">
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#aeffc8ab6873b31c9fdd52744d4265ac7">  581</a></span>  MemberDefOpPattern(TypeConverter &amp;converter, MLIRContext *ctx)</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  MemberDefOpPattern(TypeConverter &amp;converter, MLIRContext *ctx)</div>
 <div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>      : OpConversionPattern&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&gt;(converter, ctx, <span class="comment">/*benefit=*/</span>1) {}</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span> </div>
 </div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span> </div>
 <div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  LogicalResult</div>
 <div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  matchAndRewrite(<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a> op, OpAdaptor, ConversionPatternRewriter &amp;rewriter)<span class="keyword"> const override </span>{</div>
-<div class="foldopen" id="foldopen00586" data-start="{" data-end="}">
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#ad73a1f8b480f1f51e825b032c7510937">  586</a></span>    Type oldMemberType = op.<a class="code hl_function" href="classllzk_1_1component_1_1MemberDefOp.html#a13ebd41761bbfd4cfea8863a7dc08754">getType</a>();</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    Type oldMemberType = op.<a class="code hl_function" href="classllzk_1_1component_1_1MemberDefOp.html#a13ebd41761bbfd4cfea8863a7dc08754">getType</a>();</div>
 <div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    Type newMemberType = getTypeConverter()-&gt;convertType(oldMemberType);</div>
 <div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    <span class="keywordflow">if</span> (oldMemberType == newMemberType) {</div>
-</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="foldopen" id="foldopen00589" data-start="{" data-end="}">
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a7c8de60ca71c4732b633e250d3e1e64b">  589</a></span>      <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>    }</div>
-<div class="foldopen" id="foldopen00591" data-start="{" data-end="}">
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a2ac5d2515b17dc5de21ac0bd9f1e5cdd">  591</a></span>    rewriter.modifyOpInPlace(op, [&amp;op, &amp;newMemberType]() { op.<a class="code hl_function" href="classllzk_1_1component_1_1MemberDefOp.html#ace0e789fee8d948031431dfa12d97314">setType</a>(newMemberType); });</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>    rewriter.modifyOpInPlace(op, [&amp;op, &amp;newMemberType]() { op.<a class="code hl_function" href="classllzk_1_1component_1_1MemberDefOp.html#ace0e789fee8d948031431dfa12d97314">setType</a>(newMemberType); });</div>
+</div>
 <div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>    <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>  }</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a7eff12492c13890cbae6a7fe01750503">  593</a></span>  }</div>
 <div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>};</div>
 <div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span> </div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span><span class="keyword">static</span> LogicalResult verifyNestedCallSymbols(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func) {</div>
+<div class="foldopen" id="foldopen00596" data-start="{" data-end="}">
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#aa67d38241232f6f99f828e19c95cce7c">  596</a></span><span class="keyword">static</span> LogicalResult verifyNestedCallSymbols(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func) {</div>
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  SymbolTableCollection tables;</div>
 <div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  <span class="keyword">auto</span> result = func.walk([&amp;tables](<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> nestedCall) -&gt; WalkResult {</div>
+</div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    <span class="keywordflow">return</span> nestedCall.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a24030779e4a8e6924b9abe465dbeecdb">verifySymbolUses</a>(tables);</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  });</div>
+<div class="foldopen" id="foldopen00600" data-start="{" data-end="}">
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a6d409dcf3ac3443b075034de6ceb4014">  600</a></span>  });</div>
 <div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  <span class="keywordflow">return</span> failure(result.wasInterrupted());</div>
 <div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>}</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span> </div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span><span class="keyword">static</span> LogicalResult applyWildcardSpecializationConversions(</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>    FuncDefOp newFunc, <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info</div>
 </div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>) {</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span> </div>
+</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span><span class="keyword">static</span> LogicalResult applyWildcardSpecializationConversions(</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>    <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> newFunc, <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info</div>
+<div class="foldopen" id="foldopen00606" data-start="{" data-end="}">
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ae49a61882b349f3a4009b320d315f897">  606</a></span>) {</div>
 <div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>  MLIRContext *ctx = newFunc.getContext();</div>
 <div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>  WildcardArrayTypeConverter tyConv(info.replacements);</div>
+</div>
 <div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  ConversionTarget target = <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386">newConverterDefinedTarget&lt;&gt;</a>(tyConv, ctx);</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  RewritePatternSet patterns = <a class="code hl_function" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a>(tyConv, ctx, target);</div>
+<div class="foldopen" id="foldopen00610" data-start="{" data-end="}">
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#aefda83d8c08e1e89fb91992a6044b3ad">  610</a></span>  RewritePatternSet patterns = <a class="code hl_function" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a>(tyConv, ctx, target);</div>
 <div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>  <span class="keywordflow">if</span> (failed(applyFullConversion(newFunc, target, std::move(patterns)))) {</div>
-<div class="foldopen" id="foldopen00612" data-start="{" data-end="}">
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a7c8de60ca71c4732b633e250d3e1e64b">  612</a></span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>    <span class="keywordflow">return</span> failure();</div>
+</div>
 <div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>  }</div>
 <div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>  <span class="keywordflow">return</span> verifyNestedCallSymbols(newFunc);</div>
-</div>
 <div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>}</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a7eff12492c13890cbae6a7fe01750503">  616</a></span> </div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span> </div>
 <div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span><span class="keyword">static</span> LogicalResult applyWildcardSpecializationConversions(</div>
 <div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>    <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> newFunc, FunctionType newFuncTy, <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info</div>
-<div class="foldopen" id="foldopen00619" data-start="{" data-end="}">
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#aa67d38241232f6f99f828e19c95cce7c">  619</a></span>) {</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>) {</div>
 <div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>  updateFuncSignature(newFunc, newFuncTy);</div>
 <div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>  <span class="keywordflow">if</span> (!info.hasConflictingReplacements) {</div>
-</div>
 <div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>    <span class="keywordflow">return</span> applyWildcardSpecializationConversions(newFunc, info);</div>
-<div class="foldopen" id="foldopen00623" data-start="{" data-end="}">
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a6d409dcf3ac3443b075034de6ceb4014">  623</a></span>  }</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  }</div>
 <div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <span class="keywordflow">return</span> verifyNestedCallSymbols(newFunc);</div>
 <div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>}</div>
-</div>
 <div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span> </div>
-</div>
 <div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span><span class="keyword">static</span> LogicalResult applyWildcardSpecializationConversions(</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> newStruct, <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> oldStructType, <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStructType,</div>
-<div class="foldopen" id="foldopen00629" data-start="{" data-end="}">
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ae49a61882b349f3a4009b320d315f897">  629</a></span>    <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>    StructDefOp newStruct, StructType oldStructType, StructType newStructType,</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>    <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info</div>
 <div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>) {</div>
 <div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>  MLIRContext *ctx = newStruct.getContext();</div>
-</div>
 <div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>  WildcardArrayTypeConverter tyConv(info.replacements, oldStructType, newStructType);</div>
-<div class="foldopen" id="foldopen00633" data-start="{" data-end="}">
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#aefda83d8c08e1e89fb91992a6044b3ad">  633</a></span>  ConversionTarget target = <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386">newConverterDefinedTarget&lt;&gt;</a>(tyConv, ctx);</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  ConversionTarget target = <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386">newConverterDefinedTarget&lt;&gt;</a>(tyConv, ctx);</div>
 <div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  RewritePatternSet patterns = <a class="code hl_function" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a>(tyConv, ctx, target);</div>
 <div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  patterns.add&lt;CallStructFuncPattern, MemberDefOpPattern&gt;(tyConv, ctx);</div>
-</div>
 <div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>  <span class="keywordflow">return</span> applyFullConversion(newStruct, target, std::move(patterns));</div>
 <div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>}</div>
 <div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span> </div>
 <div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span><span class="keyword">static</span> FailureOr&lt;SymbolRefAttr&gt; getOrCreateSpecializedFreeFunc(</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>    <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> op, PatternRewriter &amp;rewriter, SymbolTableCollection &amp;symTables, <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> targetFunc,</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>    CallOp op, PatternRewriter &amp;rewriter, SymbolTableCollection &amp;symTables, FuncDefOp targetFunc,</div>
 <div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>    <span class="keyword">const</span> WildcardArraySpecializationInfo &amp;info, FunctionType callSig</div>
 <div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>) {</div>
 <div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  ModuleOp parentModule = <a class="code hl_function" href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">getParentOfType&lt;ModuleOp&gt;</a>(targetFunc);</div>
 <div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  assert(parentModule &amp;&amp; <span class="stringliteral">&quot;free function must be nested in a module&quot;</span>);</div>
 <div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span> </div>
 <div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>  std::string newFuncName = buildWildcardSpecializationName(targetFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a9a43c5dd639761a506dc33983b9234b2">getSymName</a>(), info);</div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> newFunc;</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  FuncDefOp newFunc;</div>
 <div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>  <span class="keywordflow">if</span> (Operation *existing = symTables.getSymbolTable(parentModule).lookup(newFuncName)) {</div>
 <div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>    newFunc = llvm::dyn_cast&lt;FuncDefOp&gt;(existing);</div>
 <div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>    <span class="keywordflow">if</span> (!newFunc) {</div>
@@ -1092,7 +1092,6 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('WildcardArrayS
 <div class="ttc" id="aclassllzk_1_1component_1_1MemberDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1MemberDefOp.html">llzk::component::MemberDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l00456">Ops.h.inc:456</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1MemberDefOp_html_a13ebd41761bbfd4cfea8863a7dc08754"><div class="ttname"><a href="classllzk_1_1component_1_1MemberDefOp.html#a13ebd41761bbfd4cfea8863a7dc08754">llzk::component::MemberDefOp::getType</a></div><div class="ttdeci">::mlir::Type getType()</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_8inc_source.html#l00634">Ops.cpp.inc:634</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1MemberDefOp_html_ace0e789fee8d948031431dfa12d97314"><div class="ttname"><a href="classllzk_1_1component_1_1MemberDefOp.html#ace0e789fee8d948031431dfa12d97314">llzk::component::MemberDefOp::setType</a></div><div class="ttdeci">void setType(::mlir::Type attrValue)</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_8inc_source.html#l00657">Ops.cpp.inc:657</a></div></div>
-<div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01345">Ops.h.inc:1345</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_a2fe7b83cd6fb6399ccf5555008ae596b"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">llzk::component::StructDefOp::getType</a></div><div class="ttdeci">StructType getType(::std::optional&lt;::mlir::ArrayAttr &gt; constParams={})</div><div class="ttdoc">Gets the StructType representing this struct.</div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_a696d722a383a5f32a4811302213b7547"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#a696d722a383a5f32a4811302213b7547">llzk::component::StructDefOp::getSymName</a></div><div class="ttdeci">::llvm::StringRef getSymName()</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01910">Ops.cpp.inc:1910</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_acd13ff0c3794acd08208bbef1dcbebd7"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#acd13ff0c3794acd08208bbef1dcbebd7">llzk::component::StructDefOp::setSymName</a></div><div class="ttdeci">void setSymName(::llvm::StringRef attrValue)</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01915">Ops.cpp.inc:1915</a></div></div>
@@ -1125,7 +1124,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('WildcardArrayS
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1UnifiableCastOp_html_a72745fd5c9c528e928a6fe029056d0ca"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a72745fd5c9c528e928a6fe029056d0ca">llzk::polymorphic::UnifiableCastOp::getInput</a></div><div class="ttdeci">::mlir::TypedValue&lt;::mlir::Type &gt; getInput()</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01538">Ops.h.inc:1538</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1UnifiableCastOp_html_a7478b7db8e18bc49ef19deaad19e8d46"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a7478b7db8e18bc49ef19deaad19e8d46">llzk::polymorphic::UnifiableCastOp::getResult</a></div><div class="ttdeci">::mlir::TypedValue&lt;::mlir::Type &gt; getResult()</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l01557">Ops.h.inc:1557</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1FromEraseSet_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html">llzk::polymorphic::detail::FromEraseSet</a></div><div class="ttdoc">Removes parameterized definitions whose instantiated replacements now cover every remaining use.</div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8h_source.html#l00082">SharedImpl.h:82</a></div></div>
-<div class="ttc" id="aclassllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html">llzk::polymorphic::impl::WildcardArraySpecializationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00555">WildcardArraySpecializationPass.cpp:555</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html">llzk::polymorphic::impl::WildcardArraySpecializationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00532">WildcardArraySpecializationPass.cpp:532</a></div></div>
 <div class="ttc" id="anamespaceCastRefinement_html"><div class="ttname"><a href="namespaceCastRefinement.html">CastRefinement</a></div><div class="ttdef"><b>Definition</b> <a href="#l00477">WildcardArraySpecializationPass.cpp:477</a></div></div>
 <div class="ttc" id="anamespaceWildcardFunctionSpecialization_html"><div class="ttname"><a href="namespaceWildcardFunctionSpecialization.html">WildcardFunctionSpecialization</a></div><div class="ttdef"><b>Definition</b> <a href="#l00528">WildcardArraySpecializationPass.cpp:528</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1array_html"><div class="ttname"><a href="namespacellzk_1_1array.html">llzk::array</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Ops_8cpp_source.html#l00043">Ops.cpp:43</a></div></div>

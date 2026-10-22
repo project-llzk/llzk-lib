@@ -427,7 +427,6 @@ var annotated_dup =
         [ "ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", "classllzk_1_1polymorphic_1_1ApplyMapOp" ],
         [ "ApplyMapOpAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor" ],
         [ "ApplyMapOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor" ],
-        [ "ConstraintFlatteningPassOptions", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions" ],
         [ "ConstReadOp", "classllzk_1_1polymorphic_1_1ConstReadOp.html", "classllzk_1_1polymorphic_1_1ConstReadOp" ],
         [ "ConstReadOpAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpAdaptor" ],
         [ "ConstReadOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor" ],

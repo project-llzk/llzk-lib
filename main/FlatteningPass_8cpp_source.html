@@ -318,76 +318,80 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>      <span class="comment">// `compute()` calls it will only be reported at one of those locations, not all.</span></div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>      delayedDiagnostics.erase(newType);</div>
 <div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>    }</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  }</div>
+<div class="foldopen" id="foldopen00213" data-start="{" data-end="};">
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html">  213</a></span>  }</div>
 <div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  SmallVector&lt;Diagnostic&gt; &amp;delayedDiagnosticSet(<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newType) {</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a913598b11a2bf5ce21b262cf2a1a0de5">  215</a></span>  SmallVector&lt;Diagnostic&gt; &amp;delayedDiagnosticSet(<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newType) {</div>
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    <span class="keywordflow">return</span> delayedDiagnostics[newType];</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  }</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span></div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  <span class="keywordtype">bool</span> isLegalConversion(Type oldType, Type newType, <span class="keyword">const</span> <span class="keywordtype">char</span> *patName)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    std::function&lt;bool(Type, Type)&gt; checkInstantiations = [&amp;](Type oTy, Type nTy) {</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a1eeedbb067f8dd3477a89bac53a9d00a">  217</a></span>  }</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a33f793af595dcfc09ea32ab291aa3e94">  218</a></span></div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a788e36b3dd5c409cf9e3342db7c41b87">  221</a></span>  <span class="keywordtype">bool</span> isLegalConversion(Type oldType, Type newType, <span class="keyword">const</span> <span class="keywordtype">char</span> *patName)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#af6f24ec4b7b3e2d434d4247a121b3ada">  222</a></span>    std::function&lt;bool(Type, Type)&gt; checkInstantiations = [&amp;](Type oTy, Type nTy) {</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>      <span class="comment">// Check if `oTy` is a struct with a known instantiation to `nTy`</span></div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> oldStructType = llvm::dyn_cast&lt;StructType&gt;(oTy)) {</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>        <span class="comment">// Note: The values in `structInstantiations` must be no-parameter struct types</span></div>
+<div class="foldopen" id="foldopen00225" data-start="{" data-end="}">
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a503598a3b2b58cc063de572d1775a99e">  225</a></span>        <span class="comment">// Note: The values in `structInstantiations` must be no-parameter struct types</span></div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>        <span class="comment">// so there is no need for recursive check, simple equality is sufficient.</span></div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        <span class="keywordflow">if</span> (this-&gt;structInstantiations.lookup(oldStructType) == nTy) {</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>          <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#abf88dbe56025836e78e6d9c4a311d06f">  228</a></span>          <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>        }</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      }</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a60514483ca28b65d98edc0c36b244039">  230</a></span>      }</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>      <span class="comment">// Check if `nTy` is the result of a struct instantiation and if the pre-image of</span></div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>      <span class="comment">// that instantiation (i.e., the parameterized version of the instantiated struct)</span></div>
-<div class="foldopen" id="foldopen00233" data-start="{" data-end="};">
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html">  233</a></span>      <span class="comment">// is a more concrete unification of `oTy`.</span></div>
+<div class="foldopen" id="foldopen00233" data-start="{" data-end="}">
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a9d49ff4789034a7940f99ff042a74115">  233</a></span>      <span class="comment">// is a more concrete unification of `oTy`.</span></div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStructType = llvm::dyn_cast&lt;StructType&gt;(nTy)) {</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a913598b11a2bf5ce21b262cf2a1a0de5">  235</a></span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> preImage = this-&gt;reverseInstantiations.lookup(newStructType)) {</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>          <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oTy, preImage, checkInstantiations)) {</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a1eeedbb067f8dd3477a89bac53a9d00a">  237</a></span>            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a33f793af595dcfc09ea32ab291aa3e94">  238</a></span>          }</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a5953e2acf09f9871e5bce5dc3d584a1d">  239</a></span>        }</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a684cfa62130a617c3b813f96540b7a65">  240</a></span>      }</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a788e36b3dd5c409cf9e3342db7c41b87">  241</a></span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#af6f24ec4b7b3e2d434d4247a121b3ada">  242</a></span>    };</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oldType, newType, checkInstantiations)) {</div>
-<div class="foldopen" id="foldopen00245" data-start="{" data-end="}">
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a503598a3b2b58cc063de572d1775a99e">  245</a></span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    }</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> preImage = this-&gt;reverseInstantiations.lookup(newStructType)) {</div>
 </div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#abf88dbe56025836e78e6d9c4a311d06f">  248</a></span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> &lt;&lt; patName &lt;&lt; <span class="stringliteral">&quot;] Cannot replace old type &quot;</span> &lt;&lt; oldType</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>                     &lt;&lt; <span class="stringliteral">&quot; with new type &quot;</span> &lt;&lt; newType</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a60514483ca28b65d98edc0c36b244039">  250</a></span>                     &lt;&lt; <span class="stringliteral">&quot; because it does not define a compatible and more concrete type.\n&quot;</span>;</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a88b0b6adaf94831d0baf08fba0d40f14">  236</a></span>          <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oTy, preImage, checkInstantiations)) {</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>          }</div>
+<div class="foldopen" id="foldopen00239" data-start="{" data-end="}">
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#ae785215961dd328e66cc80db5d9303fb">  239</a></span>        }</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>      }</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    };</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
+<div class="foldopen" id="foldopen00244" data-start="{" data-end="}">
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a7e9b4f9dd14edcb6b7b9c5729fbf1ffb">  244</a></span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oldType, newType, checkInstantiations)) {</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    }</div>
+</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    LLVM_DEBUG(</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> &lt;&lt; patName &lt;&lt; <span class="stringliteral">&quot;] Cannot replace old type &quot;</span> &lt;&lt; oldType</div>
+<div class="foldopen" id="foldopen00249" data-start="{" data-end="}">
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a30e1d3f7d7808ffd77f020c3cadd91f9">  249</a></span>                     &lt;&lt; <span class="stringliteral">&quot; with new type &quot;</span> &lt;&lt; newType</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>                     &lt;&lt; <span class="stringliteral">&quot; because it does not define a compatible and more concrete type.\n&quot;</span>;</div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    );</div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="foldopen" id="foldopen00253" data-start="{" data-end="}">
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a9d49ff4789034a7940f99ff042a74115">  253</a></span>  }</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  }</div>
 <div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span> </div>
 <div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> U&gt;</div>
-</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a88b0b6adaf94831d0baf08fba0d40f14">  256</a></span>  <span class="keyword">inline</span> <span class="keywordtype">bool</span> areLegalConversions(T oldTypes, U newTypes, <span class="keyword">const</span> <span class="keywordtype">char</span> *patName)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  <span class="keyword">inline</span> <span class="keywordtype">bool</span> areLegalConversions(T oldTypes, U newTypes, <span class="keyword">const</span> <span class="keywordtype">char</span> *patName)<span class="keyword"> const </span>{</div>
 <div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    <span class="keywordflow">return</span> llvm::all_of(</div>
 <div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>        llvm::zip_equal(oldTypes, newTypes), [<span class="keyword">this</span>, &amp;patName](std::tuple&lt;Type, Type&gt; oldThenNew) {</div>
-<div class="foldopen" id="foldopen00259" data-start="{" data-end="}">
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#ae785215961dd328e66cc80db5d9303fb">  259</a></span>      <span class="keywordflow">return</span> this-&gt;isLegalConversion(std::get&lt;0&gt;(oldThenNew), std::get&lt;1&gt;(oldThenNew), patName);</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>      <span class="keywordflow">return</span> this-&gt;isLegalConversion(std::get&lt;0&gt;(oldThenNew), std::get&lt;1&gt;(oldThenNew), patName);</div>
 <div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    }</div>
 <div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    );</div>
-</div>
 <div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  }</div>
 <div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>};</div>
-<div class="foldopen" id="foldopen00264" data-start="{" data-end="}">
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a7e9b4f9dd14edcb6b7b9c5729fbf1ffb">  264</a></span></div>
 </div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span></div>
 <div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="keyword">struct </span>MatchFailureListener : <span class="keyword">public</span> RewriterBase::Listener {</div>
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <span class="keywordtype">bool</span> hadFailure = <span class="keyword">false</span>;</div>
-<div class="foldopen" id="foldopen00269" data-start="{" data-end="}">
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a30e1d3f7d7808ffd77f020c3cadd91f9">  269</a></span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  ~MatchFailureListener()<span class="keyword"> override </span>{}</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
+<div class="foldopen" id="foldopen00270" data-start="{" data-end="}">
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a2ac97f6e8b55502ff4a37a8cb2e98b4d">  270</a></span>  ~MatchFailureListener()<span class="keyword"> override </span>{}</div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span> </div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  <span class="keywordtype">void</span> notifyMatchFailure(Location loc, function_ref&lt;<span class="keywordtype">void</span>(Diagnostic &amp;)&gt; reasonCallback)<span class="keyword"> override </span>{</div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    hadFailure = <span class="keyword">true</span>;</div>
+</div>
 <div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    InFlightDiagnostic diag = emitError(loc);</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    reasonCallback(*diag.getUnderlyingDiagnostic());</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#aa5262637ccc7799080ea562783dc6de3">  275</a></span>    InFlightDiagnostic diag = emitError(loc);</div>
+<div class="foldopen" id="foldopen00276" data-start="{" data-end="};">
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a40f5b5fa1ac902e6cd91cdd3dccb604f">  276</a></span>    reasonCallback(*diag.getUnderlyingDiagnostic());</div>
 <div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    diag.report();</div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  }</div>
 <div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>};</div>
@@ -395,65 +399,61 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span><span class="keyword">static</span> LogicalResult</div>
 <div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &amp;tracker, RewritePatternSet &amp;&amp;patterns) {</div>
 <div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  <span class="keywordtype">bool</span> currStepModified = <span class="keyword">false</span>;</div>
-</div>
 <div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  MatchFailureListener failureListener;</div>
 <div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  LogicalResult result = applyPatternsGreedily(</div>
 <div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>      modOp-&gt;getRegion(0), std::move(patterns),</div>
 <div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>      GreedyRewriteConfig().enableFolding().setMaxIterations(20).setListener(&amp;failureListener),</div>
 <div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>      &amp;currStepModified</div>
 <div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  );</div>
-<div class="foldopen" id="foldopen00290" data-start="{" data-end="}">
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a2ac97f6e8b55502ff4a37a8cb2e98b4d">  290</a></span>  tracker.updateModifiedFlag(currStepModified);</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>  tracker.updateModifiedFlag(currStepModified);</div>
 <div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  <span class="keywordflow">return</span> failure(result.failed() || failureListener.hadFailure);</div>
 <div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>}</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span></div>
 </div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span></div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#aa5262637ccc7799080ea562783dc6de3">  295</a></span><span class="keyword">template</span> &lt;<span class="keywordtype">bool</span> AllowStructParams = true&gt; <span class="keywordtype">bool</span> isConcreteAttr(Attribute a) {</div>
-<div class="foldopen" id="foldopen00296" data-start="{" data-end="};">
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a40f5b5fa1ac902e6cd91cdd3dccb604f">  296</a></span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a5b7b247b9d299875ee108f15066493e7">classifyAttrConcreteness</a>(a, AllowStructParams) == <a class="code hl_enumvalue" href="namespacellzk.html#a41c7611294e8e147781abc732a50159fac02221ae67f642f240ee3e57161e433a">AttrConcreteness::Concrete</a>;</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span></div>
+<div class="foldopen" id="foldopen00295" data-start="{" data-end="}">
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112">  295</a></span><span class="keyword">template</span> &lt;<span class="keywordtype">bool</span> AllowStructParams = true&gt; <span class="keywordtype">bool</span> isConcreteAttr(Attribute a) {</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a5b7b247b9d299875ee108f15066493e7">classifyAttrConcreteness</a>(a, AllowStructParams) == <a class="code hl_enumvalue" href="namespacellzk.html#a41c7611294e8e147781abc732a50159fac02221ae67f642f240ee3e57161e433a">AttrConcreteness::Concrete</a>;</div>
 <div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>}</div>
+</div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span><span class="keyword">static</span> <span class="keywordtype">bool</span> calleeReferencesTemplateParam(<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> op) {</div>
+<div class="foldopen" id="foldopen00299" data-start="{" data-end="}">
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a75b9d31d1ee603d2fc920c1b0129a84c">  299</a></span><span class="keyword">static</span> <span class="keywordtype">bool</span> calleeReferencesTemplateParam(<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> op) {</div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  SymbolRefAttr callee = op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a22a16e4a71340e8f79dfea5e726ba2dc">getCalleeAttr</a>();</div>
 <div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  <span class="keywordflow">if</span> (!callee || callee.getNestedReferences().size() != 1) {</div>
+</div>
 <div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+</div>
 <div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  }</div>
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  <a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> parentTemplate = <a class="code hl_function" href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">getParentOfType&lt;TemplateOp&gt;</a>(op);</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  <span class="keywordflow">if</span> (!parentTemplate) {</div>
+<div class="foldopen" id="foldopen00305" data-start="{" data-end="}">
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">  305</a></span>  <span class="keywordflow">if</span> (!parentTemplate) {</div>
 <div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  }</div>
+</div>
 <div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  <span class="keywordflow">return</span> parentTemplate.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#a530c95f0a45ca688c91fe54f1bf1ae9b">hasConstNamed</a>&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a>&gt;(callee.getRootReference());</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>}</div>
+<div class="foldopen" id="foldopen00309" data-start="{" data-end="}">
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd">  309</a></span>}</div>
 <div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span> </div>
-<div class="foldopen" id="foldopen00311" data-start="{" data-end="}">
 <div class="line"><a id="l00311" name="l00311"></a><span class="lineno"><a class="line" href="namespaceStep1__InstantiateStructs.html">  311</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceStep1__InstantiateStructs.html">Step1_InstantiateStructs</a> {</div>
+</div>
 <div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span></div>
-<div class="foldopen" id="foldopen00315" data-start="{" data-end="}">
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112">  315</a></span><span class="keyword">class </span>StructCloner {</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span><span class="keyword">class </span>StructCloner {</div>
 <div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  ConversionTracker &amp;tracker_;</div>
 <div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  ModuleOp rootMod;</div>
-</div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  SymbolTableCollection symTables;</div>
-<div class="foldopen" id="foldopen00319" data-start="{" data-end="}">
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a75b9d31d1ee603d2fc920c1b0129a84c">  319</a></span>  <span class="keywordtype">bool</span> reportMissing = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  <span class="keywordtype">bool</span> reportMissing = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
 <div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  FailureOr&lt;StructType&gt; genClone(<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> typeAtCaller, ArrayRef&lt;Attribute&gt; typeAtCallerParams) {</div>
-</div>
 <div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[StructCloner]   attempting clone of &quot;</span> &lt;&lt; typeAtCaller &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>    <span class="comment">// Find the StructDefOp for the original StructType</span></div>
 <div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>    FailureOr&lt;SymbolLookupResult&lt;StructDefOp&gt;&gt; r =</div>
-<div class="foldopen" id="foldopen00325" data-start="{" data-end="}">
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">  325</a></span>        typeAtCaller.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a4a15a4c241c98465a33145a821191760">getDefinition</a>(symTables, rootMod, reportMissing);</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>        typeAtCaller.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a4a15a4c241c98465a33145a821191760">getDefinition</a>(symTables, rootMod, reportMissing);</div>
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>    <span class="keywordflow">if</span> (failed(r)) {</div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[StructCloner]   skip: cannot find StructDefOp \n&quot;</span>);</div>
-</div>
 <div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>      <span class="keywordflow">return</span> failure(); <span class="comment">// getDefinition() already emits a sufficient error message</span></div>
-<div class="foldopen" id="foldopen00329" data-start="{" data-end="}">
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd">  329</a></span>    }</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>    }</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[StructCloner]   found definition\n&quot;</span>;);</div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span> </div>
-</div>
 <div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> origStruct = r-&gt;get();</div>
 <div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> typeAtDef = origStruct.getType();</div>
 <div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>    MLIRContext *ctx = origStruct.getContext();</div>
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>    <span class="keywordflow">if</span> (failed(layoutResult)) {</div>
 <div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>      <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>    }</div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>    InstantiationLayout layout = std::move(*layoutResult);</div>
+<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>    <a class="code hl_struct" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a> layout = std::move(*layoutResult);</div>
 <div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>    assert(layout.<a class="code hl_variable" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#ab0677cddfdc8fc11f629999bf97d3432">remainingNames</a>.size() == nonConcreteParams.size());</div>
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span> </div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>    <span class="comment">// This list will be used to build the new remote/external type.</span></div>
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>    <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ac2e791f15775aea6b58ee53d32df9d6c">evaluateTemplateExprs</a>(parentTemplate, paramNameToConcrete);</div>
 <div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span> </div>
 <div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>    <span class="comment">// Clone the original struct.</span></div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>    StructDefOp newStruct = origStruct.clone();</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> newStruct = origStruct.clone();</div>
 <div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>    <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#acef0db0f683b8b501d7b6afd3ff47cc3">convertCalleesInPlace</a>(newStruct, paramNameToConcrete);</div>
 <div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>    <span class="keywordflow">if</span> (layout.<a class="code hl_variable" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#ab0677cddfdc8fc11f629999bf97d3432">remainingNames</a>.empty()) { <span class="comment">// FULL INSTANTIATION CASE</span></div>
 <div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>      <span class="comment">// Set name of the new struct by prepending its name with instantiated template name.</span></div>
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>      typeAtCallerSymPieces.pop_back();</div>
 <div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>    } <span class="keywordflow">else</span> { <span class="comment">// PARTIAL INSTANTIATION CASE</span></div>
 <div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>      <span class="comment">// Clone the template and set instantiated name.</span></div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>      TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();</div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>      <a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> newTemplate = parentTemplate.cloneWithoutRegions();</div>
 <div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>      newTemplate.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#a717beda1ad6483759f16fa67a71d1a23">setSymName</a>(layout.<a class="code hl_variable" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#a65456921b57398e3844ac01ca8a280f2">templateNameWithAttrs</a>);</div>
 <div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>      <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ad3400673bd26d76f297ba9baeadc2405">setInstantiationNamePattern</a>(newTemplate, layout.<a class="code hl_variable" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#a3eb9a65fe5ca2f6c368827dc335b1e8f">namePattern</a>);</div>
 <div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>      assert(newTemplate-&gt;getNumRegions() &gt; 0 &amp;&amp; <span class="stringliteral">&quot;region exists&quot;</span>); <span class="comment">// it just doesn&#39;t have a block</span></div>
@@ -553,11 +553,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span> </div>
 <div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>    <span class="comment">// Retrieve the new type AFTER inserting since the struct name may be appended to make</span></div>
 <div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>    <span class="comment">// it unique and use the remaining non-concrete parameters from the original type.</span></div>
-<div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>    StructType newLocalType = newStruct.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>(reducedCallerParams);</div>
+<div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newLocalType = newStruct.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>(reducedCallerParams);</div>
 <div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>    typeAtCallerSymPieces.push_back(</div>
 <div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>        FlatSymbolRefAttr::get(newLocalType.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a12d44299436c85f76ce4f6a94ed741a1">getNameRef</a>().getLeafReference())</div>
 <div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>    );</div>
-<div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>    StructType newRemoteType =</div>
+<div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newRemoteType =</div>
 <div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span>        <a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a466bcba80e7887ad05b18747bcde2a47">StructType::get</a>(<a class="code hl_function" href="namespacellzk.html#ab1ef6741a40f7e02fc0b94c979c8b3be">asSymbolRefAttr</a>(typeAtCallerSymPieces), newLocalType.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>());</div>
 <div class="line"><a id="l00437" name="l00437"></a><span class="lineno">  437</span>    LLVM_DEBUG({</div>
 <div class="line"><a id="l00438" name="l00438"></a><span class="lineno">  438</span>      llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[StructCloner]   original def type: &quot;</span> &lt;&lt; typeAtDef &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
@@ -583,7 +583,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span>  StructCloner(ConversionTracker &amp;tracker, ModuleOp root)</div>
 <div class="line"><a id="l00459" name="l00459"></a><span class="lineno">  459</span>      : tracker_(tracker), rootMod(root), symTables() {}</div>
 <div class="line"><a id="l00460" name="l00460"></a><span class="lineno">  460</span> </div>
-<div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span>  FailureOr&lt;StructType&gt; createInstantiatedClone(StructType orig) {</div>
+<div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span>  FailureOr&lt;StructType&gt; createInstantiatedClone(<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> orig) {</div>
 <div class="line"><a id="l00462" name="l00462"></a><span class="lineno">  462</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[StructCloner] orig: &quot;</span> &lt;&lt; orig &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00463" name="l00463"></a><span class="lineno">  463</span>    <span class="keywordflow">if</span> (ArrayAttr params = orig.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
 <div class="line"><a id="l00464" name="l00464"></a><span class="lineno">  464</span>      <span class="keywordflow">return</span> genClone(orig, params.getValue());</div>
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span> </div>
 <div class="line"><a id="l00487" name="l00487"></a><span class="lineno">  487</span>    addConversion([](Type inputTy) { <span class="keywordflow">return</span> inputTy; });</div>
 <div class="line"><a id="l00488" name="l00488"></a><span class="lineno">  488</span> </div>
-<div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span>    addConversion([<span class="keyword">this</span>](StructType inputTy) -&gt; StructType {</div>
+<div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span>    addConversion([<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> inputTy) -&gt; <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> {</div>
 <div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span>      LLVM_DEBUG(</div>
 <div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[ParameterizedStructUseTypeConverter] attempting conversion of &quot;</span></div>
 <div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span>                       &lt;&lt; inputTy &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
@@ -627,7 +627,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span>      <span class="keywordflow">if</span> (failed(cloneRes)) {</div>
 <div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>        <span class="keywordflow">return</span> inputTy;</div>
 <div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>      }</div>
-<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>      StructType newTy = cloneRes.value();</div>
+<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>      <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newTy = cloneRes.value();</div>
 <div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>      LLVM_DEBUG(</div>
 <div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[ParameterizedStructUseTypeConverter] instantiating &quot;</span> &lt;&lt; inputTy</div>
 <div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>                       &lt;&lt; <span class="stringliteral">&quot; as &quot;</span> &lt;&lt; newTy &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
@@ -636,8 +636,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>      <span class="keywordflow">return</span> newTy;</div>
 <div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>    });</div>
 <div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span> </div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    addConversion([<span class="keyword">this</span>](ArrayType inputTy) {</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>      <span class="keywordflow">return</span> inputTy.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a4518414d27c955e3d06fbb54f7d57d5c">cloneWith</a>(convertType(inputTy.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>()));</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    addConversion([<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> inputTy) {</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>      <span class="keywordflow">return</span> inputTy.cloneWith(convertType(inputTy.getElementType()));</div>
 <div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>    });</div>
 <div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>  }</div>
 <div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>};</div>
@@ -651,7 +651,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>      : OpConversionPattern&lt;CallOp&gt;(converter, ctx, <span class="comment">/*benefit=*/</span>1), tracker_(tracker) {}</div>
 <div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span> </div>
 <div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>  LogicalResult matchAndRewrite(</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      CallOp op, OpAdaptor adapter, ConversionPatternRewriter &amp;rewriter</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> op, OpAdaptor adapter, ConversionPatternRewriter &amp;rewriter</div>
 <div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>  )<span class="keyword"> const override </span>{</div>
 <div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[CallStructFuncPattern] CallOp: &quot;</span> &lt;&lt; op &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span> </div>
@@ -670,21 +670,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    <span class="comment">// Instead they must come from the converted versions.</span></div>
 <div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    SymbolRefAttr calleeAttr = op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a22a16e4a71340e8f79dfea5e726ba2dc">getCalleeAttr</a>();</div>
 <div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>    <span class="keywordflow">if</span> (op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a3d5497b458dab3daed12a8caec656159">calleeIsStructCompute</a>()) {</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>      <span class="keywordflow">if</span> (StructType newStTy = <a class="code hl_function" href="namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c">getIfSingleton&lt;StructType&gt;</a>(newResultTypes)) {</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStTy = <a class="code hl_function" href="namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c">getIfSingleton&lt;StructType&gt;</a>(newResultTypes)) {</div>
 <div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>        LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[CallStructFuncPattern]   newStTy: &quot;</span> &lt;&lt; newStTy &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>        calleeAttr = <a class="code hl_function" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">appendLeaf</a>(newStTy.getNameRef(), calleeAttr.getLeafReference());</div>
 <div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>        tracker_.reportDelayedDiagnostics(newStTy, op);</div>
 <div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>      }</div>
 <div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">calleeIsStructConstrain</a>()) {</div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>      <span class="keywordflow">if</span> (StructType newStTy = <a class="code hl_function" href="namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7">getAtIndex&lt;StructType&gt;</a>(adapter.getArgOperands().getTypes(), 0)) {</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>      <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> newStTy = <a class="code hl_function" href="namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7">getAtIndex&lt;StructType&gt;</a>(adapter.getArgOperands().getTypes(), 0)) {</div>
 <div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>        LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[CallStructFuncPattern]   newStTy: &quot;</span> &lt;&lt; newStTy &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>        calleeAttr = <a class="code hl_function" href="namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d">appendLeaf</a>(newStTy.getNameRef(), calleeAttr.getLeafReference());</div>
 <div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>      }</div>
 <div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    }</div>
 <div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span> </div>
 <div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[CallStructFuncPattern] replaced &quot;</span> &lt;&lt; op);</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    CallOp newOp = <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;CallOp&gt;</a>(</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>        rewriter, op, newResultTypes, calleeAttr, adapter.getMapOperands(),</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    <a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> newOp = <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;CallOp&gt;</a>(</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>        rewriter, op, newResultTypes, calleeAttr, adapter.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#aa869f1fcc88268764557622db72c691b">getMapOperands</a>(),</div>
 <div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>        op.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af8f08106bd89bc2ec8abf876bf46ad32">getNumDimsPerMapAttr</a>(), adapter.getArgOperands()</div>
 <div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>    );</div>
 <div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    (void)newOp; <span class="comment">// tell compiler it&#39;s intentionally unused in release builds</span></div>
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>      : OpConversionPattern&lt;MemberDefOp&gt;(converter, ctx, <span class="comment">/*benefit=*/</span>1) {}</div>
 <div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span> </div>
 <div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>  LogicalResult matchAndRewrite(</div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>      MemberDefOp op, OpAdaptor <span class="comment">/*adapter*/</span>, ConversionPatternRewriter &amp;rewriter</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>      <a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a> op, OpAdaptor <span class="comment">/*adapter*/</span>, ConversionPatternRewriter &amp;rewriter</div>
 <div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  )<span class="keyword"> const override </span>{</div>
 <div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[MemberDefOpPattern] MemberDefOp: &quot;</span> &lt;&lt; op &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span> </div>
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>  }</div>
 <div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>};</div>
 <div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span></div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span><span class="keyword">class </span>DisableReportMissing : <span class="keyword">public</span> LegalityCheckCallback {</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span><span class="keyword">class </span>DisableReportMissing : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">LegalityCheckCallback</a> {</div>
 <div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  ParameterizedStructUseTypeConverter &amp;tyConv;</div>
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span> </div>
 <div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span><span class="keyword">public</span>:</div>
@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>    <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  }</div>
 <div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span> </div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  StructType mainType = mainTypeOpt.value();</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> mainType = mainTypeOpt.value();</div>
 <div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>  <span class="keywordflow">if</span> (!mainType || <a class="code hl_function" href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">isNullOrEmpty</a>(mainType.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) || tracker.getInstantiation(mainType)) {</div>
 <div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>    <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>  }</div>
@@ -753,14 +753,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>    <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  }</div>
 <div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span> </div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  StructType instantiatedMainType = cloneRes.value();</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> instantiatedMainType = cloneRes.value();</div>
 <div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>  tracker.recordInstantiation(mainType, instantiatedMainType);</div>
 <div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>  modOp-&gt;setAttr(<a class="code hl_variable" href="namespacellzk.html#af2be4b94300457930c6aac7b73294456">MAIN_ATTR_NAME</a>, TypeAttr::get(instantiatedMainType));</div>
 <div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>  <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>}</div>
 <div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span> </div>
 <div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>} <span class="comment">// namespace Step1_InstantiateStructs</span></div>
-</div>
 <div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span> </div>
 <div class="foldopen" id="foldopen00643" data-start="{" data-end="}">
 <div class="line"><a id="l00643" name="l00643"></a><span class="lineno"><a class="line" href="namespaceStep2__InstantiateFunctions.html">  643</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceStep2__InstantiateFunctions.html">Step2_InstantiateFunctions</a> {</div>
@@ -2422,8 +2421,6 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="line"><a id="l02333" name="l02333"></a><span class="lineno"> 2333</span>};</div>
 <div class="line"><a id="l02334" name="l02334"></a><span class="lineno"> 2334</span> </div>
 <div class="line"><a id="l02335" name="l02335"></a><span class="lineno"> 2335</span>} <span class="comment">// namespace</span></div>
-</div>
-</div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Dialect_8h_html"><div class="ttname"><a href="Cast_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
@@ -2526,9 +2523,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html">llzk::polymorphic::TemplateSymbolBindingOpInterface</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2OpInterfaces_8h_8inc_source.html#l00059">OpInterfaces.h.inc:59</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1CleanupBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html">llzk::polymorphic::detail::CleanupBase</a></div><div class="ttdoc">Shared state for post-instantiation cleanup helpers.</div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8h_source.html#l00063">SharedImpl.h:63</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1CleanupBase_html_af5f5945f08247b73a4dce85524aefeaa"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#af5f5945f08247b73a4dce85524aefeaa">llzk::polymorphic::detail::CleanupBase::CleanupBase</a></div><div class="ttdeci">CleanupBase(mlir::ModuleOp root, const SymbolDefTree &amp;symDefTree, const SymbolUseGraph &amp;symUseGraph)</div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8cpp_source.html#l00183">SharedImpl.cpp:183</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">llzk::polymorphic::detail::LegalityCheckCallback</a></div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8h_source.html#l00159">SharedImpl.h:159</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter.html">llzk::polymorphic::detail::TemplateTypeConverter</a></div><div class="ttdoc">Substitute known template bindings in function types and inference candidates.</div><div class="ttdef"><b>Definition</b> <a href="TemplateInstantiation_8h_source.html#l00036">TemplateInstantiation.h:36</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter_html_a9f0e243fa91194a7a901214b968c6bb9"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1TemplateTypeConverter.html#a9f0e243fa91194a7a901214b968c6bb9">llzk::polymorphic::detail::TemplateTypeConverter::convertAttr</a></div><div class="ttdeci">mlir::Attribute convertAttr(mlir::Attribute attr) const</div><div class="ttdoc">Substitute a bound attribute or the type contained in a TypeAttr.</div><div class="ttdef"><b>Definition</b> <a href="TemplateInstantiation_8cpp_source.html#l00537">TemplateInstantiation.cpp:537</a></div></div>
-<div class="ttc" id="aclassllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html">llzk::polymorphic::impl::FlatteningPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00233">FlatteningPass.cpp:233</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html">llzk::polymorphic::impl::FlatteningPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00213">FlatteningPass.cpp:213</a></div></div>
 <div class="ttc" id="allzk-lsp-server_8cpp_html_a3c04138a5bfe5d72780bb7e82a18e627"><div class="ttname"><a href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a></div><div class="ttdeci">int main(int argc, char **argv)</div><div class="ttdef"><b>Definition</b> <a href="llzk-lsp-server_8cpp_source.html#l00024">llzk-lsp-server.cpp:24</a></div></div>
 <div class="ttc" id="anamespaceStep1__InstantiateStructs_html"><div class="ttname"><a href="namespaceStep1__InstantiateStructs.html">Step1_InstantiateStructs</a></div><div class="ttdef"><b>Definition</b> <a href="#l00311">FlatteningPass.cpp:311</a></div></div>
 <div class="ttc" id="anamespaceStep2__InstantiateFunctions_html"><div class="ttname"><a href="namespaceStep2__InstantiateFunctions.html">Step2_InstantiateFunctions</a></div><div class="ttdef"><b>Definition</b> <a href="#l00643">FlatteningPass.cpp:643</a></div></div>
@@ -2554,7 +2552,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_aea1b21a65533d5e3fb2063434628d565"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#aea1b21a65533d5e3fb2063434628d565">llzk::polymorphic::detail::isErasableDefinition</a></div><div class="ttdeci">bool isErasableDefinition(mlir::Operation *op)</div><div class="ttdoc">Return true iff op is a cleanup candidate.</div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_afcfd886e0e2a27bbe62a25e39ecb7b4c"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#afcfd886e0e2a27bbe62a25e39ecb7b4c">llzk::polymorphic::detail::reportDelayedDiagnostics</a></div><div class="ttdeci">void reportDelayedDiagnostics(Operation *site, SmallVector&lt; Diagnostic &gt; &amp;&amp;diagnostics)</div><div class="ttdef"><b>Definition</b> <a href="TemplateInstantiation_8cpp_source.html#l00417">TemplateInstantiation.cpp:417</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00032">Ops.cpp:32</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a4167d219fba917ab844dcf3b9814c544"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">llzk::polymorphic::createEmptyTemplateRemovalPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createEmptyTemplateRemovalPass()</div><div class="ttdef"><b>Definition</b> <a href="EmptyTemplateRemovalPass_8cpp_source.html#l00203">EmptyTemplateRemovalPass.cpp:203</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a4167d219fba917ab844dcf3b9814c544"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">llzk::polymorphic::createEmptyTemplateRemovalPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createEmptyTemplateRemovalPass()</div><div class="ttdef"><b>Definition</b> <a href="EmptyTemplateRemovalPass_8cpp_source.html#l00183">EmptyTemplateRemovalPass.cpp:183</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a5b4315e39cbb845b0dbde2e2762cc79a"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">llzk::polymorphic::stringifyFlatteningCleanupMode</a></div><div class="ttdeci">::llvm::StringRef stringifyFlatteningCleanupMode(FlatteningCleanupMode val)</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8cpp_8inc_source.html#l00012">TransformationPassEnums.cpp.inc:12</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">llzk::polymorphic::FlatteningCleanupMode</a></div><div class="ttdeci">FlatteningCleanupMode</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00013">TransformationPassEnums.h.inc:13</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">llzk::polymorphic::FlatteningCleanupMode::Unspecified</a></div><div class="ttdeci">@ Unspecified</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00014">TransformationPassEnums.h.inc:14</a></div></div>

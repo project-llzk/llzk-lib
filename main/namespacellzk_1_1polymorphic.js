@@ -5,7 +5,6 @@ var namespacellzk_1_1polymorphic =
     [ "ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", "classllzk_1_1polymorphic_1_1ApplyMapOp" ],
     [ "ApplyMapOpAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor" ],
     [ "ApplyMapOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor" ],
-    [ "ConstraintFlatteningPassOptions", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions" ],
     [ "ConstReadOp", "classllzk_1_1polymorphic_1_1ConstReadOp.html", "classllzk_1_1polymorphic_1_1ConstReadOp" ],
     [ "ConstReadOpAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpAdaptor" ],
     [ "ConstReadOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor" ],
@@ -40,7 +39,6 @@ var namespacellzk_1_1polymorphic =
       [ "MainAsRoot", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc", null ]
     ] ],
     [ "createConstraintFlatteningPass", "namespacellzk_1_1polymorphic.html#a49b95dc6d7ecfc230e540fbdac12d924", null ],
-    [ "createConstraintFlatteningPass", "namespacellzk_1_1polymorphic.html#ad0262d4689aabc32f9f74c54ba154487", null ],
     [ "createEmptyTemplateRemovalPass", "namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544", null ],
     [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b", null ],
     [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd", null ],

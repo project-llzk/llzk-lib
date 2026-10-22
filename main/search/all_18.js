@@ -328,7 +328,7 @@ var searchData=
   ['structs_325',['&lt;span class=&quot;tt&quot;&gt;-llzk-inline-structs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-inline-structs',1,'']]],
   ['structspecialization_2ecpp_326',['StructSpecialization.cpp',['../StructSpecialization_8cpp.html',1,'']]],
   ['structspecialization_2eh_327',['StructSpecialization.h',['../StructSpecialization_8h.html',1,'']]],
-  ['structspecializationdiscovery_328',['StructSpecializationDiscovery',['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html',1,'llzk::polymorphic::detail::StructSpecializationDiscovery'],['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a9d65abb04212727eef3ef6ba9a6f2a7c',1,'llzk::polymorphic::detail::StructSpecializationDiscovery::StructSpecializationDiscovery()']]],
+  ['structspecializationdiscovery_328',['StructSpecializationDiscovery',['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html',1,'llzk::polymorphic::detail']]],
   ['structspecializationdiscovery_2ecpp_329',['StructSpecializationDiscovery.cpp',['../StructSpecializationDiscovery_8cpp.html',1,'']]],
   ['structspecializationdiscovery_2eh_330',['StructSpecializationDiscovery.h',['../StructSpecializationDiscovery_8h.html',1,'']]],
   ['structspecializationrequest_331',['StructSpecializationRequest',['../structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html',1,'llzk::polymorphic::detail']]],

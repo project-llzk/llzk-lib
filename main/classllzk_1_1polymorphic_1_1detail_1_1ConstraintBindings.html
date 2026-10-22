@@ -146,7 +146,7 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae037664c2bcaf80846df30109032d216" id="r_ae037664c2bcaf80846df30109032d216"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ae037664c2bcaf80846df30109032d216">ConstraintBindings</a> (mlir::MLIRContext *context, uint64_t &amp;work, uint64_t maximum)</td></tr>
+<tr class="memitem:af512513fc611aa3df635117ada4f0b61" id="r_af512513fc611aa3df635117ada4f0b61"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#af512513fc611aa3df635117ada4f0b61">ConstraintBindings</a> (mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:ab7b14bd9b00f5b3741d3d8cacaef2394" id="r_ab7b14bd9b00f5b3741d3d8cacaef2394"><td class="memItemLeft"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a>&#160;</td><td class="memItemRight"><a class="el" href="#ab7b14bd9b00f5b3741d3d8cacaef2394">create</a> (mlir::Type type, mlir::Value input={}, mlir::Value storage={})</td></tr>
 <tr class="memdesc:ab7b14bd9b00f5b3741d3d8cacaef2394"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a root for a local allocation, function argument, or original storage.  <br /></td></tr>
 <tr class="memitem:aa8397b18892811e02f40458077e498f6" id="r_aa8397b18892811e02f40458077e498f6"><td class="memItemLeft"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a>&#160;</td><td class="memItemRight"><a class="el" href="#aa8397b18892811e02f40458077e498f6">child</a> (<a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a> parent, mlir::Attribute step, mlir::Type type)</td></tr>
@@ -193,13 +193,13 @@ Public Member Functions</h2></td></tr>
 <div class="line">     mlir::Value, llvm::ArrayRef&lt;mlir::Attribute&gt;, mlir::Type, mlir::Operation *</div>
 <div class="line"> )&gt;</div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00055">55</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00053">53</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
 <a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae037664c2bcaf80846df30109032d216" name="ae037664c2bcaf80846df30109032d216"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae037664c2bcaf80846df30109032d216">&#9670;&#160;</a></span>ConstraintBindings()</h2>
+<a id="af512513fc611aa3df635117ada4f0b61" name="af512513fc611aa3df635117ada4f0b61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af512513fc611aa3df635117ada4f0b61">&#9670;&#160;</a></span>ConstraintBindings()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -210,27 +210,18 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">llzk::polymorphic::detail::ConstraintBindings::ConstraintBindings </td>
           <td>(</td>
-          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>context</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>context</em></span></td><td>)</td>
           <td></td>
-          <td class="paramtype">uint64_t &amp;</td>          <td class="paramname"><span class="paramname"><em>work</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>maximum</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel explicit">explicit</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00059">59</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00057">57</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -269,7 +260,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Extend an already-validated path with one record or coordinate. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00072">72</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00069">69</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -307,7 +298,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Create a root for a local allocation, function argument, or original storage. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00063">63</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00060">60</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -340,7 +331,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Select one dimension; callers check that the coordinate is static/in-bounds. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00079">79</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00076">76</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -378,7 +369,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Visit array elements in row-major order, preserving aggregate element types. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00115">115</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00112">112</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -416,7 +407,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Resolve a scalar binding; original storage is read only when needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00167">167</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00158">158</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -445,7 +436,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Temporarily make an argument root read-only without copying its identity. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00188">188</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00179">179</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -483,7 +474,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Resolve one concrete step, including those transferred into a destination. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00088">88</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00085">85</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -516,7 +507,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Bind a scalar leaf during initialization or after checking writability. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00203">203</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00194">194</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -560,7 +551,7 @@ Public Member Functions</h2></td></tr>
 <p>Snapshot leaves before replacing a subtree, including overlapping copies. </p>
 <p>Missing local leaves stay uninitialized; copying does not read them. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00208">208</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00199">199</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -589,7 +580,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Release one call's protection; enclosing calls retain their own protection. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00191">191</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00182">182</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -627,7 +618,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Enumerate scalar leaves using types, without allocating aggregate objects. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00139">139</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00133">133</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>
@@ -660,7 +651,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Reject writes based on destination identity, never scalar provenance. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00194">194</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00185">185</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
 
 </div>
 </div>

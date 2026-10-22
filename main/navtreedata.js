@@ -97,24 +97,22 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-flatten</span>", "tools.html#autotoc_md-llzk-flatten", [
               [ "Options", "tools.html#options-12", null ]
             ] ],
-            [ "<span class=\"tt\">-llzk-flatten-constraints</span>", "tools.html#autotoc_md-llzk-flatten-constraints", [
-              [ "Options", "tools.html#options-13", null ]
-            ] ],
+            [ "<span class=\"tt\">-llzk-flatten-constraints</span>", "tools.html#autotoc_md-llzk-flatten-constraints", null ],
             [ "<span class=\"tt\">-llzk-infer-tvar</span>", "tools.html#autotoc_md-llzk-infer-tvar", null ],
             [ "<span class=\"tt\">-llzk-monomorphize-templates</span>", "tools.html#autotoc_md-llzk-monomorphize-templates", [
-              [ "Options", "tools.html#options-14", null ]
+              [ "Options", "tools.html#options-13", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-specialize-wildcard-arrays</span>", "tools.html#autotoc_md-llzk-specialize-wildcard-arrays", [
-              [ "Options", "tools.html#options-15", null ]
+              [ "Options", "tools.html#options-14", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-expose-child-members</span>", "tools.html#autotoc_md-llzk-expose-child-members", [
-              [ "Options", "tools.html#options-16", null ]
+              [ "Options", "tools.html#options-15", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-inline-structs</span>", "tools.html#autotoc_md-llzk-inline-structs", [
-              [ "Options", "tools.html#options-17", null ]
+              [ "Options", "tools.html#options-16", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-to-pcl</span>", "tools.html#autotoc_md-llzk-to-pcl", [
-              [ "Options", "tools.html#options-18", null ]
+              [ "Options", "tools.html#options-17", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-r1cs-lowering", null ]
           ] ],
@@ -126,11 +124,11 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-remove-unnecessary-ops-and-defs</span>", "tools.html#autotoc_md-llzk-remove-unnecessary-ops-and-defs", null ],
             [ "<span class=\"tt\">-llzk-product-program</span>", "tools.html#autotoc_md-llzk-product-program", null ],
             [ "<span class=\"tt\">-llzk-full-struct-inlining</span>", "tools.html#autotoc_md-llzk-full-struct-inlining", [
-              [ "Options", "tools.html#options-19", null ]
+              [ "Options", "tools.html#options-18", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-full-inlining</span>", "tools.html#autotoc_md-llzk-full-inlining", null ],
             [ "<span class=\"tt\">-llzk-full-poly-lowering</span>", "tools.html#autotoc_md-llzk-full-poly-lowering", [
-              [ "Options", "tools.html#options-20", null ]
+              [ "Options", "tools.html#options-19", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-full-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-full-r1cs-lowering", null ],
             [ "<span class=\"tt\">-llzk-constraint-flattening</span>", "tools.html#autotoc_md-llzk-constraint-flattening", null ]
@@ -624,34 +622,34 @@ var NAVTREEINDEX =
 "classllzk_1_1polymorphic_1_1ConstReadOp.html",
 "classllzk_1_1polymorphic_1_1TemplateOpAdaptor.html#ac304cd821d858129b2a435a893076b5e",
 "classllzk_1_1polymorphic_1_1YieldOp.html#a837d813e547c42e54119361eb0b011c6",
-"classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase.html#a04bb5693fb4efd049faab3f1e8470053",
-"classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html#adb569ddececf5e6638e4db43ff543e5e",
-"classllzk_1_1smt__info_1_1SMTInfoSetOp.html#a03677f9bfcc977d74ea30c714cab5479",
-"classllzk_1_1verif_1_1AssumeDetOpAdaptor.html",
-"classllzk_1_1verif_1_1ContractOpGenericAdaptor.html",
-"classllzk_1_1verif_1_1EnsureConstrainOpGenericAdaptor.html#a0c35e3c49c4a4c3278e4be4a0eacd806",
-"classllzk_1_1verif_1_1InvariantOp.html#a551c7f49a47af5a0f9386880c23d050b",
-"classllzk_1_1verif_1_1RequireComputeOp.html#a9c74ec13c361ccb801fbd16cdfa43e0f",
-"classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html#af205d3aaebe9203722ee0b169fb7d8b1",
-"classllzk_1_1verif_1_1detail_1_1ContractEndOpGenericAdaptorBase.html#a1e7d4534adb9d8d08b958aad07bdd5dc",
-"classllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase.html#ae751c35b6c4b7f3a751ba4c5bf9b5ecc",
-"classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase.html#a8444b27007bf05616610e51fe4779d36",
-"dialects.html#publicattr",
-"functions_func_h.html",
-"namespaceWildcardFunctionSpecialization.html",
-"namespacellzk.html#a784af22c9b3177c330c3370cd6241886",
-"namespacellzk.html#afb3131a62a62678ca6664eb3c22c9c3e",
-"namespacellzk_1_1pod.html#af0194f68a5327cf4bf984394626233d4",
-"overview.html#frontends",
-"structGenStringFromOpPieces.html#a513c6d4e65bdc9949cd9c7b6cf3d678f",
-"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a20621aefb1d2c00057fd71d7fcf46cf7",
-"structllzk_1_1IntervalAnalysisPrinterPassOptions.html#af126cc6bab9b204081b78a4910e9ae62",
-"structllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase_1_1Properties.html#a6c6542babba02a80c909d04500a0c8a5",
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#a8421aa445e4511f406435622b48b6597",
-"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html",
-"structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#ad1db6e3241dee3731e9e102912e17349",
-"structllzk_1_1verif_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html#a52941682760dc5a6001772f6b3a4fd6f",
-"tools.html#autotoc_md-llzk-unused-declaration-elim"
+"classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase.html#a06e86c3c8daa1323d73e74b28dd39196",
+"classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a2ac5d2515b17dc5de21ac0bd9f1e5cdd",
+"classllzk_1_1smt__info_1_1SMTInfoSetOp.html#a371de392819b4495327906c71f0ffaa1",
+"classllzk_1_1verif_1_1AssumeDetOpAdaptor.html#ab4716521e2bab74cf599ccdbbc316921",
+"classllzk_1_1verif_1_1ContractOpGenericAdaptor.html#a952c302454e0e9bd88ee749154adaca4",
+"classllzk_1_1verif_1_1EnsureConstrainOpGenericAdaptor.html#ab395cbf97cb9b3e49ddd56451ea2fb9d",
+"classllzk_1_1verif_1_1InvariantOp.html#a97b190fceb4376997fb70565695f9959",
+"classllzk_1_1verif_1_1RequireComputeOp.html#ad2ce01308114d41e130491f21beef302",
+"classllzk_1_1verif_1_1VerifAssertOp.html#a4581c769cdaf7763593eeda73a5e6916",
+"classllzk_1_1verif_1_1detail_1_1ContractEndOpGenericAdaptorBase.html#a9edbe6f600cdac6cd240fb459139512d",
+"classllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits_1_1ExternalModel.html#a18ec6ef7c0feef020ec73bdb9854b719",
+"classllzk_1_1witgen_1_1FunctionInterpreter.html#a2b66e8dc49976e973a4e238ae13207a7",
+"dialects.html#results-16",
+"functions_func_s.html",
+"namespacellzk.html#a00a1db9f2cbc20b8b1ef3010ea7c97a5",
+"namespacellzk.html#a7d838b81c2874e5ce443ff1de91839d3",
+"namespacellzk.html#afe6df124d315ea4af67d41601225b1a2",
+"namespacellzk_1_1polymorphic.html#a0f178ee48a2f3064549ca1b3cc8ef0ff",
+"pcl-backend.html#felttype-1",
+"structGenerator.html#a4fefc041c66a57afa8536877063d61a0",
+"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html",
+"structllzk_1_1LLZKDialectBytecodeInterface.html#a1bec72a5c477ecc2422fec411ae99e43",
+"structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html#a66d865adbffda4dd1d638d7750de3d75",
+"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html",
+"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a38b8220e3459cfee98aec79042e8d61e",
+"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#ac931c7a8562a64c51f469251ea2ebc31",
+"structllzk_1_1verif_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html#aa5e0dbc5aefed7d13c95a4a44241b0be",
+"tools.html#options-17"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

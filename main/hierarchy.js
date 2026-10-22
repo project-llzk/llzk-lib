@@ -307,7 +307,6 @@ var hierarchy =
     [ "llzk::polymorphic::detail::ConstraintBindings", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintBindings.html", null ],
     [ "llzk::ConstraintDependencyGraph", "classllzk_1_1ConstraintDependencyGraph.html", null ],
     [ "llzk::ConstraintDependencyGraphPrinterPassOptions", "structllzk_1_1ConstraintDependencyGraphPrinterPassOptions.html", null ],
-    [ "llzk::polymorphic::ConstraintFlatteningPassOptions", "structllzk_1_1polymorphic_1_1ConstraintFlatteningPassOptions.html", null ],
     [ "llzk::constrain::detail::ConstraintOpInterfaceInterfaceTraits", "structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::polymorphic::detail::ConstraintScalarFacts", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html", null ],
     [ "llzk::polymorphic::detail::ConstraintStorage", "classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html", null ],

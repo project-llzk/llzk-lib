@@ -1,17 +1,5 @@
 var NAVTREEINDEX79 =
 {
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#a8421aa445e4511f406435622b48b6597":[11,0,3,9,2,0,9],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#a8421aa445e4511f406435622b48b6597":[13,0,1,6,2,0,9],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#ab1c8880b9aa2c568e9a2678f01c51e8d":[11,0,3,9,2,0,6],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#ab1c8880b9aa2c568e9a2678f01c51e8d":[13,0,1,6,2,0,6],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#aba204cba9be5f37d835a56d98debc35c":[11,0,3,9,2,0,8],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#aba204cba9be5f37d835a56d98debc35c":[13,0,1,6,2,0,8],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#abb4bf2e0456e06a5b3312412e611063f":[11,0,3,9,2,0,10],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#abb4bf2e0456e06a5b3312412e611063f":[13,0,1,6,2,0,10],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#ade1c07a3f7e5818ad7930e70cea589d8":[11,0,3,9,2,0,7],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#ade1c07a3f7e5818ad7930e70cea589d8":[13,0,1,6,2,0,7],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#af5a059b5ec9b905e267e3e92f58c3770":[11,0,3,9,2,0,0],
-"structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html#af5a059b5ec9b905e267e3e92f58c3770":[13,0,1,6,2,0,0],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html":[11,0,3,9,3],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html":[13,0,1,6,3],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceTrait.html#a0e6585d0f79f5fd7f29ea4f62d21fb37":[11,0,3,9,3,5],
@@ -249,5 +237,17 @@ var NAVTREEINDEX79 =
 "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#aca6f8d87bba4e274ce12a8530c0eadde":[11,0,3,12,0,1,0,3],
 "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#aca6f8d87bba4e274ce12a8530c0eadde":[13,0,1,9,0,1,0,3],
 "structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits.html":[11,0,3,12,0,2],
-"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits.html":[13,0,1,9,0,2]
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits.html":[13,0,1,9,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html":[11,0,3,12,0,2,0],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html":[13,0,1,9,0,2,0],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a47076015c45fd011dcfa81b435964ba4":[11,0,3,12,0,2,0,0],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a47076015c45fd011dcfa81b435964ba4":[13,0,1,9,0,2,0,0],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a98a61814574265d9a0d1fb5d82df3c75":[11,0,3,12,0,2,0,1],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a98a61814574265d9a0d1fb5d82df3c75":[13,0,1,9,0,2,0,1],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#ab0fef470c316c846f32e0c2c8580b2f8":[11,0,3,12,0,2,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#ab0fef470c316c846f32e0c2c8580b2f8":[13,0,1,9,0,2,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceTrait.html":[11,0,3,12,0,3],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceTrait.html":[13,0,1,9,0,3],
+"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html":[11,0,3,12,0,4,0],
+"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html":[13,0,1,9,0,4,0]
 };

@@ -148,10 +148,8 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9d65abb04212727eef3ef6ba9a6f2a7c" id="r_a9d65abb04212727eef3ef6ba9a6f2a7c"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a9d65abb04212727eef3ef6ba9a6f2a7c">StructSpecializationDiscovery</a> (uint64_t maxSteps=1000000)</td></tr>
-<tr class="memdesc:a9d65abb04212727eef3ef6ba9a6f2a7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Each evaluated body operation and unique array index tuple consumes one step.  <br /></td></tr>
-<tr class="memitem:ab5024a14ef39ff6bef38a5852509ec0c" id="r_ab5024a14ef39ff6bef38a5852509ec0c"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab5024a14ef39ff6bef38a5852509ec0c">evaluateBindings</a> (mlir::Operation *source, const <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings, uint64_t *remainingSteps=nullptr) const</td></tr>
-<tr class="memdesc:ab5024a14ef39ff6bef38a5852509ec0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate enclosing template expressions in declaration order and return an extended copy of bindings for substitution into a concrete clone.  <br /></td></tr>
+<tr class="memitem:aab201c901d470132efe676aa33fbc702" id="r_aab201c901d470132efe676aa33fbc702"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aab201c901d470132efe676aa33fbc702">evaluateBindings</a> (mlir::Operation *source, const <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings) const</td></tr>
+<tr class="memdesc:aab201c901d470132efe676aa33fbc702"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate enclosing template expressions in declaration order and return an extended copy of bindings for substitution into a concrete clone.  <br /></td></tr>
 <tr class="memitem:a49cd1ae344e969bef8d3918f964bb9d2" id="r_a49cd1ae344e969bef8d3918f964bb9d2"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="#ae70c4e94c65cefd871a368f1e62d8e68">Requests</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a49cd1ae344e969bef8d3918f964bb9d2">discover</a> (mlir::Operation *source, const <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings, llvm::SmallVectorImpl&lt; mlir::Operation * &gt; *visitedOperations=nullptr, <a class="el" href="#ab02d26b945c86fd3d777cae03d1f053a">CallTargets</a> *callTargets=nullptr) const</td></tr>
 <tr class="memdesc:a49cd1ae344e969bef8d3918f964bb9d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return ordered, deduplicated requests for a struct or free-function source, or diagnose an unresolved dependency.  <br /></td></tr>
 </table>
@@ -165,7 +163,7 @@ Public Member Functions</h2></td></tr>
 <li>Visited operations may contain regions only for scf.if, scf.for and scf.while. Other region operations and unstructured branches on explored paths are unsupported.</li>
 <li>scf.if selects the branch when its condition is known. Otherwise both branches must be supported, and a result stays known only if both branches yield the same constant. Discovery does not retain alternative values or infer facts from the branch condition.</li>
 <li>Every visited scf.for requires known signed bounds and a positive step, representable as int64_t, with no induction overflow or unsignedCmp. Iterations propagate known scalar iter_args; zero iterations return the initial values. These requirements apply even when the loop contains no struct uses.</li>
-<li>Every visited scf.while requires a known i1 condition at each check. The condition region runs before the first iteration and after every body yield. Its forwarded values become the body arguments or, when false, the loop results. The shared step budget bounds nonterminating loops.</li>
+<li>Every visited scf.while requires a known i1 condition at each check. The condition region runs before the first iteration and after every body yield. Its forwarded values become the body arguments or, when false, the loop results.</li>
 </ul>
 <p></em></p>
 <p><em>Values available for specialization:</p><ul>
@@ -181,7 +179,7 @@ Public Member Functions</h2></td></tr>
 <li>Affine calls also contribute concrete specializations. A call with a rolled struct argument receives the union from all arrays and affine calls with the same rolled type in this source instance. A call with no known source is diagnosed. Affine maps nested in struct type arguments are unsupported.</li>
 </ul>
 <p></em></p>
-<p><em>An unresolved required argument, unsupported explored structure or exhausted step budget is diagnosed. Success describes dependencies of this source instance; the caller must repeat discovery for newly instantiated definitions to obtain the transitive set of specializations.</em></p>
+<p><em>An unresolved required argument or unsupported explored structure is diagnosed. Success describes dependencies of this source instance; the caller must repeat discovery for newly instantiated definitions to obtain the transitive set of specializations.</em></p>
 <p><em>Results retain source parameterized types, including nested concrete type arguments. Identity, caching, cloning, call retargeting and metadata belong to the caller. </em></p>
 
 <p class="definition">Definition at line <a class="el" href="StructSpecializationDiscovery_8h_source.html#l00126">126</a> of file <a class="el" href="StructSpecializationDiscovery_8h_source.html">StructSpecializationDiscovery.h</a>.</p>
@@ -234,37 +232,6 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a9d65abb04212727eef3ef6ba9a6f2a7c" name="a9d65abb04212727eef3ef6ba9a6f2a7c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9d65abb04212727eef3ef6ba9a6f2a7c">&#9670;&#160;</a></span>StructSpecializationDiscovery()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llzk::polymorphic::detail::StructSpecializationDiscovery::StructSpecializationDiscovery </td>
-          <td>(</td>
-          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>maxSteps</em></span><span class="paramdefsep"> = </span><span class="paramdefval">1000000</span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel explicit">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Each evaluated body operation and unique array index tuple consumes one step. </p>
-<p>The limit is shared by template expressions and all methods in one run. </p>
-
-<p class="definition">Definition at line <a class="el" href="StructSpecializationDiscovery_8h_source.html#l00134">134</a> of file <a class="el" href="StructSpecializationDiscovery_8h_source.html">StructSpecializationDiscovery.h</a>.</p>
-
-</div>
-</div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a49cd1ae344e969bef8d3918f964bb9d2" name="a49cd1ae344e969bef8d3918f964bb9d2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a49cd1ae344e969bef8d3918f964bb9d2">&#9670;&#160;</a></span>discover()</h2>
@@ -298,12 +265,12 @@ Public Member Functions</h2></td></tr>
 <p>Return ordered, deduplicated requests for a struct or free-function source, or diagnose an unresolved dependency. </p>
 <p>Self references are omitted; the caller already owns the source instance. When supplied, visitedOperations receives explored operations so callers can retarget uses without inspecting branches excluded by constant conditions. callTargets receives the candidate sets for rolled method arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="StructSpecializationDiscovery_8cpp_source.html#l00798">798</a> of file <a class="el" href="StructSpecializationDiscovery_8cpp_source.html">StructSpecializationDiscovery.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="StructSpecializationDiscovery_8cpp_source.html#l00774">774</a> of file <a class="el" href="StructSpecializationDiscovery_8cpp_source.html">StructSpecializationDiscovery.cpp</a>.</p>
 
 </div>
 </div>
-<a id="ab5024a14ef39ff6bef38a5852509ec0c" name="ab5024a14ef39ff6bef38a5852509ec0c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab5024a14ef39ff6bef38a5852509ec0c">&#9670;&#160;</a></span>evaluateBindings()</h2>
+<a id="aab201c901d470132efe676aa33fbc702" name="aab201c901d470132efe676aa33fbc702"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab201c901d470132efe676aa33fbc702">&#9670;&#160;</a></span>evaluateBindings()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -316,20 +283,15 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>bindings</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint64_t *</td>          <td class="paramname"><span class="paramname"><em>remainingSteps</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;) const</td>
+          <td class="paramtype">const <a class="el" href="#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>bindings</em></span>&#160;) const</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Evaluate enclosing template expressions in declaration order and return an extended copy of bindings for substitution into a concrete clone. </p>
-<p>Source must be a struct definition or free-function definition. If requested, return the steps left for discovering that clone's methods. </p>
+<p>Source must be a struct definition or free-function definition. </p>
 
-<p class="definition">Definition at line <a class="el" href="StructSpecializationDiscovery_8cpp_source.html#l00787">787</a> of file <a class="el" href="StructSpecializationDiscovery_8cpp_source.html">StructSpecializationDiscovery.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="StructSpecializationDiscovery_8cpp_source.html#l00770">770</a> of file <a class="el" href="StructSpecializationDiscovery_8cpp_source.html">StructSpecializationDiscovery.cpp</a>.</p>
 
 </div>
 </div>

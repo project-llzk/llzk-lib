@@ -15,6 +15,5 @@ var classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase =
     [ "operator=", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aefed14f6b6c3c35d13e35aa7992ff8f5", null ],
     [ "createTemplateMonomorphizationPass", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#a70063d618fc49c2221a808dca0125c09", null ],
     [ "createTemplateMonomorphizationPass", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#acaa00429b83fc81de0b106fae06114ad", null ],
-    [ "evaluationLimit", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#a18d252ebfdefd8e9281e08ce4973e782", null ],
     [ "specializationLimit", "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#a5fb2c5dea48c7902eeaac60cee4ef720", null ]
 ];
