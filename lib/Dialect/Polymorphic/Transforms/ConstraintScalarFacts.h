@@ -10,10 +10,7 @@
 #pragma once
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
-#include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Util/DynamicAPIntHelper.h"
 
-#include <mlir/IR/Builders.h>
 #include <mlir/IR/Matchers.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
@@ -21,35 +18,17 @@
 #include <llvm/ADT/DenseSet.h>
 
 namespace llzk::polymorphic::detail {
-/// Evaluate only scalar dependencies demanded by control flow and concrete paths.
+/// Evaluate scalar dependencies of structural decisions, assertions, and constant arithmetic.
 class ConstraintScalarFacts {
-  mlir::Builder builder;
   /// A null entry records an evaluated value that cannot be resolved. Emitted
   /// SSA is immutable; calls and loop iterations produce fresh values.
   llvm::DenseMap<mlir::Value, mlir::Attribute> constants;
 
   /// Use fold hooks on a disposable operation; emitted scalar expressions stay SSA.
-  void fold(mlir::Operation *producer, mlir::Value current) {
+  void fold(mlir::Operation *producer) {
     llvm::SmallVector<mlir::Attribute> operands;
     for (mlir::Value operand : producer->getOperands()) {
       operands.push_back(constants.lookup(operand));
-    }
-    // Casts expose canonicalization rather than fold hooks. Match the same
-    // nonnegative, signed-64 representability rule for structural indices.
-    if (llvm::isa<llzk::cast::FeltToIndexOp>(producer)) {
-      if (auto constant = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operands.front())) {
-        auto reduced = constant.getReducedValue();
-        if (!reduced) {
-          return;
-        }
-        auto converted = checkedToInt64(*reduced);
-        if (converted && *converted >= 0) {
-          constants[current] = builder.getIndexAttr(*converted);
-        } else if (!converted) {
-          llvm::consumeError(converted.takeError());
-        }
-      }
-      return;
     }
     mlir::Operation *temporary = producer->clone();
     llvm::SmallVector<mlir::OpFoldResult> results;
@@ -65,9 +44,7 @@ class ConstraintScalarFacts {
   }
 
 public:
-  explicit ConstraintScalarFacts(mlir::MLIRContext *context) : builder(context) {}
-
-  /// Evaluate only the pure SSA dependencies of a requested structural value.
+  /// Evaluate pure SSA dependencies and casts whose fold hooks prove validity.
   /// An explicit worklist also handles long iteration-dependent expression chains.
   mlir::Attribute known(mlir::Value value) {
     llvm::SmallVector<std::pair<mlir::Value, bool>> pending {{value, false}};
@@ -83,7 +60,11 @@ public:
         continue;
       }
       mlir::Operation *producer = current.getDefiningOp();
-      if (!producer || producer->getNumRegions() || !mlir::isMemoryEffectFree(producer)) {
+      // Assert casts may have effects, but their fold hooks succeed only when the
+      // range check is satisfied. Other effectful operations remain unknown.
+      if (!producer || producer->getNumRegions() ||
+          (!mlir::isMemoryEffectFree(producer) &&
+           !llvm::isa<cast::FeltToIndexOp, cast::IntToFeltOp>(producer))) {
         constants.try_emplace(current, mlir::Attribute());
         continue;
       }
@@ -97,7 +78,7 @@ public:
         }
         continue;
       }
-      fold(producer, current);
+      fold(producer);
       constants.try_emplace(current, mlir::Attribute());
     }
     return constants.lookup(value);

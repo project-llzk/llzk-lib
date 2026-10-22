@@ -1,0 +1,131 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt %t/input.llzk --canonicalize > %t/folded.llzk
+// RUN: llzk-witgen %t/input.llzk --inputs %t/input.json > %t/original.json
+// RUN: llzk-witgen %t/folded.llzk --inputs %t/input.json > %t/folded.json
+// RUN: diff -u %t/expected.json %t/original.json
+// RUN: diff -u %t/original.json %t/folded.json
+// RUN: llzk-witgen %t/input.llzk --inputs %t/input.json --output-scope=full-witness > %t/full.json
+// RUN: llzk-witgen %t/input.llzk --inputs %t/input.json --output-wtns %t/original.wtns > %t/original-full.json
+// RUN: llzk-witgen %t/folded.llzk --inputs %t/input.json --output-wtns %t/folded.wtns > %t/folded-full.json
+// RUN: diff -u %t/full.json %t/original-full.json
+// RUN: diff -u %t/original-full.json %t/folded-full.json
+// RUN: cmp %t/original.wtns %t/folded.wtns
+// RUN: FileCheck %s --check-prefix=FULL --match-full-lines < %t/full.json
+// RUN: od -An -v -t x1 %t/original.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS --match-full-lines
+
+// Truncation keeps the low 31 bits, then reduces modulo babybear's prime.
+// Check folding equivalence and boundary values, including negative inputs.
+// A cast back to index observes the reduced value.
+
+// FULL-LABEL: {
+// FULL-NEXT:    "inputs": {
+// FULL-NEXT:      "zero": "0"
+// FULL-NEXT:    },
+// FULL-NEXT:    "signals": {
+// FULL-NEXT:      "above_prime": "1",
+// FULL-NEXT:      "below_prime": "2013265920",
+// FULL-NEXT:      "dynamic": "134217726",
+// FULL-NEXT:      "negative": "134217726",
+// FULL-NEXT:      "prime": "0",
+// FULL-NEXT:      "roundtrip": "134217726",
+// FULL-NEXT:      "truncated_one": "1",
+// FULL-NEXT:      "truncated_prime": "0",
+// FULL-NEXT:      "truncated_zero": "0"
+// FULL-NEXT:    }
+// FULL-NEXT:  }
+
+// The WTNS encoding fixes the wire order to constant one, public members
+// in declaration order, then the private zero input.
+// WTNS-LABEL: 77746e7302000000020000000100000010000000000000000800000001000078000000000b0000000200000058000000000000000100000000000000feffff0700000000000000780000000000000000000000000100000000000000000000000000000001000000000000000000000000000000feffff0700000000feffff07000000000000000000000000
+
+//--- input.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @negative : !felt.type<"babybear"> {llzk.pub}
+    struct.member @below_prime : !felt.type<"babybear"> {llzk.pub}
+    struct.member @prime : !felt.type<"babybear"> {llzk.pub}
+    struct.member @above_prime : !felt.type<"babybear"> {llzk.pub}
+    struct.member @truncated_zero : !felt.type<"babybear"> {llzk.pub}
+    struct.member @truncated_one : !felt.type<"babybear"> {llzk.pub}
+    struct.member @truncated_prime : !felt.type<"babybear"> {llzk.pub}
+    struct.member @dynamic : !felt.type<"babybear"> {llzk.pub}
+    struct.member @roundtrip : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%zero: !felt.type<"babybear"> {function.arg_name = "zero"}) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %negative = arith.constant -1 : index
+      %below_prime = arith.constant 2013265920 : index
+      %prime = arith.constant 2013265921 : index
+      %above_prime = arith.constant 2013265922 : index
+      %high_zero = arith.constant 2147483648 : index
+      %high_one = arith.constant 2147483649 : index
+      %high_prime = arith.constant 4160749569 : index
+      %a = cast.tofelt trunc %negative : index, !felt.type<"babybear">
+      %b = cast.tofelt trunc %below_prime : index, !felt.type<"babybear">
+      %c = cast.tofelt trunc %prime : index, !felt.type<"babybear">
+      %d = cast.tofelt trunc %above_prime : index, !felt.type<"babybear">
+      %e = cast.tofelt trunc %high_zero : index, !felt.type<"babybear">
+      %f = cast.tofelt trunc %high_one : index, !felt.type<"babybear">
+      %g = cast.tofelt trunc %high_prime : index, !felt.type<"babybear">
+      %base = cast.toindex %zero : !felt.type<"babybear">
+      %runtime_negative = arith.addi %base, %negative : index
+      %h = cast.tofelt trunc %runtime_negative : index, !felt.type<"babybear">
+      %index = cast.toindex %h : !felt.type<"babybear">
+      %expected = arith.constant 134217726 : index
+      %is_reduced = arith.cmpi eq, %index, %expected : index
+      bool.assert %is_reduced
+      %i = cast.tofelt %index : index, !felt.type<"babybear">
+      struct.writem %self[@negative] = %a : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@below_prime] = %b : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@prime] = %c : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@above_prime] = %d : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@truncated_zero] = %e : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@truncated_one] = %f : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@truncated_prime] = %g : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@dynamic] = %h : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@roundtrip] = %i : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %zero: !felt.type<"babybear">) {
+      %c0 = felt.const 0 : !felt.type<"babybear">
+      %c1 = felt.const 1 : !felt.type<"babybear">
+      %max = felt.const 2013265920 : !felt.type<"babybear">
+      %low_ones = felt.const 134217726 : !felt.type<"babybear">
+      %a = struct.readm %self[@negative] : !struct.type<@Main>, !felt.type<"babybear">
+      %b = struct.readm %self[@below_prime] : !struct.type<@Main>, !felt.type<"babybear">
+      %c = struct.readm %self[@prime] : !struct.type<@Main>, !felt.type<"babybear">
+      %d = struct.readm %self[@above_prime] : !struct.type<@Main>, !felt.type<"babybear">
+      %e = struct.readm %self[@truncated_zero] : !struct.type<@Main>, !felt.type<"babybear">
+      %f = struct.readm %self[@truncated_one] : !struct.type<@Main>, !felt.type<"babybear">
+      %g = struct.readm %self[@truncated_prime] : !struct.type<@Main>, !felt.type<"babybear">
+      %h = struct.readm %self[@dynamic] : !struct.type<@Main>, !felt.type<"babybear">
+      %i = struct.readm %self[@roundtrip] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %a, %low_ones : !felt.type<"babybear">
+      constrain.eq %b, %max : !felt.type<"babybear">
+      constrain.eq %c, %c0 : !felt.type<"babybear">
+      constrain.eq %d, %c1 : !felt.type<"babybear">
+      constrain.eq %e, %c0 : !felt.type<"babybear">
+      constrain.eq %f, %c1 : !felt.type<"babybear">
+      constrain.eq %g, %c0 : !felt.type<"babybear">
+      constrain.eq %h, %low_ones : !felt.type<"babybear">
+      constrain.eq %i, %low_ones : !felt.type<"babybear">
+      constrain.eq %zero, %c0 : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{"zero": "0"}
+
+//--- expected.json
+{
+  "above_prime": "1",
+  "below_prime": "2013265920",
+  "dynamic": "134217726",
+  "negative": "134217726",
+  "prime": "0",
+  "roundtrip": "134217726",
+  "truncated_one": "1",
+  "truncated_prime": "0",
+  "truncated_zero": "0"
+}

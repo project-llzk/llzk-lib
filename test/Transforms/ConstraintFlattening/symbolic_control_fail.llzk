@@ -50,7 +50,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) attributes {function.allow_non_native_field_ops} {
-      %index = cast.toindex %x : !felt.type
+      %index = cast.toindex wrap %x : !felt.type
       %local = array.new %x, %x : !array.type<2 x !felt.type>
       // expected-error @+1 {{array path requires compile-time indices}}
       %read = array.read %local[%index] : !array.type<2 x !felt.type>, !felt.type

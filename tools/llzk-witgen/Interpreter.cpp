@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
@@ -530,7 +531,7 @@ private:
         return rhs.takeError();
       }
       llvm::DynamicAPInt result(0);
-      if (*rhs < llvm::DynamicAPInt(field.bitWidth())) {
+      if (*rhs < field.bitWidth()) {
         result = *lhs >> *rhs;
       }
       return bind({WitnessVal(result)});
@@ -592,24 +593,34 @@ private:
       llvm::DynamicAPInt maxMask = (llvm::DynamicAPInt(1) << field.bitWidth()) - 1;
       return bind({WitnessVal(field.reduce(maxMask ^ *feltValue))});
     }
-    // Reduces signed integers to unsigned field elements using Field::reduce.
-    // Negative results are reduced by subtracting from the prime (e.g., -1 -> p - 1).
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
+      const Field &resultField = intToFeltOp.getType().getField();
       auto operand = lookup(intToFeltOp.getValue(), scope);
       if (!operand) {
         return operand.takeError();
       }
       if (std::holds_alternative<bool>(*operand)) {
-        return bind({WitnessVal(field.reduce(std::get<bool>(*operand) ? 1 : 0))});
+        auto result = cast::applyIntToFeltOverflow(
+            llvm::DynamicAPInt(std::get<bool>(*operand) ? 1 : 0), resultField,
+            intToFeltOp.getOverflow()
+        );
+        if (!result) {
+          return makeError("integer does not fit in felt");
+        }
+        return bind({WitnessVal(*result)});
       }
       auto integer = asIndex(*operand);
       if (!integer) {
         return integer.takeError();
       }
-      return bind({WitnessVal(field.reduce(*integer))});
+      auto result = cast::applyIntToFeltOverflow(
+          llvm::DynamicAPInt(*integer), resultField, intToFeltOp.getOverflow()
+      );
+      if (!result) {
+        return makeError("integer does not fit in felt");
+      }
+      return bind({WitnessVal(*result)});
     }
-    // Field elements are unsigned. If the field element would overflow the 64-bit
-    // index, an error is reported.
     if (auto feltToIndexOp = dyn_cast<cast::FeltToIndexOp>(op)) {
       auto operand = lookup(feltToIndexOp.getValue(), scope);
       if (!operand) {
@@ -619,11 +630,13 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      auto &felt = *feltValue;
-      if (felt < 0 || felt > std::numeric_limits<int64_t>::max()) {
+      auto result = cast::applyFeltToIndexOverflow(
+          *feltValue, IndexType::kInternalStorageBitWidth, feltToIndexOp.getOverflow()
+      );
+      if (!result) {
         return makeError("felt value does not fit in index");
       }
-      return bind({WitnessVal(int64_t(felt))});
+      return bind({WitnessVal(static_cast<int64_t>(toAPSInt(*result).getZExtValue()))});
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {

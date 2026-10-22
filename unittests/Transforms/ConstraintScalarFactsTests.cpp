@@ -10,10 +10,14 @@
 #include "../../lib/Dialect/Polymorphic/Transforms/ConstraintScalarFacts.h"
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dialect.h>
 #include <mlir/IR/OpDefinition.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
+#include <mlir/Parser/Parser.h>
 
 namespace {
 
@@ -69,7 +73,7 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedChainIsEvaluatedOncePerOperation) {
   mlir::OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&body);
   mlir::Value value = body.addArgument(builder.getIndexType(), loc);
-  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
 
   constexpr unsigned length = 256;
   for (unsigned i = 0; i < length; ++i) {
@@ -88,7 +92,7 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedResultsDoNotPoisonFreshConstantBind
   mlir::OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&body);
   auto unknown = body.addArgument(builder.getIndexType(), loc);
-  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
   EXPECT_FALSE(facts.known(identity(builder, unknown)));
 
   for (int64_t i = 0; i < 8; ++i) {
@@ -98,6 +102,35 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedResultsDoNotPoisonFreshConstantBind
     EXPECT_EQ(facts.known(result), builder.getIndexAttr(i));
   }
   EXPECT_EQ(CountedIdentityOp::foldCalls, 9U);
+}
+
+TEST_F(ConstraintScalarFactsTests, IntegerToFeltUsesDeclaredOverflowSemantics) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      function.def @convert() -> (!felt.type<"babybear">, !felt.type<"babybear">) {
+        %true = arith.constant true
+        %negative = arith.constant -1 : index
+        %boolean = cast.tofelt %true : i1, !felt.type<"babybear">
+        %index = cast.tofelt wrap %negative : index, !felt.type<"babybear">
+        function.return %boolean, %index : !felt.type<"babybear">, !felt.type<"babybear">
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  llvm::SmallVector<mlir::Value> values;
+  module->walk([&values](llzk::cast::IntToFeltOp op) { values.push_back(op.getResult()); });
+  ASSERT_EQ(values.size(), 2U);
+
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
+  auto boolean = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(facts.known(values[0]));
+  auto index = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(facts.known(values[1]));
+  ASSERT_TRUE(boolean);
+  ASSERT_TRUE(index);
+  EXPECT_EQ(boolean.getRawValue(), 1);
+  EXPECT_EQ(index.getRawValue(), 2013265920);
 }
 
 } // namespace

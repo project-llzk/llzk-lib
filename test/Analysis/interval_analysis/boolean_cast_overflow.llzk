@@ -1,0 +1,112 @@
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
+// RUN: sed 's/cast.tofelt sat/cast.tofelt wrap/g' %s | llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" 2>&1 | FileCheck %s
+// RUN: sed 's/cast.tofelt sat/cast.tofelt trunc/g' %s | llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" 2>&1 | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Every overflow mode preserves unknown and constant boolean values in stored members.
+  struct.def @BooleanCastRange {
+    struct.member @unknown : !felt.type
+    struct.member @zero : !felt.type
+    struct.member @one : !felt.type
+
+    function.def @compute(%flag: i1) -> !struct.type<@BooleanCastRange> {
+      %self = struct.new : !struct.type<@BooleanCastRange>
+      %false = arith.constant false
+      %true = arith.constant true
+      %unknown = cast.tofelt sat %flag : i1
+      %zero = cast.tofelt sat %false : i1
+      %one = cast.tofelt sat %true : i1
+      struct.writem %self[@unknown] = %unknown : !struct.type<@BooleanCastRange>, !felt.type
+      struct.writem %self[@zero] = %zero : !struct.type<@BooleanCastRange>, !felt.type
+      struct.writem %self[@one] = %one : !struct.type<@BooleanCastRange>, !felt.type
+      function.return %self : !struct.type<@BooleanCastRange>
+    }
+
+    function.def @constrain(%self: !struct.type<@BooleanCastRange>, %flag: i1) {
+      function.return
+    }
+  }
+
+  // Constraints on the casts refine both source flags and comparison operands.
+  struct.def @BooleanCastConstraints {
+    function.def @compute(%trueFlag: i1, %falseFlag: i1, %input: !felt.type)
+        -> !struct.type<@BooleanCastConstraints> {
+      %self = struct.new : !struct.type<@BooleanCastConstraints>
+      function.return %self : !struct.type<@BooleanCastConstraints>
+    }
+
+    function.def @constrain(%self: !struct.type<@BooleanCastConstraints>,
+        %trueFlag: i1, %falseFlag: i1, %input: !felt.type) {
+      %zero = felt.const 0
+      %one = felt.const 1
+      %two = felt.const 2
+      %trueFelt = cast.tofelt sat %trueFlag : i1
+      %falseFelt = cast.tofelt sat %falseFlag : i1
+      %cmp = bool.cmp lt(%input, %two)
+      %cmpFelt = cast.tofelt sat %cmp : i1
+      constrain.eq %trueFelt, %one : !felt.type
+      constrain.eq %falseFelt, %zero : !felt.type
+      constrain.eq %cmpFelt, %one : !felt.type
+      function.return
+    }
+  }
+
+  // Index casts can overflow, so their result cannot refine the original input.
+  struct.def @IndexCastOverflow {
+    struct.member @unknown : !felt.type
+
+    function.def @compute(%input: index) -> !struct.type<@IndexCastOverflow> {
+      %self = struct.new : !struct.type<@IndexCastOverflow>
+      %cast = cast.tofelt sat %input : index
+      struct.writem %self[@unknown] = %cast : !struct.type<@IndexCastOverflow>, !felt.type
+      function.return %self : !struct.type<@IndexCastOverflow>
+    }
+
+    function.def @constrain(%self: !struct.type<@IndexCastOverflow>, %input: index) {
+      %one = felt.const 1
+      %cast = cast.tofelt sat %input : index
+      constrain.eq %cast, %one : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BooleanCastRange StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] in Degenerate(1)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @BooleanCastConstraints StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Degenerate(1)
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] in Degenerate(1)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @IndexCastOverflow StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
