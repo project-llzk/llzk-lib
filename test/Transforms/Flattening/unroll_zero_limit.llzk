@@ -1,0 +1,64 @@
+// RUN: llzk-opt -llzk-flatten="max-unroll=0" -verify-diagnostics %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @computed_one() {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    // expected-warning @+1 {{loop trip count 1 exceeds max-unroll limit of 0; leaving loop unchanged}}
+    scf.for %iv = %zero to %one step %one {
+    }
+    function.return
+  }
+
+  function.def @annotated_one(%lb: index, %ub: index, %step: index) {
+    // expected-warning @+1 {{loop trip count 1 exceeds max-unroll limit of 0; leaving loop unchanged}}
+    scf.for %iv = %lb to %ub step %step {
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 1 step 1>}
+    function.return
+  }
+
+  function.def @while_one(%cond: i1) {
+    // expected-warning @+1 {{loop trip count 1 exceeds max-unroll limit of 0; leaving loop unchanged}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 1 step 1>}
+    function.return
+  }
+
+  function.def @zero_trips(%lb: index, %ub: index, %step: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    scf.for %iv = %zero to %zero step %one {
+    }
+    scf.for %iv = %lb to %ub step %step {
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 0 step 1>}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @computed_one() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_2:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_1]] {
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @annotated_one(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_5]] {
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 1 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @while_one(%[[VAL_7:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      scf.while : () -> () {
+// CHECK-NEXT:        scf.condition(%[[VAL_7]])
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:        scf.yield
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 1 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @zero_trips(%[[VAL_8:[0-9a-zA-Z_\.]+]]: index, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

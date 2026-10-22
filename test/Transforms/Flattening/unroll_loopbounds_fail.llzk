@@ -14,19 +14,6 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @trip_count_overflow(%lb: index, %ub: index, %step: index, %seed: index) -> index {
-    // expected-error @+1 {{llzk.loopbounds trip count does not fit in uint64_t}}
-    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed) -> index {
-      %next = arith.addi %acc, %iv : index
-      scf.yield %next : index
-    } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
-    function.return %result : index
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
   function.def @induction_overflow(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
     %lb = arith.index_cast %lb_index : index to i8
     %ub = arith.index_cast %ub_index : index to i8
@@ -52,62 +39,6 @@ module attributes {llzk.lang} {
     } do {
       scf.yield
     } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 0>}
-    function.return
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
-  function.def @while_trip_count_overflow(%cond: i1) {
-    // expected-error @+1 {{llzk.loopbounds trip count does not fit in uint64_t}}
-    scf.while : () -> () {
-      scf.condition(%cond)
-    } do {
-      scf.yield
-    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
-    function.return
-  }
-}
-
-// -----
-
-// Even empty annotated loops must be bounded before host-side iteration.
-
-module attributes {llzk.lang} {
-  function.def @large_annotated_for(%lb: index, %ub: index, %step: index) {
-    // expected-error @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
-    scf.for %iv = %lb to %ub step %step {
-    } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
-    function.return
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
-  function.def @large_annotated_while(%cond: i1) {
-    // expected-error @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
-    scf.while : () -> () {
-      scf.condition(%cond)
-    } do {
-      scf.yield
-    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
-    function.return
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
-  function.def @large_computed_for(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
-    %zero = arith.constant 0 : index
-    %bound = arith.constant 10001 : index
-    %one = arith.constant 1 : index
-    // expected-error @+1 {{loop trip count 10001 exceeds max-unroll limit of 10000}}
-    scf.for %iv = %zero to %bound step %one {
-      constrain.eq %a, %b : !felt.type, !felt.type
-    }
     function.return
   }
 }

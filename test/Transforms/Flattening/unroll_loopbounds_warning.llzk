@@ -1,0 +1,114 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @trip_count_overflow(%lb: index, %ub: index, %step: index, %seed: index) -> index {
+    // expected-warning @+1 {{llzk.loopbounds trip count does not fit in uint64_t}}
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed) -> index {
+      %next = arith.addi %acc, %iv : index
+      scf.yield %next : index
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
+    function.return %result : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]] iter_args(%[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]]) -> (index) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_5]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_7]] : index
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @while_trip_count_overflow(%cond: i1) {
+    // expected-warning @+1 {{llzk.loopbounds trip count does not fit in uint64_t}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @while_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      scf.while : () -> () {
+// CHECK-NEXT:        scf.condition(%[[VAL_0]])
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:        scf.yield
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Even empty annotated loops must be bounded before host-side iteration.
+module attributes {llzk.lang} {
+  function.def @large_annotated_for(%lb: index, %ub: index, %step: index) {
+    // expected-warning @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
+    scf.for %iv = %lb to %ub step %step {
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @large_annotated_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      scf.for %[[VAL_3:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]] {
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @large_annotated_while(%cond: i1) {
+    // expected-warning @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @large_annotated_while(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      scf.while : () -> () {
+// CHECK-NEXT:        scf.condition(%[[VAL_0]])
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:        scf.yield
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @large_computed_for(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %bound = arith.constant 10001 : index
+    %one = arith.constant 1 : index
+    // expected-warning @+1 {{loop trip count 10001 exceeds max-unroll limit of 10000}}
+    scf.for %iv = %zero to %bound step %one {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @large_computed_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 10001 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
