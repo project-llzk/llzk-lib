@@ -1359,8 +1359,12 @@ public:
       : OpRewritePattern<OpClass>(ctx), unrollIterationLimit(limit) {}
 
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
-    if (auto maybeConstant = getConstantTripCount(loopOp);
-        maybeConstant && maybeConstant->getActiveBits() <= 64) {
+    if (auto maybeConstant = getConstantTripCount(loopOp)) {
+      if (maybeConstant->getActiveBits() > 64) {
+        return rewriter.notifyMatchFailure(
+            loopOp, "computed loop trip count does not fit in uint64_t"
+        );
+      }
       uint64_t tripCount = maybeConstant->getZExtValue();
       if (failed(checkUnrollLimit(loopOp, rewriter, tripCount, unrollIterationLimit))) {
         return failure();
