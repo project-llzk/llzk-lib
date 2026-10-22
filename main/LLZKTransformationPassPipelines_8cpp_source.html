@@ -281,90 +281,94 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span> </div>
 <div class="foldopen" id="foldopen00142" data-start="{" data-end="}">
 <div class="line"><a id="l00142" name="l00142"></a><span class="lineno"><a class="line" href="namespacellzk.html#aa418aa873f7177afbe6b400293a8f052">  142</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aa418aa873f7177afbe6b400293a8f052">buildConstraintFlatteningPipeline</a>(OpPassManager &amp;pm) {</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a9141ba76b04405fbe3c7f22aa035f7c4">polymorphic::createTemplateMonomorphizationPass</a>());</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1component.html#a64e7d121bd194737a24fa04c4362500f">component::createExposeChildMembersPass</a>());</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a49b95dc6d7ecfc230e540fbdac12d924">polymorphic::createConstraintFlatteningPass</a>());</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>}</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  <span class="comment">// Inline frontend execute_region wrappers before specialization discovery.</span></div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  pm.addPass(mlir::createCanonicalizerPass());</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a9141ba76b04405fbe3c7f22aa035f7c4">polymorphic::createTemplateMonomorphizationPass</a>());</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1component.html#a64e7d121bd194737a24fa04c4362500f">component::createExposeChildMembersPass</a>());</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <span class="comment">// Fold specialized constants and remove empty branches before expansion.</span></div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  pm.addPass(mlir::createCanonicalizerPass());</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a49b95dc6d7ecfc230e540fbdac12d924">polymorphic::createConstraintFlatteningPass</a>());</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>}</div>
 </div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
-<div class="foldopen" id="foldopen00148" data-start="{" data-end="}">
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno"><a class="line" href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">  148</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">registerTransformationPassPipelines</a>() {</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  PassPipelineRegistration&lt;&gt;(</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>      <span class="stringliteral">&quot;llzk-constraint-flattening&quot;</span>,</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>      <span class="stringliteral">&quot;Monomorphize templates, expose child members, and expand main constrain&quot;</span>,</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>      <a class="code hl_function" href="namespacellzk.html#aa418aa873f7177afbe6b400293a8f052">buildConstraintFlatteningPipeline</a></div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  );</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  PassPipelineRegistration&lt;&gt;(</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>      <span class="stringliteral">&quot;llzk-remove-unnecessary-ops&quot;</span>,</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      <span class="stringliteral">&quot;Remove unnecessary operations, such as redundant reads or repeated constraints&quot;</span>,</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      <a class="code hl_function" href="namespacellzk.html#afce89c5a149a432e8e8cfca50235d8ca">buildRemoveUnnecessaryOpsPipeline</a></div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  );</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  PassPipelineRegistration&lt;&gt;(</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>      <span class="stringliteral">&quot;llzk-remove-unnecessary-ops-and-defs&quot;</span>,</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>      <span class="stringliteral">&quot;Remove unnecessary operations, member definitions, and struct definitions&quot;</span>,</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>      <a class="code hl_function" href="namespacellzk.html#a27026759496d766cbb52aa32e3d94a6e">buildRemoveUnnecessaryOpsAndDefsPipeline</a></div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  );</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  PassPipelineRegistration&lt;&gt;(</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      <span class="stringliteral">&quot;llzk-product-program&quot;</span>,</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>      <span class="stringliteral">&quot;Convert @compute/@constrain functions to @product function and perform alignment&quot;</span>,</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>      <a class="code hl_function" href="namespacellzk.html#a8cd193ef7cefe4761ace3d044ef00586">buildProductProgramPipeline</a></div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  );</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  PassPipelineRegistration&lt;FullStructInliningOptions&gt;(</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      <span class="stringliteral">&quot;llzk-full-struct-inlining&quot;</span>,</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      <span class="stringliteral">&quot;Run flattening and inlining of all struct definitions into the `main` struct. This &quot;</span></div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>      <span class="stringliteral">&quot;pipeline uses the `main-as-root` cleanup mode in the flattening pass by default. It &quot;</span></div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      <span class="stringliteral">&quot;is not recommended to override this cleanup mode because other cleanup modes may &quot;</span></div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      <span class="stringliteral">&quot;leave behind parameterized templates that later cause `llzk-inline-structs` to crash.&quot;</span>,</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      [](OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1FullStructInliningOptions.html">FullStructInliningOptions</a> &amp;opts) {</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keyword">auto</span> flattening = opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b">flattening</a>.getValue().createOptions();</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    buildFullStructInliningPipelineImpl(</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>        pm, flattening-&gt;createPassOptions(), opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a7b16e082368060e4043e1973301fc1ca">arrayToScalar</a>, opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#adefadcde038a499a30c377662c631601">podToScalar</a>,</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        createConfiguredPass(opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#ac577dda58f73c41a56b221f755287f93">inlining</a>)</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    );</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  }</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  );</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  PassPipelineRegistration&lt;FullStructInliningOptions&gt;(</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      <span class="stringliteral">&quot;llzk-full-inlining&quot;</span>,</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>      <span class="stringliteral">&quot;Run free function inlining, flattening, and struct inlining. This is the &quot;</span></div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>      <span class="stringliteral">&quot;recommended pipeline before any downstream pass that does not understand `function.call`.&quot;</span>,</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>      [](OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1FullStructInliningOptions.html">FullStructInliningOptions</a> &amp;opts) {</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    <span class="keyword">auto</span> flattening = opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b">flattening</a>.getValue().createOptions();</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>    <span class="comment">// Inline free-function bodies before struct cleanup so their struct uses</span></div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    <span class="comment">// participate in flattening and keep the referenced definitions alive.</span></div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    pm.addPass(<a class="code hl_function" href="namespacellzk.html#a2a13d34dbb912890632e93c572cd8450">createInlineFreeFunctionsPass</a>());</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    buildFullStructInliningPipelineImpl(</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>        pm, flattening-&gt;createPassOptions(), opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a7b16e082368060e4043e1973301fc1ca">arrayToScalar</a>, opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#adefadcde038a499a30c377662c631601">podToScalar</a>,</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>        createConfiguredPass(opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#ac577dda58f73c41a56b221f755287f93">inlining</a>)</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    );</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  }</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  );</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  PassPipelineRegistration&lt;FullPolyLoweringOptions&gt;(</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>      <span class="stringliteral">&quot;llzk-full-poly-lowering&quot;</span>,</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>      <span class="stringliteral">&quot;Run flattening and inlining of all struct definitions into the `main` struct, then lower &quot;</span></div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>      <span class="stringliteral">&quot;polynomial constraints to a given max degree, and finally remove unnecessary operations and &quot;</span></div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>      <span class="stringliteral">&quot;definitions. This pipeline uses the `main-as-root` cleanup mode in the flattening pass by &quot;</span></div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>      <span class="stringliteral">&quot;default. It is not recommended to override this cleanup mode because other cleanup modes &quot;</span></div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>      <span class="stringliteral">&quot;may leave behind parameterized templates that later cause `llzk-inline-structs` to crash.&quot;</span>,</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>      [](OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1FullPolyLoweringOptions.html">FullPolyLoweringOptions</a> &amp;opts) {</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>    <span class="keyword">auto</span> structInlining = opts.structInlining.getValue().createOptions();</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <span class="keyword">auto</span> flattening = structInlining-&gt;<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b">flattening</a>.getValue().createOptions();</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    buildFullPolyLoweringPipelineImpl(</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>        pm, flattening-&gt;createPassOptions(), structInlining-&gt;arrayToScalar,</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>        structInlining-&gt;podToScalar, createConfiguredPass(structInlining-&gt;inlining),</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>        createConfiguredPass(opts.polyLowering)</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    );</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  }</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  );</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>}</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
+<div class="foldopen" id="foldopen00152" data-start="{" data-end="}">
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno"><a class="line" href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">  152</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">registerTransformationPassPipelines</a>() {</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  PassPipelineRegistration&lt;&gt;(</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>      <span class="stringliteral">&quot;llzk-constraint-flattening&quot;</span>,</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>      <span class="stringliteral">&quot;Monomorphize templates, expose child members, and expand main constrain&quot;</span>,</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>      <a class="code hl_function" href="namespacellzk.html#aa418aa873f7177afbe6b400293a8f052">buildConstraintFlatteningPipeline</a></div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  );</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span> </div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  PassPipelineRegistration&lt;&gt;(</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>      <span class="stringliteral">&quot;llzk-remove-unnecessary-ops&quot;</span>,</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>      <span class="stringliteral">&quot;Remove unnecessary operations, such as redundant reads or repeated constraints&quot;</span>,</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>      <a class="code hl_function" href="namespacellzk.html#afce89c5a149a432e8e8cfca50235d8ca">buildRemoveUnnecessaryOpsPipeline</a></div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  );</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  PassPipelineRegistration&lt;&gt;(</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>      <span class="stringliteral">&quot;llzk-remove-unnecessary-ops-and-defs&quot;</span>,</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>      <span class="stringliteral">&quot;Remove unnecessary operations, member definitions, and struct definitions&quot;</span>,</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      <a class="code hl_function" href="namespacellzk.html#a27026759496d766cbb52aa32e3d94a6e">buildRemoveUnnecessaryOpsAndDefsPipeline</a></div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  );</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  PassPipelineRegistration&lt;&gt;(</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      <span class="stringliteral">&quot;llzk-product-program&quot;</span>,</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>      <span class="stringliteral">&quot;Convert @compute/@constrain functions to @product function and perform alignment&quot;</span>,</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      <a class="code hl_function" href="namespacellzk.html#a8cd193ef7cefe4761ace3d044ef00586">buildProductProgramPipeline</a></div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  );</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  PassPipelineRegistration&lt;FullStructInliningOptions&gt;(</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      <span class="stringliteral">&quot;llzk-full-struct-inlining&quot;</span>,</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      <span class="stringliteral">&quot;Run flattening and inlining of all struct definitions into the `main` struct. This &quot;</span></div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>      <span class="stringliteral">&quot;pipeline uses the `main-as-root` cleanup mode in the flattening pass by default. It &quot;</span></div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      <span class="stringliteral">&quot;is not recommended to override this cleanup mode because other cleanup modes may &quot;</span></div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>      <span class="stringliteral">&quot;leave behind parameterized templates that later cause `llzk-inline-structs` to crash.&quot;</span>,</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>      [](OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1FullStructInliningOptions.html">FullStructInliningOptions</a> &amp;opts) {</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="keyword">auto</span> flattening = opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b">flattening</a>.getValue().createOptions();</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    buildFullStructInliningPipelineImpl(</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>        pm, flattening-&gt;createPassOptions(), opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a7b16e082368060e4043e1973301fc1ca">arrayToScalar</a>, opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#adefadcde038a499a30c377662c631601">podToScalar</a>,</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>        createConfiguredPass(opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#ac577dda58f73c41a56b221f755287f93">inlining</a>)</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>    );</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  }</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  );</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  PassPipelineRegistration&lt;FullStructInliningOptions&gt;(</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>      <span class="stringliteral">&quot;llzk-full-inlining&quot;</span>,</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>      <span class="stringliteral">&quot;Run free function inlining, flattening, and struct inlining. This is the &quot;</span></div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>      <span class="stringliteral">&quot;recommended pipeline before any downstream pass that does not understand `function.call`.&quot;</span>,</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>      [](OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1FullStructInliningOptions.html">FullStructInliningOptions</a> &amp;opts) {</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    <span class="keyword">auto</span> flattening = opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b">flattening</a>.getValue().createOptions();</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>    <span class="comment">// Inline free-function bodies before struct cleanup so their struct uses</span></div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>    <span class="comment">// participate in flattening and keep the referenced definitions alive.</span></div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    pm.addPass(<a class="code hl_function" href="namespacellzk.html#a2a13d34dbb912890632e93c572cd8450">createInlineFreeFunctionsPass</a>());</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    buildFullStructInliningPipelineImpl(</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>        pm, flattening-&gt;createPassOptions(), opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a7b16e082368060e4043e1973301fc1ca">arrayToScalar</a>, opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#adefadcde038a499a30c377662c631601">podToScalar</a>,</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>        createConfiguredPass(opts.<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#ac577dda58f73c41a56b221f755287f93">inlining</a>)</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    );</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  }</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  );</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  PassPipelineRegistration&lt;FullPolyLoweringOptions&gt;(</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>      <span class="stringliteral">&quot;llzk-full-poly-lowering&quot;</span>,</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>      <span class="stringliteral">&quot;Run flattening and inlining of all struct definitions into the `main` struct, then lower &quot;</span></div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>      <span class="stringliteral">&quot;polynomial constraints to a given max degree, and finally remove unnecessary operations and &quot;</span></div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>      <span class="stringliteral">&quot;definitions. This pipeline uses the `main-as-root` cleanup mode in the flattening pass by &quot;</span></div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>      <span class="stringliteral">&quot;default. It is not recommended to override this cleanup mode because other cleanup modes &quot;</span></div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>      <span class="stringliteral">&quot;may leave behind parameterized templates that later cause `llzk-inline-structs` to crash.&quot;</span>,</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>      [](OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1FullPolyLoweringOptions.html">FullPolyLoweringOptions</a> &amp;opts) {</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    <span class="keyword">auto</span> structInlining = opts.structInlining.getValue().createOptions();</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    <span class="keyword">auto</span> flattening = structInlining-&gt;<a class="code hl_variable" href="structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b">flattening</a>.getValue().createOptions();</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    buildFullPolyLoweringPipelineImpl(</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>        pm, flattening-&gt;createPassOptions(), structInlining-&gt;arrayToScalar,</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>        structInlining-&gt;podToScalar, createConfiguredPass(structInlining-&gt;inlining),</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>        createConfiguredPass(opts.polyLowering)</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    );</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  }</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  );</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>}</div>
 </div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span> </div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span> </div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aArray_2Transforms_2TransformationPasses_8h_html"><div class="ttname"><a href="Array_2Transforms_2TransformationPasses_8h.html">TransformationPasses.h</a></div></div>
 <div class="ttc" id="aLLZKTransformationPassPipelines_8h_html"><div class="ttname"><a href="LLZKTransformationPassPipelines_8h.html">LLZKTransformationPassPipelines.h</a></div></div>
 <div class="ttc" id="aPOD_2Transforms_2TransformationPasses_8h_html"><div class="ttname"><a href="POD_2Transforms_2TransformationPasses_8h.html">TransformationPasses.h</a></div></div>
@@ -379,7 +383,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_ab875e94fd92641f81305cf2406f52c7b"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">llzk::polymorphic::createFlatteningPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createFlatteningPass()</div><div class="ttdef"><b>Definition</b> <a href="FlatteningPass_8cpp_source.html#l00305">FlatteningPass.cpp:305</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a27026759496d766cbb52aa32e3d94a6e"><div class="ttname"><a href="namespacellzk.html#a27026759496d766cbb52aa32e3d94a6e">llzk::buildRemoveUnnecessaryOpsAndDefsPipeline</a></div><div class="ttdeci">void buildRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &amp;pm)</div><div class="ttdef"><b>Definition</b> <a href="#l00102">LLZKTransformationPassPipelines.cpp:102</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a27132e28370fc61e82609260869dedfd"><div class="ttname"><a href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">llzk::registerTransformationPassPipelines</a></div><div class="ttdeci">void registerTransformationPassPipelines()</div><div class="ttdef"><b>Definition</b> <a href="#l00148">LLZKTransformationPassPipelines.cpp:148</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a27132e28370fc61e82609260869dedfd"><div class="ttname"><a href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">llzk::registerTransformationPassPipelines</a></div><div class="ttdeci">void registerTransformationPassPipelines()</div><div class="ttdef"><b>Definition</b> <a href="#l00152">LLZKTransformationPassPipelines.cpp:152</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a2a13d34dbb912890632e93c572cd8450"><div class="ttname"><a href="namespacellzk.html#a2a13d34dbb912890632e93c572cd8450">llzk::createInlineFreeFunctionsPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createInlineFreeFunctionsPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKInlineFreeFunctionsPass_8cpp_source.html#l00381">LLZKInlineFreeFunctionsPass.cpp:381</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a3fb6bfbb4ab0ec27ec6d0e9ea35b5905"><div class="ttname"><a href="namespacellzk.html#a3fb6bfbb4ab0ec27ec6d0e9ea35b5905">llzk::createFuseProductControlFlowPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createFuseProductControlFlowPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKFuseProductControlFlowPass_8cpp_source.html#l00294">LLZKFuseProductControlFlowPass.cpp:294</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a43127389e7b4fa6c9df9cb41983736ba"><div class="ttname"><a href="namespacellzk.html#a43127389e7b4fa6c9df9cb41983736ba">llzk::createPolyLoweringPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createPolyLoweringPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKPolyLoweringPass_8cpp_source.html#l00484">LLZKPolyLoweringPass.cpp:484</a></div></div>

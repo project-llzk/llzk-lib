@@ -745,7 +745,7 @@ Functions</h2></td></tr>
 <tr class="memitem:af64bf6226bffcb86733347072c5255e9" id="r_af64bf6226bffcb86733347072c5255e9"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#af64bf6226bffcb86733347072c5255e9">buildFullStructInliningPipeline</a> (mlir::OpPassManager &amp;, const <a class="el" href="structllzk_1_1FullStructInliningConfig.html">FullStructInliningConfig</a> &amp;)</td></tr>
 <tr class="memitem:aa95d88babf9e93912e0a3c7439c6e43b" id="r_aa95d88babf9e93912e0a3c7439c6e43b"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aa95d88babf9e93912e0a3c7439c6e43b">buildFullInliningPipeline</a> (mlir::OpPassManager &amp;, const <a class="el" href="structllzk_1_1FullStructInliningConfig.html">FullStructInliningConfig</a> &amp;)</td></tr>
 <tr class="memitem:aca7f73663be38b339bab03e1cb21a83a" id="r_aca7f73663be38b339bab03e1cb21a83a"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aca7f73663be38b339bab03e1cb21a83a">buildConstraintFlatteningPipeline</a> (mlir::OpPassManager &amp;)</td></tr>
-<tr class="memdesc:aca7f73663be38b339bab03e1cb21a83a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Monomorphize templates, expose child members, and expand main constrain.  <br /></td></tr>
+<tr class="memdesc:aca7f73663be38b339bab03e1cb21a83a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Canonicalize, monomorphize templates, expose child members, and expand main constrain.  <br /></td></tr>
 <tr class="memitem:ad809d2a8931e263f7879703211032d0d" id="r_ad809d2a8931e263f7879703211032d0d"><td class="memItemLeft">mlir::Value&#160;</td><td class="memItemRight"><a class="el" href="#ad809d2a8931e263f7879703211032d0d">rebuildExprInCompute</a> (mlir::Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> computeFunc, mlir::OpBuilder &amp;builder, llvm::DenseMap&lt; mlir::Value, mlir::Value &gt; &amp;memo)</td></tr>
 <tr class="memdesc:ad809d2a8931e263f7879703211032d0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuilds a straight-line constrain-side felt expression in <span class="tt">computeFunc</span>.  <br /></td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
@@ -2217,7 +2217,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Monomorphize templates, expose child members, and expand main constrain. </p>
+<p>Canonicalize, monomorphize templates, expose child members, and expand main constrain. </p>
 
 </div>
 </div>
@@ -10473,7 +10473,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html#l00148">148</a> of file <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html">LLZKTransformationPassPipelines.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html#l00152">152</a> of file <a class="el" href="LLZKTransformationPassPipelines_8cpp_source.html">LLZKTransformationPassPipelines.cpp</a>.</p>
 
 </div>
 </div>
