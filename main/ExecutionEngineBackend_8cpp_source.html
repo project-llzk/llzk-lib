@@ -241,9 +241,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ExecutionEngin
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keywordflow">if</span> (!rank) {</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    <span class="keywordflow">return</span> rank.takeError();</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  }</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">auto</span> descriptorSize = llvm::DynamicAPInt(<span class="keyword">sizeof</span>(<span class="keywordtype">void</span> *)) * 2;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">constexpr</span> int64_t descriptorSize = <span class="keyword">sizeof</span>(<span class="keywordtype">void</span> *) * 2;</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keyword">auto</span> shapeAndStrideCount = llvm::DynamicAPInt(1) + *rank + *rank;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keyword">auto</span> dynamicPart = llvm::DynamicAPInt(<span class="keyword">sizeof</span>(int64_t)) * shapeAndStrideCount;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keyword">auto</span> dynamicPart = <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(<span class="keyword">sizeof</span>(int64_t)) * shapeAndStrideCount;</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keyword">auto</span> totalSize = descriptorSize + dynamicPart;</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">auto</span> checkedTotalSize = <a class="code hl_function" href="namespacellzk.html#a39f5e4587892034558fc07891b125b0e">checkedToSize</a>(totalSize, <span class="stringliteral">&quot;execution-engine memref descriptor&quot;</span>);</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keywordflow">if</span> (!checkedTotalSize) {</div>

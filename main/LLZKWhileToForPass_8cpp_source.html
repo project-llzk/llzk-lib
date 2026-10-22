@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKWhileToFor
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        <span class="keywordflow">if</span> (lo &lt; hi &amp;&amp; end &gt;= hi) {</div>
 <div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>          <span class="comment">// The for loop casts its bounds and step to index. Since 0 &lt;= lo &lt; hi,</span></div>
 <div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>          <span class="comment">// bounding hi also bounds lo and hi - lo.</span></div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>          <span class="keywordflow">if</span> (hi &gt; llvm::DynamicAPInt(std::numeric_limits&lt;int64_t&gt;::max())) {</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>          <span class="keywordflow">if</span> (hi &gt; std::numeric_limits&lt;int64_t&gt;::max()) {</div>
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>            reportFailureReason(<span class="stringliteral">&quot;upper bound cannot be represented as a nonnegative index&quot;</span>);</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>            <span class="keywordflow">return</span> info;</div>
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>          }</div>

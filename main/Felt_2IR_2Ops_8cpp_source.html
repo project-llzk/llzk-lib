@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Felt_2IR_2Ops_
 <div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  }</div>
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  <span class="comment">// Any shift `amount &gt;= bitwidth` will yield zero.</span></div>
 <div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1Field.html">Field</a> *field = data-&gt;field;</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  <span class="keywordflow">if</span> (data-&gt;rhsVal &gt;= DynamicAPInt(field-&gt;<a class="code hl_function" href="classllzk_1_1Field.html#a81da197fd28bcd670656ff4dd0929728">bitWidth</a>())) {</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  <span class="keywordflow">if</span> (data-&gt;rhsVal &gt;= field-&gt;<a class="code hl_function" href="classllzk_1_1Field.html#a81da197fd28bcd670656ff4dd0929728">bitWidth</a>()) {</div>
 <div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>    <span class="keywordflow">return</span> buildFoldResult(getContext(), DynamicAPInt(0), *field, data-&gt;fieldName);</div>
 <div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  }</div>
 <div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  <span class="comment">// Right-shifting a non-negative value always yields a value in [0, lhs] &lt; prime;</span></div>
