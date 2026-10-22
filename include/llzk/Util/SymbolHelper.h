@@ -12,7 +12,10 @@
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/Diagnostics.h>
 #include <mlir/Interfaces/CallInterfaces.h>
+
+#include <llvm/ADT/STLFunctionalExtras.h>
 
 #include <cassert>
 #include <optional>
@@ -107,6 +110,20 @@ getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr)
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
+/// Return \p symbol's path relative to the supplied \p ancestor module. The path
+/// excludes \p ancestor's own name; nested symbol tables contribute their names,
+/// including modules with the `LANG_ATTR_NAME` attribute. For LLZK type resolution,
+/// \p ancestor must be the module with `LANG_ATTR_NAME` where lookup starts.
+/// Fails if the symbol is not a strict
+/// descendant or an intervening symbol table is unnamed. If supplied, \p emitError
+/// creates the diagnostic's opening message at the caller's chosen location;
+/// this helper appends the failure reason and notes identifying the symbol or
+/// unnamed table and the supplied module. Without \p emitError, failure is silent.
+mlir::FailureOr<mlir::SymbolRefAttr> getPathRelativeToAncestor(
+    mlir::SymbolOpInterface symbol, mlir::ModuleOp ancestor,
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError = nullptr
+);
+
 /// Return the full name for this symbol from the root module, including any surrounding symbol
 /// table names. If `requireParent` is false and the symbol is not nested in any operation, return
 /// its flat symbol name directly.
@@ -144,6 +161,14 @@ mlir::FailureOr<llzk::component::StructType> getMainInstanceType(mlir::Operation
 /// and is optional, in which case the result will be `success(nullptr)`.
 mlir::FailureOr<SymbolLookupResult<llzk::component::StructDefOp>>
 getMainInstanceDef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *lookupFrom);
+
+/// Resolve symbolPath (MLIR syntax or a bare name), defaulting to llzk.main.
+/// An absent default succeeds with a null result. Invalid paths or unresolved
+/// explicit symbols emit diagnostics and fail.
+mlir::FailureOr<SymbolLookupResult<component::StructDefOp>> getRootStructDef(
+    mlir::SymbolTableCollection &tables, mlir::Operation *lookupFrom,
+    mlir::StringRef symbolPath = {}
+);
 
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., function::FuncDefOp)

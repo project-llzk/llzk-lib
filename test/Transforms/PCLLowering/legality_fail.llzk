@@ -1,0 +1,25 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -llzk-to-pcl -verify-diagnostics %s
+// RUN: llzk-opt -llzk-to-pcl=mode=stubbed -verify-diagnostics %s
+
+// Unsupported PCL operations in constrain must cause lowering to fail.
+!F = !felt.type<"koalabear">
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%in: !F) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %in: !F) {
+      // expected-error@+1 {{failed to legalize operation 'scf.execute_region'}}
+      scf.execute_region {
+        scf.yield
+      }
+      %neg = felt.neg %in : !F
+      %out = struct.readm %self[@out] : !struct.type<@A>, !F
+      constrain.eq %out, %neg : !F, !F
+      function.return
+    }
+  }
+}

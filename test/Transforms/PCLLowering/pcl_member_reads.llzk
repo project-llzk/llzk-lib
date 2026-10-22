@@ -1,0 +1,72 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -llzk-to-pcl %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -llzk-to-pcl=mode=stubbed %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang} {
+  module @C {
+    module @D {
+      struct.def @B {
+        struct.member @foo : !F {llzk.pub}
+        struct.member @secret : !F
+        function.def @compute(%in: !F) -> !struct.type<@C::@D::@B> {
+          %self = struct.new : <@C::@D::@B>
+          function.return %self : !struct.type<@C::@D::@B>
+        }
+        function.def @constrain(%self: !struct.type<@C::@D::@B>, %in: !F) {
+          %foo = struct.readm %self[@foo] : !struct.type<@C::@D::@B>, !F
+          %secret = struct.readm %self[@secret] : !struct.type<@C::@D::@B>, !F
+          constrain.eq %secret, %in : !F, !F
+          constrain.eq %foo, %secret : !F, !F
+          function.return
+        }
+      }
+      struct.def @A {
+        struct.member @b : !struct.type<@C::@D::@B>
+        struct.member @foo : !F
+        struct.member @out : !F {llzk.pub}
+        function.def @compute(%in: !F) -> !struct.type<@C::@D::@A> {
+          %self = struct.new : <@C::@D::@A>
+          function.return %self : !struct.type<@C::@D::@A>
+        }
+        function.def @constrain(%self: !struct.type<@C::@D::@A>, %in: !F) {
+          %b = struct.readm %self[@b] : !struct.type<@C::@D::@A>, !struct.type<@C::@D::@B>
+          function.call @C::@D::@B::@constrain(%b, %in) : (!struct.type<@C::@D::@B>, !F) -> ()
+          %foo = struct.readm %self[@foo] : !struct.type<@C::@D::@A>, !F
+          %out = struct.readm %self[@out] : !struct.type<@C::@D::@A>, !F
+          %bfoo = struct.readm %b[@foo] : !struct.type<@C::@D::@B>, !F
+          %again = struct.readm %self[@foo] : !struct.type<@C::@D::@A>, !F
+          constrain.eq %foo, %bfoo : !F, !F
+          constrain.eq %out, %again : !F, !F
+          function.return
+        }
+      }
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @"C::D::B"(
+// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "secret" false
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_2]]
+// CHECK-NEXT:      pcl.assert %[[VAL_4]]
+// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:    }
+
+// CHECK-LABEL:   func.func @"C::D::A"(
+// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @"C::D::B"(%[[VAL_0]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "b.foo" false
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "foo" false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_2]]
+// CHECK-NEXT:      pcl.assert %[[VAL_6]]
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_5]], %[[VAL_4]]
+// CHECK-NEXT:      pcl.assert %[[VAL_7]]
+// CHECK-NEXT:      return %[[VAL_5]] : !pcl.felt
+// CHECK-NEXT:    }

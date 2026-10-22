@@ -1,0 +1,6 @@
+added:
+  - Checked arbitrary-precision decimal parsing and signed/unsigned integer conversions for C++ clients.
+fixed:
+  - Negative arbitrary-precision bitwise operations now use two's-complement semantics.
+  - Witness JSON input reports malformed decimal field values instead of asserting.
+  - Added representation-independent numeric hashing for arbitrary-precision integer keys.

@@ -88,7 +88,7 @@ def PCL_ConstOp : PCL_Op<"const", [Pure, InsideFunc, ConstantLike]> {
   let assemblyFormat = "$value attr-dict";
   let extraClassDeclaration = [{
     /// Returns the constant value as an arbitrary-precision integer.
-    ::llvm::APInt getValueAPInt() { return getValue().getValue(); }
+    const ::llvm::DynamicAPInt &getIntegerValue() { return getValue().getValue(); }
   }];
   let hasFolder = 1;
 }

@@ -19,30 +19,12 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/Twine.h>
 
-#include <climits>
 #include <limits>
 #include <random>
 
 using namespace mlir;
 
 namespace llzk::witgen {
-
-static llvm::Expected<size_t>
-dynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::Twine context) {
-  if (value < 0) {
-    return makeError(context + " would underflow size_t");
-  }
-  llvm::APSInt as = llzk::toAPSInt(value);
-  if (as.getActiveBits() > std::numeric_limits<size_t>::digits) {
-    return makeError(context + " would overflow size_t");
-  }
-  return static_cast<size_t>(as.getZExtValue());
-}
-
-llvm::Expected<size_t>
-checkedDynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::StringRef context) {
-  return dynamicAPIntToSize(value, context);
-}
 
 llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context) {
   if (ShapedType::isDynamic(dim)) {
@@ -52,7 +34,7 @@ llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef contex
     return makeError(llvm::Twine(context) + " has a negative dimension");
   }
   llvm::DynamicAPInt value(dim);
-  return dynamicAPIntToSize(value, llvm::Twine(context) + " dimension");
+  return checkedToSize(value, llvm::Twine(context) + " dimension");
 }
 
 llvm::Expected<size_t>
@@ -63,9 +45,9 @@ getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef contex
     if (!dimSize) {
       return dimSize.takeError();
     }
-    count *= toDynamicAPInt(*dimSize);
+    count *= dim;
   }
-  return dynamicAPIntToSize(count, context);
+  return checkedToSize(count, context);
 }
 
 llvm::Expected<size_t> getStaticElementCount(ShapedType type, llvm::StringRef context) {
@@ -76,7 +58,7 @@ llvm::Expected<size_t> getStaticElementCount(ShapedType type, llvm::StringRef co
   if (count < 0) {
     return makeError(llvm::Twine(context) + " has an invalid negative element count");
   }
-  return dynamicAPIntToSize(llvm::DynamicAPInt(count), context);
+  return checkedToSize(llvm::DynamicAPInt(count), context);
 }
 
 std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options) {

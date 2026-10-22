@@ -49,7 +49,7 @@ protected:
   }
 
   FeltConstAttr babyBearConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val), BB_FIELD);
+    return FeltConstAttr::get(&ctx, toDynamicAPInt(val), BB_FIELD);
   }
 
   /// Insert two arith.constant i1 ops into a detached block, build a binary
@@ -294,4 +294,23 @@ TEST_F(BoolFoldTest, CmpNoFoldNonConst) {
   bool folded = succeeded(cmpOp->fold(operands, results)) && !results.empty() &&
                 dyn_cast_if_present<Attribute>(results[0]);
   EXPECT_FALSE(folded) << "expected fold to be skipped for non-constant operands";
+}
+
+TEST_F(BoolFoldTest, CmpReducesUncanonicalizedConstants) {
+  expectBool(foldCmp(FeltCmpPredicate::EQ, babyBearConst(BB_PRIME + 1), babyBearConst(1)), true);
+  expectBool(foldCmp(FeltCmpPredicate::NE, babyBearConst(BB_PRIME), babyBearConst(0)), false);
+  expectBool(foldCmp(FeltCmpPredicate::LT, babyBearConst(BB_PRIME + 1), babyBearConst(2)), true);
+  expectBool(foldCmp(FeltCmpPredicate::GT, babyBearConst(2), babyBearConst(BB_PRIME + 1)), true);
+}
+
+TEST_F(BoolFoldTest, CmpDoesNotFoldWithoutBothFields) {
+  auto unknown = FeltConstAttr::get(&ctx, toDynamicAPInt(BB_PRIME));
+  auto unknownZero = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(0));
+  for (auto pred :
+       {FeltCmpPredicate::EQ, FeltCmpPredicate::NE, FeltCmpPredicate::LT, FeltCmpPredicate::LE,
+        FeltCmpPredicate::GT, FeltCmpPredicate::GE}) {
+    expectNoFold(foldCmp(pred, unknown, unknownZero));
+    expectNoFold(foldCmp(pred, unknown, babyBearConst(0)));
+    expectNoFold(foldCmp(pred, babyBearConst(0), unknown));
+  }
 }

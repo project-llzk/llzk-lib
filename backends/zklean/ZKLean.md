@@ -50,6 +50,8 @@ LLZK \<-\> ZKLean IR -\> ZKLean pipeline implemented and tested on LLZK circom i
 * Converts struct.\* to ZKLeanLean.\* (defs and member accessors)
 * Converts felt.\* and constrain.\* ops to ZKExpr.\* and ZKBuilder.\* ops, respectively
 * Converts bool.cmp and cast.tofelt to ZKLeanLean.call for Lean-side function resolution
+  (`cast.tofelt assert` accepts only boolean inputs; index casts require a range
+  check that the Lean-side stub cannot represent and produce a conversion error).
 * felt.constants remain in the ZKLean IR as inputs to ZKExpr.Literals
 * Strips out struct types in function arguments
 
@@ -68,7 +70,7 @@ LLZK \<-\> ZKLean IR -\> ZKLean pipeline implemented and tested on LLZK circom i
 
 Please see the LLZK's [Setup and Development Page](https://project-llzk.github.io/llzk-lib/main/setup.html). Follow the Manual Build Setup and Development Workflow.
 
-This will build LLVM 23.1.0 in third-party/ and create a build/ directory,
+This will build LLVM 23.1.3 in third-party/ and create a build/ directory,
 pointing LLZK at LLVM. (NOTE: Z3 is included but not necessary to run
 conversion / zklean pretty printing passes.)
 

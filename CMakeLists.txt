@@ -48,9 +48,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 # Dependency setup
 
-find_package(LLVM 23.1.0 REQUIRED CONFIG)
-find_package(MLIR 23.1.0 REQUIRED CONFIG)
-find_package(Clang 23.1.0 REQUIRED CONFIG)
+find_package(LLVM 23.1.3 REQUIRED CONFIG)
+find_package(MLIR 23.1.3 REQUIRED CONFIG)
+find_package(Clang 23.1.3 REQUIRED CONFIG)
 
 # Optional PCL dialect
 set(LLZK_WITH_PCL
@@ -268,6 +268,14 @@ install(TARGETS LLZKAllDialects EXPORT LLZKTargets)
 add_subdirectory(include)
 add_subdirectory(lib)
 add_subdirectory(backends)
+
+# Generate all includes needed for source analysis without building the libraries.
+add_custom_target(llzk-headers)
+add_dependencies(llzk-headers LLZKDialectHeaders ZKLeanDialectHeaders)
+if(TARGET PCLDialectHeaders)
+  add_dependencies(llzk-headers PCLDialectHeaders)
+endif()
+
 add_subdirectory(tools)
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(python)

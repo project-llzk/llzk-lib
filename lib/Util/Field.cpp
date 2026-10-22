@@ -45,13 +45,11 @@ static DenseMap<StringRef, Field> &getKnownFields() {
   return knownFields;
 }
 
-Field::Field(std::string_view primeStr, StringRef name) : Field(APSInt(primeStr), name) {}
+Field::Field(std::string_view primeStr, StringRef name) : Field(toDynamicAPInt(primeStr), name) {}
 
-Field::Field(const APInt &prime, StringRef name) : primeName(name) {
-  primeMod = toDynamicAPInt(prime);
-  halfPrime = (primeMod + felt(1)) / felt(2);
-  bitwidth = prime.getBitWidth();
-}
+Field::Field(const llvm::DynamicAPInt &prime, StringRef name)
+    : primeName(name), primeMod(prime), halfPrime((primeMod + 1) / 2),
+      bitwidth(std::max(1U, toAPSInt(prime).getActiveBits())) {}
 
 FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fieldName) {
   static std::once_flag fieldsInit;
@@ -83,7 +81,29 @@ const Field &Field::getField(StringRef fieldName, EmitErrorFn errFn) {
   llvm::report_fatal_error(msg.c_str());
 }
 
+void Field::addField(StringRef fieldName, StringRef primeStr, EmitErrorFn errFn) {
+  auto prime = parseDynamicAPInt(primeStr);
+  if (!prime) {
+    std::string message = llvm::toString(prime.takeError());
+    if (errFn) {
+      errFn().append(message).report();
+    } else {
+      llvm::report_fatal_error(message.c_str());
+    }
+    return;
+  }
+  addField(fieldName, *prime, errFn);
+}
+
 void Field::addField(Field &&f, EmitErrorFn errFn) {
+  if (f.prime() < 2) {
+    if (errFn) {
+      errFn().append("field modulus must be at least 2").report();
+    } else {
+      llvm::report_fatal_error("field modulus must be at least 2");
+    }
+    return;
+  }
   // Use `tryGetField()` to ensure knownFields is initialized before checking for conflicts.
   auto existing = Field::tryGetField(f.name());
   if (succeeded(existing)) {
@@ -136,19 +156,13 @@ DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
   return m;
 }
 
-DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(i)); }
-
 DynamicAPInt Field::toSigned(const DynamicAPInt &i) const { return i < half() ? i : i - prime(); }
 
 DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i, prime()); }
 
-DynamicAPInt Field::inv(const APInt &i) const {
-  return modInversePrime(toDynamicAPInt(i), prime());
-}
-
 IntegerAttr Field::getPrimeAttr(MLIRContext *context, unsigned bitWidth) const {
   return IntegerAttr::get(
-      IntegerType::get(context, bitWidth), toExactWidthAPInt(prime(), bitWidth)
+      IntegerType::get(context, bitWidth), cantFail(checkedToAPInt(prime(), bitWidth, false))
   );
 }
 
@@ -208,31 +222,32 @@ namespace {
 struct FieldsCtx {
   llzk::FieldSet &fields;
   LogicalResult &status;
-  mlir::Operation *scope;
+  Operation *scope;
 };
 
 } // namespace
 
-static void handleAttribute(mlir::Attribute, FieldsCtx &);
+static void handleAttribute(Attribute, FieldsCtx &);
 
-static void handleType(mlir::Type type, FieldsCtx &ctx) {
-  TypeSwitch<mlir::Type> ts(type);
+static void handleType(Type type, FieldsCtx &ctx) {
+  TypeSwitch<Type> ts(type);
   ts.Case([&ctx](llzk::felt::FeltType felt) {
     if (felt.hasField()) {
       ctx.fields.insert(felt.getField());
     } else {
       ctx.status = failure();
       if (ctx.scope) {
-        ctx.scope->emitWarning() << "felt type is unspecified, which may cause some passes to fail";
+        ctx.scope->emitWarning("felt type is unspecified, which may cause some passes to fail");
       }
     }
-  })
-      .Case([&ctx](llzk::array::ArrayType array) { handleType(array.getElementType(), ctx); })
-      .Case([&ctx](llzk::pod::PodType pod) {
+  });
+  ts.Case([&ctx](llzk::array::ArrayType array) { handleType(array.getElementType(), ctx); });
+  ts.Case([&ctx](llzk::pod::PodType pod) {
     for (auto record : pod.getRecords()) {
       handleAttribute(record, ctx);
     }
-  }).Case([&ctx](mlir::FunctionType funcType) {
+  });
+  ts.Case([&ctx](FunctionType funcType) {
     for (auto i : funcType.getInputs()) {
       handleType(i, ctx);
     }
@@ -244,29 +259,29 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
   ts.Default([](auto) {});
 }
 
-static void handleAttribute(mlir::Attribute attr, FieldsCtx &ctx) {
-  TypeSwitch<mlir::Attribute> ts(attr);
-  ts.Case([&ctx](mlir::TypeAttr typeAttr) { handleType(typeAttr.getValue(), ctx); })
-      .Case([&ctx](mlir::ArrayAttr arrayAttr) {
+static void handleAttribute(Attribute attr, FieldsCtx &ctx) {
+  TypeSwitch<Attribute> ts(attr);
+  ts.Case([&ctx](TypeAttr typeAttr) { handleType(typeAttr.getValue(), ctx); });
+  ts.Case([&ctx](ArrayAttr arrayAttr) {
     for (auto a : arrayAttr) {
       handleAttribute(a, ctx);
     }
-  })
-      .Case([&ctx](mlir::DictionaryAttr dictAttr) {
+  });
+  ts.Case([&ctx](DictionaryAttr dictAttr) {
     for (auto a : dictAttr.getValue()) {
       handleAttribute(a.getValue(), ctx);
     }
-  }).Case([&ctx](llzk::pod::RecordAttr recordAttr) {
-    handleType(recordAttr.getType(), ctx);
-  }).Default([](auto) {});
+  });
+  ts.Case([&ctx](llzk::pod::RecordAttr recordAttr) { handleType(recordAttr.getType(), ctx); });
+  ts.Default([](auto) {});
 }
 
-LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields, bool silent) {
+LogicalResult llzk::collectFields(Operation *root, llzk::FieldSet &fields, bool silent) {
   if (!root) {
     return success(); // Nothing to do
   }
   LogicalResult status = success();
-  root->walk([&fields, &status, silent](mlir::Operation *op) {
+  root->walk([&fields, &status, silent](Operation *op) {
     FieldsCtx ctx = {.fields = fields, .status = status, .scope = silent ? nullptr : op};
     // Crawl for types in the results,
     for (auto result : op->getOpResults()) {

@@ -10,7 +10,7 @@
 #ifndef LLZK_DIALECT_SMTINFO_IR_SMTINFOATTRIBUTES_TD
 #define LLZK_DIALECT_SMTINFO_IR_SMTINFOATTRIBUTES_TD
 
-include "SMTInfoDialect.td"
+include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.td"
 include "mlir/IR/AttrTypeBase.td"
 
 def SMTInfoKeywordAttr : AttrDef<SMTInfoDialect, "Keyword"> {

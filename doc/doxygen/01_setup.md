@@ -85,7 +85,7 @@ pushd third-party
 export THIRD_PARTY="$PWD"
 
 # Configure LLVM build
-git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.0 --depth 1
+git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.3 --depth 1
 pushd llvm-project
 mkdir build
 pushd build
@@ -125,6 +125,20 @@ cmake .. -GNinja \
   -DLLVM_EXTERNAL_LIT="$LIT_PATH" \
   -DLLZK_BUILD_DEVTOOLS=ON
 ```
+
+# Building with PCL
+
+The bundled \ref pcl-backend "PCL backend" is enabled by default
+(`LLZK_WITH_PCL=AUTO`), including with `nix build`. To enable it explicitly, add
+`-DLLZK_WITH_PCL=ON` to the LLZK CMake configuration command above. For an existing
+build, run from the repository root (inside `nix develop` when using Nix):
+
+```bash
+cmake -S . -B build -DLLZK_WITH_PCL=ON
+cmake --build build
+```
+
+Use `-DLLZK_WITH_PCL=OFF` to disable the backend.
 
 # Development Workflow {#dev-workflow}
 

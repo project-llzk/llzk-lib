@@ -28,7 +28,7 @@ void llzk::smt::registerSmtTranslation() {
       [](Operation *op, raw_ostream &output) -> LogicalResult {
     ModuleOp modOp = llvm::dyn_cast_if_present<ModuleOp>(op);
     if (!modOp) {
-      return op->emitOpError() << "expected builtin.module as top level operation";
+      return op->emitOpError("expected builtin.module as top level operation");
     }
     return llzk::smt::emitSMTLIBModule(modOp, output);
   }, [](DialectRegistry &registry) {

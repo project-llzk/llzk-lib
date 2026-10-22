@@ -204,8 +204,8 @@ runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions
   }
 
   FieldSet fields;
-  if (failed(collectFields(moduleOp.getOperation(), fields))) {
-    return makeError("failed to collect fields for llzk-witgen");
+  if (failed(collectFields(moduleOp.getOperation(), fields, false))) {
+    return makeError("llzk-witgen failed collecting 'felt.type' fields");
   }
   if (fields.size() != 1) {
     return makeError("llzk-witgen v1 requires exactly one field in the module");

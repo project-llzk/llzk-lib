@@ -157,7 +157,7 @@ inline bool isIntegerType(mlir::StringRef type) {
 /// @return true if the type is a primitive (bool, void, int, etc.)
 ///
 /// @note This function must be called on the CPP type because after converting to CAPI type, some
-/// things like APInt become primitive which can lead to missing wrap/unwrap functions.
+/// C++ wrapper types require explicit conversion even if their C representation is primitive.
 inline bool isPrimitiveType(mlir::StringRef cppType) {
   cppType.consume_front("::");
   return cppType == "void" || cppType == "bool" || cppType == "float" || cppType == "double" ||
@@ -200,16 +200,10 @@ inline bool isCppLanguageConstruct(mlir::StringRef methodName) {
       .Default(false);
 }
 
-/// @brief Check if a C++ type is APInt
-/// @param cppType The C++ type string to check
-/// @return true if the type is an APInt or LLZK's numeric APInt storage key
-inline bool isAPIntType(mlir::StringRef cppType) {
+/// Whether a parameter represents an arbitrary-precision mathematical integer.
+inline bool isDynamicAPIntType(mlir::StringRef cppType) {
   cppType.consume_front("::");
-  if (cppType == "llzk::APIntValue") {
-    return true;
-  }
-  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
-  return cppType == "APInt";
+  return cppType == "llzk::DynamicAPIntValue" || cppType == "llvm::DynamicAPInt";
 }
 
 /// @brief Check if a C++ type is an ArrayRef type
@@ -468,6 +462,12 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
+    // Dynamic integers are returned through a callback to avoid dangling text.
+    if (isDynamicAPIntType(method.returnType)) {
+      capiReturnType = "void";
+      paramListStream << ", MlirStringCallback callback, void *userData";
+    }
+
     // Generate declaration
     if (method.documentation.empty()) {
       os << llvm::formatv("\n/// {0}\n", method.methodName);
@@ -522,14 +522,18 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       // "void" type doesn't even need "return"
       returnPrefix = "";
       returnSuffix = "";
+    } else if (isDynamicAPIntType(cppReturnType)) {
+      capiReturnType = "void";
+      returnPrefix = "std::string text;\n  llvm::raw_string_ostream(text) << ";
+      returnSuffix = ";\n  callback(wrap(llvm::StringRef(text)), userData)";
     } else {
       // Check if return needs wrapping
       if (isPrimitiveType(cppReturnType)) {
         // Primitive types don't need wrapping
         returnPrefix = "return ";
         returnSuffix = "";
-      } else if (capiReturnType.starts_with("Mlir") || isAPIntType(cppReturnType)) {
-        // MLIR C API types and APInt type need wrapping
+      } else if (capiReturnType.starts_with("Mlir")) {
+        // MLIR C API types need wrapping
         returnPrefix = "return wrap(";
         returnSuffix = ")";
       } else {
@@ -552,6 +556,10 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
+    if (isDynamicAPIntType(cppReturnType)) {
+      paramListStream << ", MlirStringCallback callback, void *userData";
+    }
+
     // Build argument list for C++ method call
     std::string argList;
     llvm::raw_string_ostream argListStream(argList);
@@ -566,9 +574,6 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
       if (isPrimitiveType(cppParamType)) {
         // Primitive types don't need unwrapping
         argListStream << param.name;
-      } else if (isAPIntType(cppParamType)) {
-        // APInt needs unwrapping
-        argListStream << "unwrap(" << param.name << ')';
       } else {
         // Convert C++ type to C API type for parameter, skip if it can't be converted
         std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(cppParamType);
@@ -684,6 +689,10 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
       }
 
       paramListStream << ", " << name;
+    }
+
+    if (isDynamicAPIntType(method.returnType)) {
+      paramListStream << ", [](MlirStringRef, void *) {}, nullptr";
     }
 
     static constexpr char fmt[] = R"(

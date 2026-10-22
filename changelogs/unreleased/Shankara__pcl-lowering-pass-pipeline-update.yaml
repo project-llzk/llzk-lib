@@ -1,0 +1,3 @@
+added:
+  - Expose C APIs to register and build the full PCL lowering pipeline.
+  - Add `llzk-full-pcl-lowering` to normalize while loops, flatten templates, scalarize PODs and arrays, and eliminate common subexpressions and redundant reads/writes before PCL conversion while preserving component boundaries.

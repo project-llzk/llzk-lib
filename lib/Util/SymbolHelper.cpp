@@ -26,12 +26,15 @@
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/AsmParser/AsmParser.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Operation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+
+#include <algorithm>
 
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
@@ -84,21 +87,19 @@ public:
   RootPathBuilder(RootSelector whichRoot, Operation *origin, ModuleOp *foundRoot)
       : _whichRoot(whichRoot), _origin(origin), _foundRoot(foundRoot) {}
 
-  /// Traverse ModuleOp ancestors of `from` and add their names to `path` until the (closest or
-  /// furthest, based on RootSelector argument) ModuleOp with the `LANG_ATTR_NAME` attribute is
-  /// reached. If a ModuleOp without a name is reached or a ModuleOp with the `LANG_ATTR_NAME`
-  /// attribute is never found, produce an error (referencing the `origin` Operation). The name
-  /// of the root module itself is not added to the path.
-  ///
-  /// Returns the module containing the LANG_ATTR_NAME attribute.
+  /// Collect module and template names into \p path while finding a module with
+  /// the LANG_ATTR_NAME attribute starting at \p from. CLOSEST stops before adding
+  /// that root's name. FURTHEST traverses all ancestors and includes named roots
+  /// and named modules above them, returning the outermost module with the
+  /// LANG_ATTR_NAME attribute. An unnamed module before finding a root, or the
+  /// absence of any root, produces an error at the origin operation.
   FailureOr<ModuleOp> collectPathToRoot(Operation *from, std::vector<FlatSymbolRefAttr> &path) {
     Operation *check = from;
     ModuleOp currRoot = nullptr;
     do {
       if (ModuleOp m = llvm::dyn_cast_if_present<ModuleOp>(check)) {
-        // We need this attribute restriction because some stages of parsing have
-        //  an extra module wrapping the top-level module from the input file.
-        // This module, even if it has a name, does not contribute to path names.
+        // Parsing may wrap the input in an extra module; llzk.lang identifies
+        // the program's lookup root independently of that wrapper.
         if (m->hasAttr(LANG_ATTR_NAME)) {
           if (_whichRoot == RootSelector::CLOSEST) {
             return m;
@@ -318,6 +319,51 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   }
 }
 
+FailureOr<SymbolRefAttr> getPathRelativeToAncestor(
+    SymbolOpInterface symbol, ModuleOp ancestor, llvm::function_ref<InFlightDiagnostic()> emitError
+) {
+  Operation *definition = symbol.getOperation();
+  if (definition == ancestor || !ancestor->isAncestor(definition)) {
+    if (emitError) {
+      auto diagnostic = emitError();
+      if (definition == ancestor) {
+        diagnostic << " cannot be named relative to itself; a strict descendant is required";
+        diagnostic.attachNote(ancestor.getLoc())
+            << "symbol and supplied module are the same operation";
+      } else {
+        diagnostic << " is not visible from module \""
+                   << ancestor.getSymName().value_or("<unnamed>") << '"';
+        diagnostic.attachNote(definition->getLoc())
+            << "symbol is defined outside the supplied module";
+        diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
+      }
+    }
+    return failure();
+  }
+  SmallVector<FlatSymbolRefAttr> path;
+  for (Operation *current = definition; current != ancestor; current = current->getParentOp()) {
+    if (current != definition && !current->hasTrait<OpTrait::SymbolTable>()) {
+      continue;
+    }
+    auto name = llzk::getSymbolName(current);
+    if (!name) {
+      if (emitError) {
+        auto diagnostic = emitError();
+        diagnostic << " cannot be named relative to module \""
+                   << ancestor.getSymName().value_or("<unnamed>")
+                   << "\" because an intervening symbol table is unnamed";
+        diagnostic.attachNote(current->getLoc())
+            << "unnamed symbol table prevents forming a symbol path";
+        diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
+      }
+      return failure();
+    }
+    path.push_back(FlatSymbolRefAttr::get(name));
+  }
+  std::reverse(path.begin(), path.end());
+  return asSymbolRefAttr(path);
+}
+
 FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
   return RootPathBuilder(RootSelector::CLOSEST, from, nullptr).collectPathToRoot(from, path);
@@ -392,6 +438,51 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
   } else {
     return success(nullptr);
   }
+}
+
+FailureOr<SymbolLookupResult<StructDefOp>>
+getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef symbolPath) {
+  symbolPath = symbolPath.trim();
+  if (symbolPath.empty()) {
+    return getMainInstanceDef(tables, lookupFrom);
+  }
+  std::string symbolText = symbolPath.str();
+  if (symbolText.front() != '@') {
+    symbolText.insert(symbolText.begin(), '@');
+  }
+  SymbolRefAttr symbol;
+  std::string parseError;
+  {
+    // Report parser details at the caller's location instead of the temporary buffer.
+    ScopedDiagnosticHandler handler(lookupFrom->getContext(), [&](Diagnostic &diagnostic) {
+      if (diagnostic.getSeverity() == DiagnosticSeverity::Error) {
+        parseError = diagnostic.str();
+      }
+      return success();
+    });
+    symbol = dyn_cast_or_null<SymbolRefAttr>(parseAttribute(symbolText, lookupFrom->getContext()));
+  }
+  if (!symbol) {
+    auto diagnostic = lookupFrom->emitError();
+    diagnostic << "invalid root struct symbol path '" << symbolPath << '\'';
+    if (!parseError.empty()) {
+      diagnostic << ": " << parseError;
+    }
+    return diagnostic;
+  }
+  auto found = lookupTopLevelSymbol(tables, symbol, lookupFrom, false);
+  if (failed(found)) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' does not resolve to a symbol";
+  }
+  Operation *definition = found->get();
+  SymbolLookupResult<StructDefOp> root(std::move(*found));
+  if (!root) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' references a '"
+           << definition->getName() << "'; expected a 'struct.def'";
+  }
+  return root;
 }
 
 FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {

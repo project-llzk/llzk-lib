@@ -27,12 +27,15 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/IRMapping.h>
+#include <mlir/IR/Matchers.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -318,15 +321,19 @@ template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
-  APInt getValue(FeltConstantOp op) const { return op.getValue().getValue(); }
+  llvm::DynamicAPInt getValue(FeltConstantOp op) const {
+    // PCL accepts fieldless constants with raw signed values and reduces them modulo the prime
+    // inferred by `selectPrime()`. However, it requires exactly one declared field across the
+    // circuit so it's acceptable to reduce values with the specified prime immediately or hold
+    // the raw value for later reduction.
+    return op.getValue().getReducedValueOrRaw();
+  }
 };
 
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
-  APInt getValue(arith::ConstantOp op) const {
-    // Extend width by 1 bit to avoid sign issues.
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
-    return value.zext(value.getBitWidth() + 1);
+  llvm::DynamicAPInt getValue(arith::ConstantOp op) const {
+    return llzk::integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(op.getValue()));
   }
 };
 
@@ -358,7 +365,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
   LogicalResult matchAndRewrite(
       arith::ConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    auto intAttr = llvm::cast<IntegerAttr>(op.getValue());
+    const APInt &value = intAttr.getValue();
     if (op.getType().isInteger(1)) {
       if (value.isOne()) {
         rewriter.replaceOpWithNewOp<pcl::TrueOp>(op);
@@ -367,10 +375,8 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
       }
       return success();
     }
-
-    // Extend width by 1 bit to avoid sign issues.
     rewriter.replaceOpWithNewOp<pcl::ConstOp>(
-        op, pcl::FeltAttr::get(rewriter.getContext(), value.zext(value.getBitWidth() + 1))
+        op, pcl::FeltAttr::get(rewriter.getContext(), llzk::integerAttrToDynamicAPInt(intAttr))
     );
     return success();
   }
@@ -381,12 +387,15 @@ struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
 //===----------------------------------------------------------------------===//
 
 struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
-  using OpConversionPattern<CallOp>::OpConversionPattern;
+  SymbolTableCollection &tables;
+
+  template <typename... Args>
+  ConvertConstrainCall(SymbolTableCollection &symbolTables, Args &&...args)
+      : OpConversionPattern(std::forward<Args>(args)...), tables(symbolTables) {}
 
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    SymbolTableCollection tables;
     auto callee = op.getCalleeTarget(tables);
     // We only care about constrain functions.
     if (failed(callee) || !callee->get().isStructConstrain()) {
@@ -501,12 +510,15 @@ public:
 /// converted are marked illegal, so the pattern only needs to check if the callee is not a contrain
 /// call.
 struct ConvertFreeFunctionCall : public OpConversionPattern<CallOp> {
-  using OpConversionPattern<CallOp>::OpConversionPattern;
+  SymbolTableCollection &tables;
+
+  template <typename... Args>
+  ConvertFreeFunctionCall(SymbolTableCollection &symbolTables, Args &&...args)
+      : OpConversionPattern(std::forward<Args>(args)...), tables(symbolTables) {}
 
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    SymbolTableCollection tables;
     auto callee = op.getCalleeTarget(tables);
     if (failed(callee) || callee->get().isStructConstrain()) {
       return failure();
@@ -643,7 +655,11 @@ struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
 
 /// Converts `struct.readm` ops that read members of felt type from the struct into `pcl.var` ops.
 struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> {
-  using OpConversionPattern<MemberReadOp>::OpConversionPattern;
+  SymbolTableCollection &tables;
+
+  template <typename... Args>
+  ConvertSelfMemberReadOpOfFelt(SymbolTableCollection &symbolTables, Args &&...args)
+      : OpConversionPattern(std::forward<Args>(args)...), tables(symbolTables) {}
 
   LogicalResult
   matchAndRewrite(MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
@@ -651,12 +667,12 @@ struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> 
     if (!parent || op.getComponent() != parent.getArgument(0)) {
       return failure();
     }
-    SymbolTableCollection tables;
-    auto defOp = op.getMemberDefOp(tables);
-    if (failed(defOp)) {
+    // Only lower member reads with a felt result type.
+    if (!llvm::isa<FeltType>(op.getType())) {
       return failure();
     }
-    if (!llvm::isa<FeltType>(defOp->get().getType())) {
+    auto defOp = op.getMemberDefOp(tables);
+    if (failed(defOp)) {
       return failure();
     }
 
@@ -681,13 +697,7 @@ struct ConvertSelfMemberReadOpOfSubcmp : public OpConversionPattern<MemberReadOp
     if (!parent || op.getComponent() != parent.getArgument(0)) {
       return failure();
     }
-    SymbolTableCollection tables;
-    auto defOp = op.getMemberDefOp(tables);
-    if (failed(defOp)) {
-      return failure();
-    }
-
-    if (!llvm::isa<StructType>(defOp->get().getType())) {
+    if (!llvm::isa<StructType>(op.getType())) {
       return failure();
     }
     rewriter.eraseOp(op);
@@ -740,14 +750,8 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
     if (!parent || subcmp.getComponent() != parent.getArgument(0)) {
       return failure();
     }
-    SymbolTableCollection tables;
-    auto defOp = op.getMemberDefOp(tables);
-    if (failed(defOp)) {
-      return failure();
-    }
-
     llvm::SmallString<256> sto;
-    auto name = (Twine(subcmp.getMemberName()) + "." + defOp->get().getName()).toStringRef(sto);
+    auto name = (Twine(subcmp.getMemberName()) + "." + op.getMemberName()).toStringRef(sto);
     rewriter.replaceOpWithNewOp<pcl::VarOp>(op, rewriter.getStringAttr(name), /*public=*/false);
     return success();
   }
@@ -827,13 +831,25 @@ public:
 // RemoveIntToFeltOp
 //===----------------------------------------------------------------------===//
 
-/// Removes `cast.tofelt` ops since all numerical types in pcl are the same.
+/// Removes supported `cast.tofelt` operations; range validation precedes actual conversion.
 struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
   using OpConversionPattern<IntToFeltOp>::OpConversionPattern;
 
   LogicalResult matchAndRewrite(
       IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (op.getOverflow() != OverflowSemantics::ASSERT) {
+      return rewriter.notifyMatchFailure(
+          op, "PCL lowering does not currently support non-assert cast overflow semantics"
+      );
+    }
+    // Leave dynamic index assertions unsupported so analysis selects their
+    // containing free functions for stubbing.
+    if (!isMemoryEffectFree(op) && !matchPattern(op.getValue(), m_Constant())) {
+      return rewriter.notifyMatchFailure(
+          op, "cannot preserve an assertion on a non-constant index"
+      );
+    }
     rewriter.replaceOp(op, adaptor.getOperands());
     return success();
   }
@@ -865,7 +881,7 @@ struct RemoveModuleOp : public OpConversionPattern<ModuleOp> {
 //===----------------------------------------------------------------------===//
 
 void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
-    const TypeConverter &tc, RewritePatternSet &patterns
+    const TypeConverter &tc, RewritePatternSet &patterns, SymbolTableCollection &tables
 ) {
   patterns.add<
       // clang-format off
@@ -879,14 +895,11 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
       ConvertCmpOp,
       ConvertConstantOp<FeltConstantOp>,
       ConvertArithConstantOp,
-      ConvertConstrainCall,
       ConvertEmitEqualityOp,
       ConvertEnsureConstrainOp,
-      ConvertFreeFunctionCall,
       ConvertFreeFunctionReturnOp,
       ConvertProveDetOp,
       ConvertReturnOp,
-      ConvertSelfMemberReadOpOfFelt,
       ConvertSelfMemberReadOpOfSubcmp,
       ConvertSubcmpMemberReadOp,
       ConvertUnaryOp<NegFeltOp, pcl::NegOp>,
@@ -894,6 +907,9 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
       RemoveIntToFeltOp
       // clang-format on
       >(tc, &getContext());
+  patterns.add<ConvertConstrainCall, ConvertFreeFunctionCall, ConvertSelfMemberReadOpOfFelt>(
+      tables, tc, &getContext()
+  );
   patterns.add<
       // clang-format off
       ConvertArithSelectOp,

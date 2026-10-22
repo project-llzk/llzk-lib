@@ -1,0 +1,34 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -llzk-to-pcl %s | FileCheck %s
+// RUN: llzk-opt -llzk-to-pcl=mode=stubbed %s | FileCheck %s
+
+// Unsupported PCL operations in compute must be skipped while constrain is lowered.
+!F = !felt.type<"koalabear">
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%in: !F) -> !struct.type<@A> {
+      scf.execute_region {
+        scf.yield
+      }
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %in: !F) {
+      %neg = felt.neg %in : !F
+      %out = struct.readm %self[@out] : !struct.type<@A>, !F
+      constrain.eq %out, %neg : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433>} {
+// CHECK-NEXT:    func.func @A(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.neg %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -13,87 +13,157 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallString.h>
+#include <llvm/Support/Compiler.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <limits>
+#include <utility>
 
 using namespace llvm;
 using namespace std;
 
-static DynamicAPInt po2(const DynamicAPInt &e) {
-  // APInt/APSInt bitwidth is limited to max unsigned bits, so must be strictly
-  // less than the max to accommodate for the sign bit
-  assert(e >= 0);
-  assert(e < std::numeric_limits<unsigned>::max());
-  unsigned shiftAmt = llzk::toAPSInt(e).getZExtValue();
-  APSInt p(shiftAmt + 1, /* isUnsigned */ true);
-  p.setBit(shiftAmt);
-  return llzk::toDynamicAPInt(p);
-}
-
-static DynamicAPInt fromBigEndian(const std::vector<bool> &bits) {
-  APSInt rawInt(bits.size(), /* isUnsigned */ false);
-  for (unsigned i = 0; i < bits.size(); ++i) {
-    rawInt.setBitVal(i, bits[i]);
-  }
-  return llzk::toDynamicAPInt(rawInt);
-}
-
-static DynamicAPInt
-binaryBitOp(const DynamicAPInt &lhs, const DynamicAPInt &rhs, function_ref<bool(bool, bool)> fn) {
-  DynamicAPInt a = lhs, b = rhs;
-  std::vector<bool> bits;
-  while (a != 0 || b != 0) {
-    // bits are sign extended
-    bool abit = a != 0 ? bool(int64_t(a % 2)) : lhs < 0;
-    bool bbit = b != 0 ? bool(int64_t(b % 2)) : rhs < 0;
-    bits.push_back(fn(abit, bbit));
-    a /= 2;
-    b /= 2;
-  }
-  // Insert final sign bit, as the above will ignore 0 sign bits. This is also
-  // acceptable when both numbers are signed, as it acts as a sign extension.
-  bits.push_back(fn(lhs < 0, rhs < 0));
-  return fromBigEndian(bits);
+/// Apply a bitwise operation after extending both signed operands to a common width.
+static DynamicAPInt binaryBitOp(
+    const DynamicAPInt &lhs, const DynamicAPInt &rhs,
+    function_ref<APInt(const APInt &, const APInt &)> fn
+) {
+  APSInt a = llzk::toAPSInt(lhs), b = llzk::toAPSInt(rhs);
+  unsigned width = std::max(a.getBitWidth(), b.getBitWidth());
+  return DynamicAPInt(fn(a.sext(width), b.sext(width)));
 }
 
 namespace llzk {
 
+DynamicAPInt toSignedDynamicAPInt(ArrayRef<uint64_t> parts) {
+  if (parts.empty()) {
+    return DynamicAPInt(0);
+  }
+  if (parts.size() <= std::numeric_limits<unsigned>::max() / 64) {
+    return DynamicAPInt(APInt(static_cast<unsigned>(parts.size()) * 64, parts));
+  }
+  llvm::report_fatal_error("part array exceeds APInt's maximum bit width");
+}
+
+Expected<DynamicAPInt> parseDynamicAPInt(StringRef str) {
+  StringRef digits = str;
+  bool negative = digits.consume_front("-");
+  APInt magnitude;
+  if (digits.getAsInteger(10, magnitude)) {
+    return createStringError(inconvertibleErrorCode(), "expected signed decimal integer");
+  }
+  DynamicAPInt value = toDynamicAPInt(magnitude);
+  return negative ? -value : value;
+}
+
+hash_code hashDynamicAPInt(const DynamicAPInt &value) {
+  APSInt bits = toAPSInt(value);
+  return llvm::hash_value(bits.trunc(bits.getSignificantBits()));
+}
+
+Expected<APInt> checkedToAPInt(const DynamicAPInt &value, unsigned bitWidth, bool isSigned) {
+  APSInt bits = toAPSInt(value);
+  bool fits = bitWidth != 0 &&
+              (isSigned ? bits.isSignedIntN(bitWidth) : value >= 0 && bits.isIntN(bitWidth));
+  if (!fits) {
+    return createStringError(inconvertibleErrorCode(), "integer does not fit requested width");
+  }
+  return isSigned ? bits.sextOrTrunc(bitWidth) : bits.zextOrTrunc(bitWidth);
+}
+
+Expected<int64_t> checkedToInt64(const DynamicAPInt &value) {
+  if (value < numeric_limits<int64_t>::min() || value > numeric_limits<int64_t>::max()) {
+    return createStringError(inconvertibleErrorCode(), "integer does not fit requested width");
+  }
+  return static_cast<int64_t>(value);
+}
+
+Expected<uint64_t> checkedToUInt64(const DynamicAPInt &value) {
+  auto bits = checkedToAPInt(value, 64, false);
+  if (!bits) {
+    return bits.takeError();
+  }
+  return bits->getZExtValue();
+}
+
+Expected<size_t> checkedToSize(const DynamicAPInt &value, const Twine &context) {
+  if (value < 0) {
+    return createStringError(inconvertibleErrorCode(), context + " would underflow size_t");
+  }
+  constexpr size_t sizeMax = std::numeric_limits<size_t>::max();
+  if (value <= std::numeric_limits<int64_t>::max()) {
+    auto native = static_cast<uint64_t>(static_cast<int64_t>(value));
+    if (native > sizeMax) {
+      return createStringError(inconvertibleErrorCode(), context + " would overflow size_t");
+    }
+    return static_cast<size_t>(native);
+  }
+
+  static const llvm::DynamicAPInt maxValue = llzk::toDynamicAPInt(sizeMax);
+  if (value > maxValue) {
+    return createStringError(inconvertibleErrorCode(), context + " would overflow size_t");
+  }
+  // A valid value above INT64_MAX is in the upper half of a 64-bit size_t.
+  // Its distance from SIZE_MAX fits in int64_t, so extract that instead.
+  auto distance = static_cast<int64_t>(maxValue - value);
+  return sizeMax - static_cast<size_t>(distance);
+}
+
 DynamicAPInt operator&(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
-  auto fn = [](bool a, bool b) { return a && b; };
-  return binaryBitOp(lhs, rhs, fn);
+  return binaryBitOp(lhs, rhs, [](const APInt &a, const APInt &b) { return a & b; });
 }
 
 DynamicAPInt operator|(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
-  auto fn = [](bool a, bool b) { return a || b; };
-  return binaryBitOp(lhs, rhs, fn);
+  return binaryBitOp(lhs, rhs, [](const APInt &a, const APInt &b) { return a | b; });
 }
 
 DynamicAPInt operator^(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
-  auto fn = [](bool a, bool b) { return a ^ b; };
-  return binaryBitOp(lhs, rhs, fn);
+  return binaryBitOp(lhs, rhs, [](const APInt &a, const APInt &b) { return a ^ b; });
 }
 
-DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) { return lhs * po2(rhs); }
+DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
+  if (rhs < numeric_limits<int64_t>::min() || rhs > numeric_limits<int64_t>::max()) {
+    llvm::report_fatal_error("invalid or unrepresentable left shift");
+  }
+  return lhs << static_cast<int64_t>(rhs);
+}
+
+DynamicAPInt operator<<(const DynamicAPInt &lhs, int64_t rhs) {
+  APSInt bits = toAPSInt(lhs);
+  unsigned width = bits.getSignificantBits();
+  if (rhs < 0 || static_cast<uint64_t>(rhs) > numeric_limits<unsigned>::max() - width) {
+    llvm::report_fatal_error("invalid or unrepresentable left shift");
+  }
+  if (lhs == 0) {
+    return DynamicAPInt(0);
+  }
+  unsigned amount = checkedCast<unsigned>(rhs);
+  return DynamicAPInt(bits.sextOrTrunc(width + amount).shl(amount));
+}
 
 DynamicAPInt operator>>(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
-  if (lhs >= 0) {
-    return lhs / po2(rhs);
-  } else {
-    // round towards negative infinity
-    DynamicAPInt divisor = po2(rhs);
-    if (lhs % divisor == 0) {
-      return lhs / divisor;
-    } else {
-      return (lhs - (divisor - 1)) / divisor;
-    }
+  if (rhs < numeric_limits<int64_t>::min()) {
+    llvm::report_fatal_error("negative right shift");
   }
+  if (rhs > numeric_limits<int64_t>::max()) {
+    return DynamicAPInt(lhs < 0 ? -1 : 0);
+  }
+  // The bounded count fits int64_t; signed extraction avoids an APSInt conversion.
+  return lhs >> static_cast<int64_t>(rhs);
 }
 
-DynamicAPInt toDynamicAPInt(StringRef str) {
-  APSInt parsedInt(str);
-  return toDynamicAPInt(parsedInt);
+DynamicAPInt operator>>(const DynamicAPInt &lhs, int64_t rhs) {
+  if (rhs < 0) {
+    llvm::report_fatal_error("negative right shift");
+  }
+  APSInt bits = toAPSInt(lhs);
+  if (static_cast<uint64_t>(rhs) >= bits.getSignificantBits()) {
+    return DynamicAPInt(lhs < 0 ? -1 : 0);
+  }
+  return DynamicAPInt(bits.ashr(checkedCast<unsigned>(rhs)));
 }
+
+DynamicAPInt toDynamicAPInt(StringRef str) { return cantFail(parseDynamicAPInt(str)); }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
   // DynamicAPInt interprets APInt (implicit cast from APSInt for the constructor below) as
@@ -113,44 +183,53 @@ DynamicAPInt toDynamicAPInt(const APInt &i) {
   }
 }
 
+/// DynamicAPInt has no direct APInt conversion so convert values outside `int64_t` via string.
+///
+/// Ensure this function doesn't inline so the fast path avoids its stack and register overhead.
+static LLVM_ATTRIBUTE_NOINLINE APSInt toAPSIntSlow(const DynamicAPInt &i) {
+  // 254-bit magnitude needs at most 77 decimal digits plus a minus sign; 96 inline characters cover
+  // this with headroom for larger intermediates so the pre-defined primes don't require resizing.
+  SmallString<96> repr;
+  raw_svector_ostream(repr) << i;
+
+  // This is based on `APSInt(StringRef)` and uses its conservative size estimate of 64/19 bits per
+  // decimal digit. However, we take some additional precautions to allocate space for the sign bit
+  // from the start, avoid truncating when a bitwidth change would not reduce the number of words
+  // required, and move the final result into the return value to avoid unnecessary copies.
+  size_t digits = repr.size() - (repr.front() == '-');
+  constexpr uint64_t maxDigits = ((uint64_t(numeric_limits<unsigned>::max()) - 2) * 19) / 64;
+  // Bound the digit count before multiplying or narrowing to APInt's unsigned bit width.
+  if (digits > maxDigits) {
+    llvm::report_fatal_error("decimal integer exceeds APInt's maximum parse width");
+  }
+  unsigned parseWidth = static_cast<unsigned>((uint64_t(digits) * 64) / 19 + 2);
+  APInt bits(parseWidth, repr, /*radix=*/10);
+  // getSignificantBits() includes the sign bit for either sign. Truncation
+  // allocates a new APInt, so only do it when it saves a storage word.
+  unsigned minWidth = bits.getSignificantBits();
+  if (APInt::getNumWords(minWidth) < bits.getNumWords()) {
+    bits = bits.trunc(minWidth);
+  }
+  return APSInt(std::move(bits), /*isUnsigned=*/false);
+}
+
 APSInt toAPSInt(const DynamicAPInt &i) {
   if (numeric_limits<int64_t>::min() <= i && i <= numeric_limits<int64_t>::max()) {
     // Fast path for smaller values, just use the int64_t conversion
     return APSInt::get(int64_t(i));
   }
-
-  // Else, convert to string and parse back as an APSInt.
-  // This may not be the most efficient implementation, but it is the cleanest
-  // due to the lack of direct conversions between DynamicAPInt and APInts.
-  SmallString<64> repr;
-  raw_svector_ostream(repr) << i;
-
-  APSInt res(repr);
-  // For consistency, we add a bit and mark these as signed integers, since
-  // DynamicAPInts are inherently signed.
-  res = res.extend(res.getBitWidth() + 1);
-  res.setIsSigned(true);
-
-  return res;
-}
-
-APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
-  SmallString<64> str;
-  raw_svector_ostream(str) << val;
-  return APInt(bitWidth + 1, str, 10);
-}
-
-APInt toExactWidthAPInt(const DynamicAPInt &val, unsigned bitWidth) {
-  SmallString<64> str;
-  raw_svector_ostream(str) << val;
-  return APInt(bitWidth, str, 10);
+  return toAPSIntSlow(i);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
-  DynamicAPInt result(1);
-  DynamicAPInt b = base;
+  if (exp < 0 || mod <= 0) {
+    llvm::report_fatal_error(
+        "modular exponentiation requires a nonnegative exponent and positive modulus"
+    );
+  }
+  DynamicAPInt result(mod == 1 ? 0 : 1);
+  DynamicAPInt b = llvm::mod(base, mod);
   DynamicAPInt e = exp;
-  DynamicAPInt one(1);
 
   while (e != 0) {
     if (e % 2 != 0) {
@@ -158,7 +237,7 @@ DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const Dyn
     }
 
     b = (b * b) % mod;
-    e = e >> one;
+    e = e >> 1;
   }
   return result;
 }
@@ -168,7 +247,7 @@ DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p) {
   // Fermat: f^(p-2) mod p
   DynamicAPInt exp = p - 2;
   DynamicAPInt result = modExp(f, exp, p);
-  assert((f * result) % p == 1 && "inverse is incorrect");
+  assert(llvm::mod(f * result, p) == 1 && "inverse is incorrect");
   return result;
 }
 

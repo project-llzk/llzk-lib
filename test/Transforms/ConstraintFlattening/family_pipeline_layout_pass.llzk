@@ -1,0 +1,6 @@
+// RUN: llzk-opt %S/family_pipeline_pass.llzk --llzk-constraint-flattening -o %t
+// RUN: llzk-opt %S/family_pipeline_pass.llzk --llzk-monomorphize-templates | llzk-translate --llzk-layout -o %t.before.layout
+// RUN: llzk-translate %t --llzk-layout -o %t.after.layout
+// RUN: diff %t.before.layout %t.after.layout
+
+// Flattening preserves the original monomorphized signal layout.

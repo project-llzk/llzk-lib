@@ -102,3 +102,30 @@ Runs the following passes in order:
 
 The polynomial-lowering stage prepares flattened, degree-two constraints for
 R1CS conversion. CSE then removes redundant `r1cs.to_linear` operations.
+
+### `-llzk-constraint-flattening`
+
+_Monomorphize templates and expand main constrain while retaining component storage._
+
+Runs these passes in order:
+
+1. `-llzk-monomorphize-templates`
+2. `-llzk-expose-child-members`
+3. `-llzk-flatten-constraints`
+
+Inline includes and lower symbolic non-native constraint arithmetic before this
+pipeline. Constant non-native arithmetic is evaluated during expansion using
+the current call and loop bindings.
+Frontend `scf.execute_region` wrappers currently require canonicalization before
+monomorphization. Control flow and all array indices must resolve statically;
+aggregate function inputs are read-only. The pass expands concrete constrain
+bodies and eliminates local aggregate storage while retaining the original
+component layout and ordinary scalar arithmetic. Family handles retain their
+rolled types, with concrete member read types validated against the selected
+specialization and exposed template declarations. Consumers must support these
+reads through rolled handles; `-llzk-array-to-scalar` currently does not.
+
+Only scalar felt equality constraints are supported. Array equality,
+`constrain.in`, live non-signal storage reads, recursion, and undefined or
+multi-block callees are rejected. See `-llzk-flatten-constraints` for the binding
+model, diagnostics, and supported control flow.

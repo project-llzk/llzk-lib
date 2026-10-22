@@ -1,0 +1,31 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) attributes {function.allow_non_native_field_ops} {
+      %cmp = bool.cmp lt(%x, %y) : !felt.type, !felt.type
+      %both = arith.andi %cmp, %cmp : i1
+      // Only pure casts (i.e. non-assert) may disappear just because their results are unused.
+      %index = cast.toindex wrap %x : !felt.type
+      %integerCmp = arith.cmpi slt, %index, %index : index
+      %sum = arith.addi %index, %index : index
+      %product = arith.muli %sum, %index : index
+      %bits = arith.xori %both, %cmp : i1
+      %map = poly.applymap(%index) affine_map<(d) -> (d + 1)>
+      %wide = arith.index_cast %map : index to i64
+      %unused = cast.tofelt wrap %index : index
+      constrain.eq %x, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

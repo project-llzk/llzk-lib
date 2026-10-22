@@ -117,14 +117,14 @@ TEST_F({2}{1}LinkTests, Get_{3}) {{
   }
 
   /// @brief Generate parameter getter test
-  virtual void genParamGetterTest() const {
+  virtual void genParamGetterTest(bool isInteger = false) const {
     static constexpr char fmt[] = R"(
 /// This test ensures {0}{2}_{3}Get{5} links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
   auto test{1} = createIndex{1}();
 
   if ({0}{1}IsA_{2}_{3}(test{1})) {{
-    (void){0}{2}_{3}Get{5}(test{1});
+    (void){0}{2}_{3}Get{5}(test{1}{6});
   }
 }
 )";
@@ -132,7 +132,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
         fmt, getFunctionPrefix(), kind, dialectNameCapitalized, className, paramName,
-        paramNameCapitalized
+        paramNameCapitalized, isInteger ? ", [](MlirStringRef, void *) {}, nullptr" : ""
     );
   }
 
@@ -207,7 +207,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
           this->genArrayRefParamCountTest();
           this->genArrayRefParamAtTest();
         } else {
-          this->genParamGetterTest();
+          this->genParamGetterTest(isDynamicAPIntType(cppType));
         }
       }
     }
