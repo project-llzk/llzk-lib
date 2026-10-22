@@ -71,6 +71,7 @@ var namespacellzk_1_1witgen =
     [ "runWitgen", "namespacellzk_1_1witgen.html#a63fc53dc637ec93db61e7a5089a930e3", null ],
     [ "runWithExecutionEngine", "namespacellzk_1_1witgen.html#a04f85f7f45e538c01bc807e3ec7333b1", null ],
     [ "runWithExecutionEngine", "namespacellzk_1_1witgen.html#a01f474d1128de407d485f90bd60e3be3", null ],
+    [ "serializeFeltToJSON", "namespacellzk_1_1witgen.html#a5ab8cb066c5e9c901bdd7389a278b80b", null ],
     [ "serializeJSONValue", "namespacellzk_1_1witgen.html#ab2f7ce26617ba7407a527d8f64a3624c", null ],
     [ "serializeJSONValue", "namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925", null ],
     [ "writeWtns", "namespacellzk_1_1witgen.html#a71b918ef505d17c0a0360ebb345570f4", null ],

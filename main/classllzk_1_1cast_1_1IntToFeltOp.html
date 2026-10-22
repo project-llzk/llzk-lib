@@ -139,12 +139,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1c
 <div class="dynheader">
 Inheritance diagram for llzk::cast::IntToFeltOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1cast_1_1IntToFeltOp__inherit__graph.svg" width="723" height="208"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1cast_1_1IntToFeltOp__inherit__graph.svg" width="572" height="208"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for llzk::cast::IntToFeltOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1cast_1_1IntToFeltOp__coll__graph.svg" width="723" height="208"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1cast_1_1IntToFeltOp__coll__graph.svg" width="572" height="208"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -173,8 +173,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a22fac70bc9504dff37becae6b7cd3f03" id="r_a22fac70bc9504dff37becae6b7cd3f03"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a22fac70bc9504dff37becae6b7cd3f03">setOverflow</a> (<a class="el" href="namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476">::llzk::cast::OverflowSemantics</a> attrValue)</td></tr>
 <tr class="memitem:a37fec0149c636a84f61d5194012e03b4" id="r_a37fec0149c636a84f61d5194012e03b4"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a37fec0149c636a84f61d5194012e03b4">verifyInvariantsImpl</a> ()</td></tr>
 <tr class="memitem:ae5cc4d217b89d012375436279b0154a9" id="r_ae5cc4d217b89d012375436279b0154a9"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ae5cc4d217b89d012375436279b0154a9">verifyInvariants</a> ()</td></tr>
-<tr class="memitem:a22bb391a9e843f3f7be33f8f1866a6ef" id="r_a22bb391a9e843f3f7be33f8f1866a6ef"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a22bb391a9e843f3f7be33f8f1866a6ef">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
+<tr class="memitem:a09830641aa17baf5954c9e26b2e24367" id="r_a09830641aa17baf5954c9e26b2e24367"><td class="memItemLeft">::mlir::OpFoldResult&#160;</td><td class="memItemRight"><a class="el" href="#a09830641aa17baf5954c9e26b2e24367">fold</a> (<a class="el" href="#a0df5c0de6bceb744a4cde082ae9b3c16">FoldAdaptor</a> adaptor)</td></tr>
 <tr class="memitem:a4f221fb0eaa5a709dae6ecabdc969c46" id="r_a4f221fb0eaa5a709dae6ecabdc969c46"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a4f221fb0eaa5a709dae6ecabdc969c46">getEffects</a> (::llvm::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect &gt; &gt; &amp;effects)</td></tr>
+<tr class="memdesc:a4f221fb0eaa5a709dae6ecabdc969c46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Model possible assertion failure as program termination, like bool.assert.  <br /></td></tr>
+<tr class="memitem:abb1394ec5c8174779028973a309c427f" id="r_abb1394ec5c8174779028973a309c427f"><td class="memItemLeft">::mlir::Speculation::Speculatability&#160;</td><td class="memItemRight"><a class="el" href="#abb1394ec5c8174779028973a309c427f">getSpeculatability</a> ()</td></tr>
+<tr class="memdesc:abb1394ec5c8174779028973a309c427f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Only infallible casts may execute on paths where they were not present.  <br /></td></tr>
+<tr class="memitem:a22bb391a9e843f3f7be33f8f1866a6ef" id="r_a22bb391a9e843f3f7be33f8f1866a6ef"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a22bb391a9e843f3f7be33f8f1866a6ef">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -219,8 +223,6 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ac21a3dad37928efe35f0a5389fbf30ef" id="r_ac21a3dad37928efe35f0a5389fbf30ef"><td class="memItemLeft">static <a class="el" href="classllzk_1_1cast_1_1IntToFeltOp.html">IntToFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#ac21a3dad37928efe35f0a5389fbf30ef">create</a> (::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::ValueRange operands, const <a class="el" href="#a912050081125275a4236f9473e39a6be">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
 <tr class="memitem:a4216d8ebb05256a6653a3ffaecc98910" id="r_a4216d8ebb05256a6653a3ffaecc98910"><td class="memItemLeft">static <a class="el" href="classllzk_1_1cast_1_1IntToFeltOp.html">IntToFeltOp</a>&#160;</td><td class="memItemRight"><a class="el" href="#a4216d8ebb05256a6653a3ffaecc98910">create</a> (::mlir::ImplicitLocOpBuilder &amp;builder, ::mlir::ValueRange operands, const <a class="el" href="#a912050081125275a4236f9473e39a6be">Properties</a> &amp;properties, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; discardableAttributes={})</td></tr>
 <tr class="memitem:a227cf7b1390a9e81b996935bf96077a9" id="r_a227cf7b1390a9e81b996935bf96077a9"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a227cf7b1390a9e81b996935bf96077a9">populateDefaultProperties</a> (::mlir::OperationName opName, <a class="el" href="#a912050081125275a4236f9473e39a6be">Properties</a> &amp;properties)</td></tr>
-<tr class="memitem:af942ea310ef257523c7c0868c95a22af" id="r_af942ea310ef257523c7c0868c95a22af"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#af942ea310ef257523c7c0868c95a22af">canonicalize</a> (<a class="el" href="classllzk_1_1cast_1_1IntToFeltOp.html">IntToFeltOp</a> op, ::mlir::PatternRewriter &amp;rewriter)</td></tr>
-<tr class="memitem:a845021d37e1fc3e0e4f89c349595aa4a" id="r_a845021d37e1fc3e0e4f89c349595aa4a"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a845021d37e1fc3e0e4f89c349595aa4a">getCanonicalizationPatterns</a> (::mlir::RewritePatternSet &amp;results, ::mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:af3ce48d673edeba840d5d3929b74ee96" id="r_af3ce48d673edeba840d5d3929b74ee96"><td class="memItemLeft">::llvm::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#af3ce48d673edeba840d5d3929b74ee96">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::PropertyRef properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
 <tr class="memitem:ab67c2202ae0d27059d3e8d76d95f940f" id="r_ab67c2202ae0d27059d3e8d76d95f940f"><td class="memItemLeft">::mlir::ParseResult&#160;</td><td class="memItemRight"><a class="el" href="#ab67c2202ae0d27059d3e8d76d95f940f">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
 <tr class="memitem:abeed57ffe841b4299fd6b04eb4f34415" id="r_abeed57ffe841b4299fd6b04eb4f34415"><td class="memItemLeft">static bool&#160;</td><td class="memItemRight"><a class="el" href="#abeed57ffe841b4299fd6b04eb4f34415">isCompatibleReturnTypes</a> (::mlir::TypeRange lhs, ::mlir::TypeRange rhs)</td></tr>
@@ -233,7 +235,7 @@ Static Public Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00427">427</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00452">452</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a931abb4b43819fb9ea7aa15e7a9dc6b4" name="a931abb4b43819fb9ea7aa15e7a9dc6b4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a931abb4b43819fb9ea7aa15e7a9dc6b4">&#9670;&#160;</a></span>Adaptor</h2>
@@ -247,7 +249,7 @@ Static Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00431">431</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00456">456</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -263,7 +265,7 @@ Static Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00434">434</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00459">459</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -281,7 +283,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00433">433</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00458">458</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -297,7 +299,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00436">436</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00461">461</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -344,7 +346,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00823">823</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00831">831</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -395,7 +397,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00892">892</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00900">900</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -436,7 +438,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00776">776</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00784">784</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -477,7 +479,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00707">707</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00715">715</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -523,7 +525,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00758">758</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00766">766</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -569,7 +571,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00687">687</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00695">695</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -615,7 +617,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00804">804</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00812">812</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -661,7 +663,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00737">737</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00745">745</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -702,7 +704,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00853">853</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00861">861</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -748,38 +750,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00913">913</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
-
-</div>
-</div>
-<a id="af942ea310ef257523c7c0868c95a22af" name="af942ea310ef257523c7c0868c95a22af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af942ea310ef257523c7c0868c95a22af">&#9670;&#160;</a></span>canonicalize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">LogicalResult llzk::cast::IntToFeltOp::canonicalize </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1cast_1_1IntToFeltOp.html">IntToFeltOp</a></td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::PatternRewriter &amp;</td>          <td class="paramname"><span class="paramname"><em>rewriter</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00081">81</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00921">921</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -806,7 +777,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00633">633</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00641">641</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -842,7 +813,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00800">800</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00808">808</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -878,7 +849,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00733">733</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00741">741</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -919,7 +890,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00772">772</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00780">780</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -960,7 +931,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00703">703</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00711">711</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1001,7 +972,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00819">819</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00827">827</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1042,7 +1013,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00754">754</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00762">762</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1083,7 +1054,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00849">849</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00857">857</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1129,7 +1100,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00909">909</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00917">917</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1165,7 +1136,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00888">888</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00896">896</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1206,7 +1177,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00940">940</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00948">948</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1247,7 +1218,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00792">792</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00800">800</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1288,7 +1259,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00725">725</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00733">733</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1334,7 +1305,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00764">764</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00772">772</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1380,7 +1351,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00695">695</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00703">703</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1426,7 +1397,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00811">811</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00819">819</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1472,7 +1443,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00746">746</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00754">754</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1518,7 +1489,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00841">841</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00849">849</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1569,7 +1540,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00901">901</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00909">909</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1610,7 +1581,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00880">880</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00888">888</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1656,7 +1627,26 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00932">932</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00940">940</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a09830641aa17baf5954c9e26b2e24367" name="a09830641aa17baf5954c9e26b2e24367"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09830641aa17baf5954c9e26b2e24367">&#9670;&#160;</a></span>fold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">OpFoldResult llzk::cast::IntToFeltOp::fold </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a0df5c0de6bceb744a4cde082ae9b3c16">FoldAdaptor</a></td>          <td class="paramname"><span class="paramname"><em>adaptor</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00096">96</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1683,38 +1673,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00438">438</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="a845021d37e1fc3e0e4f89c349595aa4a" name="a845021d37e1fc3e0e4f89c349595aa4a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a845021d37e1fc3e0e4f89c349595aa4a">&#9670;&#160;</a></span>getCanonicalizationPatterns()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void llzk::cast::IntToFeltOp::getCanonicalizationPatterns </td>
-          <td>(</td>
-          <td class="paramtype">::mlir::RewritePatternSet &amp;</td>          <td class="paramname"><span class="paramname"><em>results</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>context</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00980">980</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00463">463</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1733,7 +1692,9 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l01064">1064</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p>Model possible assertion failure as program termination, like bool.assert. </p>
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l01069">1069</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1769,7 +1730,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00639">639</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00647">647</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1796,7 +1757,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00455">455</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00480">480</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1823,7 +1784,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00459">459</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00484">484</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1850,7 +1811,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00474">474</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00499">499</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1877,7 +1838,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00478">478</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00503">503</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1904,7 +1865,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00451">451</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00476">476</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1923,7 +1884,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00678">678</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00686">686</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1950,7 +1911,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00497">497</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00522">522</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1977,7 +1938,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00443">443</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00468">468</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2004,7 +1965,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00447">447</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00472">472</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2035,7 +1996,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00617">617</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00625">625</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2062,7 +2023,28 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00484">484</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00509">509</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="abb1394ec5c8174779028973a309c427f" name="abb1394ec5c8174779028973a309c427f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb1394ec5c8174779028973a309c427f">&#9670;&#160;</a></span>getSpeculatability()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Speculation::Speculatability llzk::cast::IntToFeltOp::getSpeculatability </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Only infallible casts may execute on paths where they were not present. </p>
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l01078">1078</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2089,7 +2071,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00465">465</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00490">490</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2116,7 +2098,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00469">469</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00494">494</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2172,7 +2154,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00984">984</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00988">988</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2203,7 +2185,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00058">58</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00073">73</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2234,7 +2216,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00992">992</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00996">996</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2265,7 +2247,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00100">100</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00114">114</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2296,7 +2278,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00944">944</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00952">952</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2332,7 +2314,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00652">652</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00660">660</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2351,7 +2333,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l01039">1039</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l01043">1043</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2387,7 +2369,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00104">104</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00118">118</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2418,7 +2400,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00665">665</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00673">673</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2454,7 +2436,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00645">645</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00653">653</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2473,7 +2455,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00683">683</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00691">691</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2500,7 +2482,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00502">502</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00527">527</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2536,7 +2518,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00594">594</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00602">602</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2572,7 +2554,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00656">656</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00664">664</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2591,7 +2573,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00976">976</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00984">984</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2610,7 +2592,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00950">950</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00958">958</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2629,7 +2611,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00672">672</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00680">680</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -2654,7 +2636,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00435">435</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html#l00460">460</a> of file <a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

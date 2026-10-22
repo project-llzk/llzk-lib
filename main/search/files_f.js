@@ -20,5 +20,7 @@ var searchData=
   ['opsbase_2etd_17',['OpsBase.td',['../OpsBase_8td.html',1,'']]],
   ['optraits_2ecpp_18',['OpTraits.cpp',['../OpTraits_8cpp.html',1,'']]],
   ['optraits_2eh_19',['OpTraits.h',['../OpTraits_8h.html',1,'']]],
-  ['optraits_2etd_20',['OpTraits.td',['../Function_2IR_2OpTraits_8td.html',1,'(Global Namespace)'],['../Shared_2OpTraits_8td.html',1,'(Global Namespace)']]]
+  ['optraits_2etd_20',['OpTraits.td',['../Function_2IR_2OpTraits_8td.html',1,'(Global Namespace)'],['../Shared_2OpTraits_8td.html',1,'(Global Namespace)']]],
+  ['overflowsemantics_2ecpp_21',['OverflowSemantics.cpp',['../OverflowSemantics_8cpp.html',1,'']]],
+  ['overflowsemantics_2eh_22',['OverflowSemantics.h',['../OverflowSemantics_8h.html',1,'']]]
 ];

@@ -145,11 +145,13 @@ var searchData=
   ['outs_142',['Outs',['../namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55',1,'llzk']]],
   ['overflow_143',['overflow',['../structllzk_1_1cast_1_1detail_1_1FeltToIndexOpGenericAdaptorBase_1_1Properties.html#a32495877ab778cbad7e84c75072de11b',1,'llzk::cast::detail::FeltToIndexOpGenericAdaptorBase::Properties::overflow'],['../structllzk_1_1cast_1_1detail_1_1IntToFeltOpGenericAdaptorBase_1_1Properties.html#a4f64ea6717467b05286c4e5262c81ec6',1,'llzk::cast::detail::IntToFeltOpGenericAdaptorBase::Properties::overflow']]],
   ['overflowsemantics_144',['OverflowSemantics',['../namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476',1,'llzk::cast::OverflowSemantics'],['../dialects.html#overflowsemantics',1,'OverflowSemantics']]],
-  ['overflowsemanticsattr_145',['OverflowSemanticsAttr',['../dialects.html#overflowsemanticsattr',1,'']]],
-  ['overflowty_146',['overflowTy',['../structllzk_1_1cast_1_1detail_1_1FeltToIndexOpGenericAdaptorBase_1_1Properties.html#a1aea6d88243802b09ce938845ecca16a',1,'llzk::cast::detail::FeltToIndexOpGenericAdaptorBase::Properties::overflowTy'],['../structllzk_1_1cast_1_1detail_1_1IntToFeltOpGenericAdaptorBase_1_1Properties.html#ace5130bb275f0c09e5de6aacbf5d8532',1,'llzk::cast::detail::IntToFeltOpGenericAdaptorBase::Properties::overflowTy']]],
-  ['overlaps_147',['overlaps',['../classllzk_1_1UnreducedInterval.html#aa9c88081d55882875f3364a6c375542d',1,'llzk::UnreducedInterval::overlaps()'],['../classllzk_1_1SourceRefIndex.html#ab5568af3d68c368f637d72a059527306',1,'llzk::SourceRefIndex::overlaps()'],['../classllzk_1_1SourceRef.html#a0960f96d359b2ee6beb071f9e3d61348',1,'llzk::SourceRef::overlaps()']]],
-  ['overview_148',['Overview',['../index.html',1,'Overview'],['../overview.html#project-overview',1,'Project Overview']]],
-  ['overwrite_149',['Overwrite',['../namespacellzk.html#a21c4d99bf342aa12b3700d61bbfa5644',1,'llzk']]],
-  ['overwrite_150',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
-  ['owningemiterrorfn_151',['OwningEmitErrorFn',['../namespacellzk.html#ab5453821bd84f89bfb591269a9554005',1,'llzk']]]
+  ['overflowsemantics_2ecpp_145',['OverflowSemantics.cpp',['../OverflowSemantics_8cpp.html',1,'']]],
+  ['overflowsemantics_2eh_146',['OverflowSemantics.h',['../OverflowSemantics_8h.html',1,'']]],
+  ['overflowsemanticsattr_147',['OverflowSemanticsAttr',['../dialects.html#overflowsemanticsattr',1,'']]],
+  ['overflowty_148',['overflowTy',['../structllzk_1_1cast_1_1detail_1_1FeltToIndexOpGenericAdaptorBase_1_1Properties.html#a1aea6d88243802b09ce938845ecca16a',1,'llzk::cast::detail::FeltToIndexOpGenericAdaptorBase::Properties::overflowTy'],['../structllzk_1_1cast_1_1detail_1_1IntToFeltOpGenericAdaptorBase_1_1Properties.html#ace5130bb275f0c09e5de6aacbf5d8532',1,'llzk::cast::detail::IntToFeltOpGenericAdaptorBase::Properties::overflowTy']]],
+  ['overlaps_149',['overlaps',['../classllzk_1_1UnreducedInterval.html#aa9c88081d55882875f3364a6c375542d',1,'llzk::UnreducedInterval::overlaps()'],['../classllzk_1_1SourceRefIndex.html#ab5568af3d68c368f637d72a059527306',1,'llzk::SourceRefIndex::overlaps()'],['../classllzk_1_1SourceRef.html#a0960f96d359b2ee6beb071f9e3d61348',1,'llzk::SourceRef::overlaps()']]],
+  ['overview_150',['Overview',['../index.html',1,'Overview'],['../overview.html#project-overview',1,'Project Overview']]],
+  ['overwrite_151',['Overwrite',['../namespacellzk.html#a21c4d99bf342aa12b3700d61bbfa5644',1,'llzk']]],
+  ['overwrite_152',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
+  ['owningemiterrorfn_153',['OwningEmitErrorFn',['../namespacellzk.html#ab5453821bd84f89bfb591269a9554005',1,'llzk']]]
 ];

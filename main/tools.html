@@ -704,7 +704,7 @@ Options</h5>
 <p>After template monomorphization and child-member visibility preparation, expand main's constrain function and reachable single-block callees. Resolve static branches, signed <span class="tt">for</span> loops with positive steps, and <span class="tt">while</span> loops directly, including field-valued iterators and comparisons.</p>
 <p>Local arrays and PODs exist only as concrete paths bound to scalar SSA values. Reads resolve bindings; writes and aggregate assignments update local bindings without emitting allocations, copies, or writes. Aggregate arguments preserve identity and remain read-only during each call. Returned aggregates alias their original roots: caller-local roots remain shared and writable after the call, while function inputs and original storage remain read-only. Component handles preserve identity. Every array access index must resolve at compile time and be in bounds. Reads of uninitialized local leaves and writes to function inputs or original storage are diagnosed.</p>
 <p>Replace only main's constrain body, retaining its signature, original component storage, compute functions, and other definitions. Signal leaves are read through paths rooted in the original arguments. Live non-signal scalar storage is rejected; no witness variables or definitions are inferred from equations or compute functions. Ordinary field arithmetic remains SSA.</p>
-<p>Diagnose symbolic control flow, recursion, unsupported effects, and non-native constraint arithmetic (including division and inversion). Static integer arithmetic, affine maps, casts, and comparisons are evaluated only as structural facts; symbolic computations must be dead after expansion. Every surviving operation is checked independently: only felt constants, felt add/subtract/multiply/negate expressions, felt equalities, original storage reads, index/i1 constants, and conversions of constant integers to felt are permitted. Expansion work is bounded across calls, iterations, and aggregate traversal. Any failed expansion or validation fails the entire pass.</p>
+<p>Diagnose symbolic control flow, recursion, unsupported effects, and non-native constraint arithmetic (including division and inversion). Static integer arithmetic, affine maps, casts, and comparisons are evaluated only as structural facts using their fold hooks and declared overflow semantics; pure symbolic computations must be dead after expansion. Both felt-to-index and integer-to-felt casts in assert mode must fold to statically valid conversions even when unused. Unresolved or failing range checks for either cast are diagnosed, never discarded. Every surviving operation is checked independently: only felt constants, felt add/subtract/multiply/negate expressions, felt equalities, original storage reads, index/i1 constants, and conversions of constant integers to felt are permitted. Validated integer-to-felt assertions are retained even when their results are unused. Expansion work is bounded across calls, iterations, and aggregate traversal. Any failed expansion or validation fails the entire pass.</p>
 <p>Equality constraints currently require scalar felt operands; array equality and constrain.in are unsupported. Symbolic if/select conditions are rejected. Callees must be concrete, defined, and single-block. Recursion is unsupported and call nesting is limited to 256. Signed integer and index induction variables are supported. Original family handles retain their rolled types. Member reads use the concrete specialization's field types, which must unify with the exposed rolled declarations. Specialization selection and concrete path validation stay inside the pass; no new handle operations are emitted.</p>
 <h5 class="doxsection"><a class="anchor" id="options-13"></a>
 Options</h5>
@@ -994,7 +994,7 @@ Options</h5>
 <li>The output JSON contains only the public outputs of the main component.</li>
 <li>Public struct members become JSON object fields.</li>
 <li>Public felt arrays become JSON arrays.</li>
-<li>Field element leaves are rendered as decimal strings.</li>
+<li>Field element leaves are reduced to canonical representatives in <span class="tt">[0, p-1]</span> and rendered as decimal strings.</li>
 </ul>
 </li>
 <li><span class="tt">--output-scope=full-witness</span><ul>
@@ -1002,7 +1002,7 @@ Options</h5>
 <li><span class="tt">inputs</span> records the main <span class="tt">compute()</span> arguments using their <span class="tt">function.arg_name</span> attributes when available, or stable fallback names such as <span class="tt">arg0</span>, <span class="tt">arg1</span>, and so on for positional inputs.</li>
 <li><span class="tt">signals</span> records all witness signals reachable from the returned main struct, including both public and private signals.</li>
 <li>Non-signal leaves are omitted, though non-signal struct containers may still appear when needed to reach nested signals.</li>
-<li>Felt arrays remain JSON arrays and field element leaves remain decimal strings.</li>
+<li>Felt arrays remain JSON arrays and field element leaves use the same canonical decimal strings as public outputs.</li>
 </ul>
 </li>
 </ul>

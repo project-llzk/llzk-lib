@@ -14,6 +14,10 @@ var namespacellzk_1_1cast =
       [ "WRAP", "namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476ae1c8555fcf0ea2bb648a6fd527d658c0", null ],
       [ "TRUNCATE", "namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476a0a83d15fde12983f199bdeb76667660f", null ]
     ] ],
+    [ "applyFeltToIndexOverflow", "namespacellzk_1_1cast.html#aa805dd651ff630f66482ee4cb3107afe", null ],
+    [ "applyFeltToIndexOverflow", "namespacellzk_1_1cast.html#a1d4ce69d1fe49aa53b13ad62dc2a2abf", null ],
+    [ "applyIntToFeltOverflow", "namespacellzk_1_1cast.html#a07c4982408165b353a7fe2d85586e2c6", null ],
+    [ "applyIntToFeltOverflow", "namespacellzk_1_1cast.html#a79c24dc55176a3dc9f2ad420f57d523d", null ],
     [ "getMaxEnumValForOverflowSemantics", "namespacellzk_1_1cast.html#a9ff83e8a5c3b5ac043102278ab41d90c", null ],
     [ "stringifyEnum", "namespacellzk_1_1cast.html#ab51826b028ec44978591c603bfcfdd96", null ],
     [ "stringifyOverflowSemantics", "namespacellzk_1_1cast.html#a9573dcd567d133359a64b394708688af", null ],

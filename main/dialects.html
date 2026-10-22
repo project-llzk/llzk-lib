@@ -1699,20 +1699,20 @@ Operations</h2>
 <div class="fragment"><div class="line">operation ::= `cast.tofelt` `` custom&lt;OptionalOverflowSemantics&gt;($overflow) $value</div>
 <div class="line">              `:` type($value)</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($result), &quot;false&quot;) attr-dict</div>
-</div><!-- fragment --><p>This operation converts a supported integer type value into a field element value. Boolean (<span class="tt">i1</span>) values map to zero or one, while <span class="tt">index</span> values are interpreted as signed integers. Constant folding preserves the signed literal, including when the result field is unspecified. Once a field is selected, the integer is reduced modulo its prime.</p>
+</div><!-- fragment --><p>This operation converts a supported integer type value into a field element value. Boolean (<span class="tt">i1</span>) values map to zero or one, while <span class="tt">index</span> values are interpreted as signed integers. The overflow mode determines how values outside the target field's safe range are handled. For <span class="tt">index</span> inputs, the default <span class="tt">assert</span> mode fails on such values, even when the result is unused, and cannot be speculated. Boolean inputs always fit in every field, so their casts are side-effect-free and speculatable in every mode, even when the result field is unspecified. The <span class="tt">sat</span>, <span class="tt">wrap</span>, and <span class="tt">trunc</span> modes are side-effect-free and speculatable.</p>
+<p>The <span class="tt">trunc</span> mode keeps the low <span class="tt">k = bitwidth(p)</span> bits, then reduces modulo the target field's prime <span class="tt">p</span>: <span class="tt">(value mod 2^k) mod p</span>, with nonnegative remainders. The result is always in <span class="tt">[0, p)</span>. This differs from <span class="tt">wrap</span>, which reduces the original integer directly modulo <span class="tt">p</span>. For example, with <span class="tt">p = 7</span>, truncating <span class="tt">-1</span> keeps the bits <span class="tt">111</span> and reduces <span class="tt">7</span> to <span class="tt">0</span>, while wrapping <span class="tt">-1</span> yields <span class="tt">6</span>.</p>
+<p>Constant folding defers casts whose result field is unspecified, whose operand is unknown, or whose <span class="tt">assert</span> range check fails.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">%0 = bool.cmp lt(%a, %b)</div>
 <div class="line">%1 = cast.tofelt %0 : i1</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+</div><!-- fragment --><p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">MemoryEffectOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-4"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
 <th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
 <tr>
-<td><code>overflow</code></td><td>::llzk::cast::OverflowSemanticsAttr</td><td>Cast overflow semantics</td></tr>
+<td><code>overflow</code></td><td>::llzk::cast::OverflowSemanticsAttr</td><td>Specifies how a cast handles a source value outside the target's safe range. For a felt target with prime <span class="tt">p</span>, the safe range is <span class="tt">[0, p-1]</span>. For an index target with bitwidth <span class="tt">N</span>, it is <span class="tt">[0, 2^(N-1)-1]</span>.</td></tr>
 </table>
 <h4 class="doxsection"><a class="anchor" id="operands-15"></a>
 Operands:</h4>
@@ -1737,18 +1737,19 @@ Results:</h4>
 <div class="fragment"><div class="line">operation ::= `cast.toindex` `` custom&lt;OptionalOverflowSemantics&gt;($overflow) $value</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($value), &quot;true&quot;) attr-dict</div>
 </div><!-- fragment --><p>This operation converts a field element value into an index value to allow use as an array index or loop bound.</p>
+<p>The default <span class="tt">assert</span> overflow mode fails when the value is outside the index safe range, even when the result is unused, and cannot be speculated. If the source has a declared field whose maximum canonical value <span class="tt">p-1</span> fits in the index safe range, the assertion cannot fail, so the cast is side-effect-free and speculatable. Unspecified fields remain conservative. The <span class="tt">sat</span>, <span class="tt">wrap</span>, and <span class="tt">trunc</span> modes are side-effect-free and speculatable.</p>
+<p>Constant folding reduces the operand in its field before applying the overflow mode and returns an index constant. Folding defers when the field is unspecified or the <span class="tt">assert</span> range check fails.</p>
 <p>Example: </p><div class="fragment"><div class="line">%0 = cast.toindex %a</div>
 <div class="line">%1 = array.read %b[%0]</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">NotFieldNative</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+</div><!-- fragment --><p>Traits: <span class="tt">NotFieldNative</span></p>
+<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">MemoryEffectOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-5"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
 <th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
 <tr>
-<td><code>overflow</code></td><td>::llzk::cast::OverflowSemanticsAttr</td><td>Cast overflow semantics</td></tr>
+<td><code>overflow</code></td><td>::llzk::cast::OverflowSemanticsAttr</td><td>Specifies how a cast handles a source value outside the target's safe range. For a felt target with prime <span class="tt">p</span>, the safe range is <span class="tt">[0, p-1]</span>. For an index target with bitwidth <span class="tt">N</span>, it is <span class="tt">[0, 2^(N-1)-1]</span>.</td></tr>
 </table>
 <h4 class="doxsection"><a class="anchor" id="operands-16"></a>
 Operands:</h4>
@@ -1770,7 +1771,7 @@ Results:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="overflowsemanticsattr"></a>
 OverflowSemanticsAttr</h3>
-<p><em>Cast overflow semantics</em></p>
+<p><em>Specifies how a cast handles a source value outside the target's safe range. For a felt target with prime <span class="tt">p</span>, the safe range is <span class="tt">[0, p-1]</span>. For an index target with bitwidth <span class="tt">N</span>, it is <span class="tt">[0, 2^(N-1)-1]</span>.</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#cast.overflow&lt;</div>
 <div class="line">  `assert` | `sat` | `wrap` | `trunc`   # value</div>
@@ -1787,7 +1788,7 @@ Parameters:</h4>
 Enums</h2>
 <h3 class="doxsection"><a class="anchor" id="overflowsemantics"></a>
 OverflowSemantics</h3>
-<p><em>Cast overflow semantics</em></p>
+<p><em>Specifies how a cast handles a source value outside the target's safe range. For a felt target with prime <span class="tt">p</span>, the safe range is <span class="tt">[0, p-1]</span>. For an index target with bitwidth <span class="tt">N</span>, it is <span class="tt">[0, 2^(N-1)-1]</span>.</em></p>
 <h4 class="doxsection"><a class="anchor" id="cases-1"></a>
 Cases:</h4>
 <table class="markdownTable">
@@ -2431,6 +2432,7 @@ FeltType</h3>
 <div class="line">  ::mlir::StringAttr   # fieldName</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>An element of a finite field. The field can be specified (e.g., !felt.type&lt;"bn254"&gt;) or left unspecified (!felt.type), to be filled in by the backend consumer of LLZK IR. Leaving the field unspecified may reduce the power of certain transformation passes.</p>
+<p>For a field with prime modulus <span class="tt">p</span>, a felt denotes a residue modulo <span class="tt">p</span>, with its canonical representative in <span class="tt">[0, p)</span>. An unreduced integer representation does not denote a distinct value outside this range.</p>
 <p>Backends are responsible for performing conversions between felts of different fields. If a circuit needs to encode translations between fields, the circuit may define a function prototype, e.g.:</p>
 <div class="fragment"><div class="line">function.def @convert(%a : !felt.type&lt;&quot;bn254&quot;&gt;) -&gt; !felt.type&lt;&quot;goldilocks&quot;&gt;;</div>
 </div><!-- fragment --><p>and perform the lowering of calls to this conversion function in a backend-specific manner.</p>

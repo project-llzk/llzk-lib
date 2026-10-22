@@ -255,6 +255,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('r1cs-backend.h
       <li class="level2">
         <a href="#arbitrary-precision-coefficients">Arbitrary-precision coefficients </a>
       </li>
+      <li class="level2">
+        <a href="#cast-range-checks">Cast range checks </a>
+      </li>
     </ul>
   </li>
 </ul>
@@ -510,7 +513,10 @@ SignalType</h3>
 <p>Syntax: <span class="tt">!r1cs.signal</span></p>
 <h2 class="doxsection"><a class="anchor" id="arbitrary-precision-coefficients"></a>
 Arbitrary-precision coefficients</h2>
-<p>R1CS constants and multipliers use exact signed mathematical integers. Their assembly has no integer-width annotation: for example, <span class="tt">r1cs.mul_const x, -1 : !r1cs.linear</span>. Binary export reduces each coefficient modulo the selected prime. The <span class="tt">--r1cs-prime</span> decimal option does not require a bit width; the exporter derives the fixed byte width required by the R1CS format. </p>
+<p>R1CS constants and multipliers use exact signed mathematical integers. Their assembly has no integer-width annotation: for example, <span class="tt">r1cs.mul_const x, -1 : !r1cs.linear</span>. Binary export reduces each coefficient modulo the selected prime. The <span class="tt">--r1cs-prime</span> decimal option does not require a bit width; the exporter derives the fixed byte width required by the R1CS format.</p>
+<h2 class="doxsection"><a class="anchor" id="cast-range-checks"></a>
+Cast range checks</h2>
+<p>R1CS lowering rejects live <span class="tt">cast.tofelt</span> and <span class="tt">cast.toindex</span> operations and potentially failing assertions in <span class="tt">constrain</span> functions. An assert cast that can fail must be preserved even when its result is unused (current lowering does not encode its range check). Valid constant assertions can be folded by canonicalization before lowering (the full R1CS pipeline includes this). Unused infallible casts, including boolean-to-felt casts and <span class="tt">cast.toindex</span> assertions from fields whose entire canonical range fits in the index safe range, such as BabyBear, are accepted even without prior cleanup. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

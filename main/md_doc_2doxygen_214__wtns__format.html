@@ -157,7 +157,7 @@ File schema</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Witness length  </td><td class="markdownTableBodyNone"><span class="tt">u32</span>  </td></tr>
 </table>
-<p>Section 2 contains <span class="tt">witness length</span> field elements, each encoded using the width declared by section 1.</p>
+<p>Section 2 contains <span class="tt">witness length</span> field elements, each encoded using the width declared by section 1. Witness values must be canonical representatives in <span class="tt">[0, p-1]</span>; the writer rejects values outside that range rather than reducing them during serialization. Witness output materialization ensures canonical field representatives before producing either JSON output or the full witness consumed by the WTNS writer.</p>
 <h1 class="doxsection"><a class="anchor" id="wire-ordering"></a>
 Wire ordering</h1>
 <p>The witness order must match LLZK's R1CS binary exporter:</p>

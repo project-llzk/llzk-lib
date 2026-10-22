@@ -156,6 +156,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a2c044b42cd4ce376e9f2b14c24c55274"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse an attribute registered to this dialect.  <br /></td></tr>
 <tr class="memitem:af48dd0277a7762873dc6a2f3755c3aa4" id="r_af48dd0277a7762873dc6a2f3755c3aa4"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#af48dd0277a7762873dc6a2f3755c3aa4">printAttribute</a> (::mlir::Attribute attr, ::mlir::DialectAsmPrinter &amp;os) const override</td></tr>
 <tr class="memdesc:af48dd0277a7762873dc6a2f3755c3aa4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print an attribute registered to this dialect.  <br /></td></tr>
+<tr class="memitem:a7d2b9ffb6ea9d58314efc18521874228" id="r_a7d2b9ffb6ea9d58314efc18521874228"><td class="memItemLeft">::mlir::Operation *&#160;</td><td class="memItemRight"><a class="el" href="#a7d2b9ffb6ea9d58314efc18521874228">materializeConstant</a> (::mlir::OpBuilder &amp;builder, ::mlir::Attribute value, ::mlir::Type type, ::mlir::Location loc) override</td></tr>
+<tr class="memdesc:a7d2b9ffb6ea9d58314efc18521874228"><td class="mdescLeft">&#160;</td><td class="mdescRight">Materialize a single constant operation from a given attribute value with the desired resultant type.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -220,6 +222,50 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Cast_2IR_2Dialect_8h_8inc_source.html#l00020">20</a> of file <a class="el" href="Cast_2IR_2Dialect_8h_8inc_source.html">Dialect.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a7d2b9ffb6ea9d58314efc18521874228" name="a7d2b9ffb6ea9d58314efc18521874228"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d2b9ffb6ea9d58314efc18521874228">&#9670;&#160;</a></span>materializeConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Operation * llzk::cast::CastDialect::materializeConstant </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Location</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Materialize a single constant operation from a given attribute value with the desired resultant type. </p>
+<p>Materialize folded cast results as felt or arithmetic constants. </p>
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Dialect_8cpp_source.html#l00034">34</a> of file <a class="el" href="Cast_2IR_2Dialect_8cpp_source.html">Dialect.cpp</a>.</p>
 
 </div>
 </div>

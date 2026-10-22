@@ -144,17 +144,36 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Cast_2IR_2Enum
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>include &quot;mlir/IR/EnumAttr.td&quot;</div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>def LLZK_OverflowSemantics</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    : I32EnumAttr&lt;&quot;OverflowSemantics&quot;, &quot;Cast overflow semantics&quot;,</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>                  [I32EnumAttrCase&lt;&quot;ASSERT&quot;, 0, &quot;assert&quot;&gt;,</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>                   I32EnumAttrCase&lt;&quot;SATURATE&quot;, 1, &quot;sat&quot;&gt;,</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>                   I32EnumAttrCase&lt;&quot;WRAP&quot;, 2, &quot;wrap&quot;&gt;,</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>                   I32EnumAttrCase&lt;&quot;TRUNCATE&quot;, 3, &quot;trunc&quot;&gt;]&gt; {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  let genSpecializedAttr = 0;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  let cppNamespace = &quot;::llzk::cast&quot;;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>}</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>#endif // LLZK_CAST_ENUMS</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>def OverflowSemanticsDescription {</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>  string r =</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>      &quot;Specifies how a cast handles a source value outside the target&#39;s safe &quot;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>      &quot;range. For a felt target with prime `p`, the safe range is `[0, p-1]`. &quot;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>      &quot;For an index target with bitwidth `N`, it is `[0, 2^(N-1)-1]`.&quot;;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>}</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>def LLZK_OverflowSemantics</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    : I32EnumAttr&lt;&quot;OverflowSemantics&quot;, OverflowSemanticsDescription.r,</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>                  [</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>                      // Assert (default): Fail when the source value is outside</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>                      // the safe range.</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>                      I32EnumAttrCase&lt;&quot;ASSERT&quot;, 0, &quot;assert&quot;&gt;,</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>                      // Saturate: Clamp to the safe range.</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                      I32EnumAttrCase&lt;&quot;SATURATE&quot;, 1, &quot;sat&quot;&gt;,</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                      // Wrap: Reduce modulo `p` for `tofelt` or modulo</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                      // `2^(N-1)` for `toindex`, keeping the result in the</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>                      // index safe range.</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>                      I32EnumAttrCase&lt;&quot;WRAP&quot;, 2, &quot;wrap&quot;&gt;,</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>                      // Truncate: Keep the low bits. For `tofelt`, keep</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>                      // `bitwidth(p)` bits, then reduce modulo `p` to stay in</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>                      // the safe range. For `toindex`, keep `N-1` bits so the</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>                      // sign bit is zero.</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>                      I32EnumAttrCase&lt;&quot;TRUNCATE&quot;, 3, &quot;trunc&quot;&gt;,</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>]&gt; {</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  let genSpecializedAttr = 0;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  let cppNamespace = &quot;::llzk::cast&quot;;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>}</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>#endif // LLZK_CAST_ENUMS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

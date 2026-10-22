@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: lib/Validators -&gt; build Relation</title>
+<title>LLZK: include/llzk/Dialect/Cast/Util/OverflowSemantics.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded',() => { initNavTree('dir_1c45e0468e85d64cc0db703544d53718.html','',''); });
+document.addEventListener('DOMContentLoaded',() => { initNavTree('OverflowSemantics_8h.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -126,15 +126,50 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('dir_1c45e0468e
 </div>
 </div>
 
+<div class="header">
+  <div class="summary">
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#func-members">Functions</a>  </div>
+  <div class="headertitle"><div class="title">OverflowSemantics.h File Reference</div></div>
+</div><!--header-->
 <div class="contents">
-<h3>Validators &rarr; build Relation</h3><table class="dirtab"><tr class="dirtab"><th class="dirtab">File in lib/Validators</th><th class="dirtab">Includes file in build</th></tr><tr class="dirtab"><td class="dirtab"><a class="el" href="LLZKValidationPasses_8cpp.html">LLZKValidationPasses.cpp</a></td><td class="dirtab"><a class="el" href="dir_8f2980731aba7ec7b9fcae5764f196e3.html">include</a>&#160;/&#160;<a class="el" href="dir_6c0d0ddf22739aa3410ca194a6ed8d73.html">llzk</a>&#160;/&#160;<a class="el" href="dir_ba0b87a1c71c7656624deb1072f340d5.html">Validators</a>&#160;/&#160;<a class="el" href="LLZKValidationPasses_8h_8inc.html">LLZKValidationPasses.h.inc</a></td></tr></table></div><!-- contents -->
+<div class="textblock"><code>#include &quot;<a class="el" href="Cast_2IR_2Enums_8h_source.html">llzk/Dialect/Cast/IR/Enums.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Field_8h_source.html">llzk/Util/Field.h</a>&quot;</code><br />
+<code>#include &lt;llvm/ADT/DynamicAPInt.h&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Include dependency graph for OverflowSemantics.h:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OverflowSemantics_8h__incl.svg" width="3382" height="392"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div><div class="textblock"><div class="dynheader">
+This graph shows which files directly or indirectly include this file:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OverflowSemantics_8h__dep__incl.svg" width="603" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+<p><a href="OverflowSemantics_8h_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
+<tr class="memitem:llzk_3A_3Acast" id="r_llzk_3A_3Acast"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1cast.html">llzk::cast</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a79c24dc55176a3dc9f2ad420f57d523d" id="r_a79c24dc55176a3dc9f2ad420f57d523d"><td class="memItemLeft">std::optional&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1cast.html#a79c24dc55176a3dc9f2ad420f57d523d">llzk::cast::applyIntToFeltOverflow</a> (const llvm::DynamicAPInt &amp;value, const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field, <a class="el" href="namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> overflow)</td></tr>
+<tr class="memdesc:a79c24dc55176a3dc9f2ad420f57d523d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply overflow semantics for an integer-to-felt conversion.  <br /></td></tr>
+<tr class="memitem:a1d4ce69d1fe49aa53b13ad62dc2a2abf" id="r_a1d4ce69d1fe49aa53b13ad62dc2a2abf"><td class="memItemLeft">std::optional&lt; llvm::DynamicAPInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1cast.html#a1d4ce69d1fe49aa53b13ad62dc2a2abf">llzk::cast::applyFeltToIndexOverflow</a> (const llvm::DynamicAPInt &amp;value, unsigned indexBitWidth, <a class="el" href="namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> overflow)</td></tr>
+<tr class="memdesc:a1d4ce69d1fe49aa53b13ad62dc2a2abf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply overflow semantics for a felt-to-index conversion.  <br /></td></tr>
+</table>
+</div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- HTML footer for doxygen 1.13.2-->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_1c45e0468e85d64cc0db703544d53718.html">Validators</a></li>
+    <li class="navelem"><a href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a href="dir_5804947f485dbfa35f1b2a5b6cdecd1f.html">llzk</a></li><li class="navelem"><a href="dir_961f7ef292a3987e3723514feaf3f181.html">Dialect</a></li><li class="navelem"><a href="dir_21552e93769c0cfe1662f9cbaf5bc6dc.html">Cast</a></li><li class="navelem"><a href="dir_201ec3d51a04f58de47a1ea978b99cd0.html">Util</a></li><li class="navelem"><a href="OverflowSemantics_8h.html">OverflowSemantics.h</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

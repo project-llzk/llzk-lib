@@ -45,7 +45,8 @@ var backends_page =
           [ "LinearType", "r1cs-backend.html#lineartype", null ],
           [ "SignalType", "r1cs-backend.html#signaltype", null ]
         ] ],
-        [ "Arbitrary-precision coefficients", "r1cs-backend.html#arbitrary-precision-coefficients", null ]
+        [ "Arbitrary-precision coefficients", "r1cs-backend.html#arbitrary-precision-coefficients", null ],
+        [ "Cast range checks", "r1cs-backend.html#cast-range-checks", null ]
       ] ]
     ] ],
     [ "SMT Backend", "smt-backend.html", [

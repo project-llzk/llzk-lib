@@ -134,52 +134,23 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1p
 </div><!--header-->
 <div class="contents">
 
-<p>Evaluate only scalar dependencies demanded by control flow and concrete paths.  
+<p>Evaluate scalar dependencies of control flow, concrete paths, and assertions.  
  <a href="#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0c7fdfe230a6fde3d9685d304b69c781" id="r_a0c7fdfe230a6fde3d9685d304b69c781"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a0c7fdfe230a6fde3d9685d304b69c781">ConstraintScalarFacts</a> (mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:a3743ca1952c487441d74b2f3607d4061" id="r_a3743ca1952c487441d74b2f3607d4061"><td class="memItemLeft">mlir::Attribute&#160;</td><td class="memItemRight"><a class="el" href="#a3743ca1952c487441d74b2f3607d4061">known</a> (mlir::Value value)</td></tr>
-<tr class="memdesc:a3743ca1952c487441d74b2f3607d4061"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate only the pure SSA dependencies of a requested structural value.  <br /></td></tr>
+<tr class="memdesc:a3743ca1952c487441d74b2f3607d4061"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate pure SSA dependencies and casts whose fold hooks prove validity.  <br /></td></tr>
 <tr class="memitem:a9fde136b90fc992d96119ccb79011bd2" id="r_a9fde136b90fc992d96119ccb79011bd2"><td class="memItemLeft">std::optional&lt; int64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9fde136b90fc992d96119ccb79011bd2">integer</a> (mlir::Value value)</td></tr>
 <tr class="memdesc:a9fde136b90fc992d96119ccb79011bd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Require an integer representable by concrete access paths and signed loops.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Evaluate only scalar dependencies demanded by control flow and concrete paths. </p>
+<div class="textblock"><p>Evaluate scalar dependencies of control flow, concrete paths, and assertions. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00025">25</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
-</div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0c7fdfe230a6fde3d9685d304b69c781" name="a0c7fdfe230a6fde3d9685d304b69c781"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c7fdfe230a6fde3d9685d304b69c781">&#9670;&#160;</a></span>ConstraintScalarFacts()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llzk::polymorphic::detail::ConstraintScalarFacts::ConstraintScalarFacts </td>
-          <td>(</td>
-          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>context</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel explicit">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00068">68</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
-
-</div>
-</div>
-<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00022">22</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a9fde136b90fc992d96119ccb79011bd2" name="a9fde136b90fc992d96119ccb79011bd2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9fde136b90fc992d96119ccb79011bd2">&#9670;&#160;</a></span>integer()</h2>
 
@@ -205,7 +176,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Require an integer representable by concrete access paths and signed loops. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00107">107</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00088">88</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
 
 </div>
 </div>
@@ -232,10 +203,10 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Evaluate only the pure SSA dependencies of a requested structural value. </p>
+<p>Evaluate pure SSA dependencies and casts whose fold hooks prove validity. </p>
 <p>An explicit worklist also handles long iteration-dependent expression chains. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00072">72</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00049">49</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
 
 </div>
 </div>

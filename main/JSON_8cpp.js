@@ -5,5 +5,6 @@ var JSON_8cpp =
     [ "llzk::witgen::extractValueAtPath", "namespacellzk_1_1witgen.html#a4385df077725e0b87d2cf1c6f36d619f", null ],
     [ "llzk::witgen::parseJSONValue", "namespacellzk_1_1witgen.html#abe0e4222eea1e16b772dd28790917999", null ],
     [ "llzk::witgen::printJSONMismatches", "namespacellzk_1_1witgen.html#ad074e5215c751ba016990321b3413724", null ],
+    [ "llzk::witgen::serializeFeltToJSON", "namespacellzk_1_1witgen.html#a5ab8cb066c5e9c901bdd7389a278b80b", null ],
     [ "llzk::witgen::serializeJSONValue", "namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925", null ]
 ];

@@ -49,6 +49,10 @@ var NAVTREEINDEX10 =
 "OpTraits_8h_source.html":[14,0,2,0,2,5,0,6],
 "OpsBase_8td.html":[14,0,2,0,2,12,7],
 "OpsBase_8td_source.html":[14,0,2,0,2,12,7],
+"OverflowSemantics_8cpp.html":[14,0,3,3,2,1,0],
+"OverflowSemantics_8cpp_source.html":[14,0,3,3,2,1,0],
+"OverflowSemantics_8h.html":[14,0,2,0,2,2,1,0],
+"OverflowSemantics_8h_source.html":[14,0,2,0,2,2,1,0],
 "PCL_8cpp.html":[14,0,3,2,1,0],
 "PCL_8cpp.html#a559ca595adacca42bcaac571ad2086b9":[14,0,3,2,1,0,0],
 "PCL_8cpp_source.html":[14,0,3,2,1,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX10 =
 "POD_2IR_2Types_8capi_8test_8cpp_8inc.html#ab8620b3f65f39612417133af65dc9fa6":[14,0,0,0,0,2,9,0,17,2],
 "POD_2IR_2Types_8capi_8test_8cpp_8inc.html#ad2fe5781d4cf07705dd4fab7e6f4267f":[14,0,0,0,0,2,9,0,17,5],
 "POD_2IR_2Types_8capi_8test_8cpp_8inc.html#afde4ca11e1877872cce31f5f229d20cd":[14,0,0,0,0,2,9,0,17,4],
-"POD_2IR_2Types_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,9,0,17],
-"POD_2IR_2Types_8cpp.html":[14,0,3,3,9,0,3],
-"POD_2IR_2Types_8cpp_8inc.html":[14,0,0,0,0,2,9,0,18],
-"POD_2IR_2Types_8cpp_8inc_source.html":[14,0,0,0,0,2,9,0,18],
-"POD_2IR_2Types_8cpp_source.html":[14,0,3,3,9,0,3]
+"POD_2IR_2Types_8capi_8test_8cpp_8inc_source.html":[14,0,0,0,0,2,9,0,17]
 };
