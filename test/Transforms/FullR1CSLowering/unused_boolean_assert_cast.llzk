@@ -3,6 +3,15 @@
 
 // Unused casts of a dynamic boolean are infallible, so cleanup must remove them
 // before R1CS lowering checks for residual casts with possible assertion failures.
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_3]], -1 : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_2]], %[[VAL_2]], %[[VAL_4]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2>}
+// CHECK-NEXT:  }
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @out : !felt.type<"babybear"> {llzk.pub}
@@ -27,13 +36,3 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
-
-// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_3]], -1 : !r1cs.linear
-// CHECK-NEXT:      r1cs.constrain %[[VAL_2]], %[[VAL_2]], %[[VAL_4]] : !r1cs.linear
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }

@@ -29,7 +29,8 @@ namespace r1cs {
 void buildFullR1CSLoweringPipeline(OpPassManager &pm) {
   // 1. Polynomial degree lowering and cleanup
   llzk::FullPolyLoweringConfig config;
-  config.polyLowering = llzk::PolyLoweringPassOptions {.maxDegree = 2};
+  config.polyLowering =
+      llzk::PolyLoweringPassOptions {.markAuxiliarySignals = true, .maxDegree = 2};
   llzk::buildFullPolyLoweringPipeline(pm, config);
 
   // 2. Convert to R1CS

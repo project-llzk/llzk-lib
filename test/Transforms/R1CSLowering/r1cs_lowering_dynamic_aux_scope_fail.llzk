@@ -1,6 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-r1cs-lowering -verify-diagnostics %s
 
-module attributes {llzk.lang = "llzk"} {
+// Reject control flow before preparing component-lifetime auxiliaries.
+module attributes {llzk.lang, llzk.main = !struct.type<@R1CSLoopAuxScope>} {
   struct.def @R1CSLoopAuxScope {
     struct.member @out : !felt.type {llzk.pub}
 
@@ -32,17 +33,20 @@ module attributes {llzk.lang = "llzk"} {
 
 // -----
 
-module attributes {llzk.lang = "llzk"} {
+// Reject control flow before preparing component-lifetime auxiliaries.
+module attributes {llzk.lang, llzk.main = !struct.type<@R1CSBranchAuxScope>} {
   struct.def @R1CSBranchAuxScope {
     struct.member @out : !felt.type {llzk.pub}
 
-    function.def @compute(%a: !felt.type, %cond: i1) -> !struct.type<@R1CSBranchAuxScope> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@R1CSBranchAuxScope> {
       %self = struct.new : !struct.type<@R1CSBranchAuxScope>
       struct.writem %self[@out] = %a : !struct.type<@R1CSBranchAuxScope>, !felt.type
       function.return %self : !struct.type<@R1CSBranchAuxScope>
     }
 
-    function.def @constrain(%self: !struct.type<@R1CSBranchAuxScope>, %a: !felt.type, %cond: i1) {
+    function.def @constrain(%self: !struct.type<@R1CSBranchAuxScope>, %a: !felt.type) {
+      %zero = felt.const 0 : !felt.type
+      %cond = bool.cmp eq(%a, %zero) : !felt.type, !felt.type
       // expected-error@+1 {{R1CS lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
       scf.if %cond {
         %dynamic_sq = felt.mul %a, %a : !felt.type, !felt.type
