@@ -1,4 +1,6 @@
-// RUN: llzk-opt -split-input-file -llzk-r1cs-lowering -verify-diagnostics %s -o /dev/null
+// RUN: llzk-opt -split-input-file -llzk-r1cs-lowering='output-llzk=%t.llzk output-layout=%t.csv' -verify-diagnostics %s -o /dev/null
+// RUN: test ! -e %t.llzk
+// RUN: test ! -e %t.csv
 
 // Reject cubic expressions before auxiliary preparation.
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {

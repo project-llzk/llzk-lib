@@ -263,8 +263,11 @@ private:
   llzk::LLZKLayout layout;
 };
 
-/// Render a structural path, using optional argument names as display labels.
-void printPath(ArrayAttr path, ArrayRef<StringAttr> names, llvm::raw_ostream &output) {
+} // namespace
+
+void llzk::printLLZKLayoutPath(
+    ArrayAttr path, ArrayRef<StringAttr> names, llvm::raw_ostream &output
+) {
   // buildLLZKLayout prefixes paths with main, or arg followed by an argument position.
   assert(path && !path.empty() && isa<StringAttr>(path[0]) && "expected a layout path root");
   auto root = cast<StringAttr>(path[0]).getValue();
@@ -295,8 +298,6 @@ void printPath(ArrayAttr path, ArrayRef<StringAttr> names, llvm::raw_ostream &ou
   }
 }
 
-} // namespace
-
 FailureOr<llzk::LLZKLayout> llzk::buildLLZKLayout(ModuleOp module) {
   return LayoutBuilder(module).build(module);
 }
@@ -316,7 +317,7 @@ void llzk::printLLZKLayout(const LLZKLayout &layout, llvm::raw_ostream &output) 
   output << "# LLZK layout map v1\n# signals\n";
   for (auto [id, path] : llvm::enumerate(layout.signalPaths)) {
     output << "signal " << id << '\t';
-    printPath(path, layout.argumentNames, output);
+    printLLZKLayoutPath(path, layout.argumentNames, output);
     output << '\n';
   }
 }
