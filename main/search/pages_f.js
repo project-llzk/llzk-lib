@@ -65,6 +65,7 @@ var searchData=
   ['lower_20bool_20quantifiers_62',['&lt;span class=&quot;tt&quot;&gt;-llzk-lower-bool-quantifiers&lt;/span&gt;',['../tools.html#autotoc_md-llzk-lower-bool-quantifiers',1,'']]],
   ['lowering_63',['lowering',['../tools.html#autotoc_md-llzk-full-poly-lowering',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-full-poly-lowering&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-full-r1cs-lowering',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-full-r1cs-lowering&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-r1cs-lowering',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-r1cs-lowering&lt;/span&gt;']]],
   ['lowering_20pass_64',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
-  ['lsp_20server_65',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]],
-  ['lt_20_3a_3apcl_3a_3acmpltop_66',['&lt;span class=&quot;tt&quot;&gt;pcl.lt&lt;/span&gt; (pcl::CmpLtOp)',['../pcl-backend.html#pcllt-pclcmpltop',1,'']]]
+  ['lowering_20pipeline_65',['Lowering pipeline',['../pcl-backend.html#lowering-pipeline',1,'']]],
+  ['lsp_20server_66',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]],
+  ['lt_20_3a_3apcl_3a_3acmpltop_67',['&lt;span class=&quot;tt&quot;&gt;pcl.lt&lt;/span&gt; (pcl::CmpLtOp)',['../pcl-backend.html#pcllt-pclcmpltop',1,'']]]
 ];

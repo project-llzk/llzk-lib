@@ -13,7 +13,8 @@ var NAVTREEINDEX74 =
 "pcl-backend.html#booltype":[8,2,0,2,0],
 "pcl-backend.html#feltattr-1":[8,2,0,1,0],
 "pcl-backend.html#felttype-1":[8,2,0,2,1],
-"pcl-backend.html#integer-values":[8,2,0,3],
+"pcl-backend.html#integer-values":[8,2,0,4],
+"pcl-backend.html#lowering-pipeline":[8,2,0,3],
 "pcl-backend.html#operands-52":[8,2,0,0,0,0],
 "pcl-backend.html#operands-53":[8,2,0,0,1,0],
 "pcl-backend.html#operands-54":[8,2,0,0,2,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX74 =
 "structGenStringFromOpPieces.html#a01f9a5216bd64084fe6e0c7a1c3daeff":[13,0,52,9],
 "structGenStringFromOpPieces.html#a131eeadc663f49653c1785fcb9bcbf13":[13,0,52,6],
 "structGenStringFromOpPieces.html#a18eaf590b1ab0c743008cc373bb9bf47":[13,0,52,1],
-"structGenStringFromOpPieces.html#a31d165fb1380fe80aacabc7c5beb71e1":[13,0,52,4],
-"structGenStringFromOpPieces.html#a513c6d4e65bdc9949cd9c7b6cf3d678f":[13,0,52,11]
+"structGenStringFromOpPieces.html#a31d165fb1380fe80aacabc7c5beb71e1":[13,0,52,4]
 };

@@ -419,6 +419,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('pcl-backend.ht
         </ul>
       </li>
       <li class="level2">
+        <a href="#lowering-pipeline">Lowering pipeline </a>
+      </li>
+      <li class="level2">
         <a href="#integer-values">Integer values </a>
       </li>
     </ul>
@@ -1026,6 +1029,12 @@ BoolType</h3>
 FeltType</h3>
 <p><em>Finite field element</em></p>
 <p>Syntax: <span class="tt">!pcl.felt</span></p>
+<h2 class="doxsection"><a class="anchor" id="lowering-pipeline"></a>
+Lowering pipeline</h2>
+<p>Run <span class="tt">llzk-opt input.llzk --llzk-full-pcl-lowering</span> to normalize while loops, canonicalize loop bounds, flatten templates and unroll loops rooted at <span class="tt">llzk.main</span>, then scalarize PODs and arrays before converting to PCL. Canonicalization also runs after flattening and scalarization. Common subexpression elimination runs before and after POD/array scalarization, followed by redundant read/write elimination before PCL conversion.</p>
+<p>This pipeline preserves component boundaries; it does not inline structs or free functions. Existing PCL restrictions still apply, including the requirement that each struct has a public output. In particular, assertion-only components and a main component with no public outputs still require separate handling.</p>
+<p>Use <span class="tt">--llzk-to-pcl</span> directly when the input has already been prepared.</p>
+<p>When PCL is enabled, C clients can append the pipeline to a module pass manager with <span class="tt">llzkBuildFullPCLLoweringPipeline</span>. Alternatively, call <span class="tt">llzkRegisterPCLConversionPassPipelines</span> and parse <span class="tt">builtin.module(llzk-full-pcl-lowering)</span> with <span class="tt">mlirParsePassPipeline</span>.</p>
 <h2 class="doxsection"><a class="anchor" id="integer-values"></a>
 Integer values</h2>
 <p>PCL felt constants and prime moduli use signed arbitrary-precision integers. Arithmetic intermediates grow as needed and are reduced modulo the module's prime. Literal storage widths have no semantic meaning. During LLZK-to-PCL conversion, the prime modulus is inferred from the felt types used across the circuit and stored in the top-level module's <span class="tt">pcl.prime</span> attribute. Conversion requires a single field for the entire circuit. Its value must be at least two; the PCL verifier does not check primality. </p>

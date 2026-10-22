@@ -172,6 +172,7 @@ var backends_page =
           [ "BoolType", "pcl-backend.html#booltype", null ],
           [ "FeltType", "pcl-backend.html#felttype-1", null ]
         ] ],
+        [ "Lowering pipeline", "pcl-backend.html#lowering-pipeline", null ],
         [ "Integer values", "pcl-backend.html#integer-values", null ]
       ] ]
     ] ],

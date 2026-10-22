@@ -1041,8 +1041,9 @@ var searchData=
   ['lowerboolquantifierspassbase_1038',['LowerBoolQuantifiersPassBase',['../classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html',1,'llzk::boolean::impl::LowerBoolQuantifiersPassBase&lt; DerivedT &gt;'],['../classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html#aedaf31887ca515e33670162f7a943a5d',1,'llzk::boolean::impl::LowerBoolQuantifiersPassBase::LowerBoolQuantifiersPassBase()'],['../classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html#a68d9b33c5a4db37f625c2b24b86bbef4',1,'llzk::boolean::impl::LowerBoolQuantifiersPassBase::LowerBoolQuantifiersPassBase(const LowerBoolQuantifiersPassBase &amp;other)'],['../classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html#a3f0c3bbcfb59a08affd07e00148cca7f',1,'llzk::boolean::impl::LowerBoolQuantifiersPassBase::LowerBoolQuantifiersPassBase(LowerBoolQuantifiersPassBase &amp;&amp;)=delete']]],
   ['lowering_1039',['lowering',['../tools.html#autotoc_md-llzk-full-poly-lowering',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-full-poly-lowering&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-full-r1cs-lowering',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-full-r1cs-lowering&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-r1cs-lowering',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-r1cs-lowering&lt;/span&gt;']]],
   ['lowering_20pass_1040',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
-  ['loweringutils_2eh_1041',['LoweringUtils.h',['../LoweringUtils_8h.html',1,'']]],
-  ['lsp_20server_1042',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]],
-  ['lt_1043',['LT',['../namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37ac562607189d77eb9dfb707464c1e7b0b',1,'llzk::boolean']]],
-  ['lt_20_3a_3apcl_3a_3acmpltop_1044',['&lt;span class=&quot;tt&quot;&gt;pcl.lt&lt;/span&gt; (pcl::CmpLtOp)',['../pcl-backend.html#pcllt-pclcmpltop',1,'']]]
+  ['lowering_20pipeline_1041',['Lowering pipeline',['../pcl-backend.html#lowering-pipeline',1,'']]],
+  ['loweringutils_2eh_1042',['LoweringUtils.h',['../LoweringUtils_8h.html',1,'']]],
+  ['lsp_20server_1043',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]],
+  ['lt_1044',['LT',['../namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37ac562607189d77eb9dfb707464c1e7b0b',1,'llzk::boolean']]],
+  ['lt_20_3a_3apcl_3a_3acmpltop_1045',['&lt;span class=&quot;tt&quot;&gt;pcl.lt&lt;/span&gt; (pcl::CmpLtOp)',['../pcl-backend.html#pcllt-pclcmpltop',1,'']]]
 ];

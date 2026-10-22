@@ -1,5 +1,6 @@
 var NAVTREEINDEX80 =
 {
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html":[11,0,3,12,0,2,0],
 "structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html":[13,0,1,9,0,2,0],
 "structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a47076015c45fd011dcfa81b435964ba4":[11,0,3,12,0,2,0,0],
 "structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a47076015c45fd011dcfa81b435964ba4":[13,0,1,9,0,2,0,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX80 =
 "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#a56a563977c2ca27b6063587305918333":[11,0,3,17,0,12,0],
 "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#a56a563977c2ca27b6063587305918333":[13,0,1,13,0,12,0],
 "structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#ab553eb466ff5bb514c542c59130a0ffa":[11,0,3,17,0,12,2],
-"structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#ab553eb466ff5bb514c542c59130a0ffa":[13,0,1,13,0,12,2],
-"structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#ad1db6e3241dee3731e9e102912e17349":[11,0,3,17,0,12,3]
+"structllzk_1_1polymorphic_1_1detail_1_1StorageDescription.html#ab553eb466ff5bb514c542c59130a0ffa":[13,0,1,13,0,12,2]
 };
