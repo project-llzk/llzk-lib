@@ -1,0 +1,88 @@
+// RUN: llzk-opt -split-input-file -llzk-r1cs-lowering -verify-diagnostics %s -o /dev/null
+
+// Reject cubic expressions before auxiliary preparation.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %square = felt.mul %x, %x : !felt.type, !felt.type
+      // expected-error@+1 {{R1CS lowering requires polynomial degree at most two; found degree 3}}
+      %cube = felt.mul %square, %x : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %cube : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject live reads of storage that is not a declared signal.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @temporary : !felt.type
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      // expected-error@+1 {{R1CS storage read has no signal in the layout}}
+      %temporary = struct.readm %self[@temporary] : <@Main>, !felt.type
+      constrain.eq %temporary, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject symbolic index conversion in flattened constraints.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !array.type<2 x !felt.type>, %i: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>,
+      %x: !array.type<2 x !felt.type>,
+      %i: !felt.type
+    ) attributes {function.allow_non_native_field_ops} {
+      // expected-error@+1 {{unsupported operation in flattened R1CS constraints}}
+      %idx = cast.toindex %i : !felt.type
+      %value = array.read %x[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %value : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject non-polynomial arithmetic in the constraint body.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      // expected-error@+1 {{unsupported operation in flattened R1CS constraints}}
+      %quotient = felt.div %x, %x : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %quotient : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

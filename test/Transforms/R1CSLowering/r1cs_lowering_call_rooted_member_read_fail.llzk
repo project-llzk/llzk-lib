@@ -1,5 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s
 
+// Reject external calls whose struct results cannot be specialized for flattening.
+
 module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
   struct.def @ExternPayload {
     struct.member @value : !felt.type {llzk.pub}
@@ -26,8 +28,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
     }
 
     function.def @constrain(%self: !struct.type<@UsesExternPayload>, %x: !felt.type) {
+      // expected-error@+1 {{unsupported operation in flattened R1CS constraints}}
       %payload = function.call @extern_wrap(%x) : (!felt.type) -> !struct.type<@ExternPayload>
-      // expected-error@+1 {{R1CS lowering only supports member reads rooted at the current constrain self value}}
       %value = struct.readm %payload[@value] : !struct.type<@ExternPayload>, !felt.type
       %square = felt.mul %value, %value : !felt.type, !felt.type
       %quad = felt.mul %square, %square : !felt.type, !felt.type

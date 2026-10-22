@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "r1cs/Dialect/IR/Attrs.h"
+#include "r1cs/Dialect/IR/Constants.h"
 #include "r1cs/Dialect/IR/Ops.h"
 #include "r1cs/Dialect/IR/Types.h"
 #include "r1cs/Transforms/TransformationPasses.h"
@@ -21,20 +22,27 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Transforms/LoweringUtils.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/LLZKLayout.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/Walk.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Matchers.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
+#include <cstdint>
 #include <deque>
+#include <limits>
 #include <memory>
 
 // Include the generated base pass class definitions.
@@ -44,6 +52,7 @@ namespace r1cs {
 } // namespace r1cs
 
 using namespace mlir;
+using r1cs::WireKind;
 using namespace llzk;
 using namespace llzk::felt;
 using namespace llzk::function;
@@ -216,547 +225,585 @@ struct R1CSConstraint {
   }
 };
 
+/// One association between a backend-independent layout leaf and a final R1CS wire.
+struct R1CSWire {
+  uint64_t layoutId;
+  uint32_t wireId;
+  WireKind kind;
+
+  /// Inputs are represented by circuit block arguments rather than signal definitions.
+  bool isInput() const { return kind == WireKind::PublicInput || kind == WireKind::PrivateInput; }
+};
+
+/// R1CS-ID-ordered wires and their reverse lookup by LLZK layout signal ID.
+struct R1CSWireMap {
+  SmallVector<R1CSWire> entries;
+  SmallVector<uint32_t> wireIdsByLayout;
+};
+
+/// Convert main's flattened constraints using one wire for every layout leaf.
 class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
   using Base = R1CSLoweringPassBase<PassImpl>;
   using Base::Base;
 
+  StructDefOp main;
+  FuncDefOp constrain;
+  DenseMap<Value, unsigned> degrees;
+  DenseMap<Value, ArrayAttr> paths;
+  DenseMap<Value, Value> normalized;
+  DenseMap<Value, Value> auxiliaries;
+  DenseMap<Value, R1CSConstraint> expressions;
+  DenseMap<Value, Value> linearWires;
+  SmallVector<AuxAssignment> assignments;
+  SmallVector<Value> wires;
   unsigned auxCounter = 0;
 
-  // Normalize a felt-valued expression into R1CS-compatible form.
-  // This performs *minimal* rewriting:
-  // - Only rewrites Add/Sub of two degree-2 terms
-  // - Operates bottom-up using post-order traversal
-  //
-  // Resulting expression is R1CS-compatible (i.e., one multiplication per constraint)
-  // and can be directly used in EmitEqualityOp or as operands of other expressions.
-  static void getPostOrder(Value root, SmallVectorImpl<Value> &postOrder) {
-    SmallVector<Value, 16> worklist;
+  /// Storage reads are polynomial leaves, including reads through aggregates.
+  static bool isStorageRead(Operation *op) {
+    return isa_and_nonnull<MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(op);
+  }
+
+  /// Visit expression dependencies once, stopping at felt storage leaves.
+  static SmallVector<Value> getExpressionOrder(Value root) {
+    SmallVector<Value> order;
+    SmallVector<std::pair<Value, bool>> pending {{root, false}};
     DenseSet<Value> visited;
-
-    worklist.push_back(root);
-
-    while (!worklist.empty()) {
-      Value val = worklist.back();
-
-      if (!visited.insert(val).second) {
-        worklist.pop_back();
-        postOrder.push_back(val);
+    while (!pending.empty()) {
+      auto [value, expanded] = pending.pop_back_val();
+      if (expanded) {
+        order.push_back(value);
         continue;
       }
-
-      if (Operation *op = val.getDefiningOp()) {
-        if (llvm::isa<MemberReadOp>(op)) {
-          continue;
-        }
-        for (Value operand : op->getOperands()) {
-          worklist.push_back(operand);
+      if (!visited.insert(value).second) {
+        continue;
+      }
+      pending.emplace_back(value, true);
+      Operation *op = value.getDefiningOp();
+      if (op && !isStorageRead(op)) {
+        for (Value operand : llvm::reverse(op->getOperands())) {
+          pending.emplace_back(operand, false);
         }
       }
     }
+    return order;
   }
 
-  /// Normalize a felt-valued expression into R1CS-compatible form by rewriting
-  /// only when strictly necessary. This function ensures the resulting expression:
-  ///
-  /// - Has at most one multiplication per constraint (R1CS-compatible)
-  /// - Avoids unnecessary introduction of auxiliary variables
-  /// - Preserves semantic equivalence via auxiliary member equality constraints
-  ///
-  /// Rewriting is done **bottom-up** using post-order traversal of the def-use chain.
-  /// The transformation is minimal:
-  /// - Only rewrites Add/Sub where both operands are degree-2
-  /// - Leaves multiplications intact unless their operands require rewriting due to constants
-  /// - Avoids rewriting expressions that are already linear or already normalized
-  ///
-  /// The function memoizes all degrees and rewrites for efficiency and correctness,
-  /// and records any auxiliary member assignments for later reconstruction in compute().
-  ///
-  /// \param root           The root felt-valued expression to normalize.
-  /// \param structDef      The enclosing struct definition (for adding aux members).
-  /// \param constrainFunc  The constrain() function containing the constraint logic.
-  /// \param degreeMemo     Memoized degrees of expressions (to avoid recomputation).
-  /// \param rewrites       Memoized rewrites of expressions.
-  /// \param auxAssignments Records auxiliary member assignments introduced during normalization.
-  /// \param builder        Builder used to insert new ops in the constrain() block.
-  /// \returns              A Value representing the normalized (possibly rewritten) expression.
-  Value normalizeForR1CS(
-      Value root, StructDefOp structDef, FuncDefOp constrainFunc,
-      DenseMap<Value, unsigned> &degreeMemo, DenseMap<Value, Value> &rewrites,
-      SmallVectorImpl<AuxAssignment> &auxAssignments, OpBuilder &builder
-  ) {
-    if (auto it = rewrites.find(root); it != rewrites.end()) {
-      return it->second;
+  /// Recover a structural layout path from immutable flattened storage reads.
+  FailureOr<ArrayAttr> resolveSignalPath(Value value) {
+    if (auto found = paths.find(value); found != paths.end()) {
+      return found->second;
     }
-
-    // Use an insertion guard to restore the builder's insertion point after this function.
-    // This avoids invalid references that could occur in the caller after executing this
-    // function since `handleAddOrSub` sets the insertion point to an op that it may erase.
-    OpBuilder::InsertionGuard guard(builder);
-
-    SmallVector<Value, 16> postOrder;
-    getPostOrder(root, postOrder);
-
-    // We perform a bottom up rewrite of the expressions. For any expression e := op(e_1, ...,
-    // e_n) we first rewrite e_1, ..., e_n if necessary and then rewrite e based on op.
-    for (Value val : postOrder) {
-      if (rewrites.contains(val)) {
-        continue;
+    OpBuilder builder(constrain);
+    SmallVector<Attribute> path;
+    if (auto arg = dyn_cast<BlockArgument>(value)) {
+      if (arg.getOwner() != &constrain.getBody().front()) {
+        return constrain.emitOpError("R1CS storage must be rooted in constrain arguments");
       }
-
-      Operation *op = val.getDefiningOp();
-
-      if (!op) {
-        // Block arguments, etc.
-        degreeMemo[val] = 1;
-        rewrites[val] = val;
-        continue;
+      if (arg.getArgNumber() == 0) {
+        path.push_back(builder.getStringAttr(LAYOUT_MAIN_ROOT));
+      } else {
+        path.append(
+            {builder.getStringAttr(LAYOUT_ARGUMENT_ROOT),
+             builder.getI64IntegerAttr(arg.getArgNumber())}
+        );
       }
-
-      // Case 1: Felt constant op. The degree is 0 and no rewrite is needed.
-      if (auto c = llvm::dyn_cast<FeltConstantOp>(op)) {
-        degreeMemo[val] = 0;
-        rewrites[val] = val;
-        continue;
-      }
-
-      // Case 2: Member read op. The degree is 1 and no rewrite needed.
-      if (auto fr = llvm::dyn_cast<MemberReadOp>(op)) {
-        degreeMemo[val] = 1;
-        rewrites[val] = val;
-        continue;
-      }
-
-      // Helper function for getting degree from memo map
-      auto getDeg = [&degreeMemo](Value v) -> unsigned {
-        auto it = degreeMemo.find(v);
-        assert(it != degreeMemo.end() && "Missing degree");
-        return it->second;
-      };
-
-      // Case 3: lhs +/- rhs. There are three subcases cases to consider:
-      // 1) If deg(lhs) <= degree(rhs) < 2 then nothing needs to be done
-      // 2) If deg(lhs) = 2 and degree(rhs) < 2 then nothing further has to be done.
-      // 3) If deg(lhs) = deg(rhs) = 2 then we lower one of lhs or rhs.
-      auto handleAddOrSub = [&](Value lhsOrig, Value rhsOrig, bool isAdd) {
-        Value lhs = rewrites[lhsOrig];
-        Value rhs = rewrites[rhsOrig];
-        unsigned degLhs = getDeg(lhs);
-        unsigned degRhs = getDeg(rhs);
-
-        if (degLhs == 2 && degRhs == 2) {
-          builder.setInsertionPoint(op);
-          std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
-          MemberDefOp auxMember = addAuxMember(structDef, auxName, val.getType());
-          Value aux = MemberReadOp::create(
-              builder, val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
-              auxMember.getNameAttr()
+    } else {
+      Operation *op = value.getDefiningOp();
+      Value parent;
+      SmallVector<Attribute> suffix;
+      if (auto read = dyn_cast<MemberReadOp>(op)) {
+        if (read.getTableOffset() || !read.getMapOperands().empty()) {
+          return read.emitError(
+              "R1CS lowering does not support member reads with table offsets or map operands"
           );
-          auto eqOp = EmitEqualityOp::create(builder, val.getLoc(), aux, lhs);
-          auxAssignments.push_back({auxName, lhs});
-          degreeMemo[aux] = 1;
-          rewrites[aux] = aux;
-          replaceSubsequentUsesWith(lhs, aux, eqOp);
-          lhs = aux;
-          degLhs = 1;
-
-          Operation *newOp =
-              isAdd ? AddFeltOp::create(builder, val.getLoc(), val.getType(), lhs, rhs)
-                    : SubFeltOp::create(builder, val.getLoc(), val.getType(), lhs, rhs);
-          Value result = newOp->getResult(0);
-          degreeMemo[result] = std::max(degLhs, degRhs);
-          rewrites[val] = result;
-          rewrites[result] = result;
-          val.replaceAllUsesWith(result);
-          if (val.use_empty()) {
-            op->erase();
-          }
-        } else {
-          degreeMemo[val] = std::max(degLhs, degRhs);
-          rewrites[val] = val;
         }
-      };
-
-      if (auto add = llvm::dyn_cast<AddFeltOp>(op)) {
-        handleAddOrSub(add.getLhs(), add.getRhs(), /*isAdd=*/true);
-        continue;
-      }
-
-      if (auto sub = llvm::dyn_cast<SubFeltOp>(op)) {
-        handleAddOrSub(sub.getLhs(), sub.getRhs(), /*isAdd=*/false);
-        continue;
-      }
-
-      // Case 4: lhs * rhs. Nothing further needs to be done assuming the degree lowering pass has
-      // been run with maxDegree = 2. This is because both operands are normalized and at most one
-      // operand can be quadratic.
-      if (auto mul = llvm::dyn_cast<MulFeltOp>(op)) {
-        Value lhs = rewrites[mul.getLhs()];
-        Value rhs = rewrites[mul.getRhs()];
-        unsigned degLhs = getDeg(lhs);
-        unsigned degRhs = getDeg(rhs);
-
-        degreeMemo[val] = degLhs + degRhs;
-        rewrites[val] = val;
-        continue;
-      }
-
-      // Case 6: Neg. Similar to multiplication, nothing needs to be done since we are doing the
-      // rewrite bottom up
-      if (auto neg = llvm::dyn_cast<NegFeltOp>(op)) {
-        Value inner = rewrites[neg.getOperand()];
-        unsigned deg = getDeg(inner);
-        degreeMemo[val] = deg;
-        rewrites[val] = val;
-        continue;
-      }
-
-      llvm::errs() << "Unhandled op in normalize ForR1CS: " << *op << '\n';
-      signalPassFailure();
-    }
-
-    return rewrites[root];
-  }
-
-  static R1CSConstraint lowerPolyToR1CS(Value poly) {
-    DenseMap<Value, R1CSConstraint> constraintMap;
-    SmallVector<Value, 16> postorder;
-    getPostOrder(poly, postorder);
-
-    // Bottom-up construction of R1CSConstraints
-    for (Value v : postorder) {
-      Operation *op = v.getDefiningOp();
-      if (!op || llvm::isa<MemberReadOp>(op)) {
-        // Leaf (input variable or member read)
-        R1CSConstraint eq;
-        eq.c.addTerm(v, 1);
-        constraintMap[v] = eq;
-        continue;
-      }
-      if (auto add = dyn_cast<AddFeltOp>(op)) {
-        R1CSConstraint lhsC = constraintMap[add.getLhs()];
-        R1CSConstraint rhsC = constraintMap[add.getRhs()];
-        constraintMap[v] = lhsC.add(rhsC);
-      } else if (auto sub = dyn_cast<SubFeltOp>(op)) {
-        R1CSConstraint lhsC = constraintMap[sub.getLhs()];
-        R1CSConstraint rhsC = constraintMap[sub.getRhs()];
-        constraintMap[v] = lhsC.add(rhsC.negated());
-      } else if (auto mul = dyn_cast<MulFeltOp>(op)) {
-        R1CSConstraint lhsC = constraintMap[mul.getLhs()];
-        R1CSConstraint rhsC = constraintMap[mul.getRhs()];
-        constraintMap[v] = lhsC.multiply(rhsC);
-      } else if (auto neg = dyn_cast<NegFeltOp>(op)) {
-        R1CSConstraint inner = constraintMap[op->getOperand(0)];
-        constraintMap[v] = inner.negated();
-      } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
-        // Reduce the constant if a field is specified. Preserve constants with unspecified field;
-        // later binary export reduces them modulo --r1cs-prime, without checking the source fields.
-        R1CSConstraint c(cst.getValue().getReducedValueOrRaw());
-        constraintMap[v] = c;
-      } else {
-        llvm::errs() << "Unhandled op in R1CS lowering: " << *op << '\n';
-        llvm_unreachable("unhandled op");
-      }
-    }
-
-    return constraintMap[poly];
-  }
-
-  static R1CSConstraint
-  lowerEquationToR1CS(Value p, Value q, const DenseMap<Value, unsigned> &degreeMemo) {
-    R1CSConstraint pconst = lowerPolyToR1CS(p);
-    R1CSConstraint qconst = lowerPolyToR1CS(q);
-
-    if (degreeMemo.at(p) == 2) {
-      if (degreeMemo.at(q) == 2) {
-        llvm::errs() << "R1CS lowering only supports one quadratic side per equality.\n";
-        llvm_unreachable("Invalid R1CS equality: both sides are quadratic");
-      }
-      R1CSConstraint result(pconst);
-      result.c = qconst.c.add(pconst.c.negated());
-      return result;
-    }
-    if (degreeMemo.at(q) == 2) {
-      R1CSConstraint result(qconst);
-      result.c = pconst.c.add(qconst.c.negated());
-      return result;
-    }
-    return qconst.add(pconst.negated());
-  }
-
-  FailureOr<Value> emitLinearCombination(
-      const LinearCombination &lc, IRMapping &valueMap, DenseMap<StringRef, Value> &memberMap,
-      Value selfVal, OpBuilder &builder, Location loc
-  ) {
-    Value result = nullptr;
-
-    auto getMapping = [&valueMap, &memberMap, selfVal, this](const Value &v) -> FailureOr<Value> {
-      if (!valueMap.contains(v)) {
-        Operation *op = v.getDefiningOp();
-        if (auto read = dyn_cast<MemberReadOp>(op)) {
-          if (read.getComponent() != selfVal) {
-            signalPassFailure();
-            return read.emitError(
-                "R1CS lowering only supports member reads rooted at the current constrain "
-                "self value"
-            );
+        parent = read.getComponent();
+        suffix.push_back(builder.getStringAttr(read.getMemberName()));
+      } else if (auto podRead = dyn_cast<pod::ReadPodOp>(op)) {
+        parent = podRead.getPodRef();
+        suffix.push_back(podRead.getRecordNameAttr());
+      } else if (isa<array::ReadArrayOp, array::ExtractArrayOp>(op)) {
+        auto access = cast<array::ArrayAccessOpInterface>(op);
+        parent = op->getOperand(0);
+        for (Value index : access.getIndices()) {
+          APInt literal;
+          if (!matchPattern(index, m_ConstantInt(&literal)) || !literal.isSignedIntN(64) ||
+              literal.isNegative()) {
+            return op->emitError("R1CS storage paths require nonnegative constant indices");
           }
-          // Table offsets and map operands select a different row.  Those
-          // accesses must not be lowered to the current-row R1CS signal.
-          if (read.getTableOffset() || !read.getMapOperands().empty()) {
-            signalPassFailure();
-            return read.emitError(
-                "R1CS lowering does not support member reads with table offsets "
-                "or map operands"
-            );
-          }
-          auto memberVal = memberMap.find(read.getMemberName());
-          if (memberVal == memberMap.end()) {
-            signalPassFailure();
-            return read.emitError("member read is not associated with an R1CS signal");
-          }
-          return memberVal->second;
+          suffix.push_back(builder.getIndexAttr(literal.getSExtValue()));
         }
-        signalPassFailure();
-        return op->emitError("Value not mapped in R1CS lowering");
+      } else {
+        return emitError(
+            value.getLoc(), "R1CS signal read is not rooted in main storage or an input argument"
+        );
       }
-      return valueMap.lookup(v);
-    };
-
-    auto linearTy = r1cs::LinearType::get(builder.getContext());
-
-    // Start with the constant, if present
-    if (lc.constant != 0) {
-      result = r1cs::ConstOp::create(
-          builder, loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), lc.constant)
-      );
-    }
-
-    for (const auto &[val, coeff] : lc.terms) {
-      FailureOr<Value> mapped = getMapping(val);
-      if (failed(mapped)) {
+      auto prefix = resolveSignalPath(parent);
+      if (failed(prefix)) {
         return failure();
       }
-      // %tmp = r1cs.to_linear %mapped
-      // most of these will be removed with CSE passes
-      Value lin = r1cs::ToLinearOp::create(builder, loc, linearTy, *mapped);
-      // %scaled = r1cs.mul_const %lin, coeff
-      Value scaled = coeff == 1 ? lin
-                                : r1cs::MulConstOp::create(
-                                      builder, loc, linearTy, lin,
-                                      r1cs::FeltAttr::get(builder.getContext(), coeff)
-                                  );
-
-      // Accumulate via r1cs.add
-      if (!result) {
-        result = scaled;
-      } else {
-        result = r1cs::AddOp::create(builder, loc, linearTy, result, scaled);
-      }
+      path.append(prefix->begin(), prefix->end());
+      path.append(suffix);
     }
-
-    if (!result) {
-      // Entire linear combination was zero
-      result = r1cs::ConstOp::create(
-          builder, loc, r1cs::LinearType::get(builder.getContext()),
-          r1cs::FeltAttr::get(builder.getContext(), lc.constant)
-      );
-    }
-
-    return result;
+    return paths[value] = builder.getArrayAttr(path);
   }
 
-  LogicalResult buildAndEmitR1CS(
-      ModuleOp &moduleOp, StructDefOp &structDef, FuncDefOp &constrainFunc,
-      DenseMap<Value, unsigned> &degreeMemo
-  ) {
-    // Validate struct members are felt and prepare signal types for circuit result types
-    bool hasPublicSignals = false;
-    for (auto member : structDef.getMemberDefs()) {
-      if (!llvm::isa<FeltType>(member.getType())) {
-        signalPassFailure();
-        return member.emitError("Only felt members are supported as output signals");
-      }
-      if (member.isPublic()) {
-        hasPublicSignals = true;
+  /// Reject unsupported expressions and degrees above two before changing IR.
+  LogicalResult validateDegreeAtMostTwo() {
+    if (failed(checkFuncBodyIsStraightLine(constrain, "R1CS lowering"))) {
+      return failure();
+    }
+    for (Operation &op : constrain.getBody().front()) {
+      if (!isa<
+              EmitEqualityOp, ReturnOp, FeltConstantOp, AddFeltOp, SubFeltOp, MulFeltOp, NegFeltOp,
+              MemberReadOp, array::ReadArrayOp, array::ExtractArrayOp, pod::ReadPodOp,
+              arith::ConstantOp>(op)) {
+        return op.emitError("unsupported operation in flattened R1CS constraints");
       }
     }
-    if (!hasPublicSignals) {
-      structDef.emitWarning("Struct should have at least one public output").report();
-    }
-
-    Region &constrainFuncBody = constrainFunc.getBody();
-
-    SmallVector<R1CSConstraint> constraints =
-        walkCollectMapped<EmitEqualityOp>(constrainFuncBody, [&degreeMemo](auto eqOp) {
-      return lowerEquationToR1CS(eqOp.getLhs(), eqOp.getRhs(), degreeMemo);
-    });
-
-    OpBuilder topBuilder(moduleOp.getBodyRegion());
-    moduleOp->setAttr(LANG_ATTR_NAME, topBuilder.getStringAttr("r1cs"));
-
-    IRMapping valueMap;
-    Location loc = structDef.getLoc();
-    llvm::SmallVector<mlir::NamedAttribute> argAttrPairs;
-    auto inputArgs = llvm::enumerate(llvm::drop_begin(constrainFuncBody.front().getArguments()));
-    for (auto [i, arg] : inputArgs) {
-      if (constrainFunc.hasArgPublicAttr(i + 1)) {
-        auto key = topBuilder.getStringAttr(std::to_string(i));
-        auto value = r1cs::PublicAttr::get(moduleOp.getContext());
-        argAttrPairs.emplace_back(key, value);
+    for (auto eq : constrain.getOps<EmitEqualityOp>()) {
+      for (Value root : eq->getOperands()) {
+        for (Value value : getExpressionOrder(root)) {
+          if (degrees.contains(value)) {
+            continue;
+          }
+          Operation *op = value.getDefiningOp();
+          unsigned degree = 0;
+          if (!isa<FeltType>(value.getType())) {
+            return emitError(value.getLoc(), "R1CS constraint expressions must have felt type");
+          }
+          if (isa<BlockArgument>(value) || isStorageRead(op)) {
+            if (failed(resolveSignalPath(value))) {
+              return failure();
+            }
+            degree = 1;
+          } else if (isa<FeltConstantOp>(op)) {
+            degree = 0;
+          } else if (isa<AddFeltOp, SubFeltOp>(op)) {
+            degree = std::max(degrees.lookup(op->getOperand(0)), degrees.lookup(op->getOperand(1)));
+          } else if (isa<MulFeltOp>(op)) {
+            degree = degrees.lookup(op->getOperand(0)) + degrees.lookup(op->getOperand(1));
+          } else if (isa<NegFeltOp>(op)) {
+            degree = degrees.lookup(op->getOperand(0));
+          } else {
+            return emitError(value.getLoc(), "unsupported operation in R1CS polynomial expression");
+          }
+          if (degree > 2) {
+            return emitError(value.getLoc())
+                   << "R1CS lowering requires polynomial degree at most two; found degree "
+                   << degree << "; run degree lowering first";
+          }
+          degrees[value] = degree;
+        }
       }
-    }
-    auto circuit = r1cs::CircuitDefOp::create(
-        topBuilder, loc, structDef.getSymName().str(), topBuilder.getDictionaryAttr(argAttrPairs)
-    );
-
-    Block *circuitBlock = circuit.addEntryBlock();
-
-    OpBuilder bodyBuilder = OpBuilder::atBlockEnd(circuitBlock);
-
-    // Step 3: Validate that all parameters to the constrain function are felt types
-    for (auto [i, arg] : inputArgs) {
-      if (!llvm::isa<FeltType>(arg.getType())) {
-        signalPassFailure();
-        return constrainFunc.emitOpError("All input arguments must be of felt type");
-      }
-      auto blockArg = circuitBlock->addArgument(bodyBuilder.getType<r1cs::SignalType>(), loc);
-      valueMap.map(arg, blockArg);
-    }
-
-    // Step 4: For every struct member we a) create a signaldefop and b) add that signal to our
-    // outputs
-    DenseMap<StringRef, Value> memberSignalMap;
-    // Label 0 belongs to the implicit constant-one wire in the binary R1CS
-    // format. Keep source signal labels compatible with binary export.
-    uint32_t signalDefCntr = 1;
-    for (auto member : structDef.getMemberDefs()) {
-      r1cs::PublicAttr pubAttr;
-      if (member.hasPublicAttr()) {
-        pubAttr = bodyBuilder.getAttr<r1cs::PublicAttr>();
-      }
-      auto defOp = r1cs::SignalDefOp::create(
-          bodyBuilder, member.getLoc(), bodyBuilder.getType<r1cs::SignalType>(),
-          bodyBuilder.getUI32IntegerAttr(signalDefCntr), pubAttr
-      );
-      signalDefCntr++;
-      memberSignalMap.insert({member.getName(), defOp.getOut()});
-    }
-
-    // Step 5: Emit the R1CS constraints
-    Value selfVal = constrainFunc.getSelfValueFromConstrain();
-    for (const R1CSConstraint &constraint : constraints) {
-      FailureOr<Value> aVal =
-          emitLinearCombination(constraint.a, valueMap, memberSignalMap, selfVal, bodyBuilder, loc);
-      if (failed(aVal)) {
-        return failure();
-      }
-      FailureOr<Value> bVal =
-          emitLinearCombination(constraint.b, valueMap, memberSignalMap, selfVal, bodyBuilder, loc);
-      if (failed(bVal)) {
-        return failure();
-      }
-      FailureOr<Value> cVal =
-          emitLinearCombination(constraint.c, valueMap, memberSignalMap, selfVal, bodyBuilder, loc);
-      if (failed(cVal)) {
-        return failure();
-      }
-      r1cs::ConstrainOp::create(bodyBuilder, loc, *aVal, *bVal, *cVal);
     }
     return success();
   }
 
-  void getDependentDialects(mlir::DialectRegistry &registry) const override {
+  /// Materialize a quadratic expression as a signal with a defining equality.
+  Value createAuxiliarySignal(Value expression, OpBuilder &builder) {
+    if (auto found = auxiliaries.find(expression); found != auxiliaries.end()) {
+      return found->second;
+    }
+    std::string name = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
+    auto member = addAuxMember(main, name, expression.getType());
+    member.setSignal(true);
+    Value read = MemberReadOp::create(
+        builder, expression.getLoc(), expression.getType(), constrain.getSelfValueFromConstrain(),
+        member.getNameAttr()
+    );
+    EmitEqualityOp::create(builder, expression.getLoc(), read, expression);
+    assignments.push_back({name, expression});
+    degrees[read] = 1;
+    return auxiliaries[expression] = read;
+  }
+
+  /// Normalize sums of quadratic terms without lowering higher-degree input.
+  Value normalizeExpression(Value root, OpBuilder &builder) {
+    if (auto found = normalized.find(root); found != normalized.end()) {
+      return found->second;
+    }
+    for (Value value : getExpressionOrder(root)) {
+      if (normalized.contains(value)) {
+        continue;
+      }
+      Operation *op = value.getDefiningOp();
+      if (!op || isStorageRead(op) || isa<FeltConstantOp>(op)) {
+        normalized[value] = value;
+        continue;
+      }
+      SmallVector<Value> operands;
+      for (Value operand : op->getOperands()) {
+        operands.push_back(normalized.lookup(operand));
+      }
+      if (isa<AddFeltOp, SubFeltOp>(op) && degrees.lookup(operands[0]) == 2 &&
+          degrees.lookup(operands[1]) == 2) {
+        operands[0] = createAuxiliarySignal(operands[0], builder);
+      }
+      IRMapping mapping;
+      for (auto [before, after] : llvm::zip(op->getOperands(), operands)) {
+        mapping.map(before, after);
+      }
+      Value replacement = value;
+      if (!llvm::equal(op->getOperands(), operands)) {
+        replacement = builder.clone(*op, mapping)->getResult(0);
+      }
+      unsigned degree = degrees.lookup(operands[0]);
+      if (operands.size() == 2) {
+        degree = isa<MulFeltOp>(op) ? degree + degrees.lookup(operands[1])
+                                    : std::max(degree, degrees.lookup(operands[1]));
+      }
+      degrees[replacement] = degree;
+      normalized[value] = replacement;
+    }
+    return normalized.lookup(root);
+  }
+
+  /// Clone only the validated dependency graph needed for a compute assignment.
+  FailureOr<Value> rebuildAuxiliaryExpression(Value root, OpBuilder &builder, IRMapping &mapping) {
+    SmallVector<std::pair<Value, bool>> pending {{root, false}};
+    while (!pending.empty()) {
+      auto [value, expanded] = pending.pop_back_val();
+      if (mapping.contains(value)) {
+        continue;
+      }
+      Operation *op = value.getDefiningOp();
+      if (!op) {
+        return emitError(value.getLoc(), "cannot map R1CS auxiliary expression into compute");
+      }
+      if (expanded) {
+        Operation *clone = builder.clone(*op, mapping);
+        for (auto [before, after] : llvm::zip(op->getResults(), clone->getResults())) {
+          mapping.map(before, after);
+        }
+      } else {
+        pending.emplace_back(value, true);
+        for (Value operand : llvm::reverse(op->getOperands())) {
+          pending.emplace_back(operand, false);
+        }
+      }
+    }
+    return mapping.lookup(root);
+  }
+
+  /// Add auxiliary signal members, equations, and compute writes before layout generation.
+  LogicalResult prepareAuxiliarySignals() {
+    if (failed(checkForAuxMemberConflicts(main, R1CS_AUXILIARY_MEMBER_PREFIX))) {
+      return failure();
+    }
+    SmallVector<EmitEqualityOp> equalities(constrain.getOps<EmitEqualityOp>());
+    for (auto eq : equalities) {
+      OpBuilder builder(eq);
+      Value lhs = normalizeExpression(eq.getLhs(), builder);
+      Value rhs = normalizeExpression(eq.getRhs(), builder);
+      if (degrees.lookup(lhs) == 2 && degrees.lookup(rhs) == 2) {
+        lhs = createAuxiliarySignal(lhs, builder);
+      }
+      eq->setOperands({lhs, rhs});
+    }
+    if (assignments.empty()) {
+      return success();
+    }
+    auto compute = main.getComputeFuncOp();
+    if (!compute || compute.isExternal()) {
+      return main.emitOpError("R1CS auxiliary signals require a compute body");
+    }
+    if (compute.getNumArguments() + 1 != constrain.getNumArguments()) {
+      return compute.emitOpError(
+          "compute inputs do not match constrain inputs for R1CS auxiliaries"
+      );
+    }
+    for (auto [input, argument] :
+         llvm::zip(compute.getArguments(), llvm::drop_begin(constrain.getArguments()))) {
+      if (input.getType() != argument.getType()) {
+        return compute.emitOpError(
+            "compute input types do not match constrain inputs for R1CS auxiliaries"
+        );
+      }
+    }
+    for (Block &block : compute.getBody()) {
+      auto ret = dyn_cast<ReturnOp>(block.getTerminator());
+      if (!ret) {
+        continue;
+      }
+      if (ret->getNumOperands() != 1) {
+        return ret.emitOpError("R1CS auxiliary writes require the returned component instance");
+      }
+      Value self = ret->getOperand(0);
+      OpBuilder builder(ret);
+      IRMapping mapping;
+      mapping.map(constrain.getArgument(0), self);
+      for (auto [input, argument] :
+           llvm::zip(compute.getArguments(), llvm::drop_begin(constrain.getArguments()))) {
+        mapping.map(argument, input);
+      }
+      for (const auto &assignment : assignments) {
+        auto expression = rebuildAuxiliaryExpression(assignment.computedValue, builder, mapping);
+        if (failed(expression)) {
+          return failure();
+        }
+        MemberWriteOp::create(
+            builder, ret.getLoc(), self, builder.getStringAttr(assignment.auxMemberName),
+            *expression
+        );
+      }
+    }
+    return success();
+  }
+
+  /// Assign IDs after all auxiliary signals have been added to main.
+  FailureOr<LLZKLayout> generateSignalLayout(ModuleOp module) {
+    auto layout = buildLLZKLayout(module);
+    if (failed(layout)) {
+      return failure();
+    }
+    for (auto eq : constrain.getOps<EmitEqualityOp>()) {
+      for (Value root : eq->getOperands()) {
+        for (Value value : getExpressionOrder(root)) {
+          if (!isa<BlockArgument>(value) && !isStorageRead(value.getDefiningOp())) {
+            continue;
+          }
+          auto path = resolveSignalPath(value);
+          if (failed(path)) {
+            return failure();
+          }
+          if (!layout->getSignalId(*path)) {
+            return emitError(value.getLoc())
+                   << "R1CS storage read has no signal in the layout: " << *path;
+          }
+        }
+      }
+    }
+    return layout;
+  }
+
+  /// Assign final R1CS IDs without changing the backend-independent LLZK layout.
+  FailureOr<R1CSWireMap> buildR1CSWireMap(const LLZKLayout &layout) {
+    if (layout.signalPaths.size() >= std::numeric_limits<uint32_t>::max()) {
+      return main.emitOpError("R1CS layout exceeds the supported wire ID range");
+    }
+    DenseMap<WireKind, SmallVector<uint64_t>> layoutIdsByKind;
+    for (auto [layoutId, path] : llvm::enumerate(layout.signalPaths)) {
+      WireKind kind;
+      if (cast<StringAttr>(path[0]).getValue() == LAYOUT_ARGUMENT_ROOT) {
+        unsigned argument = cast<IntegerAttr>(path[1]).getInt();
+        kind =
+            constrain.hasArgPublicAttr(argument) ? WireKind::PublicInput : WireKind::PrivateInput;
+      } else {
+        auto member = main.getMemberDef(cast<StringAttr>(path[1]));
+        kind = member.hasPublicAttr() ? WireKind::PublicOutput : WireKind::Internal;
+      }
+      layoutIdsByKind[kind].push_back(layoutId);
+    }
+    R1CSWireMap mapping;
+    mapping.wireIdsByLayout.resize(layout.signalPaths.size());
+    for (WireKind kind : r1cs::WIRE_KIND_ORDER) {
+      for (uint64_t layoutId : layoutIdsByKind[kind]) {
+        uint32_t wireId = mapping.entries.size() + r1cs::FIRST_SIGNAL_WIRE_ID;
+        mapping.entries.push_back({layoutId, wireId, kind});
+        mapping.wireIdsByLayout[layoutId] = wireId;
+      }
+    }
+    return mapping;
+  }
+
+  /// Create wires from the R1CS map and retain the reverse lookup by LLZK layout ID.
+  FailureOr<r1cs::CircuitDefOp>
+  createR1CSWires(ModuleOp module, const LLZKLayout &layout, const R1CSWireMap &mapping) {
+    OpBuilder builder(module.getBodyRegion());
+    StringRef name = main.getSymName();
+    if (auto origin = main->getAttrOfType<SymbolRefAttr>(polymorphic::SPECIALIZATION_ORIGIN_ATTR)) {
+      name = origin.getLeafReference().getValue();
+    }
+    SmallVector<NamedAttribute> publicInputs;
+    SmallVector<int64_t> inputLabels;
+    unsigned inputCount = 0;
+    for (const R1CSWire &entry : mapping.entries) {
+      if (entry.isInput()) {
+        if (entry.kind == WireKind::PublicInput) {
+          publicInputs.emplace_back(
+              builder.getStringAttr(std::to_string(inputCount)), builder.getAttr<r1cs::PublicAttr>()
+          );
+        }
+        inputLabels.push_back(entry.wireId);
+        ++inputCount;
+      }
+    }
+    auto circuit = r1cs::CircuitDefOp::create(
+        builder, main.getLoc(), name, builder.getDictionaryAttr(publicInputs)
+    );
+    circuit->setAttr(r1cs::INPUT_LABELS_ATTR, builder.getDenseI64ArrayAttr(inputLabels));
+    builder.setInsertionPointToEnd(circuit.addEntryBlock());
+    wires.resize(layout.signalPaths.size());
+    for (const R1CSWire &entry : mapping.entries) {
+      Value wire;
+      if (entry.isInput()) {
+        wire = circuit.getBody().front().addArgument(
+            builder.getType<r1cs::SignalType>(), main.getLoc()
+        );
+      } else {
+        auto visibility = entry.kind == WireKind::PublicOutput ? builder.getAttr<r1cs::PublicAttr>()
+                                                               : r1cs::PublicAttr();
+        wire = r1cs::SignalDefOp::create(
+            builder, main.getLoc(), builder.getType<r1cs::SignalType>(),
+            builder.getUI32IntegerAttr(entry.wireId), visibility
+        );
+      }
+      wires[entry.layoutId] = wire;
+    }
+    return circuit;
+  }
+
+  /// Cache each normalized polynomial across all equality constraints.
+  R1CSConstraint lowerExpression(Value root) {
+    if (auto found = expressions.find(root); found != expressions.end()) {
+      return found->second;
+    }
+    for (Value value : getExpressionOrder(root)) {
+      if (expressions.contains(value)) {
+        continue;
+      }
+      Operation *op = value.getDefiningOp();
+      R1CSConstraint result;
+      if (!op || isStorageRead(op)) {
+        result.c.addTerm(value, 1);
+      } else if (auto constant = dyn_cast<FeltConstantOp>(op)) {
+        result.c.constant = constant.getValue().getReducedValueOrRaw();
+      } else if (isa<AddFeltOp>(op)) {
+        result = expressions.at(op->getOperand(0)).add(expressions.at(op->getOperand(1)));
+      } else if (isa<SubFeltOp>(op)) {
+        result = expressions.at(op->getOperand(0)).add(expressions.at(op->getOperand(1)).negated());
+      } else if (isa<MulFeltOp>(op)) {
+        result = expressions.at(op->getOperand(0)).multiply(expressions.at(op->getOperand(1)));
+      } else if (isa<NegFeltOp>(op)) {
+        result = expressions.at(op->getOperand(0)).negated();
+      }
+      expressions[value] = result;
+    }
+    return expressions.at(root);
+  }
+
+  /// Emit a linear combination, reusing each wire's linear conversion.
+  Value emitLinearCombination(
+      const LinearCombination &expression, const LLZKLayout &layout, OpBuilder &builder,
+      Location loc
+  ) {
+    auto type = builder.getType<r1cs::LinearType>();
+    Value result;
+    if (expression.constant != 0) {
+      result = r1cs::ConstOp::create(
+          builder, loc, type, builder.getAttr<r1cs::FeltAttr>(expression.constant)
+      );
+    }
+    SmallVector<std::pair<uint64_t, DynamicAPInt>> terms;
+    for (const auto &[value, coefficient] : expression.terms) {
+      if (coefficient != 0) {
+        terms.emplace_back(*layout.getSignalId(paths.at(value)), coefficient);
+      }
+    }
+    llvm::sort(terms, [](const auto &lhs, const auto &rhs) { return lhs.first < rhs.first; });
+    for (const auto &[id, coefficient] : terms) {
+      Value wire = wires[id];
+      Value &linear = linearWires[wire];
+      if (!linear) {
+        linear = r1cs::ToLinearOp::create(builder, loc, type, wire);
+      }
+      Value term = linear;
+      if (coefficient != 1) {
+        term = r1cs::MulConstOp::create(
+            builder, loc, type, term, builder.getAttr<r1cs::FeltAttr>(coefficient)
+        );
+      }
+      result = result ? r1cs::AddOp::create(builder, loc, type, result, term).getResult() : term;
+    }
+    if (!result) {
+      result = r1cs::ConstOp::create(
+          builder, loc, type, builder.getAttr<r1cs::FeltAttr>(DynamicAPInt(0))
+      );
+    }
+    return result;
+  }
+
+  /// Emit each equality as a product of linear combinations equal to a linear combination.
+  LogicalResult lowerConstraintsToR1CS(r1cs::CircuitDefOp circuit, const LLZKLayout &layout) {
+    OpBuilder builder = OpBuilder::atBlockEnd(&circuit.getBody().front());
+    for (auto eq : constrain.getOps<EmitEqualityOp>()) {
+      auto lhs = lowerExpression(eq.getLhs());
+      auto rhs = lowerExpression(eq.getRhs());
+      R1CSConstraint result;
+      if (degrees.lookup(eq.getLhs()) == 2) {
+        result = lhs;
+        result.c = rhs.c.add(lhs.c.negated());
+      } else if (degrees.lookup(eq.getRhs()) == 2) {
+        result = rhs;
+        result.c = lhs.c.add(rhs.c.negated());
+      } else {
+        result = rhs.add(lhs.negated());
+      }
+      Value a = emitLinearCombination(result.a, layout, builder, eq.getLoc());
+      Value b = emitLinearCombination(result.b, layout, builder, eq.getLoc());
+      Value c = emitLinearCombination(result.c, layout, builder, eq.getLoc());
+      r1cs::ConstrainOp::create(builder, eq.getLoc(), a, b, c);
+    }
+    return success();
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<r1cs::R1CSDialect>();
   }
 
   void runOnOperation() override {
-    ModuleOp moduleOp = getOperation();
-    assert(
-        moduleOp->getContext()->getLoadedDialect<r1cs::R1CSDialect>() && "R1CS dialect not loaded"
-    );
-    moduleOp.walk([this, &moduleOp](StructDefOp structDef) {
-      FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
-      FuncDefOp computeFunc = structDef.getComputeFuncOp();
-      if (!constrainFunc || !computeFunc) {
-        structDef.emitOpError("Missing compute or constrain function").report();
-        signalPassFailure();
-        return;
+    // Pass instances may be reused for multiple modules.
+    degrees.clear();
+    paths.clear();
+    normalized.clear();
+    auxiliaries.clear();
+    expressions.clear();
+    linearWires.clear();
+    assignments.clear();
+    wires.clear();
+    auxCounter = 0;
+    ModuleOp module = getOperation();
+    SymbolTableCollection tables;
+    auto definition = getMainInstanceDef(tables, module);
+    if (failed(definition) || !*definition) {
+      if (succeeded(definition)) {
+        module.emitError("R1CS lowering requires a concrete llzk.main");
       }
-
-      if (failed(checkForAuxMemberConflicts(structDef, R1CS_AUXILIARY_MEMBER_PREFIX))) {
-        signalPassFailure();
-        return;
+      return signalPassFailure();
+    }
+    main = definition->get();
+    constrain = main.getConstrainFuncOp();
+    if (!constrain || constrain.isExternal()) {
+      main.emitOpError("R1CS lowering requires a constrain body");
+      return signalPassFailure();
+    }
+    if (failed(validateDegreeAtMostTwo()) || failed(prepareAuxiliarySignals())) {
+      return signalPassFailure();
+    }
+    auto layout = generateSignalLayout(module);
+    if (failed(layout)) {
+      return signalPassFailure();
+    }
+    auto wireMap = buildR1CSWireMap(*layout);
+    if (failed(wireMap)) {
+      return signalPassFailure();
+    }
+    auto circuit = createR1CSWires(module, *layout, *wireMap);
+    if (failed(circuit)) {
+      return signalPassFailure();
+    }
+    if (failed(lowerConstraintsToR1CS(*circuit, *layout))) {
+      circuit->erase();
+      return signalPassFailure();
+    }
+    for (Operation &op : llvm::make_early_inc_range(module.getBody()->getOperations())) {
+      if (&op != circuit->getOperation()) {
+        op.erase();
       }
-
-      if (failed(checkFuncBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
-        signalPassFailure();
-        return;
-      }
-
-      DenseMap<Value, unsigned> degreeMemo;
-      DenseMap<Value, Value> rewrites;
-      SmallVector<AuxAssignment> auxAssignments;
-
-      constrainFunc.walk([&](EmitEqualityOp eqOp) {
-        OpBuilder builder(eqOp);
-        Value lhs = normalizeForR1CS(
-            eqOp.getLhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments, builder
-        );
-        Value rhs = normalizeForR1CS(
-            eqOp.getRhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments, builder
-        );
-
-        unsigned degLhs = degreeMemo.lookup(lhs);
-        unsigned degRhs = degreeMemo.lookup(rhs);
-
-        // If both sides are degree 2, isolate one side
-        if (degLhs == 2 && degRhs == 2) {
-          std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
-          MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
-          Value aux = MemberReadOp::create(
-              builder, eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
-              auxMember.getNameAttr()
-          );
-          auto eqAux = EmitEqualityOp::create(builder, eqOp.getLoc(), aux, lhs);
-          auxAssignments.push_back({auxName, lhs});
-          degreeMemo[aux] = 1;
-          replaceSubsequentUsesWith(lhs, aux, eqAux);
-          lhs = aux;
-        }
-
-        EmitEqualityOp::create(builder, eqOp.getLoc(), lhs, rhs);
-        eqOp.erase();
-      });
-
-      Block &computeBlock = computeFunc.getBody().front();
-      OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
-      Value selfVal = computeFunc.getSelfValueFromCompute();
-      DenseMap<Value, Value> rebuildMemo;
-
-      for (const auto &assign : auxAssignments) {
-        Value expr = rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        if (!expr) {
-          signalPassFailure();
-          return;
-        }
-        MemberWriteOp::create(
-            builder, assign.computedValue.getLoc(), selfVal,
-            builder.getStringAttr(assign.auxMemberName), expr
-        );
-      }
-      if (failed(buildAndEmitR1CS(moduleOp, structDef, constrainFunc, degreeMemo))) {
-        signalPassFailure();
-        return;
-      }
-      structDef.erase();
-    });
-
-    // Avoid collisions between newly-created circuit symbols and namespace modules
-    // that became empty when their structs were lowered.
-    eraseEmptyNestedModules(moduleOp);
-
-    // Remove `llzk.main` attribute because all structs were replaced with `r1cs.circuit` ops.
-    moduleOp->removeAttr(MAIN_ATTR_NAME);
+    }
+    module->removeAttr(MAIN_ATTR_NAME);
+    module->setAttr(LANG_ATTR_NAME, StringAttr::get(module.getContext(), "r1cs"));
   }
 };
 
