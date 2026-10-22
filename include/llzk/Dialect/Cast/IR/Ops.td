@@ -29,19 +29,17 @@ class CastOp<string mnemonic, list<Trait> traits = []>
                   DeclareOpInterfaceMethods<ConditionallySpeculatable>]> {
   let extraClassDefinition = [{
     /// Model possible assertion failure as program termination, like bool.assert.
-    /// Since field primes must be at least 2, casts from boolean inputs cannot fail.
     void $cppClass::getEffects(
         ::llvm::SmallVectorImpl<::mlir::MemoryEffects::EffectInstance> &effects
     ) {
-      if (getOverflow() == OverflowSemantics::ASSERT && !getValue().getType().isInteger(1)) {
+      if (canCastAssertFail(getValue().getType(), getOverflow())) {
         effects.emplace_back(::mlir::MemoryEffects::Write::get());
       }
     }
 
     /// Only infallible casts may execute on paths where they were not present.
-    /// Since field primes must be at least 2, casts from boolean inputs cannot fail.
     ::mlir::Speculation::Speculatability $cppClass::getSpeculatability() {
-      return getOverflow() == OverflowSemantics::ASSERT && !getValue().getType().isInteger(1)
+      return canCastAssertFail(getValue().getType(), getOverflow())
                  ? ::mlir::Speculation::NotSpeculatable
                  : ::mlir::Speculation::Speculatable;
     }
@@ -117,6 +115,9 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [NotFieldNative]> {
 
     The default `assert` overflow mode fails when the value is outside the
     index safe range, even when the result is unused, and cannot be speculated.
+    If the source has a declared field whose maximum canonical value `p-1`
+    fits in the index safe range, the assertion cannot fail, so the cast is
+    side-effect-free and speculatable. Unspecified fields remain conservative.
     The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
 
     Constant folding reduces the operand in its field before applying the

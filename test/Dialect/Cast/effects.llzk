@@ -38,6 +38,22 @@ module attributes {llzk.lang} {
     %fieldless_explicit = cast.tofelt assert %flag : i1
     function.return
   }
+
+  // Every BabyBear value fits in an index, so these dynamic assertions cannot fail.
+  function.def @unused_small_field_asserts(%f: !felt.type<"babybear">)
+      attributes {function.allow_non_native_field_ops} {
+    %implicit = cast.toindex %f : !felt.type<"babybear">
+    %explicit = cast.toindex assert %f : !felt.type<"babybear">
+    function.return
+  }
+
+  // An unspecified field provides no bound, so its assertions must remain.
+  function.def @unused_fieldless_asserts(%f: !felt.type)
+      attributes {function.allow_non_native_field_ops} {
+    %implicit = cast.toindex %f
+    %explicit = cast.toindex assert %f
+    function.return
+  }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @unused_asserts(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
@@ -52,6 +68,14 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @unused_boolean_asserts(%[[VAL_6:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unused_small_field_asserts(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unused_fieldless_asserts(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_8]] : !felt.type
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_8]] : !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

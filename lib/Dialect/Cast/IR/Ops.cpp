@@ -22,6 +22,21 @@
 
 #include <llvm/ADT/STLExtras.h>
 
+/// Return whether an asserting cast can fail for any value of its source type.
+static bool canCastAssertFail(mlir::Type sourceType, llzk::cast::OverflowSemantics overflow) {
+  if (overflow != llzk::cast::OverflowSemantics::ASSERT || sourceType.isInteger(1)) {
+    return false;
+  }
+  if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(sourceType);
+      feltType && feltType.hasField()) {
+    // Every canonical source value fits if the field maximum fits the index safe range.
+    return !llzk::cast::applyFeltToIndexOverflow(
+        feltType.getField().maxVal(), mlir::IndexType::kInternalStorageBitWidth, overflow
+    );
+  }
+  return true;
+}
+
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"

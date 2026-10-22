@@ -103,4 +103,50 @@ TEST_F(CastEffectTests, BooleanCastsAreAlwaysPure) {
   EXPECT_EQ(count, 10U);
 }
 
+TEST_F(CastEffectTests, SourceFieldRangeControlsEliminationAndSpeculation) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang, llzk.fields = [
+      #felt.field<"cast_fits_index", 9223372036854775783>,
+      #felt.field<"cast_exceeds_index", 9223372036854775837>
+    ]} {
+      function.def @casts(%bb: !felt.type<"babybear">,
+                          %fits: !felt.type<"cast_fits_index">,
+                          %exceeds: !felt.type<"cast_exceeds_index">,
+                          %goldilocks: !felt.type<"goldilocks">,
+                          %bn: !felt.type<"bn254">, %unknown: !felt.type)
+          attributes {function.allow_non_native_field_ops} {
+        %a = cast.toindex %bb : !felt.type<"babybear"> {test.pure}
+        %b = cast.toindex assert %bb : !felt.type<"babybear"> {test.pure}
+        %c = cast.toindex %fits : !felt.type<"cast_fits_index"> {test.pure}
+        %d = cast.toindex assert %fits : !felt.type<"cast_fits_index"> {test.pure}
+        %e = cast.toindex %exceeds : !felt.type<"cast_exceeds_index">
+        %f = cast.toindex assert %exceeds : !felt.type<"cast_exceeds_index">
+        %g = cast.toindex %goldilocks : !felt.type<"goldilocks">
+        %h = cast.toindex assert %goldilocks : !felt.type<"goldilocks">
+        %i = cast.toindex %bn : !felt.type<"bn254">
+        %j = cast.toindex assert %bn : !felt.type<"bn254">
+        %k = cast.toindex %unknown
+        %l = cast.toindex assert %unknown
+        function.return
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+
+  unsigned count = 0;
+  module->walk([&](llzk::cast::FeltToIndexOp op) {
+    ++count;
+    SCOPED_TRACE(count);
+    bool canEliminate = op->hasAttr("test.pure");
+    EXPECT_EQ(mlir::isMemoryEffectFree(op), canEliminate);
+    EXPECT_EQ(mlir::isSpeculatable(op), canEliminate);
+    EXPECT_EQ(mlir::isPure(op), canEliminate);
+    EXPECT_EQ(mlir::isOpTriviallyDead(op), canEliminate);
+  });
+  EXPECT_EQ(count, 12U);
+}
+
 } // namespace

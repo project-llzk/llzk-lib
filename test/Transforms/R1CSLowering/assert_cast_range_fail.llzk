@@ -1,8 +1,8 @@
 // RUN: split-file %s %t
 // RUN: llzk-opt --llzk-r1cs-lowering -split-input-file -verify-diagnostics %t/residual.llzk
 // RUN: llzk-opt --llzk-full-r1cs-lowering -split-input-file -verify-diagnostics %t/residual.llzk
-// RUN: llzk-opt --canonicalize --llzk-r1cs-lowering -verify-diagnostics %t/foldable.llzk
-// RUN: llzk-opt --llzk-full-r1cs-lowering -verify-diagnostics %t/foldable.llzk
+// RUN: llzk-opt --canonicalize --llzk-r1cs-lowering -split-input-file -verify-diagnostics %t/foldable.llzk
+// RUN: llzk-opt --llzk-full-r1cs-lowering -split-input-file -verify-diagnostics %t/foldable.llzk
 
 //--- residual.llzk
 // Constraint extraction must not discard a failing cast whose result is unused.
@@ -123,6 +123,27 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %upper = cast.toindex assert %max : !felt.type<"bn254">
       %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"bn254">
       constrain.eq %out, %max : !felt.type<"bn254">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Every BabyBear value fits in an index. Unused assertions on dynamic inputs
+// must disappear during cleanup so the full pipeline accepts this circuit.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+      %implicit = cast.toindex %input : !felt.type<"babybear">
+      %explicit = cast.toindex assert %input : !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %input : !felt.type<"babybear">
       function.return
     }
   }
