@@ -69,3 +69,45 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+
+// -----
+
+// Even empty annotated loops must be bounded before host-side iteration.
+
+module attributes {llzk.lang} {
+  function.def @large_annotated_for(%lb: index, %ub: index, %step: index) {
+    // expected-error @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
+    scf.for %iv = %lb to %ub step %step {
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @large_annotated_while(%cond: i1) {
+    // expected-error @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @large_computed_for(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %bound = arith.constant 10001 : index
+    %one = arith.constant 1 : index
+    // expected-error @+1 {{loop trip count 10001 exceeds max-unroll limit of 10000}}
+    scf.for %iv = %zero to %bound step %one {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}

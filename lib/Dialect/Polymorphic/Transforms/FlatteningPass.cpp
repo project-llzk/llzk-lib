@@ -1192,6 +1192,17 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step3_Unroll {
 
+/// Reject excessive trip counts before any annotated or computed loop expansion.
+static LogicalResult
+checkUnrollLimit(Operation *loopOp, PatternRewriter &rewriter, uint64_t tripCount, uint64_t limit) {
+  if (tripCount > limit) {
+    return rewriter.notifyMatchFailure(loopOp, [&](Diagnostic &diag) {
+      diag << "loop trip count " << tripCount << " exceeds max-unroll limit of " << limit;
+    });
+  }
+  return success();
+}
+
 /// Compute the trip count from the loop itself, independently of any trusted annotation.
 static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
   if (auto whileOp = dyn_cast<scf::WhileOp>(loopOp.getOperation());
@@ -1216,8 +1227,8 @@ static std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
 template <HasInterface<LoopLikeOpInterface> OpClass>
 class AnnotatedLoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
-  AnnotatedLoopUnrollPattern(MLIRContext *ctx, ConversionTracker &t)
-      : OpRewritePattern<OpClass>(ctx), tracker(t) {}
+  AnnotatedLoopUnrollPattern(MLIRContext *ctx, ConversionTracker &t, uint64_t limit)
+      : OpRewritePattern<OpClass>(ctx), tracker(t), unrollIterationLimit(limit) {}
 
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     auto bounds = loopOp->template getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name);
@@ -1250,7 +1261,8 @@ public:
       );
     }
 
-    if (failed(unroll(loopOp, rewriter, bounds, *tripCount))) {
+    if (failed(checkUnrollLimit(loopOp, rewriter, *tripCount, unrollIterationLimit)) ||
+        failed(unroll(loopOp, rewriter, bounds, *tripCount))) {
       return failure();
     }
     tracker.updateModifiedFlag(true);
@@ -1336,18 +1348,23 @@ private:
   }
 
   ConversionTracker &tracker;
+  uint64_t unrollIterationLimit;
 };
 
-// Unroll via computed trip count
+/// Unroll loops with a constant computed trip count within the configured limit.
 template <HasInterface<LoopLikeOpInterface> OpClass>
 class ComputedLoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
-  using OpRewritePattern<OpClass>::OpRewritePattern;
+  ComputedLoopUnrollPattern(MLIRContext *ctx, uint64_t limit)
+      : OpRewritePattern<OpClass>(ctx), unrollIterationLimit(limit) {}
 
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     if (auto maybeConstant = getConstantTripCount(loopOp);
         maybeConstant && maybeConstant->getActiveBits() <= 64) {
       uint64_t tripCount = maybeConstant->getZExtValue();
+      if (failed(checkUnrollLimit(loopOp, rewriter, tripCount, unrollIterationLimit))) {
+        return failure();
+      }
       if (tripCount == 0) {
         rewriter.replaceOp(loopOp, loopOp.getInits());
         return success();
@@ -1358,16 +1375,19 @@ public:
     }
     return failure();
   }
+
+private:
+  uint64_t unrollIterationLimit;
 };
 
-LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker, uint64_t unrollIterationLimit) {
   MLIRContext *ctx = modOp.getContext();
 
   // Must unroll via `LoopBoundsAttr` if present
   RewritePatternSet annotatedPatterns(ctx);
-  annotatedPatterns.add<AnnotatedLoopUnrollPattern<scf::ForOp>>(ctx, tracker);
-  annotatedPatterns.add<AnnotatedLoopUnrollPattern<scf::WhileOp>>(ctx, tracker);
-  annotatedPatterns.add<AnnotatedLoopUnrollPattern<affine::AffineForOp>>(ctx, tracker);
+  annotatedPatterns.add<
+      AnnotatedLoopUnrollPattern<scf::ForOp>, AnnotatedLoopUnrollPattern<scf::WhileOp>,
+      AnnotatedLoopUnrollPattern<affine::AffineForOp>>(ctx, tracker, unrollIterationLimit);
   MatchFailureListener failureListener;
   walkAndApplyPatterns(modOp, std::move(annotatedPatterns), &failureListener);
   if (failureListener.hadFailure) {
@@ -1376,8 +1396,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   // Otherwise, fall through to computed trip count unrolling
   RewritePatternSet patterns(ctx);
-  patterns.add<ComputedLoopUnrollPattern<scf::ForOp>>(ctx);
-  patterns.add<ComputedLoopUnrollPattern<affine::AffineForOp>>(ctx);
+  patterns
+      .add<ComputedLoopUnrollPattern<scf::ForOp>, ComputedLoopUnrollPattern<affine::AffineForOp>>(
+          ctx, unrollIterationLimit
+      );
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
 
@@ -2323,7 +2345,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
                      << ")] Running step 2: loop unrolling\n";
       });
       // Unroll loops with known iterations.
-      if (failed(Step3_Unroll::run(modOp, tracker))) {
+      if (failed(Step3_Unroll::run(modOp, tracker, unrollIterationLimit))) {
         llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
         return failure();
       }
