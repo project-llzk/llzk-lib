@@ -16,6 +16,7 @@
 #include "smt/Conversions/ConversionPasses.h"
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
@@ -83,7 +84,7 @@ namespace {
 /// for other non-native target theories in the future.
 class ModularReasoner {
 public:
-  static constexpr uint64_t explicitReductionQuotientThreshold = 1000;
+  static constexpr int64_t explicitReductionQuotientThreshold = 1000;
 
   enum class ReductionKind : std::uint8_t {
     Direct,
@@ -113,6 +114,12 @@ public:
   }
 
   bool isScalarFeltType(Type type) const { return isa<felt::FeltType>(type); }
+  bool isArrayFeltType(Type type) const {
+    if (auto arrType = dyn_cast<array::ArrayType>(type)) {
+      return isa<felt::FeltType>(arrType.getElementType());
+    }
+    return false;
+  }
 
   UnreducedInterval getDefaultFeltRange() const {
     return UnreducedInterval(field.get().zero(), field.get().maxVal());
@@ -156,8 +163,7 @@ public:
   }
 
   bool isCanonical(const UnreducedInterval &range) const {
-    llvm::DynamicAPInt zero(0);
-    return range.getLHS() >= zero && range.getRHS() < primeDynamic;
+    return range.getLHS() >= 0 && range.getRHS() < primeDynamic;
   }
 
   bool maybeContainsZeroResidue(const UnreducedInterval &range) const {
@@ -245,7 +251,7 @@ private:
   bool shouldUseExplicitReduction(const UnreducedInterval &range) const {
     auto quotientRange = getQuotientRange(range);
     auto quotientWidth = quotientRange.getRHS() - quotientRange.getLHS();
-    return quotientWidth < llvm::DynamicAPInt(explicitReductionQuotientThreshold);
+    return quotientWidth < explicitReductionQuotientThreshold;
   }
 
   llvm::DynamicAPInt floorDiv(const llvm::DynamicAPInt &value) const {
@@ -258,174 +264,6 @@ private:
     std::string name(prefix);
     name += suffix;
     return name;
-  }
-};
-
-/// Theory-neutral primitive emitter interface used by non-native encoders.
-class NonNativeTheoryEmitter {
-public:
-  virtual ~NonNativeTheoryEmitter() = default;
-
-  virtual void emitRangeConstraint(
-      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
-  ) const = 0;
-  virtual Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const = 0;
-  virtual Value
-  emitConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const = 0;
-  virtual Value emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
-  virtual Value emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
-  virtual Value emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
-  virtual Value emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
-  virtual Value emitSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
-  virtual Value emitSignedRem(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
-  virtual Value emitModPrime(OpBuilder &builder, Location loc, Value value) const = 0;
-  virtual Value emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const = 0;
-  virtual Value emitOrderedComparison(
-      OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs, Value rhs
-  ) const = 0;
-};
-
-/// Emit primitive integer-theory terms for the optimized non-native encoding.
-///
-/// This layer only builds integer-sorted values and
-/// arithmetic fragments. Higher-level non-native encoding structure lives above
-/// this emitter.
-class SMTIntTheoryEmitter : public NonNativeTheoryEmitter {
-public:
-  SMTIntTheoryEmitter(MLIRContext *context, const ModularReasoner &modularReasoner)
-      : ctx(context), reasoner(modularReasoner) {}
-
-  void emitRangeConstraint(
-      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
-  ) const override {
-    auto lower = createIntConstant(builder, loc, range.getLHS());
-    auto upper = createIntConstant(builder, loc, range.getRHS());
-    auto lowerBound = mlir::smt::IntCmpOp::create(
-        builder, loc, mlir::smt::IntPredicate::ge, value, lower.getResult()
-    );
-    auto upperBound = mlir::smt::IntCmpOp::create(
-        builder, loc, mlir::smt::IntPredicate::le, value, upper.getResult()
-    );
-    // Assert the lower bound of the canonical/unreduced interval for this symbol.
-    mlir::smt::AssertOp::create(builder, loc, lowerBound.getResult());
-    // Assert the upper bound of the canonical/unreduced interval for this symbol.
-    mlir::smt::AssertOp::create(builder, loc, upperBound.getResult());
-  }
-
-  Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const override {
-    std::string freshName = getFreshName(name);
-    return mlir::smt::DeclareFunOp::create(
-               builder, loc, mlir::smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
-    )
-        .getResult();
-  }
-
-  Value
-  emitConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const override {
-    return createIntConstant(builder, loc, value).getResult();
-  }
-
-  Value emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return mlir::smt::IntSubOp::create(builder, loc, lhs, rhs).getResult();
-  }
-
-  Value emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return mlir::smt::IntAddOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
-  }
-
-  Value emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return mlir::smt::IntMulOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
-  }
-
-  Value emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return mlir::smt::IntDivOp::create(builder, loc, lhs, rhs).getResult();
-  }
-
-  Value emitSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return emitTruncatingSignedDivision(builder, loc, lhs, rhs);
-  }
-
-  Value emitSignedRem(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    Value quotient = emitTruncatingSignedDivision(builder, loc, lhs, rhs);
-    Value product = emitMul(builder, loc, quotient, rhs);
-    return emitSub(builder, loc, lhs, product);
-  }
-
-  Value emitModPrime(OpBuilder &builder, Location loc, Value value) const override {
-    auto primeConst = createPrimeConstant(builder, loc);
-    return mlir::smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
-        .getResult();
-  }
-
-  Value emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const override {
-    auto primeConst = createPrimeConstant(builder, loc);
-    return emitMul(builder, loc, factor, primeConst.getResult());
-  }
-
-  Value emitOrderedComparison(
-      OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs, Value rhs
-  ) const override {
-    static DenseMap<boolean::FeltCmpPredicate, mlir::smt::IntPredicate> predicateComparator = {
-        {boolean::FeltCmpPredicate::GE, mlir::smt::IntPredicate::ge},
-        {boolean::FeltCmpPredicate::GT, mlir::smt::IntPredicate::gt},
-        {boolean::FeltCmpPredicate::LE, mlir::smt::IntPredicate::le},
-        {boolean::FeltCmpPredicate::LT, mlir::smt::IntPredicate::lt}
-    };
-    return mlir::smt::IntCmpOp::create(builder, loc, predicateComparator[predicate], lhs, rhs)
-        .getResult();
-  }
-
-private:
-  /// |value| = if value < 0 then -value else value
-  Value emitAbsValue(OpBuilder &builder, Location loc, Value value) const {
-    Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
-    Value isNegative =
-        emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
-    Value negated = emitSub(builder, loc, zero, value);
-    return mlir::smt::IteOp::create(builder, loc, isNegative, negated, value).getResult();
-  }
-
-  /// absQuotient = |lhs| / |rhs|
-  /// quotient = if sign(lhs) != sign(rhs) then -absQuotient else absQuotient
-  Value emitTruncatingSignedDivision(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
-    Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
-    Value lhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, lhs, zero);
-    Value rhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, rhs, zero);
-    Value lhsAbs = emitAbsValue(builder, loc, lhs);
-    Value rhsAbs = emitAbsValue(builder, loc, rhs);
-    Value absQuotient = emitDiv(builder, loc, lhsAbs, rhsAbs);
-    // we can use xor here because we are checking if the signs are different
-    Value signsDiffer =
-        mlir::smt::XOrOp::create(builder, loc, ValueRange {lhsNeg, rhsNeg}).getResult();
-    Value negatedQuotient = emitSub(builder, loc, zero, absQuotient);
-    return mlir::smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient)
-        .getResult();
-  }
-
-  MLIRContext *ctx;
-  const ModularReasoner &reasoner;
-  // `freshSymbolCounts` is a map to improve readability. We could just have a counter.
-  mutable llvm::StringMap<unsigned> freshSymbolCounts;
-
-  std::string getFreshName(StringRef baseName) const {
-    unsigned count = freshSymbolCounts[baseName]++;
-    if (count == 0) {
-      return baseName.str();
-    }
-
-    std::string uniqueName(baseName);
-    uniqueName += '_';
-    uniqueName += std::to_string(count);
-    return uniqueName;
-  }
-
-  mlir::smt::IntConstantOp createPrimeConstant(OpBuilder &builder, Location loc) const {
-    return createIntConstant(builder, loc, reasoner.getPrime());
-  }
-
-  mlir::smt::IntConstantOp
-  createIntConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const {
-    return mlir::smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, toAPSInt(value)));
   }
 };
 
@@ -458,6 +296,12 @@ public:
   void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
   ) const;
+
+  // Emit a single range constraint for every element of the array
+  void emitArrayRangeConstraint(
+      OpBuilder &builder, Location loc, Value array, ArrayRef<size_t> extents,
+      const UnreducedInterval &range
+  ) const;
   bool maybeContainsZeroResidue(const UnreducedInterval &range) const;
   bool spansModulusBoundary(const UnreducedInterval &range) const;
   bool sameResidueWindow(const UnreducedInterval &lhs, const UnreducedInterval &rhs) const;
@@ -478,9 +322,11 @@ public:
       const UnreducedInterval &lhsRange, Value rhs, const UnreducedInterval &rhsRange,
       StringRef prefix
   ) const;
-  void emitCongruenceEqualityAssertion(
-      OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
-      const UnreducedInterval &rhsRange, StringRef prefix
+
+  // This one can fail if the values being asserted are dynamically shaped arrays
+  LogicalResult emitCongruenceEqualityAssertion(
+      OpBuilder &builder, Type type, Location loc, Value lhs, const UnreducedInterval &lhsRange,
+      Value rhs, const UnreducedInterval &rhsRange, StringRef prefix
   ) const;
   Value emitDivisionValue(
       OpBuilder &builder, Location loc, Value numerator, const UnreducedInterval &numeratorRange,
@@ -500,7 +346,7 @@ public:
 private:
   Value emitSignedFeltExpr(OpBuilder &builder, Location loc, Value value) const;
   ModularReasoner reasoner;
-  std::unique_ptr<NonNativeTheoryEmitter> emitter;
+  std::unique_ptr<SMTIntTheoryEmitter> emitter;
 };
 
 class FeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
@@ -612,8 +458,10 @@ public:
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    if (!strategy->isScalarFeltType(op.getVal().getType())) {
-      return op.emitError("SMT lowering currently only supports felt-valued struct.writem");
+    if (!isFeltOrArrayOfFelt(op.getVal().getType())) {
+      return op.emitError(
+          "SMT lowering currently only supports felt- or array-of-felt-valued struct.writem"
+      );
     }
 
     auto it = symbols.find(adaptor.getMemberName());
@@ -624,9 +472,12 @@ public:
     auto [_, witness] = it->second;
     auto witnessRange = strategy->getWitnessMemberRange(adaptor.getMemberName());
     auto valueRange = strategy->getScalarValueRange(op.getVal());
-    strategy->emitCongruenceEqualityAssertion(
-        rewriter, op.getLoc(), witness, witnessRange, adaptor.getVal(), valueRange, "member_write"
-    );
+    if (failed(strategy->emitCongruenceEqualityAssertion(
+            rewriter, op.getVal().getType(), op.getLoc(), witness, witnessRange, adaptor.getVal(),
+            valueRange, "member_write"
+        ))) {
+      return failure();
+    }
     rewriter.eraseOp(op);
 
     return success();
@@ -651,10 +502,12 @@ public:
   ) const override {
     auto lhsRange = strategy->getScalarValueRange(op.getLhs());
     auto rhsRange = strategy->getScalarValueRange(op.getRhs());
-    strategy->emitCongruenceEqualityAssertion(
-        rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange,
-        "constrain_eq"
-    );
+    if (failed(strategy->emitCongruenceEqualityAssertion(
+            rewriter, op.getLhs().getType(), op.getLoc(), adaptor.getLhs(), lhsRange,
+            adaptor.getRhs(), rhsRange, "constrain_eq"
+        ))) {
+      return failure();
+    };
     rewriter.eraseOp(op);
     return success();
   }
@@ -718,7 +571,7 @@ OptimizedNonNativeStrategy::OptimizedNonNativeStrategy(
     const StructIntervals *intervals
 )
     : reasoner(selectedField, dataflowSolver, intervals),
-      emitter(std::make_unique<SMTIntTheoryEmitter>(context, reasoner)) {}
+      emitter(std::make_unique<SMTIntTheoryEmitter>(context, toAPSInt(reasoner.getPrime()))) {}
 
 bool OptimizedNonNativeStrategy::isScalarFeltType(Type type) const {
   return reasoner.isScalarFeltType(type);
@@ -744,6 +597,22 @@ void OptimizedNonNativeStrategy::emitRangeConstraint(
     OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
 ) const {
   emitter->emitRangeConstraint(builder, loc, value, range);
+}
+
+void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
+    OpBuilder &builder, Location loc, Value array, ArrayRef<size_t> extents,
+    const UnreducedInterval &range
+) const {
+
+  auto arrayElementInRange = [this, &range, &builder, &loc, &array](ValueRange indices) -> Value {
+    auto element = emitter->emitArraySelect(loc, array, indices, builder);
+    auto [rangeLo, rangeHi] = emitter->getRangeBoundAssertions(builder, loc, element, range);
+    return mlir::smt::AndOp::create(builder, loc, rangeLo, rangeHi).getResult();
+  };
+
+  auto rangeAssertion =
+      emitter->emitQuantifiedAssertion(loc, extents, arrayElementInRange, builder);
+  mlir::smt::AssertOp::create(builder, loc, rangeAssertion);
 }
 
 bool OptimizedNonNativeStrategy::maybeContainsZeroResidue(const UnreducedInterval &range) const {
@@ -859,14 +728,35 @@ Value OptimizedNonNativeStrategy::emitOrderedComparisonPredicate(
   return emitter->emitOrderedComparison(builder, loc, predicate, lhsToCompare, rhsToCompare);
 }
 
-void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
-    OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
-    const UnreducedInterval &rhsRange, StringRef prefix
+LogicalResult OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
+    OpBuilder &builder, Type type, Location loc, Value lhs, const UnreducedInterval &lhsRange,
+    Value rhs, const UnreducedInterval &rhsRange, StringRef prefix
 ) const {
+  if (auto arrType = dyn_cast<array::ArrayType>(type)) {
+    auto extents = getExtents(arrType);
+    auto equalAtPosition = [this, &loc, &lhs, &rhs, &builder, &lhsRange, &rhsRange,
+                            &prefix](ValueRange indices) -> Value {
+      auto lhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
+      auto rhsElement = emitter->emitArraySelect(loc, rhs, indices, builder);
+      return buildCongruenceEqualityPredicate(
+          builder, loc, lhsElement, lhsRange, rhsElement, rhsRange, prefix
+      );
+    };
+    if (succeeded(extents)) {
+      Value predicate = emitter->emitQuantifiedAssertion(loc, *extents, equalAtPosition, builder);
+      mlir::smt::AssertOp::create(builder, loc, predicate);
+      return success();
+    }
+    // If the arrays are dynamically sized, just emit a warning and fall back to asserting the whole
+    // thing equal (outside the if-statement)
+    return mlir::emitError(loc) << "dynamically sized arrays not fully supported in SMT lowering";
+  }
+
   Value predicate =
       buildCongruenceEqualityPredicate(builder, loc, lhs, lhsRange, rhs, rhsRange, prefix);
   // Assert lhs ≡ rhs (mod p) using the selected congruence encoding plan.
   mlir::smt::AssertOp::create(builder, loc, predicate);
+  return success();
 }
 
 Value OptimizedNonNativeStrategy::emitDivisionValue(
@@ -1117,29 +1007,45 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
       }
 
       SignalSymbols signalSymbols;
+      LLZKToSMTTypeConverter typeConverter {&getContext()};
       for (auto memberDef : structDef.getMemberDefs()) {
-        if (!isa<felt::FeltType>(memberDef.getType())) {
+        if (!isFeltOrArrayOfFelt(memberDef.getType())) {
           continue;
         }
 
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";
+        auto symbolType = typeConverter.convertType(memberDef.getType());
         auto constraintSym = mlir::smt::DeclareFunOp::create(
-            rewriter, preamble, mlir::smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), constraintName)
+            rewriter, preamble, symbolType, StringAttr::get(&getContext(), constraintName)
         );
         auto witnessSym = mlir::smt::DeclareFunOp::create(
-            rewriter, preamble, mlir::smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), witnessName)
+            rewriter, preamble, symbolType, StringAttr::get(&getContext(), witnessName)
         );
-        strategy.emitRangeConstraint(
-            rewriter, memberDef.getLoc(), constraintSym.getResult(),
-            strategy.getConstraintMemberRange(memberDef.getSymName())
-        );
-        strategy.emitRangeConstraint(
-            rewriter, memberDef.getLoc(), witnessSym.getResult(),
-            strategy.getWitnessMemberRange(memberDef.getSymName())
-        );
+        if (isa<felt::FeltType>(memberDef.getType())) {
+          strategy.emitRangeConstraint(
+              rewriter, memberDef.getLoc(), constraintSym.getResult(),
+              strategy.getConstraintMemberRange(memberDef.getSymName())
+          );
+          strategy.emitRangeConstraint(
+              rewriter, memberDef.getLoc(), witnessSym.getResult(),
+              strategy.getWitnessMemberRange(memberDef.getSymName())
+          );
+        } else if (auto arrType = dyn_cast<array::ArrayType>(memberDef.getType())) {
+          auto extents = getExtents(arrType);
+          if (failed(extents)) {
+            mod.emitError("SMT lowering does not support dynamically-shaped arrays\n");
+            return signalPassFailure();
+          }
+          strategy.emitArrayRangeConstraint(
+              rewriter, memberDef.getLoc(), constraintSym.getResult(), *extents,
+              strategy.getConstraintMemberRange(memberDef.getSymName())
+          );
+          strategy.emitArrayRangeConstraint(
+              rewriter, memberDef.getLoc(), witnessSym.getResult(), *extents,
+              strategy.getWitnessMemberRange(memberDef.getSymName())
+          );
+        }
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
 

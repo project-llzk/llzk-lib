@@ -9,6 +9,8 @@
 
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 
+#include "llzk/Util/DynamicAPIntHelper.h"
+
 using namespace mlir;
 
 namespace llzk::felt {

@@ -24,6 +24,7 @@
 
 #include <array>
 #include <gtest/gtest.h>
+#include <limits>
 
 using namespace mlir;
 using namespace llzk;
@@ -78,6 +79,44 @@ protected:
     auto operandOp = FeltConstantOp::create(builder, loc, operandAttr);
     auto op = OpTy::create(builder, loc, operandOp.getResult());
 
+    SmallVector<Attribute, 1> operands = {operandAttr};
+    SmallVector<OpFoldResult, 1> results;
+    if (failed(op->fold(operands, results)) || results.empty()) {
+      return {};
+    }
+    return llvm::dyn_cast_or_null<FeltConstAttr>(llvm::dyn_cast_if_present<Attribute>(results[0]));
+  }
+
+  /// Fold a cast from a block argument using only the supplied constant attribute.
+  IntegerAttr foldToIndex(
+      FeltConstAttr operandAttr,
+      llzk::cast::OverflowSemantics overflow = llzk::cast::OverflowSemantics::ASSERT
+  ) {
+    Block block;
+    OpBuilder builder(&ctx);
+    builder.setInsertionPointToEnd(&block);
+    auto type = operandAttr ? operandAttr.getType() : FeltType::get(&ctx, BB_FIELD);
+    auto operand = block.addArgument(type, loc);
+    auto op = llzk::cast::FeltToIndexOp::create(builder, loc, overflow, operand);
+    SmallVector<Attribute, 1> operands = {operandAttr};
+    SmallVector<OpFoldResult, 1> results;
+    if (failed(op->fold(operands, results)) || results.empty()) {
+      return {};
+    }
+    return llvm::dyn_cast_or_null<IntegerAttr>(llvm::dyn_cast_if_present<Attribute>(results[0]));
+  }
+
+  /// Fold an integer-to-felt cast using an adaptor constant and a block argument.
+  FeltConstAttr foldToFelt(
+      IntegerAttr operandAttr, FeltType resultType,
+      llzk::cast::OverflowSemantics overflow = llzk::cast::OverflowSemantics::ASSERT
+  ) {
+    Block block;
+    OpBuilder builder(&ctx);
+    builder.setInsertionPointToEnd(&block);
+    auto type = operandAttr ? operandAttr.getType() : builder.getIndexType();
+    auto operand = block.addArgument(type, loc);
+    auto op = llzk::cast::IntToFeltOp::create(builder, loc, resultType, overflow, operand);
     SmallVector<Attribute, 1> operands = {operandAttr};
     SmallVector<OpFoldResult, 1> results;
     if (failed(op->fold(operands, results)) || results.empty()) {
@@ -430,17 +469,170 @@ TEST_F(BabyBearFoldTest, FoldsReduceUncanonicalizedOperands) {
 // constant to be canonicalized first.
 TEST_F(BabyBearFoldTest, CastToIndexReducesWithoutCanonicalizingConstant) {
   Block block;
-  PatternRewriter rewriter(&ctx);
-  rewriter.setInsertionPointToEnd(&block);
-  auto constant = FeltConstantOp::create(rewriter, loc, babyBearConst(BB_PRIME + 7));
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto constant = FeltConstantOp::create(builder, loc, babyBearConst(BB_PRIME + 7));
   ASSERT_TRUE(constant.getValue().getReducedValue());
   EXPECT_EQ(*constant.getValue().getReducedValue(), 7U);
-  auto cast = llzk::cast::FeltToIndexOp::create(rewriter, loc, constant.getResult());
-  ASSERT_TRUE(succeeded(llzk::cast::FeltToIndexOp::canonicalize(cast, rewriter)));
-  auto index = dyn_cast<arith::ConstantIndexOp>(block.back());
+  Value folded = builder.createOrFold<llzk::cast::FeltToIndexOp>(loc, constant.getResult());
+  auto index = folded.getDefiningOp<arith::ConstantIndexOp>();
   ASSERT_TRUE(index);
   EXPECT_EQ(index.value(), 7);
   EXPECT_EQ(constant.getValue().getRawValue(), toDynamicAPInt(BB_PRIME + 7));
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexFoldsAdaptorConstant) {
+  auto result = foldToIndex(babyBearConst(BB_PRIME + 7));
+  ASSERT_TRUE(result);
+  EXPECT_TRUE(result.getType().isIndex());
+  EXPECT_EQ(result.getInt(), 7);
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexDefersUnknownConstants) {
+  for (auto mode :
+       {llzk::cast::OverflowSemantics::ASSERT, llzk::cast::OverflowSemantics::SATURATE,
+        llzk::cast::OverflowSemantics::WRAP, llzk::cast::OverflowSemantics::TRUNCATE}) {
+    EXPECT_FALSE(foldToIndex({}, mode));
+    EXPECT_FALSE(foldToIndex(unspecifiedConst(0), mode));
+    EXPECT_FALSE(foldToIndex(unspecifiedConst(BB_PRIME + 7), mode));
+  }
+}
+
+TEST_F(BabyBearFoldTest, CastToIndexFoldPreservesOverflowSemantics) {
+  const int64_t maxIndex = std::numeric_limits<int64_t>::max();
+  auto maxValue = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(maxIndex), "bn254");
+  auto tooLarge = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(maxIndex) + 13, "bn254");
+  auto result = foldToIndex(maxValue);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result.getInt(), maxIndex);
+  EXPECT_FALSE(foldToIndex(tooLarge));
+
+  result = foldToIndex(tooLarge, llzk::cast::OverflowSemantics::SATURATE);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result.getInt(), maxIndex);
+  for (auto mode : {llzk::cast::OverflowSemantics::WRAP, llzk::cast::OverflowSemantics::TRUNCATE}) {
+    result = foldToIndex(tooLarge, mode);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(result.getInt(), 12);
+  }
+}
+
+TEST_F(BabyBearFoldTest, CastToFeltFoldsAdaptorConstants) {
+  OpBuilder builder(&ctx);
+  auto type = FeltType::get(&ctx, BB_FIELD);
+  expectValue(foldToFelt(builder.getIndexAttr(7), type), 7);
+  for (auto mode :
+       {llzk::cast::OverflowSemantics::ASSERT, llzk::cast::OverflowSemantics::SATURATE,
+        llzk::cast::OverflowSemantics::WRAP, llzk::cast::OverflowSemantics::TRUNCATE}) {
+    expectValue(foldToFelt(builder.getBoolAttr(false), type, mode), 0);
+    expectValue(foldToFelt(builder.getBoolAttr(true), type, mode), 1);
+  }
+}
+
+TEST_F(BabyBearFoldTest, CastToFeltDefersUnknownConstantsAndFields) {
+  OpBuilder builder(&ctx);
+  for (auto mode :
+       {llzk::cast::OverflowSemantics::ASSERT, llzk::cast::OverflowSemantics::SATURATE,
+        llzk::cast::OverflowSemantics::WRAP, llzk::cast::OverflowSemantics::TRUNCATE}) {
+    expectNoFold(foldToFelt({}, FeltType::get(&ctx, BB_FIELD), mode));
+    expectNoFold(foldToFelt(builder.getIndexAttr(0), FeltType::get(&ctx), mode));
+    expectNoFold(foldToFelt(builder.getBoolAttr(true), FeltType::get(&ctx), mode));
+  }
+}
+
+TEST_F(BabyBearFoldTest, CastToFeltFoldPreservesOverflowSemantics) {
+  OpBuilder builder(&ctx);
+  auto type = FeltType::get(&ctx, BB_FIELD);
+  auto negative = builder.getIndexAttr(-1);
+  auto prime = builder.getIndexAttr(BB_PRIME);
+  auto abovePrime = builder.getIndexAttr(BB_PRIME + 1);
+  expectValue(foldToFelt(builder.getIndexAttr(0), type), 0);
+  expectValue(foldToFelt(builder.getIndexAttr(BB_PRIME - 1), type), BB_PRIME - 1);
+  expectNoFold(foldToFelt(negative, type));
+  expectNoFold(foldToFelt(prime, type));
+  expectValue(foldToFelt(negative, type, llzk::cast::OverflowSemantics::SATURATE), 0);
+  expectValue(foldToFelt(abovePrime, type, llzk::cast::OverflowSemantics::SATURATE), BB_PRIME - 1);
+  expectValue(foldToFelt(negative, type, llzk::cast::OverflowSemantics::WRAP), BB_PRIME - 1);
+  expectValue(foldToFelt(prime, type, llzk::cast::OverflowSemantics::WRAP), 0);
+  expectValue(foldToFelt(abovePrime, type, llzk::cast::OverflowSemantics::WRAP), 1);
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr(std::numeric_limits<int64_t>::min()), type,
+          llzk::cast::OverflowSemantics::WRAP
+      ),
+      420548879
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr(std::numeric_limits<int64_t>::max()), type,
+          llzk::cast::OverflowSemantics::WRAP
+      ),
+      1592717041
+  );
+  expectValue(foldToFelt(negative, type, llzk::cast::OverflowSemantics::TRUNCATE), 134217726);
+  expectValue(foldToFelt(prime, type, llzk::cast::OverflowSemantics::TRUNCATE), 0);
+  expectValue(foldToFelt(abovePrime, type, llzk::cast::OverflowSemantics::TRUNCATE), 1);
+  expectValue(
+      foldToFelt(builder.getIndexAttr(1ULL << 31U), type, llzk::cast::OverflowSemantics::TRUNCATE),
+      0
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr((1ULL << 31U) + 1), type, llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      1
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr((1ULL << 31U) + BB_PRIME), type,
+          llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      0
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr(std::numeric_limits<int64_t>::min()), type,
+          llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      0
+  );
+  expectValue(
+      foldToFelt(
+          builder.getIndexAttr(std::numeric_limits<int64_t>::max()), type,
+          llzk::cast::OverflowSemantics::TRUNCATE
+      ),
+      134217726
+  );
+}
+
+TEST_F(BabyBearFoldTest, CastToFeltCreateOrFoldMaterializesValidResults) {
+  Block block;
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(&block);
+  auto type = FeltType::get(&ctx, "goldilocks");
+  auto seven = arith::ConstantIndexOp::create(builder, loc, 7);
+  Value folded = builder.createOrFold<llzk::cast::IntToFeltOp>(
+      loc, type, llzk::cast::OverflowSemantics::ASSERT, seven.getResult()
+  );
+  auto constant = folded.getDefiningOp<FeltConstantOp>();
+  ASSERT_TRUE(constant);
+  EXPECT_EQ(constant.getType(), type);
+  EXPECT_EQ(constant.getValue().getRawValue(), 7);
+
+  auto negative = arith::ConstantIndexOp::create(builder, loc, -1);
+  Value retained = builder.createOrFold<llzk::cast::IntToFeltOp>(
+      loc, FeltType::get(&ctx, BB_FIELD), llzk::cast::OverflowSemantics::ASSERT,
+      negative.getResult()
+  );
+  EXPECT_TRUE(retained.getDefiningOp<llzk::cast::IntToFeltOp>());
+  Value truncated = builder.createOrFold<llzk::cast::IntToFeltOp>(
+      loc, FeltType::get(&ctx, BB_FIELD), llzk::cast::OverflowSemantics::TRUNCATE,
+      negative.getResult()
+  );
+  auto truncatedConstant = truncated.getDefiningOp<FeltConstantOp>();
+  ASSERT_TRUE(truncatedConstant);
+  EXPECT_EQ(truncatedConstant.getType(), FeltType::get(&ctx, BB_FIELD));
+  EXPECT_EQ(truncatedConstant.getValue().getRawValue(), 134217726);
 }
 
 // Exercise the fold hook directly so constant canonicalization cannot mask regressions.
