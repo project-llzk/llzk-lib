@@ -703,6 +703,10 @@ class ConstraintElaborator {
     if (auto conversion = dyn_cast<cast::IntToFeltOp>(op)) {
       Attribute literal;
       if (matchPattern(conversion.getValue(), m_Constant(&literal)) && isa<IntegerAttr>(literal)) {
+        if (conversion.getOverflow() == cast::OverflowSemantics::ASSERT &&
+            !facts.known(conversion.getResult())) {
+          return constraintError(&op, "assert cast requires a statically valid field conversion");
+        }
         return success();
       }
       return constraintError(&op, "field conversion requires a compile-time integer");

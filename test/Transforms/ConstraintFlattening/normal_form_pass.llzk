@@ -2,36 +2,41 @@
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
-    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
       %self = struct.new : <@Main>
       function.return %self : !struct.type<@Main>
     }
-    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) {
       %one = arith.constant 1 : index
       %map = poly.applymap(%one) affine_map<(d) -> (d * 2 + 1)>
       %wide = arith.index_cast %map : index to i64
       %two = arith.constant 2 : i64
       %sum = arith.addi %wide, %two : i64
       %index = arith.index_cast %sum : i64 to index
-      %constant = cast.tofelt %index : index
-      %add = felt.add %x, %constant : !felt.type, !felt.type
-      %sub = felt.sub %add, %x : !felt.type, !felt.type
-      %mul = felt.mul %sub, %x : !felt.type, !felt.type
-      %neg = felt.neg %mul : !felt.type
-      constrain.eq %neg, %x : !felt.type, !felt.type
+      %constant = cast.tofelt %index : index, !felt.type<"bn128">
+      %add = felt.add %x, %constant : !felt.type<"bn128">, !felt.type<"bn128">
+      %sub = felt.sub %add, %x : !felt.type<"bn128">, !felt.type<"bn128">
+      %mul = felt.mul %sub, %x : !felt.type<"bn128">, !felt.type<"bn128">
+      %neg = felt.neg %mul : !felt.type<"bn128">
+      constrain.eq %neg, %x : !felt.type<"bn128">, !felt.type<"bn128">
       function.return
     }
   }
 }
 
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-LABEL:   struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_3]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_6]], %[[VAL_3]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_3]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.neg %[[VAL_8]] : !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_3]], %[[VAL_5]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_6]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.neg %[[VAL_8]] : !felt.type<"bn128">
+// CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
+// CHECK-NEXT:    }

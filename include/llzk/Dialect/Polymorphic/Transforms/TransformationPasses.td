@@ -174,16 +174,17 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     non-native constraint arithmetic (including division and inversion). Static
     integer arithmetic, affine maps, casts, and comparisons are evaluated only
     as structural facts using their fold hooks and declared overflow semantics;
-    pure symbolic computations must be dead after expansion. Assert-mode
-    felt-to-index casts must fold to a statically valid index even when unused.
-    Unresolved or failing range checks are diagnosed, never discarded.
+    pure symbolic computations must be dead after expansion. Both felt-to-index
+    and integer-to-felt casts in assert mode must fold to statically valid
+    conversions even when unused. Unresolved or failing range checks for either
+    cast are diagnosed, never discarded.
     Every surviving operation is checked independently: only felt constants,
     felt add/subtract/multiply/negate expressions, felt equalities, original
     storage reads, index/i1 constants, and conversions of constant integers to
-    felt are permitted. Integer-to-felt assertions are retained even when their
-    results are unused. Expansion work is bounded across calls, iterations,
-    and aggregate traversal. Any failed expansion or validation fails the entire
-    pass.
+    felt are permitted. Validated integer-to-felt assertions are retained even
+    when their results are unused. Expansion work is bounded across calls,
+    iterations, and aggregate traversal. Any failed expansion or validation
+    fails the entire pass.
 
     Equality constraints currently require scalar felt operands; array equality
     and constrain.in are unsupported. Symbolic if/select conditions are rejected.

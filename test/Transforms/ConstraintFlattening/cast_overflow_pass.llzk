@@ -41,27 +41,53 @@ module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main =
       %false = arith.constant false
       scf.if %false {
         %unreached = cast.toindex %x : !felt.type<"bn128">
+        %invalid = arith.constant 7 : index
+        %unreachedFelt = cast.tofelt %invalid : index, !felt.type<"small">
       }
 
-      // Constant integer-to-felt assertions remain in the output contract,
-      // including failing or fieldless casts whose results are unused.
+      // Valid integer-to-felt assertions at both endpoints remain even when unused.
+      %lower = arith.constant 0 : index
+      %upper = arith.constant 6 : index
+      %assertLower = cast.tofelt %lower : index, !felt.type<"small">
+      %assertUpper = cast.tofelt assert %upper : index, !felt.type<"small">
+
+      // Non-assert casts may convert out-of-range values or defer field selection.
       %outside = arith.constant 7 : index
-      %invalid = cast.tofelt %outside : index, !felt.type<"small">
-      %fieldless = cast.tofelt %one : index, !felt.type
+      %saturatedFelt = cast.tofelt sat %outside : index, !felt.type<"small">
+      %wrappedFelt = cast.tofelt wrap %outside : index, !felt.type<"small">
+      %truncatedFelt = cast.tofelt trunc %outside : index, !felt.type<"small">
+      constrain.eq %saturatedFelt, %saturatedFelt : !felt.type<"small">, !felt.type<"small">
+      constrain.eq %wrappedFelt, %truncatedFelt : !felt.type<"small">, !felt.type<"small">
+      %fieldless = cast.tofelt wrap %one : index, !felt.type
+      constrain.eq %fieldless, %fieldless : !felt.type, !felt.type
       function.return
     }
   }
 }
 
-// CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-LABEL:   struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"small">
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"small">
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"small">
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_9]] : index, !felt.type<"small">
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = cast.tofelt sat %[[VAL_12]] : index, !felt.type<"small">
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_12]] : index, !felt.type<"small">
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = cast.tofelt trunc %[[VAL_12]] : index, !felt.type<"small">
+// CHECK-NEXT:        constrain.eq %[[VAL_13]], %[[VAL_13]] : !felt.type<"small">, !felt.type<"small">
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_15]] : !felt.type<"small">, !felt.type<"small">
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_6]] : index, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_16]], %[[VAL_16]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
+// CHECK-NEXT:    }
