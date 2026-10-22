@@ -372,13 +372,12 @@ Operands:</h4>
 <p><em>Define a signal with label and optional public visibility</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `r1cs.def` $label `:` type($out) attr-dict</div>
-</div><!-- fragment --><p>The <span class="tt">def</span> op creates a new signal associated with a numeric label.</p>
+</div><!-- fragment --><p>The <span class="tt">def</span> op allocates a distinct signal associated with a numeric label. Unused signals remain part of the circuit interface and wire layout, so their declarations must survive common subexpression elimination.</p>
 <p>If the optional <span class="tt">public</span> keyword is present, the signal is treated as a public output of the circuit. Otherwise, it is considered private/internal.</p>
 <p>Example: </p><div class="fragment"><div class="line">%0 = r1cs.def 0 : !r1cs.signal {pub = #r1cs.public} // public signal</div>
 <div class="line">%1 = r1cs.def 1 : !r1cs.signal // private</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+</div><!-- fragment --><p>Interfaces: <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Allocate <a class="el" href="LICENSE_8txt.html#a99e0c7c6bd1082fe4cf97f0912e847d7">on</a> ::mlir::SideEffects::DefaultResource}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-32"></a>
 Attributes:</h4>
 <table class="doxtable">
