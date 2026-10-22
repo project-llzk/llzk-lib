@@ -1,8 +1,8 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
 
+// Normalize quadratic sums and reuse their generated auxiliary wires.
 module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
-  // lowers constraints to be at most degree 2 polynomials
   struct.def @CmpConstraint {
     struct.member @val: !felt.type {llzk.pub}
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@CmpConstraint> {
@@ -23,32 +23,32 @@ module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   }
 }
 
-// CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
-// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
-// CHECK-SAME:                                        %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal,
-// CHECK-SAME:                                        %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-DAG:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:           %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
-// CHECK-DAG:           %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
-// CHECK-DAG:           %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
-// CHECK-DAG:           %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]],  -1 : !r1cs.linear
-// CHECK-DAG:           %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_13]] : !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_11]] : !r1cs.linear
-// CHECK-DAG:           %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_6]],  -1 : !r1cs.linear
-// CHECK-DAG:           %[[VAL_16:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_16]] : !r1cs.linear
-// CHECK-DAG:         }
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @CmpConstraint inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 5 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 6 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_10]], %[[VAL_11]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_6]], %[[VAL_11]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_6]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_13]], %[[VAL_14]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_6]], %[[VAL_15]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2, 3, 4>}
+// CHECK-NEXT:  }
+
 // -----
 
+// Normalize subtraction and negation while retaining public-input visibility.
 module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
-  // lowers constraints to be at most degree 2 polynomials
   struct.def @CmpConstraint {
     struct.member @val: !felt.type {llzk.pub}
     function.def @compute(%a: !felt.type , %b: !felt.type, %c: !felt.type) -> !struct.type<@CmpConstraint> {
@@ -70,28 +70,29 @@ module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   }
 }
 
-// CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
-// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
-// CHECK-SAME:                                        %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal,
-// CHECK-SAME:                                        %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-DAG:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:           %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
-// CHECK-DAG:           %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
-// CHECK-DAG:           %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
-// CHECK-DAG:           %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_11]] : !r1cs.linear
-// CHECK-DAG:           %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:           %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_14]] : !r1cs.linear
-// CHECK-DAG:         }
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @CmpConstraint inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 5 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 6 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_8]], %[[VAL_10]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_6]], %[[VAL_11]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_6]], %[[VAL_10]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_6]], %[[VAL_13]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2, 3, 4>}
+// CHECK-NEXT:  }
+
 // -----
 
+// Include degree-lowering auxiliaries whose expressions read main signal members.
 module attributes {llzk.lang, llzk.main = !struct.type<@SelfReadAux>} {
   struct.def @SelfReadAux {
     struct.member @in : !felt.type {llzk.pub}
@@ -113,13 +114,15 @@ module attributes {llzk.lang, llzk.main = !struct.type<@SelfReadAux>} {
   }
 }
 
-// CHECK-LABEL:   r1cs.circuit @SelfReadAux {
-// CHECK-DAG:       %[[IN:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[AUX:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
-// CHECK-DAG:       %[[IN_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[IN]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[AUX_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[AUX]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       r1cs.constrain %[[IN_LIN]], %[[IN_LIN]], %[[AUX_LIN]] : !r1cs.linear
-// CHECK-DAG:       %[[OUT_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUT]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       r1cs.constrain %[[AUX_LIN]], %[[AUX_LIN]], %[[OUT_LIN]] : !r1cs.linear
-// CHECK-DAG:     }
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @SelfReadAux {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_3]], %[[VAL_3]], %[[VAL_4]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_4]], %[[VAL_4]], %[[VAL_5]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64>}
+// CHECK-NEXT:  }

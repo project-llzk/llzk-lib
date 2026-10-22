@@ -1,5 +1,7 @@
 // RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
 
+// Lower static while loops and aggregate storage through the legacy pipeline.
+
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Add>} {
   struct.def @Add {
       struct.member @out : !array.type<2 x !felt.type<"bn128">> {llzk.pub}
@@ -50,23 +52,23 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Add>} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CHECK-NEXT:    r1cs.circuit @Add inputs (%[[A0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[A1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[B0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[B1:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-DAG:       %[[OUT0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[OUT1:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[ZERO:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : !r1cs.linear
-// CHECK-DAG:       %[[A0L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A0]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[A1L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A1]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[B0L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B0]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[B1L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B1]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[OUT0L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUT0]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[OUT1L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUT1]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[NEG_OUT0:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUT0L]],  -1 : !r1cs.linear
-// CHECK-DAG:       %[[NEG_OUT1:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUT1L]],  -1 : !r1cs.linear
-// CHECK-DAG:       %[[ADD0:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:       %[[ADD1:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:       %[[ADD2:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:       %[[ADD3:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:       r1cs.constrain %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-DAG:       r1cs.constrain %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
-// CHECK-NEXT:    }
+// CHECK-NEXT:    r1cs.circuit @Add inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_10]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_9]], %[[VAL_11]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_13]], %[[VAL_14]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_16]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_15]], %[[VAL_17]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_6]], %[[VAL_18]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 3, 4, 5, 6>}
 // CHECK-NEXT:  }
