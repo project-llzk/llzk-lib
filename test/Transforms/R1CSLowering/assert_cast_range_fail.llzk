@@ -106,6 +106,30 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
+// -----
+
+// Every BabyBear value fits in an index. Unused assertions on dynamic inputs
+// are accepted by direct lowering as well as the full pipeline.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+      %implicit = cast.toindex %input : !felt.type<"babybear">
+      %explicit = cast.toindex assert %input : !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %flag = bool.cmp eq(%out, %input) : !felt.type<"babybear">, !felt.type<"babybear">
+      %boolean = cast.tofelt %flag : i1, !felt.type<"babybear">
+      %fieldless = cast.tofelt assert %flag : i1
+      constrain.eq %out, %input : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
 //--- foldable.llzk
 // Valid assertions at both endpoints of the index safe range fold away before
 // R1CS lowering. They must not cause the full pipeline to reject the circuit.
@@ -123,27 +147,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %upper = cast.toindex assert %max : !felt.type<"bn254">
       %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"bn254">
       constrain.eq %out, %max : !felt.type<"bn254">
-      function.return
-    }
-  }
-}
-
-// -----
-
-// Every BabyBear value fits in an index. Unused assertions on dynamic inputs
-// must disappear during cleanup so the full pipeline accepts this circuit.
-module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-  struct.def @Main {
-    struct.member @out : !felt.type<"babybear"> {llzk.pub}
-    function.def @compute(%input: !felt.type<"babybear">) -> !struct.type<@Main> {
-      %self = struct.new : <@Main>
-      function.return %self : !struct.type<@Main>
-    }
-    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
-      %implicit = cast.toindex %input : !felt.type<"babybear">
-      %explicit = cast.toindex assert %input : !felt.type<"babybear">
-      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
-      constrain.eq %out, %input : !felt.type<"babybear">
       function.return
     }
   }

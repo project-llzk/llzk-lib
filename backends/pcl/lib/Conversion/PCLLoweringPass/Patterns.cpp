@@ -35,6 +35,7 @@
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/Matchers.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -844,7 +845,7 @@ struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
     }
     // Leave dynamic index assertions unsupported so analysis selects their
     // containing free functions for stubbing.
-    if (!op.getValue().getType().isInteger(1) && !matchPattern(op.getValue(), m_Constant())) {
+    if (!isMemoryEffectFree(op) && !matchPattern(op.getValue(), m_Constant())) {
       return rewriter.notifyMatchFailure(
           op, "cannot preserve an assertion on a non-constant index"
       );

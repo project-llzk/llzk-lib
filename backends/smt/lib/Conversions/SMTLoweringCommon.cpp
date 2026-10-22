@@ -23,6 +23,7 @@
 #include "llzk/Util/Walk.h"
 
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -311,13 +312,13 @@ Operation *convertStructProductToFunc(Operation *op, MLIRContext *context) {
 
 namespace {
 
-/// Erase unused casts whose overflow mode cannot cause assertion failure.
-template <typename CastOp> class DeadNonAssertCastPattern : public OpRewritePattern<CastOp> {
+/// Erase unused casts that cannot cause assertion failure.
+template <typename CastOp> class DeadInfallibleCastPattern : public OpRewritePattern<CastOp> {
   using OpRewritePattern<CastOp>::OpRewritePattern;
 
 public:
   LogicalResult matchAndRewrite(CastOp op, PatternRewriter &rewriter) const override {
-    if (op.getOverflow() == cast::OverflowSemantics::ASSERT || !op->use_empty()) {
+    if (!isOpTriviallyDead(op)) {
       return failure();
     }
     rewriter.eraseOp(op);
@@ -329,7 +330,7 @@ public:
 
 void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
   // There is currently no encoding for cast values or assert-mode range checks.
-  // Only unused non-assert casts can be legalized, by erasing them.
+  // Only unused infallible casts can be legalized, by erasing them.
   target.addIllegalOp<cast::IntToFeltOp, cast::FeltToIndexOp>();
   target.addIllegalDialect<felt::FeltDialect>();
   target.addIllegalDialect<constrain::ConstrainDialect>();
@@ -363,7 +364,7 @@ applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatte
   }
 
   patterns.add<
-      DeadNonAssertCastPattern<cast::IntToFeltOp>, DeadNonAssertCastPattern<cast::FeltToIndexOp>>(
+      DeadInfallibleCastPattern<cast::IntToFeltOp>, DeadInfallibleCastPattern<cast::FeltToIndexOp>>(
       op->getContext()
   );
 

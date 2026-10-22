@@ -341,16 +341,16 @@ class ConstraintElaborator {
     });
   }
 
-  /// Evaluate integer results; assert casts must fold and pure symbolic results
-  /// must become dead.
+  /// Evaluate integer results; potentially failing casts must fold and pure
+  /// symbolic results must become dead.
   LogicalResult emitStructural(Operation &op, IRMapping &mapping, Environment &frame) {
     Operation *emitted = builder.clone(op, mapping);
     for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
       if (auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(result))) {
         frame[source] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
       } else {
-        if (auto conversion = dyn_cast<cast::FeltToIndexOp>(op);
-            conversion && conversion.getOverflow() == cast::OverflowSemantics::ASSERT) {
+        if (auto conversion = dyn_cast<cast::FeltToIndexOp>(emitted);
+            conversion && !isMemoryEffectFree(conversion)) {
           return constraintError(&op, "assert cast requires a statically valid index conversion");
         }
         frame[source] = result;
@@ -703,8 +703,7 @@ class ConstraintElaborator {
     if (auto conversion = dyn_cast<cast::IntToFeltOp>(op)) {
       Attribute literal;
       if (matchPattern(conversion.getValue(), m_Constant(&literal)) && isa<IntegerAttr>(literal)) {
-        if (conversion.getOverflow() == cast::OverflowSemantics::ASSERT &&
-            !facts.known(conversion.getResult())) {
+        if (!isMemoryEffectFree(conversion) && !facts.known(conversion.getResult())) {
           return constraintError(&op, "assert cast requires a statically valid field conversion");
         }
         return success();

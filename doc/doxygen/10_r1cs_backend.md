@@ -19,11 +19,11 @@ bit width; the exporter derives the fixed byte width required by the R1CS format
 
 ## Cast range checks
 
-R1CS lowering rejects residual `cast.tofelt` operations and `cast.toindex`
-operations with `assert` overflow semantics in `constrain` functions. An assert
+R1CS lowering rejects live `cast.tofelt` and `cast.toindex` operations and
+potentially failing assertions in `constrain` functions. An assert
 cast that can fail must be preserved even when its result is unused (current
 lowering does not encode its range check). Valid constant assertions can be
 folded by canonicalization before lowering (the full R1CS pipeline includes this).
-Unused `cast.toindex` assertions from a declared field whose entire canonical
-range fits in the index safe range, such as BabyBear, can also be eliminated
-before lowering.
+Unused infallible casts, including boolean-to-felt casts and `cast.toindex`
+assertions from fields whose entire canonical range fits in the index safe
+range, such as BabyBear, are accepted even without prior cleanup.

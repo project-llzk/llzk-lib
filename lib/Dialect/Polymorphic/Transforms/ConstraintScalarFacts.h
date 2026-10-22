@@ -60,7 +60,7 @@ public:
         continue;
       }
       mlir::Operation *producer = current.getDefiningOp();
-      // Assert casts have effects, but their fold hooks succeed only when the
+      // Assert casts may have effects, but their fold hooks succeed only when the
       // range check is satisfied. Other effectful operations remain unknown.
       if (!producer || producer->getNumRegions() ||
           (!mlir::isMemoryEffectFree(producer) &&

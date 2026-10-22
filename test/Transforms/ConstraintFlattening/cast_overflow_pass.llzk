@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file | FileCheck --enable-var-scope %s --match-full-lines
 
 module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
@@ -88,6 +88,43 @@ module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main =
 // CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_15]] : !felt.type<"small">, !felt.type<"small">
 // CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_6]] : index, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_16]], %[[VAL_16]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+
+// -----
+
+// Only potentially failing assertions need a successful fold.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"babybear">, %fieldless: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"babybear">, %fieldless: !felt.type) attributes {function.allow_non_native_field_ops} {
+      // Infallible symbolic conversions and their dead users need not fold.
+      %implicit = cast.toindex %x : !felt.type<"babybear">
+      %explicit = cast.toindex assert %x : !felt.type<"babybear">
+      %dead = arith.addi %implicit, %explicit : index
+      // A live constant boolean cast also needs no range proof from folding,
+      // which deliberately defers unspecified fields.
+      %true = arith.constant true
+      %boolean = cast.tofelt assert %true : i1
+      constrain.eq %boolean, %fieldless : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : i1, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_5]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

@@ -31,6 +31,7 @@
 #include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/IR/Matchers.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Transforms/DialectConversion.h>
 
 #include <llvm/ADT/StringSet.h>
@@ -49,8 +50,7 @@ BaseMode::BaseMode(ModuleOp op) : module(op), usedFreeFunctions(op), temps(op) {
 
 LogicalResult BaseMode::validateIntToFeltCasts(const llvm::DynamicAPInt &prime) {
   auto res = getOperation()->walk([&](cast::IntToFeltOp op) -> WalkResult {
-    if (isStep1LegalOp(op) || op.getOverflow() != cast::OverflowSemantics::ASSERT ||
-        op.getValue().getType().isInteger(1)) {
+    if (isStep1LegalOp(op) || isMemoryEffectFree(op)) {
       return WalkResult::advance();
     }
     // PCL arithmetic is modular. A comparison after converting an index to a
