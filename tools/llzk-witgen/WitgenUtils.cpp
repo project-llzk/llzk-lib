@@ -45,7 +45,7 @@ getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef contex
     if (!dimSize) {
       return dimSize.takeError();
     }
-    count *= toDynamicAPInt(*dimSize);
+    count *= dim;
   }
   return checkedToSize(count, context);
 }
