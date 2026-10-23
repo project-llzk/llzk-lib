@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -42,6 +43,20 @@ using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
+
+/// Substitute every POD field type while preserving record names and order.
+/// Recursive calls use the caller's array, struct and type-variable conversions.
+static pod::PodType convertPodType(pod::PodType type, const TypeConverter &converter) {
+  SmallVector<pod::RecordAttr> records;
+  for (auto record : type.getRecords()) {
+    Type converted = converter.convertType(record.getType());
+    if (!converted) {
+      return {};
+    }
+    records.push_back(pod::RecordAttr::get(type.getContext(), record.getName(), converted));
+  }
+  return pod::PodType::get(type.getContext(), records);
+}
 
 namespace {
 
@@ -238,6 +253,8 @@ public:
 
     addConversion([](Type inputTy) { return inputTy; });
 
+    addConversion([this](pod::PodType type) { return convertPodType(type, *this); });
+
     addConversion([this](StructType inputTy) {
       LLVM_DEBUG(llvm::dbgs() << "[MappedTypeConverter] convert " << inputTy << '\n');
 
@@ -269,7 +286,11 @@ public:
         for (Attribute a : dimSizes) {
           updated.push_back(convertIfPossible(a));
         }
-        return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
+        // Array-valued type arguments add dimensions instead of nesting array elements.
+        return flattenArrayElementType(
+            inputTy.cloneWith(inputTy.getElementType(), updated),
+            this->convertType(inputTy.getElementType())
+        );
       }
       // Otherwise, return the type unchanged
       return inputTy;
@@ -477,6 +498,8 @@ TemplateTypeConverter::TemplateTypeConverter(DenseMap<Attribute, Attribute> bind
     : paramNameToValue(std::move(bindings)) {
   addConversion([](Type t) { return t; });
 
+  addConversion([this](pod::PodType type) { return convertPodType(type, *this); });
+
   addConversion([this](TypeVarType inputTy) -> Type {
     if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
       Type convertedType = tyAttr.getValue();
@@ -599,6 +622,7 @@ LogicalResult substituteStructBody(
 
   RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
   patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, paramNameToConcrete, diagnostics);
+  patterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
   patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newStruct, target, std::move(patterns));
 }
