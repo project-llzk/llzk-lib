@@ -1,5 +1,7 @@
 var NAVTREEINDEX17 =
 {
+"classStructOperationLinkTests.html":[13,0,119],
+"classStructTypeLinkTests.html":[13,0,120],
 "classVerifDialectLinkTests.html":[13,0,130],
 "classVerifOperationLinkTests.html":[13,0,131],
 "classes.html":[13,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX17 =
 "classllzk_1_1ExpressionValue.html#a620f6d5954f09fff9c240e2c502ba5f0":[13,0,1,40,15],
 "classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65":[11,0,3,44,39],
 "classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65":[13,0,1,40,39],
-"classllzk_1_1ExpressionValue.html#a6bfbf2857b0ce70fd9e4212a35a37169":[11,0,3,44,34],
-"classllzk_1_1ExpressionValue.html#a6bfbf2857b0ce70fd9e4212a35a37169":[13,0,1,40,34],
-"classllzk_1_1ExpressionValue.html#a7152c28f81c1cee1e30fa25f8bfb3304":[11,0,3,44,24]
+"classllzk_1_1ExpressionValue.html#a6bfbf2857b0ce70fd9e4212a35a37169":[11,0,3,44,34]
 };

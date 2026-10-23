@@ -1,5 +1,12 @@
 var NAVTREEINDEX80 =
 {
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#a98a61814574265d9a0d1fb5d82df3c75":[13,0,1,9,0,2,0,1],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#ab0fef470c316c846f32e0c2c8580b2f8":[11,0,3,12,0,2,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Concept.html#ab0fef470c316c846f32e0c2c8580b2f8":[13,0,1,9,0,2,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceTrait.html":[11,0,3,12,0,3],
+"structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceTrait.html":[13,0,1,9,0,3],
+"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html":[11,0,3,12,0,4,0],
+"structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html":[13,0,1,9,0,4,0],
 "structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a38b8220e3459cfee98aec79042e8d61e":[11,0,3,12,0,4,0,0],
 "structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a38b8220e3459cfee98aec79042e8d61e":[13,0,1,9,0,4,0,0],
 "structllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase_1_1Properties.html#a50651b3772091b3174bbfef8eb6d3d62":[11,0,3,12,0,4,0,2],
@@ -242,12 +249,5 @@ var NAVTREEINDEX80 =
 "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a590e2863b61a7078127d453ec36a71dc":[13,0,1,13,0,14,1],
 "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71":[11,0,3,17,0,14,0],
 "structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71":[13,0,1,13,0,14,0],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71a10ea5989757cbd075a6bf67002daee9b":[11,0,3,17,0,14,0,1],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71a10ea5989757cbd075a6bf67002daee9b":[13,0,1,13,0,14,0,1],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71a4cd8413207629a963225f4314b53adcd":[11,0,3,17,0,14,0,0],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71a4cd8413207629a963225f4314b53adcd":[13,0,1,13,0,14,0,0],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71afa6b97eaf43e367c250960e1e0c4673e":[11,0,3,17,0,14,0,2],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71afa6b97eaf43e367c250960e1e0c4673e":[13,0,1,13,0,14,0,2],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#ac5780ae1c26a4b631db9913a31befc8f":[11,0,3,17,0,14,4],
-"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#ac5780ae1c26a4b631db9913a31befc8f":[13,0,1,13,0,14,4]
+"structllzk_1_1polymorphic_1_1detail_1_1StructSpecializationRequest.html#a8dbfd77fd5bb816fb3b62b3b93a06a71a10ea5989757cbd075a6bf67002daee9b":[11,0,3,17,0,14,0,1]
 };

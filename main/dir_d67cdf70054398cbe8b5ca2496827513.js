@@ -7,6 +7,7 @@ var dir_d67cdf70054398cbe8b5ca2496827513 =
     [ "ConstraintStorage.h", "ConstraintStorage_8h.html", "ConstraintStorage_8h" ],
     [ "EmptyTemplateRemovalPass.cpp", "EmptyTemplateRemovalPass_8cpp.html", "EmptyTemplateRemovalPass_8cpp" ],
     [ "FlatteningPass.cpp", "FlatteningPass_8cpp.html", "FlatteningPass_8cpp" ],
+    [ "ScalarEvaluation.h", "ScalarEvaluation_8h.html", "ScalarEvaluation_8h" ],
     [ "SharedImpl.cpp", "SharedImpl_8cpp.html", "SharedImpl_8cpp" ],
     [ "SharedImpl.h", "SharedImpl_8h.html", "SharedImpl_8h" ],
     [ "StructSpecializationDiscovery.cpp", "StructSpecializationDiscovery_8cpp.html", null ],

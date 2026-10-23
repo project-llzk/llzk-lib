@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ConstraintScal
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="Cast_2IR_2Ops_8h.html">llzk/Dialect/Cast/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="ScalarEvaluation_8h.html">ScalarEvaluation.h</a>&quot;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;mlir/IR/Matchers.h&gt;</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;mlir/Interfaces/SideEffectInterfaces.h&gt;</span></div>
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ConstraintScal
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic_1_1detail.html">llzk::polymorphic::detail</a> {</div>
 <div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html">   22</a></span><span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html">ConstraintScalarFacts</a> {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html">   22</a></span><span class="keyword">class </span><a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a8e6505b4119baf67ab34bd4b23d854da">ConstraintScalarFacts</a> {</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  llvm::DenseMap&lt;mlir::Value, mlir::Attribute&gt; constants;</div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span></div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keywordtype">void</span> fold(mlir::Operation *producer) {</div>
@@ -159,20 +159,20 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ConstraintScal
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keywordflow">for</span> (mlir::Value operand : producer-&gt;getOperands()) {</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>      operands.push_back(constants.lookup(operand));</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    }</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    mlir::Operation *temporary = producer-&gt;clone();</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    llvm::SmallVector&lt;mlir::OpFoldResult&gt; results;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <span class="keywordflow">if</span> (mlir::succeeded(temporary-&gt;fold(operands, results)) &amp;&amp;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>        results.size() == producer-&gt;getNumResults()) {</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [result, folded] : llvm::zip_equal(producer-&gt;getResults(), results)) {</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>        constants[result] = llvm::isa&lt;mlir::Attribute&gt;(folded)</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                                ? llvm::cast&lt;mlir::Attribute&gt;(folded)</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                                : constants.lookup(llvm::cast&lt;mlir::Value&gt;(folded));</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      }</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    }</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    temporary-&gt;destroy();</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    llvm::SmallVector&lt;mlir::OpFoldResult&gt; results;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keywordflow">if</span> (mlir::succeeded(<a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a929a307bf06c24423d868e2fcec7d28a">evaluateScalarOperation</a>(producer, operands, results))) {</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [result, folded] : llvm::zip_equal(producer-&gt;getResults(), results)) {</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>        constants[result] = llvm::isa&lt;mlir::Attribute&gt;(folded)</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>                                ? llvm::cast&lt;mlir::Attribute&gt;(folded)</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>                                : constants.lookup(llvm::cast&lt;mlir::Value&gt;(folded));</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>      }</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    }</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a8e6505b4119baf67ab34bd4b23d854da">   44</a></span>  <a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a8e6505b4119baf67ab34bd4b23d854da">ConstraintScalarFacts</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#adf41b0f56c50bd17409e504c82f8abae">   45</a></span>  <span class="keyword">explicit</span> <a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#adf41b0f56c50bd17409e504c82f8abae">ConstraintScalarFacts</a>(mlir::MLIRContext * <span class="comment">/*context*/</span>) {}</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span></div>
 <div class="foldopen" id="foldopen00049" data-start="{" data-end="}">
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a3743ca1952c487441d74b2f3607d4061">   49</a></span>  mlir::Attribute <a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a3743ca1952c487441d74b2f3607d4061">known</a>(mlir::Value value) {</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    llvm::SmallVector&lt;std::pair&lt;mlir::Value, bool&gt;&gt; pending {{value, <span class="keyword">false</span>}};</div>
@@ -226,11 +226,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ConstraintScal
 </div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>} <span class="comment">// namespace llzk::polymorphic::detail</span></div>
-<div class="ttc" id="aCast_2IR_2Ops_8h_html"><div class="ttname"><a href="Cast_2IR_2Ops_8h.html">Ops.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html">llzk::polymorphic::detail::ConstraintScalarFacts</a></div><div class="ttdoc">Evaluate scalar dependencies of structural decisions, assertions, and constant arithmetic.</div><div class="ttdef"><b>Definition</b> <a href="#l00022">ConstraintScalarFacts.h:22</a></div></div>
+<div class="ttc" id="aScalarEvaluation_8h_html"><div class="ttname"><a href="ScalarEvaluation_8h.html">ScalarEvaluation.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts_html_a3743ca1952c487441d74b2f3607d4061"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a3743ca1952c487441d74b2f3607d4061">llzk::polymorphic::detail::ConstraintScalarFacts::known</a></div><div class="ttdeci">mlir::Attribute known(mlir::Value value)</div><div class="ttdoc">Evaluate pure SSA dependencies and casts whose fold hooks prove validity.</div><div class="ttdef"><b>Definition</b> <a href="#l00049">ConstraintScalarFacts.h:49</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts_html_a8e6505b4119baf67ab34bd4b23d854da"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a8e6505b4119baf67ab34bd4b23d854da">llzk::polymorphic::detail::ConstraintScalarFacts::ConstraintScalarFacts</a></div><div class="ttdeci">ConstraintScalarFacts()=default</div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts_html_a9fde136b90fc992d96119ccb79011bd2"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#a9fde136b90fc992d96119ccb79011bd2">llzk::polymorphic::detail::ConstraintScalarFacts::integer</a></div><div class="ttdeci">std::optional&lt; int64_t &gt; integer(mlir::Value value)</div><div class="ttdoc">Require an integer representable by concrete access paths and signed loops.</div><div class="ttdef"><b>Definition</b> <a href="#l00088">ConstraintScalarFacts.h:88</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts_html_adf41b0f56c50bd17409e504c82f8abae"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintScalarFacts.html#adf41b0f56c50bd17409e504c82f8abae">llzk::polymorphic::detail::ConstraintScalarFacts::ConstraintScalarFacts</a></div><div class="ttdeci">ConstraintScalarFacts(mlir::MLIRContext *)</div><div class="ttdef"><b>Definition</b> <a href="#l00045">ConstraintScalarFacts.h:45</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html">llzk::polymorphic::detail</a></div><div class="ttdoc">Common interface for constant parameter-like symbol operations that can be defined within a TemplateO...</div><div class="ttdef"><b>Definition</b> <a href="ConstraintBindings_8h_source.html#l00024">ConstraintBindings.h:24</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_a929a307bf06c24423d868e2fcec7d28a"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#a929a307bf06c24423d868e2fcec7d28a">llzk::polymorphic::detail::evaluateScalarOperation</a></div><div class="ttdeci">mlir::LogicalResult evaluateScalarOperation(mlir::Operation *op, llvm::ArrayRef&lt; mlir::Attribute &gt; operands, llvm::SmallVectorImpl&lt; mlir::OpFoldResult &gt; &amp;results)</div><div class="ttdoc">Evaluate a scalar operation using caller-supplied operand constants.</div><div class="ttdef"><b>Definition</b> <a href="ScalarEvaluation_8h_source.html#l00026">ScalarEvaluation.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -33,6 +33,7 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "constraintError", "namespacellzk_1_1polymorphic_1_1detail.html#a391bf710898e11b1491070e91740eb63", null ],
     [ "convertCalleesInPlace", "namespacellzk_1_1polymorphic_1_1detail.html#a61f49a0d605e0a32907c033869c9d26c", null ],
     [ "convertCalleesInPlace", "namespacellzk_1_1polymorphic_1_1detail.html#acef0db0f683b8b501d7b6afd3ff47cc3", null ],
+    [ "evaluateScalarOperation", "namespacellzk_1_1polymorphic_1_1detail.html#a929a307bf06c24423d868e2fcec7d28a", null ],
     [ "evaluateTemplateExprs", "namespacellzk_1_1polymorphic_1_1detail.html#ac2e791f15775aea6b58ee53d32df9d6c", null ],
     [ "evaluateTemplateExprs", "namespacellzk_1_1polymorphic_1_1detail.html#a10b759a5143c347d94548927ba1a96ff", null ],
     [ "flattenInstantiatedArrayType", "namespacellzk_1_1polymorphic_1_1detail.html#a9b23024ca9118c9b8962644e682cbd51", null ],
