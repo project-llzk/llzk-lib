@@ -12,7 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Transforms/LoweringUtils.h"
 
 #include <mlir/IR/Block.h>
@@ -72,7 +74,10 @@ Value rebuildExprInCompute(
     return memo[val] = mapBlockArgumentInCompute(barg, computeFunc);
   }
 
-  if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
+  if (Operation *readOp = val.getDefiningOp();
+      isa_and_nonnull<MemberReadOp, array::ReadArrayOp, array::ExtractArrayOp, pod::ReadPodOp>(
+          readOp
+      )) {
     IRMapping mapper;
     for (Value operand : readOp->getOperands()) {
       Value rebuiltOperand = mapValueIntoCompute(operand, computeFunc, builder, memo);
@@ -82,8 +87,8 @@ Value rebuildExprInCompute(
       mapper.map(operand, rebuiltOperand);
     }
 
-    Operation *rebuiltOp = builder.clone(*readOp.getOperation(), mapper);
-    assert(rebuiltOp->getNumResults() == 1 && "member reads have exactly one result");
+    Operation *rebuiltOp = builder.clone(*readOp, mapper);
+    assert(rebuiltOp->getNumResults() == 1 && "storage reads have exactly one result");
     return memo[val] = rebuiltOp->getResult(0);
   }
 
