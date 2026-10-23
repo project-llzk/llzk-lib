@@ -189,12 +189,15 @@ LogicalResult CircuitDefOp::verify() {
   if (auto labels = (*this)->getAttr(INPUT_LABELS_ATTR)) {
     auto values = dyn_cast<DenseI64ArrayAttr>(labels);
     if (!values || values.size() != getBody().front().getNumArguments()) {
-      return emitOpError("r1cs.input_labels must contain one i64 label per input");
+      return emitError() << "'" << INPUT_LABELS_ATTR << "' must contain one i64 label per input";
     }
     for (int64_t label : values.asArrayRef()) {
-      if (label < FIRST_SIGNAL_WIRE_ID || label > std::numeric_limits<uint32_t>::max() ||
-          !seenLabels.insert(label).second) {
-        return emitOpError("R1CS input labels must be distinct positive uint32 values");
+      if (label < FIRST_SIGNAL_WIRE_ID || label > std::numeric_limits<uint32_t>::max()) {
+        return emitError() << "'" << INPUT_LABELS_ATTR << "' must be in [" << FIRST_SIGNAL_WIRE_ID
+                           << ", " << std::numeric_limits<uint32_t>::max() << ']';
+      }
+      if (!seenLabels.insert(label).second) {
+        return emitError() << "'" << INPUT_LABELS_ATTR << "' must not contain duplicate labels";
       }
     }
   }
