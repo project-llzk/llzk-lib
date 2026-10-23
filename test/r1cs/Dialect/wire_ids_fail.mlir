@@ -52,7 +52,7 @@ module {
 
 // Public outputs precede inputs.
 module {
-  // expected-error@+1 {{wire IDs must follow public outputs, public inputs, private inputs, then internal wires}}
+  // expected-error@+1 {{'r1cs.input_labels' must be ordered as public outputs, public inputs, private inputs, then internal wires}}
   r1cs.circuit @Main inputs (%a: !r1cs.signal) {
     %out = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
   } {r1cs.input_labels = array<i64: 1>}
@@ -62,7 +62,7 @@ module {
 
 // Public input IDs precede private input IDs even if their arguments are interleaved.
 module {
-  // expected-error@+1 {{wire IDs must follow public outputs, public inputs, private inputs, then internal wires}}
+  // expected-error@+1 {{'r1cs.input_labels' must be ordered as public outputs, public inputs, private inputs, then internal wires}}
   r1cs.circuit @Main inputs (%a: !r1cs.signal, %b: !r1cs.signal {pub = #r1cs.pub}) {
     %out = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
   } {r1cs.input_labels = array<i64: 2, 3>}
@@ -72,7 +72,7 @@ module {
 
 // Explicit wire IDs cannot leave gaps before internal wires.
 module {
-  // expected-error@+1 {{wire IDs must follow public outputs, public inputs, private inputs, then internal wires}}
+  // expected-error@+1 {{'r1cs.input_labels' must be ordered as public outputs, public inputs, private inputs, then internal wires}}
   r1cs.circuit @Main inputs (%a: !r1cs.signal) {
     %out = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
     %internal = r1cs.def 4 : !r1cs.signal

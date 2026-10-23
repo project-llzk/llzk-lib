@@ -147,10 +147,9 @@ LogicalResult verifyExplicitWireIds(CircuitDefOp circuit) {
   for (WireKind kind : WIRE_KIND_ORDER) {
     for (int64_t id : idsByKind[kind]) {
       if (id != expected++) {
-        return circuit.emitOpError(
-            "wire IDs must follow public outputs, public inputs, private inputs, then internal "
-            "wires"
-        );
+        return circuit.emitError() << '\'' << INPUT_LABELS_ATTR
+                                   << "' must be ordered as public outputs, public inputs, private "
+                                      "inputs, then internal wires";
       }
     }
   }
