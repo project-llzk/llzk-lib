@@ -203,7 +203,9 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     - Replace parameterized structs with flattened (i.e., no parameter)
       versions of those structs based on requested return type at calls
       to `compute()` functions and unroll loops
-    - Unroll loops
+    - Unroll loops. If a `llzk.loopbounds` annotation is present on the
+      loop, it overrides the loop's bounds and step. A warning is emitted
+      if a statically computed trip count differs from the annotated count.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.
@@ -216,6 +218,12 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
               "is true as well. Thus, the pass will run multiple times "
               "until no further changes can be made or the upper limit "
               "provided in this option is reached.">,
+       Option<
+           "unrollIterationLimit", "max-unroll", "uint64_t",
+           /* default */ "10000",
+           "Maximum trip count for each loop unrolled, including annotated "
+           "loops. Exceeding this limit warns and leaves the loop unchanged. "
+           "A value of zero only permits removal of zero-trip loops.">,
        Option<"cleanupMode", "cleanup",
               "::llzk::polymorphic::FlatteningCleanupMode",
               /* default */

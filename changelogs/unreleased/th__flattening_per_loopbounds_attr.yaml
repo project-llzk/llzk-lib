@@ -1,0 +1,3 @@
+changed:
+  - The flattening pass unrolls loops using trusted `llzk.loopbounds` annotations, warning when an independently computed trip count disagrees with the annotation.
+  - Annotated `scf.while` loops are unrolled while preserving condition-region side effects and final forwarded results.
