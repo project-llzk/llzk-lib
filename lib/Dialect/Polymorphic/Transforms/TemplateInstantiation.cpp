@@ -286,7 +286,11 @@ public:
         for (Attribute a : dimSizes) {
           updated.push_back(convertIfPossible(a));
         }
-        return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
+        // Array-valued type arguments add dimensions instead of nesting array elements.
+        return flattenArrayElementType(
+            inputTy.cloneWith(inputTy.getElementType(), updated),
+            this->convertType(inputTy.getElementType())
+        );
       }
       // Otherwise, return the type unchanged
       return inputTy;
