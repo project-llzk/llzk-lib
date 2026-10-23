@@ -1,0 +1,33 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      %buffer = llzk.nondet : !array.type<1 x !felt.type<"bn128">>
+      %zero = arith.constant 0 : index
+      array.write %buffer[%zero] = %x : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %value = array.read %buffer[%zero] : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      constrain.eq %value, %x : !felt.type<"bn128">, !felt.type<"bn128">
+      function.return
+    }
+  }
+}
+
+
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
