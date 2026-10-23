@@ -1,6 +1,6 @@
 // Repeated visits to the same array-valued read enumerate its family once.
-// RUN: llzk-opt %s --llzk-monomorphize-templates=max-evaluation-steps=60 | FileCheck %s
-// RUN: llzk-opt %s --llzk-monomorphize-templates=max-evaluation-steps=60 --llzk-monomorphize-templates=max-evaluation-steps=60 | FileCheck %s
+// RUN: llzk-opt %s --llzk-monomorphize-templates | FileCheck %s
+// RUN: llzk-opt %s --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @Child {

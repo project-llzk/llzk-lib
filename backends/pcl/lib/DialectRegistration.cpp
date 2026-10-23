@@ -13,6 +13,7 @@
 
 #include "pcl/DialectRegistration.h"
 
+#include "pcl/Conversion/ConversionPassPipelines.h"
 #include "pcl/Conversion/ConversionPasses.h"
 #include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/Transforms/TransformationPasses.h"
@@ -28,6 +29,7 @@ void registerDialects(mlir::DialectRegistry &registry) {
 
 void registerPasses(mlir::DialectRegistry &) {
   pcl::registerPCLConversionPasses();
+  pcl::registerConversionPassPipelines();
   pcl::registerTransformationPasses();
 }
 

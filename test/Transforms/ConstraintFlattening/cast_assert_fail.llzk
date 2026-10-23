@@ -1,0 +1,163 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+// An unused symbolic assert cast still has a range check to discharge.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %x : !felt.type<"bn128">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The first value beyond the signed index safe range must not disappear.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      %large = felt.const 9223372036854775808 : <"bn128">
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %large : !felt.type<"bn128">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Fieldless constants defer conversion until their representative is known.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) attributes {function.allow_non_native_field_ops} {
+      %zero = felt.const 0
+      // expected-error @+1 {{assert cast requires a statically valid index conversion}}
+      %unused = cast.toindex %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A failing integer-to-felt assertion cannot supply a structural constant.
+module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"small">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"small">) attributes {function.allow_non_native_field_ops} {
+      %outside = arith.constant 8 : index
+      // expected-error @+1 {{assert cast requires a statically valid field conversion}}
+      %felt = cast.tofelt %outside : index, !felt.type<"small">
+      %unused = cast.toindex %felt : !felt.type<"small">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A failing integer-to-felt assertion cannot supply a field constraint.
+module attributes {llzk.lang, llzk.fields = #felt.field<"live_cast", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"live_cast">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"live_cast">) attributes {function.allow_non_native_field_ops} {
+      %c8 = arith.constant 8 : index
+      // expected-error @+1 {{assert cast requires a statically valid field conversion}}
+      %f = cast.tofelt %c8 : index, !felt.type<"live_cast">
+      constrain.eq %x, %f : !felt.type<"live_cast">, !felt.type<"live_cast">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An unused integer-to-felt assertion must reject the field modulus itself.
+module attributes {llzk.lang, llzk.fields = #felt.field<"modulus_cast", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"modulus_cast">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"modulus_cast">) {
+      %outside = arith.constant 7 : index
+      // expected-error @+1 {{assert cast requires a statically valid field conversion}}
+      %unused = cast.tofelt %outside : index, !felt.type<"modulus_cast">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Negative integers are outside the assert-mode field conversion range.
+module attributes {llzk.lang, llzk.fields = #felt.field<"negative_cast", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"negative_cast">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"negative_cast">) {
+      %negative = arith.constant -1 : index
+      // expected-error @+1 {{assert cast requires a statically valid field conversion}}
+      %unused = cast.tofelt assert %negative : index, !felt.type<"negative_cast">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An unspecified destination field leaves even an unused assertion unresolved.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %one = arith.constant 1 : index
+      // expected-error @+1 {{assert cast requires a statically valid field conversion}}
+      %unused = cast.tofelt %one : index
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Infallibility does not make a symbolic index a compile-time structural value.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %index = cast.toindex %x : !felt.type<"babybear">
+      %felt = cast.tofelt %index : index, !felt.type<"babybear">
+      constrain.eq %felt, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      function.return
+    }
+  }
+}

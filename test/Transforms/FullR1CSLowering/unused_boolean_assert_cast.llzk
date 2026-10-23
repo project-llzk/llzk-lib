@@ -1,0 +1,39 @@
+// RUN: llzk-opt --llzk-full-r1cs-lowering %s | FileCheck %s
+// RUN: llzk-opt --llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
+
+// Unused casts of a dynamic boolean are infallible, so cleanup must remove them
+// before R1CS lowering checks for residual casts with possible assertion failures.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+
+    function.def @compute(%input: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %zero = felt.const 0 : !felt.type<"babybear">
+      struct.writem %self[@out] = %zero : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) {
+      %zero = felt.const 0 : !felt.type<"babybear">
+      %flag = bool.cmp eq(%input, %zero) : !felt.type<"babybear">, !felt.type<"babybear">
+      %implicit = cast.tofelt %flag : i1, !felt.type<"babybear">
+      %explicit = cast.tofelt assert %flag : i1, !felt.type<"babybear">
+      %fieldless = cast.tofelt %flag : i1
+      %fieldless_explicit = cast.tofelt assert %flag : i1
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %zero : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_3]], -1 : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_2]], %[[VAL_2]], %[[VAL_4]] : !r1cs.linear
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,20 @@
+// RUN: llzk-opt --convert-llzk-to-zklean %s | FileCheck %s
+
+// Both boolean values fit any field; dynamic booleans remain supported.
+module attributes {llzk.lang} {
+  function.def @bool_cast(%value: i1) attributes {function.allow_constraint} {
+    %felt = cast.tofelt %value : i1, !felt.type<"babybear">
+    %zero = felt.const 0 : !felt.type<"babybear">
+    constrain.eq %felt, %zero : !felt.type<"babybear">
+    function.return
+  }
+}
+// CHECK-LABEL: module @ZKLean attributes {llzk.lang} {
+// CHECK-NEXT:    func.func @bool_cast(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = ZKLeanLean.call @cast.tofelt(%[[VAL_0]]) : (i1) -> !ZKExpr.zkexpr
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = ZKExpr.Literal %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = ZKBuilder.ConstrainEq %[[VAL_1]] %[[VAL_3]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

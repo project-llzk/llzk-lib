@@ -109,13 +109,20 @@ _Monomorphize templates and expand main constrain while retaining component stor
 
 Runs these passes in order:
 
-1. `-llzk-monomorphize-templates`
-2. `-llzk-expose-child-members`
-3. `-llzk-flatten-constraints`
+1. MLIR's `-canonicalize`
+2. `-llzk-monomorphize-templates`
+3. `-llzk-expose-child-members`
+4. MLIR's `-canonicalize`
+5. `-llzk-flatten-constraints`
 
-Inline includes and lower non-native constraint arithmetic before this pipeline.
-Frontend `scf.execute_region` wrappers currently require canonicalization before
-monomorphization. Control flow and all array indices must resolve statically;
+Inline includes and lower symbolic non-native constraint arithmetic before this
+pipeline. Constant non-native arithmetic is evaluated during expansion using
+the current call and loop bindings. Specialization discovery and constraint
+expansion share scalar folding and integer/field conversion logic, so known
+template and loop values use the same arithmetic semantics in both stages.
+Canonicalization removes frontend `scf.execute_region` wrappers before
+monomorphization and folds specialized constants before expansion.
+Control flow and all array indices must resolve statically;
 aggregate function inputs are read-only. The pass expands concrete constrain
 bodies and eliminates local aggregate storage while retaining the original
 component layout and ordinary scalar arithmetic. Family handles retain their
@@ -126,4 +133,4 @@ reads through rolled handles; `-llzk-array-to-scalar` currently does not.
 Only scalar felt equality constraints are supported. Array equality,
 `constrain.in`, live non-signal storage reads, recursion, and undefined or
 multi-block callees are rejected. See `-llzk-flatten-constraints` for the binding
-model, diagnostics, and expansion limits.
+model, diagnostics, and supported control flow.

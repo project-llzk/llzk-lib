@@ -10,10 +10,14 @@
 #include "../../lib/Dialect/Polymorphic/Transforms/ConstraintScalarFacts.h"
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dialect.h>
 #include <mlir/IR/OpDefinition.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
+#include <mlir/Parser/Parser.h>
 
 namespace {
 
@@ -69,7 +73,7 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedChainIsEvaluatedOncePerOperation) {
   mlir::OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&body);
   mlir::Value value = body.addArgument(builder.getIndexType(), loc);
-  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
 
   constexpr unsigned length = 256;
   for (unsigned i = 0; i < length; ++i) {
@@ -88,7 +92,7 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedResultsDoNotPoisonFreshConstantBind
   mlir::OpBuilder builder(&ctx);
   builder.setInsertionPointToEnd(&body);
   auto unknown = body.addArgument(builder.getIndexType(), loc);
-  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
   EXPECT_FALSE(facts.known(identity(builder, unknown)));
 
   for (int64_t i = 0; i < 8; ++i) {
@@ -98,6 +102,81 @@ TEST_F(ConstraintScalarFactsTests, UnresolvedResultsDoNotPoisonFreshConstantBind
     EXPECT_EQ(facts.known(result), builder.getIndexAttr(i));
   }
   EXPECT_EQ(CountedIdentityOp::foldCalls, 9U);
+}
+
+TEST_F(ConstraintScalarFactsTests, IntegerToFeltUsesDeclaredOverflowSemantics) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      function.def @convert() -> (!felt.type<"babybear">, !felt.type<"babybear">) {
+        %true = arith.constant true
+        %negative = arith.constant -1 : index
+        %boolean = cast.tofelt %true : i1, !felt.type<"babybear">
+        %index = cast.tofelt wrap %negative : index, !felt.type<"babybear">
+        function.return %boolean, %index : !felt.type<"babybear">, !felt.type<"babybear">
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  llvm::SmallVector<mlir::Value> values;
+  module->walk([&values](llzk::cast::IntToFeltOp op) { values.push_back(op.getResult()); });
+  ASSERT_EQ(values.size(), 2U);
+
+  llzk::polymorphic::detail::ConstraintScalarFacts facts;
+  auto boolean = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(facts.known(values[0]));
+  auto index = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(facts.known(values[1]));
+  ASSERT_TRUE(boolean);
+  ASSERT_TRUE(index);
+  EXPECT_EQ(boolean.getRawValue(), 1);
+  EXPECT_EQ(index.getRawValue(), 2013265920);
+}
+
+TEST_F(ConstraintScalarFactsTests, ScalarEvaluationUsesSuppliedBindingsWithoutRewritingIR) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+    module attributes {llzk.lang} {
+      function.def @convert(%n: index) -> index attributes {function.allow_non_native_field_ops} {
+        %field = cast.tofelt %n : index, !felt.type<"bn128">
+        %index = cast.toindex %field : !felt.type<"bn128">
+        function.return %index : index
+      }
+    }
+  )mlir",
+      &ctx
+  );
+  ASSERT_TRUE(module);
+  llzk::cast::IntToFeltOp toField;
+  llzk::cast::FeltToIndexOp toIndex;
+  module->walk([&toField](llzk::cast::IntToFeltOp op) { toField = op; });
+  module->walk([&toIndex](llzk::cast::FeltToIndexOp op) { toIndex = op; });
+  ASSERT_TRUE(toField);
+  ASSERT_TRUE(toIndex);
+
+  mlir::Builder builder(&ctx);
+  llvm::SmallVector<mlir::Attribute> operands {builder.getIndexAttr(7)};
+  llvm::SmallVector<mlir::OpFoldResult> results;
+  ASSERT_TRUE(
+      mlir::succeeded(
+          llzk::polymorphic::detail::evaluateScalarOperation(toField, operands, results)
+      )
+  );
+  ASSERT_EQ(results.size(), 1U);
+  operands[0] = llvm::cast<mlir::Attribute>(results[0]);
+  results.clear();
+  ASSERT_TRUE(
+      mlir::succeeded(
+          llzk::polymorphic::detail::evaluateScalarOperation(toIndex, operands, results)
+      )
+  );
+  ASSERT_EQ(results.size(), 1U);
+  EXPECT_EQ(llvm::cast<mlir::Attribute>(results[0]), builder.getIndexAttr(7));
+  EXPECT_TRUE(llvm::isa<mlir::BlockArgument>(toField.getValue()));
+  EXPECT_EQ(toIndex.getValue(), toField.getResult());
+
+  llzk::polymorphic::detail::ConstraintScalarFacts facts(&ctx);
+  EXPECT_FALSE(facts.known(toIndex.getResult()));
 }
 
 } // namespace

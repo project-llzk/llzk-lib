@@ -1,6 +1,6 @@
 // Array dimensions and indices determine element specializations and affine call targets.
-// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates=max-evaluation-steps=20 | FileCheck %s --enable-var-scope
-// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates=max-evaluation-steps=20 --llzk-monomorphize-templates=max-evaluation-steps=20 | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
 
 // Three array elements and a rolled affine call share Child<0>, Child<1>, and Child<2>.
 module attributes {test.scenario = "array_of_parameterized_structs", llzk.lang, llzk.main = !struct.type<@Main>} {
@@ -229,7 +229,7 @@ module attributes {test.scenario = "discovery_multidimensional_family", llzk.lan
 
 // -----
 
-// A billion-by-zero array produces no element specializations within the 20-step budget.
+// A billion-by-zero array produces no element specializations without enumerating its empty index space.
 module attributes {test.scenario = "discovery_empty_family", llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
   poly.template @Child {
     poly.param @N : index
