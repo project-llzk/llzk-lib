@@ -622,6 +622,7 @@ LogicalResult substituteStructBody(
 
   RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
   patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, paramNameToConcrete, diagnostics);
+  patterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
   patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newStruct, target, std::move(patterns));
 }
