@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Dialect/Cast/IR/Ops.h"
+#include "ScalarEvaluation.h"
 
 #include <mlir/IR/Matchers.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
@@ -30,20 +30,20 @@ class ConstraintScalarFacts {
     for (mlir::Value operand : producer->getOperands()) {
       operands.push_back(constants.lookup(operand));
     }
-    mlir::Operation *temporary = producer->clone();
     llvm::SmallVector<mlir::OpFoldResult> results;
-    if (mlir::succeeded(temporary->fold(operands, results)) &&
-        results.size() == producer->getNumResults()) {
+    if (mlir::succeeded(evaluateScalarOperation(producer, operands, results))) {
       for (auto [result, folded] : llvm::zip_equal(producer->getResults(), results)) {
         constants[result] = llvm::isa<mlir::Attribute>(folded)
                                 ? llvm::cast<mlir::Attribute>(folded)
                                 : constants.lookup(llvm::cast<mlir::Value>(folded));
       }
     }
-    temporary->destroy();
   }
 
 public:
+  ConstraintScalarFacts() = default;
+  explicit ConstraintScalarFacts(mlir::MLIRContext * /*context*/) {}
+
   /// Evaluate pure SSA dependencies and casts whose fold hooks prove validity.
   /// An explicit worklist also handles long iteration-dependent expression chains.
   mlir::Attribute known(mlir::Value value) {

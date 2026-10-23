@@ -117,7 +117,9 @@ Runs these passes in order:
 
 Inline includes and lower symbolic non-native constraint arithmetic before this
 pipeline. Constant non-native arithmetic is evaluated during expansion using
-the current call and loop bindings.
+the current call and loop bindings. Specialization discovery and constraint
+expansion share scalar folding and integer/field conversion logic, so known
+template and loop values use the same arithmetic semantics in both stages.
 Canonicalization removes frontend `scf.execute_region` wrappers before
 monomorphization and folds specialized constants before expansion.
 Control flow and all array indices must resolve statically;
