@@ -28,6 +28,8 @@ lowering pipeline on the parsed module, then calls the binary exporter directly.
 It does not print or reparse intermediate IR. Rolled compute and witness metadata
 remain in memory during lowering. Already evaluated modules are also accepted.
 The existing `--r1cs-to-binary` translation exports already lowered R1CS IR.
+Whole-array equality constraints, including multidimensional arrays and array
+slices, are expanded into scalar equations during symbolic evaluation.
 
 ### LLZK layout map
 

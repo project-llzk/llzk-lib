@@ -502,6 +502,47 @@ class Evaluator {
     );
   }
 
+  /// Expand array equalities in row-major order, retaining each equation's provenance.
+  LogicalResult emitEquality(Operation &op, AV lhs, AV rhs) {
+    if (auto array = dyn_cast<array::ArrayType>(lhs->type)) {
+      if (lhs->type != rhs->type) {
+        return error(&op, "array equality requires matching types");
+      }
+      int64_t size = array.getShape().front();
+      if (size < 0) {
+        return error(&op, "array equality requires a static shape");
+      }
+      Type element = array.getSelectionType(1);
+      for (int64_t i = 0; i < size; ++i) {
+        if (++steps > limit) {
+          return error(&op, "evaluation step limit exceeded");
+        }
+        auto key = std::to_string(i);
+        auto segment = builder.getIndexAttr(i);
+        if (failed(emitEquality(
+                op, child(lhs, key, segment, element, &op), child(rhs, key, segment, element, &op)
+            ))) {
+          return failure();
+        }
+      }
+      return success();
+    }
+    Value left = materialize(lhs, op.getLoc());
+    Value right = materialize(rhs, op.getLoc());
+    if (!left || !right) {
+      return failure();
+    }
+    IRMapping mapping;
+    mapping.map(op.getOperand(0), left);
+    mapping.map(op.getOperand(1), right);
+    Operation *emitted = builder.clone(op, mapping);
+    ++equations;
+    emitted->setAttr("poly.source_operation", op.getAttr("poly.evaluation_source_operation"));
+    emitted->setAttr("poly.call_stack", builder.getArrayAttr(stack));
+    emitted->setAttr("poly.loop_indices", builder.getArrayAttr(loops));
+    return success();
+  }
+
   /// Execute a block, returning its terminator operands in the abstract domain.
   LogicalResult block(Block &body, Env &env, SmallVectorImpl<AV> &returned) {
     for (Operation &op : body) {
@@ -822,10 +863,15 @@ class Evaluator {
         }
         continue;
       }
-      bool equation = name == "constrain.eq";
-      if (!equation && !(isMemoryEffectFree(&op) && !op.getNumRegions() &&
-                         (name.starts_with("felt.") || name.starts_with("arith.") ||
-                          name.starts_with("bool.") || name.starts_with("cast.")))) {
+      if (name == "constrain.eq") {
+        if (failed(emitEquality(op, env.lookup(op.getOperand(0)), env.lookup(op.getOperand(1))))) {
+          return failure();
+        }
+        continue;
+      }
+      if (!(isMemoryEffectFree(&op) && !op.getNumRegions() &&
+            (name.starts_with("felt.") || name.starts_with("arith.") || name.starts_with("bool.") ||
+             name.starts_with("cast.")))) {
         return error(&op, "unsupported operation '" + name + "'");
       }
       IRMapping mapping;
@@ -845,7 +891,7 @@ class Evaluator {
       for (Type type : op.getResultTypes()) {
         keyStream << type;
       }
-      if (!equation && op.getNumResults() == 1) {
+      if (op.getNumResults() == 1) {
         if (auto it = expressions.find(key); it != expressions.end()) {
           auto v = value(op.getResult(0).getType());
           v->scalar = it->second;
@@ -854,14 +900,8 @@ class Evaluator {
         }
       }
       Operation *emitted = builder.clone(op, mapping);
-      if (!equation && op.getNumResults() == 1) {
+      if (op.getNumResults() == 1) {
         expressions[key] = emitted->getResult(0);
-      }
-      if (equation) {
-        ++equations;
-        emitted->setAttr("poly.source_operation", op.getAttr("poly.evaluation_source_operation"));
-        emitted->setAttr("poly.call_stack", builder.getArrayAttr(stack));
-        emitted->setAttr("poly.loop_indices", builder.getArrayAttr(loops));
       }
       for (auto [a, b] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
         auto v = value(a.getType());
