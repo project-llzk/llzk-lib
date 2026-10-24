@@ -140,11 +140,14 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     if (computeStruct != constrainStruct) {
       return false;
     }
-    if (compute.getNumOperands() == 0) {
-      return true;
+    // Affine-map instantiation operands are not function arguments.
+    auto computeArgs = compute.getArgOperands();
+    auto constrainArgs = constrain.getArgOperands();
+    if (constrainArgs.size() != computeArgs.size() + 1) {
+      return false;
     }
-    for (unsigned i = 0, e = compute->getNumOperands() - 1; i < e; i++) {
-      if (!equivalence.areSignalsEquivalent(compute->getOperand(i), constrain->getOperand(i + 1))) {
+    for (unsigned i = 0, e = computeArgs.size(); i < e; i++) {
+      if (!equivalence.areSignalsEquivalent(computeArgs[i], constrainArgs[i + 1])) {
         return false;
       }
     }
@@ -188,10 +191,14 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     // ...and replace the two calls with a single call to @A::@product
     OpBuilder callBuilder(compute);
     CallOp newCall = CallOp::create(
-        callBuilder, callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), newProduct,
-        compute.getOperands()
+        callBuilder, callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}),
+        compute.getResultTypes(), newProduct.getFullyQualifiedName(false),
+        CallOp::toVectorOfValueRange(compute.getMapOperands()), compute.getNumDimsPerMapAttr(),
+        compute.getArgOperands()
     );
     compute->replaceAllUsesWith(newCall.getResults());
+    compute->erase();
+    constrain->erase();
   }
 
   return success();
