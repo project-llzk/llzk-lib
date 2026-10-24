@@ -1,0 +1,149 @@
+// RUN: llzk-opt %s --llzk-const-global-propagation --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s
+
+// Reach both struct and function specialization from llzk.main. A known-field
+// value is reduced before forwarding to a fieldless parameter; literal and
+// symbolic arguments with that value must select the same child specialization.
+// Resolve constant globals before specialization.
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// CHECK-NEXT:    poly.template @ChildTemplate {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        struct.member @value : !felt.type
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ChildTemplate::@Child<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@ChildTemplate::@Child<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@ChildTemplate::@Child<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ChildTemplate::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@value] : <@ChildTemplate::@Child<[@N]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @ValueFunction {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      function.def @value() -> !felt.type {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:        function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : !felt.type<"babybear">
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        struct.member @literal : !struct.type<@ChildTemplate::@Child<[#felt<const 2013265924 : <"babybear">>]>>
+// CHECK-NEXT:        struct.member @forwarded : !struct.type<@ChildTemplate::@Child<[@N]>>
+// CHECK-NEXT:        struct.member @raw : !struct.type<@ChildTemplate::@Child<[#felt<const 3>]>>
+// CHECK-NEXT:        struct.member @global : !struct.type<@ChildTemplate::@Child<[#felt<const 2013265924 : <"babybear">>]>>
+// CHECK-NEXT:        struct.member @value : !felt.type
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Caller::@Main<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Caller::@Main<[@N]>>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @ValueFunction::@value<[@N]>() : () -> !felt.type
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @ValueFunction::@value<[#felt<const 2013265924 : <"babybear">>]>() : () -> !felt.type
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@value] = %[[VAL_9]] : <@Caller::@Main<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@Caller::@Main<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Caller::@Main<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_10]][@value] : <@Caller::@Main<[@N]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.const  6
+// CHECK-NEXT:          constrain.eq %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @literal : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @forwarded : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @raw : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @global : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @value__spec_0() : () -> !felt.type
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @value__spec_0() : () -> !felt.type
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_14]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@value] = %[[VAL_16]] : <@Main__spec_0>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_13]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_17]][@value] : <@Main__spec_0>, !felt.type
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.const  6
+// CHECK-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_19]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @Caller::@Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  3
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        struct.writem %[[VAL_21]][@value] = %[[VAL_20]] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_21]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_22]][@value] : <@Child__spec_1>, !felt.type
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = felt.const  3
+// CHECK-NEXT:        constrain.eq %[[VAL_23]], %[[VAL_24]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3> : !felt.type], poly.origin = @ChildTemplate::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    function.def @value__spec_0() -> !felt.type attributes {poly.arguments = [#felt<const 3> : !felt.type], poly.origin = @ValueFunction::@value} {
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = felt.const  3
+// CHECK-NEXT:      function.return %[[VAL_25]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[#felt<const 2013265924 : !felt.type<"babybear">>]>>} {
+  global.def const @GlobalValue : !felt.type<"babybear"> = 2013265924
+  poly.template @ChildTemplate {
+    poly.param @N : !felt.type
+    struct.def @Child {
+      struct.member @value : !felt.type
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %n = poly.read_const @N : !felt.type
+        %self = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        struct.writem %self[@value] = %n : !struct.type<@ChildTemplate::@Child<[@N]>>, !felt.type
+        function.return %self : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@ChildTemplate::@Child<[@N]>>) {
+        %actual = struct.readm %self[@value] : !struct.type<@ChildTemplate::@Child<[@N]>>, !felt.type
+        %expected = poly.read_const @N : !felt.type
+        constrain.eq %actual, %expected : !felt.type
+        function.return
+      }
+    }
+  }
+  poly.template @ValueFunction {
+    poly.param @N : !felt.type
+    function.def @value() -> !felt.type {
+      %n = poly.read_const @N : !felt.type
+      function.return %n : !felt.type
+    }
+  }
+  poly.template @Caller {
+    poly.param @N : !felt.type<"babybear">
+    struct.def @Main {
+      struct.member @literal : !struct.type<@ChildTemplate::@Child<[#felt<const 2013265924 : !felt.type<"babybear">>]>>
+      struct.member @forwarded : !struct.type<@ChildTemplate::@Child<[@N]>>
+      struct.member @raw : !struct.type<@ChildTemplate::@Child<[#felt<const 3>]>>
+      struct.member @global : !struct.type<@ChildTemplate::@Child<[@GlobalValue]>>
+      struct.member @value : !felt.type
+      function.def @compute() -> !struct.type<@Caller::@Main<[@N]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@N]>>
+        %value = function.call @ValueFunction::@value<[@N]>() : () -> !felt.type
+        %global = function.call @ValueFunction::@value<[@GlobalValue]>() : () -> !felt.type
+        %sum = felt.add %value, %global : !felt.type
+        struct.writem %self[@value] = %sum : !struct.type<@Caller::@Main<[@N]>>, !felt.type
+        function.return %self : !struct.type<@Caller::@Main<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@N]>>) {
+        %actual = struct.readm %self[@value] : !struct.type<@Caller::@Main<[@N]>>, !felt.type
+        %expected = felt.const 6
+        constrain.eq %actual, %expected : !felt.type
+        function.return
+      }
+    }
+  }
+}

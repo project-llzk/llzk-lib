@@ -1,0 +1,27 @@
+// RUN: llzk-opt %s --verify-diagnostics
+// RUN: llzk-opt %s --llzk-monomorphize-templates --verify-diagnostics
+
+// A valid nested type argument remains accepted and reaches child specialization.
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@S<[!pod.type<[@child: !array.type<2 x !struct.type<@Inner::@S<[#felt<const 35 : !felt.type<"bn128">>]>>>]>]>>} {
+  poly.template @Inner {
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Inner::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Inner::@S<[@N]>>
+        function.return %self : !struct.type<@Inner::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@S<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @S {
+      struct.member @child : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Outer::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@Outer::@S<[@Ty]>>
+        function.return %self : !struct.type<@Outer::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@S<[@Ty]>>) { function.return }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+// RUN: llzk-opt -verify-diagnostics %s | FileCheck %s
+
+// A fieldless restriction accepts known-field symbols in contract inclusions.
+module attributes {llzk.lang} {
+  global.def const @GlobalValue : !felt.type<"bn128"> = 35
+
+  poly.template @Spec {
+    poly.param @N : !felt.type
+    function.def @token() { function.return }
+    verif.contract @Base for @Spec::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @entry() { function.return }
+  verif.contract @Wrapper for @entry () {
+    verif.include @Spec::@Base<[@GlobalValue]>() : () -> ()
+  }
+
+  poly.template @Caller {
+    poly.param @LocalValue : !felt.type<"bn128">
+    function.def @local_entry() { function.return }
+    verif.contract @LocalWrapper for @Caller::@local_entry () {
+      verif.include @Spec::@Base<[@LocalValue]>() : () -> ()
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @GlobalValue : !felt.type<"bn128"> =  35 : <"bn128">
+// CHECK-NEXT:    poly.template @Spec {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      function.def @token() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @Spec::@token () {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_0]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @entry() {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Wrapper for @entry () {
+// CHECK-NEXT:      verif.include @Spec::@Base<[@GlobalValue]>() : () -> ()
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @LocalValue : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @local_entry() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @LocalWrapper for @Caller::@local_entry () {
+// CHECK-NEXT:        verif.include @Spec::@Base<[@LocalValue]>() : () -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

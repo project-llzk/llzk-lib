@@ -1,0 +1,60 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file --llzk-monomorphize-templates -verify-diagnostics %s
+
+// A type-valued parameter can supply a child type argument through a type variable.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[index]>>} {
+  poly.template @Target {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Child {
+      struct.member @value : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> {
+        %self = struct.new : !struct.type<@Target::@Child<[@Ty]>>
+        function.return %self : !struct.type<@Target::@Child<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Child<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @Value : !poly.tvar<@Value>
+    struct.def @Main {
+      struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+      function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@Value]>>
+        %child = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        struct.writem %self[@child] = %child : !struct.type<@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        function.return %self : !struct.type<@Caller::@Main<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@Value]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// An unrestricted parameter remains deferred until its concrete type is supplied.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[index]>>} {
+  poly.template @Target {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Child {
+      struct.member @value : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> {
+        %self = struct.new : !struct.type<@Target::@Child<[@Ty]>>
+        function.return %self : !struct.type<@Target::@Child<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Child<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @Value
+    struct.def @Main {
+      struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+      function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@Value]>>
+        %child = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        struct.writem %self[@child] = %child : !struct.type<@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        function.return %self : !struct.type<@Caller::@Main<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@Value]>>) { function.return }
+    }
+  }
+}
