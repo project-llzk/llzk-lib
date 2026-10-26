@@ -253,7 +253,20 @@ class ConstraintElaborator {
       return failure();
     }
     if (aggregate(op.getType())) {
-      frame[op.getResult()] = bindings.create(info->memberType, {}, emitted.getResult());
+      Type bindingType = info->memberType;
+      if (auto readArray = dyn_cast<array::ArrayType>(op.getType())) {
+        auto declaredArray = llvm::cast<array::ArrayType>(info->memberType);
+        SmallVector<Attribute> dimensions(readArray.getDimensionSizes());
+        // Compatibility was checked by describe(). Preserve read-side type identity
+        // and static refinements, filling only unknown dimensions from storage.
+        for (size_t i = 0; i < dimensions.size(); ++i) {
+          if (readArray.getShape()[i] < 0 && declaredArray.getShape()[i] >= 0) {
+            dimensions[i] = declaredArray.getDimensionSizes()[i];
+          }
+        }
+        bindingType = readArray.cloneWith(readArray.getElementType(), dimensions);
+      }
+      frame[op.getResult()] = bindings.create(bindingType, {}, emitted.getResult());
     } else {
       frame[op.getResult()] = emitted.getResult();
       if (!isa<StructType>(op.getType()) && !info->signal) {
