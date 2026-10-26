@@ -641,10 +641,10 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       llvm::raw_string_ostream stream(accessPath);
       printLLZKLayoutPath(path, layout.argumentNames, stream);
       // CSV escapes embedded quotes by doubling them, and quotes fields with commas.
-      output << '\"';
+      output << '"';
       for (char character : accessPath) {
-        if (character == '\"') {
-          output << '\"';
+        if (character == '"') {
+          output << '"';
         }
         output << character;
       }
@@ -898,12 +898,11 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     }
     std::string llzkIR;
     if (!outputLLZK.getValue().empty()) {
-      OwningOpRef<ModuleOp> snapshot = cast<ModuleOp>(module->clone());
-      if (failed(verify(*snapshot))) {
+      if (failed(verify(module))) {
         return signalPassFailure();
       }
       llvm::raw_string_ostream stream(llzkIR);
-      snapshot->print(stream);
+      module->print(stream);
       stream << '\n';
     }
     auto circuit = createR1CSWires(module, *layout, *wireMap);

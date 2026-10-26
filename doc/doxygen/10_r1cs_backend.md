@@ -23,12 +23,6 @@ bit width; the exporter derives the fixed byte width required by the R1CS format
 `llzk.main`, R1CS conversion, and common subexpression elimination. It retains
 aggregate storage rather than running storage scalarization. Source helper and
 component definitions are not independently converted into extra circuits.
-This is an additional pipeline using the existing R1CS lowering pass class.
-`-llzk-full-r1cs-lowering` keeps its original full-polynomial-lowering pipeline
-composition and uses that same updated conversion pass.
-
-Before conversion, run constraint flattening and degree lowering with a maximum
-polynomial degree of two. The combined pipeline above runs both passes.
 
 The R1CS conversion then:
 
@@ -69,10 +63,9 @@ Constant one has no LLZK layout ID and is omitted. The CSV is emitted during
 lowering, while the LLZK paths are available. The R1CS dialect and its binary
 exporter do not interpret those paths.
 
-The current binary exporter still assigns wire indices during serialization;
-for newly lowered circuits they already agree with the final IDs recorded by
-lowering, giving an identity wire-to-label table. Replacing that exporter logic
-with validation-only serialization is the next change.
+The binary exporter assigns wire indices during serialization. For circuits
+produced by layout-based lowering, these indices agree with the wire IDs
+assigned during lowering, giving an identity wire-to-label table.
 
 Private storage without `{signal}` is not implicitly promoted to an R1CS wire.
 
