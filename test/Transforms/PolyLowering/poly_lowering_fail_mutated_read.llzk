@@ -1,0 +1,47 @@
+// RUN: llzk-opt -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+// A member copy is mutated before its scalar value is used in an auxiliary.
+module attributes {llzk.lang} {
+  struct.def @MutatedArray {
+    struct.member @data : !array.type<1 x !felt.type>
+    function.def @compute(%x: !felt.type) -> !struct.type<@MutatedArray> {
+      %self = struct.new : !struct.type<@MutatedArray>
+      function.return %self : !struct.type<@MutatedArray>
+    }
+    function.def @constrain(%self: !struct.type<@MutatedArray>, %x: !felt.type) {
+      %aggregate = struct.readm %self[@data] : !struct.type<@MutatedArray>, !array.type<1 x !felt.type>
+      %idx = arith.constant 0 : index
+      array.write %aggregate[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression after an aggregate write; aggregate mutations cannot be replayed}}
+      %value = array.read %aggregate[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A member copy is mutated before its scalar value is used in an auxiliary.
+module attributes {llzk.lang} {
+  struct.def @MutatedPod {
+    struct.member @data : !pod.type<[@value: !felt.type]>
+    function.def @compute(%x: !felt.type) -> !struct.type<@MutatedPod> {
+      %self = struct.new : !struct.type<@MutatedPod>
+      function.return %self : !struct.type<@MutatedPod>
+    }
+    function.def @constrain(%self: !struct.type<@MutatedPod>, %x: !felt.type) {
+      %aggregate = struct.readm %self[@data] : !struct.type<@MutatedPod>, !pod.type<[@value: !felt.type]>
+      %idx = arith.constant 0 : index
+      pod.write %aggregate[@value] = %x : !pod.type<[@value: !felt.type]>, !felt.type
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression after an aggregate write; aggregate mutations cannot be replayed}}
+      %value = pod.read %aggregate[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}

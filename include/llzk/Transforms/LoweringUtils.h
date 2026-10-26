@@ -38,6 +38,8 @@ struct AuxAssignment {
 /// compute `%self`, and later arguments to compute inputs.
 /// Returns null after emitting a diagnostic when an expression root cannot be
 /// rebuilt safely in compute.
+/// Storage reads following aggregate writes are conservatively rejected because
+/// reconstruction does not replay mutations or prove that their storage is disjoint.
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo

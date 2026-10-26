@@ -78,6 +78,21 @@ Value rebuildExprInCompute(
       isa_and_nonnull<MemberReadOp, array::ReadArrayOp, array::ExtractArrayOp, pod::ReadPodOp>(
           readOp
       )) {
+    // Aggregate writes are not part of the SSA operand graph cloned below. Without
+    // alias analysis, even a write through another view may change the read value.
+    // Reject preceding writes rather than reconstructing a stale storage state.
+    for (Operation &preceding : *readOp->getBlock()) {
+      if (&preceding == readOp) {
+        break;
+      }
+      if (isa<array::WriteArrayOp, array::InsertArrayOp, pod::WritePodOp>(preceding)) {
+        readOp->emitError(
+            "cannot rebuild storage read in compute-side auxiliary expression after an "
+            "aggregate write; aggregate mutations cannot be replayed"
+        );
+        return nullptr;
+      }
+    }
     IRMapping mapper;
     for (Value operand : readOp->getOperands()) {
       Value rebuiltOperand = mapValueIntoCompute(operand, computeFunc, builder, memo);
