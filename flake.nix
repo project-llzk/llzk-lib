@@ -1,6 +1,6 @@
 {
   inputs = {
-    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs";
+    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs/th/suppress_rather_than_init";
     nixpkgs.follows = "llzk-pkgs/nixpkgs";
     flake-utils.follows = "llzk-pkgs/flake-utils";
 
