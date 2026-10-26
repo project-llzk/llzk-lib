@@ -1,5 +1,7 @@
 var NAVTREEINDEX83 =
 {
+"tools.html#options":[3,0,0,0,0,0],
+"tools.html#options-1":[3,0,0,0,1,0],
 "tools.html#options-10":[3,0,0,1,8,0],
 "tools.html#options-11":[3,0,0,1,14,0],
 "tools.html#options-12":[3,0,0,1,17,0],
