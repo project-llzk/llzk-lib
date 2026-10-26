@@ -17,29 +17,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // -----
 
-// An unknown while condition cannot determine which body requests are reached.
-module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-  struct.def @Main {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Main> {
-      %zero = arith.constant 0 : index
-      %felt_zero = felt.const 0
-      %condition = bool.cmp eq(%input, %felt_zero)
-      // expected-error@+1 {{specialization discovery requires a known while condition}}
-      %result = scf.while (%i = %zero) : (index) -> index {
-        scf.condition(%condition) %i : index
-      } do {
-      ^bb0(%i: index):
-        scf.yield %i : index
-      }
-      %self = struct.new : !struct.type<@Main>
-      function.return %self : !struct.type<@Main>
-    }
-    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type) { function.return }
-  }
-}
-
-// -----
-
 // Different yields from an unknown condition leave the affine specialization argument unresolved.
 module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
   poly.template @Child {

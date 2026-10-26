@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+      %buffer = llzk.nondet : !array.type<1 x !felt.type<"bn128">>
+      %zero = arith.constant 0 : index
+      // expected-error @+1 {{read of uninitialized local storage}}
+      %value = array.read %buffer[%zero] : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      constrain.eq %value, %x : !felt.type<"bn128">, !felt.type<"bn128">
+      function.return
+    }
+  }
+}
