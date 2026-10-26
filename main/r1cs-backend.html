@@ -303,6 +303,7 @@ Results:</h4>
 <p><em>Defines an R1CS circuit with labeled inputs and constraints</em></p>
 <p>The <span class="tt">r1cs.circuit</span> operation defines a named circuit, with explicit inputs and internally declared signals and constraints.</p>
 <p>Signals defined with <span class="tt">r1cs.def</span> and marked <span class="tt">public</span> are considered outputs.</p>
+<p>The optional <span class="tt">r1cs.input_labels</span> array supplies one explicit wire ID for each input, in block-argument order. When present, all wire IDs must be consecutive after constant one, ordered as public outputs, public inputs, private inputs, then internal signals. Circuits may omit this attribute when the binary exporter will assign input labels.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">r1cs.circuit @CmpConstraint inputs (%arg0: !r1cs.signal {#r1cs.pub}, %arg1: !r1cs.signal, %arg2: !r1cs.signal) {</div>
 <div class="line">    %0 = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}</div>
