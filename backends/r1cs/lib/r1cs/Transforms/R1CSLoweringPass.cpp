@@ -921,6 +921,10 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     }
     module->removeAttr(MAIN_ATTR_NAME);
     module->setAttr(LANG_ATTR_NAME, StringAttr::get(module.getContext(), "r1cs"));
+    // Reject invalid converted IR before committing any side outputs.
+    if (failed(verify(module))) {
+      return signalPassFailure();
+    }
     if (failed(emitOutputs(module, llzkIR, *layout, *wireMap))) {
       return signalPassFailure();
     }
