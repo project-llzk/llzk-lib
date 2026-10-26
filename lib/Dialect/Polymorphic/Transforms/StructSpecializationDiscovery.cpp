@@ -596,6 +596,54 @@ class DiscoveryRun {
     return path;
   }
 
+  /// Decode an allocation's array dimensions in its original map-operand order.
+  /// Bound array-valued element types may add trailing dimensions without operands.
+  SmallVector<int64_t>
+  allocationShape(array::ArrayType type, llvm::function_ref<Attribute(AffineMapAttr)> resolveMap) {
+    auto resolved = llvm::cast<array::ArrayType>(typeResolver.resolveType(type));
+    SmallVector<int64_t> shape(resolved.getShape());
+    for (auto [i, dimension] : llvm::enumerate(type.getDimensionSizes())) {
+      if (auto map = dyn_cast<AffineMapAttr>(dimension)) {
+        auto extent = getKnownInteger(resolveMap(map));
+        if (extent && *extent >= 0) {
+          shape[i] = *extent;
+        }
+      }
+    }
+    return shape;
+  }
+
+  /// Record shapes for uninitialized nested POD fields. Traverse in the same
+  /// record order as the POD verifier, including groups for struct parameters.
+  void recordPodShapes(
+      Type type, const DiscoveryValue &value, SmallVector<Attribute> &path,
+      llvm::function_ref<Attribute(AffineMapAttr)> resolveMap
+  ) {
+    if (auto podType = dyn_cast<pod::PodType>(type)) {
+      for (auto record : podType.getRecords()) {
+        path.push_back(record.getName());
+        recordPodShapes(record.getType(), value, path, resolveMap);
+        path.pop_back();
+      }
+    } else if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
+      storage.setShape(value, allocationShape(arrayType, resolveMap), path);
+    } else if (auto structure = dyn_cast<StructType>(type)) {
+      if (auto parameters = structure.getParams()) {
+        for (Attribute parameter : parameters) {
+          if (auto map = dyn_cast<AffineMapAttr>(parameter)) {
+            resolveMap(map);
+          }
+        }
+      }
+    } else if (isa<TypeVarType>(type)) {
+      // Maps introduced by a binding have no operand groups on this allocation.
+      auto resolved = typeResolver.resolveType(type);
+      if (resolved != type) {
+        recordPodShapes(resolved, value, path, [](AffineMapAttr) { return Attribute(); });
+      }
+    }
+  }
+
   /// Interpret local aggregate value copies and scalar stores. Unsupported effects
   /// discard facts, so specialization never depends on a stale stored constant.
   bool
@@ -604,24 +652,17 @@ class DiscoveryRun {
         .Case<array::CreateArrayOp>([&](auto allocation) {
       auto value = storage.create();
       results[0] = value;
-      auto type = llvm::cast<array::ArrayType>(typeResolver.resolveType(allocation.getType()));
-      SmallVector<int64_t> shape(type.getShape());
       size_t group = 0;
-      for (auto [i, dimension] : llvm::enumerate(type.getDimensionSizes())) {
-        if (auto map = dyn_cast<AffineMapAttr>(dimension)) {
-          if (group >= allocation.getMapOperands().size()) {
-            continue;
-          }
-          SmallVector<Attribute> operands;
-          for (Value operand : allocation.getMapOperands()[group++]) {
-            operands.push_back(env.lookup(operand).constant);
-          }
-          auto extent = getKnownInteger(typeResolver.resolveAffineArgument(map, operands));
-          if (extent && *extent >= 0) {
-            shape[i] = *extent;
-          }
+      auto shape = allocationShape(allocation.getType(), [&](AffineMapAttr map) {
+        if (group >= allocation.getMapOperands().size()) {
+          return Attribute();
         }
-      }
+        SmallVector<Attribute> operands;
+        for (Value operand : allocation.getMapOperands()[group++]) {
+          operands.push_back(env.lookup(operand).constant);
+        }
+        return typeResolver.resolveAffineArgument(map, operands);
+      });
       storage.setShape(value, shape);
       if (llvm::any_of(shape, [](int64_t size) { return size <= 0; })) {
         return true;
@@ -643,6 +684,18 @@ class DiscoveryRun {
     })
         .Case<pod::NewPodOp>([&](auto allocation) {
       auto value = storage.create();
+      size_t group = 0;
+      SmallVector<Attribute> path;
+      recordPodShapes(allocation.getType(), value, path, [&](AffineMapAttr map) {
+        if (group >= allocation.getMapOperands().size()) {
+          return Attribute();
+        }
+        SmallVector<Attribute> operands;
+        for (Value operand : allocation.getMapOperands()[group++]) {
+          operands.push_back(env.lookup(operand).constant);
+        }
+        return typeResolver.resolveAffineArgument(map, operands);
+      });
       for (auto record : allocation.getInitializedRecordValues()) {
         storage.write(value, {StringAttr::get(context(), record.name)}, env.lookup(record.value));
       }

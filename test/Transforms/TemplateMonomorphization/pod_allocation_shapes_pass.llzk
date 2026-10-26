@@ -1,0 +1,234 @@
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates | FileCheck %s --enable-var-scope
+
+// Partially initialized POD allocations retain affine array shapes.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %holder = pod.new { @tag = %one }(%two) : !pod.type<[@tag: index, @a: !array.type<affine_map<(d0) -> (d0)> x index>]>
+        %items = pod.read %holder[@a] : !pod.type<[@tag: index, @a: !array.type<affine_map<(d0) -> (d0)> x index>]>, !array.type<affine_map<(d0) -> (d0)> x index>
+        array.write %items[%one] = %two : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        %value = array.read %items[%one] : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Parent__spec_0>} {
+// CHECK-NEXT:    poly.template @Child {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Parent {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.expr @Next {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Parent {
+// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = pod.new { @tag = %[[VAL_7]] } (%[[VAL_8]]) : <[@tag: index, @a: !array.type<#[[$ATTR_0]] x index>]>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_9]][@a] : <[@tag: index, @a: !array.type<#[[$ATTR_0]] x index>]>, !array.type<#[[$ATTR_0]] x index>
+// CHECK-NEXT:          array.write %[[VAL_10]]{{\[}}%[[VAL_7]]] = %[[VAL_8]] : <#[[$ATTR_0]] x index>, index
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_7]]] : <#[[$ATTR_0]] x index>, index
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_11]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_13]] : !struct.type<@Parent::@Parent<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Parent__spec_0 {
+// CHECK-NEXT:      function.def @compute(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = pod.new { @tag = %[[VAL_18]] } (%[[VAL_19]]) : <[@tag: index, @a: !array.type<#[[$ATTR_0]] x index>]>
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_20]][@a] : <[@tag: index, @a: !array.type<#[[$ATTR_0]] x index>]>, !array.type<#[[$ATTR_0]] x index>
+// CHECK-NEXT:        array.write %[[VAL_21]]{{\[}}%[[VAL_18]]] = %[[VAL_19]] : <#[[$ATTR_0]] x index>, index
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_18]]] : <#[[$ATTR_0]] x index>, index
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_22]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [1]}
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_24]] : !struct.type<@Parent__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_25:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>, %[[VAL_26:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_27]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_28:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:  }
+
+// -----
+
+
+
+// Nested POD snapshots preserve distinct map-operand groups and symbol extents.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %three = arith.constant 3 : index
+        %holder = pod.new (%two), ()[%three] : !pod.type<[@a: !array.type<affine_map<(d0) -> (d0)> x index>, @nested: !pod.type<[@b: !array.type<affine_map<()[s0] -> (s0)> x index>]>]>
+        %nested = pod.read %holder[@nested] : !pod.type<[@a: !array.type<affine_map<(d0) -> (d0)> x index>, @nested: !pod.type<[@b: !array.type<affine_map<()[s0] -> (s0)> x index>]>]>, !pod.type<[@b: !array.type<affine_map<()[s0] -> (s0)> x index>]>
+        %items = pod.read %nested[@b] : !pod.type<[@b: !array.type<affine_map<()[s0] -> (s0)> x index>]>, !array.type<affine_map<()[s0] -> (s0)> x index>
+        array.write %items[%two] = %two : !array.type<affine_map<()[s0] -> (s0)> x index>, index
+        %value = array.read %items[%two] : !array.type<affine_map<()[s0] -> (s0)> x index>, index
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Parent__spec_0>} {
+// CHECK-NEXT:    poly.template @Child {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Parent {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.expr @Next {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Parent {
+// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = pod.new(%[[VAL_8]]), (){{\[}}%[[VAL_9]]] : <[@a: !array.type<#[[$ATTR_0]] x index>, @nested: !pod.type<[@b: !array.type<#[[$ATTR_1]] x index>]>]>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_10]][@nested] : <[@a: !array.type<#[[$ATTR_0]] x index>, @nested: !pod.type<[@b: !array.type<#[[$ATTR_1]] x index>]>]>, !pod.type<[@b: !array.type<#[[$ATTR_1]] x index>]>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_11]][@b] : <[@b: !array.type<#[[$ATTR_1]] x index>]>, !array.type<#[[$ATTR_1]] x index>
+// CHECK-NEXT:          array.write %[[VAL_12]]{{\[}}%[[VAL_8]]] = %[[VAL_8]] : <#[[$ATTR_1]] x index>, index
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_12]]{{\[}}%[[VAL_8]]] : <#[[$ATTR_1]] x index>, index
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_13]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_15]] : !struct.type<@Parent::@Parent<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Parent__spec_0 {
+// CHECK-NEXT:      function.def @compute(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = pod.new(%[[VAL_21]]), (){{\[}}%[[VAL_22]]] : <[@a: !array.type<#[[$ATTR_0]] x index>, @nested: !pod.type<[@b: !array.type<#[[$ATTR_1]] x index>]>]>
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_23]][@nested] : <[@a: !array.type<#[[$ATTR_0]] x index>, @nested: !pod.type<[@b: !array.type<#[[$ATTR_1]] x index>]>]>, !pod.type<[@b: !array.type<#[[$ATTR_1]] x index>]>
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_24]][@b] : <[@b: !array.type<#[[$ATTR_1]] x index>]>, !array.type<#[[$ATTR_1]] x index>
+// CHECK-NEXT:        array.write %[[VAL_25]]{{\[}}%[[VAL_21]]] = %[[VAL_21]] : <#[[$ATTR_1]] x index>, index
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_25]]{{\[}}%[[VAL_21]]] : <#[[$ATTR_1]] x index>, index
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_26]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [1]}
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_28]] : !struct.type<@Parent__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_29:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>, %[[VAL_30:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_31]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_32:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:  }

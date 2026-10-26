@@ -131,9 +131,12 @@ public:
     return result;
   }
 
-  /// Record the immutable dimensions of a fresh local array.
-  void setShape(const DiscoveryValue &value, llvm::ArrayRef<int64_t> shape) {
-    value.aggregate->shapes[builder.getArrayAttr({})] = llvm::SmallVector<int64_t>(shape);
+  /// Record dimensions at an array root or a nested POD record path.
+  void setShape(
+      const DiscoveryValue &value, llvm::ArrayRef<int64_t> shape,
+      llvm::ArrayRef<mlir::Attribute> path = {}
+  ) {
+    value.aggregate->shapes[builder.getArrayAttr(path)] = llvm::SmallVector<int64_t>(shape);
   }
 
   /// Return concrete root dimensions when available, including after value copies.
