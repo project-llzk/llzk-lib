@@ -1,0 +1,44 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product %s | FileCheck %s
+
+// Affine instantiation operands must remain separate from function arguments.
+// Preserve the instantiated result type and both dimension and symbol operands.
+#map = affine_map<(d0)[s0] -> (d0 + s0)>
+!Child = !struct.type<@Template::@Child<[#map]>>
+module attributes {llzk.lang} {
+  poly.template @Template {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Template::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@Template::@Child<[@N]>>
+        function.return %self : !struct.type<@Template::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Template::@Child<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+  struct.def @Main {
+    struct.member @child : !Child
+    function.def @compute(%input: !felt.type, %dim: index, %sym: index) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %child = function.call @Template::@Child::@compute(%input){(%dim)[%sym]} : (!felt.type) -> !Child
+      struct.writem %self[@child] = %child : !struct.type<@Main>, !Child
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type, %dim: index, %sym: index) {
+      %child = struct.readm %self[@child] : !struct.type<@Main>, !Child
+      function.call @Template::@Child::@constrain(%child, %input) : (!Child, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// NOTE: Checks generated with scripts/generate-test-checks.py and minimized.
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
+// CHECK-LABEL: struct.def @Main {
+// CHECK: function.def @product(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index, %[[VAL_8:[0-9a-zA-Z_\.]+]]: index)
+// CHECK-NEXT: %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Main> {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @Template::@Child::@product(%[[VAL_6]]) {(%[[VAL_7]]){{\[}}%[[VAL_8]]]} : (!felt.type) -> !struct.type<@Template::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT: struct.writem %[[VAL_9]][@child] = %[[VAL_10]] : <@Main>, !struct.type<@Template::@Child<[#[[$ATTR_0]]]>> {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@child] : <@Main>, !struct.type<@Template::@Child<[#[[$ATTR_0]]]>> {product_source = "constrain"}
+// CHECK-NEXT: function.return %[[VAL_9]] : !struct.type<@Main>
