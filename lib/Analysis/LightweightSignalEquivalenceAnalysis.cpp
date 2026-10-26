@@ -39,10 +39,15 @@ namespace llzk {
 
 namespace {
 
+/// Represents an "observation" into a nested POD record; either a directly reading into an SSA
+/// value via `pod.read`, or copying the contents via a pod-typed `struct.writem`
 struct PodObservation {
+  // The root POD being observed
   Value root;
+  // The path to the nested POD record being observed
   SmallVector<StringAttr> path;
-  Operation *rootObservation = nullptr;
+  // The operation doing the observing
+  Operation *observingOp = nullptr;
 };
 
 /// Return whether \p value is used by \p op or one of its nested operations.
@@ -56,11 +61,11 @@ static bool operationUsesValue(Operation *op, Value value) {
 /// Visit the operations strictly between two same-block anchors.
 template <typename Callback>
 static bool allBetween(Operation *lhs, Operation *rhs, Callback &&callback) {
-  if (lhs->getBlock() != rhs->getBlock()) {
-    return false;
-  }
   if (lhs == rhs) {
     return true;
+  }
+  if (lhs->getBlock() != rhs->getBlock()) {
+    return false;
   }
 
   Operation *first = lhs->isBeforeInBlock(rhs) ? lhs : rhs;
@@ -208,7 +213,7 @@ static bool normalizePodStorage(
 
   result.root = storage;
   result.path = path;
-  result.rootObservation = observation;
+  result.observingOp = observation;
   return true;
 }
 
@@ -288,7 +293,7 @@ bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(Value v1, Value 
     std::optional<PodObservation> obs2 = normalizePodRead(podRead2);
     if (!obs1 || !obs2 || obs1->root != obs2->root || obs1->path != obs2->path ||
         !podRecordUnmodified(
-            obs1->root, obs1->path.front(), obs1->rootObservation, obs2->rootObservation
+            obs1->root, obs1->path.front(), obs1->observingOp, obs2->observingOp
         )) {
       return false;
     }

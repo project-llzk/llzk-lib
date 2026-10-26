@@ -11,8 +11,6 @@
 
 #include "llzk/Util/BinaryBuffer.h"
 
-#include <llvm/Support/LogicalResult.h>
-
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <string>

@@ -140,7 +140,7 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     if (computeStruct != constrainStruct) {
       return false;
     }
-    // Affine-map instantiation operands are not function arguments.
+    // Count only `ArgOperands` to avoid counting affine-map instantiation operands.
     auto computeArgs = compute.getArgOperands();
     auto constrainArgs = constrain.getArgOperands();
     if (constrainArgs.size() != computeArgs.size() + 1) {
