@@ -27,6 +27,7 @@
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 #include <limits>
 #include <optional>
@@ -98,7 +99,10 @@ public:
         dimensions.push_back(resolveAttribute(dimension));
       }
       return std::make_pair(
-          Type(array::ArrayType::get(resolveType(array.getElementType()), dimensions)),
+          Type(flattenArrayElementType(
+              array.cloneWith(array.getElementType(), dimensions),
+              resolveType(array.getElementType())
+          )),
           WalkResult::skip()
       );
     }
@@ -575,7 +579,11 @@ class DiscoveryRun {
   arrayCoordinates(array::ArrayAccessOpInterface access, const Environment &env) {
     auto type =
         llvm::cast<array::ArrayType>(typeResolver.resolveType(access.getArrRef().getType()));
-    auto shape = type.getShape();
+    SmallVector<int64_t> shape(type.getShape());
+    auto concreteShape = storage.getShape(env.lookup(access.getArrRef()));
+    if (!concreteShape.empty()) {
+      shape.assign(concreteShape.begin(), concreteShape.end());
+    }
     SmallVector<Attribute> path;
     for (auto [i, index] : llvm::enumerate(access.getIndices())) {
       auto coordinate = getKnownInteger(env.lookup(index));
@@ -592,18 +600,38 @@ class DiscoveryRun {
   /// discard facts, so specialization never depends on a stale stored constant.
   bool
   evaluateStorage(Operation &op, const Environment &env, SmallVector<DiscoveryValue> &results) {
-    if (auto allocation = dyn_cast<array::CreateArrayOp>(op)) {
+    return llvm::TypeSwitch<Operation *, bool>(&op)
+        .Case<array::CreateArrayOp>([&](auto allocation) {
       auto value = storage.create();
       results[0] = value;
       auto type = llvm::cast<array::ArrayType>(typeResolver.resolveType(allocation.getType()));
-      auto shape = type.getShape();
+      SmallVector<int64_t> shape(type.getShape());
+      size_t group = 0;
+      for (auto [i, dimension] : llvm::enumerate(type.getDimensionSizes())) {
+        if (auto map = dyn_cast<AffineMapAttr>(dimension)) {
+          if (group >= allocation.getMapOperands().size()) {
+            continue;
+          }
+          SmallVector<Attribute> operands;
+          for (Value operand : allocation.getMapOperands()[group++]) {
+            operands.push_back(env.lookup(operand).constant);
+          }
+          auto extent = getKnownInteger(typeResolver.resolveAffineArgument(map, operands));
+          if (extent && *extent >= 0) {
+            shape[i] = *extent;
+          }
+        }
+      }
+      storage.setShape(value, shape);
       if (llvm::any_of(shape, [](int64_t size) { return size <= 0; })) {
         return true;
       }
       for (auto [linear, element] : llvm::enumerate(allocation.getElements())) {
-        SmallVector<Attribute> path(shape.size());
+        // A bound array-valued element contributes a subtree, not extra
+        // constructor coordinates. Binding its type can expand the resolved rank.
+        SmallVector<Attribute> path(allocation.getType().getDimensionSizes().size());
         uint64_t offset = linear;
-        for (unsigned i = shape.size(); i > 0; --i) {
+        for (size_t i = path.size(); i > 0; --i) {
           path[i - 1] = IntegerAttr::get(
               IndexType::get(context()), static_cast<int64_t>(offset % shape[i - 1])
           );
@@ -612,36 +640,39 @@ class DiscoveryRun {
         storage.write(value, path, env.lookup(element));
       }
       return true;
-    }
-    if (auto allocation = dyn_cast<pod::NewPodOp>(op)) {
+    })
+        .Case<pod::NewPodOp>([&](auto allocation) {
       auto value = storage.create();
       for (auto record : allocation.getInitializedRecordValues()) {
         storage.write(value, {StringAttr::get(context(), record.name)}, env.lookup(record.value));
       }
       results[0] = std::move(value);
       return true;
-    }
-    if (auto read = dyn_cast<pod::ReadPodOp>(op)) {
+    })
+        .Case<pod::ReadPodOp>([&](auto read) {
       results[0] = storage.read(
           env.lookup(read.getPodRef()), {StringAttr::get(context(), read.getRecordName())},
-          isa<array::ArrayType, pod::PodType>(read.getType())
+          isa<array::ArrayType, pod::PodType>(typeResolver.resolveType(read.getType()))
       );
       return true;
-    }
-    if (auto write = dyn_cast<pod::WritePodOp>(op)) {
+    })
+        .Case<pod::WritePodOp>([&](auto write) {
       storage.write(
           env.lookup(write.getPodRef()), {StringAttr::get(context(), write.getRecordName())},
           env.lookup(write.getValue())
       );
       return true;
-    }
-    if (auto access = dyn_cast<array::ArrayAccessOpInterface>(op)) {
+    })
+        .Case<array::ArrayAccessOpInterface>([&](auto access) {
       auto coordinates = arrayCoordinates(access, env);
       auto array = env.lookup(access.getArrRef());
       if (isa<array::ReadArrayOp, array::ExtractArrayOp>(op)) {
         if (coordinates) {
           results[0] = storage.read(
-              array, *coordinates, isa<array::ArrayType, pod::PodType>(op.getResult(0).getType())
+              array, *coordinates,
+              isa<array::ArrayType, pod::PodType>(
+                  typeResolver.resolveType(op.getResult(0).getType())
+              )
           );
         }
       } else if (coordinates) {
@@ -653,12 +684,11 @@ class DiscoveryRun {
         storage.forget(array);
       }
       return true;
-    }
-    if (auto conversion = dyn_cast<UnifiableCastOp>(op)) {
+    })
+        .Case<UnifiableCastOp>([&](auto conversion) {
       results[0] = env.lookup(conversion.getInput());
       return true;
-    }
-    return false;
+    }).Default([](Operation *) { return false; });
   }
 
   /// Dispatch evaluation and collect type uses at the operation being visited.
@@ -706,7 +736,9 @@ class DiscoveryRun {
               array::CreateArrayOp, array::WriteArrayOp, array::InsertArrayOp, array::ReadArrayOp,
               array::ExtractArrayOp, pod::NewPodOp, pod::ReadPodOp, pod::WritePodOp>(op)) {
         for (Value operand : op.getOperands()) {
-          storage.forget(env.lookup(operand));
+          if (isa<array::ArrayType, pod::PodType>(typeResolver.resolveType(operand.getType()))) {
+            storage.forget(env.lookup(operand));
+          }
         }
       }
       if (isa<function::CallOp>(op)) {
