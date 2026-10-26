@@ -402,6 +402,9 @@ var hierarchy =
       [ "llzk::LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", null ]
     ] ],
     [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::polymorphic::detail::DiscoveryAggregate", "structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html", null ],
+    [ "llzk::polymorphic::detail::DiscoveryStorage", "classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html", null ],
+    [ "llzk::polymorphic::detail::DiscoveryValue", "structllzk_1_1polymorphic_1_1detail_1_1DiscoveryValue.html", null ],
     [ "llzk::felt::detail::DivFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1DivFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::DivFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::DivFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html", [

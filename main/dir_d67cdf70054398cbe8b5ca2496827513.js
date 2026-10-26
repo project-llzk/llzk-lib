@@ -5,6 +5,7 @@ var dir_d67cdf70054398cbe8b5ca2496827513 =
     [ "ConstraintFlatteningPass.cpp", "ConstraintFlatteningPass_8cpp.html", "ConstraintFlatteningPass_8cpp" ],
     [ "ConstraintScalarFacts.h", "ConstraintScalarFacts_8h.html", "ConstraintScalarFacts_8h" ],
     [ "ConstraintStorage.h", "ConstraintStorage_8h.html", "ConstraintStorage_8h" ],
+    [ "DiscoveryStorage.h", "DiscoveryStorage_8h.html", "DiscoveryStorage_8h" ],
     [ "EmptyTemplateRemovalPass.cpp", "EmptyTemplateRemovalPass_8cpp.html", "EmptyTemplateRemovalPass_8cpp" ],
     [ "FlatteningPass.cpp", "FlatteningPass_8cpp.html", "FlatteningPass_8cpp" ],
     [ "ScalarEvaluation.h", "ScalarEvaluation_8h.html", "ScalarEvaluation_8h" ],

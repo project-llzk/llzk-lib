@@ -1,15 +1,14 @@
 var searchData=
 [
-  ['managedresources_0',['ManagedResources',['../namespacellzk.html#ac8a54e0415aa906da6090bb42e428e26',1,'llzk']]],
-  ['mapopgroupsizesty_1',['mapOpGroupSizesTy',['../structllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase_1_1Properties.html#a81ba21a256babe91ca807cead8606876',1,'llzk::array::detail::CreateArrayOpGenericAdaptorBase::Properties::mapOpGroupSizesTy'],['../structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#ae4976bccbe5c41bd62ce6c822007ad2f',1,'llzk::function::detail::CallOpGenericAdaptorBase::Properties::mapOpGroupSizesTy'],['../structllzk_1_1pod_1_1detail_1_1NewPodOpGenericAdaptorBase_1_1Properties.html#a862d7a8a721817dbef5f2fc412001ec9',1,'llzk::pod::detail::NewPodOpGenericAdaptorBase::Properties::mapOpGroupSizesTy'],['../structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a82a5907371998c0335997f5b8f8cf759',1,'llzk::component::detail::MemberReadOpGenericAdaptorBase::Properties::mapOpGroupSizesTy'],['../structllzk_1_1verif_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html#a0128173db2d3f7c7412ceba3f5b089a4',1,'llzk::verif::detail::IncludeOpGenericAdaptorBase::Properties::mapOpGroupSizesTy']]],
-  ['mapty_2',['mapTy',['../structllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase_1_1Properties.html#a6b051b669a5b4a9c146cc95f4f5271d4',1,'llzk::polymorphic::detail::ApplyMapOpGenericAdaptorBase::Properties']]],
-  ['member_5fnamety_3',['member_nameTy',['../structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a3134c0c7f5486d3faf277b06c78e3b58',1,'llzk::component::detail::MemberReadOpGenericAdaptorBase::Properties::member_nameTy'],['../structllzk_1_1component_1_1detail_1_1MemberWriteOpGenericAdaptorBase_1_1Properties.html#a076061668491365475ca3f808e00b4d3',1,'llzk::component::detail::MemberWriteOpGenericAdaptorBase::Properties::member_nameTy']]],
-  ['memberinfo_4',['MemberInfo',['../classllzk_1_1SplitAggregateInMemberRefOp.html#a957f1df1fd2239f3486304c0368f9195',1,'llzk::SplitAggregateInMemberRefOp']]],
-  ['membermap_5',['MemberMap',['../classllzk_1_1IntervalAnalysisLattice.html#aaf34b9b5147ca6072ec68b8bf93173c6',1,'llzk::IntervalAnalysisLattice']]],
-  ['memberreplacementmap_6',['MemberReplacementMap',['../classllzk_1_1SplitAggregateInMemberRefOp.html#a242d2f2c314d4ff69ea23524c8633ca3',1,'llzk::SplitAggregateInMemberRefOp']]],
-  ['mlirnotifyblockinserted_7',['MlirNotifyBlockInserted',['../llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e',1,'Builder.h']]],
-  ['mlirnotifyoperationinserted_8',['MlirNotifyOperationInserted',['../llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c',1,'Builder.h']]],
-  ['mliropbuilderinsertpoint_9',['MlirOpBuilderInsertPoint',['../llzk-c_2Builder_8h.html#a52388a91942e35e6e807ce7b791b8706',1,'Builder.h']]],
-  ['mlirvaluerange_10',['MlirValueRange',['../llzk-c_2Support_8h.html#a8a8029a9a2c1d78174a35e5cc532a106',1,'Support.h']]],
-  ['msgty_11',['msgTy',['../structllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase_1_1Properties.html#afee29b035b28d3b6c4b20458b39aa6c0',1,'llzk::boolean::detail::AssertOpGenericAdaptorBase::Properties']]]
+  ['lattice_0',['Lattice',['../classllzk_1_1SourceRefAnalysis.html#ab3f7e3e5c56cf17240450ffdc24cb119',1,'llzk::SourceRefAnalysis']]],
+  ['latticevalue_1',['LatticeValue',['../classllzk_1_1IntervalAnalysisLattice.html#a2f778316624a60a58f6a32d39bcb3eb2',1,'llzk::IntervalAnalysisLattice::LatticeValue'],['../classllzk_1_1SourceRefLattice.html#af45f69fc2b235cc8a04d7c830844cbeb',1,'llzk::SourceRefLattice::LatticeValue']]],
+  ['llzkaffinemapoperandsbuilder_2',['LlzkAffineMapOperandsBuilder',['../llzk-c_2Support_8h.html#a7b1f8bcfb9eabfb771f22c05346fc86f',1,'Support.h']]],
+  ['llzkbooleanfeltcmppredicate_3',['LlzkBooleanFeltCmpPredicate',['../Bool_2IR_2Enums_8capi_8h_8inc.html#a1b72ada3ed2e14b8c96d756a4d0e1c7a',1,'Enums.capi.h.inc']]],
+  ['llzkboolfeltcmppredicate_4',['LlzkBoolFeltCmpPredicate',['../Bool_2IR_2Enums_8capi_8h_8inc.html#ad7603df52f5f70272cbd258d299cc563',1,'Enums.capi.h.inc']]],
+  ['llzkcastoverflowsemantics_5',['LlzkCastOverflowSemantics',['../Cast_2IR_2Enums_8capi_8h_8inc.html#a30735da5a63324073d08f673478f77f9',1,'Enums.capi.h.inc']]],
+  ['llzkrecordvalue_6',['LlzkRecordValue',['../POD_8h.html#a93b6acd8b62ded56afafc63117a6c1ca',1,'POD.h']]],
+  ['llzksymbollookupresult_7',['LlzkSymbolLookupResult',['../llzk-c_2Support_8h.html#a29c0dc24cbb3588550b4a6b51de56308',1,'Support.h']]],
+  ['localmemberreplacementmap_8',['LocalMemberReplacementMap',['../classllzk_1_1SplitAggregateInMemberRefOp.html#ae4eedd61623ef572784cb2fa0f379425',1,'llzk::SplitAggregateInMemberRefOp']]],
+  ['loop_5farg_5ftypesty_9',['loop_arg_typesTy',['../structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#abf3fe66aa6e663a3ba3518f997588cc8',1,'llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties']]],
+  ['loop_5fnamety_10',['loop_nameTy',['../structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#aa4fdf6264efc30a2610a0f64e0b64739',1,'llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties']]]
 ];

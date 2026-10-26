@@ -16,6 +16,7 @@ var searchData=
   ['discardableallocationopinterfaces_2eh_13',['DiscardableAllocationOpInterfaces.h',['../DiscardableAllocationOpInterfaces_8h.html',1,'']]],
   ['discardableallocationopinterfaces_2eh_2einc_14',['DiscardableAllocationOpInterfaces.h.inc',['../DiscardableAllocationOpInterfaces_8h_8inc.html',1,'']]],
   ['discardableallocationopinterfaces_2etd_15',['DiscardableAllocationOpInterfaces.td',['../DiscardableAllocationOpInterfaces_8td.html',1,'']]],
-  ['dynamicapinthelper_2ecpp_16',['DynamicAPIntHelper.cpp',['../DynamicAPIntHelper_8cpp.html',1,'']]],
-  ['dynamicapinthelper_2eh_17',['DynamicAPIntHelper.h',['../DynamicAPIntHelper_8h.html',1,'']]]
+  ['discoverystorage_2eh_16',['DiscoveryStorage.h',['../DiscoveryStorage_8h.html',1,'']]],
+  ['dynamicapinthelper_2ecpp_17',['DynamicAPIntHelper.cpp',['../DynamicAPIntHelper_8cpp.html',1,'']]],
+  ['dynamicapinthelper_2eh_18',['DynamicAPIntHelper.h',['../DynamicAPIntHelper_8h.html',1,'']]]
 ];

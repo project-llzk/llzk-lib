@@ -153,6 +153,12 @@ Classes</h2></td></tr>
 <tr class="memitem:ConstraintStorage" id="r_ConstraintStorage"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html">ConstraintStorage</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolve concrete components and signal provenance directly from original SSA.  <a href="classllzk_1_1polymorphic_1_1detail_1_1ConstraintStorage.html#details">More...</a><br /></td></tr>
 <tr class="memitem:ConstReadOpGenericAdaptorBase" id="r_ConstReadOpGenericAdaptorBase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html">ConstReadOpGenericAdaptorBase</a></td></tr>
+<tr class="memitem:DiscoveryAggregate" id="r_DiscoveryAggregate"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html">DiscoveryAggregate</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scalar contents and concrete array shapes, including nested aggregate roots.  <a href="structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html#details">More...</a><br /></td></tr>
+<tr class="memitem:DiscoveryStorage" id="r_DiscoveryStorage"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html">DiscoveryStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Track only local constant aggregate contents.  <a href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#details">More...</a><br /></td></tr>
+<tr class="memitem:DiscoveryValue" id="r_DiscoveryValue"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1DiscoveryValue.html">DiscoveryValue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A scalar constant or a local aggregate identity. Missing leaves are unknown.  <a href="structllzk_1_1polymorphic_1_1detail_1_1DiscoveryValue.html#details">More...</a><br /></td></tr>
 <tr class="memitem:EmptyLegalityCheckCallback" id="r_EmptyLegalityCheckCallback"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html">EmptyLegalityCheckCallback</a></td></tr>
 <tr class="memitem:FromEraseSet" id="r_FromEraseSet"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html">FromEraseSet</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes parameterized definitions whose instantiated replacements now cover every remaining use.  <a href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#details">More...</a><br /></td></tr>
@@ -183,6 +189,8 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a485c27e93beab672e7f6f5067efe0ea4" id="r_a485c27e93beab672e7f6f5067efe0ea4"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a485c27e93beab672e7f6f5067efe0ea4">BoundValue</a> = std::variant&lt;mlir::Value, <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html">AccessPath</a>&gt;</td></tr>
 <tr class="memdesc:a485c27e93beab672e7f6f5067efe0ea4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scalar expressions are SSA; aggregates are paths, never emitted allocations.  <br /></td></tr>
 <tr class="memitem:a8148e70847cad27318c1c86948e10ae0" id="r_a8148e70847cad27318c1c86948e10ae0"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a8148e70847cad27318c1c86948e10ae0">Environment</a> = llvm::DenseMap&lt;mlir::Value, <a class="el" href="#a485c27e93beab672e7f6f5067efe0ea4">BoundValue</a>&gt;</td></tr>
+<tr class="memitem:a7d7c206d91a508c339b15c2b1e8546d9" id="r_a7d7c206d91a508c339b15c2b1e8546d9"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a7d7c206d91a508c339b15c2b1e8546d9">DiscoveryLeaves</a> = llvm::DenseMap&lt;mlir::ArrayAttr, mlir::Attribute&gt;</td></tr>
+<tr class="memdesc:a7d7c206d91a508c339b15c2b1e8546d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sparse known scalar leaves of a local aggregate, indexed by record/array paths.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -264,6 +272,24 @@ Variables</h2></td></tr>
 <p>Scalar expressions are SSA; aggregates are paths, never emitted allocations. </p>
 
 <p class="definition">Definition at line <a class="el" href="ConstraintBindings_8h_source.html#l00035">35</a> of file <a class="el" href="ConstraintBindings_8h_source.html">ConstraintBindings.h</a>.</p>
+
+</div>
+</div>
+<a id="a7d7c206d91a508c339b15c2b1e8546d9" name="a7d7c206d91a508c339b15c2b1e8546d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d7c206d91a508c339b15c2b1e8546d9">&#9670;&#160;</a></span>DiscoveryLeaves</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#a7d7c206d91a508c339b15c2b1e8546d9">llzk::polymorphic::detail::DiscoveryLeaves</a> = llvm::DenseMap&lt;mlir::ArrayAttr, mlir::Attribute&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sparse known scalar leaves of a local aggregate, indexed by record/array paths. </p>
+
+<p class="definition">Definition at line <a class="el" href="DiscoveryStorage_8h_source.html#l00021">21</a> of file <a class="el" href="DiscoveryStorage_8h_source.html">DiscoveryStorage.h</a>.</p>
 
 </div>
 </div>
