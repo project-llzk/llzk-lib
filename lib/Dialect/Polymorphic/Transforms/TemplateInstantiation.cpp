@@ -18,6 +18,7 @@
 #include "SharedImpl.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
@@ -309,6 +310,49 @@ public:
       }
       return inputTy;
     });
+  }
+};
+
+/// Initialize a rank-expanded array by inserting each converted subarray into a fresh allocation.
+/// Initializer positions follow the original outer shape's row-major order.
+class ClonedBodyCreateArrayOpPattern final : public OpConversionPattern<CreateArrayOp> {
+public:
+  using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (op.getElements().empty()) {
+      return failure();
+    }
+    auto newElemTy = dyn_cast_if_present<ArrayType>(
+        getTypeConverter()->convertType(op.getType().getElementType())
+    );
+    auto newResultTy =
+        dyn_cast_if_present<ArrayType>(getTypeConverter()->convertType(op.getType()));
+    if (!newElemTy || !newResultTy) {
+      return failure();
+    }
+    if (!op.getType().hasStaticShape()) {
+      return rewriter.notifyMatchFailure(op, "initialized array requires a static outer shape");
+    }
+    for (Value element : adaptor.getElements()) {
+      if (element.getType() != newElemTy) {
+        return rewriter.notifyMatchFailure(op, "converted initializer has unexpected type");
+      }
+    }
+
+    Location loc = op.getLoc();
+    auto allocation =
+        preserveDiscardableAttrs(op, CreateArrayOp::create(rewriter, loc, newResultTy));
+    ArrayIndexGen idxGen = ArrayIndexGen::from(op.getType());
+    for (auto [index, element] : llvm::enumerate(adaptor.getElements())) {
+      auto indices = idxGen.delinearize(checkedCast<int64_t>(index), loc, rewriter);
+      assert(indices && "static array initializer index should delinearize");
+      InsertArrayOp::create(rewriter, loc, allocation.getResult(), ValueRange(*indices), element);
+    }
+    rewriter.replaceOp(op, allocation.getResult());
+    return success();
   }
 };
 
@@ -622,6 +666,7 @@ LogicalResult substituteStructBody(
 
   RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
   patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, paramNameToConcrete, diagnostics);
+  patterns.add<ClonedBodyCreateArrayOpPattern>(tyConv, ctx);
   patterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
   patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newStruct, target, std::move(patterns));
@@ -643,6 +688,7 @@ LogicalResult substituteFunctionBody(
       tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
   );
   bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
+  bodyPatterns.add<ClonedBodyCreateArrayOpPattern>(tyConv, ctx);
   bodyPatterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newFunc, target, std::move(bodyPatterns));
 }
