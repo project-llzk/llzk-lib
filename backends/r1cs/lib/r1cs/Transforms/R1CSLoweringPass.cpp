@@ -18,6 +18,7 @@
 #include "r1cs/Transforms/TransformationPasses.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -28,6 +29,7 @@
 #include "llzk/Util/Walk.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
@@ -681,6 +683,31 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       }
 
       if (failed(checkFuncBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
+        signalPassFailure();
+        return;
+      }
+
+      // Constraint extraction only visits equality operands. Reject residual
+      // casts explicitly so a potentially failing assertion cannot disappear
+      // with the struct. Unused infallible casts need no lowering.
+      // Valid constant casts can be folded by canonicalization before this pass.
+      if (walkContains<cast::IntToFeltOp>(constrainFunc, [](cast::IntToFeltOp op) {
+        if (isOpTriviallyDead(op)) {
+          return false;
+        }
+        op.emitError("R1CS lowering does not support effectful 'cast.tofelt' operations");
+        return true;
+      })) {
+        signalPassFailure();
+        return;
+      }
+      if (walkContains<cast::FeltToIndexOp>(constrainFunc, [](cast::FeltToIndexOp op) {
+        if (isOpTriviallyDead(op)) {
+          return false;
+        }
+        op.emitError("R1CS lowering does not support effectful 'cast.toindex' operations");
+        return true;
+      })) {
         signalPassFailure();
         return;
       }

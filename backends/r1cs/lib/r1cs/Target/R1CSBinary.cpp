@@ -14,6 +14,7 @@
 
 #include "r1cs/Target/R1CSBinary.h"
 
+#include "r1cs/Dialect/IR/Constants.h"
 #include "r1cs/Dialect/IR/Ops.h"
 
 #include "llzk/Util/BinaryBuffer.h"
@@ -251,6 +252,14 @@ private:
       }
     }
 
+    // Layout-backed conversion supplies labels for inputs as well as members.
+    auto inputLabels = circuit->getAttrOfType<DenseI64ArrayAttr>(r1cs::INPUT_LABELS_ATTR);
+    if (inputLabels) {
+      for (int64_t label : inputLabels.asArrayRef()) {
+        nextFreshLabel = std::max(nextFreshLabel, static_cast<uint64_t>(label) + 1);
+      }
+    }
+
     model.wireToLabel.push_back(0);
 
     uint32_t nextWireId = 1;
@@ -268,12 +277,13 @@ private:
       }
 
       FailureOr<uint64_t> freshLabel =
-          assignFreshLabel(nextFreshLabel, "public input", arg.getLoc());
+          inputLabels ? FailureOr<uint64_t>(inputLabels[arg.getArgNumber()])
+                      : assignFreshLabel(nextFreshLabel, "public input", arg.getLoc());
       if (failed(freshLabel)) {
         return failure();
       }
       addWire(arg, nextWireId++, *freshLabel, ExportWireClass::PublicInput);
-      nextFreshLabel = *freshLabel + 1;
+      nextFreshLabel = std::max(nextFreshLabel, *freshLabel + 1);
     }
 
     for (BlockArgument arg : entryBlock.getArguments()) {
@@ -282,12 +292,13 @@ private:
       }
 
       FailureOr<uint64_t> freshLabel =
-          assignFreshLabel(nextFreshLabel, "private input", arg.getLoc());
+          inputLabels ? FailureOr<uint64_t>(inputLabels[arg.getArgNumber()])
+                      : assignFreshLabel(nextFreshLabel, "private input", arg.getLoc());
       if (failed(freshLabel)) {
         return failure();
       }
       addWire(arg, nextWireId++, *freshLabel, ExportWireClass::PrivateInput);
-      nextFreshLabel = *freshLabel + 1;
+      nextFreshLabel = std::max(nextFreshLabel, *freshLabel + 1);
     }
 
     uint32_t numArguments = llzk::checkedCast<uint32_t>(entryBlock.getNumArguments());

@@ -31,6 +31,15 @@
 extern "C" {
 #endif
 
+#if LLZK_WITH_PCL
+/// Register the named PCL conversion pipelines for use with mlirParsePassPipeline.
+MLIR_CAPI_EXPORTED void llzkRegisterPCLConversionPassPipelines(void);
+
+/// Append the full LLZK-to-PCL lowering pipeline to a module pass manager.
+/// Preserves component boundaries and the existing PCL legality requirements.
+MLIR_CAPI_EXPORTED void llzkBuildFullPCLLoweringPipeline(MlirOpPassManager passManager);
+#endif
+
 /// Translate an operation that satisfies the PCL dialect (i.e. previously converted with
 /// the `-llzk-to-pcl` pass). The PCL lisp code is written into the provided callback.
 ///

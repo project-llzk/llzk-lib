@@ -28,6 +28,12 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [Symbol, IsolatedFromAbove,
 
     Signals defined with `r1cs.def` and marked `public` are considered outputs.
 
+    The optional `r1cs.input_labels` array supplies one explicit wire ID for
+    each input, in block-argument order. When present, all wire IDs must be
+    consecutive after constant one, ordered as public outputs, public inputs,
+    private inputs, then internal signals. Circuits may omit this attribute
+    when the binary exporter will assign input labels.
+
     Example:
 
     ```mlir
@@ -57,10 +63,12 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [Symbol, IsolatedFromAbove,
   }];
 }
 
-def R1CS_SignalDefOp : R1CS_Op<"def", [Pure]> {
+def R1CS_SignalDefOp : R1CS_Op<"def", [MemoryEffects<[MemAlloc]>]> {
   let summary = "Define a signal with label and optional public visibility";
   let description = [{
-    The `def` op creates a new signal associated with a numeric label.
+    The `def` op allocates a distinct signal associated with a numeric label.
+    Unused signals remain part of the circuit interface and wire layout, so
+    their declarations must survive common subexpression elimination.
 
     If the optional `public` keyword is present, the signal is treated as a public output
     of the circuit. Otherwise, it is considered private/internal.

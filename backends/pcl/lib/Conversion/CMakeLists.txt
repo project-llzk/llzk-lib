@@ -4,6 +4,7 @@ add_library(LLZK::PCLConversion ALIAS PCLConversion)
 
 target_sources(PCLConversion PRIVATE 
   CAPI.cpp
+  ConversionPassPipelines.cpp
   PCLLoweringPass.cpp 
   PCLLoweringPass/UsedFreeFunctions.cpp
   PCLLoweringPass/Patterns.cpp
@@ -24,6 +25,9 @@ target_link_libraries(
   PRIVATE
     LLZKDialect
     LLZKAnalysis
+    LLZKTransforms
+    LLZKArrayTransforms
+    LLZKPODTransforms
 )
 
 llzk_target_add_mlir_link_settings(PCLConversion)

@@ -143,7 +143,7 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
 
   void runOnOperation() override {
     auto prime = selectPrime();
-    if (failed(prime) || failed(validateStructs()) || failed(createMode()->lower())) {
+    if (failed(prime) || failed(validateStructs()) || failed(createMode()->lower(*prime))) {
       signalPassFailure();
       return;
     }

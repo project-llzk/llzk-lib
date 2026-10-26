@@ -154,14 +154,12 @@ class TemplateInstantiationWorklist {
     StructDefOp source;
     StructDefOp clone;
     SmallVector<Operation *> visited;
-    uint64_t remainingSteps;
   };
 
   struct FunctionEntry {
     function::FuncDefOp source;
     function::FuncDefOp clone;
     SmallVector<Operation *> visited;
-    uint64_t remainingSteps;
     /// Whether discovery reached this clone on a live path. Inactive clones
     /// retain calls in unexplored branches without evaluating their bodies.
     bool active;
@@ -177,7 +175,6 @@ class TemplateInstantiationWorklist {
   ModuleOp root;
   ModuleOp topRoot;
   unsigned limit;
-  uint64_t evaluationLimit;
   SymbolTableCollection tables;
   SmallVector<StructEntry> structEntries;
   SmallVector<FunctionEntry> functionEntries;
@@ -296,7 +293,7 @@ class TemplateInstantiationWorklist {
         return clone.emitError("duplicate struct specialization identity");
       }
       structCloneToId[clone.getOperation()] = structEntries.size();
-      structEntries.push_back({cast<StructDefOp>((*key)->first), clone, {}, evaluationLimit});
+      structEntries.push_back({cast<StructDefOp>((*key)->first), clone, {}});
     }
     return success();
   }
@@ -329,7 +326,7 @@ class TemplateInstantiationWorklist {
         return clone.emitError("duplicate function specialization identity");
       }
       functionCloneToId[clone.getOperation()] = functionEntries.size();
-      functionEntries.push_back({source, clone, {}, evaluationLimit, false, false, std::nullopt});
+      functionEntries.push_back({source, clone, {}, false, false, std::nullopt});
     }
     return success();
   }
@@ -409,19 +406,16 @@ class TemplateInstantiationWorklist {
 
   /// Bind concrete template parameters and evaluate the source's template
   /// expressions before substituting the clone body.
-  FailureOr<StructSpecializationDiscovery::Bindings> bindArguments(
-      Operation *source, ArrayRef<Attribute> names, ArrayAttr arguments, uint64_t &remainingSteps
-  ) {
+  FailureOr<StructSpecializationDiscovery::Bindings>
+  bindArguments(Operation *source, ArrayRef<Attribute> names, ArrayAttr arguments) {
     StructSpecializationDiscovery::Bindings bindings;
     for (auto [name, argument] : llvm::zip_equal(names, arguments)) {
       bindings[name] = argument;
     }
-    remainingSteps = evaluationLimit;
     if (!source->getParentOfType<TemplateOp>()) {
       return bindings;
     }
-    return StructSpecializationDiscovery(evaluationLimit)
-        .evaluateBindings(source, bindings, &remainingSteps);
+    return StructSpecializationDiscovery().evaluateBindings(source, bindings);
   }
 
   /// Report a template read left after substitution at the specialization
@@ -542,8 +536,7 @@ class TemplateInstantiationWorklist {
           names.push_back(FlatSymbolRefAttr::get(parameter.getSymNameAttr()));
         }
       }
-      uint64_t remainingSteps;
-      auto evaluated = bindArguments(source, names, *localArguments, remainingSteps);
+      auto evaluated = bindArguments(source, names, *localArguments);
       if (failed(evaluated)) {
         return failure();
       }
@@ -555,7 +548,7 @@ class TemplateInstantiationWorklist {
       id = functionEntries.size();
       functionCache[*key] = id;
       functionCloneToId[clone.getOperation()] = id;
-      functionEntries.push_back({source, clone, {}, remainingSteps, active, false, call.getLoc()});
+      functionEntries.push_back({source, clone, {}, active, false, call.getLoc()});
       convertCalleesInPlace(clone, bindings);
       convertCallArguments(clone, bindings);
       SmallVector<Diagnostic> diagnostics;
@@ -620,10 +613,8 @@ class TemplateInstantiationWorklist {
       return failure();
     }
     auto templ = source->getParentOfType<TemplateOp>();
-    uint64_t remainingSteps;
-    auto evaluated = bindArguments(
-        source, names ? names.getValue() : ArrayRef<Attribute>(), *localArguments, remainingSteps
-    );
+    auto evaluated =
+        bindArguments(source, names ? names.getValue() : ArrayRef<Attribute>(), *localArguments);
     if (failed(evaluated)) {
       return failure();
     }
@@ -645,7 +636,7 @@ class TemplateInstantiationWorklist {
     unsigned id = structEntries.size();
     structCache[key] = id;
     structCloneToId[clone.getOperation()] = id;
-    structEntries.push_back({source, clone, {}, remainingSteps});
+    structEntries.push_back({source, clone, {}});
     convertCalleesInPlace(clone, bindings);
     clone.walk([&parameterConverter](function::CallOp call) {
       if (auto parameters = call.getTemplateParamsAttr()) {
@@ -878,8 +869,7 @@ class TemplateInstantiationWorklist {
   }
 
 public:
-  TemplateInstantiationWorklist(ModuleOp module, unsigned maximum, uint64_t steps)
-      : root(module), limit(maximum), evaluationLimit(steps) {}
+  TemplateInstantiationWorklist(ModuleOp module, unsigned maximum) : root(module), limit(maximum) {}
 
   /// Discover each appended clone once, then rewrite uses after all identities
   /// have been reserved. This ordering also resolves mutually dependent types.
@@ -920,8 +910,6 @@ public:
       Operation *clone = isStruct ? structEntries[structIndex].clone.getOperation()
                                   : functionEntries[functionIndex].clone.getOperation();
       SmallVector<Operation *> visited;
-      uint64_t steps = isStruct ? structEntries[structIndex].remainingSteps
-                                : functionEntries[functionIndex].remainingSteps;
       std::optional<ScopedDiagnosticHandler> requestNote;
       if (!isStruct && functionEntries[functionIndex].request) {
         Location request = *functionEntries[functionIndex].request;
@@ -936,7 +924,7 @@ public:
         });
       }
       StructSpecializationDiscovery::CallTargets rolledCalls;
-      StructSpecializationDiscovery discovery(steps);
+      StructSpecializationDiscovery discovery;
       auto requests = discovery.discover(
           clone, StructSpecializationDiscovery::Bindings(), &visited, &rolledCalls
       );
@@ -1128,8 +1116,7 @@ public:
 
 private:
   void runOnOperation() override {
-    if (failed(TemplateInstantiationWorklist(getOperation(), specializationLimit, evaluationLimit)
-                   .run())) {
+    if (failed(TemplateInstantiationWorklist(getOperation(), specializationLimit).run())) {
       signalPassFailure();
     }
   }
