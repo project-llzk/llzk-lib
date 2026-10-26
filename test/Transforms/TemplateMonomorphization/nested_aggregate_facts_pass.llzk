@@ -56,7 +56,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
   }
 }
 
-
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Parent__spec_0>} {

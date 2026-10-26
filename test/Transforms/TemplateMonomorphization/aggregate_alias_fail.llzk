@@ -33,7 +33,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !pod.type<[@n: index]>
         pod.write %alias[@n] = %two : !pod.type<[@n: index]>, index
         %value = pod.read %original[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -80,7 +80,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !pod.type<[@n: index]>
         pod.write %alias[@n] = %two : !pod.type<[@n: index]>, index
         %value = pod.read %original[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -126,7 +126,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !array.type<1 x index>
         array.write %alias[%zero] = %two : !array.type<1 x index>, index
         %value = array.read %original[%zero] : !array.type<1 x index>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -173,7 +173,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !array.type<1 x index>
         array.write %alias[%zero] = %two : !array.type<1 x index>, index
         %value = array.read %original[%zero] : !array.type<1 x index>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -219,7 +219,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         array.write %slots[%zero] = %one : !array.type<affine_map<(d0) -> (d0)> x index>, index
         array.write %slots[%two] = %two : !array.type<affine_map<(d0) -> (d0)> x index>, index
         %value = array.read %slots[%zero] : !array.type<affine_map<(d0) -> (d0)> x index>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -265,7 +265,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         array.write %slots[%zero] = %one : !array.type<affine_map<(d0) -> (d0)> x index>, index
         array.write %slots[%unknown] = %two : !array.type<affine_map<(d0) -> (d0)> x index>, index
         %value = array.read %slots[%zero] : !array.type<affine_map<(d0) -> (d0)> x index>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -315,7 +315,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !array.type<1,1 x index>
         array.insert %alias[%zero] = %row : !array.type<1,1 x index>, !array.type<1 x index>
         %value = array.read %original[%zero, %zero] : !array.type<1,1 x index>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -365,7 +365,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !array.type<1,1 x index>
         array.insert %alias[%unknown] = %row : !array.type<1,1 x index>, !array.type<1 x index>
         %value = array.read %original[%zero, %zero] : !array.type<1,1 x index>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -414,7 +414,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         %alias = arith.select %condition, %original, %other : !pod.type<[@n: index]>
         function.call @touch(%alias) : (!pod.type<[@n: index]>) -> ()
         %value = pod.read %original[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>

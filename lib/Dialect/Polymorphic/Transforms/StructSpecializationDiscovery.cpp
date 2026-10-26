@@ -375,7 +375,9 @@ class DiscoveryRun {
         }
         Attribute argument = typeResolver.resolveAffineArgument(map, operands);
         if (!argument) {
-          call.emitError("cannot resolve affine struct specialization argument");
+          call.emitError(
+              "monomorphize-templates: cannot resolve affine struct specialization argument"
+          );
         }
         return argument;
       }

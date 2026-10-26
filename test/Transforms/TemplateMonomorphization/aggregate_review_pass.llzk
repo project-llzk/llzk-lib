@@ -110,8 +110,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[!pod.ty
 
 // -----
 
-
-
 // Bound array elements snapshot aggregates.
 module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[!array.type<1 x index>]>>} {
   poly.template @Child {
@@ -221,8 +219,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[!array.
 // CHECK-NEXT:  }
 
 // -----
-
-
 
 // Affine allocation extents and copied subarray dimensions remain concrete.
 module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
@@ -345,8 +341,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
 // CHECK-NEXT:  }
 
 // -----
-
-
 
 // Concrete affine shapes survive POD snapshots.
 module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {

@@ -32,7 +32,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         array.write %slots[%unknown] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -83,7 +83,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         }
         %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -131,7 +131,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         array.write %slots[%zero] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -186,7 +186,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         }
         %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>
@@ -235,7 +235,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
         array.write %slots[%zero] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
         %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
-        // expected-error @+1 {{cannot resolve affine struct specialization argument}}
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
         %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
         %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
         function.return %self : !struct.type<@Parent::@Parent<[@N]>>

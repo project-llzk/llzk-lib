@@ -113,8 +113,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
 
 // -----
 
-
-
 // Nested POD snapshots preserve distinct map-operand groups and symbol extents.
 module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
   poly.template @Child {
