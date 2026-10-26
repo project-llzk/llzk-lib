@@ -9,10 +9,13 @@
 
 #include "StructSpecializationDiscovery.h"
 
-#include "llzk/Dialect/Array/IR/Types.h"
+#include "DiscoveryStorage.h"
+#include "ScalarEvaluation.h"
+
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Util/StaticLoop.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
@@ -24,6 +27,7 @@
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 #include <limits>
 #include <optional>
@@ -37,7 +41,7 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
-using Environment = DenseMap<Value, Attribute>;
+using Environment = DenseMap<Value, DiscoveryValue>;
 
 /// Resolve types using template bindings and concrete affine operands from the
 /// evaluation environment. Substitutes bound parameters in nested types and
@@ -95,7 +99,10 @@ public:
         dimensions.push_back(resolveAttribute(dimension));
       }
       return std::make_pair(
-          Type(array::ArrayType::get(resolveType(array.getElementType()), dimensions)),
+          Type(flattenArrayElementType(
+              array.cloneWith(array.getElementType(), dimensions),
+              resolveType(array.getElementType())
+          )),
           WalkResult::skip()
       );
     }
@@ -151,13 +158,14 @@ public:
 /// loop-body result can have a different value on each iteration. Keeping those
 /// values in separate environments lets each iteration use its current inputs
 /// without changing N or leaking local results into another method or branch.
-/// This object owns the requests and evaluation budget for a single discover()
-/// call so a later call with different template arguments starts from fresh state.
+/// This object owns the requests for a single discover() call so a later call
+/// with different template arguments starts from fresh state.
 class DiscoveryRun {
   Operation *source;
   StructSpecializationDiscovery::Bindings bindings;
   SpecializationTypeResolver typeResolver;
   SymbolTableCollection tables;
+  DiscoveryStorage storage {source->getContext()};
   StructSpecializationDiscovery::Requests requests;
   DenseSet<std::tuple<Operation *, Type, ArrayAttr, Type, unsigned>> seen;
   DenseSet<std::pair<Operation *, Type>> enumeratedArrays;
@@ -166,18 +174,8 @@ class DiscoveryRun {
   DenseSet<FamilyKey> knownFamilies;
   SmallVector<std::pair<function::CallOp, StructType>> rolledCalls;
   DenseSet<std::pair<Operation *, Type>> seenRolledCalls;
-  uint64_t remaining;
   SmallVectorImpl<Operation *> *visitedOperations;
   StructSpecializationDiscovery::CallTargets *callTargets;
-
-  /// Charge work before evaluating it, including empty loop bodies' terminators.
-  LogicalResult consumeStep(Operation *site) {
-    if (!remaining) {
-      return site->emitError("specialization discovery step limit exceeded");
-    }
-    --remaining;
-    return success();
-  }
 
   /// Record nested type arguments as dependencies too, retaining input identity.
   LogicalResult recordRequest(
@@ -337,9 +335,6 @@ class DiscoveryRun {
           }
           return success();
         }
-        if (failed(consumeStep(site))) {
-          return failure();
-        }
         return collectTypes(site, array.getElementType(), elementIndices, true);
       };
       return enumerate(enumerate, 0);
@@ -376,11 +371,13 @@ class DiscoveryRun {
         }
         SmallVector<Attribute> operands;
         for (Value operand : call.getMapOperands()[group++]) {
-          operands.push_back(env.lookup(operand));
+          operands.push_back(env.lookup(operand).constant);
         }
         Attribute argument = typeResolver.resolveAffineArgument(map, operands);
         if (!argument) {
-          call.emitError("cannot resolve affine struct specialization argument");
+          call.emitError(
+              "monomorphize-templates: cannot resolve affine struct specialization argument"
+          );
         }
         return argument;
       }
@@ -412,8 +409,8 @@ class DiscoveryRun {
   }
 
   /// Decode a known signed control-flow value without narrowing it.
-  static std::optional<int64_t> getKnownInteger(Attribute attr) {
-    auto value = dyn_cast_or_null<IntegerAttr>(attr);
+  static std::optional<int64_t> getKnownInteger(const DiscoveryValue &fact) {
+    auto value = dyn_cast_or_null<IntegerAttr>(fact.constant);
     if (!value || value.getValue().getSignificantBits() > 64) {
       return std::nullopt;
     }
@@ -421,7 +418,7 @@ class DiscoveryRun {
   }
 
   /// Bind every result, including unknown values, to avoid stale loop values.
-  static void bindResults(ValueRange results, ArrayRef<Attribute> values, Environment &env) {
+  static void bindResults(ValueRange results, ArrayRef<DiscoveryValue> values, Environment &env) {
     for (auto [result, value] : llvm::zip_equal(results, values)) {
       env[result] = value;
     }
@@ -430,18 +427,27 @@ class DiscoveryRun {
   /// Execute only a known branch. With an unknown condition, collect requests
   /// from both paths and retain a result constant only if the paths agree.
   LogicalResult
-  evaluateIf(scf::IfOp branch, const Environment &env, SmallVector<Attribute> &results) {
+  evaluateIf(scf::IfOp branch, const Environment &env, SmallVector<DiscoveryValue> &results) {
     auto condition = getKnownInteger(env.lookup(branch.getCondition()));
-    SmallVector<Attribute> left, right;
+    SmallVector<DiscoveryValue> left, right;
+    if (!condition) {
+      storage.invalidate();
+    }
     if (!condition || *condition) {
       if (failed(evaluateBlock(branch.getThenRegion().front(), env, left))) {
         return failure();
       }
     }
+    if (!condition) {
+      storage.invalidate();
+    }
     if ((!condition || !*condition) && !branch.getElseRegion().empty()) {
       if (failed(evaluateBlock(branch.getElseRegion().front(), env, right))) {
         return failure();
       }
+    }
+    if (!condition) {
+      storage.invalidate();
     }
     if (condition) {
       results = *condition ? left : right;
@@ -456,7 +462,7 @@ class DiscoveryRun {
   /// Carry each iteration's yielded constants into the next one. The body gets
   /// its own SSA environment so an unknown result cannot reuse a prior value.
   LogicalResult
-  evaluateFor(scf::ForOp loop, const Environment &env, SmallVector<Attribute> &results) {
+  evaluateFor(scf::ForOp loop, const Environment &env, SmallVector<DiscoveryValue> &results) {
     auto lower = getKnownInteger(env.lookup(loop.getLowerBound()));
     auto upper = getKnownInteger(env.lookup(loop.getUpperBound()));
     auto stride = getKnownInteger(env.lookup(loop.getStep()));
@@ -486,17 +492,18 @@ class DiscoveryRun {
   }
 
   /// Recheck the condition after each body yield and carry the condition's
-  /// forwarded values either into the body or out as the loop results.
+  /// forwarded values either into the body or out as the loop results. Unknown
+  /// conditions collect iteration-independent requests without inferring results.
   LogicalResult
-  evaluateWhile(scf::WhileOp loop, const Environment &env, SmallVector<Attribute> &results) {
-    SmallVector<Attribute> carried;
+  evaluateWhile(scf::WhileOp loop, const Environment &env, SmallVector<DiscoveryValue> &results) {
+    SmallVector<DiscoveryValue> carried;
     for (Value initial : loop.getInits()) {
       carried.push_back(env.lookup(initial));
     }
     while (true) {
       auto before = env;
       bindResults(loop.getBefore().front().getArguments(), carried, before);
-      SmallVector<Attribute> forwarded;
+      SmallVector<DiscoveryValue> forwarded;
       Attribute condition;
       if (failed(
               evaluateBlock(loop.getBefore().front(), std::move(before), forwarded, &condition)
@@ -505,7 +512,26 @@ class DiscoveryRun {
       }
       auto known = dyn_cast_or_null<IntegerAttr>(condition);
       if (!known || !known.getType().isInteger(1)) {
-        return loop.emitError("specialization discovery requires a known while condition");
+        // Runtime loops need no execution when specialization requests are
+        // independent of their carried values. Visit both regions with unknown
+        // arguments; dependent affine requests still fail in discoverCallTypes.
+        storage.invalidate();
+        for (Region *region : {&loop.getBefore(), &loop.getAfter()}) {
+          auto local = env;
+          for (BlockArgument argument : region->front().getArguments()) {
+            local[argument] = {};
+          }
+          SmallVector<DiscoveryValue> ignored;
+          Attribute ignoredCondition;
+          if (failed(
+                  evaluateBlock(region->front(), std::move(local), ignored, &ignoredCondition)
+              )) {
+            return failure();
+          }
+        }
+        storage.invalidate();
+        results.assign(loop.getNumResults(), DiscoveryValue());
+        return success();
       }
       if (known.getValue().isZero()) {
         results = std::move(forwarded);
@@ -530,29 +556,200 @@ class DiscoveryRun {
 
   /// Use existing arithmetic semantics when every operand is known. Unfoldable
   /// results stay unknown; a fold returning an SSA operand reuses its known value.
-  void evaluateFoldableOp(Operation &op, const Environment &env, SmallVector<Attribute> &results) {
+  void
+  evaluateFoldableOp(Operation &op, const Environment &env, SmallVector<DiscoveryValue> &results) {
     SmallVector<Attribute> operands;
     for (Value operand : op.getOperands()) {
-      operands.push_back(env.lookup(operand));
+      operands.push_back(env.lookup(operand).constant);
     }
     if (llvm::all_of(operands, [](Attribute attr) { return attr != nullptr; })) {
       SmallVector<OpFoldResult> folded;
-      if (succeeded(op.fold(operands, folded)) && folded.size() == results.size()) {
+      if (succeeded(evaluateScalarOperation(&op, operands, folded))) {
         for (auto [index, value] : llvm::enumerate(folded)) {
           if (auto attr = dyn_cast<Attribute>(value)) {
             results[index] = attr;
           } else {
-            results[index] = env.lookup(cast<Value>(value));
+            results[index] = env.lookup(llvm::cast<Value>(value));
           }
         }
       }
     }
   }
 
+  /// Resolve a static array prefix; unknown or invalid indices yield no facts.
+  std::optional<SmallVector<Attribute>>
+  arrayCoordinates(array::ArrayAccessOpInterface access, const Environment &env) {
+    auto type =
+        llvm::cast<array::ArrayType>(typeResolver.resolveType(access.getArrRef().getType()));
+    SmallVector<int64_t> shape(type.getShape());
+    auto concreteShape = storage.getShape(env.lookup(access.getArrRef()));
+    if (!concreteShape.empty()) {
+      shape.assign(concreteShape.begin(), concreteShape.end());
+    }
+    SmallVector<Attribute> path;
+    for (auto [i, index] : llvm::enumerate(access.getIndices())) {
+      auto coordinate = getKnownInteger(env.lookup(index));
+      if (!coordinate || *coordinate < 0 || i >= shape.size() || shape[i] < 0 ||
+          *coordinate >= shape[i]) {
+        return std::nullopt;
+      }
+      path.push_back(IntegerAttr::get(IndexType::get(context()), *coordinate));
+    }
+    return path;
+  }
+
+  /// Decode an allocation's array dimensions in its original map-operand order.
+  /// Bound array-valued element types may add trailing dimensions without operands.
+  SmallVector<int64_t>
+  allocationShape(array::ArrayType type, llvm::function_ref<Attribute(AffineMapAttr)> resolveMap) {
+    auto resolved = llvm::cast<array::ArrayType>(typeResolver.resolveType(type));
+    SmallVector<int64_t> shape(resolved.getShape());
+    for (auto [i, dimension] : llvm::enumerate(type.getDimensionSizes())) {
+      if (auto map = dyn_cast<AffineMapAttr>(dimension)) {
+        auto extent = getKnownInteger(resolveMap(map));
+        if (extent && *extent >= 0) {
+          shape[i] = *extent;
+        }
+      }
+    }
+    return shape;
+  }
+
+  /// Record shapes for uninitialized nested POD fields. Traverse in the same
+  /// record order as the POD verifier, including groups for struct parameters.
+  void recordPodShapes(
+      Type type, const DiscoveryValue &value, SmallVector<Attribute> &path,
+      llvm::function_ref<Attribute(AffineMapAttr)> resolveMap
+  ) {
+    if (auto podType = dyn_cast<pod::PodType>(type)) {
+      for (auto record : podType.getRecords()) {
+        path.push_back(record.getName());
+        recordPodShapes(record.getType(), value, path, resolveMap);
+        path.pop_back();
+      }
+    } else if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
+      storage.setShape(value, allocationShape(arrayType, resolveMap), path);
+    } else if (auto structure = dyn_cast<StructType>(type)) {
+      if (auto parameters = structure.getParams()) {
+        for (Attribute parameter : parameters) {
+          if (auto map = dyn_cast<AffineMapAttr>(parameter)) {
+            resolveMap(map);
+          }
+        }
+      }
+    } else if (isa<TypeVarType>(type)) {
+      // Maps introduced by a binding have no operand groups on this allocation.
+      auto resolved = typeResolver.resolveType(type);
+      if (resolved != type) {
+        recordPodShapes(resolved, value, path, [](AffineMapAttr) { return Attribute(); });
+      }
+    }
+  }
+
+  /// Interpret local aggregate value copies and scalar stores. Unsupported effects
+  /// discard facts, so specialization never depends on a stale stored constant.
+  bool
+  evaluateStorage(Operation &op, const Environment &env, SmallVector<DiscoveryValue> &results) {
+    return llvm::TypeSwitch<Operation *, bool>(&op)
+        .Case<array::CreateArrayOp>([&](auto allocation) {
+      auto value = storage.create();
+      results[0] = value;
+      size_t group = 0;
+      auto shape = allocationShape(allocation.getType(), [&](AffineMapAttr map) {
+        if (group >= allocation.getMapOperands().size()) {
+          return Attribute();
+        }
+        SmallVector<Attribute> operands;
+        for (Value operand : allocation.getMapOperands()[group++]) {
+          operands.push_back(env.lookup(operand).constant);
+        }
+        return typeResolver.resolveAffineArgument(map, operands);
+      });
+      storage.setShape(value, shape);
+      if (llvm::any_of(shape, [](int64_t size) { return size <= 0; })) {
+        return true;
+      }
+      for (auto [linear, element] : llvm::enumerate(allocation.getElements())) {
+        // A bound array-valued element contributes a subtree, not extra
+        // constructor coordinates. Binding its type can expand the resolved rank.
+        SmallVector<Attribute> path(allocation.getType().getDimensionSizes().size());
+        uint64_t offset = linear;
+        for (size_t i = path.size(); i > 0; --i) {
+          path[i - 1] = IntegerAttr::get(
+              IndexType::get(context()), static_cast<int64_t>(offset % shape[i - 1])
+          );
+          offset /= shape[i - 1];
+        }
+        storage.write(value, path, env.lookup(element));
+      }
+      return true;
+    })
+        .Case<pod::NewPodOp>([&](auto allocation) {
+      auto value = storage.create();
+      size_t group = 0;
+      SmallVector<Attribute> path;
+      recordPodShapes(allocation.getType(), value, path, [&](AffineMapAttr map) {
+        if (group >= allocation.getMapOperands().size()) {
+          return Attribute();
+        }
+        SmallVector<Attribute> operands;
+        for (Value operand : allocation.getMapOperands()[group++]) {
+          operands.push_back(env.lookup(operand).constant);
+        }
+        return typeResolver.resolveAffineArgument(map, operands);
+      });
+      for (auto record : allocation.getInitializedRecordValues()) {
+        storage.write(value, {StringAttr::get(context(), record.name)}, env.lookup(record.value));
+      }
+      results[0] = std::move(value);
+      return true;
+    })
+        .Case<pod::ReadPodOp>([&](auto read) {
+      results[0] = storage.read(
+          env.lookup(read.getPodRef()), {StringAttr::get(context(), read.getRecordName())},
+          isa<array::ArrayType, pod::PodType>(typeResolver.resolveType(read.getType()))
+      );
+      return true;
+    })
+        .Case<pod::WritePodOp>([&](auto write) {
+      storage.write(
+          env.lookup(write.getPodRef()), {StringAttr::get(context(), write.getRecordName())},
+          env.lookup(write.getValue())
+      );
+      return true;
+    })
+        .Case<array::ArrayAccessOpInterface>([&](auto access) {
+      auto coordinates = arrayCoordinates(access, env);
+      auto array = env.lookup(access.getArrRef());
+      if (isa<array::ReadArrayOp, array::ExtractArrayOp>(op)) {
+        if (coordinates) {
+          results[0] = storage.read(
+              array, *coordinates,
+              isa<array::ArrayType, pod::PodType>(
+                  typeResolver.resolveType(op.getResult(0).getType())
+              )
+          );
+        }
+      } else if (coordinates) {
+        auto value = isa<array::WriteArrayOp>(op)
+                         ? llvm::cast<array::WriteArrayOp>(op).getRvalue()
+                         : llvm::cast<array::InsertArrayOp>(op).getRvalue();
+        storage.write(array, *coordinates, env.lookup(value));
+      } else {
+        storage.forget(array);
+      }
+      return true;
+    })
+        .Case<UnifiableCastOp>([&](auto conversion) {
+      results[0] = env.lookup(conversion.getInput());
+      return true;
+    }).Default([](Operation *) { return false; });
+  }
+
   /// Dispatch evaluation and collect type uses at the operation being visited.
   /// Region handlers collect uses only along the paths they actually explore.
   LogicalResult
-  evaluateOperation(Operation &op, const Environment &env, SmallVector<Attribute> &results) {
+  evaluateOperation(Operation &op, const Environment &env, SmallVector<DiscoveryValue> &results) {
     if (visitedOperations) {
       visitedOperations->push_back(&op);
     }
@@ -571,24 +768,36 @@ class DiscoveryRun {
     } else if (op.getNumRegions()) {
       return op.emitError("unsupported control flow in specialization discovery");
     } else {
-      // The environment tracks scalar constants produced by template reads and
-      // folding. Resolving global reads requires looking up global initializers;
-      // resolving POD, array and struct-member reads requires tracking stored values
-      // and writes. Those reads currently produce unknown values, including constant
-      // global reads, which have no fold hook. Type uses are still collected below.
-      // Unknown values are diagnosed when needed for a loop bound or specialization
-      // argument; unknown if conditions cause both branches to be explored.
-      if (auto read = dyn_cast<ConstReadOp>(op)) {
+      // Local aggregate facts supplement scalar folding; reads from external
+      // storage remain unknown. Diagnose unknown values only when needed.
+      if (evaluateStorage(op, env, results)) {
+        // Still collect nested specialization types below.
+      } else if (auto read = dyn_cast<ConstReadOp>(op)) {
         auto value = evaluateConstRead(read);
         if (failed(value)) {
           return failure();
         }
         results[0] = *value;
-      } else if (isMemoryEffectFree(&op)) {
+      } else if (isMemoryEffectFree(&op) || isa<cast::FeltToIndexOp, cast::IntToFeltOp>(op)) {
         evaluateFoldableOp(op, env, results);
       }
       if (auto call = dyn_cast<function::CallOp>(op)) {
-        return discoverCallTypes(call, env);
+        if (failed(discoverCallTypes(call, env))) {
+          return failure();
+        }
+      }
+      if (!isMemoryEffectFree(&op) &&
+          !isa<
+              array::CreateArrayOp, array::WriteArrayOp, array::InsertArrayOp, array::ReadArrayOp,
+              array::ExtractArrayOp, pod::NewPodOp, pod::ReadPodOp, pod::WritePodOp>(op)) {
+        for (Value operand : op.getOperands()) {
+          if (isa<array::ArrayType, pod::PodType>(typeResolver.resolveType(operand.getType()))) {
+            storage.forget(env.lookup(operand));
+          }
+        }
+      }
+      if (isa<function::CallOp>(op)) {
+        return success();
       }
     }
     for (Type type : op.getResultTypes()) {
@@ -599,22 +808,19 @@ class DiscoveryRun {
     return success();
   }
 
-  /// Sequence evaluation in a private SSA scope, charging the shared budget and
-  /// binding each operation's results before evaluating its users. Terminators
+  /// Sequence evaluation in a private SSA scope, binding each operation's results
+  /// before evaluating its users. Terminators
   /// return values to the enclosing branch, loop, method or template expression.
   LogicalResult evaluateBlock(
-      Block &body, Environment env, SmallVectorImpl<Attribute> &yielded,
+      Block &body, Environment env, SmallVectorImpl<DiscoveryValue> &yielded,
       Attribute *condition = nullptr
   ) {
     for (Operation &op : body) {
-      if (failed(consumeStep(&op))) {
-        return failure();
-      }
       if (auto terminator = dyn_cast<scf::ConditionOp>(op)) {
         if (!condition) {
           return op.emitError("scf.condition outside a while condition region");
         }
-        *condition = env.lookup(terminator.getCondition());
+        *condition = env.lookup(terminator.getCondition()).constant;
         for (Value operand : terminator.getArgs()) {
           yielded.push_back(env.lookup(operand));
         }
@@ -629,7 +835,7 @@ class DiscoveryRun {
       if (op.hasTrait<OpTrait::IsTerminator>()) {
         return op.emitError("unsupported control flow in specialization discovery");
       }
-      SmallVector<Attribute> results(op.getNumResults());
+      SmallVector<DiscoveryValue> results(op.getNumResults());
       if (failed(evaluateOperation(op, env, results))) {
         return failure();
       }
@@ -643,24 +849,22 @@ public:
 
   DiscoveryRun(
       Operation *definition, const StructSpecializationDiscovery::Bindings &parameters,
-      uint64_t limit, SmallVectorImpl<Operation *> *visited,
+      SmallVectorImpl<Operation *> *visited,
       StructSpecializationDiscovery::CallTargets *targets = nullptr
   )
-      : source(definition), bindings(parameters), typeResolver(bindings), remaining(limit),
+      : source(definition), bindings(parameters), typeResolver(bindings),
         visitedOperations(visited), callTargets(targets) {}
-
-  uint64_t getRemainingSteps() const { return remaining; }
 
   /// Extend the parameter environment with known template-expression results.
   FailureOr<StructSpecializationDiscovery::Bindings> evaluateBindings() {
     if (auto templ = source->getParentOfType<TemplateOp>()) {
       for (auto expr : templ.getConstOps<TemplateExprOp>()) {
-        SmallVector<Attribute> values;
+        SmallVector<DiscoveryValue> values;
         if (failed(evaluateBlock(expr.getInitializerRegion().front(), Environment(), values))) {
           return failure();
         }
-        if (values.size() == 1 && values[0]) {
-          bindings[FlatSymbolRefAttr::get(expr.getSymNameAttr())] = values[0];
+        if (values.size() == 1 && values[0].constant) {
+          bindings[FlatSymbolRefAttr::get(expr.getSymNameAttr())] = values[0].constant;
         }
       }
     }
@@ -684,7 +888,7 @@ public:
     if (auto structure = dyn_cast<StructDefOp>(source)) {
       llvm::append_range(functions, structure.getOps<function::FuncDefOp>());
     } else {
-      functions.push_back(cast<function::FuncDefOp>(source));
+      functions.push_back(llvm::cast<function::FuncDefOp>(source));
     }
     for (auto function : functions) {
       if (!function.getBody().hasOneBlock()) {
@@ -703,7 +907,7 @@ public:
           return failure();
         }
       }
-      SmallVector<Attribute> values;
+      SmallVector<DiscoveryValue> values;
       if (failed(evaluateBlock(function.getBody().front(), Environment(), values))) {
         return failure();
       }
@@ -784,20 +988,14 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
          << read.getConstNameAttr() << " with value \"" << binding << "\" as type " << readType;
 }
 
-FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(
-    Operation *source, const Bindings &bindings, uint64_t *remainingSteps
-) const {
-  DiscoveryRun run(source, bindings, limit, nullptr);
-  auto evaluated = run.evaluateBindings();
-  if (succeeded(evaluated) && remainingSteps) {
-    *remainingSteps = run.getRemainingSteps();
-  }
-  return evaluated;
+FailureOr<StructSpecializationDiscovery::Bindings>
+StructSpecializationDiscovery::evaluateBindings(Operation *source, const Bindings &bindings) const {
+  return DiscoveryRun(source, bindings, nullptr).evaluateBindings();
 }
 
 FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discover(
     Operation *source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
     CallTargets *callTargets
 ) const {
-  return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();
+  return DiscoveryRun(source, bindings, visitedOperations, callTargets).run();
 }

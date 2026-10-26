@@ -10,17 +10,32 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
 #include "llzk/Dialect/Cast/IR/Enums.h"
+#include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
-#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/TypeSwitch.h>
+
+/// Return whether an asserting cast can fail for any value of its source type.
+static bool canCastAssertFail(mlir::Type sourceType, llzk::cast::OverflowSemantics overflow) {
+  if (overflow != llzk::cast::OverflowSemantics::ASSERT || sourceType.isInteger(1)) {
+    return false;
+  }
+  if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(sourceType);
+      feltType && feltType.hasField()) {
+    // Every canonical source value fits if the field maximum fits the index safe range.
+    return !llzk::cast::applyFeltToIndexOverflow(
+        feltType.getField().maxVal(), mlir::IndexType::kInternalStorageBitWidth, overflow
+    );
+  }
+  return true;
+}
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -78,22 +93,21 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
   });
 }
 
-LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter &rewriter) {
-  // Instead of casting an arith.constant to felt, just generate a felt.const
-  if (!op.getValue().getDefiningOp()) {
-    return failure();
+OpFoldResult IntToFeltOp::fold(FoldAdaptor adaptor) {
+  auto value = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getValue());
+  felt::FeltType resultType = getType();
+  // A fieldless felt defers its field selection and overflow behavior.
+  if (!value || !resultType.hasField()) {
+    return {};
   }
 
-  return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
-      .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
-    rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, felt::FeltConstAttr::get(
-                op->getContext(),
-                integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(constOp.getValue())), op.getType()
-            )
-    );
-    return success();
-  }).Default([](auto) { return failure(); });
+  const Field &field = resultType.getField();
+  DynamicAPInt signedValue = integerAttrToDynamicAPInt(value);
+  auto result = applyIntToFeltOverflow(signedValue, field, getOverflow());
+  if (!result) {
+    return {};
+  }
+  return felt::FeltConstAttr::get(getContext(), *result, resultType);
 }
 
 ParseResult
@@ -107,21 +121,22 @@ void IntToFeltOp::printOptionalOverflowSemantics(
   ::printOptionalOverflowSemantics(printer, overflow);
 }
 
-LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
-  // Instead of casting a felt.const to index, just generate an arith.constant
-  if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    if (auto reduced = constOp.getValue().getReducedValue()) {
-      // The reduced representative is nonnegative; the index builder also
-      // requires it to fit in a signed 64-bit integer.
-      auto converted = checkedToInt64(*reduced);
-      if (!converted) {
-        return rewriter.notifyMatchFailure(op, llvm::toString(converted.takeError()));
-      }
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, *converted);
-      return success();
-    }
+OpFoldResult FeltToIndexOp::fold(FoldAdaptor adaptor) {
+  auto value = llvm::dyn_cast_if_present<felt::FeltConstAttr>(adaptor.getValue());
+  if (!value) {
+    return {};
   }
-  return failure();
+  // A fieldless felt has no representative until its field is known.
+  auto reduced = value.getReducedValue();
+  if (!reduced) {
+    return {};
+  }
+  auto result =
+      applyFeltToIndexOverflow(*reduced, IndexType::kInternalStorageBitWidth, getOverflow());
+  if (!result) {
+    return {};
+  }
+  return IntegerAttr::get(getType(), cantFail(checkedToInt64(*result)));
 }
 
 ParseResult FeltToIndexOp::parseOptionalOverflowSemantics(

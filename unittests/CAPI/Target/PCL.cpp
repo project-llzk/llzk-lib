@@ -31,6 +31,69 @@
 
 constexpr unsigned SEVEN = 7;
 
+TEST_F(CAPITest, FullPCLLoweringPipelineCAPI) {
+  mlir::DialectRegistry registry;
+  pcl::registerDialects(registry);
+  unwrap(context)->appendDialectRegistry(registry);
+  mlirContextLoadAllAvailableDialects(context);
+  llzkRegisterPCLConversionPassPipelines();
+
+  constexpr const char *source = R"mlir(
+    module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+      struct.def @Main {
+        struct.member @out : !array.type<2 x !felt.type<"bn128">> {llzk.pub}
+        function.def @compute(%in: !felt.type<"bn128">) -> !struct.type<@Main> {
+          %self = struct.new : <@Main>
+          function.return %self : !struct.type<@Main>
+        }
+        function.def @constrain(%self: !struct.type<@Main>, %in: !felt.type<"bn128">) {
+          %out = struct.readm %self[@out] : <@Main>, !array.type<2 x !felt.type<"bn128">>
+          %c0 = arith.constant 0 : index
+          %c1 = arith.constant 1 : index
+          %a = array.read %out[%c0] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %b = array.read %out[%c1] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          constrain.eq %a, %in : !felt.type<"bn128">, !felt.type<"bn128">
+          constrain.eq %b, %in : !felt.type<"bn128">, !felt.type<"bn128">
+          function.return
+        }
+      }
+    }
+  )mlir";
+
+  // Exercise both direct construction and registration for textual pipelines.
+  for (bool parsePipeline : {false, true}) {
+    auto module = mlirModuleCreateParse(context, mlirStringRefCreateFromCString(source));
+    ASSERT_FALSE(mlirModuleIsNull(module));
+    auto manager = mlirPassManagerCreate(context);
+    auto opManager = mlirPassManagerGetAsOpPassManager(manager);
+    if (parsePipeline) {
+      std::string diagnostics;
+      auto callback = [](MlirStringRef text, void *data) {
+        static_cast<std::string *>(data)->append(text.data, text.length);
+      };
+      EXPECT_TRUE(mlirLogicalResultIsSuccess(mlirParsePassPipeline(
+          opManager, mlirStringRefCreateFromCString("builtin.module(llzk-full-pcl-lowering)"),
+          callback, &diagnostics
+      ))) << diagnostics;
+    } else {
+      llzkBuildFullPCLLoweringPipeline(opManager);
+    }
+    EXPECT_TRUE(
+        mlirLogicalResultIsSuccess(mlirPassManagerRunOnOp(manager, mlirModuleGetOperation(module)))
+    );
+    auto lowered = unwrap(module);
+    EXPECT_TRUE(lowered->hasAttr(PCL_PRIME_ATTR_NAME));
+    auto functions = lowered.getOps<mlir::func::FuncOp>();
+    ASSERT_FALSE(functions.empty());
+    EXPECT_EQ((*functions.begin()).getFunctionType().getNumResults(), 2u);
+    unsigned assertions = 0;
+    lowered.walk([&](pcl::AssertOp) { ++assertions; });
+    EXPECT_EQ(assertions, 2u);
+    mlirPassManagerDestroy(manager);
+    mlirModuleDestroy(module);
+  }
+}
+
 constexpr std::string_view EXPECTED_PCL_MODULE_1 =
     // clang-format off
     "(prime-number 7)\n\n"

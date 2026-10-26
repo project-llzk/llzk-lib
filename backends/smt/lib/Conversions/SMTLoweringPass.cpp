@@ -84,7 +84,7 @@ namespace {
 /// for other non-native target theories in the future.
 class ModularReasoner {
 public:
-  static constexpr uint64_t explicitReductionQuotientThreshold = 1000;
+  static constexpr int64_t explicitReductionQuotientThreshold = 1000;
 
   enum class ReductionKind : std::uint8_t {
     Direct,
@@ -163,8 +163,7 @@ public:
   }
 
   bool isCanonical(const UnreducedInterval &range) const {
-    llvm::DynamicAPInt zero(0);
-    return range.getLHS() >= zero && range.getRHS() < primeDynamic;
+    return range.getLHS() >= 0 && range.getRHS() < primeDynamic;
   }
 
   bool maybeContainsZeroResidue(const UnreducedInterval &range) const {
@@ -252,7 +251,7 @@ private:
   bool shouldUseExplicitReduction(const UnreducedInterval &range) const {
     auto quotientRange = getQuotientRange(range);
     auto quotientWidth = quotientRange.getRHS() - quotientRange.getLHS();
-    return quotientWidth < llvm::DynamicAPInt(explicitReductionQuotientThreshold);
+    return quotientWidth < explicitReductionQuotientThreshold;
   }
 
   llvm::DynamicAPInt floorDiv(const llvm::DynamicAPInt &value) const {

@@ -1,0 +1,43 @@
+// RUN: llzk-opt %s --llzk-constraint-flattening | FileCheck %s --match-full-lines
+
+// Frontend region wrappers must disappear before discovery. Template-dependent
+// arithmetic must fold after specialization, before constraint expansion.
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@Main<[4]>>} {
+  poly.template @T {
+    poly.param @N : index
+    struct.def @Main {
+      function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@T::@Main<[@N]>> {
+        %self = struct.new : <@T::@Main<[@N]>>
+        function.return %self : !struct.type<@T::@Main<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Main<[@N]>>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
+        %value = scf.execute_region -> !felt.type<"bn128"> {
+          %n = poly.read_const @N : index
+          %numerator = cast.tofelt %n : index, !felt.type<"bn128">
+          %two = felt.const 2 : !felt.type<"bn128">
+          %half = felt.div %numerator, %two : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.yield %half : !felt.type<"bn128">
+        }
+        %condition = bool.cmp lt(%x, %value) : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.if %condition {
+        } else {
+        }
+        constrain.eq %x, %value : !felt.type<"bn128">, !felt.type<"bn128">
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:        constrain.eq %[[VAL_11]], %[[VAL_12]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @T::@Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:  }

@@ -83,7 +83,7 @@ struct RolledCallTargets {
 /// - Every visited scf.while requires a known i1 condition at each check.
 ///   The condition region runs before the first iteration and after every body
 ///   yield. Its forwarded values become the body arguments or, when false, the
-///   loop results. The shared step budget bounds nonterminating loops.
+///   loop results.
 ///
 /// Values available for specialization:
 /// - poly.read_const reads the supplied bindings and known template-expression
@@ -92,10 +92,12 @@ struct RolledCallTargets {
 ///   operands are known and its fold hook returns attributes or known SSA values.
 ///   This includes foldable constants and arithmetic; purity alone is insufficient.
 /// - Calls are inspected for result types but their bodies are not evaluated.
-///   Call results, global reads (including constant globals), and POD, array and
-///   struct-member reads remain unknown. Aggregate contents and writes are not
-///   tracked. Unknown values may flow through ordinary computations, but cannot
-///   supply a required specialization argument or loop bound.
+///   Call results, global reads (including constant globals), and struct-member
+///   reads remain unknown. Local POD and array reads snapshot known contents;
+///   bound result types and allocation affine operands determine aggregate shape.
+///   Unknown control flow and writes through untracked aliases invalidate storage
+///   facts. Unknown values cannot supply a required specialization argument or
+///   loop bound.
 ///
 /// Supported type dependencies:
 /// - Member types, method signatures and visited operation result types are
@@ -115,9 +117,9 @@ struct RolledCallTargets {
 ///   the same rolled type in this source instance. A call with no known source
 ///   is diagnosed. Affine maps nested in struct type arguments are unsupported.
 ///
-/// An unresolved required argument, unsupported explored structure or exhausted
-/// step budget is diagnosed. Success describes dependencies of this source
-/// instance; the caller must repeat discovery for newly instantiated definitions
+/// An unresolved required argument or unsupported explored structure is
+/// diagnosed. Success describes dependencies of this source instance; the caller
+/// must repeat discovery for newly instantiated definitions
 /// to obtain the transitive set of specializations.
 ///
 /// Results retain source parameterized types, including nested concrete type
@@ -129,17 +131,11 @@ public:
   using Requests = llvm::SmallVector<StructSpecializationRequest>;
   using CallTargets = llvm::SmallVector<RolledCallTargets>;
 
-  /// Each evaluated body operation and unique array index tuple consumes one
-  /// step. The limit is shared by template expressions and all methods in one run.
-  explicit StructSpecializationDiscovery(uint64_t maxSteps = 1000000) : limit(maxSteps) {}
-
   /// Evaluate enclosing template expressions in declaration order and return an
   /// extended copy of bindings for substitution into a concrete clone. Source
   /// must be a struct definition or free-function definition.
-  /// If requested, return the steps left for discovering that clone's methods.
-  mlir::FailureOr<Bindings> evaluateBindings(
-      mlir::Operation *source, const Bindings &bindings, uint64_t *remainingSteps = nullptr
-  ) const;
+  mlir::FailureOr<Bindings>
+  evaluateBindings(mlir::Operation *source, const Bindings &bindings) const;
 
   /// Return ordered, deduplicated requests for a struct or free-function source,
   /// or diagnose an unresolved dependency.
@@ -152,9 +148,6 @@ public:
       llvm::SmallVectorImpl<mlir::Operation *> *visitedOperations = nullptr,
       CallTargets *callTargets = nullptr
   ) const;
-
-private:
-  uint64_t limit;
 };
 
 } // namespace llzk::polymorphic::detail

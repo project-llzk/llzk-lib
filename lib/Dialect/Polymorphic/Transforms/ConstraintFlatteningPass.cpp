@@ -19,6 +19,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Util/StaticLoop.h"
@@ -54,11 +55,9 @@ class ConstraintElaborator {
   SymbolTableCollection tables;
   /// Detached output is committed only after expansion and validation succeed.
   Region output;
-  /// Scalar facts requested by control flow and family coordinates only.
+  /// Scalar facts requested by structural control, paths, and assertions.
   ConstraintScalarFacts facts;
   std::optional<ConstraintStorage> storage;
-  uint64_t steps = 0;
-  uint64_t limit;
   ConstraintBindings bindings;
   /// Live unresolved scalar storage reads are rejected after dead SSA removal.
   llvm::DenseSet<Operation *> nonSignalReads;
@@ -254,7 +253,7 @@ class ConstraintElaborator {
       return failure();
     }
     if (aggregate(op.getType())) {
-      frame[op.getResult()] = bindings.create(op.getType(), {}, emitted.getResult());
+      frame[op.getResult()] = bindings.create(info->memberType, {}, emitted.getResult());
     } else {
       frame[op.getResult()] = emitted.getResult();
       if (!isa<StructType>(op.getType()) && !info->signal) {
@@ -341,18 +340,67 @@ class ConstraintElaborator {
     });
   }
 
-  /// Evaluate pure integer results when possible; symbolic results must become dead.
+  /// Evaluate integer results; potentially failing casts must fold and pure
+  /// symbolic results must become dead.
   LogicalResult emitStructural(Operation &op, IRMapping &mapping, Environment &frame) {
     Operation *emitted = builder.clone(op, mapping);
     for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
       if (auto constant = dyn_cast_or_null<IntegerAttr>(facts.known(result))) {
         frame[source] = Value(arith::ConstantOp::create(builder, op.getLoc(), constant));
       } else {
+        if (auto conversion = dyn_cast<cast::FeltToIndexOp>(emitted);
+            conversion && !isMemoryEffectFree(conversion)) {
+          return constraintError(&op, "assert cast requires a statically valid index conversion");
+        }
         frame[source] = result;
       }
     }
     // Keep the temporary operation until final dead-code removal: other folded
     // results may still depend on it, and the facts cache retains its SSA keys.
+    return success();
+  }
+
+  /// Evaluate non-native field arithmetic under the given environment.
+  /// Require every result to fold to a field constant.
+  LogicalResult evaluateNonNative(Operation &op, Environment &frame) {
+    if (op.getNumRegions() || !op.getNumResults() || !isMemoryEffectFree(&op) ||
+        !llvm::all_of(op.getResultTypes(), [](Type type) { return isa<felt::FeltType>(type); })) {
+      return constraintError(&op, "lower non-native operations before constraint flattening");
+    }
+    auto mapping = scalarMapping(op, frame);
+    if (failed(mapping)) {
+      return failure();
+    }
+    // A field left shift with a known amount is multiplication by 2^amount.
+    // Fold that factor using the shift's own modular semantics, including large
+    // unsigned shift representatives. Right shifts retain integer semantics.
+    if (auto shift = dyn_cast<felt::ShlFeltOp>(op); shift &&
+                                                    !facts.known(mapping->lookup(shift.getLhs())) &&
+                                                    facts.known(mapping->lookup(shift.getRhs()))) {
+      Value lhs = mapping->lookup(shift.getLhs());
+      auto one = felt::FeltConstAttr::get(
+          op.getContext(), llvm::DynamicAPInt(1), llvm::cast<felt::FeltType>(shift.getType())
+      );
+      mapping->map(shift.getLhs(), felt::FeltConstantOp::create(builder, op.getLoc(), one));
+      Operation *factor = builder.clone(op, *mapping);
+      auto constant = dyn_cast_or_null<felt::FeltConstAttr>(facts.known(factor->getResult(0)));
+      if (!constant) {
+        return constraintError(&op, "lower non-native operations before constraint flattening");
+      }
+      Value multiplier = felt::FeltConstantOp::create(builder, op.getLoc(), constant);
+      frame[shift.getResult()] =
+          Value(felt::MulFeltOp::create(builder, op.getLoc(), lhs, multiplier));
+      return success();
+    }
+    Operation *emitted = builder.clone(op, *mapping);
+    for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
+      auto constant = dyn_cast_or_null<felt::FeltConstAttr>(facts.known(result));
+      if (!constant || constant.getType() != result.getType()) {
+        return constraintError(&op, "lower non-native operations before constraint flattening");
+      }
+      frame[source] = Value(felt::FeltConstantOp::create(builder, op.getLoc(), constant));
+    }
+    // As with structural computations, keep cached SSA keys alive until DCE.
     return success();
   }
 
@@ -367,10 +415,10 @@ class ConstraintElaborator {
     if (equality && !isa<felt::FeltType>(op.getOperand(0).getType())) {
       return constraintError(&op, "equality constraints require scalar felt operands");
     }
-    bool structural = isIntegerExpression(op);
+    bool structural = isIntegerExpression(op) || isa<cast::FeltToIndexOp>(op);
     if (!(equality || structural || isFieldExpression(op) || isa<cast::IntToFeltOp>(op))) {
       if (op.hasTrait<function::NotFieldNative>() || isa<felt::DivFeltOp>(op)) {
-        return constraintError(&op, "lower non-native operations before constraint flattening");
+        return evaluateNonNative(op, frame);
       }
       if (isa<constrain::EmitContainmentOp>(op)) {
         return constraintError(
@@ -640,6 +688,14 @@ class ConstraintElaborator {
         .Case<array::CreateArrayOp>([this, &frame](auto allocation) {
       return arrayNew(allocation, frame);
     })
+        .Case<NonDetOp>([this, &frame](auto allocation) {
+      if (!aggregate(allocation.getType())) {
+        return emit(*allocation, frame);
+      }
+      // Uninitialized aggregate leaves may be overwritten but never read.
+      frame[allocation.getResult()] = bindings.create(allocation.getType());
+      return success();
+    })
         .Case<pod::NewPodOp>([this, &frame](auto allocation) { return podNew(allocation, frame); })
         .Case<array::ReadArrayOp, array::ExtractArrayOp>([this, &frame](auto read) {
       return arrayRead(read, frame);
@@ -657,9 +713,6 @@ class ConstraintElaborator {
   /// Visit source operations once per execution; all ordinary values remain SSA.
   LogicalResult expand(Block &block, Environment &frame, SmallVectorImpl<BoundValue> &results) {
     for (Operation &op : block) {
-      if (++steps > limit) {
-        return constraintError(&op, "evaluation step limit exceeded");
-      }
       if (isa<ReturnOp, scf::YieldOp, scf::ConditionOp>(op)) {
         for (Value value : op.getOperands()) {
           results.push_back(frame.lookup(value));
@@ -698,6 +751,9 @@ class ConstraintElaborator {
     if (auto conversion = dyn_cast<cast::IntToFeltOp>(op)) {
       Attribute literal;
       if (matchPattern(conversion.getValue(), m_Constant(&literal)) && isa<IntegerAttr>(literal)) {
+        if (!isMemoryEffectFree(conversion) && !facts.known(conversion.getResult())) {
+          return constraintError(&op, "assert cast requires a statically valid field conversion");
+        }
         return success();
       }
       return constraintError(&op, "field conversion requires a compile-time integer");
@@ -731,8 +787,11 @@ class ConstraintElaborator {
   /// Remove dead facts, enforce the output contract, and reject non-signal reads.
   LogicalResult validateOutput() {
     for (Operation &op : llvm::make_early_inc_range(llvm::reverse(output.front()))) {
+      // A successful cast fold proves its range assertion, so the temporary
+      // cast can be removed despite its conservative effect interface.
+      bool foldedIndexCast = isa<cast::FeltToIndexOp>(op) && facts.known(op.getResult(0));
       if (op.use_empty() &&
-          (isMemoryEffectFree(&op) ||
+          (foldedIndexCast || isMemoryEffectFree(&op) ||
            isa<MemberReadOp, array::ReadArrayOp, array::ExtractArrayOp, pod::ReadPodOp>(op))) {
         op.erase();
       }
@@ -764,9 +823,8 @@ class ConstraintElaborator {
   }
 
 public:
-  ConstraintElaborator(ModuleOp root, uint64_t maximum)
-      : module(root), builder(root.getContext()), facts(root.getContext()), limit(maximum),
-        bindings(root.getContext(), steps, maximum) {}
+  explicit ConstraintElaborator(ModuleOp root)
+      : module(root), builder(root.getContext()), bindings(root.getContext()) {}
 
   /// Preserve main's signature and commit only the complete validated body.
   LogicalResult run() {
@@ -808,7 +866,7 @@ class PassImpl : public llzk::polymorphic::impl::ConstraintFlatteningPassBase<Pa
   using Base::Base;
 
   void runOnOperation() override {
-    if (failed(ConstraintElaborator(getOperation(), evaluationLimit).run())) {
+    if (failed(ConstraintElaborator(getOperation()).run())) {
       signalPassFailure();
     }
   }

@@ -18,6 +18,7 @@
 #include "r1cs/Transforms/TransformationPasses.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -28,6 +29,7 @@
 #include "llzk/Util/Walk.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
@@ -62,7 +64,8 @@ struct LinearCombination {
 
   LinearCombination() : constant() {}
 
-  void addTerm(Value v, const DynamicAPInt &coeff) {
+  /// Add a term, preserving native coefficients for arithmetic overload selection.
+  template <typename CoeffT> void addTerm(Value v, const CoeffT &coeff) {
     if (coeff == 0) {
       return;
     }
@@ -72,11 +75,6 @@ struct LinearCombination {
     }
   }
 
-  void addTerm(Value v, int64_t coeff) {
-    DynamicAPInt dynamicCoeff(coeff);
-    return addTerm(v, dynamicCoeff);
-  }
-
   void negate() {
     for (auto &kv : terms) {
       kv.second = -kv.second;
@@ -84,7 +82,8 @@ struct LinearCombination {
     constant = -constant;
   };
 
-  LinearCombination scaled(const DynamicAPInt &factor) const {
+  /// Scale all coefficients, preserving native factors for arithmetic overload selection.
+  template <typename FactorT> LinearCombination scaled(const FactorT &factor) const {
     LinearCombination result;
     if (factor == 0) {
       return result;
@@ -95,11 +94,6 @@ struct LinearCombination {
     }
     result.constant = constant * factor;
     return result;
-  }
-
-  LinearCombination scaled(int64_t factor) const {
-    DynamicAPInt dynamicFactor(factor);
-    return scaled(dynamicFactor);
   }
 
   LinearCombination add(const LinearCombination &other) const {
@@ -689,6 +683,31 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       }
 
       if (failed(checkFuncBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
+        signalPassFailure();
+        return;
+      }
+
+      // Constraint extraction only visits equality operands. Reject residual
+      // casts explicitly so a potentially failing assertion cannot disappear
+      // with the struct. Unused infallible casts need no lowering.
+      // Valid constant casts can be folded by canonicalization before this pass.
+      if (walkContains<cast::IntToFeltOp>(constrainFunc, [](cast::IntToFeltOp op) {
+        if (isOpTriviallyDead(op)) {
+          return false;
+        }
+        op.emitError("R1CS lowering does not support effectful 'cast.tofelt' operations");
+        return true;
+      })) {
+        signalPassFailure();
+        return;
+      }
+      if (walkContains<cast::FeltToIndexOp>(constrainFunc, [](cast::FeltToIndexOp op) {
+        if (isOpTriviallyDead(op)) {
+          return false;
+        }
+        op.emitError("R1CS lowering does not support effectful 'cast.toindex' operations");
+        return true;
+      })) {
         signalPassFailure();
         return;
       }
