@@ -9,9 +9,13 @@
 
 #include "r1cs/Dialect/IR/Ops.h"
 
+#include "r1cs/Dialect/IR/Constants.h"
+
 #include <mlir/IR/OpImplementation.h>
 
 #include <llvm/Support/Casting.h>
+
+#include <limits>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -75,7 +79,10 @@ ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
     result.addAttribute("arg_attrs", DictionaryAttr::get(parser.getContext(), attrs));
   }
   Region *body = result.addRegion();
-  return parser.parseRegion(*body, args);
+  if (parser.parseRegion(*body, args)) {
+    return failure();
+  }
+  return parser.parseOptionalAttrDict(result.attributes);
 }
 
 void CircuitDefOp::print(OpAsmPrinter &p) {
@@ -106,6 +113,7 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
   }
   p << ' ';
   p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
+  p.printOptionalAttrDict((*this)->getAttrs(), {"sym_name", "arg_attrs"});
 }
 
 mlir::Block *CircuitDefOp::addEntryBlock() {
@@ -115,6 +123,40 @@ mlir::Block *CircuitDefOp::addEntryBlock() {
   body.push_back(block);
   return block;
 }
+
+namespace {
+
+/// Check the format ordering when the circuit supplies explicit input wire IDs.
+LogicalResult verifyExplicitWireIds(CircuitDefOp circuit) {
+  auto inputs = circuit->getAttrOfType<DenseI64ArrayAttr>(INPUT_LABELS_ATTR);
+  if (!inputs) {
+    return success();
+  }
+  DenseMap<WireKind, SmallVector<int64_t>> idsByKind;
+  for (auto signal : circuit.getBody().front().getOps<SignalDefOp>()) {
+    WireKind kind = signal.getPub() ? WireKind::PublicOutput : WireKind::Internal;
+    idsByKind[kind].push_back(signal.getLabel());
+  }
+  auto argAttrs = circuit.getArgAttrs().value_or(DictionaryAttr::get(circuit.getContext()));
+  for (auto [index, id] : llvm::enumerate(inputs.asArrayRef())) {
+    bool isPublic = isa_and_nonnull<PublicAttr>(argAttrs.get(std::to_string(index)));
+    WireKind kind = isPublic ? WireKind::PublicInput : WireKind::PrivateInput;
+    idsByKind[kind].push_back(id);
+  }
+  int64_t expected = FIRST_SIGNAL_WIRE_ID;
+  for (WireKind kind : WIRE_KIND_ORDER) {
+    for (int64_t id : idsByKind[kind]) {
+      if (id != expected++) {
+        return circuit.emitError() << '\'' << INPUT_LABELS_ATTR
+                                   << "' must be ordered as public outputs, public inputs, private "
+                                      "inputs, then internal wires";
+      }
+    }
+  }
+  return success();
+}
+
+} // namespace
 
 LogicalResult CircuitDefOp::verify() {
 
@@ -143,6 +185,21 @@ LogicalResult CircuitDefOp::verify() {
 
   // === Step 2: Check that signal labels are unique ===
   DenseSet<uint32_t> seenLabels;
+  if (auto labels = (*this)->getAttr(INPUT_LABELS_ATTR)) {
+    auto values = dyn_cast<DenseI64ArrayAttr>(labels);
+    if (!values || values.size() != getBody().front().getNumArguments()) {
+      return emitError() << '\'' << INPUT_LABELS_ATTR << "' must contain one i64 label per input";
+    }
+    for (int64_t label : values.asArrayRef()) {
+      if (label < FIRST_SIGNAL_WIRE_ID || label > std::numeric_limits<uint32_t>::max()) {
+        return emitError() << '\'' << INPUT_LABELS_ATTR << "' must be in [" << FIRST_SIGNAL_WIRE_ID
+                           << ", " << std::numeric_limits<uint32_t>::max() << ']';
+      }
+      if (!seenLabels.insert(label).second) {
+        return emitError() << '\'' << INPUT_LABELS_ATTR << "' must not contain duplicate labels";
+      }
+    }
+  }
   bool foundPublic = false;
 
   for (auto &op : getBody().front()) {
@@ -156,6 +213,10 @@ LogicalResult CircuitDefOp::verify() {
         foundPublic = true;
       }
     }
+  }
+
+  if (failed(verifyExplicitWireIds(*this))) {
+    return failure();
   }
 
   // === Step 3: Require at least one public signal ===
