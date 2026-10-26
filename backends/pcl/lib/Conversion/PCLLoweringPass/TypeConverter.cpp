@@ -23,6 +23,9 @@ PCLTypeConverter::PCLTypeConverter() {
 
   addConversion([](IntegerType t) -> Type { return BoolType::get(t.getContext()); });
 
+  // Index constants and stub arguments use PCL felts.
+  addConversion([](IndexType t) { return FeltType::get(t.getContext()); });
+
   addConversion([](llzk::felt::FeltType t) { return FeltType::get(t.getContext()); });
 
   addSourceMaterialization(

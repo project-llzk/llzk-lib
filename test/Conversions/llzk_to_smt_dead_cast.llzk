@@ -1,0 +1,73 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf -split-input-file %s | FileCheck --enable-var-scope %s --check-prefix=OPT
+// RUN: llzk-opt --llzk-to-smt-no-cf-naive -split-input-file %s | FileCheck --enable-var-scope %s --check-prefix=NAIVE
+
+// Direct lowering must erase unused non-assert casts without canonicalization.
+// Nonconstant operands ensure that folding cannot hide the unsupported casts.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product(%input: index, %felt: !felt.type<"bn254">) -> !struct.type<@Main>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@Main>
+      %a = cast.tofelt sat %input : index, !felt.type<"bn254">
+      %b = cast.tofelt wrap %input : index, !felt.type<"bn254">
+      %c = cast.tofelt trunc %input : index, !felt.type<"bn254">
+      %d = cast.toindex sat %felt : !felt.type<"bn254">
+      %e = cast.toindex wrap %felt : !felt.type<"bn254">
+      %f = cast.toindex trunc %felt : !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// OPT-LABEL: module attributes {llzk.lang} {
+// OPT-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495616
+// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_1]], %[[VAL_2]]
+// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_1]], %[[VAL_3]]
+// OPT-NEXT:      smt.assert %[[VAL_4]]
+// OPT-NEXT:      smt.assert %[[VAL_5]]
+// OPT-NEXT:      return
+// OPT-NEXT:    }
+// OPT-NEXT:  }
+
+// NAIVE-LABEL: module attributes {llzk.lang} {
+// NAIVE-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// NAIVE-NEXT:      return
+// NAIVE-NEXT:    }
+// NAIVE-NEXT:  }
+
+// -----
+
+// Unused infallible assertions need no range-check encoding in either strategy.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product(%input: !felt.type<"babybear">, %flag: i1) -> !struct.type<@Main>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@Main>
+      %implicit = cast.toindex %input : !felt.type<"babybear">
+      %explicit = cast.toindex assert %input : !felt.type<"babybear">
+      %boolean = cast.tofelt %flag : i1, !felt.type<"babybear">
+      %fieldless = cast.tofelt assert %flag : i1
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// OPT-LABEL: module attributes {llzk.lang} {
+// OPT-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
+// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_0]], %[[VAL_2]]
+// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_0]], %[[VAL_3]]
+// OPT-NEXT:      smt.assert %[[VAL_4]]
+// OPT-NEXT:      smt.assert %[[VAL_5]]
+// OPT-NEXT:      return
+// OPT-NEXT:    }
+// OPT-NEXT:  }
+
+// NAIVE-LABEL: module attributes {llzk.lang} {
+// NAIVE-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// NAIVE-NEXT:      return
+// NAIVE-NEXT:    }
+// NAIVE-NEXT:  }

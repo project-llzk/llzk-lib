@@ -9,6 +9,8 @@
 
 #include "StructSpecializationDiscovery.h"
 
+#include "ScalarEvaluation.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -151,8 +153,8 @@ public:
 /// loop-body result can have a different value on each iteration. Keeping those
 /// values in separate environments lets each iteration use its current inputs
 /// without changing N or leaking local results into another method or branch.
-/// This object owns the requests and evaluation budget for a single discover()
-/// call so a later call with different template arguments starts from fresh state.
+/// This object owns the requests for a single discover() call so a later call
+/// with different template arguments starts from fresh state.
 class DiscoveryRun {
   Operation *source;
   StructSpecializationDiscovery::Bindings bindings;
@@ -166,18 +168,8 @@ class DiscoveryRun {
   DenseSet<FamilyKey> knownFamilies;
   SmallVector<std::pair<function::CallOp, StructType>> rolledCalls;
   DenseSet<std::pair<Operation *, Type>> seenRolledCalls;
-  uint64_t remaining;
   SmallVectorImpl<Operation *> *visitedOperations;
   StructSpecializationDiscovery::CallTargets *callTargets;
-
-  /// Charge work before evaluating it, including empty loop bodies' terminators.
-  LogicalResult consumeStep(Operation *site) {
-    if (!remaining) {
-      return site->emitError("specialization discovery step limit exceeded");
-    }
-    --remaining;
-    return success();
-  }
 
   /// Record nested type arguments as dependencies too, retaining input identity.
   LogicalResult recordRequest(
@@ -336,9 +328,6 @@ class DiscoveryRun {
             elementIndices.pop_back();
           }
           return success();
-        }
-        if (failed(consumeStep(site))) {
-          return failure();
         }
         return collectTypes(site, array.getElementType(), elementIndices, true);
       };
@@ -537,12 +526,12 @@ class DiscoveryRun {
     }
     if (llvm::all_of(operands, [](Attribute attr) { return attr != nullptr; })) {
       SmallVector<OpFoldResult> folded;
-      if (succeeded(op.fold(operands, folded)) && folded.size() == results.size()) {
+      if (succeeded(evaluateScalarOperation(&op, operands, folded))) {
         for (auto [index, value] : llvm::enumerate(folded)) {
           if (auto attr = dyn_cast<Attribute>(value)) {
             results[index] = attr;
           } else {
-            results[index] = env.lookup(cast<Value>(value));
+            results[index] = env.lookup(llvm::cast<Value>(value));
           }
         }
       }
@@ -584,7 +573,7 @@ class DiscoveryRun {
           return failure();
         }
         results[0] = *value;
-      } else if (isMemoryEffectFree(&op)) {
+      } else if (isMemoryEffectFree(&op) || isa<cast::FeltToIndexOp, cast::IntToFeltOp>(op)) {
         evaluateFoldableOp(op, env, results);
       }
       if (auto call = dyn_cast<function::CallOp>(op)) {
@@ -599,17 +588,14 @@ class DiscoveryRun {
     return success();
   }
 
-  /// Sequence evaluation in a private SSA scope, charging the shared budget and
-  /// binding each operation's results before evaluating its users. Terminators
+  /// Sequence evaluation in a private SSA scope, binding each operation's results
+  /// before evaluating its users. Terminators
   /// return values to the enclosing branch, loop, method or template expression.
   LogicalResult evaluateBlock(
       Block &body, Environment env, SmallVectorImpl<Attribute> &yielded,
       Attribute *condition = nullptr
   ) {
     for (Operation &op : body) {
-      if (failed(consumeStep(&op))) {
-        return failure();
-      }
       if (auto terminator = dyn_cast<scf::ConditionOp>(op)) {
         if (!condition) {
           return op.emitError("scf.condition outside a while condition region");
@@ -643,13 +629,11 @@ public:
 
   DiscoveryRun(
       Operation *definition, const StructSpecializationDiscovery::Bindings &parameters,
-      uint64_t limit, SmallVectorImpl<Operation *> *visited,
+      SmallVectorImpl<Operation *> *visited,
       StructSpecializationDiscovery::CallTargets *targets = nullptr
   )
-      : source(definition), bindings(parameters), typeResolver(bindings), remaining(limit),
+      : source(definition), bindings(parameters), typeResolver(bindings),
         visitedOperations(visited), callTargets(targets) {}
-
-  uint64_t getRemainingSteps() const { return remaining; }
 
   /// Extend the parameter environment with known template-expression results.
   FailureOr<StructSpecializationDiscovery::Bindings> evaluateBindings() {
@@ -684,7 +668,7 @@ public:
     if (auto structure = dyn_cast<StructDefOp>(source)) {
       llvm::append_range(functions, structure.getOps<function::FuncDefOp>());
     } else {
-      functions.push_back(cast<function::FuncDefOp>(source));
+      functions.push_back(llvm::cast<function::FuncDefOp>(source));
     }
     for (auto function : functions) {
       if (!function.getBody().hasOneBlock()) {
@@ -784,20 +768,14 @@ FailureOr<Attribute> llzk::polymorphic::detail::resolveConstReadBinding(
          << read.getConstNameAttr() << " with value \"" << binding << "\" as type " << readType;
 }
 
-FailureOr<StructSpecializationDiscovery::Bindings> StructSpecializationDiscovery::evaluateBindings(
-    Operation *source, const Bindings &bindings, uint64_t *remainingSteps
-) const {
-  DiscoveryRun run(source, bindings, limit, nullptr);
-  auto evaluated = run.evaluateBindings();
-  if (succeeded(evaluated) && remainingSteps) {
-    *remainingSteps = run.getRemainingSteps();
-  }
-  return evaluated;
+FailureOr<StructSpecializationDiscovery::Bindings>
+StructSpecializationDiscovery::evaluateBindings(Operation *source, const Bindings &bindings) const {
+  return DiscoveryRun(source, bindings, nullptr).evaluateBindings();
 }
 
 FailureOr<StructSpecializationDiscovery::Requests> StructSpecializationDiscovery::discover(
     Operation *source, const Bindings &bindings, SmallVectorImpl<Operation *> *visitedOperations,
     CallTargets *callTargets
 ) const {
-  return DiscoveryRun(source, bindings, limit, visitedOperations, callTargets).run();
+  return DiscoveryRun(source, bindings, visitedOperations, callTargets).run();
 }

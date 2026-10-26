@@ -3,22 +3,25 @@
 // RUN: sed 's/babybear/bn128/g' %t/babybear.llzk > %t/bn128.llzk
 // RUN: llzk-opt %t/babybear.llzk --canonicalize > %t/babybear-folded.llzk
 // RUN: llzk-witgen %t/babybear.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BABYBEAR
-// RUN: llzk-witgen %t/babybear.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BABYBEAR
+// RUN: not llzk-witgen %t/babybear.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=EE-ERROR
 // RUN: llzk-witgen %t/babybear-folded.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BABYBEAR
-// RUN: llzk-witgen %t/babybear-folded.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BABYBEAR
+// RUN: not llzk-witgen %t/babybear-folded.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=EE-ERROR
 // RUN: llzk-opt %t/goldilocks.llzk --canonicalize > %t/goldilocks-folded.llzk
 // RUN: llzk-witgen %t/goldilocks.llzk --inputs %t/input.json | FileCheck %s --check-prefix=GOLDILOCKS
-// RUN: llzk-witgen %t/goldilocks.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=GOLDILOCKS
+// RUN: not llzk-witgen %t/goldilocks.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=EE-ERROR
 // RUN: llzk-witgen %t/goldilocks-folded.llzk --inputs %t/input.json | FileCheck %s --check-prefix=GOLDILOCKS
-// RUN: llzk-witgen %t/goldilocks-folded.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=GOLDILOCKS
+// RUN: not llzk-witgen %t/goldilocks-folded.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=EE-ERROR
 // RUN: llzk-opt %t/bn128.llzk --canonicalize > %t/bn128-folded.llzk
 // RUN: llzk-witgen %t/bn128.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BN128
-// RUN: llzk-witgen %t/bn128.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BN128
+// RUN: not llzk-witgen %t/bn128.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=EE-ERROR
 // RUN: llzk-witgen %t/bn128-folded.llzk --inputs %t/input.json | FileCheck %s --check-prefix=BN128
-// RUN: llzk-witgen %t/bn128-folded.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s --check-prefix=BN128
+// RUN: not llzk-witgen %t/bn128-folded.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=EE-ERROR
 
-// Runtime index conversions must agree with signed constant folding for fields
+// Explicit wrapping in the interpreter must agree with signed constant folding for fields
 // narrower than, equal to, and wider than the 64-bit index representation.
+// The execution engine diagnoses runtime non-assert casts until it supports them.
+// EE-ERROR: witgen lowering does not currently support non-assert cast overflow semantics
+
 //--- babybear.llzk
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
@@ -37,10 +40,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %negative = arith.addi %base, %minus_one : index
       %minimum = arith.addi %base, %min : index
       %maximum = arith.addi %base, %max : index
-      %a = cast.tofelt %negative : index, !felt.type<"babybear">
-      %b = cast.tofelt %minimum : index, !felt.type<"babybear">
-      %c = cast.tofelt %maximum : index, !felt.type<"babybear">
-      %d = cast.tofelt %minus_one : index, !felt.type<"babybear">
+      %a = cast.tofelt wrap %negative : index, !felt.type<"babybear">
+      %b = cast.tofelt wrap %minimum : index, !felt.type<"babybear">
+      %c = cast.tofelt wrap %maximum : index, !felt.type<"babybear">
+      %d = cast.tofelt wrap %minus_one : index, !felt.type<"babybear">
       %e = cast.tofelt %true : i1, !felt.type<"babybear">
       struct.writem %self[@negative] = %a : !struct.type<@Main>, !felt.type<"babybear">
       struct.writem %self[@minimum] = %b : !struct.type<@Main>, !felt.type<"babybear">

@@ -15,6 +15,8 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
+
 namespace mlir {
 class TypeConverter;
 class RewritePatternSet;
@@ -45,6 +47,9 @@ protected:
   /// `constrain` function of a struct or a used free function.
   bool isStep1LegalOp(mlir::Operation *op);
 
+  /// Check ASSERT casts before conversion loses the original integer values.
+  mlir::LogicalResult validateIntToFeltCasts(const llvm::DynamicAPInt &prime);
+
   /// Populates step 1 patterns sharing a cache that must outlive the conversion.
   void populateStep1ConversionPatterns(
       const mlir::TypeConverter &tc, mlir::RewritePatternSet &patterns,
@@ -68,11 +73,11 @@ protected:
   void
   populateStep3ConversionTarget(mlir::ConversionTarget &target, DupVarsReplacements &replacements);
 
-  /// Step 1 converts the body of each struct to PCL operations.
+  /// Step 1 validates ASSERT casts and converts the body of each struct to PCL operations.
   ///
   /// This conversion is performed before moving the body to a function because
   /// that way the IR can access information about the members of the struct.
-  virtual mlir::LogicalResult runStep1() = 0;
+  virtual mlir::LogicalResult runStep1(const llvm::DynamicAPInt &prime) = 0;
 
   /// Step 2 converts the struct to a function, moving the contents of the @constrain function
   /// into the body of the new function.
@@ -97,8 +102,8 @@ public:
 
   virtual ~BaseMode() = default;
 
-  mlir::LogicalResult lower() {
-    return llvm::failure(failed(runStep1()) || failed(runStep2()) || failed(runStep3()));
+  mlir::LogicalResult lower(const llvm::DynamicAPInt &prime) {
+    return llvm::failure(failed(runStep1(prime)) || failed(runStep2()) || failed(runStep3()));
   }
 };
 
@@ -106,11 +111,11 @@ public:
 struct FullLoweringMode : public BaseMode {
   using BaseMode::BaseMode;
 
-  /// Step 1 converts the body of each struct to PCL operations.
+  /// Step 1 validates ASSERT casts and converts the body of each struct to PCL operations.
   ///
   /// This conversion is performed before moving the body to a function because
   /// that way the IR can access information about the members of the struct.
-  mlir::LogicalResult runStep1() final;
+  mlir::LogicalResult runStep1(const llvm::DynamicAPInt &prime) final;
 
   void populateStep2ConversionPatterns(
       const mlir::TypeConverter &tc, mlir::RewritePatternSet &patterns
@@ -134,11 +139,11 @@ private:
   /// Functions marked as stubs are lowered as such in step 2.
   void checkAnalysisResult();
 
-  /// Step 1 converts the body of each struct to PCL operations.
+  /// Step 1 selects stubs, validates remaining ASSERT casts, and converts struct bodies to PCL.
   ///
   /// This conversion is performed before moving the body to a function because
   /// that way the IR can access information about the members of the struct.
-  mlir::LogicalResult runStep1() final;
+  mlir::LogicalResult runStep1(const llvm::DynamicAPInt &prime) final;
 
   void populateStep2ConversionPatterns(
       const mlir::TypeConverter &tc, mlir::RewritePatternSet &patterns

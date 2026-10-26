@@ -17,6 +17,7 @@
 // MLIR interfaces used by generated ops
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES

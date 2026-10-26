@@ -1,0 +1,33 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+// RUN: llzk-opt %s --canonicalize --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+// Truncation keeps the low three bits of -1, then reduces 7 modulo 7 to zero.
+// The following assert cast must select x from the first array element.
+module attributes {llzk.lang, llzk.fields = #felt.field<"small", 7>, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type<"small">, %y: !felt.type<"small">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"small">, %y: !felt.type<"small">) attributes {function.allow_non_native_field_ops} {
+      %values = array.new %x, %y, %y, %y, %y, %y, %y, %y : !array.type<8 x !felt.type<"small">>
+      %negative = arith.constant -1 : index
+      %truncated = cast.tofelt trunc %negative : index, !felt.type<"small">
+      %index = cast.toindex assert %truncated : !felt.type<"small">
+      %selected = array.read %values[%index] : !array.type<8 x !felt.type<"small">>, !felt.type<"small">
+      constrain.eq %selected, %x : !felt.type<"small">, !felt.type<"small">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"small">, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"small">) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"small">, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"small">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type<"small">, !felt.type<"small">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }

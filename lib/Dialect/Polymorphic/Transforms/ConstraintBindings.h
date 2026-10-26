@@ -48,16 +48,13 @@ class ConstraintBindings {
 
   mlir::Builder builder;
   llvm::SmallVector<Root> roots;
-  uint64_t &steps;
-  uint64_t limit;
 
 public:
   using StorageReader = llvm::function_ref<mlir::FailureOr<mlir::Value>(
       mlir::Value, llvm::ArrayRef<mlir::Attribute>, mlir::Type, mlir::Operation *
   )>;
 
-  ConstraintBindings(mlir::MLIRContext *context, uint64_t &work, uint64_t maximum)
-      : builder(context), steps(work), limit(maximum) {}
+  explicit ConstraintBindings(mlir::MLIRContext *context) : builder(context) {}
 
   /// Create a root for a local allocation, function argument, or original storage.
   AccessPath create(mlir::Type type, mlir::Value input = {}, mlir::Value storage = {}) {
@@ -125,9 +122,6 @@ public:
       return constraintError(site, "aggregate shape must be static");
     }
     for (int64_t i = 0; i < size; ++i) {
-      if (++steps > limit) {
-        return constraintError(site, "evaluation step limit exceeded");
-      }
       if (mlir::failed(elements(element(path, i), site, visit))) {
         return mlir::failure();
       }
@@ -150,9 +144,6 @@ public:
     }
     if (auto type = llvm::dyn_cast<pod::PodType>(path.type)) {
       for (auto record : type.getRecords()) {
-        if (++steps > limit) {
-          return constraintError(site, "evaluation step limit exceeded");
-        }
         auto field = child(path, record.getName(), record.getType());
         if (mlir::failed(walk(field, site, visit))) {
           return mlir::failure();

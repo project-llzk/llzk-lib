@@ -34,6 +34,8 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/IRMapping.h>
+#include <mlir/IR/Matchers.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -829,13 +831,25 @@ public:
 // RemoveIntToFeltOp
 //===----------------------------------------------------------------------===//
 
-/// Removes `cast.tofelt` ops since all numerical types in pcl are the same.
+/// Removes supported `cast.tofelt` operations; range validation precedes actual conversion.
 struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
   using OpConversionPattern<IntToFeltOp>::OpConversionPattern;
 
   LogicalResult matchAndRewrite(
       IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (op.getOverflow() != OverflowSemantics::ASSERT) {
+      return rewriter.notifyMatchFailure(
+          op, "PCL lowering does not currently support non-assert cast overflow semantics"
+      );
+    }
+    // Leave dynamic index assertions unsupported so analysis selects their
+    // containing free functions for stubbing.
+    if (!isMemoryEffectFree(op) && !matchPattern(op.getValue(), m_Constant())) {
+      return rewriter.notifyMatchFailure(
+          op, "cannot preserve an assertion on a non-constant index"
+      );
+    }
     rewriter.replaceOp(op, adaptor.getOperands());
     return success();
   }
