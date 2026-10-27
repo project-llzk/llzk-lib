@@ -3,5 +3,4 @@ fixed:
   - Preserve felt IV types in annotated `llzk-while-to-for` conversions, using assert semantics for known in-range values and wrap semantics otherwise.
   - Skip annotated loops with a warning for negative bounds, nonpositive steps, or index overflow in bounds, steps, or the final increment.
 changed:
-  - Define `llzk.loopbounds` as arbitrary-precision signed integers. Producers must ensure
-    the felt IV sequence and iteration count match the original loop.
+  - Define `llzk.loopbounds` as arbitrary-precision signed integers.
