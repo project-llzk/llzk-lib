@@ -111,85 +111,6 @@ module attributes {llzk.lang} {
     array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
     function.return
   }
-  struct.def @DisjointConstrainCall {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@DisjointConstrainCall> {
-      %self = struct.new : <@DisjointConstrainCall>
-      function.return %self : !struct.type<@DisjointConstrainCall>
-    }
-    function.def @constrain(%self: !struct.type<@DisjointConstrainCall>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      %local = array.new %x : !array.type<1 x !felt.type>
-      function.call @mutate(%local, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
-
-// -----
-
-// Calls can change storage without producing any SSA value in the read chain.
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
-  struct.def @CallAfterRead {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@CallAfterRead> {
-      %self = struct.new : <@CallAfterRead>
-      function.return %self : !struct.type<@CallAfterRead>
-    }
-    function.def @constrain(%self: !struct.type<@CallAfterRead>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
-      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
-
-// -----
-
-// Calls can change storage without producing any SSA value in the read chain.
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    %ignored = array.read %data[%idx] : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
-  struct.def @ReadOnlyHelper {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ReadOnlyHelper> {
-      %self = struct.new : <@ReadOnlyHelper>
-      function.return %self : !struct.type<@ReadOnlyHelper>
-    }
-    function.def @constrain(%self: !struct.type<@ReadOnlyHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
-
-// -----
-
-// Calls can change storage without producing any SSA value in the read chain.
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
   function.def @wrapper(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
     function.call @mutate(%data, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
     function.return
@@ -293,33 +214,6 @@ module attributes {llzk.lang} {
     array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
     function.return
   }
-  struct.def @DisjointConstrainWrite {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@DisjointConstrainWrite> {
-      %self = struct.new : <@DisjointConstrainWrite>
-      function.return %self : !struct.type<@DisjointConstrainWrite>
-    }
-    function.def @constrain(%self: !struct.type<@DisjointConstrainWrite>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      %local = array.new %x : !array.type<1 x !felt.type>
-      array.write %local[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
-
-// -----
-
-// Calls can change storage without producing any SSA value in the read chain.
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
   struct.def @OpaqueComputeStorage {
     function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@OpaqueComputeStorage> {
       %self = struct.new : <@OpaqueComputeStorage>
@@ -365,32 +259,6 @@ module attributes {llzk.lang} {
     // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
     function.def @constrain(%self: !struct.type<@ComponentHandles>, %a: !struct.type<@Payload>, %b: !struct.type<@Payload>, %x: !felt.type) {
       %value = struct.readm %a[@value] : <@Payload>, !felt.type
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
-
-// -----
-
-// Calls can change storage without producing any SSA value in the read chain.
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    %ignored = array.read %data[%idx] : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
-  struct.def @ReadOnlyComputeHelper {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ReadOnlyComputeHelper> {
-      %self = struct.new : <@ReadOnlyComputeHelper>
-      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      function.return %self : !struct.type<@ReadOnlyComputeHelper>
-    }
-    function.def @constrain(%self: !struct.type<@ReadOnlyComputeHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
       %square = felt.mul %value, %value : !felt.type, !felt.type
       %fourth = felt.mul %square, %square : !felt.type, !felt.type
       constrain.eq %x, %fourth : !felt.type

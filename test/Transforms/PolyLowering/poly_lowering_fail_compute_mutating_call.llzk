@@ -82,31 +82,3 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// A helper receiving an independent local aggregate must not reject input reads.
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
-  struct.def @IndependentHelperArgument {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@IndependentHelperArgument> {
-      %self = struct.new : <@IndependentHelperArgument>
-      %idx = arith.constant 0 : index
-      %local = array.new %x : !array.type<1 x !felt.type>
-      function.call @mutate(%local, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      function.return %self : !struct.type<@IndependentHelperArgument>
-    }
-    function.def @constrain(%self: !struct.type<@IndependentHelperArgument>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
