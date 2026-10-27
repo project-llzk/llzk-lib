@@ -36,7 +36,7 @@ struct StructInliningFlatteningOptions
           "maximum trip count for each loop unrolled; exceeding it warns and leaves the loop "
           "unchanged"
       ),
-      llvm::cl::init(10000)
+      llvm::cl::init(100000)
   };
 
   Option<polymorphic::FlatteningCleanupMode> cleanupMode {

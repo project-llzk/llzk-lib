@@ -60,7 +60,7 @@ module attributes {llzk.lang} {
     %zero = arith.constant 0 : i128
     %bound = arith.constant 18446744073709551615 : i128
     %one = arith.constant 1 : i128
-    // expected-warning @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 10000}}
+    // expected-warning @+1 {{loop trip count 18446744073709551615 exceeds max-unroll limit of 100000}}
     scf.for %iv = %zero to %bound step %one : i128 {
       constrain.eq %a, %b : !felt.type, !felt.type
     }

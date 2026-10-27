@@ -220,7 +220,7 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
               "provided in this option is reached.">,
        Option<
            "unrollIterationLimit", "max-unroll", "uint64_t",
-           /* default */ "10000",
+           /* default */ "100000",
            "Maximum trip count for each loop unrolled, including annotated "
            "loops. Exceeding this limit warns and leaves the loop unchanged. "
            "A value of zero only permits removal of zero-trip loops.">,
