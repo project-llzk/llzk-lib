@@ -2736,7 +2736,7 @@ LoopBoundsAttr</h3>
 <div class="line">  ::llzk::DynamicAPIntValue,   # upper</div>
 <div class="line">  ::llzk::DynamicAPIntValue   # step</div>
 <div class="line">&gt;</div>
-</div><!-- fragment --><p>This attribute indicates the loop variable's lower bound (inclusive), upper bound (exclusive), and step size.</p>
+</div><!-- fragment --><p>This attribute indicates the loop variable's lower bound (inclusive), upper bound (exclusive), and nonzero step size. Positive and negative steps are allowed; a zero step is a verification error.</p>
 <p>These attributes are trusted unconditionally, so the producer must ensure these values agree with the loop's behavior. Passes are not required to produce an error diagnostic if the values specified by the attribute contradict the IR itself; incorrect annotations can change program behavior.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">scf.while ... {</div>
@@ -2754,7 +2754,7 @@ Parameters:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter">upper  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">Loop variable upper bound (exclusive)  </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">step  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">Loop variable step/increment  </td></tr>
+<td class="markdownTableBodyCenter">step  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1DynamicAPIntValue.html" title="Attribute storage adapter providing numeric hashing for DynamicAPInt.">llzk::DynamicAPIntValue</a></span>  </td><td class="markdownTableBodyNone">Nonzero loop variable step/increment  </td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="publicattr"></a>
 PublicAttr</h3>
