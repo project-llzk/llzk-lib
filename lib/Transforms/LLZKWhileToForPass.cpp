@@ -27,6 +27,7 @@
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
@@ -142,6 +143,18 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     // This conversion only supports nonnegative bounds and a positive scf.for step.
     if (bounds.getLower() < 0 || bounds.getUpper() < 0 || bounds.getStep() <= 0) {
       reportFailureReason("loopbounds must have nonnegative bounds and a positive step");
+      return info;
+    }
+    // Check the annotation before field reduction using the same range as cast.toindex assert.
+    auto fitsIndex = [](const llvm::DynamicAPInt &value) {
+      return llzk::cast::applyFeltToIndexOverflow(
+                 value, IndexType::kInternalStorageBitWidth, llzk::cast::OverflowSemantics::ASSERT
+      )
+          .has_value();
+    };
+    if (!fitsIndex(bounds.getLower()) || !fitsIndex(bounds.getUpper()) ||
+        !fitsIndex(bounds.getStep())) {
+      reportFailureReason("loopbounds values cannot be represented as nonnegative indices");
       return info;
     }
     auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
