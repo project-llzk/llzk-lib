@@ -7,6 +7,10 @@ fixed:
     left unchanged with a warning instead of introducing invalid loops or failing casts.
   - Materialize annotated loop bounds and steps directly as index constants without field reduction,
     preserving their integer values even when they equal or exceed the induction variable's field modulus.
+  - Reconstruct annotated felt induction variables with wrapping casts so integer values at or above
+    the field modulus supply their field representatives to the loop body instead of failing an assertion.
 changed:
   - Specify that `llzk.loopbounds` values are signed mathematical integers of arbitrary precision,
     interpreted without field reduction even when the loop variable has a felt type.
+    Felt loop bodies receive the field representatives of the integer induction sequence; producers
+    must ensure both that sequence and the iteration count match the original loop.

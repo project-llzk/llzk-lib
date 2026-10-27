@@ -335,11 +335,13 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
 
   auto inductionVar = forOp.getInductionVar();
   if (isa<FeltType>(ivarType)) {
-    // If the induction var was a felt, we need to cast it back to felt in the scf.for body
-    // Note that this means the body of the scf.for might cast it back to index again anyway, but
-    // --canonicalize should fix that
-    inductionVar = llzk::cast::IntToFeltOp::create(rewriter, forOp.getLoc(), ivarType, inductionVar)
-                       .getResult();
+    // Annotated integer IVs map to their field representatives in the body, including when
+    // they reach or exceed the modulus. Inferred felt bounds retain their checked cast.
+    auto overflow = op->hasAttr(llzk::LoopBoundsAttr::name) ? llzk::cast::OverflowSemantics::WRAP
+                                                            : llzk::cast::OverflowSemantics::ASSERT;
+    inductionVar =
+        llzk::cast::IntToFeltOp::create(rewriter, forOp.getLoc(), ivarType, overflow, inductionVar)
+            .getResult();
   }
 
   // Start by mapping the `before` block to the loop body

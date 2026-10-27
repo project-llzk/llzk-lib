@@ -121,7 +121,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
 // CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
 // CHECK-NEXT:      scf.for %[[VAL_38:[0-9a-zA-Z_\.]+]] = %[[VAL_35]] to %[[VAL_36]] step %[[VAL_37]] {
-// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_38]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_38]] : index, !felt.type<"bn128">
 // CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_39]], %[[VAL_33]]) : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_39]], %[[VAL_34]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<9223372036854775807 to 9223372036854775807 step 9223372036854775807>}
