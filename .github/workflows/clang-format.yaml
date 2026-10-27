@@ -1,8 +1,9 @@
 name: Formatting check
 on:
-  # Run whenever a cpp, h, or td file is modified in a PR
+  # Run whenever a c, cpp, h, or td file is modified in a PR
   pull_request:
     paths:
+      - '**.c'
       - '**.cpp'
       - '**.h'
       - '**.td'
@@ -53,7 +54,7 @@ jobs:
           version: ${{ steps.clang.outputs.bin }}
           style: file # Use .clang-format.
           tidy-checks: '-*' # Disable clang-tidy; it has a separate workflow.
-          extensions: 'cpp,h,td'
+          extensions: 'c,cpp,h,td'
           files-changed-only: true
           lines-changed-only: true
           ignore: 'build|result|third-party'
