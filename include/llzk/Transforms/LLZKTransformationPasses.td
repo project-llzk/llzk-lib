@@ -183,8 +183,9 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "annotated loop is left unchanged with a warning. Annotated values are "
       "materialized directly as index constants without field reduction. "
       "The annotated integer induction variable is converted to its field "
-      "representative using cast.tofelt wrap when the original variable is a "
-      "felt. "
+      "representative when the original variable is a felt. The cast uses "
+      "assert for empty loops or when every executed induction value is "
+      "within the known field, and wrap otherwise. "
       "This pass may introduce some spurious felt/index casts which "
       "should be cleaned up by --canonicalize.";
 }

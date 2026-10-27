@@ -72,7 +72,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <10 x !felt.type<"babybear">>
 // CHECK-NEXT:        scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_5]] to %[[VAL_4]] step %[[VAL_3]] {
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_8]] : index, !felt.type<"babybear">
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"babybear">
 // CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_9]] : !felt.type<"babybear">
 // CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_10]]] = %[[VAL_9]] : <10 x !felt.type<"babybear">>, !felt.type<"babybear">
 // CHECK-NEXT:        } {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}

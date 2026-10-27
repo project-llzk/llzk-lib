@@ -87,7 +87,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 2013265921 : index
 // CHECK-NEXT:      scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_5]] to %[[VAL_6]] step %[[VAL_7]] {
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_8]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_8]] : index, !felt.type<"babybear">
 // CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_9]], %[[VAL_1]]) : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_9]] : <1 x !felt.type<"babybear">>, !felt.type<"babybear">
 // CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_9]], %[[VAL_2]] : !felt.type<"babybear">, !felt.type<"babybear">
@@ -100,7 +100,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
 // CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
 // CHECK-NEXT:      scf.for %[[VAL_20:[0-9a-zA-Z_\.]+]] = %[[VAL_17]] to %[[VAL_18]] step %[[VAL_19]] {
-// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_20]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_20]] : index, !felt.type<"babybear">
 // CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_21]], %[[VAL_13]]) : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK-NEXT:        array.write %[[VAL_15]]{{\[}}%[[VAL_16]]] = %[[VAL_21]] : <1 x !felt.type<"babybear">>, !felt.type<"babybear">
 // CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_21]], %[[VAL_14]] : !felt.type<"babybear">, !felt.type<"babybear">

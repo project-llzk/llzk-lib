@@ -63,6 +63,9 @@ struct ForOpInfo {
   // SSA values holding the loop bounds
   std::optional<Value> lb, ub, step;
 
+  // Overflow semantics for reconstructing a felt induction variable in the body.
+  llzk::cast::OverflowSemantics ivarOverflow = llzk::cast::OverflowSemantics::ASSERT;
+
   // Block argument index of the induction variable in the *before* block
   std::optional<size_t> ivarIndexBefore;
   // Block argument index of the induction variable in the *after* block
@@ -169,6 +172,13 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       if (!fitsIndex(end)) {
         reportFailureReason("loopbounds final induction value cannot be represented as an index");
         return info;
+      }
+      // Only executed IVs need to fit the field, not the exclusive upper bound or final
+      // increment. Positive steps make end - step the largest executed IV. Empty loops
+      // retain ASSERT because the body cast never executes, even with an unknown field.
+      if (auto type = dyn_cast<FeltType>(ivarBefore.getType());
+          type && (!type.hasField() || end - bounds.getStep() >= type.getField().prime())) {
+        info.ivarOverflow = llzk::cast::OverflowSemantics::WRAP;
       }
     }
 
@@ -335,13 +345,10 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
 
   auto inductionVar = forOp.getInductionVar();
   if (isa<FeltType>(ivarType)) {
-    // Annotated integer IVs map to their field representatives in the body, including when
-    // they reach or exceed the modulus. Inferred felt bounds retain their checked cast.
-    auto overflow = op->hasAttr(llzk::LoopBoundsAttr::name) ? llzk::cast::OverflowSemantics::WRAP
-                                                            : llzk::cast::OverflowSemantics::ASSERT;
-    inductionVar =
-        llzk::cast::IntToFeltOp::create(rewriter, forOp.getLoc(), ivarType, overflow, inductionVar)
-            .getResult();
+    inductionVar = llzk::cast::IntToFeltOp::create(
+                       rewriter, forOp.getLoc(), ivarType, info.ivarOverflow, inductionVar
+    )
+                       .getResult();
   }
 
   // Start by mapping the `before` block to the loop body
