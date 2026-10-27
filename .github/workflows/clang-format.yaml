@@ -2,6 +2,11 @@ name: Formatting check
 on:
   # Run whenever a c, cpp, h, or td file is modified in a PR
   pull_request:
+    paths:
+      - '**.c'
+      - '**.cpp'
+      - '**.h'
+      - '**.td'
 
 permissions:
   contents: write # Allow cpp-linter to push formatting fixes.
@@ -50,7 +55,7 @@ jobs:
           style: file # Use .clang-format.
           tidy-checks: '-*' # Disable clang-tidy; it has a separate workflow.
           extensions: 'c,cpp,h,td'
-          files-changed-only: false
+          files-changed-only: true
           lines-changed-only: false # always format the full file
           ignore: 'build|result|third-party'
           step-summary: true
