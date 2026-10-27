@@ -392,6 +392,7 @@ var namespacellzk =
     [ "isDynamic", "namespacellzk.html#a0112dda4887f249d668efa60a5646bdd", null ],
     [ "isFeltOrSimpleFeltAggregate", "namespacellzk.html#a874d45e73577b58a7de9f25eda1f6a25", null ],
     [ "isFeltOrSimpleFeltAggregate", "namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7", null ],
+    [ "isLayoutSignalMember", "namespacellzk.html#ace4d537c183850fb6d7394e4e0f56283", null ],
     [ "isLocationLess", "namespacellzk.html#afb284386fff71ad94c74a27f050076b8", null ],
     [ "isMoreConcreteUnification", "namespacellzk.html#a1799d8cc9b704df606b1a99172014065", null ],
     [ "isMoreConcreteUnification", "namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e", null ],

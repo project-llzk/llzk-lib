@@ -46,6 +46,7 @@ var backends_page =
           [ "SignalType", "r1cs-backend.html#signaltype", null ]
         ] ],
         [ "Arbitrary-precision coefficients", "r1cs-backend.html#arbitrary-precision-coefficients", null ],
+        [ "Lowering LLZK constraints", "r1cs-backend.html#lowering-llzk-constraints", null ],
         [ "Cast range checks", "r1cs-backend.html#cast-range-checks", null ]
       ] ]
     ] ],

@@ -35,7 +35,7 @@ var searchData=
   ['constrainr1cs_20_3a_3allzk_3a_3azkbuilder_3a_3aconstrainr1csop_32',['&lt;span class=&quot;tt&quot;&gt;ZKBuilder.ConstrainR1CS&lt;/span&gt; (llzk::zkbuilder::ConstrainR1CSOp)',['../zklean-backend.html#zkbuilderconstrainr1cs-llzkzkbuilderconstrainr1csop',1,'']]],
   ['constraint_20dependency_20graphs_33',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-constraint-dependency-graphs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-constraint-dependency-graphs',1,'']]],
   ['constraint_20flattening_34',['&lt;span class=&quot;tt&quot;&gt;-llzk-constraint-flattening&lt;/span&gt;',['../tools.html#autotoc_md-llzk-constraint-flattening',1,'']]],
-  ['constraints_35',['&lt;span class=&quot;tt&quot;&gt;-llzk-flatten-constraints&lt;/span&gt;',['../tools.html#autotoc_md-llzk-flatten-constraints',1,'']]],
+  ['constraints_35',['constraints',['../tools.html#autotoc_md-llzk-flatten-constraints',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-flatten-constraints&lt;/span&gt;'],['../r1cs-backend.html#lowering-llzk-constraints',1,'Lowering LLZK constraints']]],
   ['contribution_20guide_36',['Contribution Guide',['../contribution-guide.html',1,'']]],
   ['contribution_20philosophy_37',['Contribution Philosophy',['../contribution-guide.html#contribution-philosophy',1,'']]],
   ['contributor_20covenant_20code_20of_20conduct_38',['Contributor Covenant Code of Conduct',['../code-of-conduct.html',1,'contribution-guide']]],

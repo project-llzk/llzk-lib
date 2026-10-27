@@ -166,8 +166,9 @@ Wire ordering</h1>
 <li>Public output members, in main-struct declaration order.</li>
 <li>Public inputs, in main-function argument order.</li>
 <li>Private inputs, in main-function argument order.</li>
-<li>Non-public output members, in main-struct declaration order.</li>
+<li>Non-public members marked <span class="tt">{signal}</span>, in main-struct declaration order.</li>
 </ol>
+<p>Unmarked private storage is excluded from both full-witness JSON selection and WTNS collection, using the same member-signal predicate as the R1CS layout.</p>
 <p>Input visibility comes from the corresponding arguments of <span class="tt">@constrain</span>, as it does in the R1CS lowering pass. The first <span class="tt">@constrain</span> argument is <span class="tt">self</span> and is not an R1CS input.</p>
 <p>The current WTNS writer supports scalar felt inputs and main members. It also cross-checks its witness length against an R1CS-lowered clone of the module. Circuits that require synthesized R1CS auxiliary wires are rejected until witgen can materialize those auxiliary values. Unsupported aggregates and wire count mismatches are therefore diagnosed rather than silently serialized. </p>
 </div></div><!-- contents -->

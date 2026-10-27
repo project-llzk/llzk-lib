@@ -831,6 +831,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ade0a132d2633c09a60ea3dc041c501ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collects all the fields used in a circuit.  <br /></td></tr>
 <tr class="memitem:ad9aa681c2fc2160938a72878439bad3d" id="r_ad9aa681c2fc2160938a72878439bad3d"><td class="memItemLeft">std::optional&lt; std::reference_wrapper&lt; const <a class="el" href="classllzk_1_1Field.html">Field</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad9aa681c2fc2160938a72878439bad3d">tryDetectSpecifiedField</a> (mlir::Operation *root)</td></tr>
 <tr class="memdesc:ad9aa681c2fc2160938a72878439bad3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try to detect a uniquely used field from the enclosing LLZK module.  <br /></td></tr>
+<tr class="memitem:ace4d537c183850fb6d7394e4e0f56283" id="r_ace4d537c183850fb6d7394e4e0f56283"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ace4d537c183850fb6d7394e4e0f56283">isLayoutSignalMember</a> (<a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a> member, bool isMain)</td></tr>
+<tr class="memdesc:ace4d537c183850fb6d7394e4e0f56283"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether a member directly declares signal storage: explicit signals and public members of main are included.  <br /></td></tr>
 <tr class="memitem:a45f4a6402571e684a96ff9c901438a49" id="r_a45f4a6402571e684a96ff9c901438a49"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a45f4a6402571e684a96ff9c901438a49">buildLLZKLayout</a> (mlir::ModuleOp module)</td></tr>
 <tr class="memdesc:a45f4a6402571e684a96ff9c901438a49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the signal leaves of llzk.main and its constrain arguments.  <br /></td></tr>
 <tr class="memitem:a07a09d978a5d8db06c6813d5c6a4443f" id="r_a07a09d978a5d8db06c6813d5c6a4443f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a07a09d978a5d8db06c6813d5c6a4443f">printLLZKLayout</a> (const <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &amp;layout, llvm::raw_ostream &amp;output)</td></tr>
@@ -6610,6 +6612,32 @@ template&lt;typename GraphT&gt; </div>
 
 </div>
 </div>
+<a id="ace4d537c183850fb6d7394e4e0f56283" name="ace4d537c183850fb6d7394e4e0f56283"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace4d537c183850fb6d7394e4e0f56283">&#9670;&#160;</a></span>isLayoutSignalMember()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::isLayoutSignalMember </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a></td>          <td class="paramname"><span class="paramname"><em>member</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isMain</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Whether a member directly declares signal storage: explicit signals and public members of main are included. </p>
+<p>Unmarked component containers may still contain nested signals, which callers enumerate independently. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00300">300</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+
+</div>
+</div>
 <a id="afb284386fff71ad94c74a27f050076b8" name="afb284386fff71ad94c74a27f050076b8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afb284386fff71ad94c74a27f050076b8">&#9670;&#160;</a></span>isLocationLess()</h2>
 
@@ -9054,7 +9082,7 @@ template&lt;typename ConcreteOp&gt; </div>
 <p>Print the logical signal section of the .llzk-layout format. </p>
 <p>Paths must follow the structural format produced by buildLLZKLayout. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00315">315</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00319">319</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
 
 </div>
 </div>
@@ -13579,7 +13607,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 <p>Structural path root for a constrain argument, followed by its position. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00031">31</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00040">40</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 
 </div>
 </div>
@@ -13605,7 +13633,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 <p>Structural path root for storage in the main instance. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00029">29</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00038">38</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 
 </div>
 </div>

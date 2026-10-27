@@ -786,8 +786,18 @@ Options</h5>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-r1cs-lowering"></a>
 <em><em><span class="tt">-llzk-r1cs-lowering</span></em></em></h4>
 <p><em><em></em></em></p>
-<p><em><em><em>Rewrite constraints to be compatible with R1CS constraints, i.e a*b - c = 0</em></em></em></p>
-<p><em><em>Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect. The pass expects already-flattened, straight-line <span class="tt">constrain</span> bodies. Run <span class="tt">llzk-flatten</span> or another control-flow lowering pass before this pass; nested-region, successor-bearing, or multi-block constraints are rejected before R1CS normalization. This pass is best used on already-flattened input as part of the <span class="tt">-llzk-full-r1cs-lowering</span> pipeline which includes a degree lowering pass and clean up passes to ensure correctness and performance.  </em></em></p>
+<p><em><em><em>Convert flattened LLZK constraints to R1CS</em></em></em></p>
+<p><em><em>Converts the constraints in llzk.main to R1CS. Run <span class="tt">llzk-constraint-flattening</span> and <span class="tt">llzk-poly-lowering-pass</span> with <span class="tt">main-only=true max-degree=2</span> first.</em></em></p>
+<p><em><em>The pass performs the following steps:</em></em></p>
+<p><em><em></p><ol type="1">
+<li>Check that every constraint is polynomial and has degree at most two.</li>
+<li>Add auxiliary signal fields and equations where needed to express each constraint as A * B = C. Add assignments in @compute for those fields.</li>
+<li>Compute the LLZK layout, including the auxiliary signals.</li>
+<li>Assign R1CS wire IDs: zero for constant one, then public outputs, public inputs, private inputs, and internal signals.</li>
+<li>Create the R1CS wires and convert the constraints to use them.</li>
+</ol>
+<p></em></em></p>
+<p><em><em>The resulting module contains R1CS IR.  </em></em></p>
 <p><em><em></em></em></p>
 <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
 <em><em>Validation Passes</em></em></h3>

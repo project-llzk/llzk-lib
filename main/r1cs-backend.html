@@ -256,6 +256,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('r1cs-backend.h
         <a href="#arbitrary-precision-coefficients">Arbitrary-precision coefficients </a>
       </li>
       <li class="level2">
+        <a href="#lowering-llzk-constraints">Lowering LLZK constraints </a>
+      </li>
+      <li class="level2">
         <a href="#cast-range-checks">Cast range checks </a>
       </li>
     </ul>
@@ -514,6 +517,11 @@ SignalType</h3>
 <h2 class="doxsection"><a class="anchor" id="arbitrary-precision-coefficients"></a>
 Arbitrary-precision coefficients</h2>
 <p>R1CS constants and multipliers use exact signed mathematical integers. Their assembly has no integer-width annotation: for example, <span class="tt">r1cs.mul_const x, -1 : !r1cs.linear</span>. Binary export reduces each coefficient modulo the selected prime. The <span class="tt">--r1cs-prime</span> decimal option does not require a bit width; the exporter derives the fixed byte width required by the R1CS format.</p>
+<h2 class="doxsection"><a class="anchor" id="lowering-llzk-constraints"></a>
+Lowering LLZK constraints</h2>
+<p>Run constraint flattening and degree lowering to degree two before <span class="tt">-llzk-r1cs-lowering</span>. The pass checks the degree bound, adds auxiliary signal fields and assignments in <span class="tt">@compute</span>, computes the signal layout, assigns R1CS wire IDs, and converts the constraints. Each signal leaf receives a wire, including unused signals. Private storage used in constraints needs <span class="tt">{signal}</span>.</p>
+<p>R1CS IDs follow public outputs, public inputs, private inputs, then internal signals, with wire zero reserved for constant one. The LLZK layout keeps its own ordering. No LLZK path metadata is stored in the R1CS dialect.</p>
+<p>Constraint statements follow source equality order. Within each linear combination, repeated reads of the same signal are combined and nonzero terms are emitted in increasing LLZK layout-ID order. This makes operand and statement ordering independent of SSA addresses and hash-map iteration.</p>
 <h2 class="doxsection"><a class="anchor" id="cast-range-checks"></a>
 Cast range checks</h2>
 <p>R1CS lowering rejects live <span class="tt">cast.tofelt</span> and <span class="tt">cast.toindex</span> operations and potentially failing assertions in <span class="tt">constrain</span> functions. An assert cast that can fail must be preserved even when its result is unused (current lowering does not encode its range check). Valid constant assertions can be folded by canonicalization before lowering (the full R1CS pipeline includes this). Unused infallible casts, including boolean-to-felt casts and <span class="tt">cast.toindex</span> assertions from fields whose entire canonical range fits in the index safe range, such as BabyBear, are accepted even without prior cleanup. </p>

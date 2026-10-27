@@ -158,7 +158,7 @@ Public Attributes</h2></td></tr>
 <div class="textblock"><p>Logical felt-signal paths in a monomorphized LLZK circuit. </p>
 <p>The first path segment is "main" for the main instance, or "arg" followed by an i64 constrain argument position. Subsequent segments are StringAttr member names or index attributes for array indices. Signal IDs are positions in signalPaths, starting at zero. Struct members and POD fields are visited in declaration order, expanding each field fully before the next. Arrays use numeric index order. Constrain arguments come first in signature order, followed by the main instance's members. Every declared signal receives an ID, including unused signals. Members must have the signal annotation, except main's public members, which are implicit signals. Main's inputs are also implicit signals. These IDs are independent of any backend's wire numbering or auxiliary variables. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00045">45</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00054">54</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aeb6e89f6e8cc345d647ca097fbc1f686" name="aeb6e89f6e8cc345d647ca097fbc1f686"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aeb6e89f6e8cc345d647ca097fbc1f686">&#9670;&#160;</a></span>getSignalId()</h2>
@@ -178,7 +178,7 @@ Public Attributes</h2></td></tr>
 <p>Look up a structural path in this layout. </p>
 <p>Argument names are display labels; the argument position in the path determines argument identity. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00304">304</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00308">308</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
 
 </div>
 </div>
@@ -198,7 +198,7 @@ Public Attributes</h2></td></tr>
 <p>Optional display names indexed by constrain argument position. </p>
 <p>Entry zero represents self and is always null; unnamed arguments also have null entries. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00052">52</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00061">61</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 
 </div>
 </div>
@@ -216,7 +216,7 @@ Public Attributes</h2></td></tr>
 
 <p>Reverse mapping from structural storage paths to logical signal IDs. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00049">49</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00058">58</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 
 </div>
 </div>
@@ -234,7 +234,7 @@ Public Attributes</h2></td></tr>
 
 <p>Structural paths indexed by logical signal ID. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00047">47</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8h_source.html#l00056">56</a> of file <a class="el" href="LLZKLayout_8h_source.html">LLZKLayout.h</a>.</p>
 
 </div>
 </div>
