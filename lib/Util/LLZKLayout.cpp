@@ -119,7 +119,7 @@ private:
     }
     for (auto member : definition.getMemberDefs()) {
       path.push_back(member.getSymNameAttr());
-      bool isSignal = member.getSignal() || (isMain && member.hasPublicAttr());
+      bool isSignal = llzk::isLayoutSignalMember(member, isMain);
       if (failed(visitType(member.getType(), member, path, isSignal))) {
         return failure();
       }
@@ -296,6 +296,10 @@ void printPath(ArrayAttr path, ArrayRef<StringAttr> names, llvm::raw_ostream &ou
 }
 
 } // namespace
+
+bool llzk::isLayoutSignalMember(component::MemberDefOp member, bool isMain) {
+  return member.getSignal() || (isMain && member.hasPublicAttr());
+}
 
 FailureOr<llzk::LLZKLayout> llzk::buildLLZKLayout(ModuleOp module) {
   return LayoutBuilder(module).build(module);
