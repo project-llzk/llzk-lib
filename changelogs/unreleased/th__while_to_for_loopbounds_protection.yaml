@@ -1,16 +1,8 @@
 fixed:
-  - In `llzk-while-to-for`, preserve the while induction variable's felt type when remapping it
-    into the body of the converted `scf.for` loop.
-  - In `llzk-while-to-for`, prevent incorrect `scf.for` conversion when `llzk.loopbounds` has
-    negative bounds, nonpositive steps, values exceeding the nonnegative index range, or a
-    final induction value that overflows index after the last increment. These loops are now
-    left unchanged with a warning instead of introducing invalid loops or failing casts.
-  - Materialize annotated loop bounds and steps directly as index constants without field reduction,
-    preserving their integer values even when they equal or exceed the induction variable's field modulus.
-  - Reconstruct annotated felt induction variables with wrapping casts so integer values at or above
-    the field modulus supply their field representatives to the loop body instead of failing an assertion.
+  - Preserve felt IV types and use wrapping casts in annotated `llzk-while-to-for` conversions.
+  - Skip annotated loops with a warning for negative bounds, nonpositive steps, or
+    index overflow in bounds, steps, or the final increment.
+  - Materialize `llzk.loopbounds` as index constants without field reduction.
 changed:
-  - Specify that `llzk.loopbounds` values are signed mathematical integers of arbitrary precision,
-    interpreted without field reduction even when the loop variable has a felt type.
-    Felt loop bodies receive the field representatives of the integer induction sequence; producers
-    must ensure both that sequence and the iteration count match the original loop.
+  - Define `llzk.loopbounds` as arbitrary-precision signed integers. Producers must ensure
+    the felt IV sequence and iteration count match the original loop.
