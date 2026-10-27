@@ -9,7 +9,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %true = arith.constant true
-      // expected-error @+1 {{always-true while loop}}
+      // expected-error @+1 {{llzk-flatten-constraints: cannot execute an always-true while loop}}
       scf.while : () -> () {
         scf.condition(%true)
       } do {
@@ -31,7 +31,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
     function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
       %zero = felt.const 0 : !felt.type<"bn128">
-      // expected-error @+1 {{always-true while loop}}
+      // expected-error @+1 {{llzk-flatten-constraints: cannot execute an always-true while loop}}
       %result = scf.while (%i = %x) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
         %condition = bool.cmp ge(%i, %zero) : !felt.type<"bn128">, !felt.type<"bn128">
         scf.condition(%condition) %i : !felt.type<"bn128">
