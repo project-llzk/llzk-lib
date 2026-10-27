@@ -67,8 +67,9 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
       DynamicAPIntParameter<"Loop variable step/increment">:$step);
 
   let builders = [AttrBuilder<
-      (ins "::llvm::DynamicAPInt":$lower, "::llvm::DynamicAPInt":$upper,
-          "::llvm::DynamicAPInt":$step),
+      (ins "const ::llvm::DynamicAPInt &":$lower,
+          "const ::llvm::DynamicAPInt &":$upper,
+          "const ::llvm::DynamicAPInt &":$step),
       [{ return $_get(context,
           ::llzk::DynamicAPIntValue(lower),
           ::llzk::DynamicAPIntValue(upper),
