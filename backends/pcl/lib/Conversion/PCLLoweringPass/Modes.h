@@ -12,7 +12,9 @@
 #include "Temporary.h"
 #include "Types.h"
 #include "UsedFreeFunctions.h"
+
 #include <mlir/IR/BuiltinOps.h>
+
 #include <llvm/ADT/DynamicAPInt.h>
 
 namespace mlir {
