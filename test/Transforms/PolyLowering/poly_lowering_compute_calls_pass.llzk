@@ -1,6 +1,31 @@
 // RUN: llzk-opt -split-input-file -llzk-poly-lowering-pass="max-degree=2" --verify-each %s | FileCheck --enable-var-scope %s
 
 // A helper receiving an independent local aggregate must not reject input reads.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @IndependentHelperArgument {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@IndependentHelperArgument> {
+      %self = struct.new : <@IndependentHelperArgument>
+      %idx = arith.constant 0 : index
+      %local = array.new %x : !array.type<1 x !felt.type>
+      function.call @mutate(%local, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      function.return %self : !struct.type<@IndependentHelperArgument>
+    }
+    function.def @constrain(%self: !struct.type<@IndependentHelperArgument>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @mutate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -32,21 +57,23 @@
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// A read-only compute helper must not block return-side reconstruction.
 module attributes {llzk.lang} {
   function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
     %idx = arith.constant 0 : index
-    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    %ignored = array.read %data[%idx] : !array.type<1 x !felt.type>, !felt.type
     function.return
   }
-  struct.def @IndependentHelperArgument {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@IndependentHelperArgument> {
-      %self = struct.new : <@IndependentHelperArgument>
-      %idx = arith.constant 0 : index
-      %local = array.new %x : !array.type<1 x !felt.type>
-      function.call @mutate(%local, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      function.return %self : !struct.type<@IndependentHelperArgument>
+  struct.def @ReadOnlyComputeHelper {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ReadOnlyComputeHelper> {
+      %self = struct.new : <@ReadOnlyComputeHelper>
+      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      function.return %self : !struct.type<@ReadOnlyComputeHelper>
     }
-    function.def @constrain(%self: !struct.type<@IndependentHelperArgument>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+    function.def @constrain(%self: !struct.type<@ReadOnlyComputeHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
       %idx = arith.constant 0 : index
       %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
       %square = felt.mul %value, %value : !felt.type, !felt.type
@@ -57,9 +84,6 @@ module attributes {llzk.lang} {
   }
 }
 
-// -----
-
-// A read-only compute helper must not block return-side reconstruction.
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @mutate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -89,25 +113,3 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-module attributes {llzk.lang} {
-  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
-    %idx = arith.constant 0 : index
-    %ignored = array.read %data[%idx] : !array.type<1 x !felt.type>, !felt.type
-    function.return
-  }
-  struct.def @ReadOnlyComputeHelper {
-    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ReadOnlyComputeHelper> {
-      %self = struct.new : <@ReadOnlyComputeHelper>
-      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
-      function.return %self : !struct.type<@ReadOnlyComputeHelper>
-    }
-    function.def @constrain(%self: !struct.type<@ReadOnlyComputeHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
-      %idx = arith.constant 0 : index
-      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
-      %square = felt.mul %value, %value : !felt.type, !felt.type
-      %fourth = felt.mul %square, %square : !felt.type, !felt.type
-      constrain.eq %x, %fourth : !felt.type
-      function.return
-    }
-  }
-}
