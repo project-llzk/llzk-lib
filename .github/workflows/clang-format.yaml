@@ -23,13 +23,34 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Auto-fix uses the checkout credentials to push to the PR branch.
           persist-credentials: true
+      - uses: cachix/install-nix-action@v31
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.35.2/install
+          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Set Git credentials
+        run: |
+          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
+          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
+          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
+      - uses: cachix/cachix-action@v17
+        with:
+          name: veridise-public
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      - name: Locate Nix clang tools
+        id: clang
+        run: |
+          # Use the same clang-format as the development environment.
+          # shellcheck disable=SC2016
+          nix develop .#debugClang --command bash -c \
+            'printf "bin=%s\n" "$(dirname "$(command -v clang-format)")"' \
+            >> "$GITHUB_OUTPUT"
       - name: Run clang-format
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          version: '23'
+          version: ${{ steps.clang.outputs.bin }}
           style: file # Use .clang-format.
           tidy-checks: '-*' # Disable clang-tidy; it has a separate workflow.
           extensions: 'cpp,h,td'
