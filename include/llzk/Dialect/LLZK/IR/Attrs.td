@@ -46,6 +46,11 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
     bound (exclusive), and nonzero step size. Positive and negative steps are
     allowed; a zero step is a verification error.
 
+    All three values are signed mathematical integers of arbitrary precision,
+    not field elements. They are interpreted without reduction modulo any field,
+    even when the loop variable has a felt type. For example, a step equal to
+    the field modulus denotes that integer increment, not zero.
+
     These attributes are trusted unconditionally, so the producer must ensure
     these values agree with the loop's behavior. Passes are not required to
     produce an error diagnostic if the values specified by the attribute
