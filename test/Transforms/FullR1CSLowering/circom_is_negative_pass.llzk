@@ -1,5 +1,8 @@
-// RUN: llzk-opt -llzk-full-r1cs-lowering %s > %t
-// RUN: FileCheck %s --check-prefixes=CHECK,INPUT-FIRST < %t 2> %t.err || FileCheck %s --check-prefixes=CHECK,OUTPUT-FIRST < %t
+// RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
+
+// Emission follows constraint order and increasing layout signal IDs after
+// combining repeated reads; CHECK-NEXT operand/statement order is deterministic.
+// Lower a compute loop carrying POD state and preserve the final wire mapping.
 
 !F = !felt.type<"bn128">
 !State = !pod.type<[@value: !F]>
@@ -36,17 +39,14 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@IsNegative>} 
   }
 }
 
-// Independent linearizations and the commutative add can appear in either order.
-// Check both valid add orders while retaining every operand relationship.
 // CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CHECK-NEXT:    r1cs.circuit @IsNegative inputs (%[[INPUT:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-DAG:       %[[OUTPUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[ZERO:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : !r1cs.linear
-// CHECK-DAG:       %[[INPUT_LINEAR:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[INPUT]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[OUTPUT_LINEAR:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUTPUT]] : !r1cs.signal to !r1cs.linear
-// CHECK-DAG:       %[[NEGATED:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUTPUT_LINEAR]],  -1 : !r1cs.linear
-// INPUT-FIRST:     %[[SUM:[0-9a-zA-Z_\.]+]] = r1cs.add %[[INPUT_LINEAR]], %[[NEGATED]] : !r1cs.linear
-// OUTPUT-FIRST:    %[[SUM:[0-9a-zA-Z_\.]+]] = r1cs.add %[[NEGATED]], %[[INPUT_LINEAR]] : !r1cs.linear
-// CHECK-NEXT:      r1cs.constrain %[[ZERO]], %[[ZERO]], %[[SUM]] : !r1cs.linear
-// CHECK-NEXT:    }
+// CHECK-NEXT:    r1cs.circuit @IsNegative inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_4]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_3]], %[[VAL_5]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_2]], %[[VAL_2]], %[[VAL_6]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2>}
 // CHECK-NEXT:  }

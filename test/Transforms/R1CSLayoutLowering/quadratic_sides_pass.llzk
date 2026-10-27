@@ -1,0 +1,44 @@
+// RUN: llzk-opt -llzk-r1cs-lowering %s | FileCheck %s
+
+// Quadratic expressions on both sides require an auxiliary signal.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(
+      %a: !felt.type,
+      %b: !felt.type,
+      %c: !felt.type,
+      %d: !felt.type
+    ) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>,
+      %a: !felt.type,
+      %b: !felt.type,
+      %c: !felt.type,
+      %d: !felt.type
+    ) {
+      %lhs = felt.mul %a, %b : !felt.type, !felt.type
+      %rhs = felt.mul %c, %d : !felt.type, !felt.type
+      constrain.eq %lhs, %rhs : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 6 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2, 3, 4, 5>}
+// CHECK-NEXT:  }

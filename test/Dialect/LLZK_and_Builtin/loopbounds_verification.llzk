@@ -1,0 +1,30 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// expected-error@+1 {{loopbounds step must be nonzero}}
+module attributes {llzk.lang, llzk.loopbounds = #llzk.loopbounds<0 to 10 step 0>} {}
+
+// -----
+
+// Empty bounds do not make a zero step valid.
+// expected-error@+1 {{loopbounds step must be nonzero}}
+module attributes {llzk.lang, llzk.loopbounds = #llzk.loopbounds<0 to 0 step 0>} {}
+
+// -----
+
+// Verification also applies to nested attributes under other names.
+// expected-error@+1 {{loopbounds step must be nonzero}}
+module attributes {llzk.lang, test.bounds = [#llzk.loopbounds<10 to 0 step 0>]} {}
+
+// -----
+
+// Only zero is invalid: signed steps of arbitrary precision remain supported.
+module attributes {
+  llzk.lang,
+  test.bounds = [
+    #llzk.loopbounds<0 to 10 step 1>,
+    #llzk.loopbounds<10 to 0 step -1>,
+    #llzk.loopbounds<0 to 0 step 1>,
+    #llzk.loopbounds<0 to 18446744073709551617 step 18446744073709551616>,
+    #llzk.loopbounds<0 to -18446744073709551617 step -18446744073709551616>
+  ]
+} {}

@@ -1,0 +1,118 @@
+// RUN: llzk-opt -llzk-constraint-flattening-r1cs-lowering='output-llzk=%t.llzk output-layout=%t.csv' %s -o %t.r1cs.mlir
+// RUN: FileCheck %s < %t.r1cs.mlir
+// RUN: FileCheck %s --check-prefix=PREPARE < %t.llzk
+// RUN: FileCheck %s --check-prefix=CSV < %t.csv
+// RUN: llzk-witgen %t.llzk --inputs %S/Inputs/array_degree.json --output-scope=full-witness | FileCheck %s --check-prefix=WITNESS
+
+// Degree lowering must rebuild aggregate input reads in compute and include its
+// generated signal in the layout before R1CS conversion.
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(
+      %input: !array.type<2 x !F> {function.arg_name = "input"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %zero = arith.constant 0 : index
+      %x = array.read %input[%zero] : !array.type<2 x !F>, !F
+      %square = felt.mul %x, %x : !F, !F
+      %cube = felt.mul %square, %x : !F, !F
+      struct.writem %self[@out] = %cube : <@Main>, !F
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<2 x !F>) {
+      %zero = arith.constant 0 : index
+      %x = array.read %input[%zero] : !array.type<2 x !F>, !F
+      %square = felt.mul %x, %x : !F, !F
+      %cube = felt.mul %square, %x : !F, !F
+      %out = struct.readm %self[@out] : <@Main>, !F
+      constrain.eq %out, %cube : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 4 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_4]], %[[VAL_4]], %[[VAL_5]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_5]], %[[VAL_4]], %[[VAL_6]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2, 3>}
+// CHECK-NEXT:  }
+
+// PREPARE-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// PREPARE-NEXT:    struct.def @Main {
+// PREPARE-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+// PREPARE-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">> {function.arg_name = "input"}) -> !struct.type<@Main> attributes {function.allow_witness} {
+// PREPARE-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// PREPARE-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_3]], %[[VAL_3]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_4]], %[[VAL_3]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_5]] : <@Main>, !felt.type<"babybear">
+// PREPARE-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// PREPARE-NEXT:      }
+// PREPARE-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">>) attributes {function.allow_constraint} {
+// PREPARE-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_9]], %[[VAL_9]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_9]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@out] : <@Main>, !felt.type<"babybear">
+// PREPARE-NEXT:        constrain.eq %[[VAL_12]], %[[VAL_11]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        function.return
+// PREPARE-NEXT:      }
+// PREPARE-NEXT:    }
+// PREPARE-NEXT:    struct.def @Main__spec_0 {
+// PREPARE-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+// PREPARE-NEXT:      function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">> {function.arg_name = "input"}) -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// PREPARE-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// PREPARE-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_14]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_16]], %[[VAL_16]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_17]], %[[VAL_16]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        struct.writem %[[VAL_15]][@out] = %[[VAL_18]] : <@Main__spec_0>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_19]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_20]], %[[VAL_20]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        struct.writem %[[VAL_15]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_21]] : <@Main__spec_0>, !felt.type<"babybear">
+// PREPARE-NEXT:        function.return %[[VAL_15]] : !struct.type<@Main__spec_0>
+// PREPARE-NEXT:      }
+// PREPARE-NEXT:      function.def @constrain(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_23:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">>) attributes {function.allow_constraint} {
+// PREPARE-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_23]]{{\[}}%[[VAL_24]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_25]], %[[VAL_25]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_22]][@__llzk_poly_lowering_pass_aux_member_0] : <@Main__spec_0>, !felt.type<"babybear">
+// PREPARE-NEXT:        constrain.eq %[[VAL_27]], %[[VAL_26]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_27]], %[[VAL_25]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_22]][@out] : <@Main__spec_0>, !felt.type<"babybear">
+// PREPARE-NEXT:        constrain.eq %[[VAL_29]], %[[VAL_28]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        function.return
+// PREPARE-NEXT:      }
+// PREPARE-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type<"babybear"> {signal}
+// PREPARE-NEXT:    } {poly.arguments = [], poly.origin = @Main, poly.specialization_id = 0 : i64}
+// PREPARE-NEXT:  }
+
+// CSV-LABEL: access_path,llzk_layout_id,r1cs_wire_id
+// CSV-NEXT:  "arg1[0]",0,2
+// CSV-NEXT:  "arg1[1]",1,3
+// CSV-NEXT:  "main[""out""]",2,1
+// CSV-NEXT:  "main[""__llzk_poly_lowering_pass_aux_member_0""]",3,4
+
+// WITNESS-LABEL: {
+// WITNESS-NEXT:    "inputs": {
+// WITNESS-NEXT:      "input": [
+// WITNESS-NEXT:        "2",
+// WITNESS-NEXT:        "3"
+// WITNESS-NEXT:      ]
+// WITNESS-NEXT:    },
+// WITNESS-NEXT:    "signals": {
+// WITNESS-NEXT:      "__llzk_poly_lowering_pass_aux_member_0": "4",
+// WITNESS-NEXT:      "out": "8"
+// WITNESS-NEXT:    }
+// WITNESS-NEXT:  }
