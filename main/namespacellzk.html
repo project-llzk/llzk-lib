@@ -835,6 +835,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ace4d537c183850fb6d7394e4e0f56283"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether a member directly declares signal storage: explicit signals and public members of main are included.  <br /></td></tr>
 <tr class="memitem:a45f4a6402571e684a96ff9c901438a49" id="r_a45f4a6402571e684a96ff9c901438a49"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a45f4a6402571e684a96ff9c901438a49">buildLLZKLayout</a> (mlir::ModuleOp module)</td></tr>
 <tr class="memdesc:a45f4a6402571e684a96ff9c901438a49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the signal leaves of llzk.main and its constrain arguments.  <br /></td></tr>
+<tr class="memitem:acc3ac2ad85836f0481d623f0bc2f1cf6" id="r_acc3ac2ad85836f0481d623f0bc2f1cf6"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#acc3ac2ad85836f0481d623f0bc2f1cf6">printLLZKLayoutPath</a> (mlir::ArrayAttr path, llvm::ArrayRef&lt; mlir::StringAttr &gt; argumentNames, llvm::raw_ostream &amp;output)</td></tr>
+<tr class="memdesc:acc3ac2ad85836f0481d623f0bc2f1cf6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print a path produced by buildLLZKLayout, retaining optional argument display names.  <br /></td></tr>
 <tr class="memitem:a07a09d978a5d8db06c6813d5c6a4443f" id="r_a07a09d978a5d8db06c6813d5c6a4443f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a07a09d978a5d8db06c6813d5c6a4443f">printLLZKLayout</a> (const <a class="el" href="structllzk_1_1LLZKLayout.html">LLZKLayout</a> &amp;layout, llvm::raw_ostream &amp;output)</td></tr>
 <tr class="memdesc:a07a09d978a5d8db06c6813d5c6a4443f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the logical signal section of the .llzk-layout format.  <br /></td></tr>
 <tr class="memitem:add5fbee8a55ca19fc62c9e5b8e04f380" id="r_add5fbee8a55ca19fc62c9e5b8e04f380"><td class="memTemplParams" colspan="2">template&lt;typename Func, typename... Args&gt; </td></tr>
@@ -6634,7 +6636,7 @@ template&lt;typename GraphT&gt; </div>
 <p>Whether a member directly declares signal storage: explicit signals and public members of main are included. </p>
 <p>Unmarked component containers may still contain nested signals, which callers enumerate independently. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00300">300</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00301">301</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
 
 </div>
 </div>
@@ -9082,7 +9084,35 @@ template&lt;typename ConcreteOp&gt; </div>
 <p>Print the logical signal section of the .llzk-layout format. </p>
 <p>Paths must follow the structural format produced by buildLLZKLayout. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00319">319</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLayout_8cpp_source.html#l00320">320</a> of file <a class="el" href="LLZKLayout_8cpp_source.html">LLZKLayout.cpp</a>.</p>
+
+</div>
+</div>
+<a id="acc3ac2ad85836f0481d623f0bc2f1cf6" name="acc3ac2ad85836f0481d623f0bc2f1cf6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc3ac2ad85836f0481d623f0bc2f1cf6">&#9670;&#160;</a></span>printLLZKLayoutPath()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::printLLZKLayoutPath </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>path</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; mlir::StringAttr &gt;</td>          <td class="paramname"><span class="paramname"><em>argumentNames</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::raw_ostream &amp;</td>          <td class="paramname"><span class="paramname"><em>output</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Print a path produced by buildLLZKLayout, retaining optional argument display names. </p>
 
 </div>
 </div>

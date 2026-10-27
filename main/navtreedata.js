@@ -114,7 +114,9 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-to-pcl</span>", "tools.html#autotoc_md-llzk-to-pcl", [
               [ "Options", "tools.html#options-17", null ]
             ] ],
-            [ "<span class=\"tt\">-llzk-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-r1cs-lowering", null ]
+            [ "<span class=\"tt\">-llzk-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-r1cs-lowering", [
+              [ "Options", "tools.html#options-18", null ]
+            ] ]
           ] ],
           [ "Validation Passes", "tools.html#validation-passes", [
             [ "<span class=\"tt\">-llzk-validate-member-writes</span>", "tools.html#autotoc_md-llzk-validate-member-writes", null ]
@@ -124,13 +126,14 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-remove-unnecessary-ops-and-defs</span>", "tools.html#autotoc_md-llzk-remove-unnecessary-ops-and-defs", null ],
             [ "<span class=\"tt\">-llzk-product-program</span>", "tools.html#autotoc_md-llzk-product-program", null ],
             [ "<span class=\"tt\">-llzk-full-struct-inlining</span>", "tools.html#autotoc_md-llzk-full-struct-inlining", [
-              [ "Options", "tools.html#options-18", null ]
+              [ "Options", "tools.html#options-19", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-full-inlining</span>", "tools.html#autotoc_md-llzk-full-inlining", null ],
             [ "<span class=\"tt\">-llzk-full-poly-lowering</span>", "tools.html#autotoc_md-llzk-full-poly-lowering", [
-              [ "Options", "tools.html#options-19", null ]
+              [ "Options", "tools.html#options-20", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-full-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-full-r1cs-lowering", null ],
+            [ "<span class=\"tt\">-llzk-constraint-flattening-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-constraint-flattening-r1cs-lowering", null ],
             [ "<span class=\"tt\">-llzk-constraint-flattening</span>", "tools.html#autotoc_md-llzk-constraint-flattening", null ]
           ] ]
         ] ]
@@ -638,18 +641,18 @@ var NAVTREEINDEX =
 "dir_fbb5839660df89f0c7872b7fe52b5d6c.html",
 "llzk_2Util_2Constants_8h.html",
 "namespacellzk.html#a6c6b23d251765a4ab382acebfd6138fd",
-"namespacellzk.html#af577599d1b29a0347b4009191e02d514",
-"namespacellzk_1_1pod.html#a0b8d7f36d461c489f492469d7a1a28d2",
-"namespacemembers_h.html",
-"structExtraMethod.html#a660b29e76565e399bc01763065221ff6",
-"structVerifProveOpBuildFuncHelper.html#ae2e24124ca6375761135b79ae91f643f",
+"namespacellzk.html#af49a31336d658a9fdf7604b99a5d9b8b",
+"namespacellzk_1_1pod.html#a0745bd01602f938e292b4e8090425e54",
+"namespacemembers_g.html",
+"structExtraMethod.html#a628197cce6e5ab2dddada3704494664f",
+"structVerifProveOpBuildFuncHelper.html#a78ee6dc6ceffca168a82822b4107546f",
 "structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc",
 "structllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase_1_1Properties.html#a64ccde265dcfef66155bc870ae401024",
 "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html",
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#addacb94cc418269532f97a0da7a0e68c",
 "structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html#a5bd5834995eff3fb6016a87ed7acb595",
 "structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#abd8376b3c2b0b6652a97c4eec01a06a8",
-"syntax.html#translation-guidelines"
+"syntax.html#syntax-1"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

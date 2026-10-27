@@ -345,6 +345,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
               </li>
               <li class="level4">
                 <a href="#autotoc_md-llzk-r1cs-lowering"><span class="tt">-llzk-r1cs-lowering</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-18">Options </a>
+                  </li>
+                </ul>
               </li>
             </ul>
           </li>
@@ -372,7 +377,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-full-struct-inlining"><span class="tt">-llzk-full-struct-inlining</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-18">Options </a>
+                    <a href="#options-19">Options </a>
                   </li>
                 </ul>
               </li>
@@ -383,12 +388,15 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-full-poly-lowering"><span class="tt">-llzk-full-poly-lowering</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-19">Options </a>
+                    <a href="#options-20">Options </a>
                   </li>
                 </ul>
               </li>
               <li class="level4">
                 <a href="#autotoc_md-llzk-full-r1cs-lowering"><span class="tt">-llzk-full-r1cs-lowering</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-constraint-flattening-r1cs-lowering"><span class="tt">-llzk-constraint-flattening-r1cs-lowering</span> </a>
               </li>
               <li class="level4">
                 <a href="#autotoc_md-llzk-constraint-flattening"><span class="tt">-llzk-constraint-flattening</span> </a>
@@ -787,7 +795,7 @@ Options</h5>
 <em><em><span class="tt">-llzk-r1cs-lowering</span></em></em></h4>
 <p><em><em></em></em></p>
 <p><em><em><em>Convert flattened LLZK constraints to R1CS</em></em></em></p>
-<p><em><em>Converts the constraints in llzk.main to R1CS. Run <span class="tt">llzk-constraint-flattening</span> and <span class="tt">llzk-poly-lowering-pass</span> with <span class="tt">main-only=true max-degree=2</span> first.</em></em></p>
+<p><em><em>Converts the constraints in llzk.main to R1CS. Run <span class="tt">llzk-constraint-flattening</span> and <span class="tt">llzk-poly-lowering-pass</span> with <span class="tt">main-only=true max-degree=2</span> first. The <span class="tt">llzk-constraint-flattening-r1cs-lowering</span> pipeline runs these passes together.</em></em></p>
 <p><em><em>The pass performs the following steps:</em></em></p>
 <p><em><em></p><ol type="1">
 <li>Check that every constraint is polynomial and has degree at most two.</li>
@@ -797,7 +805,15 @@ Options</h5>
 <li>Create the R1CS wires and convert the constraints to use them.</li>
 </ol>
 <p></em></em></p>
-<p><em><em>The resulting module contains R1CS IR.  </em></em></p>
+<p><em><em>The resulting module contains R1CS IR. Set <span class="tt">output-llzk=&lt;<a class="el" href="LICENSE_8txt.html#a54c3aaa43358b77e4f57f4f72cbe56c6">file</a>&gt;</span> to write LLZK with auxiliary fields and assignments in @compute to that file. Set <span class="tt">output-layout=&lt;<a class="el" href="LICENSE_8txt.html#a54c3aaa43358b77e4f57f4f72cbe56c6">file</a>&gt;</span> to write a CSV with columns access_path, llzk_layout_id, and r1cs_wire_id to that file. Each option defaults to an empty string, which disables its file output.</em></em></p>
+<p><em><em>LLZK layout IDs and R1CS wire IDs may differ. Each CSV row maps the same signal, identified by its access path, between the two. The CSV is written directly from the layout and wire map built during lowering; no LLZK layout information is stored in the R1CS IR.</em></em></p>
+<p><em><em></em></em></p>
+<h5 class="doxsection"><a class="anchor" id="options-18"></a>
+<em><em>Options</em></em></h5>
+<p><em><em></em></em></p>
+<p><em><em></p><div class="fragment"><div class="line">-output-llzk   : If non-empty, write LLZK with auxiliary fields and assignments in compute to this file</div>
+<div class="line">-output-layout : If non-empty, write access paths, LLZK layout IDs, and R1CS wire IDs as CSV to this file</div>
+</div><!-- fragment --><p>  </em></em></p>
 <p><em><em></em></em></p>
 <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
 <em><em>Validation Passes</em></em></h3>
@@ -864,7 +880,7 @@ Options</h5>
 <p></em></em></p>
 <p><em><em>POD scalarization precedes array scalarization because it can split <span class="tt">pod.type</span> array elements into parallel arrays. The pipeline defaults flattening cleanup to <span class="tt">main-as-root</span>; using another cleanup mode is not recommended because parameterized templates may survive flattening and cause <span class="tt">-llzk-inline-structs</span> to fail.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-18"></a>
+<h5 class="doxsection"><a class="anchor" id="options-19"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><ul>
@@ -895,7 +911,7 @@ Options</h5>
 <p></em></em></p>
 <p><em><em>The nested struct-inlining stage uses <span class="tt">main-as-root</span> cleanup by default for the same reason as <span class="tt">-llzk-full-struct-inlining</span>.</em></em></p>
 <p><em><em></em></em></p>
-<h5 class="doxsection"><a class="anchor" id="options-19"></a>
+<h5 class="doxsection"><a class="anchor" id="options-20"></a>
 <em><em>Options</em></em></h5>
 <p><em><em></em></em></p>
 <p><em><em></p><ul>
@@ -907,7 +923,7 @@ Options</h5>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-r1cs-lowering"></a>
 <em><em><span class="tt">-llzk-full-r1cs-lowering</span></em></em></h4>
 <p><em><em></em></em></p>
-<p><em><em><em>Lower polynomial constraints to R1CS.</em></em></em></p>
+<p><em><em><em>Lower polynomial constraints to R1CS using full polynomial lowering.</em></em></em></p>
 <p><em><em>Runs the following passes in order:</em></em></p>
 <p><em><em></p><ol type="1">
 <li><span class="tt">-llzk-full-poly-lowering</span> with <span class="tt">lowering={max-degree=2}</span></li>
@@ -915,7 +931,21 @@ Options</h5>
 <li>MLIR's <span class="tt">-cse</span></li>
 </ol>
 <p></em></em></p>
-<p><em><em>The polynomial-lowering stage prepares flattened, degree-two constraints for R1CS conversion. CSE then removes redundant <span class="tt">r1cs.to_linear</span> operations.</em></em></p>
+<p><em><em></em></em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-constraint-flattening-r1cs-lowering"></a>
+<em><em><span class="tt">-llzk-constraint-flattening-r1cs-lowering</span></em></em></h4>
+<p><em><em></em></em></p>
+<p><em><em><em>Monomorphize and flatten main constraints, lower degree, and convert layout signals to R1CS.</em></em></em></p>
+<p><em><em>Runs the following passes in order:</em></em></p>
+<p><em><em></p><ol type="1">
+<li><span class="tt">-llzk-constraint-flattening</span></li>
+<li><span class="tt">-llzk-poly-lowering-pass</span> with <span class="tt">main-only=true max-degree=2</span></li>
+<li><span class="tt">-llzk-r1cs-lowering</span></li>
+<li>MLIR's <span class="tt">-cse</span></li>
+</ol>
+<p></em></em></p>
+<p><em><em>Degree lowering processes the flattened main constrain body and marks generated auxiliaries as signals. The R1CS conversion pass validates degree at most two, prepares additional R1CS auxiliaries, builds the signal layout, and converts storage paths directly to wires. Array, POD, and component storage remain intact until conversion.</em></em></p>
+<p><em><em>Both R1CS pipelines accept <span class="tt">output-llzk=&lt;<a class="el" href="LICENSE_8txt.html#a54c3aaa43358b77e4f57f4f72cbe56c6">file</a>&gt;</span> and <span class="tt">output-layout=&lt;<a class="el" href="LICENSE_8txt.html#a54c3aaa43358b77e4f57f4f72cbe56c6">file</a>&gt;</span>. Alongside the R1CS IR returned through <span class="tt">-o</span>, these write the LLZK with auxiliary fields and assignments in <span class="tt">@compute</span>, and the access-path/layout-ID/R1CS-ID CSV. See the R1CS backend documentation for an example.</em></em></p>
 <p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-constraint-flattening"></a>
 <em><em><span class="tt">-llzk-constraint-flattening</span></em></em></h4>

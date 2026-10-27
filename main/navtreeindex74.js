@@ -1,5 +1,6 @@
 var NAVTREEINDEX74 =
 {
+"namespacemembers_g.html":[11,1,0,6],
 "namespacemembers_h.html":[11,1,0,7],
 "namespacemembers_i.html":[11,1,0,8],
 "namespacemembers_l.html":[11,1,0,9],
@@ -115,8 +116,8 @@ var NAVTREEINDEX74 =
 "r1cs-backend.html#attributes-34":[8,0,0,1],
 "r1cs-backend.html#cast-range-checks":[8,0,0,5],
 "r1cs-backend.html#feltattr":[8,0,0,1,0],
+"r1cs-backend.html#layout-based-lowering":[8,0,0,4],
 "r1cs-backend.html#lineartype":[8,0,0,2,0],
-"r1cs-backend.html#lowering-llzk-constraints":[8,0,0,4],
 "r1cs-backend.html#operands-47":[8,0,0,0,0,0],
 "r1cs-backend.html#operands-48":[8,0,0,0,3,0],
 "r1cs-backend.html#operands-49":[8,0,0,0,5,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX74 =
 "structExistsOpBuildFuncHelper.html#a735b4b003070a4f522ae32dd2428dad7":[13,0,37,1],
 "structExtraMethod.html":[13,0,39],
 "structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de":[13,0,39,2],
-"structExtraMethod.html#a235cdf484b6844a580be4bec84ae7fe5":[13,0,39,1],
-"structExtraMethod.html#a628197cce6e5ab2dddada3704494664f":[13,0,39,4]
+"structExtraMethod.html#a235cdf484b6844a580be4bec84ae7fe5":[13,0,39,1]
 };
