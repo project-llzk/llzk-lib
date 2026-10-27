@@ -22,8 +22,10 @@ namespace llzk {
 using namespace component;
 
 LogicalResult LoopBoundsAttr::verify(
-    llvm::function_ref<InFlightDiagnostic()> emitError, DynamicAPIntValue, DynamicAPIntValue,
-    // TableGen requires this parameter to be passed by value.
+    llvm::function_ref<InFlightDiagnostic()> emitError,
+    // TableGen requires these parameters to be passed by value.
+    DynamicAPIntValue,            // NOLINT(performance-unnecessary-value-param)
+    DynamicAPIntValue,            // NOLINT(performance-unnecessary-value-param)
     DynamicAPIntValue stepWrapper // NOLINT(performance-unnecessary-value-param)
 ) {
   const llvm::DynamicAPInt &step = stepWrapper;
