@@ -1,0 +1,2 @@
+fixed:
+  - Fold comparisons against zero that are always true or false for unsigned reduced field representatives, including assertions over symbolic field values.
