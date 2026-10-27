@@ -1,4 +1,4 @@
-// RUN: llzk-opt %s --canonicalize --mlir-print-op-generic | FileCheck %s --match-full-lines
+// RUN: llzk-opt %s --canonicalize | FileCheck %s --match-full-lines
 
 // Comparisons use unsigned reduced field representatives. Only the four
 // boundary predicates are constant; equality and interior bounds stay symbolic.
@@ -16,17 +16,16 @@ function.def @unspecified_boundaries(%x: !felt.type) -> (i1, i1, i1, i1, i1, i1,
   function.return %a, %b, %c, %d, %e, %f, %g : i1, i1, i1, i1, i1, i1, i1
 }
 
-// CHECK-LABEL: "builtin.module"() ({
-// CHECK-NEXT:    "function.def"() <{function_type = (!felt.type) -> (i1, i1, i1, i1, i1, i1, i1), sym_name = "unspecified_boundaries"}> ({
-// CHECK-NEXT:    ^bb0(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type):
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = "felt.const"() <{value = #felt<const 0> : !felt.type}> : () -> !felt.type
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = "felt.const"() <{value = #felt<const -1> : !felt.type}> : () -> !felt.type
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = "felt.const"() <{value = #felt<const 1> : !felt.type}> : () -> !felt.type
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = "arith.constant"() <{value = true}> : () -> i1
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = "arith.constant"() <{value = false}> : () -> i1
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = "bool.cmp"(%[[VAL_0]], %[[VAL_1]]) <{predicate = #bool<cmp eq>}> : (!felt.type, !felt.type) -> i1
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = "bool.cmp"(%[[VAL_0]], %[[VAL_3]]) <{predicate = #bool<cmp ge>}> : (!felt.type, !felt.type) -> i1
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = "bool.cmp"(%[[VAL_0]], %[[VAL_2]]) <{predicate = #bool<cmp ge>}> : (!felt.type, !felt.type) -> i1
-// CHECK-NEXT:      "function.return"(%[[VAL_4]], %[[VAL_5]], %[[VAL_4]], %[[VAL_5]], %[[VAL_6]], %[[VAL_7]], %[[VAL_8]]) : (i1, i1, i1, i1, i1, i1, i1) -> ()
-// CHECK-NEXT:    }) {function.allow_non_native_field_ops} : () -> ()
-// CHECK-NEXT:  }) : () -> ()
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @unspecified_boundaries(%[[VAL_0:[0-9a-zA-Z_\.-]+]]: !felt.type) -> (i1, i1, i1, i1, i1, i1, i1) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = bool.cmp eq(%[[VAL_0]], %[[VAL_1]]) : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = bool.cmp ge(%[[VAL_0]], %[[VAL_3]]) : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.-]+]] = bool.cmp ge(%[[VAL_0]], %[[VAL_2]]) : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]], %[[VAL_4]], %[[VAL_5]], %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : i1, i1, i1, i1, i1, i1, i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
