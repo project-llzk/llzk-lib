@@ -25,6 +25,7 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>
@@ -40,13 +41,67 @@ namespace llzk {
 
 namespace {
 
+/// Conservatively follows aggregate provenance, including views and value copies.
+/// Unknown region arguments may carry the input through control flow.
+bool mayDeriveFromAggregateArgument(Value value, Value argument, DenseSet<Value> &visited) {
+  if (value == argument) {
+    return true;
+  }
+  if (!visited.insert(value).second) {
+    return false;
+  }
+  if (auto barg = dyn_cast<BlockArgument>(value)) {
+    return barg.getOwner() != cast<BlockArgument>(argument).getOwner();
+  }
+  Operation *def = value.getDefiningOp();
+  // Region results may forward captured aggregates without listing them as operands.
+  if (def->getNumRegions() != 0) {
+    return true;
+  }
+  return llvm::any_of(def->getOperands(), [&](Value operand) {
+    return isa<array::ArrayType, pod::PodType, StructType>(operand.getType()) &&
+           mayDeriveFromAggregateArgument(operand, argument, visited);
+  });
+}
+
+/// Rejects mapping an aggregate input whose compute-side storage may be mutated.
+/// Scan all regions and paths because auxiliaries are emitted at compute returns.
+bool hasComputeMutation(Value argument, FuncDefOp computeFunc) {
+  auto result = computeFunc.walk([&](Operation *op) -> WalkResult {
+    Value storage;
+    if (auto arrayWrite = dyn_cast<array::WriteArrayOp>(op)) {
+      storage = arrayWrite.getArrRef();
+    } else if (auto insert = dyn_cast<array::InsertArrayOp>(op)) {
+      storage = insert.getArrRef();
+    } else if (auto podWrite = dyn_cast<pod::WritePodOp>(op)) {
+      storage = podWrite.getPodRef();
+    } else if (auto memberWrite = dyn_cast<MemberWriteOp>(op)) {
+      storage = memberWrite.getComponent();
+    }
+    DenseSet<Value> visited;
+    return storage && mayDeriveFromAggregateArgument(storage, argument, visited)
+               ? WalkResult::interrupt()
+               : WalkResult::advance();
+  });
+  return result.wasInterrupted();
+}
+
 Value mapBlockArgumentInCompute(BlockArgument barg, FuncDefOp computeFunc) {
   // Constrain entry arguments map onto compute inputs: constrain(%self, args...)
   // corresponds to compute(args...), plus the compute-side `%self`.
   if (barg.getArgNumber() == 0) {
     return computeFunc.getSelfValueFromCompute();
   }
-  return computeFunc.getArgument(barg.getArgNumber() - 1);
+  Value argument = computeFunc.getArgument(barg.getArgNumber() - 1);
+  if (isa<array::ArrayType, pod::PodType, StructType>(argument.getType()) &&
+      hasComputeMutation(argument, computeFunc)) {
+    emitError(
+        barg.getLoc()
+    ) << "cannot rebuild aggregate argument in compute-side auxiliary expression: "
+         "compute may mutate the input storage";
+    return nullptr;
+  }
+  return argument;
 }
 
 Value mapValueIntoCompute(

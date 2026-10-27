@@ -40,6 +40,8 @@ struct AuxAssignment {
 /// rebuilt safely in compute.
 /// Storage reads following aggregate writes are conservatively rejected because
 /// reconstruction does not replay mutations or prove that their storage is disjoint.
+/// Aggregate arguments are rejected if compute may write through a derived aggregate,
+/// since return-side reconstruction would observe a different input state.
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo
