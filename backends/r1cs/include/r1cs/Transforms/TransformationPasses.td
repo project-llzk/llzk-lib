@@ -16,12 +16,10 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   let summary = "Convert flattened LLZK constraints to R1CS";
   let options = [Option<"outputLLZK", "output-llzk", "std::string", "\"\"",
                         "If non-empty, write LLZK with auxiliary fields and "
-                        "assignments in compute to "
-                        "this file">,
+                        "assignments in compute to this file">,
                  Option<"outputLayout", "output-layout", "std::string", "\"\"",
                         "If non-empty, write access paths, LLZK layout IDs, "
-                        "and R1CS wire IDs "
-                        "as CSV to this file">];
+                        "and R1CS wire IDs as CSV to this file">];
   let description = [{
     Converts the constraints in llzk.main to R1CS. Run
     `llzk-constraint-flattening` and `llzk-poly-lowering-pass` with
