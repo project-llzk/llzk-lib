@@ -2729,14 +2729,15 @@ Results:</h4>
 Attributes</h2>
 <h3 class="doxsection"><a class="anchor" id="loopboundsattr"></a>
 LoopBoundsAttr</h3>
-<p><em>Annotation with the bounds of a loop</em></p>
+<p><em>Trusted annotation with the bounds of a loop</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#llzk.loopbounds&lt;</div>
 <div class="line">  ::llzk::DynamicAPIntValue,   # lower</div>
 <div class="line">  ::llzk::DynamicAPIntValue,   # upper</div>
 <div class="line">  ::llzk::DynamicAPIntValue   # step</div>
 <div class="line">&gt;</div>
-</div><!-- fragment --><p>This attribute holds information useful for the analysis of loops. Holds the bounds of the loop and the step size.</p>
+</div><!-- fragment --><p>This attribute indicates the loop variable's lower bound (inclusive), upper bound (exclusive), and step size.</p>
+<p>These attributes are trusted unconditionally, so the producer must ensure these values agree with the loop's behavior. Passes are not required to produce an error diagnostic if the values specified by the attribute contradict the IR itself; incorrect annotations can change program behavior.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">scf.while ... {</div>
 <div class="line">  ...</div>
