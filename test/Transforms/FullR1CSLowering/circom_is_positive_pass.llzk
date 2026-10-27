@@ -1,5 +1,7 @@
 // RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
 
+// Emission follows constraint order and increasing layout signal IDs after
+// combining repeated reads; CHECK-NEXT operand/statement order is deterministic.
 // Lower a compute loop that increments POD state before R1CS conversion.
 
 !F = !felt.type<"bn128">

@@ -252,6 +252,21 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
   SmallVector<Value> wires;
   unsigned auxCounter = 0;
 
+  /// Clear all per-module handles and caches before reusing a pass instance.
+  void resetState() {
+    main = StructDefOp();
+    constrain = FuncDefOp();
+    degrees.clear();
+    paths.clear();
+    normalized.clear();
+    auxiliaries.clear();
+    expressions.clear();
+    linearWires.clear();
+    assignments.clear();
+    wires.clear();
+    auxCounter = 0;
+  }
+
   /// Storage reads are polynomial leaves, including reads through aggregates.
   static bool isStorageRead(Operation *op) {
     return isa_and_nonnull<MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(op);
@@ -318,7 +333,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         suffix.push_back(podRead.getRecordNameAttr());
       } else if (isa<array::ReadArrayOp, array::ExtractArrayOp>(op)) {
         auto access = llvm::cast<array::ArrayAccessOpInterface>(op);
-        parent = op->getOperand(0);
+        parent = access.getArrRef();
         for (Value index : access.getIndices()) {
           APInt literal;
           if (!matchPattern(index, m_ConstantInt(&literal)) || !literal.isSignedIntN(64) ||
@@ -690,7 +705,8 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     return expressions.at(root);
   }
 
-  /// Emit a linear combination, reusing each wire's linear conversion.
+  /// Emit nonzero terms in increasing layout-ID order, merging repeated signal
+  /// reads and reusing each wire's linear conversion. Constants are emitted first.
   Value emitLinearCombination(
       const LinearCombination &expression, const LLZKLayout &layout, OpBuilder &builder,
       Location loc
@@ -702,10 +718,20 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
           builder, loc, type, builder.getAttr<r1cs::FeltAttr>(expression.constant)
       );
     }
-    SmallVector<std::pair<uint64_t, DynamicAPInt>> terms;
+    // Distinct SSA reads can name the same signal. Combine them before sorting
+    // so emission never depends on DenseMap iteration or equal-key sort order.
+    DenseMap<uint64_t, DynamicAPInt> coefficientsById;
     for (const auto &[value, coefficient] : expression.terms) {
+      uint64_t id = *layout.getSignalId(paths.at(value));
+      auto [entry, inserted] = coefficientsById.try_emplace(id, coefficient);
+      if (!inserted) {
+        entry->second += coefficient;
+      }
+    }
+    SmallVector<std::pair<uint64_t, DynamicAPInt>> terms;
+    for (const auto &[id, coefficient] : coefficientsById) {
       if (coefficient != 0) {
-        terms.emplace_back(*layout.getSignalId(paths.at(value)), coefficient);
+        terms.emplace_back(id, coefficient);
       }
     }
     llvm::sort(terms, [](const auto &lhs, const auto &rhs) { return lhs.first < rhs.first; });
@@ -760,16 +786,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
   }
 
   void runOnOperation() override {
-    // Pass instances may be reused for multiple modules.
-    degrees.clear();
-    paths.clear();
-    normalized.clear();
-    auxiliaries.clear();
-    expressions.clear();
-    linearWires.clear();
-    assignments.clear();
-    wires.clear();
-    auxCounter = 0;
+    resetState();
     ModuleOp module = getOperation();
     SymbolTableCollection tables;
     auto definition = getMainInstanceDef(tables, module);

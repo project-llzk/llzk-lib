@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-r1cs-lowering %s | FileCheck %s --check-prefix=CONVERT
+// RUN: llzk-opt -llzk-r1cs-lowering %s | FileCheck %s
 
 // Shared expression roots use one auxiliary signal and cached wire conversions.
 // Reusing a quadratic expression creates one auxiliary signal.
@@ -33,22 +33,22 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
-// CONVERT-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CONVERT-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CONVERT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CONVERT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 6 : !r1cs.signal
-// CONVERT-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_12]] : !r1cs.linear
-// CONVERT-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_13]] : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_14]] : !r1cs.linear
-// CONVERT-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_15]] : !r1cs.linear
-// CONVERT-NEXT:    } {r1cs.input_labels = array<i64: 2, 3, 4, 5>}
-// CONVERT-NEXT:  }
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 6 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_12]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_13]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_14]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_15]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2, 3, 4, 5>}
+// CHECK-NEXT:  }

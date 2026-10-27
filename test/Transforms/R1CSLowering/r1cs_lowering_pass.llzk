@@ -1,6 +1,8 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
 
+// Emission follows constraint order and increasing layout signal IDs after
+// combining repeated reads; CHECK-NEXT operand/statement order is deterministic.
 // Normalize quadratic sums and reuse their generated auxiliary wires.
 module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   struct.def @CmpConstraint {

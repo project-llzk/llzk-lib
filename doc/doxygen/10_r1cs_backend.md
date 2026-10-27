@@ -29,6 +29,11 @@ R1CS IDs follow public outputs, public inputs, private inputs, then internal
 signals, with wire zero reserved for constant one. The LLZK layout keeps its
 own ordering. No LLZK path metadata is stored in the R1CS dialect.
 
+Constraint statements follow source equality order. Within each linear combination,
+repeated reads of the same signal are combined and nonzero terms are emitted in
+increasing LLZK layout-ID order. This makes operand and statement ordering independent
+of SSA addresses and hash-map iteration.
+
 ## Cast range checks
 
 R1CS lowering rejects live `cast.tofelt` and `cast.toindex` operations and
