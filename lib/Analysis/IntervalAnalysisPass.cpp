@@ -104,7 +104,7 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
       out.indent(indent);
       value.printAsOperand(out, asmState);
       if (auto opResult = llvm::dyn_cast<OpResult>(value)) {
-        out << " [" << opResult.getOwner()->getName().getStringRef() << "]";
+        out << " [" << opResult.getOwner()->getName().getStringRef() << ']';
       }
       out << " in " << expr.getInterval();
       if (printUnreducedIntervals && expr.hasUnreducedInterval()) {
