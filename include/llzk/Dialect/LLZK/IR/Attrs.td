@@ -43,7 +43,8 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
   let summary = "Trusted annotation with the bounds of a loop";
   let description = [{
     This attribute indicates the loop variable's lower bound (inclusive), upper
-    bound (exclusive), and step size.
+    bound (exclusive), and nonzero step size. Positive and negative steps are
+    allowed; a zero step is a verification error.
 
     These attributes are trusted unconditionally, so the producer must ensure
     these values agree with the loop's behavior. Passes are not required to
@@ -64,7 +65,7 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
   let parameters = (ins DynamicAPIntParameter<
                         "Loop variable lower bound (inclusive)">:$lower,
       DynamicAPIntParameter<"Loop variable upper bound (exclusive)">:$upper,
-      DynamicAPIntParameter<"Loop variable step/increment">:$step);
+      DynamicAPIntParameter<"Nonzero loop variable step/increment">:$step);
 
   let builders = [AttrBuilder<(ins "const ::llvm::DynamicAPInt &":$lower,
                                   "const ::llvm::DynamicAPInt &":$upper,
@@ -75,6 +76,7 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
           ::llzk::DynamicAPIntValue(step)); }]>];
 
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
+  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_ATTRS
