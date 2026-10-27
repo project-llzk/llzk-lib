@@ -900,12 +900,13 @@ public:
             "unstructured control flow is unsupported"
         );
       }
-      for (Type type : function.getFunctionType().getInputs()) {
+      FunctionType functionType = function.getFunctionType();
+      for (Type type : functionType.getInputs()) {
         if (failed(collectTypes(function, type))) {
           return failure();
         }
       }
-      for (Type type : function.getFunctionType().getResults()) {
+      for (Type type : functionType.getResults()) {
         if (failed(collectTypes(function, type))) {
           return failure();
         }
