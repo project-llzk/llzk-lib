@@ -1,0 +1,25 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+// Declaration refinements survive copying an array element containing nested arrays.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @input : !array.type<2 x !pod.type<[@rows: !array.type<3 x !felt.type>]>> {signal}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %input = struct.readm %self[@input] : !struct.type<@Main>, !array.type<2 x !pod.type<[@rows: !array.type<? x !felt.type>]>>
+      %zero = arith.constant 0 : index
+      %record = array.read %input[%zero] : !array.type<2 x !pod.type<[@rows: !array.type<? x !felt.type>]>>, !pod.type<[@rows: !array.type<? x !felt.type>]>
+      %rows = pod.read %record[@rows] : !pod.type<[@rows: !array.type<? x !felt.type>]>, !array.type<? x !felt.type>
+      %length = array.len %rows, %zero : !array.type<? x !felt.type>
+      %one = arith.constant 1 : index
+      %last = arith.addi %length, %one : index
+      // expected-error @+1 {{array path index is out of bounds}}
+      %value = array.read %rows[%last] : !array.type<? x !felt.type>, !felt.type
+      constrain.eq %value, %value : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

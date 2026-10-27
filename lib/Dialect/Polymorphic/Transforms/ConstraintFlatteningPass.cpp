@@ -47,6 +47,38 @@ using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
 namespace {
+/// Combine compatible array/POD shapes recursively, retaining read-side leaf identities.
+/// Call only after storage description has verified that the two types unify.
+Type refineMemberShape(Type readType, Type declaredType) {
+  if (auto readArray = dyn_cast<array::ArrayType>(readType)) {
+    auto declaredArray = llvm::cast<array::ArrayType>(declaredType);
+    SmallVector<Attribute> dimensions(readArray.getDimensionSizes());
+    for (size_t i = 0; i < dimensions.size(); ++i) {
+      if (readArray.getShape()[i] == ShapedType::kDynamic && declaredArray.getShape()[i] >= 0) {
+        dimensions[i] = declaredArray.getDimensionSizes()[i];
+      }
+    }
+    return readArray.cloneWith(
+        refineMemberShape(readArray.getElementType(), declaredArray.getElementType()), dimensions
+    );
+  }
+  if (auto readPod = dyn_cast<pod::PodType>(readType)) {
+    auto declaredPod = llvm::cast<pod::PodType>(declaredType);
+    SmallVector<pod::RecordAttr> records;
+    for (auto [readRecord, declaredRecord] :
+         llvm::zip(readPod.getRecords(), declaredPod.getRecords())) {
+      records.push_back(
+          pod::RecordAttr::get(
+              readType.getContext(), readRecord.getName(),
+              refineMemberShape(readRecord.getType(), declaredRecord.getType())
+          )
+      );
+    }
+    return pod::PodType::get(readType.getContext(), records);
+  }
+  return readType;
+}
+
 /// Expand structural control flow while leaving ordinary expressions as SSA.
 class ConstraintElaborator {
   ModuleOp module;
@@ -253,7 +285,8 @@ class ConstraintElaborator {
       return failure();
     }
     if (aggregate(op.getType())) {
-      frame[op.getResult()] = bindings.create(info->memberType, {}, emitted.getResult());
+      Type bindingType = refineMemberShape(op.getType(), info->memberType);
+      frame[op.getResult()] = bindings.create(bindingType, {}, emitted.getResult());
     } else {
       frame[op.getResult()] = emitted.getResult();
       if (!isa<StructType>(op.getType()) && !info->signal) {
