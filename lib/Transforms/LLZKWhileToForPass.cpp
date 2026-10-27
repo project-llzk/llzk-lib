@@ -138,6 +138,12 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
+    // Signed annotations must not become field representatives before conversion to index.
+    // This conversion only supports nonnegative bounds and a positive scf.for step.
+    if (bounds.getLower() < 0 || bounds.getUpper() < 0 || bounds.getStep() <= 0) {
+      reportFailureReason("loopbounds must have nonnegative bounds and a positive step");
+      return info;
+    }
     auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
 
     // Make these constant felts for now; the actual for op builder will later clean it up

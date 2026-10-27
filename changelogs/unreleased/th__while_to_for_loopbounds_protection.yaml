@@ -1,0 +1,3 @@
+fixed:
+  - Prevent incorrect `scf.for` conversion in `llzk-while-to-for` when `llzk.loopbounds`
+    has negative bounds or nonpositive steps. These loops are now left unchanged with a warning.
