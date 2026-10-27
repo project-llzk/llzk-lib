@@ -17,14 +17,10 @@
 #include <mlir/Dialect/SMT/IR/SMTAttributes.h>
 #include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/Dialect/SMT/IR/SMTOps.h>
-#include <mlir/Dialect/SMT/IR/SMTTypes.h>
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Support/FileUtilities.h>
-
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/ScopeExit.h>
@@ -33,6 +29,9 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringSet.h>
+#include <mlir/Dialect/SMT/IR/SMTTypes.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/ToolOutputFile.h>
