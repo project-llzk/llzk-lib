@@ -551,6 +551,33 @@ static Value normalizeSignedWideValue(
   );
 }
 
+/// Reduce a signed index modulo the field without narrowing before reduction.
+/// Like the interpreter and the other cast lowerings, this assumes a 64-bit
+/// index (IndexType::kInternalStorageBitWidth). The extra field bit keeps the
+/// modulus positive for signed arithmetic, including fields wider than index.
+static Value
+lowerWrappingIndexToFelt(OpBuilder &builder, Location loc, Value operand, const Field &field) {
+  unsigned indexWidth = IndexType::kInternalStorageBitWidth;
+  unsigned wideWidth = std::max(indexWidth, field.bitWidth() + 1);
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value widened = arith::IndexCastOp::create(builder, loc, wideType, operand);
+  if (field.prime() < (llvm::DynamicAPInt(1) << (indexWidth - 1))) {
+    return normalizeSignedWideValue(builder, loc, widened, field.bitWidth(), field);
+  }
+
+  // Here -p <= index < p, so only negative indices need one addition. Avoid
+  // wide remainder operations for fields such as Goldilocks and BN128.
+  Value modulus =
+      arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
+  Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, widened, zero);
+  Value adjusted = arith::AddIOp::create(builder, loc, widened, modulus);
+  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, widened);
+  return arith::TruncIOp::create(
+      builder, loc, IntegerType::get(builder.getContext(), field.bitWidth()), canonical
+  );
+}
+
 /// Reinterpret a canonical field element as a signed integer in a widened type.
 static Value
 lowerFeltToSignedWide(OpBuilder &builder, Location loc, Value operand, const Field &field) {
@@ -1486,9 +1513,11 @@ private:
     }
 
     if (auto intToFelt = dyn_cast<cast::IntToFeltOp>(op)) {
-      if (intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+      auto overflow = intToFelt.getOverflow();
+      if (overflow != cast::OverflowSemantics::ASSERT &&
+          overflow != cast::OverflowSemantics::WRAP) {
         return intToFelt.emitError(
-            "witgen lowering does not currently support non-assert cast overflow semantics"
+            "witgen lowering only supports assert and wrap overflow semantics for cast.tofelt"
         );
       }
       auto operand = lookupScalar(intToFelt.getValue(), valueMap, intToFelt.getOperation());
@@ -1499,7 +1528,9 @@ private:
       const Field &resultField = resultType.getField();
       auto dstType = IntegerType::get(builder.getContext(), resultField.bitWidth());
       Value lowered;
-      if (isa<IndexType>((*operand).getType())) {
+      if (isa<IndexType>((*operand).getType()) && overflow == cast::OverflowSemantics::WRAP) {
+        lowered = lowerWrappingIndexToFelt(builder, loc, *operand, resultField);
+      } else if (isa<IndexType>((*operand).getType())) {
         Value zero = makeIndexConstant(builder, loc, 0);
         Value isNonNegative =
             arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::sge, *operand, zero);

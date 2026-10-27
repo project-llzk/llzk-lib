@@ -1,0 +1,2 @@
+fixed:
+  - Support runtime `cast.tofelt wrap` in `llzk-witgen --backend=execution-engine`, using signed modular reduction for index inputs and zero extension for booleans.
