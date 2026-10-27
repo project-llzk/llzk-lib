@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('IncludeHelper_
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordflow">return</span> emitError() &lt;&lt; <span class="stringliteral">&quot;could not find file \&quot;&quot;</span> &lt;&lt; filename &lt;&lt; <span class="charliteral">&#39;&quot;&#39;</span>;</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  }</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  r.buffer = std::move(*buffer);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordflow">return</span> std::move(r);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordflow">return</span> r;</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>}</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>FailureOr&lt;OwningOpRef&lt;ModuleOp&gt;&gt; parseFile(<span class="keyword">const</span> StringRef filename, Operation *origin) {</div>
