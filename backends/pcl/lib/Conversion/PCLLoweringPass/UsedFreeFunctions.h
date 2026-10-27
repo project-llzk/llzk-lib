@@ -24,8 +24,7 @@ namespace pcl::lowering {
 ///
 /// For that reason, this mapping is missing the U in CRUD and we only insert during creation.
 class UsedFreeFunctions {
-  using M =
-  llvm::DenseMap<mlir::Attribute, llzk::function::FuncDefOp>;
+  using M = llvm::DenseMap<mlir::Attribute, llzk::function::FuncDefOp>;
 
   /// Maps the FQN to the operation representing it.
   M funcs;

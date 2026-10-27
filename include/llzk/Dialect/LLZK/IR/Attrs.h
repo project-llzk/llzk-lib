@@ -22,7 +22,5 @@
 namespace llzk {
 
 mlir::FailureOr<component::StructType>
-getTypeFromLlzkMainAttr(
-    mlir::ModuleOp op, mlir::Attribute attr);
-
+getTypeFromLlzkMainAttr(mlir::ModuleOp op, mlir::Attribute attr);
 }
