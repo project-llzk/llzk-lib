@@ -900,7 +900,7 @@ public:
             "unstructured control flow is unsupported"
         );
       }
-      FunctionType functionType = function.getFunctionType();
+      FunctionType functionType = function.getFunctionType(); // local avoids dangling ref warning
       for (Type type : functionType.getInputs()) {
         if (failed(collectTypes(function, type))) {
           return failure();
