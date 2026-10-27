@@ -141,8 +141,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('StructSpeciali
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="StructSpecializationDiscovery_8h.html">StructSpecializationDiscovery.h</a>&quot;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="DiscoveryStorage_8h.html">DiscoveryStorage.h</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="ScalarEvaluation_8h.html">ScalarEvaluation.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="ConstraintScalarFacts_8h.html">ConstraintScalarFacts.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="DiscoveryStorage_8h.html">DiscoveryStorage.h</a>&quot;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Array_2IR_2Ops_8h.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Ops_8h.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</span></div>
@@ -593,495 +593,499 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('StructSpeciali
 <div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span></div>
 <div class="line"><a id="l00497" name="l00497"></a><span class="lineno">  497</span>  LogicalResult</div>
 <div class="line"><a id="l00498" name="l00498"></a><span class="lineno">  498</span>  evaluateWhile(scf::WhileOp loop, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
-<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span>    SmallVector&lt;DiscoveryValue&gt; carried;</div>
-<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>    <span class="keywordflow">for</span> (Value initial : loop.getInits()) {</div>
-<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>      carried.push_back(env.lookup(initial));</div>
-<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span>    }</div>
-<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>    <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
-<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>      <span class="keyword">auto</span> before = env;</div>
-<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>      bindResults(loop.getBefore().front().getArguments(), carried, before);</div>
-<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>      SmallVector&lt;DiscoveryValue&gt; forwarded;</div>
-<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>      Attribute condition;</div>
-<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>      <span class="keywordflow">if</span> (failed(</div>
-<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>              evaluateBlock(loop.getBefore().front(), std::move(before), forwarded, &amp;condition)</div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>          )) {</div>
-<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>      }</div>
-<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>      <span class="keyword">auto</span> known = dyn_cast_or_null&lt;IntegerAttr&gt;(condition);</div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>      <span class="keywordflow">if</span> (!known || !known.getType().isInteger(1)) {</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>        <span class="comment">// Runtime loops need no execution when specialization requests are</span></div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>        <span class="comment">// independent of their carried values. Visit both regions with unknown</span></div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>        <span class="comment">// arguments; dependent affine requests still fail in discoverCallTypes.</span></div>
-<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>        storage.invalidate();</div>
-<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>        <span class="keywordflow">for</span> (Region *region : {&amp;loop.getBefore(), &amp;loop.getAfter()}) {</div>
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>          <span class="keyword">auto</span> local = env;</div>
-<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>          <span class="keywordflow">for</span> (BlockArgument argument : region-&gt;front().getArguments()) {</div>
-<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>            local[argument] = {};</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>          }</div>
-<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>          SmallVector&lt;DiscoveryValue&gt; ignored;</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>          Attribute ignoredCondition;</div>
-<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>          <span class="keywordflow">if</span> (failed(</div>
-<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>                  evaluateBlock(region-&gt;front(), std::move(local), ignored, &amp;ignoredCondition)</div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>              )) {</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>            <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>          }</div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>        }</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>        storage.invalidate();</div>
-<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>        results.assign(loop.getNumResults(), DiscoveryValue());</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>        <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>      }</div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>      <span class="keywordflow">if</span> (known.getValue().isZero()) {</div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>        results = std::move(forwarded);</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>        <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>      }</div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>      <span class="keyword">auto</span> after = env;</div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>      bindResults(loop.getAfter().front().getArguments(), forwarded, after);</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>      carried.clear();</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>      <span class="keywordflow">if</span> (failed(evaluateBlock(loop.getAfter().front(), std::move(after), carried))) {</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>      }</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    }</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>  }</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span></div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  FailureOr&lt;Attribute&gt; evaluateConstRead(ConstReadOp read) {</div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ac5d324ff80fc04dc92bd6f9e94bf7661">resolveConstReadBinding</a>(</div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>        read, bindings.lookup(read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>()), typeResolver.resolveType(read.getType())</div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    );</div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>  }</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span></div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>  evaluateFoldableOp(Operation &amp;op, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    SmallVector&lt;Attribute&gt; operands;</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>    <span class="keywordflow">for</span> (Value operand : op.getOperands()) {</div>
-<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>      operands.push_back(env.lookup(operand).constant);</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>    }</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    <span class="keywordflow">if</span> (llvm::all_of(operands, [](Attribute attr) { <span class="keywordflow">return</span> attr != <span class="keyword">nullptr</span>; })) {</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      SmallVector&lt;OpFoldResult&gt; folded;</div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>      <span class="keywordflow">if</span> (succeeded(<a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a929a307bf06c24423d868e2fcec7d28a">evaluateScalarOperation</a>(&amp;op, operands, folded))) {</div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> [index, value] : llvm::enumerate(folded)) {</div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>          <span class="keywordflow">if</span> (<span class="keyword">auto</span> attr = dyn_cast&lt;Attribute&gt;(value)) {</div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>            results[index] = attr;</div>
-<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>          } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>            results[index] = env.lookup(llvm::cast&lt;Value&gt;(value));</div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>          }</div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>        }</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>      }</div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>    }</div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>  }</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span></div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  std::optional&lt;SmallVector&lt;Attribute&gt;&gt;</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  arrayCoordinates(array::ArrayAccessOpInterface access, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env) {</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>    <span class="keyword">auto</span> type =</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>        llvm::cast&lt;array::ArrayType&gt;(typeResolver.resolveType(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#ac9fed385196206e8f333090299b9c997">getArrRef</a>().getType()));</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>    SmallVector&lt;int64_t&gt; shape(type.getShape());</div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    <span class="keyword">auto</span> concreteShape = storage.getShape(env.lookup(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#ac9fed385196206e8f333090299b9c997">getArrRef</a>()));</div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    <span class="keywordflow">if</span> (!concreteShape.empty()) {</div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>      shape.assign(concreteShape.begin(), concreteShape.end());</div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    }</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>    SmallVector&lt;Attribute&gt; path;</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [i, index] : llvm::enumerate(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#a09216fc6529bd376c13ad3fa2b8fea96">getIndices</a>())) {</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>      <span class="keyword">auto</span> coordinate = getKnownInteger(env.lookup(index));</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>      <span class="keywordflow">if</span> (!coordinate || *coordinate &lt; 0 || i &gt;= shape.size() || shape[i] &lt; 0 ||</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>          *coordinate &gt;= shape[i]) {</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>        <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>      }</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>      path.push_back(IntegerAttr::get(IndexType::get(context()), *coordinate));</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>    }</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>    <span class="keywordflow">return</span> path;</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  }</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span></div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  SmallVector&lt;int64_t&gt;</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>  allocationShape(array::ArrayType type, llvm::function_ref&lt;Attribute(AffineMapAttr)&gt; resolveMap) {</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>    <span class="keyword">auto</span> resolved = llvm::cast&lt;array::ArrayType&gt;(typeResolver.resolveType(type));</div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>    SmallVector&lt;int64_t&gt; shape(resolved.getShape());</div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [i, dimension] : llvm::enumerate(type.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868">getDimensionSizes</a>())) {</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> map = dyn_cast&lt;AffineMapAttr&gt;(dimension)) {</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>        <span class="keyword">auto</span> extent = getKnownInteger(resolveMap(map));</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>        <span class="keywordflow">if</span> (extent &amp;&amp; *extent &gt;= 0) {</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>          shape[i] = *extent;</div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>        }</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>      }</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>    }</div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>    <span class="keywordflow">return</span> shape;</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  }</div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span></div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>  <span class="keywordtype">void</span> recordPodShapes(</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>      Type type, <span class="keyword">const</span> DiscoveryValue &amp;value, SmallVector&lt;Attribute&gt; &amp;path,</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>      llvm::function_ref&lt;Attribute(AffineMapAttr)&gt; resolveMap</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  ) {</div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> podType = dyn_cast&lt;pod::PodType&gt;(type)) {</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : podType.getRecords()) {</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>        path.push_back(record.getName());</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>        recordPodShapes(record.getType(), value, path, resolveMap);</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>        path.pop_back();</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>      }</div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> arrayType = dyn_cast&lt;array::ArrayType&gt;(type)) {</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>      storage.setShape(value, allocationShape(arrayType, resolveMap), path);</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> structure = dyn_cast&lt;StructType&gt;(type)) {</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> parameters = structure.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>        <span class="keywordflow">for</span> (Attribute parameter : parameters) {</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>          <span class="keywordflow">if</span> (<span class="keyword">auto</span> map = dyn_cast&lt;AffineMapAttr&gt;(parameter)) {</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>            resolveMap(map);</div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>          }</div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>        }</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>      }</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (isa&lt;TypeVarType&gt;(type)) {</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>      <span class="comment">// Maps introduced by a binding have no operand groups on this allocation.</span></div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>      <span class="keyword">auto</span> resolved = typeResolver.resolveType(type);</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>      <span class="keywordflow">if</span> (resolved != type) {</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>        recordPodShapes(resolved, value, path, [](AffineMapAttr) { <span class="keywordflow">return</span> Attribute(); });</div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>      }</div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>    }</div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  }</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span></div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>  <span class="keywordtype">bool</span></div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>  evaluateStorage(Operation &amp;op, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>    <span class="keywordflow">return</span> llvm::TypeSwitch&lt;Operation *, bool&gt;(&amp;op)</div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>        .Case&lt;array::CreateArrayOp&gt;([&amp;](<span class="keyword">auto</span> allocation) {</div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>      <span class="keyword">auto</span> value = storage.create();</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>      results[0] = value;</div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>      <span class="keywordtype">size_t</span> group = 0;</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>      <span class="keyword">auto</span> shape = allocationShape(allocation.getType(), [&amp;](AffineMapAttr map) {</div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>        if (group &gt;= allocation.getMapOperands().size()) {</div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>          return Attribute();</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>        }</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>        SmallVector&lt;Attribute&gt; operands;</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>        for (Value operand : allocation.getMapOperands()[group++]) {</div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>          operands.push_back(env.lookup(operand).constant);</div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>        }</div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>        <span class="keywordflow">return</span> typeResolver.resolveAffineArgument(map, operands);</div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>      });</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      storage.setShape(value, shape);</div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>      <span class="keywordflow">if</span> (llvm::any_of(shape, [](int64_t size) { <span class="keywordflow">return</span> size &lt;= 0; })) {</div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>      }</div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [linear, element] : llvm::enumerate(allocation.getElements())) {</div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>        <span class="comment">// A bound array-valued element contributes a subtree, not extra</span></div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>        <span class="comment">// constructor coordinates. Binding its type can expand the resolved rank.</span></div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>        SmallVector&lt;Attribute&gt; path(allocation.getType().getDimensionSizes().size());</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>        uint64_t offset = linear;</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = path.size(); i &gt; 0; --i) {</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>          path[i - 1] = IntegerAttr::get(</div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>              IndexType::get(context()), <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(offset % shape[i - 1])</div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>          );</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>          offset /= shape[i - 1];</div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>        }</div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>        storage.write(value, path, env.lookup(element));</div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>      }</div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>    })</div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>        .Case&lt;pod::NewPodOp&gt;([&amp;](<span class="keyword">auto</span> allocation) {</div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>      <span class="keyword">auto</span> value = storage.create();</div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>      <span class="keywordtype">size_t</span> group = 0;</div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>      SmallVector&lt;Attribute&gt; path;</div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>      recordPodShapes(allocation.getType(), value, path, [&amp;](AffineMapAttr map) {</div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>        if (group &gt;= allocation.getMapOperands().size()) {</div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>          return Attribute();</div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>        }</div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>        SmallVector&lt;Attribute&gt; operands;</div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>        for (Value operand : allocation.getMapOperands()[group++]) {</div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>          operands.push_back(env.lookup(operand).constant);</div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>        }</div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>        <span class="keywordflow">return</span> typeResolver.resolveAffineArgument(map, operands);</div>
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>      });</div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : allocation.getInitializedRecordValues()) {</div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>        storage.write(value, {StringAttr::get(context(), record.name)}, env.lookup(record.value));</div>
-<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>      }</div>
-<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>      results[0] = std::move(value);</div>
-<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>    })</div>
-<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>        .Case&lt;pod::ReadPodOp&gt;([&amp;](<span class="keyword">auto</span> read) {</div>
-<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>      results[0] = storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a342406199a74c70668f9f86ffb5880ed">read</a>(</div>
-<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>          env.lookup(read.getPodRef()), {StringAttr::get(context(), read.getRecordName())},</div>
-<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>          isa&lt;array::ArrayType, pod::PodType&gt;(typeResolver.resolveType(read.getType()))</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>      );</div>
-<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>    })</div>
-<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>        .Case&lt;pod::WritePodOp&gt;([&amp;](<span class="keyword">auto</span> write) {</div>
-<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>      storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a02f2c6141acbb9b2b54440e39d65ce0c">write</a>(</div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>          env.lookup(write.getPodRef()), {StringAttr::get(context(), write.getRecordName())},</div>
-<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>          env.lookup(write.getValue())</div>
-<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>      );</div>
-<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>    })</div>
-<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>        .Case&lt;array::ArrayAccessOpInterface&gt;([&amp;](<span class="keyword">auto</span> access) {</div>
-<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span>      <span class="keyword">auto</span> coordinates = arrayCoordinates(access, env);</div>
-<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>      <span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a> = env.lookup(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#ac9fed385196206e8f333090299b9c997">getArrRef</a>());</div>
-<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>      <span class="keywordflow">if</span> (isa&lt;array::ReadArrayOp, array::ExtractArrayOp&gt;(op)) {</div>
-<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>        <span class="keywordflow">if</span> (coordinates) {</div>
-<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>          results[0] = storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a342406199a74c70668f9f86ffb5880ed">read</a>(</div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>              <a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a>, *coordinates,</div>
-<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>              isa&lt;array::ArrayType, pod::PodType&gt;(</div>
-<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>                  typeResolver.resolveType(op.getResult(0).getType())</div>
-<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>              )</div>
-<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>          );</div>
-<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>        }</div>
-<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (coordinates) {</div>
-<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>        <span class="keyword">auto</span> value = isa&lt;array::WriteArrayOp&gt;(op)</div>
-<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>                         ? llvm::cast&lt;array::WriteArrayOp&gt;(op).getRvalue()</div>
-<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>                         : llvm::cast&lt;array::InsertArrayOp&gt;(op).getRvalue();</div>
-<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>        storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a02f2c6141acbb9b2b54440e39d65ce0c">write</a>(<a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a>, *coordinates, env.lookup(value));</div>
-<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>        storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#aa487459273b34fdce13bcd01f15e704e">forget</a>(<a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a>);</div>
-<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>      }</div>
-<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>    })</div>
-<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>        .Case&lt;UnifiableCastOp&gt;([&amp;](<span class="keyword">auto</span> conversion) {</div>
-<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>      results[0] = env.lookup(conversion.getInput());</div>
-<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>    }).Default([](Operation *) { <span class="keywordflow">return</span> <span class="keyword">false</span>; });</div>
-<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>  }</div>
-<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span></div>
-<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>  LogicalResult</div>
-<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>  evaluateOperation(Operation &amp;op, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
-<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>    <span class="keywordflow">if</span> (visitedOperations) {</div>
-<div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span>      visitedOperations-&gt;push_back(&amp;op);</div>
-<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>    }</div>
-<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> branch = dyn_cast&lt;scf::IfOp&gt;(op)) {</div>
-<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>      <span class="keywordflow">if</span> (failed(evaluateIf(branch, env, results))) {</div>
-<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>      }</div>
-<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> forLoop = dyn_cast&lt;scf::ForOp&gt;(op)) {</div>
-<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>      <span class="keywordflow">if</span> (failed(evaluateFor(forLoop, env, results))) {</div>
-<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>      }</div>
-<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> whileLoop = dyn_cast&lt;scf::WhileOp&gt;(op)) {</div>
-<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>      <span class="keywordflow">if</span> (failed(evaluateWhile(whileLoop, env, results))) {</div>
-<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>      }</div>
-<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (op.getNumRegions()) {</div>
-<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>      <span class="keywordflow">return</span> op.emitError(<span class="stringliteral">&quot;unsupported control flow in specialization discovery&quot;</span>);</div>
-<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>      <span class="comment">// Local aggregate facts supplement scalar folding; reads from external</span></div>
-<div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span>      <span class="comment">// storage remain unknown. Diagnose unknown values only when needed.</span></div>
-<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>      <span class="keywordflow">if</span> (evaluateStorage(op, env, results)) {</div>
-<div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>        <span class="comment">// Still collect nested specialization types below.</span></div>
-<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> read = dyn_cast&lt;ConstReadOp&gt;(op)) {</div>
-<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span>        <span class="keyword">auto</span> value = evaluateConstRead(read);</div>
-<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>        <span class="keywordflow">if</span> (failed(value)) {</div>
-<div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>        }</div>
-<div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>        results[0] = *value;</div>
-<div class="line"><a id="l00781" name="l00781"></a><span class="lineno">  781</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (isMemoryEffectFree(&amp;op) || isa&lt;cast::FeltToIndexOp, cast::IntToFeltOp&gt;(op)) {</div>
-<div class="line"><a id="l00782" name="l00782"></a><span class="lineno">  782</span>        evaluateFoldableOp(op, env, results);</div>
-<div class="line"><a id="l00783" name="l00783"></a><span class="lineno">  783</span>      }</div>
-<div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> call = dyn_cast&lt;function::CallOp&gt;(op)) {</div>
-<div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span>        <span class="keywordflow">if</span> (failed(discoverCallTypes(call, env))) {</div>
-<div class="line"><a id="l00786" name="l00786"></a><span class="lineno">  786</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span>        }</div>
-<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>      }</div>
-<div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span>      <span class="keywordflow">if</span> (!isMemoryEffectFree(&amp;op) &amp;&amp;</div>
-<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>          !isa&lt;</div>
-<div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>              <a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">array::CreateArrayOp</a>, <a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">array::WriteArrayOp</a>, <a class="code hl_class" href="classllzk_1_1array_1_1InsertArrayOp.html">array::InsertArrayOp</a>, <a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">array::ReadArrayOp</a>,</div>
-<div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span>              <a class="code hl_class" href="classllzk_1_1array_1_1ExtractArrayOp.html">array::ExtractArrayOp</a>, <a class="code hl_class" href="classllzk_1_1pod_1_1NewPodOp.html">pod::NewPodOp</a>, <a class="code hl_class" href="classllzk_1_1pod_1_1ReadPodOp.html">pod::ReadPodOp</a>, <a class="code hl_class" href="classllzk_1_1pod_1_1WritePodOp.html">pod::WritePodOp</a>&gt;(op)) {</div>
-<div class="line"><a id="l00793" name="l00793"></a><span class="lineno">  793</span>        <span class="keywordflow">for</span> (Value operand : op.getOperands()) {</div>
-<div class="line"><a id="l00794" name="l00794"></a><span class="lineno">  794</span>          <span class="keywordflow">if</span> (isa&lt;array::ArrayType, pod::PodType&gt;(typeResolver.resolveType(operand.getType()))) {</div>
-<div class="line"><a id="l00795" name="l00795"></a><span class="lineno">  795</span>            storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#aa487459273b34fdce13bcd01f15e704e">forget</a>(env.lookup(operand));</div>
-<div class="line"><a id="l00796" name="l00796"></a><span class="lineno">  796</span>          }</div>
-<div class="line"><a id="l00797" name="l00797"></a><span class="lineno">  797</span>        }</div>
-<div class="line"><a id="l00798" name="l00798"></a><span class="lineno">  798</span>      }</div>
-<div class="line"><a id="l00799" name="l00799"></a><span class="lineno">  799</span>      <span class="keywordflow">if</span> (isa&lt;function::CallOp&gt;(op)) {</div>
-<div class="line"><a id="l00800" name="l00800"></a><span class="lineno">  800</span>        <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a9ba034ba12eeace14acd9e7ebe97072a">isInvariantTrueCondition</a>(loop.getConditionOp().getCondition())) {</div>
+<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>      <span class="keywordflow">return</span> loop.emitError(<span class="stringliteral">&quot;specialization discovery cannot execute an always-true while loop&quot;</span>);</div>
+<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>    }</div>
+<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span>    SmallVector&lt;DiscoveryValue&gt; carried;</div>
+<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>    <span class="keywordflow">for</span> (Value initial : loop.getInits()) {</div>
+<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>      carried.push_back(env.lookup(initial));</div>
+<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>    }</div>
+<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>    <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
+<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>      <span class="keyword">auto</span> before = env;</div>
+<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>      bindResults(loop.getBefore().front().getArguments(), carried, before);</div>
+<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>      SmallVector&lt;DiscoveryValue&gt; forwarded;</div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>      Attribute condition;</div>
+<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>      <span class="keywordflow">if</span> (failed(</div>
+<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>              evaluateBlock(loop.getBefore().front(), std::move(before), forwarded, &amp;condition)</div>
+<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>          )) {</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>      }</div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>      <span class="keyword">auto</span> known = dyn_cast_or_null&lt;IntegerAttr&gt;(condition);</div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>      <span class="keywordflow">if</span> (!known || !known.getType().isInteger(1)) {</div>
+<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>        <span class="comment">// Runtime loops need no execution when specialization requests are</span></div>
+<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>        <span class="comment">// independent of their carried values. Visit both regions with unknown</span></div>
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>        <span class="comment">// arguments; dependent affine requests still fail in discoverCallTypes.</span></div>
+<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>        storage.invalidate();</div>
+<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>        <span class="keywordflow">for</span> (Region *region : {&amp;loop.getBefore(), &amp;loop.getAfter()}) {</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>          <span class="keyword">auto</span> local = env;</div>
+<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>          <span class="keywordflow">for</span> (BlockArgument argument : region-&gt;front().getArguments()) {</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>            local[argument] = {};</div>
+<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>          }</div>
+<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>          SmallVector&lt;DiscoveryValue&gt; ignored;</div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>          Attribute ignoredCondition;</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>          <span class="keywordflow">if</span> (failed(</div>
+<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>                  evaluateBlock(region-&gt;front(), std::move(local), ignored, &amp;ignoredCondition)</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>              )) {</div>
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>            <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>          }</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>        }</div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>        storage.invalidate();</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>        results.assign(loop.getNumResults(), DiscoveryValue());</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>        <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>      }</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>      <span class="keywordflow">if</span> (known.getValue().isZero()) {</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>        results = std::move(forwarded);</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>        <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>      }</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>      <span class="keyword">auto</span> after = env;</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>      bindResults(loop.getAfter().front().getArguments(), forwarded, after);</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>      carried.clear();</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>      <span class="keywordflow">if</span> (failed(evaluateBlock(loop.getAfter().front(), std::move(after), carried))) {</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>      }</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>    }</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>  }</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span></div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>  FailureOr&lt;Attribute&gt; evaluateConstRead(ConstReadOp read) {</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ac5d324ff80fc04dc92bd6f9e94bf7661">resolveConstReadBinding</a>(</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>        read, bindings.lookup(read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>()), typeResolver.resolveType(read.getType())</div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>    );</div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>  }</div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span></div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>  evaluateFoldableOp(Operation &amp;op, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>    SmallVector&lt;Attribute&gt; operands;</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    <span class="keywordflow">for</span> (Value operand : op.getOperands()) {</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      operands.push_back(env.lookup(operand).constant);</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>    }</div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>    <span class="keywordflow">if</span> (llvm::all_of(operands, [](Attribute attr) { <span class="keywordflow">return</span> attr != <span class="keyword">nullptr</span>; })) {</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>      SmallVector&lt;OpFoldResult&gt; folded;</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>      <span class="keywordflow">if</span> (succeeded(<a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#a929a307bf06c24423d868e2fcec7d28a">evaluateScalarOperation</a>(&amp;op, operands, folded))) {</div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> [index, value] : llvm::enumerate(folded)) {</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>          <span class="keywordflow">if</span> (<span class="keyword">auto</span> attr = dyn_cast&lt;Attribute&gt;(value)) {</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>            results[index] = attr;</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>          } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>            results[index] = env.lookup(llvm::cast&lt;Value&gt;(value));</div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>          }</div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>        }</div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>      }</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>    }</div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  }</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span></div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  std::optional&lt;SmallVector&lt;Attribute&gt;&gt;</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  arrayCoordinates(array::ArrayAccessOpInterface access, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env) {</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    <span class="keyword">auto</span> type =</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>        llvm::cast&lt;array::ArrayType&gt;(typeResolver.resolveType(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#ac9fed385196206e8f333090299b9c997">getArrRef</a>().getType()));</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    SmallVector&lt;int64_t&gt; shape(type.getShape());</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    <span class="keyword">auto</span> concreteShape = storage.getShape(env.lookup(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#ac9fed385196206e8f333090299b9c997">getArrRef</a>()));</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>    <span class="keywordflow">if</span> (!concreteShape.empty()) {</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>      shape.assign(concreteShape.begin(), concreteShape.end());</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>    }</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>    SmallVector&lt;Attribute&gt; path;</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [i, index] : llvm::enumerate(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#a09216fc6529bd376c13ad3fa2b8fea96">getIndices</a>())) {</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>      <span class="keyword">auto</span> coordinate = getKnownInteger(env.lookup(index));</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>      <span class="keywordflow">if</span> (!coordinate || *coordinate &lt; 0 || i &gt;= shape.size() || shape[i] &lt; 0 ||</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>          *coordinate &gt;= shape[i]) {</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>        <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>      }</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>      path.push_back(IntegerAttr::get(IndexType::get(context()), *coordinate));</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    }</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>    <span class="keywordflow">return</span> path;</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>  }</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span></div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  SmallVector&lt;int64_t&gt;</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>  allocationShape(array::ArrayType type, llvm::function_ref&lt;Attribute(AffineMapAttr)&gt; resolveMap) {</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>    <span class="keyword">auto</span> resolved = llvm::cast&lt;array::ArrayType&gt;(typeResolver.resolveType(type));</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>    SmallVector&lt;int64_t&gt; shape(resolved.getShape());</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [i, dimension] : llvm::enumerate(type.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868">getDimensionSizes</a>())) {</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> map = dyn_cast&lt;AffineMapAttr&gt;(dimension)) {</div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>        <span class="keyword">auto</span> extent = getKnownInteger(resolveMap(map));</div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>        <span class="keywordflow">if</span> (extent &amp;&amp; *extent &gt;= 0) {</div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>          shape[i] = *extent;</div>
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>        }</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>      }</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>    }</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>    <span class="keywordflow">return</span> shape;</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  }</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span></div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  <span class="keywordtype">void</span> recordPodShapes(</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>      Type type, <span class="keyword">const</span> DiscoveryValue &amp;value, SmallVector&lt;Attribute&gt; &amp;path,</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>      llvm::function_ref&lt;Attribute(AffineMapAttr)&gt; resolveMap</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>  ) {</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> podType = dyn_cast&lt;pod::PodType&gt;(type)) {</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : podType.getRecords()) {</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>        path.push_back(record.getName());</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>        recordPodShapes(record.getType(), value, path, resolveMap);</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>        path.pop_back();</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>      }</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> arrayType = dyn_cast&lt;array::ArrayType&gt;(type)) {</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>      storage.setShape(value, allocationShape(arrayType, resolveMap), path);</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> structure = dyn_cast&lt;StructType&gt;(type)) {</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> parameters = structure.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>        <span class="keywordflow">for</span> (Attribute parameter : parameters) {</div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>          <span class="keywordflow">if</span> (<span class="keyword">auto</span> map = dyn_cast&lt;AffineMapAttr&gt;(parameter)) {</div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>            resolveMap(map);</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>          }</div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>        }</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>      }</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (isa&lt;TypeVarType&gt;(type)) {</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>      <span class="comment">// Maps introduced by a binding have no operand groups on this allocation.</span></div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>      <span class="keyword">auto</span> resolved = typeResolver.resolveType(type);</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>      <span class="keywordflow">if</span> (resolved != type) {</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>        recordPodShapes(resolved, value, path, [](AffineMapAttr) { <span class="keywordflow">return</span> Attribute(); });</div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>      }</div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>    }</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  }</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span></div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  <span class="keywordtype">bool</span></div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  evaluateStorage(Operation &amp;op, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>    <span class="keywordflow">return</span> llvm::TypeSwitch&lt;Operation *, bool&gt;(&amp;op)</div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>        .Case&lt;array::CreateArrayOp&gt;([&amp;](<span class="keyword">auto</span> allocation) {</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>      <span class="keyword">auto</span> value = storage.create();</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>      results[0] = value;</div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>      <span class="keywordtype">size_t</span> group = 0;</div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>      <span class="keyword">auto</span> shape = allocationShape(allocation.getType(), [&amp;](AffineMapAttr map) {</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>        if (group &gt;= allocation.getMapOperands().size()) {</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>          return Attribute();</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>        }</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>        SmallVector&lt;Attribute&gt; operands;</div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>        for (Value operand : allocation.getMapOperands()[group++]) {</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>          operands.push_back(env.lookup(operand).constant);</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>        }</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>        <span class="keywordflow">return</span> typeResolver.resolveAffineArgument(map, operands);</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>      });</div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>      storage.setShape(value, shape);</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>      <span class="keywordflow">if</span> (llvm::any_of(shape, [](int64_t size) { <span class="keywordflow">return</span> size &lt;= 0; })) {</div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>      }</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [linear, element] : llvm::enumerate(allocation.getElements())) {</div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>        <span class="comment">// A bound array-valued element contributes a subtree, not extra</span></div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>        <span class="comment">// constructor coordinates. Binding its type can expand the resolved rank.</span></div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>        SmallVector&lt;Attribute&gt; path(allocation.getType().getDimensionSizes().size());</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>        uint64_t offset = linear;</div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = path.size(); i &gt; 0; --i) {</div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>          path[i - 1] = IntegerAttr::get(</div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>              IndexType::get(context()), <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(offset % shape[i - 1])</div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>          );</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>          offset /= shape[i - 1];</div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>        }</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>        storage.write(value, path, env.lookup(element));</div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>      }</div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>    })</div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>        .Case&lt;pod::NewPodOp&gt;([&amp;](<span class="keyword">auto</span> allocation) {</div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>      <span class="keyword">auto</span> value = storage.create();</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>      <span class="keywordtype">size_t</span> group = 0;</div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>      SmallVector&lt;Attribute&gt; path;</div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>      recordPodShapes(allocation.getType(), value, path, [&amp;](AffineMapAttr map) {</div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>        if (group &gt;= allocation.getMapOperands().size()) {</div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>          return Attribute();</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>        }</div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>        SmallVector&lt;Attribute&gt; operands;</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>        for (Value operand : allocation.getMapOperands()[group++]) {</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>          operands.push_back(env.lookup(operand).constant);</div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>        }</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>        <span class="keywordflow">return</span> typeResolver.resolveAffineArgument(map, operands);</div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>      });</div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : allocation.getInitializedRecordValues()) {</div>
+<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>        storage.write(value, {StringAttr::get(context(), record.name)}, env.lookup(record.value));</div>
+<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>      }</div>
+<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>      results[0] = std::move(value);</div>
+<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>    })</div>
+<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>        .Case&lt;pod::ReadPodOp&gt;([&amp;](<span class="keyword">auto</span> read) {</div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>      results[0] = storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a342406199a74c70668f9f86ffb5880ed">read</a>(</div>
+<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>          env.lookup(read.getPodRef()), {StringAttr::get(context(), read.getRecordName())},</div>
+<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>          isa&lt;array::ArrayType, pod::PodType&gt;(typeResolver.resolveType(read.getType()))</div>
+<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>      );</div>
+<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>    })</div>
+<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>        .Case&lt;pod::WritePodOp&gt;([&amp;](<span class="keyword">auto</span> write) {</div>
+<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>      storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a02f2c6141acbb9b2b54440e39d65ce0c">write</a>(</div>
+<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>          env.lookup(write.getPodRef()), {StringAttr::get(context(), write.getRecordName())},</div>
+<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>          env.lookup(write.getValue())</div>
+<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>      );</div>
+<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>    })</div>
+<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>        .Case&lt;array::ArrayAccessOpInterface&gt;([&amp;](<span class="keyword">auto</span> access) {</div>
+<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>      <span class="keyword">auto</span> coordinates = arrayCoordinates(access, env);</div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>      <span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a> = env.lookup(access.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayAccessOpInterface.html#ac9fed385196206e8f333090299b9c997">getArrRef</a>());</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>      <span class="keywordflow">if</span> (isa&lt;array::ReadArrayOp, array::ExtractArrayOp&gt;(op)) {</div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>        <span class="keywordflow">if</span> (coordinates) {</div>
+<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>          results[0] = storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a342406199a74c70668f9f86ffb5880ed">read</a>(</div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>              <a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a>, *coordinates,</div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>              isa&lt;array::ArrayType, pod::PodType&gt;(</div>
+<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>                  typeResolver.resolveType(op.getResult(0).getType())</div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>              )</div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>          );</div>
+<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>        }</div>
+<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (coordinates) {</div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>        <span class="keyword">auto</span> value = isa&lt;array::WriteArrayOp&gt;(op)</div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>                         ? llvm::cast&lt;array::WriteArrayOp&gt;(op).getRvalue()</div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>                         : llvm::cast&lt;array::InsertArrayOp&gt;(op).getRvalue();</div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>        storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a02f2c6141acbb9b2b54440e39d65ce0c">write</a>(<a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a>, *coordinates, env.lookup(value));</div>
+<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>        storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#aa487459273b34fdce13bcd01f15e704e">forget</a>(<a class="code hl_namespace" href="namespacellzk_1_1array.html">array</a>);</div>
+<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>      }</div>
+<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span>    })</div>
+<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>        .Case&lt;UnifiableCastOp&gt;([&amp;](<span class="keyword">auto</span> conversion) {</div>
+<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>      results[0] = env.lookup(conversion.getInput());</div>
+<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>    }).Default([](Operation *) { <span class="keywordflow">return</span> <span class="keyword">false</span>; });</div>
+<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>  }</div>
+<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span></div>
+<div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span>  LogicalResult</div>
+<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>  evaluateOperation(Operation &amp;op, <span class="keyword">const</span> <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> &amp;env, SmallVector&lt;DiscoveryValue&gt; &amp;results) {</div>
+<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>    <span class="keywordflow">if</span> (visitedOperations) {</div>
+<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>      visitedOperations-&gt;push_back(&amp;op);</div>
+<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>    }</div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> branch = dyn_cast&lt;scf::IfOp&gt;(op)) {</div>
+<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>      <span class="keywordflow">if</span> (failed(evaluateIf(branch, env, results))) {</div>
+<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>      }</div>
+<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> forLoop = dyn_cast&lt;scf::ForOp&gt;(op)) {</div>
+<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>      <span class="keywordflow">if</span> (failed(evaluateFor(forLoop, env, results))) {</div>
+<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>      }</div>
+<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> whileLoop = dyn_cast&lt;scf::WhileOp&gt;(op)) {</div>
+<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>      <span class="keywordflow">if</span> (failed(evaluateWhile(whileLoop, env, results))) {</div>
+<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>      }</div>
+<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (op.getNumRegions()) {</div>
+<div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span>      <span class="keywordflow">return</span> op.emitError(<span class="stringliteral">&quot;unsupported control flow in specialization discovery&quot;</span>);</div>
+<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>      <span class="comment">// Local aggregate facts supplement scalar folding; reads from external</span></div>
+<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>      <span class="comment">// storage remain unknown. Diagnose unknown values only when needed.</span></div>
+<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span>      <span class="keywordflow">if</span> (evaluateStorage(op, env, results)) {</div>
+<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>        <span class="comment">// Still collect nested specialization types below.</span></div>
+<div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> read = dyn_cast&lt;ConstReadOp&gt;(op)) {</div>
+<div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>        <span class="keyword">auto</span> value = evaluateConstRead(read);</div>
+<div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>        <span class="keywordflow">if</span> (failed(value)) {</div>
+<div class="line"><a id="l00781" name="l00781"></a><span class="lineno">  781</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00782" name="l00782"></a><span class="lineno">  782</span>        }</div>
+<div class="line"><a id="l00783" name="l00783"></a><span class="lineno">  783</span>        results[0] = *value;</div>
+<div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (isMemoryEffectFree(&amp;op) || isa&lt;cast::FeltToIndexOp, cast::IntToFeltOp&gt;(op)) {</div>
+<div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span>        evaluateFoldableOp(op, env, results);</div>
+<div class="line"><a id="l00786" name="l00786"></a><span class="lineno">  786</span>      }</div>
+<div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> call = dyn_cast&lt;function::CallOp&gt;(op)) {</div>
+<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>        <span class="keywordflow">if</span> (failed(discoverCallTypes(call, env))) {</div>
+<div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>        }</div>
+<div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>      }</div>
+<div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span>      <span class="keywordflow">if</span> (!isMemoryEffectFree(&amp;op) &amp;&amp;</div>
+<div class="line"><a id="l00793" name="l00793"></a><span class="lineno">  793</span>          !isa&lt;</div>
+<div class="line"><a id="l00794" name="l00794"></a><span class="lineno">  794</span>              <a class="code hl_class" href="classllzk_1_1array_1_1CreateArrayOp.html">array::CreateArrayOp</a>, <a class="code hl_class" href="classllzk_1_1array_1_1WriteArrayOp.html">array::WriteArrayOp</a>, <a class="code hl_class" href="classllzk_1_1array_1_1InsertArrayOp.html">array::InsertArrayOp</a>, <a class="code hl_class" href="classllzk_1_1array_1_1ReadArrayOp.html">array::ReadArrayOp</a>,</div>
+<div class="line"><a id="l00795" name="l00795"></a><span class="lineno">  795</span>              <a class="code hl_class" href="classllzk_1_1array_1_1ExtractArrayOp.html">array::ExtractArrayOp</a>, <a class="code hl_class" href="classllzk_1_1pod_1_1NewPodOp.html">pod::NewPodOp</a>, <a class="code hl_class" href="classllzk_1_1pod_1_1ReadPodOp.html">pod::ReadPodOp</a>, <a class="code hl_class" href="classllzk_1_1pod_1_1WritePodOp.html">pod::WritePodOp</a>&gt;(op)) {</div>
+<div class="line"><a id="l00796" name="l00796"></a><span class="lineno">  796</span>        <span class="keywordflow">for</span> (Value operand : op.getOperands()) {</div>
+<div class="line"><a id="l00797" name="l00797"></a><span class="lineno">  797</span>          <span class="keywordflow">if</span> (isa&lt;array::ArrayType, pod::PodType&gt;(typeResolver.resolveType(operand.getType()))) {</div>
+<div class="line"><a id="l00798" name="l00798"></a><span class="lineno">  798</span>            storage.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#aa487459273b34fdce13bcd01f15e704e">forget</a>(env.lookup(operand));</div>
+<div class="line"><a id="l00799" name="l00799"></a><span class="lineno">  799</span>          }</div>
+<div class="line"><a id="l00800" name="l00800"></a><span class="lineno">  800</span>        }</div>
 <div class="line"><a id="l00801" name="l00801"></a><span class="lineno">  801</span>      }</div>
-<div class="line"><a id="l00802" name="l00802"></a><span class="lineno">  802</span>    }</div>
-<div class="line"><a id="l00803" name="l00803"></a><span class="lineno">  803</span>    <span class="keywordflow">for</span> (Type type : op.getResultTypes()) {</div>
-<div class="line"><a id="l00804" name="l00804"></a><span class="lineno">  804</span>      <span class="keywordflow">if</span> (failed(collectTypes(&amp;op, type))) {</div>
-<div class="line"><a id="l00805" name="l00805"></a><span class="lineno">  805</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00806" name="l00806"></a><span class="lineno">  806</span>      }</div>
-<div class="line"><a id="l00807" name="l00807"></a><span class="lineno">  807</span>    }</div>
-<div class="line"><a id="l00808" name="l00808"></a><span class="lineno">  808</span>    <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00809" name="l00809"></a><span class="lineno">  809</span>  }</div>
-<div class="line"><a id="l00810" name="l00810"></a><span class="lineno">  810</span></div>
-<div class="line"><a id="l00814" name="l00814"></a><span class="lineno">  814</span>  LogicalResult evaluateBlock(</div>
-<div class="line"><a id="l00815" name="l00815"></a><span class="lineno">  815</span>      Block &amp;body, <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> env, SmallVectorImpl&lt;DiscoveryValue&gt; &amp;yielded,</div>
-<div class="line"><a id="l00816" name="l00816"></a><span class="lineno">  816</span>      Attribute *condition = <span class="keyword">nullptr</span></div>
-<div class="line"><a id="l00817" name="l00817"></a><span class="lineno">  817</span>  ) {</div>
-<div class="line"><a id="l00818" name="l00818"></a><span class="lineno">  818</span>    <span class="keywordflow">for</span> (Operation &amp;op : body) {</div>
-<div class="line"><a id="l00819" name="l00819"></a><span class="lineno">  819</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> terminator = dyn_cast&lt;scf::ConditionOp&gt;(op)) {</div>
-<div class="line"><a id="l00820" name="l00820"></a><span class="lineno">  820</span>        <span class="keywordflow">if</span> (!condition) {</div>
-<div class="line"><a id="l00821" name="l00821"></a><span class="lineno">  821</span>          <span class="keywordflow">return</span> op.emitError(<span class="stringliteral">&quot;scf.condition outside a while condition region&quot;</span>);</div>
-<div class="line"><a id="l00822" name="l00822"></a><span class="lineno">  822</span>        }</div>
-<div class="line"><a id="l00823" name="l00823"></a><span class="lineno">  823</span>        *condition = env.lookup(terminator.getCondition()).constant;</div>
-<div class="line"><a id="l00824" name="l00824"></a><span class="lineno">  824</span>        <span class="keywordflow">for</span> (Value operand : terminator.getArgs()) {</div>
-<div class="line"><a id="l00825" name="l00825"></a><span class="lineno">  825</span>          yielded.push_back(env.lookup(operand));</div>
-<div class="line"><a id="l00826" name="l00826"></a><span class="lineno">  826</span>        }</div>
-<div class="line"><a id="l00827" name="l00827"></a><span class="lineno">  827</span>        <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00828" name="l00828"></a><span class="lineno">  828</span>      }</div>
-<div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span>      <span class="keywordflow">if</span> (isa&lt;YieldOp, scf::YieldOp, function::ReturnOp&gt;(op)) {</div>
-<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span>        <span class="keywordflow">for</span> (Value operand : op.getOperands()) {</div>
-<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span>          yielded.push_back(env.lookup(operand));</div>
-<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>        }</div>
-<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>        <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>      }</div>
-<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span>      <span class="keywordflow">if</span> (op.hasTrait&lt;OpTrait::IsTerminator&gt;()) {</div>
-<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span>        <span class="keywordflow">return</span> op.emitError(<span class="stringliteral">&quot;unsupported control flow in specialization discovery&quot;</span>);</div>
+<div class="line"><a id="l00802" name="l00802"></a><span class="lineno">  802</span>      <span class="keywordflow">if</span> (isa&lt;function::CallOp&gt;(op)) {</div>
+<div class="line"><a id="l00803" name="l00803"></a><span class="lineno">  803</span>        <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00804" name="l00804"></a><span class="lineno">  804</span>      }</div>
+<div class="line"><a id="l00805" name="l00805"></a><span class="lineno">  805</span>    }</div>
+<div class="line"><a id="l00806" name="l00806"></a><span class="lineno">  806</span>    <span class="keywordflow">for</span> (Type type : op.getResultTypes()) {</div>
+<div class="line"><a id="l00807" name="l00807"></a><span class="lineno">  807</span>      <span class="keywordflow">if</span> (failed(collectTypes(&amp;op, type))) {</div>
+<div class="line"><a id="l00808" name="l00808"></a><span class="lineno">  808</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00809" name="l00809"></a><span class="lineno">  809</span>      }</div>
+<div class="line"><a id="l00810" name="l00810"></a><span class="lineno">  810</span>    }</div>
+<div class="line"><a id="l00811" name="l00811"></a><span class="lineno">  811</span>    <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00812" name="l00812"></a><span class="lineno">  812</span>  }</div>
+<div class="line"><a id="l00813" name="l00813"></a><span class="lineno">  813</span></div>
+<div class="line"><a id="l00817" name="l00817"></a><span class="lineno">  817</span>  LogicalResult evaluateBlock(</div>
+<div class="line"><a id="l00818" name="l00818"></a><span class="lineno">  818</span>      Block &amp;body, <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a> env, SmallVectorImpl&lt;DiscoveryValue&gt; &amp;yielded,</div>
+<div class="line"><a id="l00819" name="l00819"></a><span class="lineno">  819</span>      Attribute *condition = <span class="keyword">nullptr</span></div>
+<div class="line"><a id="l00820" name="l00820"></a><span class="lineno">  820</span>  ) {</div>
+<div class="line"><a id="l00821" name="l00821"></a><span class="lineno">  821</span>    <span class="keywordflow">for</span> (Operation &amp;op : body) {</div>
+<div class="line"><a id="l00822" name="l00822"></a><span class="lineno">  822</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> terminator = dyn_cast&lt;scf::ConditionOp&gt;(op)) {</div>
+<div class="line"><a id="l00823" name="l00823"></a><span class="lineno">  823</span>        <span class="keywordflow">if</span> (!condition) {</div>
+<div class="line"><a id="l00824" name="l00824"></a><span class="lineno">  824</span>          <span class="keywordflow">return</span> op.emitError(<span class="stringliteral">&quot;scf.condition outside a while condition region&quot;</span>);</div>
+<div class="line"><a id="l00825" name="l00825"></a><span class="lineno">  825</span>        }</div>
+<div class="line"><a id="l00826" name="l00826"></a><span class="lineno">  826</span>        *condition = env.lookup(terminator.getCondition()).constant;</div>
+<div class="line"><a id="l00827" name="l00827"></a><span class="lineno">  827</span>        <span class="keywordflow">for</span> (Value operand : terminator.getArgs()) {</div>
+<div class="line"><a id="l00828" name="l00828"></a><span class="lineno">  828</span>          yielded.push_back(env.lookup(operand));</div>
+<div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span>        }</div>
+<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span>        <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span>      }</div>
+<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>      <span class="keywordflow">if</span> (isa&lt;YieldOp, scf::YieldOp, function::ReturnOp&gt;(op)) {</div>
+<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>        <span class="keywordflow">for</span> (Value operand : op.getOperands()) {</div>
+<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>          yielded.push_back(env.lookup(operand));</div>
+<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span>        }</div>
+<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span>        <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00837" name="l00837"></a><span class="lineno">  837</span>      }</div>
-<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>      SmallVector&lt;DiscoveryValue&gt; results(op.getNumResults());</div>
-<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>      <span class="keywordflow">if</span> (failed(evaluateOperation(op, env, results))) {</div>
-<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>      }</div>
-<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>      bindResults(op.getResults(), results, env);</div>
-<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span>    }</div>
-<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span>    <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>  }</div>
-<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span> </div>
-<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span>  MLIRContext *context() { <span class="keywordflow">return</span> <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>-&gt;getContext(); }</div>
+<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>      <span class="keywordflow">if</span> (op.hasTrait&lt;OpTrait::IsTerminator&gt;()) {</div>
+<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>        <span class="keywordflow">return</span> op.emitError(<span class="stringliteral">&quot;unsupported control flow in specialization discovery&quot;</span>);</div>
+<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>      }</div>
+<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>      SmallVector&lt;DiscoveryValue&gt; results(op.getNumResults());</div>
+<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>      <span class="keywordflow">if</span> (failed(evaluateOperation(op, env, results))) {</div>
+<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span>      }</div>
+<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>      bindResults(op.getResults(), results, env);</div>
+<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span>    }</div>
+<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span>    <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span>  }</div>
 <div class="line"><a id="l00849" name="l00849"></a><span class="lineno">  849</span> </div>
-<div class="line"><a id="l00850" name="l00850"></a><span class="lineno">  850</span>  DiscoveryRun(</div>
-<div class="line"><a id="l00851" name="l00851"></a><span class="lineno">  851</span>      Operation *<a class="code hl_variable" href="LICENSE_8txt.html#a2a7e6052bfc8b1f68f10d7cf5d61c65c">definition</a>, <span class="keyword">const</span> <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">StructSpecializationDiscovery::Bindings</a> &amp;parameters,</div>
-<div class="line"><a id="l00852" name="l00852"></a><span class="lineno">  852</span>      SmallVectorImpl&lt;Operation *&gt; *visited,</div>
-<div class="line"><a id="l00853" name="l00853"></a><span class="lineno">  853</span>      <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#ab02d26b945c86fd3d777cae03d1f053a">StructSpecializationDiscovery::CallTargets</a> *targets = <span class="keyword">nullptr</span></div>
-<div class="line"><a id="l00854" name="l00854"></a><span class="lineno">  854</span>  )</div>
-<div class="line"><a id="l00855" name="l00855"></a><span class="lineno">  855</span>      : <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>(<a class="code hl_variable" href="LICENSE_8txt.html#a2a7e6052bfc8b1f68f10d7cf5d61c65c">definition</a>), bindings(parameters), typeResolver(bindings),</div>
-<div class="line"><a id="l00856" name="l00856"></a><span class="lineno">  856</span>        visitedOperations(visited), callTargets(targets) {}</div>
-<div class="line"><a id="l00857" name="l00857"></a><span class="lineno">  857</span></div>
-<div class="line"><a id="l00859" name="l00859"></a><span class="lineno">  859</span>  FailureOr&lt;StructSpecializationDiscovery::Bindings&gt; evaluateBindings() {</div>
-<div class="line"><a id="l00860" name="l00860"></a><span class="lineno">  860</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> templ = <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>&gt;()) {</div>
-<div class="line"><a id="l00861" name="l00861"></a><span class="lineno">  861</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> expr : templ.getConstOps&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">TemplateExprOp</a>&gt;()) {</div>
-<div class="line"><a id="l00862" name="l00862"></a><span class="lineno">  862</span>        SmallVector&lt;DiscoveryValue&gt; values;</div>
-<div class="line"><a id="l00863" name="l00863"></a><span class="lineno">  863</span>        <span class="keywordflow">if</span> (failed(evaluateBlock(expr.getInitializerRegion().front(), <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a>(), values))) {</div>
-<div class="line"><a id="l00864" name="l00864"></a><span class="lineno">  864</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00865" name="l00865"></a><span class="lineno">  865</span>        }</div>
-<div class="line"><a id="l00866" name="l00866"></a><span class="lineno">  866</span>        <span class="keywordflow">if</span> (values.size() == 1 &amp;&amp; values[0].constant) {</div>
-<div class="line"><a id="l00867" name="l00867"></a><span class="lineno">  867</span>          bindings[FlatSymbolRefAttr::get(expr.getSymNameAttr())] = values[0].constant;</div>
+<div class="line"><a id="l00850" name="l00850"></a><span class="lineno">  850</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00851" name="l00851"></a><span class="lineno">  851</span>  MLIRContext *context() { <span class="keywordflow">return</span> <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>-&gt;getContext(); }</div>
+<div class="line"><a id="l00852" name="l00852"></a><span class="lineno">  852</span> </div>
+<div class="line"><a id="l00853" name="l00853"></a><span class="lineno">  853</span>  DiscoveryRun(</div>
+<div class="line"><a id="l00854" name="l00854"></a><span class="lineno">  854</span>      Operation *<a class="code hl_variable" href="LICENSE_8txt.html#a2a7e6052bfc8b1f68f10d7cf5d61c65c">definition</a>, <span class="keyword">const</span> <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">StructSpecializationDiscovery::Bindings</a> &amp;parameters,</div>
+<div class="line"><a id="l00855" name="l00855"></a><span class="lineno">  855</span>      SmallVectorImpl&lt;Operation *&gt; *visited,</div>
+<div class="line"><a id="l00856" name="l00856"></a><span class="lineno">  856</span>      <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#ab02d26b945c86fd3d777cae03d1f053a">StructSpecializationDiscovery::CallTargets</a> *targets = <span class="keyword">nullptr</span></div>
+<div class="line"><a id="l00857" name="l00857"></a><span class="lineno">  857</span>  )</div>
+<div class="line"><a id="l00858" name="l00858"></a><span class="lineno">  858</span>      : <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>(<a class="code hl_variable" href="LICENSE_8txt.html#a2a7e6052bfc8b1f68f10d7cf5d61c65c">definition</a>), bindings(parameters), typeResolver(bindings),</div>
+<div class="line"><a id="l00859" name="l00859"></a><span class="lineno">  859</span>        visitedOperations(visited), callTargets(targets) {}</div>
+<div class="line"><a id="l00860" name="l00860"></a><span class="lineno">  860</span></div>
+<div class="line"><a id="l00862" name="l00862"></a><span class="lineno">  862</span>  FailureOr&lt;StructSpecializationDiscovery::Bindings&gt; evaluateBindings() {</div>
+<div class="line"><a id="l00863" name="l00863"></a><span class="lineno">  863</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> templ = <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>&gt;()) {</div>
+<div class="line"><a id="l00864" name="l00864"></a><span class="lineno">  864</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> expr : templ.getConstOps&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">TemplateExprOp</a>&gt;()) {</div>
+<div class="line"><a id="l00865" name="l00865"></a><span class="lineno">  865</span>        SmallVector&lt;DiscoveryValue&gt; values;</div>
+<div class="line"><a id="l00866" name="l00866"></a><span class="lineno">  866</span>        <span class="keywordflow">if</span> (failed(evaluateBlock(expr.getInitializerRegion().front(), <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a>(), values))) {</div>
+<div class="line"><a id="l00867" name="l00867"></a><span class="lineno">  867</span>          <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00868" name="l00868"></a><span class="lineno">  868</span>        }</div>
-<div class="line"><a id="l00869" name="l00869"></a><span class="lineno">  869</span>      }</div>
-<div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span>    }</div>
-<div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span>    <span class="keywordflow">return</span> bindings;</div>
-<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span>  }</div>
-<div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span></div>
-<div class="line"><a id="l00876" name="l00876"></a><span class="lineno">  876</span>  FailureOr&lt;StructSpecializationDiscovery::Requests&gt; run() {</div>
-<div class="line"><a id="l00877" name="l00877"></a><span class="lineno">  877</span>    <span class="keywordflow">if</span> (failed(evaluateBindings())) {</div>
-<div class="line"><a id="l00878" name="l00878"></a><span class="lineno">  878</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span>    }</div>
-<div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> structure = dyn_cast&lt;StructDefOp&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>)) {</div>
-<div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> member : structure.getOps&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&gt;()) {</div>
-<div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span>        <span class="keywordflow">if</span> (failed(collectTypes(member, member.getType()))) {</div>
-<div class="line"><a id="l00883" name="l00883"></a><span class="lineno">  883</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span>        }</div>
-<div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span>      }</div>
-<div class="line"><a id="l00886" name="l00886"></a><span class="lineno">  886</span>    }</div>
-<div class="line"><a id="l00887" name="l00887"></a><span class="lineno">  887</span>    SmallVector&lt;function::FuncDefOp&gt; functions;</div>
-<div class="line"><a id="l00888" name="l00888"></a><span class="lineno">  888</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> structure = dyn_cast&lt;StructDefOp&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>)) {</div>
-<div class="line"><a id="l00889" name="l00889"></a><span class="lineno">  889</span>      llvm::append_range(functions, structure.getOps&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a>&gt;());</div>
-<div class="line"><a id="l00890" name="l00890"></a><span class="lineno">  890</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00891" name="l00891"></a><span class="lineno">  891</span>      functions.push_back(llvm::cast&lt;function::FuncDefOp&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>));</div>
-<div class="line"><a id="l00892" name="l00892"></a><span class="lineno">  892</span>    }</div>
-<div class="line"><a id="l00893" name="l00893"></a><span class="lineno">  893</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a> : functions) {</div>
-<div class="line"><a id="l00894" name="l00894"></a><span class="lineno">  894</span>      <span class="keywordflow">if</span> (!<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getBody().hasOneBlock()) {</div>
-<div class="line"><a id="l00895" name="l00895"></a><span class="lineno">  895</span>        <span class="keywordflow">return</span> <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.emitError(</div>
-<div class="line"><a id="l00896" name="l00896"></a><span class="lineno">  896</span>            <span class="stringliteral">&quot;specialization discovery requires a defined single-block function; &quot;</span></div>
-<div class="line"><a id="l00897" name="l00897"></a><span class="lineno">  897</span>            <span class="stringliteral">&quot;unstructured control flow is unsupported&quot;</span></div>
-<div class="line"><a id="l00898" name="l00898"></a><span class="lineno">  898</span>        );</div>
-<div class="line"><a id="l00899" name="l00899"></a><span class="lineno">  899</span>      }</div>
-<div class="line"><a id="l00900" name="l00900"></a><span class="lineno">  900</span>      <span class="keywordflow">for</span> (Type type : <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getFunctionType().getInputs()) {</div>
-<div class="line"><a id="l00901" name="l00901"></a><span class="lineno">  901</span>        <span class="keywordflow">if</span> (failed(collectTypes(<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>, type))) {</div>
-<div class="line"><a id="l00902" name="l00902"></a><span class="lineno">  902</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00903" name="l00903"></a><span class="lineno">  903</span>        }</div>
-<div class="line"><a id="l00904" name="l00904"></a><span class="lineno">  904</span>      }</div>
-<div class="line"><a id="l00905" name="l00905"></a><span class="lineno">  905</span>      <span class="keywordflow">for</span> (Type type : <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getFunctionType().getResults()) {</div>
-<div class="line"><a id="l00906" name="l00906"></a><span class="lineno">  906</span>        <span class="keywordflow">if</span> (failed(collectTypes(<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>, type))) {</div>
-<div class="line"><a id="l00907" name="l00907"></a><span class="lineno">  907</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00908" name="l00908"></a><span class="lineno">  908</span>        }</div>
-<div class="line"><a id="l00909" name="l00909"></a><span class="lineno">  909</span>      }</div>
-<div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>      SmallVector&lt;DiscoveryValue&gt; values;</div>
-<div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span>      <span class="keywordflow">if</span> (failed(evaluateBlock(<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getBody().front(), <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a>(), values))) {</div>
-<div class="line"><a id="l00912" name="l00912"></a><span class="lineno">  912</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>      }</div>
-<div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span>    }</div>
-<div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [call, family] : rolledCalls) {</div>
-<div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span>      <span class="keyword">auto</span> key = getFamilyKey(call, family);</div>
-<div class="line"><a id="l00917" name="l00917"></a><span class="lineno">  917</span>      <span class="keywordflow">if</span> (failed(key)) {</div>
-<div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>      }</div>
-<div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span>      <span class="keywordflow">if</span> (!knownFamilies.contains(*key)) {</div>
-<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span>        <span class="keywordflow">return</span> call.emitError(<span class="stringliteral">&quot;no known source for affine struct call argument &quot;</span>) &lt;&lt; family;</div>
+<div class="line"><a id="l00869" name="l00869"></a><span class="lineno">  869</span>        <span class="keywordflow">if</span> (values.size() == 1 &amp;&amp; values[0].constant) {</div>
+<div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span>          bindings[FlatSymbolRefAttr::get(expr.getSymNameAttr())] = values[0].constant;</div>
+<div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span>        }</div>
+<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span>      }</div>
+<div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span>    }</div>
+<div class="line"><a id="l00874" name="l00874"></a><span class="lineno">  874</span>    <span class="keywordflow">return</span> bindings;</div>
+<div class="line"><a id="l00875" name="l00875"></a><span class="lineno">  875</span>  }</div>
+<div class="line"><a id="l00876" name="l00876"></a><span class="lineno">  876</span></div>
+<div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span>  FailureOr&lt;StructSpecializationDiscovery::Requests&gt; run() {</div>
+<div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>    <span class="keywordflow">if</span> (failed(evaluateBindings())) {</div>
+<div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span>    }</div>
+<div class="line"><a id="l00883" name="l00883"></a><span class="lineno">  883</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> structure = dyn_cast&lt;StructDefOp&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>)) {</div>
+<div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> member : structure.getOps&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&gt;()) {</div>
+<div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span>        <span class="keywordflow">if</span> (failed(collectTypes(member, member.getType()))) {</div>
+<div class="line"><a id="l00886" name="l00886"></a><span class="lineno">  886</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00887" name="l00887"></a><span class="lineno">  887</span>        }</div>
+<div class="line"><a id="l00888" name="l00888"></a><span class="lineno">  888</span>      }</div>
+<div class="line"><a id="l00889" name="l00889"></a><span class="lineno">  889</span>    }</div>
+<div class="line"><a id="l00890" name="l00890"></a><span class="lineno">  890</span>    SmallVector&lt;function::FuncDefOp&gt; functions;</div>
+<div class="line"><a id="l00891" name="l00891"></a><span class="lineno">  891</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> structure = dyn_cast&lt;StructDefOp&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>)) {</div>
+<div class="line"><a id="l00892" name="l00892"></a><span class="lineno">  892</span>      llvm::append_range(functions, structure.getOps&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a>&gt;());</div>
+<div class="line"><a id="l00893" name="l00893"></a><span class="lineno">  893</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00894" name="l00894"></a><span class="lineno">  894</span>      functions.push_back(llvm::cast&lt;function::FuncDefOp&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>));</div>
+<div class="line"><a id="l00895" name="l00895"></a><span class="lineno">  895</span>    }</div>
+<div class="line"><a id="l00896" name="l00896"></a><span class="lineno">  896</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a> : functions) {</div>
+<div class="line"><a id="l00897" name="l00897"></a><span class="lineno">  897</span>      <span class="keywordflow">if</span> (!<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getBody().hasOneBlock()) {</div>
+<div class="line"><a id="l00898" name="l00898"></a><span class="lineno">  898</span>        <span class="keywordflow">return</span> <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.emitError(</div>
+<div class="line"><a id="l00899" name="l00899"></a><span class="lineno">  899</span>            <span class="stringliteral">&quot;specialization discovery requires a defined single-block function; &quot;</span></div>
+<div class="line"><a id="l00900" name="l00900"></a><span class="lineno">  900</span>            <span class="stringliteral">&quot;unstructured control flow is unsupported&quot;</span></div>
+<div class="line"><a id="l00901" name="l00901"></a><span class="lineno">  901</span>        );</div>
+<div class="line"><a id="l00902" name="l00902"></a><span class="lineno">  902</span>      }</div>
+<div class="line"><a id="l00903" name="l00903"></a><span class="lineno">  903</span>      <span class="keywordflow">for</span> (Type type : <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getFunctionType().getInputs()) {</div>
+<div class="line"><a id="l00904" name="l00904"></a><span class="lineno">  904</span>        <span class="keywordflow">if</span> (failed(collectTypes(<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>, type))) {</div>
+<div class="line"><a id="l00905" name="l00905"></a><span class="lineno">  905</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00906" name="l00906"></a><span class="lineno">  906</span>        }</div>
+<div class="line"><a id="l00907" name="l00907"></a><span class="lineno">  907</span>      }</div>
+<div class="line"><a id="l00908" name="l00908"></a><span class="lineno">  908</span>      <span class="keywordflow">for</span> (Type type : <a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getFunctionType().getResults()) {</div>
+<div class="line"><a id="l00909" name="l00909"></a><span class="lineno">  909</span>        <span class="keywordflow">if</span> (failed(collectTypes(<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>, type))) {</div>
+<div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span>        }</div>
+<div class="line"><a id="l00912" name="l00912"></a><span class="lineno">  912</span>      }</div>
+<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>      SmallVector&lt;DiscoveryValue&gt; values;</div>
+<div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span>      <span class="keywordflow">if</span> (failed(evaluateBlock(<a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>.getBody().front(), <a class="code hl_typedef" href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">Environment</a>(), values))) {</div>
+<div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span>      }</div>
+<div class="line"><a id="l00917" name="l00917"></a><span class="lineno">  917</span>    }</div>
+<div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [call, family] : rolledCalls) {</div>
+<div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>      <span class="keyword">auto</span> key = getFamilyKey(call, family);</div>
+<div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span>      <span class="keywordflow">if</span> (failed(key)) {</div>
+<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span>        <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00922" name="l00922"></a><span class="lineno">  922</span>      }</div>
-<div class="line"><a id="l00923" name="l00923"></a><span class="lineno">  923</span>      <span class="keyword">auto</span> candidates = familyCandidates.lookup(*key);</div>
-<div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span>      <span class="keywordflow">for</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> candidate : candidates) {</div>
-<div class="line"><a id="l00925" name="l00925"></a><span class="lineno">  925</span>        <span class="keywordflow">if</span> (failed(recordRequest(call, candidate))) {</div>
-<div class="line"><a id="l00926" name="l00926"></a><span class="lineno">  926</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00927" name="l00927"></a><span class="lineno">  927</span>        }</div>
-<div class="line"><a id="l00928" name="l00928"></a><span class="lineno">  928</span>      }</div>
-<div class="line"><a id="l00929" name="l00929"></a><span class="lineno">  929</span>      <span class="keywordflow">if</span> (callTargets) {</div>
-<div class="line"><a id="l00930" name="l00930"></a><span class="lineno">  930</span>        callTargets-&gt;push_back({call, candidates});</div>
+<div class="line"><a id="l00923" name="l00923"></a><span class="lineno">  923</span>      <span class="keywordflow">if</span> (!knownFamilies.contains(*key)) {</div>
+<div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span>        <span class="keywordflow">return</span> call.emitError(<span class="stringliteral">&quot;no known source for affine struct call argument &quot;</span>) &lt;&lt; family;</div>
+<div class="line"><a id="l00925" name="l00925"></a><span class="lineno">  925</span>      }</div>
+<div class="line"><a id="l00926" name="l00926"></a><span class="lineno">  926</span>      <span class="keyword">auto</span> candidates = familyCandidates.lookup(*key);</div>
+<div class="line"><a id="l00927" name="l00927"></a><span class="lineno">  927</span>      <span class="keywordflow">for</span> (<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> candidate : candidates) {</div>
+<div class="line"><a id="l00928" name="l00928"></a><span class="lineno">  928</span>        <span class="keywordflow">if</span> (failed(recordRequest(call, candidate))) {</div>
+<div class="line"><a id="l00929" name="l00929"></a><span class="lineno">  929</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00930" name="l00930"></a><span class="lineno">  930</span>        }</div>
 <div class="line"><a id="l00931" name="l00931"></a><span class="lineno">  931</span>      }</div>
-<div class="line"><a id="l00932" name="l00932"></a><span class="lineno">  932</span>    }</div>
-<div class="line"><a id="l00933" name="l00933"></a><span class="lineno">  933</span>    <span class="keywordflow">return</span> std::move(requests);</div>
-<div class="line"><a id="l00934" name="l00934"></a><span class="lineno">  934</span>  }</div>
-<div class="line"><a id="l00935" name="l00935"></a><span class="lineno">  935</span>};</div>
-<div class="line"><a id="l00936" name="l00936"></a><span class="lineno">  936</span> </div>
-<div class="line"><a id="l00937" name="l00937"></a><span class="lineno">  937</span>} <span class="comment">// namespace</span></div>
-<div class="line"><a id="l00938" name="l00938"></a><span class="lineno">  938</span> </div>
-<div class="line"><a id="l00939" name="l00939"></a><span class="lineno">  939</span>FailureOr&lt;Attribute&gt; <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ac5d324ff80fc04dc92bd6f9e94bf7661">llzk::polymorphic::detail::resolveConstReadBinding</a>(</div>
-<div class="line"><a id="l00940" name="l00940"></a><span class="lineno">  940</span>    <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">ConstReadOp</a> read, Attribute binding, Type readType</div>
-<div class="line"><a id="l00941" name="l00941"></a><span class="lineno">  941</span>) {</div>
-<div class="line"><a id="l00942" name="l00942"></a><span class="lineno">  942</span>  <span class="keywordflow">if</span> (!binding) {</div>
-<div class="line"><a id="l00943" name="l00943"></a><span class="lineno">  943</span>    <span class="keywordflow">return</span> binding;</div>
-<div class="line"><a id="l00944" name="l00944"></a><span class="lineno">  944</span>  }</div>
-<div class="line"><a id="l00945" name="l00945"></a><span class="lineno">  945</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> constant = dyn_cast&lt;felt::FeltConstAttr&gt;(binding)) {</div>
-<div class="line"><a id="l00946" name="l00946"></a><span class="lineno">  946</span>    <span class="keywordflow">if</span> (constant.getType() != readType) {</div>
-<div class="line"><a id="l00947" name="l00947"></a><span class="lineno">  947</span>      <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read felt template binding &quot;</span>)</div>
-<div class="line"><a id="l00948" name="l00948"></a><span class="lineno">  948</span>             &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; of type &quot;</span> &lt;&lt; constant.getType() &lt;&lt; <span class="stringliteral">&quot; as &quot;</span> &lt;&lt; readType</div>
-<div class="line"><a id="l00949" name="l00949"></a><span class="lineno">  949</span>             &lt;&lt; (isa&lt;felt::FeltType&gt;(readType) ? <span class="stringliteral">&quot;; read the binding using its declared felt type&quot;</span></div>
-<div class="line"><a id="l00950" name="l00950"></a><span class="lineno">  950</span>                                               : <span class="stringliteral">&quot;; use an explicit cast&quot;</span>);</div>
-<div class="line"><a id="l00951" name="l00951"></a><span class="lineno">  951</span>    }</div>
-<div class="line"><a id="l00952" name="l00952"></a><span class="lineno">  952</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> reduced = constant.getReducedValue()) {</div>
-<div class="line"><a id="l00953" name="l00953"></a><span class="lineno">  953</span>      <span class="keywordflow">return</span> Attribute(felt::FeltConstAttr::get(read.getContext(), *reduced, constant.getType()));</div>
+<div class="line"><a id="l00932" name="l00932"></a><span class="lineno">  932</span>      <span class="keywordflow">if</span> (callTargets) {</div>
+<div class="line"><a id="l00933" name="l00933"></a><span class="lineno">  933</span>        callTargets-&gt;push_back({call, candidates});</div>
+<div class="line"><a id="l00934" name="l00934"></a><span class="lineno">  934</span>      }</div>
+<div class="line"><a id="l00935" name="l00935"></a><span class="lineno">  935</span>    }</div>
+<div class="line"><a id="l00936" name="l00936"></a><span class="lineno">  936</span>    <span class="keywordflow">return</span> std::move(requests);</div>
+<div class="line"><a id="l00937" name="l00937"></a><span class="lineno">  937</span>  }</div>
+<div class="line"><a id="l00938" name="l00938"></a><span class="lineno">  938</span>};</div>
+<div class="line"><a id="l00939" name="l00939"></a><span class="lineno">  939</span> </div>
+<div class="line"><a id="l00940" name="l00940"></a><span class="lineno">  940</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00941" name="l00941"></a><span class="lineno">  941</span> </div>
+<div class="line"><a id="l00942" name="l00942"></a><span class="lineno">  942</span>FailureOr&lt;Attribute&gt; <a class="code hl_function" href="namespacellzk_1_1polymorphic_1_1detail.html#ac5d324ff80fc04dc92bd6f9e94bf7661">llzk::polymorphic::detail::resolveConstReadBinding</a>(</div>
+<div class="line"><a id="l00943" name="l00943"></a><span class="lineno">  943</span>    <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">ConstReadOp</a> read, Attribute binding, Type readType</div>
+<div class="line"><a id="l00944" name="l00944"></a><span class="lineno">  944</span>) {</div>
+<div class="line"><a id="l00945" name="l00945"></a><span class="lineno">  945</span>  <span class="keywordflow">if</span> (!binding) {</div>
+<div class="line"><a id="l00946" name="l00946"></a><span class="lineno">  946</span>    <span class="keywordflow">return</span> binding;</div>
+<div class="line"><a id="l00947" name="l00947"></a><span class="lineno">  947</span>  }</div>
+<div class="line"><a id="l00948" name="l00948"></a><span class="lineno">  948</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> constant = dyn_cast&lt;felt::FeltConstAttr&gt;(binding)) {</div>
+<div class="line"><a id="l00949" name="l00949"></a><span class="lineno">  949</span>    <span class="keywordflow">if</span> (constant.getType() != readType) {</div>
+<div class="line"><a id="l00950" name="l00950"></a><span class="lineno">  950</span>      <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read felt template binding &quot;</span>)</div>
+<div class="line"><a id="l00951" name="l00951"></a><span class="lineno">  951</span>             &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; of type &quot;</span> &lt;&lt; constant.getType() &lt;&lt; <span class="stringliteral">&quot; as &quot;</span> &lt;&lt; readType</div>
+<div class="line"><a id="l00952" name="l00952"></a><span class="lineno">  952</span>             &lt;&lt; (isa&lt;felt::FeltType&gt;(readType) ? <span class="stringliteral">&quot;; read the binding using its declared felt type&quot;</span></div>
+<div class="line"><a id="l00953" name="l00953"></a><span class="lineno">  953</span>                                               : <span class="stringliteral">&quot;; use an explicit cast&quot;</span>);</div>
 <div class="line"><a id="l00954" name="l00954"></a><span class="lineno">  954</span>    }</div>
-<div class="line"><a id="l00955" name="l00955"></a><span class="lineno">  955</span>    <span class="keywordflow">return</span> binding;</div>
-<div class="line"><a id="l00956" name="l00956"></a><span class="lineno">  956</span>  }</div>
-<div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> integer = dyn_cast&lt;IntegerAttr&gt;(binding)) {</div>
-<div class="line"><a id="l00958" name="l00958"></a><span class="lineno">  958</span>    <span class="keyword">const</span> APInt &amp;number = integer.getValue();</div>
-<div class="line"><a id="l00959" name="l00959"></a><span class="lineno">  959</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> type = dyn_cast&lt;felt::FeltType&gt;(readType)) {</div>
-<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>      <span class="comment">// An i1&#39;s set bit represents one; index values have signed semantics.</span></div>
-<div class="line"><a id="l00961" name="l00961"></a><span class="lineno">  961</span>      <span class="keyword">auto</span> value = integer.getType().isSignlessInteger(1)</div>
-<div class="line"><a id="l00962" name="l00962"></a><span class="lineno">  962</span>                       ? llvm::DynamicAPInt(number.isOne() ? 1 : 0)</div>
-<div class="line"><a id="l00963" name="l00963"></a><span class="lineno">  963</span>                       : <a class="code hl_namespace" href="namespacellvm.html">llvm</a>::DynamicAPInt(number);</div>
-<div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>      <span class="keywordflow">if</span> (type.hasField()) {</div>
-<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>        const Field &amp;field = type.getField();</div>
-<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>        return Attribute(felt::FeltConstAttr::get(read.getContext(), field.reduce(value), type));</div>
-<div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span>      }</div>
-<div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span>      if (value &lt; 0) {</div>
-<div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>        <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read negative template binding &quot;</span>)</div>
-<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>               &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; as felt without a known field modulus&quot;</span>;</div>
-<div class="line"><a id="l00971" name="l00971"></a><span class="lineno">  971</span>      }</div>
-<div class="line"><a id="l00972" name="l00972"></a><span class="lineno">  972</span>      <span class="keywordflow">return</span> Attribute(felt::FeltConstAttr::get(read.getContext(), value, type));</div>
-<div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>    }</div>
-<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>    <span class="keywordflow">if</span> (readType.isSignlessInteger(1)) {</div>
-<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>      <span class="keywordflow">if</span> (!number.isZero() &amp;&amp; !number.isOne()) {</div>
-<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>        <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read template binding &quot;</span>)</div>
-<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>               &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; with value &quot;</span> &lt;&lt; binding</div>
-<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>               &lt;&lt; <span class="stringliteral">&quot; as i1: expected zero or one; use an explicit cast&quot;</span>;</div>
-<div class="line"><a id="l00979" name="l00979"></a><span class="lineno">  979</span>      }</div>
-<div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>      <span class="keywordflow">return</span> Attribute(IntegerAttr::get(readType, number.isOne() ? 1 : 0));</div>
-<div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>    }</div>
-<div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>    <span class="keywordflow">if</span> (readType.isIndex()) {</div>
-<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>      <span class="keyword">auto</span> bits = integer.getType().isSignlessInteger(1) ? number.zext(64) : number.sextOrTrunc(64);</div>
-<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>      <span class="keywordflow">return</span> Attribute(IntegerAttr::get(readType, bits));</div>
-<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>    }</div>
-<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>  }</div>
-<div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span>  <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read template binding &quot;</span>)</div>
-<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>         &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; with value \&quot;&quot;</span> &lt;&lt; binding &lt;&lt; <span class="stringliteral">&quot;\&quot; as type &quot;</span> &lt;&lt; readType;</div>
-<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>}</div>
-<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span> </div>
-<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>FailureOr&lt;StructSpecializationDiscovery::Bindings&gt;</div>
-<div class="foldopen" id="foldopen00992" data-start="{" data-end="}">
-<div class="line"><a id="l00992" name="l00992"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#aab201c901d470132efe676aa33fbc702">  992</a></span><a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#aab201c901d470132efe676aa33fbc702">StructSpecializationDiscovery::evaluateBindings</a>(Operation *<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, <span class="keyword">const</span> <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span>  <span class="keywordflow">return</span> DiscoveryRun(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, bindings, <span class="keyword">nullptr</span>).evaluateBindings();</div>
-<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span>}</div>
+<div class="line"><a id="l00955" name="l00955"></a><span class="lineno">  955</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> reduced = constant.getReducedValue()) {</div>
+<div class="line"><a id="l00956" name="l00956"></a><span class="lineno">  956</span>      <span class="keywordflow">return</span> Attribute(felt::FeltConstAttr::get(read.getContext(), *reduced, constant.getType()));</div>
+<div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span>    }</div>
+<div class="line"><a id="l00958" name="l00958"></a><span class="lineno">  958</span>    <span class="keywordflow">return</span> binding;</div>
+<div class="line"><a id="l00959" name="l00959"></a><span class="lineno">  959</span>  }</div>
+<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> integer = dyn_cast&lt;IntegerAttr&gt;(binding)) {</div>
+<div class="line"><a id="l00961" name="l00961"></a><span class="lineno">  961</span>    <span class="keyword">const</span> APInt &amp;number = integer.getValue();</div>
+<div class="line"><a id="l00962" name="l00962"></a><span class="lineno">  962</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> type = dyn_cast&lt;felt::FeltType&gt;(readType)) {</div>
+<div class="line"><a id="l00963" name="l00963"></a><span class="lineno">  963</span>      <span class="comment">// An i1&#39;s set bit represents one; index values have signed semantics.</span></div>
+<div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>      <span class="keyword">auto</span> value = integer.getType().isSignlessInteger(1)</div>
+<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>                       ? llvm::DynamicAPInt(number.isOne() ? 1 : 0)</div>
+<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>                       : <a class="code hl_namespace" href="namespacellvm.html">llvm</a>::DynamicAPInt(number);</div>
+<div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span>      <span class="keywordflow">if</span> (type.hasField()) {</div>
+<div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span>        const Field &amp;field = type.getField();</div>
+<div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>        return Attribute(felt::FeltConstAttr::get(read.getContext(), field.reduce(value), type));</div>
+<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>      }</div>
+<div class="line"><a id="l00971" name="l00971"></a><span class="lineno">  971</span>      if (value &lt; 0) {</div>
+<div class="line"><a id="l00972" name="l00972"></a><span class="lineno">  972</span>        <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read negative template binding &quot;</span>)</div>
+<div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>               &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; as felt without a known field modulus&quot;</span>;</div>
+<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>      }</div>
+<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>      <span class="keywordflow">return</span> Attribute(felt::FeltConstAttr::get(read.getContext(), value, type));</div>
+<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>    }</div>
+<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>    <span class="keywordflow">if</span> (readType.isSignlessInteger(1)) {</div>
+<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>      <span class="keywordflow">if</span> (!number.isZero() &amp;&amp; !number.isOne()) {</div>
+<div class="line"><a id="l00979" name="l00979"></a><span class="lineno">  979</span>        <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read template binding &quot;</span>)</div>
+<div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>               &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; with value &quot;</span> &lt;&lt; binding</div>
+<div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>               &lt;&lt; <span class="stringliteral">&quot; as i1: expected zero or one; use an explicit cast&quot;</span>;</div>
+<div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>      }</div>
+<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>      <span class="keywordflow">return</span> Attribute(IntegerAttr::get(readType, number.isOne() ? 1 : 0));</div>
+<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>    }</div>
+<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>    <span class="keywordflow">if</span> (readType.isIndex()) {</div>
+<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>      <span class="keyword">auto</span> bits = integer.getType().isSignlessInteger(1) ? number.zext(64) : number.sextOrTrunc(64);</div>
+<div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span>      <span class="keywordflow">return</span> Attribute(IntegerAttr::get(readType, bits));</div>
+<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>    }</div>
+<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>  }</div>
+<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span>  <span class="keywordflow">return</span> read.emitError(<span class="stringliteral">&quot;cannot read template binding &quot;</span>)</div>
+<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>         &lt;&lt; read.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8">getConstNameAttr</a>() &lt;&lt; <span class="stringliteral">&quot; with value \&quot;&quot;</span> &lt;&lt; binding &lt;&lt; <span class="stringliteral">&quot;\&quot; as type &quot;</span> &lt;&lt; readType;</div>
+<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span>}</div>
+<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span> </div>
+<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span>FailureOr&lt;StructSpecializationDiscovery::Bindings&gt;</div>
+<div class="foldopen" id="foldopen00995" data-start="{" data-end="}">
+<div class="line"><a id="l00995" name="l00995"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#aab201c901d470132efe676aa33fbc702">  995</a></span><a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#aab201c901d470132efe676aa33fbc702">StructSpecializationDiscovery::evaluateBindings</a>(Operation *<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, <span class="keyword">const</span> <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00996" name="l00996"></a><span class="lineno">  996</span>  <span class="keywordflow">return</span> DiscoveryRun(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, bindings, <span class="keyword">nullptr</span>).evaluateBindings();</div>
+<div class="line"><a id="l00997" name="l00997"></a><span class="lineno">  997</span>}</div>
 </div>
-<div class="line"><a id="l00995" name="l00995"></a><span class="lineno">  995</span> </div>
-<div class="foldopen" id="foldopen00996" data-start="{" data-end="}">
-<div class="line"><a id="l00996" name="l00996"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2">  996</a></span>FailureOr&lt;StructSpecializationDiscovery::Requests&gt; <a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2">StructSpecializationDiscovery::discover</a>(</div>
-<div class="line"><a id="l00997" name="l00997"></a><span class="lineno">  997</span>    Operation *<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, <span class="keyword">const</span> <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings, SmallVectorImpl&lt;Operation *&gt; *visitedOperations,</div>
-<div class="line"><a id="l00998" name="l00998"></a><span class="lineno">  998</span>    <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#ab02d26b945c86fd3d777cae03d1f053a">CallTargets</a> *callTargets</div>
-<div class="line"><a id="l00999" name="l00999"></a><span class="lineno">  999</span>)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l01000" name="l01000"></a><span class="lineno"> 1000</span>  <span class="keywordflow">return</span> DiscoveryRun(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, bindings, visitedOperations, callTargets).run();</div>
-<div class="line"><a id="l01001" name="l01001"></a><span class="lineno"> 1001</span>}</div>
+<div class="line"><a id="l00998" name="l00998"></a><span class="lineno">  998</span> </div>
+<div class="foldopen" id="foldopen00999" data-start="{" data-end="}">
+<div class="line"><a id="l00999" name="l00999"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2">  999</a></span>FailureOr&lt;StructSpecializationDiscovery::Requests&gt; <a class="code hl_function" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2">StructSpecializationDiscovery::discover</a>(</div>
+<div class="line"><a id="l01000" name="l01000"></a><span class="lineno"> 1000</span>    Operation *<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, <span class="keyword">const</span> <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">Bindings</a> &amp;bindings, SmallVectorImpl&lt;Operation *&gt; *visitedOperations,</div>
+<div class="line"><a id="l01001" name="l01001"></a><span class="lineno"> 1001</span>    <a class="code hl_typedef" href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#ab02d26b945c86fd3d777cae03d1f053a">CallTargets</a> *callTargets</div>
+<div class="line"><a id="l01002" name="l01002"></a><span class="lineno"> 1002</span>)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l01003" name="l01003"></a><span class="lineno"> 1003</span>  <span class="keywordflow">return</span> DiscoveryRun(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, bindings, visitedOperations, callTargets).run();</div>
+<div class="line"><a id="l01004" name="l01004"></a><span class="lineno"> 1004</span>}</div>
 </div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
+<div class="ttc" id="aConstraintScalarFacts_8h_html"><div class="ttname"><a href="ConstraintScalarFacts_8h.html">ConstraintScalarFacts.h</a></div></div>
 <div class="ttc" id="aDiscoveryStorage_8h_html"><div class="ttname"><a href="DiscoveryStorage_8h.html">DiscoveryStorage.h</a></div></div>
 <div class="ttc" id="aDynamicAPIntHelper_8h_html"><div class="ttname"><a href="DynamicAPIntHelper_8h.html">DynamicAPIntHelper.h</a></div><div class="ttdoc">This file implements helpers for DynamicAPInt operations and conversions that LLVM does not provide.</div></div>
 <div class="ttc" id="aFelt_2IR_2Ops_8h_html"><div class="ttname"><a href="Felt_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -1090,7 +1094,6 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('StructSpeciali
 <div class="ttc" id="aLICENSE_8txt_html_a40e859b9aaa2d8657227ee008c8a6c7b"><div class="ttname"><a href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a></div><div class="ttdeci">Apache License January AND DISTRIBUTION Definitions License shall mean the terms and conditions for and distribution as defined by Sections through of this document Licensor shall mean the copyright owner or entity authorized by the copyright owner that is granting the License Legal Entity shall mean the union of the acting entity and all other entities that control are controlled by or are under common control with that entity For the purposes of this definition control direct or to cause the direction or management of such whether by contract or including but not limited to software source documentation source</div><div class="ttdef"><b>Definition</b> <a href="LICENSE_8txt_source.html#l00028">LICENSE.txt:28</a></div></div>
 <div class="ttc" id="aPOD_2IR_2Ops_8h_html"><div class="ttname"><a href="POD_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h.html">Ops.h</a></div></div>
-<div class="ttc" id="aScalarEvaluation_8h_html"><div class="ttname"><a href="ScalarEvaluation_8h.html">ScalarEvaluation.h</a></div></div>
 <div class="ttc" id="aStaticLoop_8h_html"><div class="ttname"><a href="StaticLoop_8h.html">StaticLoop.h</a></div></div>
 <div class="ttc" id="aStructSpecializationDiscovery_8h_html"><div class="ttname"><a href="StructSpecializationDiscovery_8h.html">StructSpecializationDiscovery.h</a></div></div>
 <div class="ttc" id="aTypeHelper_8h_html"><div class="ttname"><a href="TypeHelper_8h.html">TypeHelper.h</a></div></div>
@@ -1124,9 +1127,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('StructSpeciali
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage_html_a02f2c6141acbb9b2b54440e39d65ce0c"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a02f2c6141acbb9b2b54440e39d65ce0c">llzk::polymorphic::detail::DiscoveryStorage::write</a></div><div class="ttdeci">void write(const DiscoveryValue &amp;destination, llvm::ArrayRef&lt; mlir::Attribute &gt; path, const DiscoveryValue &amp;value)</div><div class="ttdoc">Replace a subtree, clearing old facts even when the new value is unknown.</div><div class="ttdef"><b>Definition</b> <a href="DiscoveryStorage_8h_source.html#l00154">DiscoveryStorage.h:154</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage_html_a342406199a74c70668f9f86ffb5880ed"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#a342406199a74c70668f9f86ffb5880ed">llzk::polymorphic::detail::DiscoveryStorage::read</a></div><div class="ttdeci">DiscoveryValue read(const DiscoveryValue &amp;source, llvm::ArrayRef&lt; mlir::Attribute &gt; path, bool aggregate)</div><div class="ttdoc">Read a scalar leaf or snapshot an aggregate subtree into an independent root.</div><div class="ttdef"><b>Definition</b> <a href="DiscoveryStorage_8h_source.html#l00102">DiscoveryStorage.h:102</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage_html_aa487459273b34fdce13bcd01f15e704e"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1DiscoveryStorage.html#aa487459273b34fdce13bcd01f15e704e">llzk::polymorphic::detail::DiscoveryStorage::forget</a></div><div class="ttdeci">void forget(const DiscoveryValue &amp;value)</div><div class="ttdoc">Forget the contents of a potentially modified or escaping local aggregate.</div><div class="ttdef"><b>Definition</b> <a href="DiscoveryStorage_8h_source.html#l00091">DiscoveryStorage.h:91</a></div></div>
-<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_a49cd1ae344e969bef8d3918f964bb9d2"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2">llzk::polymorphic::detail::StructSpecializationDiscovery::discover</a></div><div class="ttdeci">mlir::FailureOr&lt; Requests &gt; discover(mlir::Operation *source, const Bindings &amp;bindings, llvm::SmallVectorImpl&lt; mlir::Operation * &gt; *visitedOperations=nullptr, CallTargets *callTargets=nullptr) const</div><div class="ttdoc">Return ordered, deduplicated requests for a struct or free-function source, or diagnose an unresolved...</div><div class="ttdef"><b>Definition</b> <a href="#l00996">StructSpecializationDiscovery.cpp:996</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_a49cd1ae344e969bef8d3918f964bb9d2"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a49cd1ae344e969bef8d3918f964bb9d2">llzk::polymorphic::detail::StructSpecializationDiscovery::discover</a></div><div class="ttdeci">mlir::FailureOr&lt; Requests &gt; discover(mlir::Operation *source, const Bindings &amp;bindings, llvm::SmallVectorImpl&lt; mlir::Operation * &gt; *visitedOperations=nullptr, CallTargets *callTargets=nullptr) const</div><div class="ttdoc">Return ordered, deduplicated requests for a struct or free-function source, or diagnose an unresolved...</div><div class="ttdef"><b>Definition</b> <a href="#l00999">StructSpecializationDiscovery.cpp:999</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_a6df4e2fd04830b727ad6fd73a3c0742f"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f">llzk::polymorphic::detail::StructSpecializationDiscovery::Bindings</a></div><div class="ttdeci">llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; Bindings</div><div class="ttdef"><b>Definition</b> <a href="StructSpecializationDiscovery_8h_source.html#l00130">StructSpecializationDiscovery.h:130</a></div></div>
-<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_aab201c901d470132efe676aa33fbc702"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#aab201c901d470132efe676aa33fbc702">llzk::polymorphic::detail::StructSpecializationDiscovery::evaluateBindings</a></div><div class="ttdeci">mlir::FailureOr&lt; Bindings &gt; evaluateBindings(mlir::Operation *source, const Bindings &amp;bindings) const</div><div class="ttdoc">Evaluate enclosing template expressions in declaration order and return an extended copy of bindings ...</div><div class="ttdef"><b>Definition</b> <a href="#l00992">StructSpecializationDiscovery.cpp:992</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_aab201c901d470132efe676aa33fbc702"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#aab201c901d470132efe676aa33fbc702">llzk::polymorphic::detail::StructSpecializationDiscovery::evaluateBindings</a></div><div class="ttdeci">mlir::FailureOr&lt; Bindings &gt; evaluateBindings(mlir::Operation *source, const Bindings &amp;bindings) const</div><div class="ttdoc">Evaluate enclosing template expressions in declaration order and return an extended copy of bindings ...</div><div class="ttdef"><b>Definition</b> <a href="#l00995">StructSpecializationDiscovery.cpp:995</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_ab02d26b945c86fd3d777cae03d1f053a"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#ab02d26b945c86fd3d777cae03d1f053a">llzk::polymorphic::detail::StructSpecializationDiscovery::CallTargets</a></div><div class="ttdeci">llvm::SmallVector&lt; RolledCallTargets &gt; CallTargets</div><div class="ttdef"><b>Definition</b> <a href="StructSpecializationDiscovery_8h_source.html#l00132">StructSpecializationDiscovery.h:132</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery_html_ae70c4e94c65cefd871a368f1e62d8e68"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#ae70c4e94c65cefd871a368f1e62d8e68">llzk::polymorphic::detail::StructSpecializationDiscovery::Requests</a></div><div class="ttdeci">llvm::SmallVector&lt; StructSpecializationRequest &gt; Requests</div><div class="ttdef"><b>Definition</b> <a href="StructSpecializationDiscovery_8h_source.html#l00131">StructSpecializationDiscovery.h:131</a></div></div>
 <div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00411">SourceRefLattice.cpp:411</a></div></div>
@@ -1136,6 +1139,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('StructSpeciali
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html">llzk::polymorphic::detail</a></div><div class="ttdoc">Common interface for constant parameter-like symbol operations that can be defined within a TemplateO...</div><div class="ttdef"><b>Definition</b> <a href="ConstraintBindings_8h_source.html#l00024">ConstraintBindings.h:24</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_a8148e70847cad27318c1c86948e10ae0"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#a8148e70847cad27318c1c86948e10ae0">llzk::polymorphic::detail::Environment</a></div><div class="ttdeci">llvm::DenseMap&lt; mlir::Value, BoundValue &gt; Environment</div><div class="ttdef"><b>Definition</b> <a href="ConstraintBindings_8h_source.html#l00036">ConstraintBindings.h:36</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_a929a307bf06c24423d868e2fcec7d28a"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#a929a307bf06c24423d868e2fcec7d28a">llzk::polymorphic::detail::evaluateScalarOperation</a></div><div class="ttdeci">mlir::LogicalResult evaluateScalarOperation(mlir::Operation *op, llvm::ArrayRef&lt; mlir::Attribute &gt; operands, llvm::SmallVectorImpl&lt; mlir::OpFoldResult &gt; &amp;results)</div><div class="ttdoc">Evaluate a scalar operation using caller-supplied operand constants.</div><div class="ttdef"><b>Definition</b> <a href="ScalarEvaluation_8h_source.html#l00026">ScalarEvaluation.h:26</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_a9ba034ba12eeace14acd9e7ebe97072a"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#a9ba034ba12eeace14acd9e7ebe97072a">llzk::polymorphic::detail::isInvariantTrueCondition</a></div><div class="ttdeci">bool isInvariantTrueCondition(mlir::Value condition)</div><div class="ttdoc">Prove a Boolean condition true without any loop-carried bindings.</div><div class="ttdef"><b>Definition</b> <a href="ConstraintScalarFacts_8h_source.html#l00099">ConstraintScalarFacts.h:99</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_ac5d324ff80fc04dc92bd6f9e94bf7661"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#ac5d324ff80fc04dc92bd6f9e94bf7661">llzk::polymorphic::detail::resolveConstReadBinding</a></div><div class="ttdeci">mlir::FailureOr&lt; mlir::Attribute &gt; resolveConstReadBinding(ConstReadOp read, mlir::Attribute binding, mlir::Type readType)</div><div class="ttdoc">Materialize a binding with the resolved read type for evaluation or cloning.</div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00032">Ops.cpp:32</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a5e3b7f67fa2f2d8234665c4a71fa5862"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a5e3b7f67fa2f2d8234665c4a71fa5862">llzk::polymorphic::hasNextStaticIteration</a></div><div class="ttdeci">bool hasNextStaticIteration(int64_t current, int64_t upper, int64_t step)</div><div class="ttdoc">Whether another signed iteration exists after current, for current &lt; upper and a positive step.</div><div class="ttdef"><b>Definition</b> <a href="StaticLoop_8h_source.html#l00019">StaticLoop.h:19</a></div></div>

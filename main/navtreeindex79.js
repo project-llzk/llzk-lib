@@ -1,5 +1,6 @@
 var NAVTREEINDEX79 =
 {
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html":[13,0,1,6,1],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html":[11,0,3,9,2],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html":[13,0,1,6,2],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits_1_1Concept.html":[11,0,3,9,2,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX79 =
 "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a38b101aeccbfb1499869c849e9188f1a":[13,0,1,9,0,1,0,8],
 "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a3e74253bbb88fe90a8f23aa1da6740f8":[11,0,3,12,0,1,0,9],
 "structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a3e74253bbb88fe90a8f23aa1da6740f8":[13,0,1,9,0,1,0,9],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a4c2823c14d255a6b4d26194259967ef2":[11,0,3,12,0,1,0,4],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a4c2823c14d255a6b4d26194259967ef2":[13,0,1,9,0,1,0,4]
+"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a4c2823c14d255a6b4d26194259967ef2":[11,0,3,12,0,1,0,4]
 };

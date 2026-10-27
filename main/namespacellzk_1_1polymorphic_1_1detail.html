@@ -196,6 +196,8 @@ Typedefs</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:a391bf710898e11b1491070e91740eb63" id="r_a391bf710898e11b1491070e91740eb63"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a391bf710898e11b1491070e91740eb63">constraintError</a> (mlir::Operation *site, const llvm::Twine &amp;message)</td></tr>
 <tr class="memdesc:a391bf710898e11b1491070e91740eb63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emit the common diagnostic prefix for constraint expansion and storage helpers.  <br /></td></tr>
+<tr class="memitem:a9ba034ba12eeace14acd9e7ebe97072a" id="r_a9ba034ba12eeace14acd9e7ebe97072a"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a9ba034ba12eeace14acd9e7ebe97072a">isInvariantTrueCondition</a> (mlir::Value condition)</td></tr>
+<tr class="memdesc:a9ba034ba12eeace14acd9e7ebe97072a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prove a Boolean condition true without any loop-carried bindings.  <br /></td></tr>
 <tr class="memitem:a929a307bf06c24423d868e2fcec7d28a" id="r_a929a307bf06c24423d868e2fcec7d28a"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a929a307bf06c24423d868e2fcec7d28a">evaluateScalarOperation</a> (mlir::Operation *op, llvm::ArrayRef&lt; mlir::Attribute &gt; operands, llvm::SmallVectorImpl&lt; mlir::OpFoldResult &gt; &amp;results)</td></tr>
 <tr class="memdesc:a929a307bf06c24423d868e2fcec7d28a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate a scalar operation using caller-supplied operand constants.  <br /></td></tr>
 <tr class="memitem:a5ffc185c7897fb342829c777267f42d1" id="r_a5ffc185c7897fb342829c777267f42d1"><td class="memItemLeft">FailureOr&lt; <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5ffc185c7897fb342829c777267f42d1">buildInstantiationLayout</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> parentTemplate, ArrayAttr callParams, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete)</td></tr>
@@ -741,6 +743,36 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate. </p>
+
+</div>
+</div>
+<a id="a9ba034ba12eeace14acd9e7ebe97072a" name="a9ba034ba12eeace14acd9e7ebe97072a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9ba034ba12eeace14acd9e7ebe97072a">&#9670;&#160;</a></span>isInvariantTrueCondition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::polymorphic::detail::isInvariantTrueCondition </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Value</td>          <td class="paramname"><span class="paramname"><em>condition</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Prove a Boolean condition true without any loop-carried bindings. </p>
+<p>Such a condition cannot become false on a later iteration, unlike a true first test. </p>
+
+<p class="definition">Definition at line <a class="el" href="ConstraintScalarFacts_8h_source.html#l00099">99</a> of file <a class="el" href="ConstraintScalarFacts_8h_source.html">ConstraintScalarFacts.h</a>.</p>
 
 </div>
 </div>

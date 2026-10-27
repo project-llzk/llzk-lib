@@ -46,6 +46,7 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "inferUnifiedParam", "namespacellzk_1_1polymorphic_1_1detail.html#a675bf66f2609ed68c6027e068d2bd1ec", null ],
     [ "inferUnifiedParam", "namespacellzk_1_1polymorphic_1_1detail.html#a5ddbefc3debaeb3802ceef20fc6a88ca", null ],
     [ "isErasableDefinition", "namespacellzk_1_1polymorphic_1_1detail.html#aea1b21a65533d5e3fb2063434628d565", null ],
+    [ "isInvariantTrueCondition", "namespacellzk_1_1polymorphic_1_1detail.html#a9ba034ba12eeace14acd9e7ebe97072a", null ],
     [ "newBaseTarget", "namespacellzk_1_1polymorphic_1_1detail.html#afa4db6a4baedb109176585c4bfc46e48", null ],
     [ "newConverterDefinedTarget", "namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386", null ],
     [ "newConverterDefinedTargetWithCallback", "namespacellzk_1_1polymorphic_1_1detail.html#a07f9f8f9a4106a59ae12e59ab7241dc6", null ],
