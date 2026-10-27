@@ -92,7 +92,7 @@ the same reason as `-llzk-full-struct-inlining`.
 
 ### `-llzk-full-r1cs-lowering`
 
-_Lower polynomial constraints to R1CS._
+_Lower polynomial constraints to R1CS using full polynomial lowering._
 
 Runs the following passes in order:
 
@@ -100,8 +100,27 @@ Runs the following passes in order:
 2. `-llzk-r1cs-lowering`
 3. MLIR's `-cse`
 
-The polynomial-lowering stage prepares flattened, degree-two constraints for
-R1CS conversion. CSE then removes redundant `r1cs.to_linear` operations.
+### `-llzk-constraint-flattening-r1cs-lowering`
+
+_Monomorphize and flatten main constraints, lower degree, and convert layout signals to R1CS._
+
+Runs the following passes in order:
+
+1. `-llzk-constraint-flattening`
+2. `-llzk-poly-lowering-pass` with `main-only=true max-degree=2`
+3. `-llzk-r1cs-lowering`
+4. MLIR's `-cse`
+
+Degree lowering processes the flattened main constrain body and marks generated
+auxiliaries as signals. The R1CS conversion pass validates degree at
+most two, prepares additional R1CS auxiliaries, builds the signal layout, and
+converts storage paths directly to wires. Array, POD, and component storage
+remain intact until conversion.
+
+Both R1CS pipelines accept `output-llzk=<file>` and `output-layout=<file>`.
+Alongside the R1CS IR returned through `-o`, these write the LLZK with auxiliary
+fields and assignments in `@compute`, and the access-path/layout-ID/R1CS-ID CSV.
+See the R1CS backend documentation for an example.
 
 ### `-llzk-constraint-flattening`
 

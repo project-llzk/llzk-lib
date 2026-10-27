@@ -1,4 +1,6 @@
-// RUN: llzk-opt -llzk-constraint-flattening -llzk-poly-lowering-pass='main-only=true max-degree=2' -llzk-r1cs-lowering -cse %s | FileCheck %s
+// RUN: llzk-opt -llzk-constraint-flattening-r1cs-lowering='output-layout=%t.csv' %s -o %t
+// RUN: FileCheck %s < %t
+// RUN: FileCheck %s --check-prefix=CSV < %t.csv
 
 // IDs include unused input and signal leaves, but omit non-signal temporaries.
 
@@ -67,3 +69,15 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:      r1cs.constrain %[[VAL_10]], %[[VAL_10]], %[[VAL_18]] : !r1cs.linear
 // CHECK-NEXT:    } {r1cs.input_labels = array<i64: 3, 4, 5, 6, 7>}
 // CHECK-NEXT:  }
+
+// CSV-LABEL: access_path,llzk_layout_id,r1cs_wire_id
+// CSV-NEXT:  "arg1[0][0]",0,3
+// CSV-NEXT:  "arg1[0][1]",1,4
+// CSV-NEXT:  "arg1[1][0]",2,5
+// CSV-NEXT:  "arg1[1][1]",3,6
+// CSV-NEXT:  "arg2",4,7
+// CSV-NEXT:  "main[""out""][0]",5,1
+// CSV-NEXT:  "main[""out""][1]",6,2
+// CSV-NEXT:  "main[""hidden""]",7,8
+// CSV-NEXT:  "main[""child""][""value""]",8,9
+// CSV-NEXT:  "main[""record""][""value""]",9,10

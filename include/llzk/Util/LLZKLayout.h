@@ -76,6 +76,11 @@ struct LLZKLayout {
 /// rewrite function bodies.
 mlir::FailureOr<LLZKLayout> buildLLZKLayout(mlir::ModuleOp module);
 
+/// Print a path produced by buildLLZKLayout, retaining optional argument display names.
+void printLLZKLayoutPath(
+    mlir::ArrayAttr path, llvm::ArrayRef<mlir::StringAttr> argumentNames, llvm::raw_ostream &output
+);
+
 /// Print the logical signal section of the .llzk-layout format.
 /// Paths must follow the structural format produced by buildLLZKLayout.
 void printLLZKLayout(const LLZKLayout &layout, llvm::raw_ostream &output);
