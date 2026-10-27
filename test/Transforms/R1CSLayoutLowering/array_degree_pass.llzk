@@ -50,13 +50,13 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // PREPARE-NEXT:    struct.def @Main {
 // PREPARE-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
 // PREPARE-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">> {function.arg_name = "input"}) -> !struct.type<@Main> attributes {function.allow_witness} {
-// PREPARE-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// PREPARE-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// PREPARE-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// PREPARE-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
 // PREPARE-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_3]], %[[VAL_3]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_4]], %[[VAL_3]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        struct.writem %[[VAL_1]][@out] = %[[VAL_5]] : <@Main>, !felt.type<"babybear">
-// PREPARE-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// PREPARE-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_5]] : <@Main>, !felt.type<"babybear">
+// PREPARE-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
 // PREPARE-NEXT:      }
 // PREPARE-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">>) attributes {function.allow_constraint} {
 // PREPARE-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -71,17 +71,17 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // PREPARE-NEXT:    struct.def @Main__spec_0 {
 // PREPARE-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
 // PREPARE-NEXT:      function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">> {function.arg_name = "input"}) -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
-// PREPARE-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
-// PREPARE-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// PREPARE-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_15]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// PREPARE-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// PREPARE-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_14]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
 // PREPARE-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_16]], %[[VAL_16]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_17]], %[[VAL_16]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        struct.writem %[[VAL_14]][@out] = %[[VAL_18]] : <@Main__spec_0>, !felt.type<"babybear">
+// PREPARE-NEXT:        struct.writem %[[VAL_15]][@out] = %[[VAL_18]] : <@Main__spec_0>, !felt.type<"babybear">
 // PREPARE-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // PREPARE-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_19]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
 // PREPARE-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_20]], %[[VAL_20]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        struct.writem %[[VAL_14]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_21]] : <@Main__spec_0>, !felt.type<"babybear">
-// PREPARE-NEXT:        function.return %[[VAL_14]] : !struct.type<@Main__spec_0>
+// PREPARE-NEXT:        struct.writem %[[VAL_15]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_21]] : <@Main__spec_0>, !felt.type<"babybear">
+// PREPARE-NEXT:        function.return %[[VAL_15]] : !struct.type<@Main__spec_0>
 // PREPARE-NEXT:      }
 // PREPARE-NEXT:      function.def @constrain(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_23:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"babybear">>) attributes {function.allow_constraint} {
 // PREPARE-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index

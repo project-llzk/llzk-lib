@@ -35,8 +35,8 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Matchers.h>
-#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/IR/Verifier.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Support/FileUtilities.h>
 
 #include <llvm/ADT/DenseMap.h>
