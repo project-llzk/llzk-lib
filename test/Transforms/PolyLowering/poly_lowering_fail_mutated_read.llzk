@@ -12,7 +12,7 @@ module attributes {llzk.lang} {
       %aggregate = struct.readm %self[@data] : !struct.type<@MutatedArray>, !array.type<1 x !felt.type>
       %idx = arith.constant 0 : index
       array.write %aggregate[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
-      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression after an aggregate write; aggregate mutations cannot be replayed}}
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
       %value = array.read %aggregate[%idx] : !array.type<1 x !felt.type>, !felt.type
       %square = felt.mul %value, %value : !felt.type, !felt.type
       %fourth = felt.mul %square, %square : !felt.type, !felt.type
@@ -36,7 +36,7 @@ module attributes {llzk.lang} {
       %aggregate = struct.readm %self[@data] : !struct.type<@MutatedPod>, !pod.type<[@value: !felt.type]>
       %idx = arith.constant 0 : index
       pod.write %aggregate[@value] = %x : !pod.type<[@value: !felt.type]>, !felt.type
-      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression after an aggregate write; aggregate mutations cannot be replayed}}
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
       %value = pod.read %aggregate[@value] : !pod.type<[@value: !felt.type]>, !felt.type
       %square = felt.mul %value, %value : !felt.type, !felt.type
       %fourth = felt.mul %square, %square : !felt.type, !felt.type

@@ -38,12 +38,14 @@ struct AuxAssignment {
 /// compute `%self`, and later arguments to compute inputs.
 /// Returns null after emitting a diagnostic when an expression root cannot be
 /// rebuilt safely in compute.
-/// Storage reads following aggregate writes are conservatively rejected because
-/// reconstruction does not replay mutations or prove that their storage is disjoint.
-/// Aggregate arguments are rejected if compute may write through a derived aggregate,
-/// since return-side reconstruction would observe a different input state.
-/// Passing a derived aggregate to a compute-side call is also treated as a mutation
-/// because the callee may write to that storage.
+/// Both constrain reads and compute input mappings use the same storage-safety
+/// query: known writes, calls, and unknown effects on potentially shared aggregate
+/// storage prevent replay. Access interfaces and MLIR memory effects establish
+/// read-only operations; distinct value-type entry arguments/allocations establish
+/// disjointness. Component handles may alias despite distinct SSA origins.
+/// Views and copies are conservatively treated as sharing their source storage,
+/// and unknown provenance cannot establish disjointness. Callees are checked with
+/// the same query; external calls and recursive cycles cannot prove safety.
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo

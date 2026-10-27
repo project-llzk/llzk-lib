@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Transforms/LoweringUtils.h"
 
 #include <mlir/IR/Block.h>
@@ -23,10 +24,12 @@
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -41,59 +44,161 @@ namespace llzk {
 
 namespace {
 
-/// Conservatively follows aggregate provenance, including views and value copies.
-/// Unknown region arguments may carry the input through control flow.
-bool mayDeriveFromAggregateArgument(Value value, Value argument, DenseSet<Value> &visited) {
-  if (value == argument) {
+/// Whether a value can denote storage used by reconstructed aggregate reads.
+bool isAggregateStorage(Value value) {
+  return isa<array::ArrayType, pod::PodType, StructType>(value.getType());
+}
+
+/// Collects possible storage origins. Views, casts, and aggregate copies are all
+/// conservatively associated with their source. Only entry arguments and known
+/// allocations prove distinct origins; region forwarding and opaque producers
+/// remain unknown instead of incorrectly proving disjointness.
+bool collectStorageOrigins(Value value, DenseSet<Value> &origins, DenseSet<Value> &visited) {
+  if (!visited.insert(value).second) {
     return true;
   }
-  if (!visited.insert(value).second) {
+  // Component values are identity-bearing handles, even when passed by value.
+  // Different arguments or aggregate paths may refer to the same component.
+  if (isa<StructType>(value.getType()) && !value.getDefiningOp<CreateStructOp>()) {
     return false;
   }
-  if (auto barg = dyn_cast<BlockArgument>(value)) {
-    return barg.getOwner() != cast<BlockArgument>(argument).getOwner();
-  }
-  Operation *def = value.getDefiningOp();
-  // Region results may forward captured aggregates without listing them as operands.
-  if (def->getNumRegions() != 0) {
+  if (auto argument = dyn_cast<BlockArgument>(value)) {
+    if (!isa<FuncDefOp>(argument.getOwner()->getParentOp()) ||
+        argument.getOwner() != &argument.getOwner()->getParent()->front()) {
+      return false;
+    }
+    origins.insert(value);
     return true;
   }
-  return llvm::any_of(def->getOperands(), [&](Value operand) {
-    return isa<array::ArrayType, pod::PodType, StructType>(operand.getType()) &&
-           mayDeriveFromAggregateArgument(operand, argument, visited);
+  Operation *def = value.getDefiningOp();
+  if (isa<array::CreateArrayOp, pod::NewPodOp, CreateStructOp>(def)) {
+    origins.insert(value);
+    return true;
+  }
+  bool isAccess = isa<MemberReadOp, array::ArrayAccessOpInterface, pod::PodAccessOpInterface>(def);
+  bool isAliasCast = isa<polymorphic::UnifiableCastOp, UnrealizedConversionCastOp>(def) &&
+                     def->getNumOperands() == 1 && def->getNumResults() == 1;
+  if (!isAccess && !isAliasCast) {
+    return false;
+  }
+  bool hasSource = false;
+  bool known = true;
+  for (Value operand : def->getOperands()) {
+    if (isAggregateStorage(operand)) {
+      hasSource = true;
+      known &= collectStorageOrigins(operand, origins, visited);
+    }
+  }
+  return hasSource && known;
+}
+
+/// Proves disjointness only for distinct known origins, ignoring subpaths.
+/// Treating value copies and different members as overlapping is conservative.
+bool mayShareStorage(Value lhs, Value rhs) {
+  DenseSet<Value> lhsOrigins, rhsOrigins, lhsVisited, rhsVisited;
+  if (!collectStorageOrigins(lhs, lhsOrigins, lhsVisited) ||
+      !collectStorageOrigins(rhs, rhsOrigins, rhsVisited)) {
+    return true;
+  }
+  return llvm::any_of(lhsOrigins, [&](Value origin) { return rhsOrigins.contains(origin); });
+}
+
+/// Queries the body of a scope with an active-callee set for conservative recursion handling.
+Operation *
+findStorageMutation(Operation *scope, Value storage, DenseSet<Operation *> &activeCallees);
+
+/// Checks each potentially overlapping call argument against the corresponding
+/// callee argument. Opaque/external calls and recursive cycles cannot prove safety.
+bool callMayMutateStorage(CallOp call, Value storage, DenseSet<Operation *> &activeCallees) {
+  SmallVector<unsigned> overlappingArgs;
+  for (auto [index, argument] : llvm::enumerate(call.getArgOperands())) {
+    if (isAggregateStorage(argument) && mayShareStorage(argument, storage)) {
+      overlappingArgs.push_back(index);
+    }
+  }
+  if (overlappingArgs.empty()) {
+    return false;
+  }
+  SymbolTableCollection tables;
+  auto target = call.getCalleeTarget(tables);
+  if (failed(target)) {
+    return true;
+  }
+  FuncDefOp callee = target->get();
+  if (callee.getBody().empty() || !activeCallees.insert(callee).second) {
+    return true;
+  }
+  llvm::scope_exit cleanup([&]() { activeCallees.erase(callee); });
+  for (unsigned index : overlappingArgs) {
+    if (index >= callee.getNumArguments() ||
+        findStorageMutation(callee, callee.getArgument(index), activeCallees)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Shared mutation model for both constrain reads and compute input mappings.
+/// LLZK access interfaces describe their storage precisely. MLIR effects handle
+/// other operations; unknown effects may mutate any aggregate operand. Calls
+/// are analyzed using the same query on their callee arguments, without a whitelist.
+bool operationMayMutateStorage(Operation *op, Value storage, DenseSet<Operation *> &activeCallees) {
+  if (auto call = dyn_cast<CallOp>(op)) {
+    return callMayMutateStorage(call, storage, activeCallees);
+  }
+  if (auto access = dyn_cast<array::ArrayAccessOpInterface>(op)) {
+    return !access.isRead() && mayShareStorage(access.getArrRef(), storage);
+  }
+  if (auto access = dyn_cast<pod::PodAccessOpInterface>(op)) {
+    return !access.isRead() && mayShareStorage(access.getPodRef(), storage);
+  }
+  if (auto write = dyn_cast<MemberWriteOp>(op)) {
+    return mayShareStorage(write.getComponent(), storage);
+  }
+  // Constraint emission observes storage; terminators only transfer values.
+  if (isa<ConstraintOpInterface>(op) || op->hasTrait<OpTrait::IsTerminator>()) {
+    return false;
+  }
+  auto overlapsOperand = [&]() {
+    return llvm::any_of(op->getOperands(), [&](Value operand) {
+      return isAggregateStorage(operand) && mayShareStorage(operand, storage);
+    });
+  };
+  auto effects = getEffectsRecursively(op);
+  if (!effects) {
+    return overlapsOperand();
+  }
+  return llvm::any_of(*effects, [&](const MemoryEffects::EffectInstance &effect) {
+    if (!isa<MemoryEffects::Write, MemoryEffects::Free>(effect.getEffect())) {
+      return false;
+    }
+    if (Value target = effect.getValue()) {
+      return !isAggregateStorage(target) || mayShareStorage(target, storage);
+    }
+    // An unscoped write effect cannot establish which storage it modifies.
+    return true;
   });
 }
 
-/// Rejects mapping an aggregate input whose compute-side storage may be mutated.
-/// Scan all regions and paths because auxiliaries are emitted at compute returns.
-/// Calls receiving a derived aggregate are conservatively treated as mutating it.
-bool hasComputeMutation(Value argument, FuncDefOp computeFunc) {
-  auto result = computeFunc.walk([&](Operation *op) -> WalkResult {
-    if (auto call = dyn_cast<CallOp>(op)) {
-      for (Value operand : call.getArgOperands()) {
-        DenseSet<Value> visited;
-        if (isa<array::ArrayType, pod::PodType, StructType>(operand.getType()) &&
-            mayDeriveFromAggregateArgument(operand, argument, visited)) {
-          return WalkResult::interrupt();
-        }
-      }
+/// Finds a possible mutation in any region/path of a scope. The same query is
+/// used before constrain reads and across compute, where reads are replayed at returns.
+Operation *
+findStorageMutation(Operation *scope, Value storage, DenseSet<Operation *> &activeCallees) {
+  Operation *mutation = nullptr;
+  scope->walk([&](Operation *op) -> WalkResult {
+    if (operationMayMutateStorage(op, storage, activeCallees)) {
+      mutation = op;
+      return WalkResult::interrupt();
     }
-    Value storage;
-    if (auto arrayWrite = dyn_cast<array::WriteArrayOp>(op)) {
-      storage = arrayWrite.getArrRef();
-    } else if (auto insert = dyn_cast<array::InsertArrayOp>(op)) {
-      storage = insert.getArrRef();
-    } else if (auto podWrite = dyn_cast<pod::WritePodOp>(op)) {
-      storage = podWrite.getPodRef();
-    } else if (auto memberWrite = dyn_cast<MemberWriteOp>(op)) {
-      storage = memberWrite.getComponent();
-    }
-    DenseSet<Value> visited;
-    return storage && mayDeriveFromAggregateArgument(storage, argument, visited)
-               ? WalkResult::interrupt()
-               : WalkResult::advance();
+    return WalkResult::advance();
   });
-  return result.wasInterrupted();
+  return mutation;
+}
+
+/// Starts a storage-safety query without assumptions about previously visited callees.
+Operation *findStorageMutation(Operation *scope, Value storage) {
+  DenseSet<Operation *> activeCallees;
+  return findStorageMutation(scope, storage, activeCallees);
 }
 
 Value mapBlockArgumentInCompute(BlockArgument barg, FuncDefOp computeFunc) {
@@ -103,8 +208,7 @@ Value mapBlockArgumentInCompute(BlockArgument barg, FuncDefOp computeFunc) {
     return computeFunc.getSelfValueFromCompute();
   }
   Value argument = computeFunc.getArgument(barg.getArgNumber() - 1);
-  if (isa<array::ArrayType, pod::PodType, StructType>(argument.getType()) &&
-      hasComputeMutation(argument, computeFunc)) {
+  if (isAggregateStorage(argument) && findStorageMutation(computeFunc, argument)) {
     emitError(
         barg.getLoc()
     ) << "cannot rebuild aggregate argument in compute-side auxiliary expression: "
@@ -143,21 +247,20 @@ Value rebuildExprInCompute(
       isa_and_nonnull<MemberReadOp, array::ReadArrayOp, array::ExtractArrayOp, pod::ReadPodOp>(
           readOp
       )) {
-    // Aggregate writes are not part of the SSA operand graph cloned below. Without
-    // alias analysis, even a write through another view may change the read value.
-    // Reject preceding writes rather than reconstructing a stale storage state.
+    // Replay is safe only if preceding operations cannot change the read's storage.
+    // Use the same effect/provenance model as compute-side argument mappings.
     for (Operation &preceding : *readOp->getBlock()) {
       if (&preceding == readOp) {
         break;
       }
-      if (isa<array::WriteArrayOp, array::InsertArrayOp, pod::WritePodOp, MemberWriteOp>(
-              preceding
-          )) {
-        readOp->emitError(
-            "cannot rebuild storage read in compute-side auxiliary expression after an "
-            "aggregate write; aggregate mutations cannot be replayed"
-        );
-        return nullptr;
+      for (Value operand : readOp->getOperands()) {
+        if (isAggregateStorage(operand) && findStorageMutation(&preceding, operand)) {
+          readOp->emitError(
+              "cannot rebuild storage read in compute-side auxiliary expression: "
+              "storage may have been mutated; aggregate mutations cannot be replayed"
+          );
+          return nullptr;
+        }
       }
     }
     IRMapping mapper;
