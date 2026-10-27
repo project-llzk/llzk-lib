@@ -66,8 +66,18 @@ bool mayDeriveFromAggregateArgument(Value value, Value argument, DenseSet<Value>
 
 /// Rejects mapping an aggregate input whose compute-side storage may be mutated.
 /// Scan all regions and paths because auxiliaries are emitted at compute returns.
+/// Calls receiving a derived aggregate are conservatively treated as mutating it.
 bool hasComputeMutation(Value argument, FuncDefOp computeFunc) {
   auto result = computeFunc.walk([&](Operation *op) -> WalkResult {
+    if (auto call = dyn_cast<CallOp>(op)) {
+      for (Value operand : call.getArgOperands()) {
+        DenseSet<Value> visited;
+        if (isa<array::ArrayType, pod::PodType, StructType>(operand.getType()) &&
+            mayDeriveFromAggregateArgument(operand, argument, visited)) {
+          return WalkResult::interrupt();
+        }
+      }
+    }
     Value storage;
     if (auto arrayWrite = dyn_cast<array::WriteArrayOp>(op)) {
       storage = arrayWrite.getArrRef();
@@ -140,7 +150,9 @@ Value rebuildExprInCompute(
       if (&preceding == readOp) {
         break;
       }
-      if (isa<array::WriteArrayOp, array::InsertArrayOp, pod::WritePodOp>(preceding)) {
+      if (isa<array::WriteArrayOp, array::InsertArrayOp, pod::WritePodOp, MemberWriteOp>(
+              preceding
+          )) {
         readOp->emitError(
             "cannot rebuild storage read in compute-side auxiliary expression after an "
             "aggregate write; aggregate mutations cannot be replayed"

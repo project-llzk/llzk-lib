@@ -42,6 +42,8 @@ struct AuxAssignment {
 /// reconstruction does not replay mutations or prove that their storage is disjoint.
 /// Aggregate arguments are rejected if compute may write through a derived aggregate,
 /// since return-side reconstruction would observe a different input state.
+/// Passing a derived aggregate to a compute-side call is also treated as a mutation
+/// because the callee may write to that storage.
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo

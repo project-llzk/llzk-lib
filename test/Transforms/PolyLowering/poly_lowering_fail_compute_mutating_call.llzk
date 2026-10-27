@@ -1,0 +1,112 @@
+// RUN: llzk-opt -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+// An uninlined helper may mutate the input or its derived view.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @HelperMutatedArray {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@HelperMutatedArray> {
+      %self = struct.new : <@HelperMutatedArray>
+      %idx = arith.constant 0 : index
+      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      function.return %self : !struct.type<@HelperMutatedArray>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@HelperMutatedArray>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An uninlined helper may mutate the input or its derived view.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !pod.type<[@value: !felt.type]>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    pod.write %data[@value] = %x : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+  struct.def @HelperMutatedPod {
+    function.def @compute(%input: !pod.type<[@value: !felt.type]>, %x: !felt.type) -> !struct.type<@HelperMutatedPod> {
+      %self = struct.new : <@HelperMutatedPod>
+      %idx = arith.constant 0 : index
+      function.call @mutate(%input, %x) : (!pod.type<[@value: !felt.type]>, !felt.type) -> ()
+      function.return %self : !struct.type<@HelperMutatedPod>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@HelperMutatedPod>, %input: !pod.type<[@value: !felt.type]>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = pod.read %input[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An uninlined helper may mutate the input or its derived view.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @HelperMutatedView {
+    function.def @compute(%input: !array.type<1,1 x !felt.type>, %x: !felt.type) -> !struct.type<@HelperMutatedView> {
+      %self = struct.new : <@HelperMutatedView>
+      %idx = arith.constant 0 : index
+      %arg = array.extract %input[%idx] : !array.type<1,1 x !felt.type>
+      function.call @mutate(%arg, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      function.return %self : !struct.type<@HelperMutatedView>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@HelperMutatedView>, %input: !array.type<1,1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx, %idx] : !array.type<1,1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A helper receiving an independent local aggregate must not reject input reads.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @IndependentHelperArgument {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@IndependentHelperArgument> {
+      %self = struct.new : <@IndependentHelperArgument>
+      %idx = arith.constant 0 : index
+      %local = array.new %x : !array.type<1 x !felt.type>
+      function.call @mutate(%local, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      function.return %self : !struct.type<@IndependentHelperArgument>
+    }
+    function.def @constrain(%self: !struct.type<@IndependentHelperArgument>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
