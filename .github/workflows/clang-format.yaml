@@ -56,7 +56,7 @@ jobs:
           tidy-checks: '-*' # Disable clang-tidy; it has a separate workflow.
           extensions: 'c,cpp,h,td'
           files-changed-only: true
-          lines-changed-only: true
+          lines-changed-only: false # always format the full file
           ignore: 'build|result|third-party'
           step-summary: true
           file-annotations: true
