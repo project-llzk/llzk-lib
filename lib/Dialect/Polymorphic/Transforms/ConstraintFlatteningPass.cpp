@@ -54,7 +54,7 @@ Type refineMemberShape(Type readType, Type declaredType) {
     auto declaredArray = llvm::cast<array::ArrayType>(declaredType);
     SmallVector<Attribute> dimensions(readArray.getDimensionSizes());
     for (size_t i = 0; i < dimensions.size(); ++i) {
-      if (readArray.getShape()[i] < 0 && declaredArray.getShape()[i] >= 0) {
+      if (readArray.getShape()[i] == ShapedType::kDynamic && declaredArray.getShape()[i] >= 0) {
         dimensions[i] = declaredArray.getDimensionSizes()[i];
       }
     }
