@@ -12,8 +12,7 @@
 
 include "mlir/IR/DialectBase.td"
 
-def ConstrainDialect
-: Dialect {
+def ConstrainDialect : Dialect {
   let name = "constrain";
   let summary = "LLZK constraint emission operations.";
 
