@@ -1,2 +1,2 @@
 fixed:
-  - Preserve static array dimensions supplied by member reads during constraint flattening, combining compatible refinements from reads and declarations so wildcard member dimensions do not reject valid array lengths and accesses.
+  - Preserve static array dimensions supplied by member reads during constraint flattening, recursively combining compatible refinements from reads and declarations through arrays and POD records so wildcard member dimensions do not reject valid array lengths, copies, and accesses.
