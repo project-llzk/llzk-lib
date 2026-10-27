@@ -68,7 +68,9 @@ struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LL
       if (failed(lower) || failed(upper) || failed(step)) {
         return {};
       }
-      return LoopBoundsAttr::get(getContext(), *lower, *upper, *step);
+      return LoopBoundsAttr::getChecked([&reader]() {
+        return reader.emitError();
+      }, getContext(), *lower, *upper, *step);
     }
     }
 

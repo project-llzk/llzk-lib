@@ -56,7 +56,7 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 
 - The frontend translation for each source language to LLZK IR should be as simple as possible since this will be repeated effort for each source language. To expand support of frontend languages, we welcome proposals of new high-level syntax along with a translation of that syntax to existing LLZK syntax.
 - To promote reusable infrastructure, transformations or optimizations should be performed on the LLZK IR rather than the source language, whenever possible. We welcome PRs to LLZK-lib for reusable passes.
-- Loops can be represented with either `scf.for` or `scf.while` and the optional `llzk.loopbounds` attribute can be added to specify the loop variable's lower bound (inclusive), upper bound (exclusive), and step size. These attributes are trusted unconditionally, so the producer must ensure these values agree with the loop's behavior.
+- Loops can be represented with either `scf.for` or `scf.while` and the optional `llzk.loopbounds` attribute can be added to specify the loop variable's lower bound (inclusive), upper bound (exclusive), and nonzero step size. These attributes are trusted unconditionally, so the producer must ensure these values agree with the loop's behavior.
 - Frontend translations should attach accurate source line information to operations via the `Location` whenever possible.
 - Only the outermost module should have the `llzk.lang` attribute (because the presence of that attribute is used to determine the “root” symbol table for symbol resolution).
 - All inner modules must be named because their names are used to build the fully-qualified path names for symbol references.
