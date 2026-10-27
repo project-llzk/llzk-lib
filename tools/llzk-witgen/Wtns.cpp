@@ -126,7 +126,7 @@ collectWitnessValues(ModuleOp moduleOp, const llvm::json::Value &fullWitness, co
   witness.push_back(field.one());
   auto appendMemberClass = [&](bool isPublic) -> llvm::Error {
     for (component::MemberDefOp member : mainDef->get().getMemberDefs()) {
-      if (member.hasPublicAttr() != isPublic) {
+      if (!memberIsSignal(mainDef->get(), member) || member.hasPublicAttr() != isPublic) {
         continue;
       }
       if (!isa<felt::FeltType>(member.getType())) {

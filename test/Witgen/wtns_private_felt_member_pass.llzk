@@ -4,20 +4,12 @@
 // RUN: cmp %t/interpreter.wtns %t/jit.wtns
 // RUN: od -An -v -t x1 %t/interpreter.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS
 
-// CHECK:      "signals": {
-// CHECK-NEXT:   "ordinary": "16",
-// CHECK-NEXT:   "out": "16"
-
-// The private @ordinary member has no {signal} attribute, but R1CS lowering
-// assigns it a wire. The WTNS must therefore contain [one, out, input, ordinary].
-// WTNS: 77746e730200000002000000010000001000000000000000080000000100007800000000040000000200000020000000000000000100000000000000100000000000000004000000000000001000000000000000
-
 //--- test.llzk
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @out : !felt.type<"babybear"> {llzk.pub}
-    struct.member @ordinary : !felt.type<"babybear">
+    struct.member @ordinary : !felt.type<"babybear"> {signal}
 
     function.def @compute(
       %input: !felt.type<"babybear"> {function.arg_name = "input"}
@@ -39,6 +31,14 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
+
+// CHECK:      "signals": {
+// CHECK-NEXT:   "ordinary": "16",
+// CHECK-NEXT:   "out": "16"
+
+// The private @ordinary signal participates in both layouts.
+// The WTNS contains [one, out, input, ordinary].
+// WTNS: 77746e730200000002000000010000001000000000000000080000000100007800000000040000000200000020000000000000000100000000000000100000000000000004000000000000001000000000000000
 
 //--- input.json
 {"input": 4}

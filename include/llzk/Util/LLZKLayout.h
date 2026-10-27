@@ -25,6 +25,15 @@ class raw_ostream;
 
 namespace llzk {
 
+namespace component {
+class MemberDefOp;
+} // namespace component
+
+/// Whether a member directly declares signal storage: explicit signals and
+/// public members of main are included. Unmarked component containers may still
+/// contain nested signals, which callers enumerate independently.
+bool isLayoutSignalMember(component::MemberDefOp member, bool isMain);
+
 /// Structural path root for storage in the main instance.
 inline constexpr char LAYOUT_MAIN_ROOT[] = "main";
 /// Structural path root for a constrain argument, followed by its position.

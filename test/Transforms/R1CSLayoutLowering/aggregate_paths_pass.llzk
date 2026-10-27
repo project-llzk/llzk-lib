@@ -1,0 +1,69 @@
+// RUN: llzk-opt -llzk-constraint-flattening -llzk-poly-lowering-pass='main-only=true max-degree=2' -llzk-r1cs-lowering -cse %s | FileCheck %s
+
+// IDs include unused input and signal leaves, but omit non-signal temporaries.
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Child {
+    struct.member @value : !F {signal}
+    function.def @compute(%x: !F) -> !struct.type<@Child> {
+      %self = struct.new : <@Child>
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>, %x: !F) {
+      %value = struct.readm %self[@value] : <@Child>, !F
+      constrain.eq %value, %x : !F, !F
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.member @out : !array.type<2 x !F> {llzk.pub}
+    struct.member @hidden : !F {signal}
+    struct.member @child : !struct.type<@Child>
+    struct.member @record : !pod.type<[@value: !F]> {signal}
+    struct.member @unused_temporary : !F
+    function.def @compute(%input: !array.type<2,2 x !F>, %unused: !F) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>,
+      %input: !array.type<2,2 x !F> {llzk.pub},
+      %unused: !F
+    ) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %slice = array.extract %input[%one] : !array.type<2,2 x !F>
+      %x = array.read %slice[%zero] : !array.type<2 x !F>, !F
+      %child = struct.readm %self[@child] : <@Main>, !struct.type<@Child>
+      function.call @Child::@constrain(%child, %x) : (!struct.type<@Child>, !F) -> ()
+      %record = struct.readm %self[@record] : <@Main>, !pod.type<[@value: !F]>
+      %value = pod.read %record[@value] : !pod.type<[@value: !F]>, !F
+      %out = struct.readm %self[@out] : <@Main>, !array.type<2 x !F>
+      %out0 = array.read %out[%zero] : !array.type<2 x !F>, !F
+      constrain.eq %out0, %value : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub}, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.def 8 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.def 9 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.def 10 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_8]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_12]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_13]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_10]], %[[VAL_10]], %[[VAL_14]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_15]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_9]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_16]], %[[VAL_17]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_10]], %[[VAL_10]], %[[VAL_18]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 3, 4, 5, 6, 7>}
+// CHECK-NEXT:  }

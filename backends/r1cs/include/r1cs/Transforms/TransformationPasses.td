@@ -13,16 +13,23 @@
 include "llzk/Pass/PassBase.td"
 
 def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
-  let summary = "Rewrite constraints to be compatible with R1CS constraints, "
-                "i.e a*b - c = 0";
+  let summary = "Convert flattened LLZK constraints to R1CS";
   let description = [{
-    Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
-    The pass expects already-flattened, straight-line `constrain` bodies. Run `llzk-flatten` or
-    another control-flow lowering pass before this pass; nested-region, successor-bearing, or
-    multi-block constraints are rejected before R1CS normalization.
-    This pass is best used on already-flattened input as part of the `-llzk-full-r1cs-lowering`
-    pipeline which includes a degree lowering pass and clean up passes to ensure correctness and
-    performance.
+    Converts the constraints in llzk.main to R1CS. Run
+    `llzk-constraint-flattening` and `llzk-poly-lowering-pass` with
+    `main-only=true max-degree=2` first.
+
+    The pass performs the following steps:
+
+    1. Check that every constraint is polynomial and has degree at most two.
+    2. Add auxiliary signal fields and equations where needed to express each
+       constraint as A * B = C. Add assignments in @compute for those fields.
+    3. Compute the LLZK layout, including the auxiliary signals.
+    4. Assign R1CS wire IDs: zero for constant one, then public outputs, public
+       inputs, private inputs, and internal signals.
+    5. Create the R1CS wires and convert the constraints to use them.
+
+    The resulting module contains R1CS IR.
   }];
 }
 
