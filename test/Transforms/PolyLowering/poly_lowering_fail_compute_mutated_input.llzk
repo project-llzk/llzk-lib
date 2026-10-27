@@ -1,0 +1,96 @@
+// RUN: llzk-opt -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+// Mutations in compute must not change the input used to reconstruct auxiliaries.
+module attributes {llzk.lang} {
+  struct.def @ComputeMutatedArray {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ComputeMutatedArray> {
+      %self = struct.new : !struct.type<@ComputeMutatedArray>
+      %idx = arith.constant 0 : index
+      array.write %input[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@ComputeMutatedArray>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@ComputeMutatedArray>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Mutations in compute must not change the input used to reconstruct auxiliaries.
+module attributes {llzk.lang} {
+  struct.def @ComputeMutatedPod {
+    function.def @compute(%input: !pod.type<[@value: !felt.type]>, %x: !felt.type) -> !struct.type<@ComputeMutatedPod> {
+      %self = struct.new : !struct.type<@ComputeMutatedPod>
+      %idx = arith.constant 0 : index
+      %condition = arith.constant true
+      scf.if %condition {
+        pod.write %input[@value] = %x : !pod.type<[@value: !felt.type]>, !felt.type
+      }
+      function.return %self : !struct.type<@ComputeMutatedPod>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@ComputeMutatedPod>, %input: !pod.type<[@value: !felt.type]>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = pod.read %input[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Mutations in compute must not change the input used to reconstruct auxiliaries.
+module attributes {llzk.lang} {
+  struct.def @ComputeMutatedView {
+    function.def @compute(%input: !array.type<1,1 x !felt.type>, %x: !felt.type) -> !struct.type<@ComputeMutatedView> {
+      %self = struct.new : !struct.type<@ComputeMutatedView>
+      %idx = arith.constant 0 : index
+      %view = array.extract %input[%idx] : !array.type<1,1 x !felt.type>
+      array.write %view[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@ComputeMutatedView>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@ComputeMutatedView>, %input: !array.type<1,1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx, %idx] : !array.type<1,1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Mutations in compute must not change the input used to reconstruct auxiliaries.
+module attributes {llzk.lang} {
+  struct.def @ComputeMutatedInsert {
+    function.def @compute(%input: !array.type<1,1 x !felt.type>, %x: !felt.type) -> !struct.type<@ComputeMutatedInsert> {
+      %self = struct.new : !struct.type<@ComputeMutatedInsert>
+      %idx = arith.constant 0 : index
+      %row = array.new %x : !array.type<1 x !felt.type>
+      array.insert %input[%idx] = %row : !array.type<1,1 x !felt.type>, !array.type<1 x !felt.type>
+      function.return %self : !struct.type<@ComputeMutatedInsert>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@ComputeMutatedInsert>, %input: !array.type<1,1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx, %idx] : !array.type<1,1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}

@@ -38,6 +38,14 @@ struct AuxAssignment {
 /// compute `%self`, and later arguments to compute inputs.
 /// Returns null after emitting a diagnostic when an expression root cannot be
 /// rebuilt safely in compute.
+/// Both constrain reads and compute input mappings use the same storage-safety
+/// query: known writes, calls, and unknown effects on potentially shared aggregate
+/// storage prevent replay. Access interfaces and MLIR memory effects establish
+/// read-only operations; distinct value-type entry arguments/allocations establish
+/// disjointness. Component handles may alias despite distinct SSA origins.
+/// Views and copies are conservatively treated as sharing their source storage,
+/// and unknown provenance cannot establish disjointness. Callees are checked with
+/// the same query; external calls and recursive cycles cannot prove safety.
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo
