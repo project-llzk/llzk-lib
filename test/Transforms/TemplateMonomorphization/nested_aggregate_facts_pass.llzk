@@ -1,0 +1,163 @@
+// RUN: llzk-opt %s --llzk-monomorphize-templates | FileCheck %s --match-full-lines
+
+// Resolve a stored round parameter only when a mutable nested countdown reaches zero.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %slots = array.new : !array.type<2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>
+        scf.for %i = %zero to %two step %one {
+          %params = pod.new { @r = %i } : !pod.type<[@r: index]>
+          %pod = pod.new { @count = %two, @params = %params } : !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+          array.write %slots[%i] = %pod : !array.type<2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+          scf.for %j = %zero to %two step %one {
+            %copy = array.read %slots[%i] : !array.type<2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+            %count = pod.read %copy[@count] : !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>, index
+            %next = arith.subi %count, %one : index
+            pod.write %copy[@count] = %next : !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>, index
+            %ready = arith.cmpi eq, %next, %zero : index
+            scf.if %ready {
+              %p = pod.read %copy[@params] : !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>, !pod.type<[@r: index]>
+              %value = pod.read %p[@r] : !pod.type<[@r: index]>, index
+              %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+            }
+            array.write %slots[%i] = %copy : !array.type<2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+          }
+        }
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Parent__spec_0>} {
+// CHECK-NEXT:    poly.template @Child {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Parent {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.expr @Next {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Parent {
+// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>
+// CHECK-NEXT:          scf.for %[[VAL_10:[0-9a-zA-Z_\.]+]] = %[[VAL_6]] to %[[VAL_8]] step %[[VAL_7]] {
+// CHECK-NEXT:            %[[VAL_11:[0-9a-zA-Z_\.]+]] = pod.new { @r = %[[VAL_10]] }  : <[@r: index]>
+// CHECK-NEXT:            %[[VAL_12:[0-9a-zA-Z_\.]+]] = pod.new { @count = %[[VAL_8]], @params = %[[VAL_11]] }  : <[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:            array.write %[[VAL_9]]{{\[}}%[[VAL_10]]] = %[[VAL_12]] : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:            scf.for %[[VAL_13:[0-9a-zA-Z_\.]+]] = %[[VAL_6]] to %[[VAL_8]] step %[[VAL_7]] {
+// CHECK-NEXT:              %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_10]]] : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:              %[[VAL_15:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_14]][@count] : <[@count: index, @params: !pod.type<[@r: index]>]>, index
+// CHECK-NEXT:              %[[VAL_16:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_15]], %[[VAL_7]] : index
+// CHECK-NEXT:              pod.write %[[VAL_14]][@count] = %[[VAL_16]] : <[@count: index, @params: !pod.type<[@r: index]>]>, index
+// CHECK-NEXT:              %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_16]], %[[VAL_6]] : index
+// CHECK-NEXT:              scf.if %[[VAL_17]] {
+// CHECK-NEXT:                %[[VAL_18:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_14]][@params] : <[@count: index, @params: !pod.type<[@r: index]>]>, !pod.type<[@r: index]>
+// CHECK-NEXT:                %[[VAL_19:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_18]][@r] : <[@r: index]>, index
+// CHECK-NEXT:                %[[VAL_20:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_19]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:              }
+// CHECK-NEXT:              array.write %[[VAL_9]]{{\[}}%[[VAL_10]]] = %[[VAL_14]] : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:            }
+// CHECK-NEXT:          }
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_21]] : !struct.type<@Parent::@Parent<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>, %[[VAL_23:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Parent__spec_0 {
+// CHECK-NEXT:      function.def @compute(%[[VAL_24:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>
+// CHECK-NEXT:        scf.for %[[VAL_29:[0-9a-zA-Z_\.]+]] = %[[VAL_25]] to %[[VAL_27]] step %[[VAL_26]] {
+// CHECK-NEXT:          %[[VAL_30:[0-9a-zA-Z_\.]+]] = pod.new { @r = %[[VAL_29]] }  : <[@r: index]>
+// CHECK-NEXT:          %[[VAL_31:[0-9a-zA-Z_\.]+]] = pod.new { @count = %[[VAL_27]], @params = %[[VAL_30]] }  : <[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:          array.write %[[VAL_28]]{{\[}}%[[VAL_29]]] = %[[VAL_31]] : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:          scf.for %[[VAL_32:[0-9a-zA-Z_\.]+]] = %[[VAL_25]] to %[[VAL_27]] step %[[VAL_26]] {
+// CHECK-NEXT:            %[[VAL_33:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_28]]{{\[}}%[[VAL_29]]] : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:            %[[VAL_34:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_33]][@count] : <[@count: index, @params: !pod.type<[@r: index]>]>, index
+// CHECK-NEXT:            %[[VAL_35:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_34]], %[[VAL_26]] : index
+// CHECK-NEXT:            pod.write %[[VAL_33]][@count] = %[[VAL_35]] : <[@count: index, @params: !pod.type<[@r: index]>]>, index
+// CHECK-NEXT:            %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_35]], %[[VAL_25]] : index
+// CHECK-NEXT:            scf.if %[[VAL_36]] {
+// CHECK-NEXT:              %[[VAL_37:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_33]][@params] : <[@count: index, @params: !pod.type<[@r: index]>]>, !pod.type<[@r: index]>
+// CHECK-NEXT:              %[[VAL_38:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_37]][@r] : <[@r: index]>, index
+// CHECK-NEXT:              %[[VAL_39:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_38]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [1, 2]}
+// CHECK-NEXT:            }
+// CHECK-NEXT:            array.write %[[VAL_28]]{{\[}}%[[VAL_29]]] = %[[VAL_33]] : <2 x !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>>, !pod.type<[@count: index, @params: !pod.type<[@r: index]>]>
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_40]] : !struct.type<@Parent__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_41:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>, %[[VAL_42:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_43]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_44:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [0 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_2 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_2>
+// CHECK-NEXT:        function.return %[[VAL_45]] : !struct.type<@Child__spec_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_46:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [1 : index], poly.origin = @Child::@Child, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:  }

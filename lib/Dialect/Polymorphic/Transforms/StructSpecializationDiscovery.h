@@ -92,10 +92,12 @@ struct RolledCallTargets {
 ///   operands are known and its fold hook returns attributes or known SSA values.
 ///   This includes foldable constants and arithmetic; purity alone is insufficient.
 /// - Calls are inspected for result types but their bodies are not evaluated.
-///   Call results, global reads (including constant globals), and POD, array and
-///   struct-member reads remain unknown. Aggregate contents and writes are not
-///   tracked. Unknown values may flow through ordinary computations, but cannot
-///   supply a required specialization argument or loop bound.
+///   Call results, global reads (including constant globals), and struct-member
+///   reads remain unknown. Local POD and array reads snapshot known contents;
+///   bound result types and allocation affine operands determine aggregate shape.
+///   Unknown control flow and writes through untracked aliases invalidate storage
+///   facts. Unknown values cannot supply a required specialization argument or
+///   loop bound.
 ///
 /// Supported type dependencies:
 /// - Member types, method signatures and visited operation result types are

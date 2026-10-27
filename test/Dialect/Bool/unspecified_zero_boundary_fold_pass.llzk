@@ -1,0 +1,31 @@
+// RUN: llzk-opt %s --canonicalize | FileCheck %s --match-full-lines
+
+// Comparisons use unsigned reduced field representatives. Only the four
+// boundary predicates are constant; equality and interior bounds stay symbolic.
+function.def @unspecified_boundaries(%x: !felt.type) -> (i1, i1, i1, i1, i1, i1, i1) attributes {function.allow_non_native_field_ops} {
+  %zero = felt.const 0 : !felt.type
+  %negative = felt.const -1 : !felt.type
+  %one = felt.const 1 : !felt.type
+  %a = bool.cmp ge(%x, %zero) : !felt.type, !felt.type
+  %b = bool.cmp lt(%x, %zero) : !felt.type, !felt.type
+  %c = bool.cmp le(%zero, %x) : !felt.type, !felt.type
+  %d = bool.cmp gt(%zero, %x) : !felt.type, !felt.type
+  %e = bool.cmp eq(%x, %zero) : !felt.type, !felt.type
+  %f = bool.cmp ge(%x, %one) : !felt.type, !felt.type
+  %g = bool.cmp ge(%x, %negative) : !felt.type, !felt.type
+  function.return %a, %b, %c, %d, %e, %f, %g : i1, i1, i1, i1, i1, i1, i1
+}
+
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @unspecified_boundaries(%[[VAL_0:[0-9a-zA-Z_\.-]+]]: !felt.type) -> (i1, i1, i1, i1, i1, i1, i1) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.-]+]] = felt.const  -1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.-]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.-]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.-]+]] = bool.cmp eq(%[[VAL_0]], %[[VAL_1]]) : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.-]+]] = bool.cmp ge(%[[VAL_0]], %[[VAL_3]]) : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.-]+]] = bool.cmp ge(%[[VAL_0]], %[[VAL_2]]) : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]], %[[VAL_4]], %[[VAL_5]], %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : i1, i1, i1, i1, i1, i1, i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,248 @@
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics -o /dev/null
+
+// Unknown array coordinates invalidate potentially overwritten leaves.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %pod = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %slots = array.new %pod : !array.type<1 x !pod.type<[@n: index]>>
+        array.write %slots[%unknown] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+
+// -----
+
+// Writes under unknown branches cannot leak one path's constants.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %pod = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %slots = array.new %pod : !array.type<1 x !pod.type<[@n: index]>>
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        scf.if %condition {
+          array.write %slots[%zero] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        }
+        %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+
+// -----
+
+// Unknown scalar writes erase earlier constants.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %pod = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %slots = array.new %pod : !array.type<1 x !pod.type<[@n: index]>>
+        pod.write %pod[@n] = %unknown : !pod.type<[@n: index]>, index
+        array.write %slots[%zero] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+
+// -----
+
+// Unknown runtime loops cannot leak constants from a speculative iteration.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %pod = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %slots = array.new %pod : !array.type<1 x !pod.type<[@n: index]>>
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        %result = scf.while (%i = %zero) : (index) -> index {
+          scf.condition(%condition) %i : index
+        } do {
+        ^bb0(%i: index):
+          array.write %slots[%zero] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+          scf.yield %i : index
+        }
+        %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+
+// -----
+
+// Escaping aggregate arguments cannot retain facts across an unknown call.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  function.def private @touch(%p: !pod.type<[@n: index]>) attributes {extern}
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %pod = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %slots = array.new %pod : !array.type<1 x !pod.type<[@n: index]>>
+        function.call @touch(%pod) : (!pod.type<[@n: index]>) -> ()
+        array.write %slots[%zero] = %pod : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %copy = array.read %slots[%zero] : !array.type<1 x !pod.type<[@n: index]>>, !pod.type<[@n: index]>
+        %value = pod.read %copy[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
