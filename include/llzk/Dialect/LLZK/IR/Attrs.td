@@ -40,10 +40,15 @@ def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
 }
 
 def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
-  let summary = "Annotation with the bounds of a loop";
+  let summary = "Trusted annotation with the bounds of a loop";
   let description = [{
-    This attribute holds information useful for the analysis of loops.
-    Holds the bounds of the loop and the step size.
+    This attribute indicates the loop variable's lower bound (inclusive), upper
+    bound (exclusive), and step size.
+
+    These attributes are trusted unconditionally, so the producer must ensure
+    these values agree with the loop's behavior. Passes are not required to
+    produce an error diagnostic if the values specified by the attribute
+    contradict the IR itself; incorrect annotations can change program behavior.
 
     Example:
 
