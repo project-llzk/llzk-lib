@@ -32,11 +32,14 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/Error.h>
 
 #include <algorithm>
 #include <cassert>
@@ -145,7 +148,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       reportFailureReason("loopbounds must have nonnegative bounds and a positive step");
       return info;
     }
-    // Check the annotation before field reduction using the same range as cast.toindex assert.
+    // Use the same nonnegative index range as cast.toindex assert.
     auto fitsIndex = [](const llvm::DynamicAPInt &value) {
       return llzk::cast::applyFeltToIndexOverflow(
                  value, IndexType::kInternalStorageBitWidth, llzk::cast::OverflowSemantics::ASSERT
@@ -157,12 +160,27 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       reportFailureReason("loopbounds values cannot be represented as nonnegative indices");
       return info;
     }
-    auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
+    // scf.for also requires the value after the final increment to fit, even though it is
+    // outside the iteration range. Compute it with mathematical integers to avoid overflow.
+    if (bounds.getLower() < bounds.getUpper()) {
+      auto distance = bounds.getUpper() - bounds.getLower();
+      auto tripCount = (distance + bounds.getStep() - 1) / bounds.getStep();
+      auto end = bounds.getLower() + tripCount * bounds.getStep();
+      if (!fitsIndex(end)) {
+        reportFailureReason("loopbounds final induction value cannot be represented as an index");
+        return info;
+      }
+    }
 
-    // Make these constant felts for now; the actual for op builder will later clean it up
-    info.lb = createBound(bounds.getLower(), ivarType);
-    info.ub = createBound(bounds.getUpper(), ivarType);
-    info.step = createBound(bounds.getStep(), ivarType);
+    // Annotations are mathematical integers, independent of the induction variable's field.
+    auto createIndexBound = [&builder, &op](const llvm::DynamicAPInt &value) -> Value {
+      return arith::ConstantIndexOp::create(
+          builder, op.getLoc(), llvm::cantFail(llzk::checkedToInt64(value))
+      );
+    };
+    info.lb = createIndexBound(bounds.getLower());
+    info.ub = createIndexBound(bounds.getUpper());
+    info.step = createIndexBound(bounds.getStep());
     return info;
   }
 
@@ -296,12 +314,10 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
       lb.getType() == ub.getType() && lb.getType() == step.getType(),
       "cannot have differing types for loop bounds"
   );
-  Type ivarType = lb.getType();
-  if (isa<FeltType>(ivarType)) {
-    lb = toIndex(lb);
-    ub = toIndex(ub);
-    step = toIndex(step);
-  }
+  Type ivarType = op.getBeforeArguments()[*info.ivarIndexBefore].getType();
+  lb = toIndex(lb);
+  ub = toIndex(ub);
+  step = toIndex(step);
 
   SmallVector<Value> inits;
   for (auto [i, init] : llvm::enumerate(op.getInits())) {
@@ -376,16 +392,13 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     rewriter.clone(bodyOp, mapping);
   }
 
-  // scf.for doesn't explicitly yield its induction var from the final iteration, so we need to
-  // reconstruct it
+  // Match the original result list, using a type-correct placeholder for the unused final IV.
   SmallVector<Value> replacedValues;
   for (auto [i, result] : llvm::enumerate(op.getResults())) {
     if (i == info.ivarIndexBefore) {
-      // Note that the final value of the induction variable might not actually be the upper bound
-      // (e.g. if `step` doesn't divide `(ub - lb)`), but we've already guaranteed earlier that this
-      // value isn't being used so it doesn't matter what gets yielded here (the canonicalizer can
-      // clean it up). But we still have to yield something to preserve the shape of the op.
-      replacedValues.push_back(*info.ub);
+      // parseInfo guarantees this result is unused. The original initializer has its type,
+      // even when the annotated loop bounds were materialized as index constants.
+      replacedValues.push_back(op.getInits()[*info.ivarIndexBefore]);
       continue;
     }
 
@@ -401,7 +414,7 @@ class PassImpl : public llzk::impl::WhileToForPassBase<PassImpl> {
   using Base::Base;
 
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<llzk::cast::CastDialect>();
+    registry.insert<arith::ArithDialect, llzk::cast::CastDialect>();
   }
   void runOnOperation() override {
     Operation *op = getOperation();

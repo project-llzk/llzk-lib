@@ -178,8 +178,10 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "induction variable and a uniform step, and converts them "
       "to equivalent scf.for loops, which are preferred by some "
       "analyses. Annotated loopbounds must have nonnegative bounds and a "
-      "positive step, all within the nonnegative index range; other annotated "
-      "loops are left unchanged with a warning. "
+      "positive step, all within the nonnegative index range. The induction "
+      "value after the final increment must also fit in index; otherwise the "
+      "annotated loop is left unchanged with a warning. Annotated values are "
+      "materialized directly as index constants without field reduction. "
       "This pass may introduce some spurious felt/index casts which "
       "should be cleaned up by --canonicalize.";
 }

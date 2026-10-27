@@ -117,18 +117,14 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @index_max(%[[VAL_32:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_33:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_34:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
-// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
-// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
-// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_35]] : !felt.type<"bn128">
-// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_36]] : !felt.type<"bn128">
-// CHECK-NEXT:      %[[VAL_40:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_37]] : !felt.type<"bn128">
-// CHECK-NEXT:      scf.for %[[VAL_41:[0-9a-zA-Z_\.]+]] = %[[VAL_38]] to %[[VAL_39]] step %[[VAL_40]] {
-// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_41]] : index, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_42]], %[[VAL_33]]) : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_42]], %[[VAL_34]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      scf.for %[[VAL_38:[0-9a-zA-Z_\.]+]] = %[[VAL_35]] to %[[VAL_36]] step %[[VAL_37]] {
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_38]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_39]], %[[VAL_33]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_39]], %[[VAL_34]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<9223372036854775807 to 9223372036854775807 step 9223372036854775807>}
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
