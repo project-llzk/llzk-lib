@@ -1,0 +1,46 @@
+// RUN: llzk-opt -llzk-constraint-flattening-r1cs-lowering %s | FileCheck %s
+
+// Flatten loop iterations and helper calls before factoring a cubic constraint.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @cube(%x: !felt.type) -> !felt.type {
+    %square = felt.mul %x, %x : !felt.type, !felt.type
+    %cube = felt.mul %square, %x : !felt.type, !felt.type
+    function.return %cube : !felt.type
+  }
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %cube = function.call @cube(%x) : (!felt.type) -> !felt.type
+      struct.writem %self[@out] = %cube : <@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %two = arith.constant 2 : index
+      %one = arith.constant 1 : index
+      scf.for %i = %zero to %two step %one {
+        %cube = function.call @cube(%x) : (!felt.type) -> !felt.type
+        %out = struct.readm %self[@out] : <@Main>, !felt.type
+        constrain.eq %out, %cube : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 4 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_4]], %[[VAL_4]], %[[VAL_5]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_5]], %[[VAL_4]], %[[VAL_6]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_4]], %[[VAL_4]], %[[VAL_7]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_7]], %[[VAL_4]], %[[VAL_6]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 2>}
+// CHECK-NEXT:  }

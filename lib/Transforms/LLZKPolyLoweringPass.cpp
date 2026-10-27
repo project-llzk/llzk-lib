@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/LoweringUtils.h"
 
@@ -210,7 +211,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (llvm::isa<FeltConstantOp>(defOp)) {
         return memo[val] = 0;
       }
-      if (llvm::isa<NonDetOp, MemberReadOp>(defOp)) {
+      if (llvm::isa<NonDetOp, MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(defOp)) {
         return memo[val] = 1;
       }
       if (auto add = llvm::dyn_cast<AddFeltOp>(defOp)) {
@@ -328,6 +329,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (lhs == rhs && eraseMul) {
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
+        if (mainOnly || markAuxiliarySignals) {
+          auxMember.setSignal(true);
+        }
 
         auto auxVal = MemberReadOp::create(
             builder, lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
@@ -356,6 +360,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         // Create auxiliary member for toFactor
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxMember = addAuxMember(structDef, auxName, toFactor.getType());
+        if (mainOnly || markAuxiliarySignals) {
+          auxMember.setSignal(true);
+        }
 
         // Read back as MemberReadOp (new SSA value)
         auto auxVal = MemberReadOp::create(
@@ -417,6 +424,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     // call arguments must be represented by an auxiliary member read.
     std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
     MemberDefOp auxMember = addAuxMember(structDef, auxName, loweredVal.getType());
+    if (mainOnly || markAuxiliarySignals) {
+      auxMember.setSignal(true);
+    }
 
     OpBuilder builder(callOp);
     Value selfVal = constrainFunc.getSelfValueFromConstrain();
@@ -1036,6 +1046,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
 
     auto moduleRes = moduleOp.walk([this](StructDefOp structDef) -> WalkResult {
+      if (mainOnly && !structDef.isMainComponent()) {
+        return WalkResult::advance();
+      }
       try {
         if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
           return WalkResult::interrupt();

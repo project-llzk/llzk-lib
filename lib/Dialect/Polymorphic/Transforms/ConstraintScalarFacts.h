@@ -94,4 +94,12 @@ public:
   }
 };
 
+/// Prove a Boolean condition true without any loop-carried bindings. Such a
+/// condition cannot become false on a later iteration, unlike a true first test.
+inline bool isInvariantTrueCondition(mlir::Value condition) {
+  ConstraintScalarFacts facts(condition.getContext());
+  auto value = facts.integer(condition);
+  return value && *value != 0;
+}
+
 } // namespace llzk::polymorphic::detail

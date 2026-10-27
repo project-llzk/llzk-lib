@@ -40,10 +40,16 @@ def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
 }
 
 def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
-  let summary = "Annotation with the bounds of a loop";
+  let summary = "Trusted annotation with the bounds of a loop";
   let description = [{
-    This attribute holds information useful for the analysis of loops.
-    Holds the bounds of the loop and the step size.
+    This attribute indicates the loop variable's lower bound (inclusive), upper
+    bound (exclusive), and nonzero step size. Positive and negative steps are
+    allowed; a zero step is a verification error.
+
+    These attributes are trusted unconditionally, so the producer must ensure
+    these values agree with the loop's behavior. Passes are not required to
+    produce an error diagnostic if the values specified by the attribute
+    contradict the IR itself; incorrect annotations can change program behavior.
 
     Example:
 
@@ -59,16 +65,18 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
   let parameters = (ins DynamicAPIntParameter<
                         "Loop variable lower bound (inclusive)">:$lower,
       DynamicAPIntParameter<"Loop variable upper bound (exclusive)">:$upper,
-      DynamicAPIntParameter<"Loop variable step/increment">:$step);
+      DynamicAPIntParameter<"Nonzero loop variable step/increment">:$step);
 
-  let builders = [AttrBuilder<
-      (ins "::llvm::DynamicAPInt":$lower, "::llvm::DynamicAPInt":$upper,
-          "::llvm::DynamicAPInt":$step),
-      [{ return $_get(context, ::llzk::DynamicAPIntValue(std::move(lower)),
-          ::llzk::DynamicAPIntValue(std::move(upper)),
-          ::llzk::DynamicAPIntValue(std::move(step))); }]>];
+  let builders = [AttrBuilder<(ins "const ::llvm::DynamicAPInt &":$lower,
+                                  "const ::llvm::DynamicAPInt &":$upper,
+                                  "const ::llvm::DynamicAPInt &":$step),
+                              [{ return $_get(context,
+          ::llzk::DynamicAPIntValue(lower),
+          ::llzk::DynamicAPIntValue(upper),
+          ::llzk::DynamicAPIntValue(step)); }]>];
 
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
+  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_ATTRS
