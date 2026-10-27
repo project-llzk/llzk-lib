@@ -136,7 +136,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKLoweringUt
 
 <p>Shared utility function implementations for LLZK lowering passes.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="LLZK_2IR_2Ops_8h_source.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="LLZK_2IR_2Ops_8h_source.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="POD_2IR_2Ops_8h_source.html">llzk/Dialect/POD/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LoweringUtils_8h_source.html">llzk/Transforms/LoweringUtils.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/Block.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
@@ -144,14 +147,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKLoweringUt
 <code>#include &lt;mlir/IR/IRMapping.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
 <code>#include &lt;mlir/IR/SymbolTable.h&gt;</code><br />
+<code>#include &lt;mlir/Interfaces/SideEffectInterfaces.h&gt;</code><br />
 <code>#include &lt;mlir/Support/LogicalResult.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseSet.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/ScopeExit.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 <code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKLoweringUtils.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKLoweringUtils_8cpp__incl.svg" width="4219" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKLoweringUtils_8cpp__incl.svg" width="5699" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="LLZKLoweringUtils_8cpp_source.html">Go to the source code of this file.</a></p>

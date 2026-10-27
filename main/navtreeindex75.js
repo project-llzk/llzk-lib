@@ -1,5 +1,9 @@
 var NAVTREEINDEX75 =
 {
+"structExtraMethod.html#adece370eb95e462adfa9e610bcaf3ec9":[13,0,39,0],
+"structExtractArrayOpBuildFuncHelper.html":[13,0,38],
+"structExtractArrayOpBuildFuncHelper.html#a7219d6760848c76e0f60ba5ce0629d99":[13,0,38,0],
+"structExtractArrayOpBuildFuncHelper.html#aa7360dafbca0f868c41615e8eeb1b183":[13,0,38,1],
 "structFeltConstantOpBuildFuncHelper.html":[13,0,41],
 "structFeltConstantOpBuildFuncHelper.html#a1189d15da16f3e9c3be3c14d8bd138d5":[13,0,41,1],
 "structFeltConstantOpBuildFuncHelper.html#afd6306f4173f51d7a67c01f3d7ae0078":[13,0,41,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX75 =
 "structVerifProveOpBuildFuncHelper.html":[13,0,132],
 "structVerifProveOpBuildFuncHelper.html#a78ee6dc6ceffca168a82822b4107546f":[13,0,132,0],
 "structVerifProveOpBuildFuncHelper.html#ae2e24124ca6375761135b79ae91f643f":[13,0,132,1],
-"structVerifSMTProveOpBuildFuncHelper.html":[13,0,133],
-"structVerifSMTProveOpBuildFuncHelper.html#a15d78a2a7fcf67be80d0b629436d7ce4":[13,0,133,0],
-"structVerifSMTProveOpBuildFuncHelper.html#a2afded09768a16df13459e9a90c71319":[13,0,133,1],
-"structWriteArrayOpBuildFuncHelper.html":[13,0,134],
-"structWriteArrayOpBuildFuncHelper.html#a73e71d74bed2637848dc18a2f35d13f4":[13,0,134,1]
+"structVerifSMTProveOpBuildFuncHelper.html":[13,0,133]
 };

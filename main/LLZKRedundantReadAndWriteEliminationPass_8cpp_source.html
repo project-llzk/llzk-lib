@@ -637,84 +637,85 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKRedundantR
 <div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>    }</div>
 <div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>  }</div>
 <div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>  <span class="keywordflow">return</span> res;</div>
-<div class="foldopen" id="foldopen00596" data-start="{" data-end="};">
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">  596</a></span>}</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>}</div>
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span></div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>KnownState intersect(<span class="keyword">const</span> KnownState &amp;lhs, <span class="keyword">const</span> KnownState &amp;rhs) {</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">  600</a></span>  <span class="keywordflow">return</span> {</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9183f3a7a29f033b5b61ec193df1eae4">  601</a></span>      intersectValueMap(lhs.values, rhs.values), intersectGlobals(lhs.globals, rhs.globals),</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017">  602</a></span>      intersectValueLookup(lhs.ram, rhs.ram), intersectValueLookup(lhs.ramExact, rhs.ramExact)</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a5812a639ea5fa8034f49e56001a3a366">  603</a></span>  };</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c">  604</a></span>}</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#afae66c7a90669e7252b56dc0825359c1">  605</a></span></div>
-<div class="foldopen" id="foldopen00608" data-start="{" data-end="}">
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#af7888b2de6e01eb395822e1650f5dc05">  608</a></span>ValueMap cloneValueMap(<span class="keyword">const</span> ValueMap &amp;orig) {</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  ValueMap res;</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[<span class="keywordtype">id</span>, tree] : orig) {</div>
-</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a407060e30dfa9022915543bbe415adea">  611</a></span>    res[id] = tree-&gt;clone();</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  <span class="keywordflow">return</span> {</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>      intersectValueMap(lhs.values, rhs.values), intersectGlobals(lhs.globals, rhs.globals),</div>
+<div class="foldopen" id="foldopen00602" data-start="{" data-end="};">
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">  602</a></span>      intersectValueLookup(lhs.ram, rhs.ram), intersectValueLookup(lhs.ramExact, rhs.ramExact)</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  };</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">  604</a></span>}</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span></div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017">  608</a></span>ValueMap cloneValueMap(<span class="keyword">const</span> ValueMap &amp;orig) {</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a5812a639ea5fa8034f49e56001a3a366">  609</a></span>  ValueMap res;</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c">  610</a></span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[<span class="keywordtype">id</span>, tree] : orig) {</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#afae66c7a90669e7252b56dc0825359c1">  611</a></span>    res[id] = tree-&gt;clone();</div>
 <div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>  }</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0065cbd894233a9ea9587be816352f83">  613</a></span>  <span class="keywordflow">return</span> res;</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>}</div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>  <span class="keywordflow">return</span> res;</div>
+<div class="foldopen" id="foldopen00614" data-start="{" data-end="}">
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#af7888b2de6e01eb395822e1650f5dc05">  614</a></span>}</div>
 <div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span> </div>
-<div class="foldopen" id="foldopen00616" data-start="{" data-end="}">
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a31c04e74d187fd85ac1366b823288950">  616</a></span>GlobalStateMap cloneGlobalStateMap(<span class="keyword">const</span> GlobalStateMap &amp;orig) {</div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>  GlobalStateMap res;</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[name, <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>] : orig) {</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>GlobalStateMap cloneGlobalStateMap(<span class="keyword">const</span> GlobalStateMap &amp;orig) {</div>
 </div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48">  619</a></span>    res[name].scalar = <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>.scalar;</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a407060e30dfa9022915543bbe415adea">  617</a></span>  GlobalStateMap res;</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[name, <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>] : orig) {</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0065cbd894233a9ea9587be816352f83">  619</a></span>    res[name].scalar = <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>.scalar;</div>
 <div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>    <span class="keywordflow">if</span> (<a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>.aggregate) {</div>
 <div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>      res[name].aggregate = <a class="code hl_namespace" href="namespacellzk_1_1global.html">global</a>.aggregate-&gt;clone();</div>
 <div class="foldopen" id="foldopen00622" data-start="{" data-end="}">
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  622</a></span>    }</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a31c04e74d187fd85ac1366b823288950">  622</a></span>    }</div>
 <div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  }</div>
 <div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <span class="keywordflow">return</span> res;</div>
 </div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>}</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48">  625</a></span>}</div>
 <div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span></div>
-<div class="foldopen" id="foldopen00627" data-start="{" data-end="}">
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  627</a></span><span class="comment">/// Deep copy the KnownState for exclusive branches/regions so tree updates do</span></div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span><span class="comment">/// not mutate the incoming state.</span></div>
+<div class="foldopen" id="foldopen00628" data-start="{" data-end="}">
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  628</a></span><span class="comment">/// not mutate the incoming state.</span></div>
 <div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>KnownState cloneKnownState(<span class="keyword">const</span> KnownState &amp;orig) {</div>
-</div>
 <div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>  <span class="keywordflow">return</span> {cloneValueMap(orig.values), cloneGlobalStateMap(orig.globals), orig.ram, orig.ramExact};</div>
+</div>
 <div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>}</div>
-<div class="foldopen" id="foldopen00632" data-start="{" data-end="}">
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  632</a></span> </div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a>&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span> </div>
+<div class="foldopen" id="foldopen00633" data-start="{" data-end="}">
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  633</a></span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a>&lt;PassImpl&gt; {</div>
 <div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">Base</a> = <a class="code hl_function" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">RedundantReadAndWriteEliminationPassBase&lt;PassImpl&gt;</a>;</div>
 <div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">Base::Base</a>;</div>
+</div>
 <div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span></div>
+<div class="foldopen" id="foldopen00638" data-start="{" data-end="}">
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  638</a></span><span class="comment">  /// the current function. Such values cannot be safely merged with a</span></div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span><span class="comment">  /// distinct aggregate copy, even when their source access is unchanged.</span></div>
 <div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  DenseSet&lt;Value&gt; aggregateWriteTargets;</div>
 <div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span></div>
-</div>
 <div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
 <div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>    getOperation().walk([<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> fn) { runOnFunc(fn); });</div>
 <div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  }</div>
 <div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span></div>
+</div>
 <div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  <span class="keywordtype">void</span> runOnFunc(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> fn) {</div>
 <div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>    <span class="comment">// Nothing to do for body-less functions.</span></div>
 <div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>    <span class="keywordflow">if</span> (fn.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#adf116ecb31969911123cbd50b112cfcc">getCallableRegion</a>() == <span class="keyword">nullptr</span>) {</div>
-<div class="foldopen" id="foldopen00656" data-start="{" data-end="}">
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  656</a></span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>      <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>    }</div>
 <div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span> </div>
-</div>
 <div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>    LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Running on &quot;</span> &lt;&lt; fn.getName() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
-</div>
 <div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span> </div>
 <div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>    aggregateWriteTargets.clear();</div>
 <div class="foldopen" id="foldopen00662" data-start="{" data-end="}">
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  662</a></span>    <span class="keyword">auto</span> recordAggregateWriteTarget = [<span class="keyword">this</span>](Value target) {</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  662</a></span>    <span class="keyword">auto</span> recordAggregateWriteTarget = [<span class="keyword">this</span>](Value target) {</div>
 <div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>      <span class="keywordflow">if</span> (requiresAggregateSnapshot(target.getType())) {</div>
 <div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>        aggregateWriteTargets.insert(getAggregateAliasRoot(target));</div>
 </div>
 <div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>      }</div>
+</div>
 <div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>    };</div>
 <div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>    fn.walk([&amp;](Operation *op) {</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      <span class="keywordtype">bool</span> knownAggregateWrite = <span class="keyword">false</span>;</div>
+<div class="foldopen" id="foldopen00668" data-start="{" data-end="}">
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  668</a></span>      <span class="keywordtype">bool</span> knownAggregateWrite = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> memberWrite = dyn_cast&lt;MemberWriteOp&gt;(op)) {</div>
 <div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>        recordAggregateWriteTarget(memberWrite.getComponent());</div>
+</div>
 <div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>        knownAggregateWrite = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>      } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (</div>
 <div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>          <span class="keyword">auto</span> arrayAccess = llvm::dyn_cast&lt;ArrayAccessOpInterface&gt;(op);</div>
@@ -1777,9 +1778,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKRedundantR
 <div class="ttc" id="aclassllzk_1_1Interval_html_a52bd7748f087dc64682eb89063510cd8"><div class="ttname"><a href="classllzk_1_1Interval.html#a52bd7748f087dc64682eb89063510cd8">llzk::Interval::print</a></div><div class="ttdeci">void print(llvm::raw_ostream &amp;os) const</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00797">Intervals.cpp:797</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00801">Ops.h.inc:801</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_adf116ecb31969911123cbd50b112cfcc"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#adf116ecb31969911123cbd50b112cfcc">llzk::function::FuncDefOp::getCallableRegion</a></div><div class="ttdeci">::mlir::Region * getCallableRegion()</div><div class="ttdoc">Required by FunctionOpInterface.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l01063">Ops.h.inc:1063</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00596">LLZKRedundantReadAndWriteEliminationPass.cpp:596</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html_a3f636cd93dd538aa99029a5fdca0eb6d"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">llzk::impl::RedundantReadAndWriteEliminationPassBase::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdeci">RedundantReadAndWriteEliminationPassBase()</div><div class="ttdef"><b>Definition</b> <a href="#l00600">LLZKRedundantReadAndWriteEliminationPass.cpp:600</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html_a6cfd583eb6aa0a69c242d013547fdaaf"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">llzk::impl::RedundantReadAndWriteEliminationPassBase::Base</a></div><div class="ttdeci">RedundantReadAndWriteEliminationPassBase Base</div><div class="ttdef"><b>Definition</b> <a href="#l00598">LLZKRedundantReadAndWriteEliminationPass.cpp:598</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00602">LLZKRedundantReadAndWriteEliminationPass.cpp:602</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html_a3f636cd93dd538aa99029a5fdca0eb6d"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">llzk::impl::RedundantReadAndWriteEliminationPassBase::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdeci">RedundantReadAndWriteEliminationPassBase()</div><div class="ttdef"><b>Definition</b> <a href="#l00606">LLZKRedundantReadAndWriteEliminationPass.cpp:606</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html_a6cfd583eb6aa0a69c242d013547fdaaf"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">llzk::impl::RedundantReadAndWriteEliminationPassBase::Base</a></div><div class="ttdeci">RedundantReadAndWriteEliminationPassBase Base</div><div class="ttdef"><b>Definition</b> <a href="#l00604">LLZKRedundantReadAndWriteEliminationPass.cpp:604</a></div></div>
 <div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00411">SourceRefLattice.cpp:411</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1array_html"><div class="ttname"><a href="namespacellzk_1_1array.html">llzk::array</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Ops_8cpp_source.html#l00043">Ops.cpp:43</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Dialect_8cpp_source.html#l00209">Dialect.cpp:209</a></div></div>

@@ -582,10 +582,14 @@ Options</h5>
 <p>Rewrites constraint expressions into an (observationally) equivalent system where the degree of every polynomial is less than or equal to the specified maximum.</p>
 <p>High-degree subexpressions are factored into auxiliary struct members. The pass also recurses through degree-neutral roots such as <span class="tt">felt.add</span>, <span class="tt">felt.sub</span>, and <span class="tt">felt.neg</span>, so composite equality operands and struct constrain call arguments satisfy their degree bounds.</p>
 <p>The pass expects an already-flattened, straight-line <span class="tt">constrain</span> body. Run <span class="tt">llzk-flatten</span> or another control-flow lowering pass before this pass; nested-region, successor-bearing, or multi-block constrain functions are rejected instead of being rewritten with component-lifetime auxiliary members. Compute functions may contain control flow; auxiliary computations and writes are materialized on every return path.</p>
+<p>Rebuilding aggregate reads requires stable storage. The pass checks preceding constrain operations and compute input mutations using one storage-origin and effect analysis, including helper bodies. Read-only helpers and disjoint allocations are supported. Unknown effects, external helpers, recursive call cycles, and uncertain storage origins are conservatively rejected when they may affect a reconstructed read. Different subpaths and aggregate copies are not proven disjoint by this analysis.</p>
+<p>With <span class="tt">main-only=true</span>, only llzk.main is processed and generated auxiliaries are marked as signals so a subsequent signal layout includes them. This is used after constraint flattening, which retains source definitions and aggregate storage reads. <span class="tt">mark-auxiliary-signals=true</span> also marks auxiliaries when lowering all components.</p>
 <p>This pass is best used on already-flattened input as part of the <span class="tt">-llzk-full-poly-lowering</span> pipeline, which includes additional cleanup passes to ensure correctness and optimal performance.</p>
 <h5 class="doxsection"><a class="anchor" id="options-8"></a>
 Options</h5>
-<div class="fragment"><div class="line">-max-degree : Maximum degree of constraint polynomials (default 2, minimum 2)</div>
+<div class="fragment"><div class="line">-main-only              : Lower only llzk.main and mark generated auxiliaries as signals</div>
+<div class="line">-mark-auxiliary-signals : Mark generated auxiliaries as signals for R1CS layout</div>
+<div class="line">-max-degree             : Maximum degree of constraint polynomials (default 2, minimum 2)</div>
 </div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unused-discardable-allocations"></a>
 <span class="tt">-llzk-remove-unused-discardable-allocations</span></h4>
 <p><em>Remove unread discardable allocations and their dead stores</em></p>

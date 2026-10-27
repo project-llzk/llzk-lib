@@ -1,5 +1,13 @@
 var NAVTREEINDEX79 =
 {
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html":[13,0,1,6,0,0],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#a43b405368748bf17eb9b4e9730297ecf":[11,0,3,9,0,0,2],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#a43b405368748bf17eb9b4e9730297ecf":[13,0,1,6,0,0,2],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#a5be0e9d874ed5b99939750a7060abaf5":[11,0,3,9,0,0,1],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#a5be0e9d874ed5b99939750a7060abaf5":[13,0,1,6,0,0,1],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#ae074d4f994eeb0aa8d21731c78e37e0d":[11,0,3,9,0,0,0],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#ae074d4f994eeb0aa8d21731c78e37e0d":[13,0,1,6,0,0,0],
+"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html":[11,0,3,9,1],
 "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html":[13,0,1,6,1],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html":[11,0,3,9,2],
 "structllzk_1_1detail_1_1LLZKCallLikeOpInterfaceInterfaceTraits.html":[13,0,1,6,2],
@@ -241,13 +249,5 @@ var NAVTREEINDEX79 =
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#adb5e70689f37aca469648f662011855a":[13,0,1,9,0,0,0,3],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#addacb94cc418269532f97a0da7a0e68c":[11,0,3,12,0,0,0,12],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#addacb94cc418269532f97a0da7a0e68c":[13,0,1,9,0,0,0,12],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#af3738774559c064ecacbc077f52fc1a8":[11,0,3,12,0,0,0,10],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#af3738774559c064ecacbc077f52fc1a8":[13,0,1,9,0,0,0,10],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html":[11,0,3,12,0,1,0],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html":[13,0,1,9,0,1,0],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a38b101aeccbfb1499869c849e9188f1a":[11,0,3,12,0,1,0,8],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a38b101aeccbfb1499869c849e9188f1a":[13,0,1,9,0,1,0,8],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a3e74253bbb88fe90a8f23aa1da6740f8":[11,0,3,12,0,1,0,9],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a3e74253bbb88fe90a8f23aa1da6740f8":[13,0,1,9,0,1,0,9],
-"structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a4c2823c14d255a6b4d26194259967ef2":[11,0,3,12,0,1,0,4]
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#af3738774559c064ecacbc077f52fc1a8":[11,0,3,12,0,0,0,10]
 };
