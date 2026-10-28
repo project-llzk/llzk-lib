@@ -27,7 +27,6 @@
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
-#include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
@@ -151,17 +150,17 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       reportFailureReason("loopbounds must have nonnegative bounds and a positive step");
       return info;
     }
-    // Use the same nonnegative index range as cast.toindex assert.
-    auto fitsIndex = [](const llvm::DynamicAPInt &value) {
-      return llzk::cast::applyFeltToIndexOverflow(
-                 value, IndexType::kInternalStorageBitWidth, llzk::cast::OverflowSemantics::ASSERT
-      )
-          .has_value();
-    };
-    if (!fitsIndex(bounds.getLower()) || !fitsIndex(bounds.getUpper()) ||
-        !fitsIndex(bounds.getStep())) {
-      reportFailureReason("loopbounds values cannot be represented as nonnegative indices");
-      return info;
+    // The sign checks above and checkedToInt64 enforce the nonnegative index storage range.
+    // Retain the converted values so validation and constant materialization cannot disagree.
+    SmallVector<int64_t, 3> indexBounds;
+    for (const auto &value : {bounds.getLower(), bounds.getUpper(), bounds.getStep()}) {
+      auto converted = llzk::checkedToInt64(value);
+      if (!converted) {
+        reportFailureReason("loopbounds values cannot be represented as nonnegative indices")
+            << ": " << llvm::toString(converted.takeError());
+        return info;
+      }
+      indexBounds.push_back(*converted);
     }
     // scf.for also requires the value after the final increment to fit, even though it is
     // outside the iteration range. Compute it with mathematical integers to avoid overflow.
@@ -169,8 +168,9 @@ static inline ForOpInfo parseInfo(WhileOp op) {
       auto distance = bounds.getUpper() - bounds.getLower();
       auto tripCount = (distance + bounds.getStep() - 1) / bounds.getStep();
       auto end = bounds.getLower() + tripCount * bounds.getStep();
-      if (!fitsIndex(end)) {
-        reportFailureReason("loopbounds final induction value cannot be represented as an index");
+      if (auto convertedEnd = llzk::checkedToInt64(end); !convertedEnd) {
+        reportFailureReason("loopbounds final induction value cannot be represented as an index")
+            << ": " << llvm::toString(convertedEnd.takeError());
         return info;
       }
       // Only executed IVs need to fit the field, not the exclusive upper bound or final
@@ -183,14 +183,12 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     }
 
     // Annotations are mathematical integers, independent of the induction variable's field.
-    auto createIndexBound = [&builder, &op](const llvm::DynamicAPInt &value) -> Value {
-      return arith::ConstantIndexOp::create(
-          builder, op.getLoc(), llvm::cantFail(llzk::checkedToInt64(value))
-      );
+    auto createIndexBound = [&builder, &op](int64_t value) -> Value {
+      return arith::ConstantIndexOp::create(builder, op.getLoc(), value);
     };
-    info.lb = createIndexBound(bounds.getLower());
-    info.ub = createIndexBound(bounds.getUpper());
-    info.step = createIndexBound(bounds.getStep());
+    info.lb = createIndexBound(indexBounds[0]);
+    info.ub = createIndexBound(indexBounds[1]);
+    info.step = createIndexBound(indexBounds[2]);
     return info;
   }
 
@@ -319,11 +317,12 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   auto ub = copyIfNeeded(*info.ub);
   auto step = copyIfNeeded(*info.step);
 
-  // Store the original type of the scf.while's induction var so we can cast back if necessary
+  // Inferred bounds must share a type; annotated bounds are already index constants.
   llzk::ensure(
       lb.getType() == ub.getType() && lb.getType() == step.getType(),
       "cannot have differing types for loop bounds"
   );
+  // Store the original type of the scf.while's induction var so we can cast back if necessary.
   Type ivarType = op.getBeforeArguments()[*info.ivarIndexBefore].getType();
   lb = toIndex(lb);
   ub = toIndex(ub);
