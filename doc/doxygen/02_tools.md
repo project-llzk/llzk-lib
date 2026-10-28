@@ -191,8 +191,7 @@ The execution engine supports `cast.tofelt` with `assert` (the default) and
 convention: `assert` requires `0 <= x < p`, while `wrap` reduces the signed value
 modulo `p` to a representative in `[0, p-1]`, including the minimum signed index.
 Boolean inputs become zero or one in either mode. Reduction preserves the full
-index value before narrowing to the field representation; fields with
-`p >= 2^63`, including Goldilocks and BN128, need only add `p` to negative inputs.
+index value before narrowing to the field representation.
 Other `cast.tofelt` overflow modes and non-assert `cast.toindex` modes remain
 unsupported by the execution engine and produce diagnostics.
 

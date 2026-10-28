@@ -533,6 +533,21 @@ static Value normalizeWideValue(
   );
 }
 
+/// Add the modulus to a negative value in [-p, p), then truncate to the field width.
+static Value addModulusIfNegative(
+    OpBuilder &builder, Location loc, Value wideValue, Value modulus, unsigned dstWidth
+) {
+  auto wideType = llvm::cast<IntegerType>(wideValue.getType());
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
+  Value isNegative =
+      arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, wideValue, zero);
+  Value adjusted = arith::AddIOp::create(builder, loc, wideValue, modulus);
+  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, wideValue);
+  return arith::TruncIOp::create(
+      builder, loc, IntegerType::get(builder.getContext(), dstWidth), canonical
+  );
+}
+
 /// Normalize a signed widened integer back into the field modulus and truncate it.
 static Value normalizeSignedWideValue(
     OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field
@@ -542,13 +557,7 @@ static Value normalizeSignedWideValue(
       builder, loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
   );
   Value reduced = arith::RemSIOp::create(builder, loc, wideValue, modulus);
-  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
-  Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, reduced, zero);
-  Value adjusted = arith::AddIOp::create(builder, loc, reduced, modulus);
-  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, reduced);
-  return arith::TruncIOp::create(
-      builder, loc, IntegerType::get(builder.getContext(), dstWidth), canonical
-  );
+  return addModulusIfNegative(builder, loc, reduced, modulus, dstWidth);
 }
 
 /// Reduce a signed index modulo the field without narrowing before reduction.
@@ -569,13 +578,7 @@ lowerWrappingIndexToFelt(OpBuilder &builder, Location loc, Value operand, const 
   // wide remainder operations for fields such as Goldilocks and BN128.
   Value modulus =
       arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
-  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
-  Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, widened, zero);
-  Value adjusted = arith::AddIOp::create(builder, loc, widened, modulus);
-  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, widened);
-  return arith::TruncIOp::create(
-      builder, loc, IntegerType::get(builder.getContext(), field.bitWidth()), canonical
-  );
+  return addModulusIfNegative(builder, loc, widened, modulus, field.bitWidth());
 }
 
 /// Reinterpret a canonical field element as a signed integer in a widened type.
