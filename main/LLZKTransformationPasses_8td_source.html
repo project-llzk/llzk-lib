@@ -309,11 +309,20 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      &quot;This pass identifies scf.while loops that have an &quot;</div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      &quot;induction variable and a uniform step, and converts them &quot;</div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      &quot;to equivalent scf.for loops, which are preferred by some &quot;</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>      &quot;analyses. This pass may introduce some spurious felt/index casts which &quot;</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      &quot;should be cleaned up by --canonicalize.&quot;;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>}</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>#endif // LLZK_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>      &quot;analyses. Annotated loopbounds must have nonnegative bounds and a &quot;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      &quot;positive step, all within the nonnegative index range. The induction &quot;</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>      &quot;value after the final increment must also fit in index; otherwise the &quot;</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>      &quot;annotated loop is left unchanged with a warning. Annotated values are &quot;</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>      &quot;materialized directly as index constants without field reduction. &quot;</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>      &quot;The annotated integer induction variable is converted to its field &quot;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>      &quot;representative when the original variable is a felt. The cast uses &quot;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>      &quot;assert for empty loops or when every executed induction value is &quot;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      &quot;within the known field, and wrap otherwise. &quot;</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      &quot;This pass may introduce some spurious felt/index casts which &quot;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>      &quot;should be cleaned up by --canonicalize.&quot;;</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>}</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>#endif // LLZK_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

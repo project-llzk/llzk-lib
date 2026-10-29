@@ -2737,6 +2737,9 @@ LoopBoundsAttr</h3>
 <div class="line">  ::llzk::DynamicAPIntValue   # step</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>This attribute indicates the loop variable's lower bound (inclusive), upper bound (exclusive), and nonzero step size. Positive and negative steps are allowed; a zero step is a verification error.</p>
+<p>All three values are signed mathematical integers of arbitrary precision, not field elements. They are interpreted without reduction modulo any field, even when the loop variable has a felt type. For example, a step equal to the field modulus denotes that integer increment, not zero.</p>
+<p>For a felt loop variable over a field of modulus <span class="tt">p</span>, the body receives the field representative of the integer induction value: <span class="tt">(lower + k * step)
+mod p</span> on iteration <span class="tt">k</span>, starting at zero. Loop control uses the unreduced integer bounds and step. The producer must ensure both this sequence of field values and the number of iterations agree with the original loop; reduction modulo <span class="tt">p</span> does not preserve ordering or termination conditions.</p>
 <p>These attributes are trusted unconditionally, so the producer must ensure these values agree with the loop's behavior. Passes are not required to produce an error diagnostic if the values specified by the attribute contradict the IR itself; incorrect annotations can change program behavior.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">scf.while ... {</div>
