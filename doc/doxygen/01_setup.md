@@ -47,83 +47,6 @@ Notes:
 * Nix 2.13 is assumed. Compatibility with other versions has not been checked
   yet, but they should work.
 
-# Python Bindings
-
-The Python-enabled package uses the Python, nanobind, and LLVM/MLIR versions
-from the pinned Nix dependencies. Build and test both the build-tree and
-installed bindings with:
-
-```sh
-nix build -L .#llzk-with-python
-nix build -L .#checks.aarch64-darwin.llzk-installcheck-python
-```
-
-Use `x86_64-linux` instead of `aarch64-darwin` on Linux. The normal LLZK build
-does not enable Python; its passing tests alone do not validate these bindings.
-
-For development, use the dedicated shell and a separate build directory:
-
-```sh
-nix develop .#python
-cmake -S . -B build-python -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DLLZK_ENABLE_BINDINGS_PYTHON=ON -DLLZK_BUILD_DEVTOOLS=ON \
-  -DLLZK_VERSION_OVERRIDE=3.0.0
-cmake --build build-python --target check-lit
-```
-
-The shell puts `build-python/python` and the matching installed MLIR package on
-`PYTHONPATH`. LLZK installs its packages under `<prefix>/python`; add that
-directory to `PYTHONPATH` to use an installed build with the same MLIR environment.
-Outside Nix, install nanobind and MLIR's Python dependencies, build MLIR with
-`MLIR_ENABLE_BINDINGS_PYTHON=ON`, and configure LLZK against that installation.
-The MLIR Python package must be importable by the configured Python interpreter.
-
-```python
-from mlir import ir
-from mlir.dialects import llzk as core
-import llzk
-
-with ir.Context() as context, ir.Location.unknown():
-    llzk.add_dialects_to_context(context)
-    context.load_all_available_dialects()
-    felt_type = ir.Type.parse("!felt.type")
-    module = ir.Module.create()
-    with ir.InsertionPoint(module.body):
-        core.NonDetOp(felt_type)
-    assert module.operation.verify()
-```
-
-Operation classes are generated from TableGen for the `array`, `bool`, `cast`,
-`constrain`, `felt`, `function`, `global`, `include`, `llzk`, `pod`, `poly`, `ram`,
-`smt_info`, `string`, `struct`, and `verif` namespaces. Import them from
-`mlir.dialects.<namespace>`; use `importlib.import_module("mlir.dialects.global")`
-for the Python keyword `global`. The earlier `mlir.dialects.llzk_dialect` import
-remains an alias for the core `llzk` module.
-
-Custom types and attributes support generic `ir.Type.parse` and
-`ir.Attribute.parse`, printing, equality, and use in generated builders. Dedicated
-Python subclasses and convenience constructors for every custom type/attribute
-are not provided. Backend dialect wrappers are also outside this package's
-current scope.
-
-For explicit registration, create an `ir.DialectRegistry`, call
-`llzk.registration.register_dialects(registry)`, and append it to a context.
-Call `llzk.registration.register_passes(registry)` once before creating pass
-pipelines to register core LLZK passes and their context extensions. Append that
-registry to the context used by the pass manager. Registration makes dialects
-available for lazy loading during parsing; call
-`context.load_all_available_dialects()` before constructing operations directly
-or querying operation registration.
-
-After LLZK pass registration, both `remove-dead-values` and
-`llzk-remove-dead-values` select LLZK's cleanup wrapper in Python pipelines,
-native LLZK pipelines, and `llzk-opt` command-line flags. The wrapper runs the
-upstream pass, replaces remaining live `ub.poison` values with `llzk.nondet`,
-and removes unused poison values and trivial else regions. The historical name
-is a pipeline alias, which takes precedence over MLIR Python's already registered
-upstream pass. Call `registration.register_passes(registry)` before parsing
-pipelines: previously constructed pass managers retain their existing passes.
-
 # Manual Build Setup
 
 Note that the manual build instructions may be out of date; if you encounter issues, look at the build options as configured in Nix.
@@ -237,6 +160,73 @@ you can run the following commands:
 The build configuration will automatically export `compile_commands.json`, so
 LSP servers such as `clangd` should be able to pick up helpful IDE information
 like include paths, etc.
+
+# Python Bindings
+
+The Python-enabled package uses the Python, nanobind, and LLVM/MLIR versions
+from the pinned Nix dependencies. Build and test both the build-tree and
+installed bindings with:
+
+```sh
+nix build -L .#llzk-with-python
+nix build -L .#checks.aarch64-darwin.llzk-installcheck-python
+```
+
+Use `x86_64-linux` instead of `aarch64-darwin` on Linux. The normal LLZK build
+does not enable Python; its passing tests alone do not validate these bindings.
+
+For development, use the dedicated shell and a separate build directory:
+
+```sh
+nix develop .#python
+cmake -S . -B build-python -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DLLZK_ENABLE_BINDINGS_PYTHON=ON -DLLZK_BUILD_DEVTOOLS=ON
+cmake --build build-python --target check-lit
+```
+
+The shell puts `build-python/python` and the matching installed MLIR package on
+`PYTHONPATH`. LLZK installs its packages under `<prefix>/python`; add that
+directory to `PYTHONPATH` to use an installed build with the same MLIR environment.
+Outside Nix, install nanobind and MLIR's Python dependencies, build MLIR with
+`MLIR_ENABLE_BINDINGS_PYTHON=ON`, and configure LLZK against that installation.
+The MLIR Python package must be importable by the configured Python interpreter.
+
+```python
+from mlir import ir
+from mlir.dialects import llzk as core
+import llzk
+
+with ir.Context() as context, ir.Location.unknown():
+    llzk.add_dialects_to_context(context)
+    context.load_all_available_dialects()
+    felt_type = ir.Type.parse("!felt.type")
+    module = ir.Module.create()
+    with ir.InsertionPoint(module.body):
+        core.NonDetOp(felt_type)
+    assert module.operation.verify()
+```
+
+Operation classes are generated from TableGen for the `array`, `bool`, `cast`,
+`constrain`, `felt`, `function`, `global`, `include`, `llzk`, `pod`, `poly`, `ram`,
+`smt_info`, `string`, `struct`, and `verif` namespaces. Import them from
+`mlir.dialects.<namespace>`; use `importlib.import_module("mlir.dialects.global")`
+for the Python keyword `global`. The earlier `mlir.dialects.llzk_dialect` import
+remains an alias for the core `llzk` module.
+
+Custom types and attributes support generic `ir.Type.parse` and
+`ir.Attribute.parse`, printing, equality, and use in generated builders. Dedicated
+Python subclasses and convenience constructors for every custom type/attribute
+are not provided. Backend dialect wrappers are also outside this package's
+current scope.
+
+For explicit registration, create an `ir.DialectRegistry`, call
+`llzk.registration.register_dialects(registry)`, and append it to a context.
+Call `llzk.registration.register_passes(registry)` once before creating pass
+pipelines to register core LLZK passes and their context extensions. Append that
+registry to the context used by the pass manager. Registration makes dialects
+available for lazy loading during parsing; call
+`context.load_all_available_dialects()` before constructing operations directly
+or querying operation registration.
 
 <div class="section_buttons">
 | Previous          |                              Next |

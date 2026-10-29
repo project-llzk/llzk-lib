@@ -3,4 +3,3 @@ added:
   - Add a Python-enabled Nix development shell and build-tree and installed-package binding tests.
 fixed:
   - Build LLZK Python bindings with MLIR's nanobind adaptors and locate the installed MLIR C API library.
-  - Allow LLZK pass registration alongside MLIR Python passes; preserve LLZK's remove-dead-values behavior in native and Python pipelines, with llzk-remove-dead-values as an explicit spelling.
