@@ -1,0 +1,43 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints | FileCheck %s --match-full-lines
+
+// Merge complementary dimensions through nested POD records, including a POD root.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @input : !pod.type<[@data: !pod.type<[@rows: !array.type<2,? x !felt.type>]>]> {signal}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %input = struct.readm %self[@input] : !struct.type<@Main>, !pod.type<[@data: !pod.type<[@rows: !array.type<?,3 x !felt.type>]>]>
+      %data = pod.read %input[@data] : !pod.type<[@data: !pod.type<[@rows: !array.type<?,3 x !felt.type>]>]>, !pod.type<[@rows: !array.type<?,3 x !felt.type>]>
+      %rows = pod.read %data[@rows] : !pod.type<[@rows: !array.type<?,3 x !felt.type>]>, !array.type<?,3 x !felt.type>
+      %one = arith.constant 1 : index
+      %length = array.len %rows, %one : !array.type<?,3 x !felt.type>
+      %last = arith.subi %length, %one : index
+      %value = array.read %rows[%one, %last] : !array.type<?,3 x !felt.type>, !felt.type
+      constrain.eq %value, %value : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @input : !pod.type<[@data: !pod.type<[@rows: !array.type<2,? x !felt.type>]>]> {signal}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@input] : <@Main>, !pod.type<[@data: !pod.type<[@rows: !array.type<?,3 x !felt.type>]>]>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_2]][@data] : <[@data: !pod.type<[@rows: !array.type<?,3 x !felt.type>]>]>, !pod.type<[@rows: !array.type<?,3 x !felt.type>]>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_3]][@rows] : <[@rows: !array.type<?,3 x !felt.type>]>, !array.type<?,3 x !felt.type>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]], %[[VAL_6]]] : <?,3 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

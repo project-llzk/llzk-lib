@@ -1,0 +1,107 @@
+// RUN: llzk-opt --llzk-while-to-for --verify-diagnostics %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  // A negative lower bound must not be reinterpreted as a field representative.
+  function.def @negative_lower(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) attributes {function.allow_non_native_field_ops} {
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: loopbounds must have nonnegative bounds and a positive step}}
+    scf.while (%i = %lo) : (!felt.type) -> !felt.type {
+      %cond = bool.cmp lt(%i, %hi)
+      scf.condition(%cond) %i : !felt.type
+    } do {
+    ^bb0(%i: !felt.type):
+      %next = felt.add %i, %step
+      scf.yield %next : !felt.type
+    } attributes {llzk.loopbounds = #llzk.loopbounds<-1 to 10 step 1>}
+    function.return
+  }
+
+  // Check the upper bound independently of the lower bound and step.
+  function.def @negative_upper(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) attributes {function.allow_non_native_field_ops} {
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: loopbounds must have nonnegative bounds and a positive step}}
+    scf.while (%i = %lo) : (!felt.type) -> !felt.type {
+      %cond = bool.cmp lt(%i, %hi)
+      scf.condition(%cond) %i : !felt.type
+    } do {
+    ^bb0(%i: !felt.type):
+      %next = felt.add %i, %step
+      scf.yield %next : !felt.type
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to -1 step 1>}
+    function.return
+  }
+
+  // Trusted descending bounds cannot be used directly for an scf.for.
+  function.def @negative_step(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) attributes {function.allow_non_native_field_ops} {
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: loopbounds must have nonnegative bounds and a positive step}}
+    scf.while (%i = %lo) : (!felt.type) -> !felt.type {
+      %cond = bool.cmp lt(%i, %hi)
+      scf.condition(%cond) %i : !felt.type
+    } do {
+    ^bb0(%i: !felt.type):
+      %next = felt.add %i, %step
+      scf.yield %next : !felt.type
+    } attributes {llzk.loopbounds = #llzk.loopbounds<10 to 0 step -1>}
+    function.return
+  }
+
+  // Check the full signed value, even with a known field and a step wider than 64 bits.
+  function.def @large_negative_step(%lo: !felt.type<"babybear">, %hi: !felt.type<"babybear">, %step: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: loopbounds must have nonnegative bounds and a positive step}}
+    scf.while (%i = %lo) : (!felt.type<"babybear">) -> !felt.type<"babybear"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"babybear">, !felt.type<"babybear">
+      scf.condition(%cond) %i : !felt.type<"babybear">
+    } do {
+    ^bb0(%i: !felt.type<"babybear">):
+      %next = felt.add %i, %step : !felt.type<"babybear">, !felt.type<"babybear">
+      scf.yield %next : !felt.type<"babybear">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<10 to 0 step -18446744073709551616>}
+    function.return
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @negative_lower(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) : (!felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_4]], %[[VAL_1]]) : !felt.type, !felt.type
+// CHECK-NEXT:        scf.condition(%[[VAL_5]]) %[[VAL_4]] : !felt.type
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type):
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_7]] : !felt.type
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<-1 to 10 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @negative_upper(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_12:[0-9a-zA-Z_\.]+]] = %[[VAL_8]]) : (!felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_12]], %[[VAL_9]]) : !felt.type, !felt.type
+// CHECK-NEXT:        scf.condition(%[[VAL_13]]) %[[VAL_12]] : !felt.type
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type):
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_14]], %[[VAL_10]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_15]] : !felt.type
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to -1 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @negative_step(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_20:[0-9a-zA-Z_\.]+]] = %[[VAL_16]]) : (!felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_20]], %[[VAL_17]]) : !felt.type, !felt.type
+// CHECK-NEXT:        scf.condition(%[[VAL_21]]) %[[VAL_20]] : !felt.type
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !felt.type):
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_22]], %[[VAL_18]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_23]] : !felt.type
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<10 to 0 step -1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @large_negative_step(%[[VAL_24:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_26:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_28:[0-9a-zA-Z_\.]+]] = %[[VAL_24]]) : (!felt.type<"babybear">) -> !felt.type<"babybear"> {
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_28]], %[[VAL_25]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        scf.condition(%[[VAL_29]]) %[[VAL_28]] : !felt.type<"babybear">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_30:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">):
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_30]], %[[VAL_26]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        scf.yield %[[VAL_31]] : !felt.type<"babybear">
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<10 to 0 step -18446744073709551616>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+

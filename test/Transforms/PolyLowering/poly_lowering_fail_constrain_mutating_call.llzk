@@ -1,0 +1,268 @@
+// RUN: llzk-opt -allow-unregistered-dialect -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @ConstrainMutatedArray {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ConstrainMutatedArray> {
+      %self = struct.new : <@ConstrainMutatedArray>
+      function.return %self : !struct.type<@ConstrainMutatedArray>
+    }
+    function.def @constrain(%self: !struct.type<@ConstrainMutatedArray>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !pod.type<[@value: !felt.type]>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    pod.write %data[@value] = %x : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+  struct.def @ConstrainMutatedPod {
+    function.def @compute(%input: !pod.type<[@value: !felt.type]>, %x: !felt.type) -> !struct.type<@ConstrainMutatedPod> {
+      %self = struct.new : <@ConstrainMutatedPod>
+      function.return %self : !struct.type<@ConstrainMutatedPod>
+    }
+    function.def @constrain(%self: !struct.type<@ConstrainMutatedPod>, %input: !pod.type<[@value: !felt.type]>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      function.call @mutate(%input, %x) : (!pod.type<[@value: !felt.type]>, !felt.type) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = pod.read %input[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @ConstrainMutatedView {
+    function.def @compute(%input: !array.type<1,1 x !felt.type>, %x: !felt.type) -> !struct.type<@ConstrainMutatedView> {
+      %self = struct.new : <@ConstrainMutatedView>
+      function.return %self : !struct.type<@ConstrainMutatedView>
+    }
+    function.def @constrain(%self: !struct.type<@ConstrainMutatedView>, %input: !array.type<1,1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %view = array.extract %input[%idx] : !array.type<1,1 x !felt.type>
+      function.call @mutate(%view, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = array.read %input[%idx, %idx] : !array.type<1,1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  struct.def @UnknownMutation {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@UnknownMutation> {
+      %self = struct.new : <@UnknownMutation>
+      function.return %self : !struct.type<@UnknownMutation>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownMutation>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      "test.mutate"(%input) : (!array.type<1 x !felt.type>) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  function.def @wrapper(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    function.call @mutate(%data, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+    function.return
+  }
+  struct.def @NestedHelper {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@NestedHelper> {
+      %self = struct.new : <@NestedHelper>
+      function.return %self : !struct.type<@NestedHelper>
+    }
+    function.def @constrain(%self: !struct.type<@NestedHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      function.call @wrapper(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    function.call @mutate(%data, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+    function.return
+  }
+  struct.def @RecursiveHelper {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@RecursiveHelper> {
+      %self = struct.new : <@RecursiveHelper>
+      function.return %self : !struct.type<@RecursiveHelper>
+    }
+    function.def @constrain(%self: !struct.type<@RecursiveHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def private @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) attributes {extern}
+  struct.def @ExternalHelper {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@ExternalHelper> {
+      %self = struct.new : <@ExternalHelper>
+      function.return %self : !struct.type<@ExternalHelper>
+    }
+    function.def @constrain(%self: !struct.type<@ExternalHelper>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      function.call @mutate(%input, %x) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      // expected-error@+1 {{cannot rebuild storage read in compute-side auxiliary expression: storage may have been mutated; aggregate mutations cannot be replayed}}
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  struct.def @UnknownComputeMutation {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@UnknownComputeMutation> {
+      %self = struct.new : <@UnknownComputeMutation>
+      "test.mutate"(%input) : (!array.type<1 x !felt.type>) -> ()
+      function.return %self : !struct.type<@UnknownComputeMutation>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@UnknownComputeMutation>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Calls can change storage without producing any SSA value in the read chain.
+module attributes {llzk.lang} {
+  function.def @mutate(%data: !array.type<1 x !felt.type>, %x: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %data[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @OpaqueComputeStorage {
+    function.def @compute(%input: !array.type<1 x !felt.type>, %x: !felt.type) -> !struct.type<@OpaqueComputeStorage> {
+      %self = struct.new : <@OpaqueComputeStorage>
+      %idx = arith.constant 0 : index
+      %local = array.new %x : !array.type<1 x !felt.type>
+      %opaque = "test.opaque_storage"(%local) : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+      array.write %opaque[%idx] = %x : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@OpaqueComputeStorage>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@OpaqueComputeStorage>, %input: !array.type<1 x !felt.type>, %x: !felt.type) {
+      %idx = arith.constant 0 : index
+      %value = array.read %input[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Distinct component arguments may be handles to the same instance.
+module attributes {llzk.lang} {
+  struct.def @Payload {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Payload> {
+      %self = struct.new : <@Payload>
+      function.return %self : !struct.type<@Payload>
+    }
+    function.def @constrain(%self: !struct.type<@Payload>) {
+      function.return
+    }
+  }
+  function.def private @opaque(%data: !struct.type<@Payload>) attributes {extern}
+  struct.def @ComponentHandles {
+    function.def @compute(%a: !struct.type<@Payload>, %b: !struct.type<@Payload>, %x: !felt.type) -> !struct.type<@ComponentHandles> {
+      %self = struct.new : <@ComponentHandles>
+      function.call @opaque(%b) : (!struct.type<@Payload>) -> ()
+      function.return %self : !struct.type<@ComponentHandles>
+    }
+    // expected-error@+1 {{cannot rebuild aggregate argument in compute-side auxiliary expression: compute may mutate the input storage}}
+    function.def @constrain(%self: !struct.type<@ComponentHandles>, %a: !struct.type<@Payload>, %b: !struct.type<@Payload>, %x: !felt.type) {
+      %value = struct.readm %a[@value] : <@Payload>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %fourth = felt.mul %square, %square : !felt.type, !felt.type
+      constrain.eq %x, %fourth : !felt.type
+      function.return
+    }
+  }
+}

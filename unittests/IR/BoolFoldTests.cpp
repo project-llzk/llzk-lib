@@ -303,13 +303,22 @@ TEST_F(BoolFoldTest, CmpReducesUncanonicalizedConstants) {
   expectBool(foldCmp(FeltCmpPredicate::GT, babyBearConst(2), babyBearConst(BB_PRIME + 1)), true);
 }
 
-TEST_F(BoolFoldTest, CmpDoesNotFoldWithoutBothFields) {
+TEST_F(BoolFoldTest, CmpRequiresKnownFieldsExceptZeroBounds) {
   auto unknown = FeltConstAttr::get(&ctx, toDynamicAPInt(BB_PRIME));
   auto unknownZero = FeltConstAttr::get(&ctx, llvm::DynamicAPInt(0));
   for (auto pred :
        {FeltCmpPredicate::EQ, FeltCmpPredicate::NE, FeltCmpPredicate::LT, FeltCmpPredicate::LE,
         FeltCmpPredicate::GT, FeltCmpPredicate::GE}) {
-    expectNoFold(foldCmp(pred, unknown, unknownZero));
+    if (pred == FeltCmpPredicate::LT || pred == FeltCmpPredicate::GE) {
+      expectBool(foldCmp(pred, unknown, unknownZero), pred == FeltCmpPredicate::GE);
+    } else {
+      expectNoFold(foldCmp(pred, unknown, unknownZero));
+    }
+    if (pred == FeltCmpPredicate::LE || pred == FeltCmpPredicate::GT) {
+      expectBool(foldCmp(pred, unknownZero, unknown), pred == FeltCmpPredicate::LE);
+    } else {
+      expectNoFold(foldCmp(pred, unknownZero, unknown));
+    }
     expectNoFold(foldCmp(pred, unknown, babyBearConst(0)));
     expectNoFold(foldCmp(pred, babyBearConst(0), unknown));
   }
