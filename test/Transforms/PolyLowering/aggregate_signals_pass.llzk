@@ -1,0 +1,177 @@
+// RUN: llzk-opt -llzk-poly-lowering-pass='main-only=true max-degree=2' %s | FileCheck %s --check-prefix=MAIN
+// RUN: llzk-opt -llzk-poly-lowering-pass='mark-auxiliary-signals=true max-degree=2' %s | FileCheck %s --check-prefix=ALL
+
+// Factor aggregate reads into signal auxiliaries and rebuild those reads in compute.
+// Main-only lowering leaves the other component's cubic constraint unchanged.
+!F = !felt.type<"babybear">
+!P = !pod.type<[@value: !F]>
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !F {llzk.pub}
+    struct.member @record : !P {signal}
+    function.def @compute(%input: !array.type<2,2 x !F>) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %zero = arith.constant 0 : index
+      %slice = array.extract %input[%zero] : !array.type<2,2 x !F>
+      %x = array.read %slice[%zero] : !array.type<2 x !F>, !F
+      %record = pod.new : !P
+      pod.write %record[@value] = %x : !P, !F
+      struct.writem %self[@record] = %record : <@Main>, !P
+      %sum = felt.add %x, %x : !F, !F
+      %square = felt.mul %sum, %sum : !F, !F
+      %cube = felt.mul %square, %sum : !F, !F
+      struct.writem %self[@out] = %cube : <@Main>, !F
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<2,2 x !F>) {
+      %zero = arith.constant 0 : index
+      %slice = array.extract %input[%zero] : !array.type<2,2 x !F>
+      %x = array.read %slice[%zero] : !array.type<2 x !F>, !F
+      %record = struct.readm %self[@record] : <@Main>, !P
+      %value = pod.read %record[@value] : !P, !F
+      %sum = felt.add %x, %value : !F, !F
+      %square = felt.mul %sum, %sum : !F, !F
+      %cube = felt.mul %square, %sum : !F, !F
+      %out = struct.readm %self[@out] : <@Main>, !F
+      constrain.eq %out, %cube : !F, !F
+      function.return
+    }
+  }
+  struct.def @Unselected {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%x: !F) -> !struct.type<@Unselected> {
+      %self = struct.new : <@Unselected>
+      function.return %self : !struct.type<@Unselected>
+    }
+    function.def @constrain(%self: !struct.type<@Unselected>, %x: !F) {
+      %square = felt.mul %x, %x : !F, !F
+      %cube = felt.mul %square, %x : !F, !F
+      %out = struct.readm %self[@out] : <@Unselected>, !F
+      constrain.eq %out, %cube : !F, !F
+      function.return
+    }
+  }
+}
+
+// MAIN-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// MAIN-NEXT:    struct.def @Main {
+// MAIN-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+// MAIN-NEXT:      struct.member @record : !pod.type<[@value: !felt.type<"babybear">]> {signal}
+// MAIN-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type<"babybear">>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// MAIN-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// MAIN-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// MAIN-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2,2 x !felt.type<"babybear">>
+// MAIN-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_2]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.new : <[@value: !felt.type<"babybear">]>
+// MAIN-NEXT:        pod.write %[[VAL_5]][@value] = %[[VAL_4]] : <[@value: !felt.type<"babybear">]>, !felt.type<"babybear">
+// MAIN-NEXT:        struct.writem %[[VAL_1]][@record] = %[[VAL_5]] : <@Main>, !pod.type<[@value: !felt.type<"babybear">]>
+// MAIN-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_4]], %[[VAL_4]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_6]], %[[VAL_6]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_6]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        struct.writem %[[VAL_1]][@out] = %[[VAL_8]] : <@Main>, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// MAIN-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_9]]] : <2,2 x !felt.type<"babybear">>
+// MAIN-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_9]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@record] : <@Main>, !pod.type<[@value: !felt.type<"babybear">]>
+// MAIN-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_12]][@value] : <[@value: !felt.type<"babybear">]>, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_11]], %[[VAL_13]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_14]], %[[VAL_14]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        struct.writem %[[VAL_1]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_15]] : <@Main>, !felt.type<"babybear">
+// MAIN-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// MAIN-NEXT:      }
+// MAIN-NEXT:      function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type<"babybear">>) attributes {function.allow_constraint} {
+// MAIN-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// MAIN-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_17]]{{\[}}%[[VAL_18]]] : <2,2 x !felt.type<"babybear">>
+// MAIN-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_18]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@record] : <@Main>, !pod.type<[@value: !felt.type<"babybear">]>
+// MAIN-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_21]][@value] : <[@value: !felt.type<"babybear">]>, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_20]], %[[VAL_22]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_23]], %[[VAL_23]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@__llzk_poly_lowering_pass_aux_member_0] : <@Main>, !felt.type<"babybear">
+// MAIN-NEXT:        constrain.eq %[[VAL_25]], %[[VAL_24]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_25]], %[[VAL_23]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@out] : <@Main>, !felt.type<"babybear">
+// MAIN-NEXT:        constrain.eq %[[VAL_27]], %[[VAL_26]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        function.return
+// MAIN-NEXT:      }
+// MAIN-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type<"babybear"> {signal}
+// MAIN-NEXT:    }
+// MAIN-NEXT:    struct.def @Unselected {
+// MAIN-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+// MAIN-NEXT:      function.def @compute(%[[VAL_28:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) -> !struct.type<@Unselected> attributes {function.allow_witness} {
+// MAIN-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = struct.new : <@Unselected>
+// MAIN-NEXT:        function.return %[[VAL_29]] : !struct.type<@Unselected>
+// MAIN-NEXT:      }
+// MAIN-NEXT:      function.def @constrain(%[[VAL_30:[0-9a-zA-Z_\.]+]]: !struct.type<@Unselected>, %[[VAL_31:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_constraint} {
+// MAIN-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_31]], %[[VAL_31]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_32]], %[[VAL_31]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_30]][@out] : <@Unselected>, !felt.type<"babybear">
+// MAIN-NEXT:        constrain.eq %[[VAL_34]], %[[VAL_33]] : !felt.type<"babybear">, !felt.type<"babybear">
+// MAIN-NEXT:        function.return
+// MAIN-NEXT:      }
+// MAIN-NEXT:    }
+// MAIN-NEXT:  }
+
+// ALL-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// ALL-NEXT:    struct.def @Main {
+// ALL-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+// ALL-NEXT:      struct.member @record : !pod.type<[@value: !felt.type<"babybear">]> {signal}
+// ALL-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type<"babybear">>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// ALL-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// ALL-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// ALL-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2,2 x !felt.type<"babybear">>
+// ALL-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_2]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = pod.new : <[@value: !felt.type<"babybear">]>
+// ALL-NEXT:        pod.write %[[VAL_5]][@value] = %[[VAL_4]] : <[@value: !felt.type<"babybear">]>, !felt.type<"babybear">
+// ALL-NEXT:        struct.writem %[[VAL_1]][@record] = %[[VAL_5]] : <@Main>, !pod.type<[@value: !felt.type<"babybear">]>
+// ALL-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_4]], %[[VAL_4]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_6]], %[[VAL_6]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_6]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        struct.writem %[[VAL_1]][@out] = %[[VAL_8]] : <@Main>, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// ALL-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_9]]] : <2,2 x !felt.type<"babybear">>
+// ALL-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_9]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@record] : <@Main>, !pod.type<[@value: !felt.type<"babybear">]>
+// ALL-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_12]][@value] : <[@value: !felt.type<"babybear">]>, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_11]], %[[VAL_13]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_14]], %[[VAL_14]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        struct.writem %[[VAL_1]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_15]] : <@Main>, !felt.type<"babybear">
+// ALL-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// ALL-NEXT:      }
+// ALL-NEXT:      function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type<"babybear">>) attributes {function.allow_constraint} {
+// ALL-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// ALL-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_17]]{{\[}}%[[VAL_18]]] : <2,2 x !felt.type<"babybear">>
+// ALL-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_18]]] : <2 x !felt.type<"babybear">>, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@record] : <@Main>, !pod.type<[@value: !felt.type<"babybear">]>
+// ALL-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_21]][@value] : <[@value: !felt.type<"babybear">]>, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_20]], %[[VAL_22]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_23]], %[[VAL_23]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@__llzk_poly_lowering_pass_aux_member_0] : <@Main>, !felt.type<"babybear">
+// ALL-NEXT:        constrain.eq %[[VAL_25]], %[[VAL_24]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_25]], %[[VAL_23]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@out] : <@Main>, !felt.type<"babybear">
+// ALL-NEXT:        constrain.eq %[[VAL_27]], %[[VAL_26]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        function.return
+// ALL-NEXT:      }
+// ALL-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type<"babybear"> {signal}
+// ALL-NEXT:    }
+// ALL-NEXT:    struct.def @Unselected {
+// ALL-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+// ALL-NEXT:      function.def @compute(%[[VAL_28:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) -> !struct.type<@Unselected> attributes {function.allow_witness} {
+// ALL-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = struct.new : <@Unselected>
+// ALL-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_28]], %[[VAL_28]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        struct.writem %[[VAL_29]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_30]] : <@Unselected>, !felt.type<"babybear">
+// ALL-NEXT:        function.return %[[VAL_29]] : !struct.type<@Unselected>
+// ALL-NEXT:      }
+// ALL-NEXT:      function.def @constrain(%[[VAL_31:[0-9a-zA-Z_\.]+]]: !struct.type<@Unselected>, %[[VAL_32:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_constraint} {
+// ALL-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_32]], %[[VAL_32]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_31]][@__llzk_poly_lowering_pass_aux_member_1] : <@Unselected>, !felt.type<"babybear">
+// ALL-NEXT:        constrain.eq %[[VAL_34]], %[[VAL_33]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_35:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_34]], %[[VAL_32]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_31]][@out] : <@Unselected>, !felt.type<"babybear">
+// ALL-NEXT:        constrain.eq %[[VAL_36]], %[[VAL_35]] : !felt.type<"babybear">, !felt.type<"babybear">
+// ALL-NEXT:        function.return
+// ALL-NEXT:      }
+// ALL-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_1 : !felt.type<"babybear"> {signal}
+// ALL-NEXT:    }
+// ALL-NEXT:  }

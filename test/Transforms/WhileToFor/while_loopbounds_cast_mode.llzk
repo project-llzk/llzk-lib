@@ -1,0 +1,177 @@
+// RUN: llzk-opt --llzk-while-to-for %s | FileCheck %s
+
+// These structural tests trust the annotations; source bounds are intentionally unknown.
+!F = !felt.type<"babybear">
+module attributes {llzk.lang} {
+  // All executed IVs fit the known field.
+  function.def @in_field(%lo: !F, %hi: !F, %step: !F) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!F) -> !F {
+      %cond = bool.cmp lt(%i, %hi) : !F, !F
+      scf.condition(%cond) %i : !F
+    } do {
+    ^bb0(%i: !F):
+      %next = felt.add %i, %step : !F, !F
+      scf.yield %next : !F
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
+    function.return
+  }
+
+  // The exclusive upper bound is the modulus; the last executed IV is p - 1.
+  function.def @exclusive_modulus(%lo: !F, %hi: !F, %step: !F) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!F) -> !F {
+      %cond = bool.cmp lt(%i, %hi) : !F, !F
+      scf.condition(%cond) %i : !F
+    } do {
+    ^bb0(%i: !F):
+      %next = felt.add %i, %step : !F, !F
+      scf.yield %next : !F
+    } attributes {llzk.loopbounds = #llzk.loopbounds<2013265919 to 2013265921 step 1>}
+    function.return
+  }
+
+  // IVs p - 3 and p - 1 fit even though the upper bound and final increment exceed p.
+  function.def @skips_modulus(%lo: !F, %hi: !F, %step: !F) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!F) -> !F {
+      %cond = bool.cmp lt(%i, %hi) : !F, !F
+      scf.condition(%cond) %i : !F
+    } do {
+    ^bb0(%i: !F):
+      %next = felt.add %i, %step : !F, !F
+      scf.yield %next : !F
+    } attributes {llzk.loopbounds = #llzk.loopbounds<2013265918 to 2013265922 step 2>}
+    function.return
+  }
+
+  // Executing at p requires wrapping; equality must not select assert.
+  function.def @reaches_modulus(%lo: !F, %hi: !F, %step: !F) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!F) -> !F {
+      %cond = bool.cmp lt(%i, %hi) : !F, !F
+      scf.condition(%cond) %i : !F
+    } do {
+    ^bb0(%i: !F):
+      %next = felt.add %i, %step : !F, !F
+      scf.yield %next : !F
+    } attributes {llzk.loopbounds = #llzk.loopbounds<2013265920 to 2013265922 step 1>}
+    function.return
+  }
+
+  // An empty loop never casts its out-of-field lower bound.
+  function.def @empty_equal(%lo: !F, %hi: !F, %step: !F) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!F) -> !F {
+      %cond = bool.cmp lt(%i, %hi) : !F, !F
+      scf.condition(%cond) %i : !F
+    } do {
+    ^bb0(%i: !F):
+      %next = felt.add %i, %step : !F, !F
+      scf.yield %next : !F
+    } attributes {llzk.loopbounds = #llzk.loopbounds<2013265922 to 2013265922 step 1>}
+    function.return
+  }
+
+  // Reversed bounds also produce an empty loop.
+  function.def @empty_reversed(%lo: !F, %hi: !F, %step: !F) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!F) -> !F {
+      %cond = bool.cmp lt(%i, %hi) : !F, !F
+      scf.condition(%cond) %i : !F
+    } do {
+    ^bb0(%i: !F):
+      %next = felt.add %i, %step : !F, !F
+      scf.yield %next : !F
+    } attributes {llzk.loopbounds = #llzk.loopbounds<2013265922 to 2013265921 step 1>}
+    function.return
+  }
+
+  // An empty loop needs no field information to use assert.
+  function.def @unknown_empty(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) attributes {function.allow_non_native_field_ops} {
+    scf.while (%i = %lo) : (!felt.type) -> !felt.type {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type, !felt.type
+      scf.condition(%cond) %i : !felt.type
+    } do {
+    ^bb0(%i: !felt.type):
+      %next = felt.add %i, %step : !felt.type, !felt.type
+      scf.yield %next : !felt.type
+    } attributes {llzk.loopbounds = #llzk.loopbounds<10 to 0 step 1>}
+    function.return
+  }
+
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @in_field(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_5]] {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_6]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_7]], %[[VAL_1]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_7]], %[[VAL_2]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @exclusive_modulus(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 2013265919 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_16:[0-9a-zA-Z_\.]+]] = %[[VAL_13]] to %[[VAL_14]] step %[[VAL_15]] {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_16]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_17]], %[[VAL_11]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_17]], %[[VAL_12]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<2013265919 to 2013265921 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @skips_modulus(%[[VAL_20:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_21:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_22:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant 2013265918 : index
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      scf.for %[[VAL_26:[0-9a-zA-Z_\.]+]] = %[[VAL_23]] to %[[VAL_24]] step %[[VAL_25]] {
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_26]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_27]], %[[VAL_21]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_27]], %[[VAL_22]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<2013265918 to 2013265922 step 2>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @reaches_modulus(%[[VAL_30:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_31:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_32:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_36:[0-9a-zA-Z_\.]+]] = %[[VAL_33]] to %[[VAL_34]] step %[[VAL_35]] {
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_36]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_37]], %[[VAL_31]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_37]], %[[VAL_32]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<2013265920 to 2013265922 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @empty_equal(%[[VAL_40:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_41:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_42:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
+// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
+// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_46:[0-9a-zA-Z_\.]+]] = %[[VAL_43]] to %[[VAL_44]] step %[[VAL_45]] {
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_46]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_47]], %[[VAL_41]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_47]], %[[VAL_42]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<2013265922 to 2013265922 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @empty_reversed(%[[VAL_50:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_51:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_52:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_53:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
+// CHECK-NEXT:      %[[VAL_54:[0-9a-zA-Z_\.]+]] = arith.constant 2013265921 : index
+// CHECK-NEXT:      %[[VAL_55:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_56:[0-9a-zA-Z_\.]+]] = %[[VAL_53]] to %[[VAL_54]] step %[[VAL_55]] {
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_56]] : index, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_57]], %[[VAL_51]]) : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_57]], %[[VAL_52]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<2013265922 to 2013265921 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unknown_empty(%[[VAL_60:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_61:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_62:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_63:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
+// CHECK-NEXT:      %[[VAL_64:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_65:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_66:[0-9a-zA-Z_\.]+]] = %[[VAL_63]] to %[[VAL_64]] step %[[VAL_65]] {
+// CHECK-NEXT:        %[[VAL_67:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_66]] : index, !felt.type
+// CHECK-NEXT:        %[[VAL_68:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_67]], %[[VAL_61]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_69:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_67]], %[[VAL_62]] : !felt.type, !felt.type
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<10 to 0 step 1>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

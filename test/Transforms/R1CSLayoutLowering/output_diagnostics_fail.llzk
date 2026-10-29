@@ -1,0 +1,59 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt -llzk-r1cs-lowering='output-llzk=-' -verify-diagnostics %t/stdout.llzk -o /dev/null
+// RUN: llzk-opt -llzk-r1cs-lowering='output-llzk=same output-layout=same' -verify-diagnostics %t/duplicate.llzk -o /dev/null
+// RUN: llzk-opt -llzk-r1cs-lowering='output-llzk=%t/aux.llzk output-layout=%t/missing/layout.csv' -verify-diagnostics %t/open.llzk -o /dev/null
+// RUN: test ! -e %t/aux.llzk
+// RUN: test ! -e %t/missing/layout.csv
+// RUN: rm -f %t/invalid.aux.llzk %t/invalid.csv
+// RUN: llzk-opt -llzk-r1cs-lowering='output-llzk=%t/invalid.aux.llzk output-layout=%t/invalid.csv' -verify-diagnostics %t/invalid.llzk -o /dev/null
+// RUN: test ! -e %t/invalid.aux.llzk
+// RUN: test ! -e %t/invalid.csv
+
+//--- stdout.llzk
+// Side outputs must not overwrite the primary R1CS stream.
+// expected-error@+1 {{output-llzk and output-layout require file paths, not standard output}}
+module attributes {llzk.lang} {}
+
+//--- invalid.llzk
+// Public inputs do not satisfy the R1CS verifier's public-output requirement.
+// Verification failure must leave neither side output behind.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  // expected-error@+1 {{at least one signal must be marked public}}
+  struct.def @Main {
+    struct.member @out : !felt.type {signal}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      struct.writem %self[@out] = %x : <@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type {llzk.pub}) {
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+//--- duplicate.llzk
+// LLZK and CSV require separate files.
+// expected-error@+1 {{output-llzk and output-layout require distinct file paths}}
+module attributes {llzk.lang} {}
+
+//--- open.llzk
+// A failed CSV write must also remove the incomplete LLZK output.
+// expected-error@+1 {{cannot open R1CS lowering output}}
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      struct.writem %self[@out] = %x : <@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

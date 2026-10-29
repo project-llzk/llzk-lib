@@ -39,7 +39,10 @@ The witness order must match LLZK's R1CS binary exporter:
 2. Public output members, in main-struct declaration order.
 3. Public inputs, in main-function argument order.
 4. Private inputs, in main-function argument order.
-5. Non-public output members, in main-struct declaration order.
+5. Non-public members marked `{signal}`, in main-struct declaration order.
+
+Unmarked private storage is excluded from both full-witness JSON selection and
+WTNS collection, using the same member-signal predicate as the R1CS layout.
 
 Input visibility comes from the corresponding arguments of `@constrain`, as it
 does in the R1CS lowering pass. The first `@constrain` argument is `self` and is

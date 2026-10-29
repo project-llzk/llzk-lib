@@ -90,14 +90,32 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     component-lifetime auxiliary members. Compute functions may contain control flow; auxiliary
     computations and writes are materialized on every return path.
 
+    Rebuilding aggregate reads requires stable storage. The pass checks preceding constrain
+    operations and compute input mutations using one storage-origin and effect analysis,
+    including helper bodies. Read-only helpers and disjoint allocations are supported.
+    Unknown effects, external helpers, recursive call cycles, and uncertain storage origins
+    are conservatively rejected when they may affect a reconstructed read. Different
+    subpaths and aggregate copies are not proven disjoint by this analysis.
+
+    With `main-only=true`, only llzk.main is processed and generated auxiliaries
+    are marked as signals so a subsequent signal layout includes them. This is
+    used after constraint flattening, which retains source definitions and
+    aggregate storage reads. `mark-auxiliary-signals=true` also marks auxiliaries
+    when lowering all components.
+
     This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`
     pipeline, which includes additional cleanup passes to ensure correctness and optimal
     performance.
   }];
-  let options = [Option<"maxDegree", "max-degree", "unsigned",
-                        /* default */ "2",
-                        "Maximum degree of constraint polynomials "
-                        "(default 2, minimum 2)">,
+  let options =
+      [Option<"mainOnly", "main-only", "bool", "false",
+              "Lower only llzk.main and mark generated auxiliaries as signals">,
+       Option<"markAuxiliarySignals", "mark-auxiliary-signals", "bool", "false",
+              "Mark generated auxiliaries as signals for R1CS layout">,
+       Option<"maxDegree", "max-degree", "unsigned",
+              /* default */ "2",
+              "Maximum degree of constraint polynomials "
+              "(default 2, minimum 2)">,
   ];
 }
 
@@ -159,7 +177,16 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "This pass identifies scf.while loops that have an "
       "induction variable and a uniform step, and converts them "
       "to equivalent scf.for loops, which are preferred by some "
-      "analyses. This pass may introduce some spurious felt/index casts which "
+      "analyses. Annotated loopbounds must have nonnegative bounds and a "
+      "positive step, all within the nonnegative index range. The induction "
+      "value after the final increment must also fit in index; otherwise the "
+      "annotated loop is left unchanged with a warning. Annotated values are "
+      "materialized directly as index constants without field reduction. "
+      "The annotated integer induction variable is converted to its field "
+      "representative when the original variable is a felt. The cast uses "
+      "assert for empty loops or when every executed induction value is "
+      "within the known field, and wrap otherwise. "
+      "This pass may introduce some spurious felt/index casts which "
       "should be cleaned up by --canonicalize.";
 }
 

@@ -1,5 +1,7 @@
 // RUN: llzk-opt --llzk-r1cs-lowering %s | FileCheck %s
 
+// Preserve large and negative coefficients until field reduction during export.
+
 // Without prior canonicalization, lowering reduces BabyBear literals 2013265928
 // and -1 to 7 and 2013265920, while fieldless literals retain their signed raw
 // values as R1CS coefficients. Check all four emitted constraints; reduction of
@@ -39,6 +41,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
 // CHECK-NEXT:    r1cs.circuit @ReducedConstant {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
@@ -73,5 +76,5 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
 // CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_25]], -1 : !r1cs.linear
 // CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_24]], %[[VAL_26]] : !r1cs.linear
 // CHECK-NEXT:      r1cs.constrain %[[VAL_22]], %[[VAL_23]], %[[VAL_27]] : !r1cs.linear
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64>}
 // CHECK-NEXT:  }

@@ -1,0 +1,71 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt -llzk-r1cs-lowering %t/forward.llzk -o %t/forward.r1cs
+// RUN: llzk-opt -llzk-r1cs-lowering %t/reverse.llzk -o %t/reverse.r1cs
+// RUN: cmp %t/forward.r1cs %t/reverse.r1cs
+// RUN: FileCheck %s < %t/forward.r1cs
+
+// Repeated reads of a signal must combine before emission. Equivalent sums
+// must produce identical wire conversions, coefficients, and add ordering.
+//--- forward.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @a : !felt.type {signal}
+    struct.member @b : !felt.type {signal}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %a0 = struct.readm %self[@a] : <@Main>, !felt.type
+      %a1 = struct.readm %self[@a] : <@Main>, !felt.type
+      %b = struct.readm %self[@b] : <@Main>, !felt.type
+      %twice = felt.add %a0, %a1 : !felt.type, !felt.type
+      %sum = felt.add %twice, %b : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %sum : !felt.type
+      function.return
+    }
+  }
+}
+
+//--- reverse.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @a : !felt.type {signal}
+    struct.member @b : !felt.type {signal}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %b = struct.readm %self[@b] : <@Main>, !felt.type
+      %a1 = struct.readm %self[@a] : <@Main>, !felt.type
+      %a0 = struct.readm %self[@a] : <@Main>, !felt.type
+      %partial = felt.add %b, %a1 : !felt.type, !felt.type
+      %sum = felt.add %a0, %partial : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : <@Main>, !felt.type
+      constrain.eq %out, %sum : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_5]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_7]], 2 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_6]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_9]], %[[VAL_10]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_3]], %[[VAL_4]], %[[VAL_11]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64>}
+// CHECK-NEXT:  }

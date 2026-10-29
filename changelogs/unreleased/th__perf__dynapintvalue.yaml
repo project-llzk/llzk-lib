@@ -1,0 +1,2 @@
+changed:
+  - Avoid unnecessary `DynamicAPInt` copies in the `LoopBoundsAttr` builder by accepting inputs by const reference.
