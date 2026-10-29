@@ -186,6 +186,8 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "representative when the original variable is a felt. The cast uses "
       "assert for empty loops or when every executed induction value is "
       "within the known field, and wrap otherwise. "
+      "Condition regions containing non-pure operations also execute after "
+      "the for loop using the final loop-carried values. "
       "This pass may introduce some spurious felt/index casts which "
       "should be cleaned up by --canonicalize.";
 }

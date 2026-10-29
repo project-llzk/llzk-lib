@@ -20,8 +20,9 @@
 ///
 /// This pass begins by identifying the induction variable, lower and upper bounds, and step
 /// (`ForOp::parseInfo`), then materializes a for loop with these parameters and copies the `before`
-/// and `after` blocks into the body, drops the yielded induction variable, and remaps uses of the
-/// other yielded values (`transformWhileToFor`).
+/// and `after` blocks into the body, and remaps uses of the yielded values (`transformWhileToFor`).
+/// When the condition region is not pure, it is also executed after the for loop using the final
+/// yielded values, including the original induction variable. Otherwise, that variable is dropped.
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -232,16 +233,6 @@ static inline ForOpInfo parseInfo(WhileOp op) {
             reportFailureReason("upper bound cannot be represented as a nonnegative index");
             return info;
           }
-          // A while loop also executes the condition region on its final check.
-          // Dropping that execution is only safe for pure preamble operations.
-          bool purePreamble =
-              llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
-            return mlir::isPure(&preambleOp);
-          });
-          if (!purePreamble) {
-            reportFailureReason("condition region contains operations that are not pure");
-            return info;
-          }
           // Use canonical representatives, including when source literals are negative.
           info.lb = createBound(lo, type);
           info.ub = createBound(hi, type);
@@ -328,12 +319,25 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   ub = toIndex(ub);
   step = toIndex(step);
 
+  auto *whilePreamble = op.getBeforeBody();
+  bool preserveFinalCondition =
+      llvm::any_of(whilePreamble->without_terminator(), [](Operation &preambleOp) {
+    return !mlir::isPure(&preambleOp);
+  });
+
   SmallVector<Value> inits;
   for (auto [i, init] : llvm::enumerate(op.getInits())) {
     if (i == info.ivarIndexBefore) {
       continue;
     }
     inits.push_back(init);
+  }
+
+  if (preserveFinalCondition) {
+    // Carry the original IV separately for the final condition check. The body may yield a
+    // different value from the index IV's final increment, for example a constant or a wrapped
+    // felt. For an empty loop, the final check must instead receive the original initializer.
+    inits.push_back(op.getInits()[*info.ivarIndexBefore]);
   }
 
   // Build the skeleton of the for loop
@@ -353,7 +357,6 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   // Start by mapping the `before` block to the loop body
   // Each block arg of the before block should get mapped to the corresponding iter_arg, with the
   // exception of the induction var which should get mapped to the induction var
-  auto *whilePreamble = op.getBeforeBody();
   for (size_t i = 0; i < whilePreamble->getNumArguments(); i++) {
     if (i == info.ivarIndexBefore) {
       mapping.map(whilePreamble->getArgument(i), inductionVar);
@@ -381,16 +384,20 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   auto *whileBody = op.getAfterBody();
 
   for (auto &bodyOp : *whileBody) {
-    // scf.yield is special here because we don't want to yield the induction var to the next
-    // iteration...
+    // The index IV drives the next iteration; other values remain loop-carried.
     if (auto yieldOp = dyn_cast<scf::YieldOp>(&bodyOp)) {
       SmallVector<Value> valuesToYield;
       for (auto [i, val] : llvm::enumerate(yieldOp.getResults())) {
         if (i == info.ivarIndexAfter) {
           continue;
         }
-        // ...but the other yielded values should point to the correct iter_arg
+        // Other yielded values should point to the correct iter_arg.
         valuesToYield.push_back(mapping.lookupOrDefault(val));
+      }
+      if (preserveFinalCondition) {
+        valuesToYield.push_back(
+            mapping.lookupOrDefault(yieldOp.getResults()[*info.ivarIndexBefore])
+        );
       }
       if (!valuesToYield.empty()) {
         scf::YieldOp::create(rewriter, yieldOp.getLoc(), valuesToYield);
@@ -400,17 +407,32 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     rewriter.clone(bodyOp, mapping);
   }
 
-  // Match the original result list, using a type-correct placeholder for the unused final IV.
+  // Match the original result list, retaining the final IV when the condition region needs it.
   SmallVector<Value> replacedValues;
   for (auto [i, result] : llvm::enumerate(op.getResults())) {
     if (i == info.ivarIndexBefore) {
       // parseInfo guarantees this result is unused. The original initializer has its type,
       // even when the annotated loop bounds were materialized as index constants.
-      replacedValues.push_back(op.getInits()[*info.ivarIndexBefore]);
+      replacedValues.push_back(
+          preserveFinalCondition ? forOp.getResults().back() : op.getInits()[*info.ivarIndexBefore]
+      );
       continue;
     }
 
     replacedValues.push_back(forOp.getResult(i > info.ivarIndexBefore ? i - 1 : i));
+  }
+
+  if (preserveFinalCondition) {
+    rewriter.setInsertionPointAfter(forOp);
+    IRMapping finalMapping;
+    for (auto [arg, value] : llvm::zip(op.getBeforeArguments(), replacedValues)) {
+      finalMapping.map(arg, value);
+    }
+    // A while loop executes its condition region once more after the last body iteration.
+    // Use a fresh mapping so no references to values inside the for loop escape its region.
+    for (auto &preambleOp : whilePreamble->without_terminator()) {
+      rewriter.clone(preambleOp, finalMapping);
+    }
   }
 
   rewriter.replaceOp(op, replacedValues);
