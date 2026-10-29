@@ -1,0 +1,76 @@
+// RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
+
+// Emission follows constraint order and increasing layout signal IDs after
+// combining repeated reads; CHECK-NEXT operand/statement order is deterministic.
+// Lower static while loops and aggregate storage through the legacy pipeline.
+
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Add>} {
+  struct.def @Add {
+      struct.member @out : !array.type<2 x !felt.type<"bn128">> {llzk.pub}
+      function.def @compute(%a: !array.type<2 x !felt.type<"bn128">>, %b: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@Add> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %self = struct.new : <@Add>
+        %out = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+        %zero = felt.const 0 : <"bn128">
+        %unused = scf.while (%i = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+          %two = felt.const 2 : <"bn128">
+          %cond = bool.cmp lt(%i, %two) : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.condition(%cond) %i : !felt.type<"bn128">
+        } do {
+        ^bb0(%i: !felt.type<"bn128">):
+          %idx = cast.toindex %i : !felt.type<"bn128">
+          %av = array.read %a[%idx] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %bv = array.read %b[%idx] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %sum = felt.add %av, %bv : !felt.type<"bn128">, !felt.type<"bn128">
+          array.write %out[%idx] = %sum : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %one = felt.const 1 : <"bn128">
+          %next = felt.add %i, %one : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.yield %next : !felt.type<"bn128">
+        }
+        struct.writem %self[@out] = %out : <@Add>, !array.type<2 x !felt.type<"bn128">>
+        function.return %self : !struct.type<@Add>
+      }
+      function.def @constrain(%self: !struct.type<@Add>, %a: !array.type<2 x !felt.type<"bn128">>, %b: !array.type<2 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+        %out = struct.readm %self[@out] : <@Add>, !array.type<2 x !felt.type<"bn128">>
+        %zero = felt.const 0 : <"bn128">
+        %unused = scf.while (%i = %zero) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+          %two = felt.const 2 : <"bn128">
+          %cond = bool.cmp lt(%i, %two) : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.condition(%cond) %i : !felt.type<"bn128">
+        } do {
+        ^bb0(%i: !felt.type<"bn128">):
+          %idx = cast.toindex %i : !felt.type<"bn128">
+          %av = array.read %a[%idx] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %bv = array.read %b[%idx] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %sum = felt.add %av, %bv : !felt.type<"bn128">, !felt.type<"bn128">
+          %ov = array.read %out[%idx] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          constrain.eq %ov, %sum : !felt.type<"bn128">, !felt.type<"bn128">
+          %one = felt.const 1 : <"bn128">
+          %next = felt.add %i, %one : !felt.type<"bn128">, !felt.type<"bn128">
+          scf.yield %next : !felt.type<"bn128">
+        }
+        function.return
+      }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Add inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_10]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_9]], %[[VAL_11]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_13]], %[[VAL_14]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_16]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_15]], %[[VAL_17]] : !r1cs.linear
+// CHECK-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_6]], %[[VAL_18]] : !r1cs.linear
+// CHECK-NEXT:    } {r1cs.input_labels = array<i64: 3, 4, 5, 6>}
+// CHECK-NEXT:  }
