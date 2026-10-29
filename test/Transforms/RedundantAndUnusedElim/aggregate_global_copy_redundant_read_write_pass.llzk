@@ -399,8 +399,10 @@ module attributes {llzk.lang} {
       struct.writem %self[@value] = %one : !struct.type<@ReadBox>, index
       global.write @read_box = %self : !struct.type<@ReadBox>
       %loaded = global.read @read_box : !struct.type<@ReadBox>
-      struct.writem %loaded[@value] = %two : !struct.type<@ReadBox>, index
-      %source = struct.readm %self[@value] : !struct.type<@ReadBox>, index
+      // The loaded snapshot must survive rewriting the global from a local instance.
+      struct.writem %self[@value] = %two : !struct.type<@ReadBox>, index
+      global.write @read_box = %self : !struct.type<@ReadBox>
+      %source = struct.readm %loaded[@value] : !struct.type<@ReadBox>, index
       %again = global.read @read_box : !struct.type<@ReadBox>
       %stored = struct.readm %again[@value] : !struct.type<@ReadBox>, index
       struct.writem %self[@source_result] = %source : !struct.type<@ReadBox>, index
@@ -441,13 +443,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadBox>
 // CHECK-NEXT:        struct.writem %[[VAL_10]][@value] = %[[VAL_8]] : <@ReadBox>, index
 // CHECK-NEXT:        global.write @read_box = %[[VAL_10]] : !struct.type<@ReadBox>
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = global.read @read_box : !struct.type<@ReadBox>
-// CHECK-NEXT:        struct.writem %[[VAL_11]][@value] = %[[VAL_9]] : <@ReadBox>, index
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@value] = %[[VAL_9]] : <@ReadBox>, index
+// CHECK-NEXT:        global.write @read_box = %[[VAL_10]] : !struct.type<@ReadBox>
 // CHECK-NEXT:        struct.writem %[[VAL_10]][@source_result] = %[[VAL_8]] : <@ReadBox>, index
-// CHECK-NEXT:        struct.writem %[[VAL_10]][@stored_result] = %[[VAL_8]] : <@ReadBox>, index
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@stored_result] = %[[VAL_9]] : <@ReadBox>, index
 // CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@ReadBox>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadBox>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: index, %[[VAL_14:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadBox>, %[[VAL_12:[0-9a-zA-Z_\.]+]]: index, %[[VAL_13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
