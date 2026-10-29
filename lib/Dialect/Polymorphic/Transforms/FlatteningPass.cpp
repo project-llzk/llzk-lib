@@ -114,7 +114,8 @@ static std::optional<std::string> getUnrollSkipReason(Operation *op, uint64_t li
     return std::nullopt;
   }
   uint64_t tripCount;
-  if (auto bounds = op->getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name)) {
+  auto bounds = op->getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name);
+  if (bounds) {
     if (bounds.getStep() == 0) {
       return std::nullopt; // The annotated unroller diagnoses invalid steps separately.
     }
@@ -143,6 +144,32 @@ static std::optional<std::string> getUnrollSkipReason(Operation *op, uint64_t li
     return ("loop trip count " + Twine(tripCount) + " exceeds max-unroll limit of " + Twine(limit) +
             "; leaving loop unchanged")
         .str();
+  }
+  if (bounds && tripCount != 0) {
+    Value iv;
+    bool isSigned = true;
+    if (auto forOp = dyn_cast<scf::ForOp>(op)) {
+      iv = forOp.getInductionVar();
+      isSigned = !forOp.getUnsignedCmp();
+    } else if (auto affineForOp = dyn_cast<affine::AffineForOp>(op)) {
+      iv = affineForOp.getInductionVar();
+    }
+    if (iv && !iv.use_empty()) {
+      Type ivType = iv.getType();
+      unsigned width =
+          ivType.isIndex() ? IndexType::kInternalStorageBitWidth : ivType.getIntOrFloatBitWidth();
+      const llvm::DynamicAPInt &lower = bounds.getLower();
+      auto last = lower + toDynamicAPInt(tripCount - 1) * bounds.getStep();
+      // All intermediate induction values lie between these endpoints.
+      for (const auto &value : {lower, last}) {
+        auto encoded = checkedToAPInt(value, width, isSigned);
+        if (!encoded) {
+          llvm::consumeError(encoded.takeError());
+          return "llzk.loopbounds induction value does not fit the loop induction type; "
+                 "leaving loop unchanged";
+        }
+      }
+    }
   }
   return std::nullopt;
 }
@@ -1364,29 +1391,13 @@ private:
   unroll(ForOp loopOp, PatternRewriter &rewriter, LoopBoundsAttr bounds, uint64_t tripCount) {
     const llvm::DynamicAPInt &lower = bounds.getLower();
     const llvm::DynamicAPInt &step = bounds.getStep();
-    llvm::DynamicAPInt count = toDynamicAPInt(tripCount);
 
     Value iv = loopOp.getInductionVar();
     Type ivType = iv.getType();
     unsigned width =
         ivType.isIndex() ? IndexType::kInternalStorageBitWidth : ivType.getIntOrFloatBitWidth();
-    bool isSigned = true;
-    if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
-      isSigned = !forOp.getUnsignedCmp();
-    }
-    // Check the endpoints before mutating IR; all intermediate induction values lie between them.
-    if (tripCount != 0 && !iv.use_empty()) {
-      for (const auto &value : {lower, lower + (count - 1) * step}) {
-        auto encoded = checkedToAPInt(value, width, isSigned);
-        if (!encoded) {
-          llvm::consumeError(encoded.takeError());
-          return rewriter.notifyMatchFailure(
-              loopOp, "llzk.loopbounds induction value does not fit the loop induction type"
-          );
-        }
-      }
-    }
 
+    // The preservation guard already checked all induction values that will be materialized.
     SmallVector<Value> results(loopOp.getInits());
     llvm::DynamicAPInt inductionValue = lower;
     for (uint64_t i = 0; i < tripCount; ++i, inductionValue += step) {

@@ -14,24 +14,6 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @induction_overflow(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
-    %lb = arith.index_cast %lb_index : index to i8
-    %ub = arith.index_cast %ub_index : index to i8
-    %step = arith.index_cast %step_index : index to i8
-    %seed_int = arith.index_cast %seed : index to i8
-    // expected-error @+1 {{llzk.loopbounds induction value does not fit the loop induction type}}
-    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed_int) -> i8 : i8 {
-      %next = arith.addi %acc, %iv : i8
-      scf.yield %next : i8
-    } {llzk.loopbounds = #llzk.loopbounds<127 to 129 step 1>}
-    %result_index = arith.index_cast %result : i8 to index
-    function.return %result_index : index
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
   function.def @while_zero_step(%cond: i1) {
     scf.while : () -> () {
       scf.condition(%cond)
