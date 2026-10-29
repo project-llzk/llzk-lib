@@ -150,9 +150,13 @@ foreach(library IN LISTS MLIR_EXPORTED_TARGETS)
 endforeach()
 set_property(TARGET LLZKPythonExtensionModules.extension._llzkRegistration.dso
              PROPERTY MLIR_AGGREGATE_EXCLUDE_LIBS "${LLZK_PYTHON_EXCLUDE_LIBS}")
-# The C API runtime depends on LLVM, which also supplies LLZK's direct LLVM calls.
-target_link_libraries(LLZKPythonExtensionModules.extension._llzkRegistration.dso
-                      PRIVATE LLVM)
+# Reuse the shared LLVM runtime when available. LLVM_BUILD_LLVM_DYLIB=OFF
+# installations have no aggregate target; llzk_target_add_mlir_link_settings
+# retains their LLVMSupport component dependency when filtering MLIR archives.
+if(TARGET LLVM)
+  target_link_libraries(LLZKPythonExtensionModules.extension._llzkRegistration.dso
+                        PRIVATE LLVM)
+endif()
 
 # Dense forward dataflow is not pulled into MLIRPythonCAPI. When the Python
 # consumer filters out MLIRAnalysis, retain its archive without its transitive

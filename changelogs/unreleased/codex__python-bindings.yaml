@@ -3,3 +3,4 @@ added:
   - Add a Python-enabled Nix development shell and build-tree and installed-package binding tests.
 fixed:
   - Build LLZK Python bindings with MLIR's nanobind adaptors and locate the installed MLIR C API library.
+  - Link Python bindings against exported LLVM components when the monolithic LLVM target is unavailable.

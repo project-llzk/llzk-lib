@@ -17,6 +17,13 @@ macro(llzk_target_add_mlir_link_settings target)
         get_target_property(llzk_library_type ${llzk_link_target} TYPE)
         if(llzk_imported AND llzk_library_type STREQUAL "STATIC_LIBRARY")
           get_mlir_filtered_link_libraries(llzk_filtered_library ${llzk_link_library})
+          if(NOT TARGET LLVM)
+            # Keep LLVMSupport when filtering out MLIR's static archives. This
+            # dependency belongs on each referencing library so Unix linkers
+            # see the support archive after LLZK's code that needs its symbols.
+            list(APPEND llzk_filtered_library
+              "$<BUILD_INTERFACE:$<$<IN_LIST:${llzk_link_target},$<TARGET_PROPERTY:MLIR_AGGREGATE_EXCLUDE_LIBS>>:LLVMSupport>>")
+          endif()
         endif()
       endif()
       list(APPEND llzk_filtered_libraries "${llzk_filtered_library}")
