@@ -1345,10 +1345,12 @@ public:
                            << " does not match computed trip count "
                            << llvm::toString(*computed, 10, false) << "; using llzk.loopbounds";
     }
-    auto tripCount = checkedToUInt64(count);
-    assert(tripCount && "unrepresentable trip counts must be preserved");
+    // The preservation guard already checked representability. Consume Expected even when
+    // assertions are disabled, as checked LLVM builds require successful results to be checked.
+    uint64_t tripCount =
+        llvm::cantFail(checkedToUInt64(count), "unrepresentable trip counts must be preserved");
 
-    if (failed(unroll(loopOp, rewriter, bounds, *tripCount))) {
+    if (failed(unroll(loopOp, rewriter, bounds, tripCount))) {
       return failure();
     }
     tracker.updateModifiedFlag(true);
