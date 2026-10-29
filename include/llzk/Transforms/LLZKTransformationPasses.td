@@ -173,23 +173,26 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let summary =
       "Converts scf.while loops to equivalent scf.for loops when possible";
-  let description =
-      "This pass identifies scf.while loops that have an "
-      "induction variable and a uniform step, and converts them "
-      "to equivalent scf.for loops, which are preferred by some "
-      "analyses. Annotated loopbounds must have nonnegative bounds and a "
-      "positive step, all within the nonnegative index range. The induction "
-      "value after the final increment must also fit in index; otherwise the "
-      "annotated loop is left unchanged with a warning. Annotated values are "
-      "materialized directly as index constants without field reduction. "
-      "The annotated integer induction variable is converted to its field "
-      "representative when the original variable is a felt. The cast uses "
-      "assert for empty loops or when every executed induction value is "
-      "within the known field, and wrap otherwise. "
-      "Condition regions containing non-pure operations also execute after "
-      "the for loop using the final loop-carried values. "
-      "This pass may introduce some spurious felt/index casts which "
-      "should be cleaned up by --canonicalize.";
+  let description = [{
+    This pass identifies scf.while loops that have an induction variable and
+    a uniform step, and converts them to equivalent scf.for loops, which are
+    preferred by some analyses.
+
+    Annotated loopbounds must have nonnegative bounds and a positive step,
+    all within the nonnegative index range. The induction value after the
+    final increment must also fit in index; otherwise the annotated loop is
+    left unchanged with a warning. Annotated values are materialized directly
+    as index constants without field reduction. However, when the original
+    variable is a felt, the conversion to its field representative is necessary
+    and the cast uses `assert` overflow semantics for empty loops or when every
+    executed induction value is within the known field, and `wrap` otherwise.
+
+    Condition regions containing non-pure operations also execute after
+    the scf.for loop using the final loop-carried values.
+
+    This pass may introduce some spurious felt/index casts which should be
+    cleaned up by --canonicalize.
+  }];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD
