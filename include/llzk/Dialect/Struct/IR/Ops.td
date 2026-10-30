@@ -360,8 +360,11 @@ def LLZK_MemberWriteOp
     storage. When the value has `struct.type`, the copied value is an
     identity-bearing handle to the same component instance.
 
-    A struct can write its own members. However, writing members of other components
-    is not allowed.
+    The target component must be a direct result of `struct.new`. Combined with
+    function isolation and `struct.new` verification, this ensures that the instance
+    is created in the current function and has the enclosing struct's type. Thus,
+    writing to a component passed as a function argument, returned by a call, or
+    loaded from storage is not allowed, even if it has the same struct type.
   }];
   let isRead = 0;
 

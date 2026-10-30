@@ -1,0 +1,87 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// A global-loaded instance is not a local struct.new result either.
+module attributes {llzk.lang} {
+  global.def @instance : !struct.type<@GlobalInstance>
+
+  struct.def @GlobalInstance {
+    struct.member @value : !felt.type
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@GlobalInstance> {
+      %self = struct.new : !struct.type<@GlobalInstance>
+      %other = global.read @instance : !struct.type<@GlobalInstance>
+      // expected-error@+1 {{'struct.writem' op requires base value to be a 'struct.new' result}}
+      struct.writem %other[@value] = %value : !struct.type<@GlobalInstance>, !felt.type
+      function.return %self : !struct.type<@GlobalInstance>
+    }
+
+    function.def @constrain(%self: !struct.type<@GlobalInstance>, %value: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A same-type function argument is not an instance created in this function.
+module attributes {llzk.lang} {
+  struct.def @ArgumentInstance {
+    struct.member @value : !felt.type
+
+    function.def @compute(%other: !struct.type<@ArgumentInstance>, %value: !felt.type) -> !struct.type<@ArgumentInstance> {
+      %self = struct.new : !struct.type<@ArgumentInstance>
+      // expected-error@+1 {{'struct.writem' op requires base value to be a 'struct.new' result}}
+      struct.writem %other[@value] = %value : !struct.type<@ArgumentInstance>, !felt.type
+      function.return %self : !struct.type<@ArgumentInstance>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArgumentInstance>, %other: !struct.type<@ArgumentInstance>, %value: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A call result was not created by struct.new in the current function.
+module attributes {llzk.lang} {
+  function.def private @get_instance() -> !struct.type<@CallInstance> attributes {function.allow_witness}
+
+  struct.def @CallInstance {
+    struct.member @value : !felt.type
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@CallInstance> {
+      %self = struct.new : !struct.type<@CallInstance>
+      %other = function.call @get_instance() : () -> !struct.type<@CallInstance>
+      // expected-error@+1 {{'struct.writem' op requires base value to be a 'struct.new' result}}
+      struct.writem %other[@value] = %value : !struct.type<@CallInstance>, !felt.type
+      function.return %self : !struct.type<@CallInstance>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallInstance>, %value: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Loading a same-type instance from an array does not permit writes to it.
+module attributes {llzk.lang} {
+  struct.def @LoadedInstance {
+    struct.member @value : !felt.type
+
+    function.def @compute(%instances: !array.type<1 x !struct.type<@LoadedInstance>>, %value: !felt.type) -> !struct.type<@LoadedInstance> {
+      %self = struct.new : !struct.type<@LoadedInstance>
+      %c0 = arith.constant 0 : index
+      %other = array.read %instances[%c0] : !array.type<1 x !struct.type<@LoadedInstance>>, !struct.type<@LoadedInstance>
+      // expected-error@+1 {{'struct.writem' op requires base value to be a 'struct.new' result}}
+      struct.writem %other[@value] = %value : !struct.type<@LoadedInstance>, !felt.type
+      function.return %self : !struct.type<@LoadedInstance>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoadedInstance>, %instances: !array.type<1 x !struct.type<@LoadedInstance>>, %value: !felt.type) {
+      function.return
+    }
+  }
+}

@@ -170,7 +170,7 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @WrongComponent { // expected-note {{uses this type instead}}
+  struct.def @WrongComponent {
     struct.member @f : !felt.type
     function.def @compute() -> !struct.type<@WrongComponent> {
       %self = struct.new : !struct.type<@WrongComponent>
@@ -182,7 +182,7 @@ module attributes {llzk.lang} {
   struct.def @ComponentN {
     function.def @compute(%0: !struct.type<@WrongComponent>, %1: !felt.type) -> !struct.type<@ComponentN> {
       %self = struct.new : !struct.type<@ComponentN>
-      // expected-error@+1 {{'struct.writem' op must use type of its ancestor 'struct.def' "@ComponentN<[]>" as base value type}}
+      // expected-error@+1 {{'struct.writem' op requires base value to be a 'struct.new' result}}
       struct.writem %0[@f] = %1 : !struct.type<@WrongComponent>, !felt.type
       function.return %self : !struct.type<@ComponentN>
     }
