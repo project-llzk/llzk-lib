@@ -1,59 +1,70 @@
 name: Formatting check
 on:
-  # Run whenever a cpp, h, or td file is modified in a PR
+  # Run whenever a c, cpp, h, or td file is modified in a PR
   pull_request:
     paths:
+      - '**.c'
       - '**.cpp'
       - '**.h'
       - '**.td'
+
+permissions:
+  contents: write # Allow cpp-linter to push formatting fixes.
+  pull-requests: write
 
 jobs:
   run-clang-format:
     runs-on: ubuntu-24.04
     steps:
-      - name: Get fetch depth
-        run: |
-          echo "PR_COMMIT_COUNT=${{ github.event.pull_request.commits }}" >> "${GITHUB_ENV}"
-          echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
-          # Checkout head commit and all commits in the PR, including the merge base.
-          # Use head.repo.full_name and head.sha so this works for PRs from upstream and forks.
+          # Lint the PR head, including for PRs from forks.
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
-      - name: Setup git-clang-format
+          # Auto-fix uses the checkout credentials to push to the PR branch.
+          persist-credentials: true
+      - uses: cachix/install-nix-action@v31
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.35.2/install
+          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Set Git credentials
         run: |
-          export CLANG_FORMAT_VERSION="23"
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-${CLANG_FORMAT_VERSION} main" \
-              | sudo tee -a /etc/apt/sources.list
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-format-${CLANG_FORMAT_VERSION}
-          export CLANG_FORMAT_SCRIPT="/usr/bin/git-clang-format-${CLANG_FORMAT_VERSION}"
-          if [ ! -x "$CLANG_FORMAT_SCRIPT" ]; then
-            echo "Missing executable $CLANG_FORMAT_SCRIPT"
-            exit 1
-          fi
-          echo "CLANG_FORMAT_COMMAND=$CLANG_FORMAT_SCRIPT --binary /usr/bin/clang-format-${CLANG_FORMAT_VERSION}" >> "${GITHUB_ENV}"
+          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
+          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
+          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
+      - uses: cachix/cachix-action@v17
+        with:
+          name: veridise-public
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      - name: Locate Nix clang tools
+        id: clang
+        run: |
+          # Use the same clang-format as the development environment.
+          # shellcheck disable=SC2016
+          nix develop .#debugClang --command bash -c \
+            'printf "bin=%s\n" "$(dirname "$(command -v clang-format)")"' \
+            >> "$GITHUB_OUTPUT"
       - name: Run clang-format
-        run: |
-          export tmp_patch="$(mktemp)"
-          export HEAD_COMMIT="$(git rev-parse HEAD)"
-          export BASE_COMMIT="$HEAD_COMMIT"~"$PR_COMMIT_COUNT"
-          EXIT_CODE=0
-          $CLANG_FORMAT_COMMAND --diff "$BASE_COMMIT" "$HEAD_COMMIT" > "$tmp_patch" || EXIT_CODE=$?
-          echo "git-clang-format exited with status $EXIT_CODE"
-          if [[ $EXIT_CODE -eq 0 ]] ; then
-            echo "No formatting problems detected"
-            exit
-          fi
-          echo "::error::The code changes are not formatted."
-          echo "Please run the following command in the repository root:"
-          echo
-          echo "    git clang-format --diff $BASE_COMMIT $HEAD_COMMIT | patch -p1"
-          echo
-          echo "::notice::Alternatively, apply the following patch:"
-          cat "$tmp_patch"
-          rm "$tmp_patch"
-          exit 1
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ steps.clang.outputs.bin }}
+          style: file # Use .clang-format.
+          tidy-checks: '-*' # Disable clang-tidy; it has a separate workflow.
+          extensions: 'c,cpp,h,td'
+          files-changed-only: true
+          lines-changed-only: false # always format the full file
+          ignore: 'build|result|third-party'
+          step-summary: true
+          file-annotations: true
+          # Fork PRs have read-only tokens, so only check formatting there.
+          auto-fix: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          thread-comments: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'update' || 'false' }}
+          no-lgtm: false
+      - name: Fail on diagnostics
+        # cpp-linter reports findings without failing the action itself.
+        if: steps.linter.outputs.checks-failed > 0
+        run: exit 1
