@@ -1,0 +1,48 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt %t/test.llzk --llzk-while-to-for --canonicalize > %t/for.llzk
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %t/for.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/for.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+// In-field loop bounds continue to use assertion casts after while-to-for.
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !array.type<4 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(%zero: !felt.type<"babybear"> {function.arg_name = "zero"}) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %out = array.new : !array.type<4 x !felt.type<"babybear">>
+      %upper = felt.const 4 : !felt.type<"babybear">
+      %step = felt.const 1 : !felt.type<"babybear">
+      scf.while (%i = %zero) : (!felt.type<"babybear">) -> !felt.type<"babybear"> {
+        %cond = bool.cmp lt(%i, %upper) : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.condition(%cond) %i : !felt.type<"babybear">
+      } do {
+      ^bb0(%i: !felt.type<"babybear">):
+        %index = cast.toindex %i : !felt.type<"babybear">
+        array.write %out[%index] = %i : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+        %next = felt.add %i, %step : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.yield %next : !felt.type<"babybear">
+      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 4 step 1>}
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !array.type<4 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %zero: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: {
+// CHECK-NEXT:    "out": [
+// CHECK-NEXT:      "0",
+// CHECK-NEXT:      "1",
+// CHECK-NEXT:      "2",
+// CHECK-NEXT:      "3"
+// CHECK-NEXT:    ]
+// CHECK-NEXT:  }
+
+//--- input.json
+{"zero": "0"}
