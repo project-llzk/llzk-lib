@@ -167,8 +167,7 @@
                 # Add release helpers to the PATH for convenience
                 export PATH="${pkgs.changelogCreator.out}/bin":"$PATH"
 
-                # TODO: only enable if python bindings enabled
-                export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+                export PYTHONPATH="$PWD"/build/python:"$PYTHONPATH"
 
                 # Needed for using mlir-tblgen inside the dev shell
                 export LD_LIBRARY_PATH=${pkgs.z3.lib}/lib:$LD_LIBRARY_PATH
@@ -213,6 +212,10 @@
         };
 
         checks = flake-utils.lib.flattenTree {
+          llzk-installcheck-python = pkgs.callPackage ./nix/llzk-python-installcheck {
+            mlir_pkg = pkgs.mlir-with-python;
+            llzk_pkg = pkgs.llzk-with-python;
+          };
           llzk-installcheck-release = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir;
             llzk_pkg = pkgs.llzk;
@@ -224,6 +227,11 @@
         };
 
         devShells = flake-utils.lib.flattenTree {
+          python = (pkgs.devShellBase pkgs pkgs.llzk-with-python).shell.overrideAttrs (old: {
+            shellHook = old.shellHook + ''
+              export PYTHONPATH="$PWD"/build-python/python:"$PYTHONPATH"
+            '';
+          });
           default = (pkgs.devShellBaseWithDefault pkgs).shell.overrideAttrs (_: {
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
