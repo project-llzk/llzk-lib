@@ -233,14 +233,19 @@ public:
     });
   }
 
-  /// Collect operations excluded from greedy folding, DCE, and pattern rewriting in this round.
+  /// Protect skipped loops and their nested/enclosing control flow from greedy rewriting.
+  /// Regionless body operations remain eligible for folding and type instantiation/propagation.
   DenseSet<Operation *> getPreservedLoopOps(ModuleOp modOp) {
     DenseSet<Operation *> preserved;
     modOp.walk<WalkOrder::PreOrder>([&](Operation *op) {
       if (!shouldSkipUnroll(op)) {
         return WalkResult::advance();
       }
-      op->walk([&preserved](Operation *nested) { preserved.insert(nested); });
+      op->walk([&preserved](Operation *nested) {
+        if (nested->getNumRegions() != 0) {
+          preserved.insert(nested);
+        }
+      });
       for (Operation *p = op->getParentOp(); p && !isa<SymbolOpInterface>(p);
            p = p->getParentOp()) {
         preserved.insert(p);

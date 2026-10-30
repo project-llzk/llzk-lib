@@ -185,3 +185,51 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// The source array's element type becomes concrete outside the preserved loop.
+// Inside it, Step 4 must instantiate the local array's affine dimension, and Step 5
+// must propagate the concrete element type through both reads and the local array.
+module attributes {llzk.lang} {
+  poly.template @ArrayTypes {
+    poly.param @T
+    function.def @preserved_array_types(%value: !felt.type) attributes {function.allow_constraint} {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %three = arith.constant 3 : index
+      %size = arith.addi %one, %three : index
+      %source = array.new : !array.type<1 x !poly.tvar<@T>>
+      array.write %source[%zero] = %value : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2; leaving loop unchanged}}
+      scf.for %iv = %zero to %three step %one {
+        %element = array.read %source[%zero] : !array.type<1 x !poly.tvar<@T>>, !poly.tvar<@T>
+        %local = array.new{(%size)} : !array.type<affine_map<(n) -> (n)> x !poly.tvar<@T>>
+        array.write %local[%iv] = %element : !array.type<affine_map<(n) -> (n)> x !poly.tvar<@T>>, !poly.tvar<@T>
+        %read = array.read %local[%iv] : !array.type<affine_map<(n) -> (n)> x !poly.tvar<@T>>, !poly.tvar<@T>
+        constrain.eq %read, %value : !poly.tvar<@T>, !felt.type
+      }
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ArrayTypes {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @preserved_array_types(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_1]] to %[[VAL_3]] step %[[VAL_2]] {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_1]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_0]] : !felt.type, !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

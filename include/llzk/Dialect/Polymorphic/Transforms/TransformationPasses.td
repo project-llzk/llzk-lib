@@ -206,6 +206,8 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     - Unroll loops. When present, trusted `llzk.loopbounds` annotations
       determine the trip count. A warning is emitted if this differs from
       a statically computed count, but the annotation still takes precedence.
+      Loops exceeding `max-unroll` remain rolled. Array type instantiation
+      and propagation still run inside their bodies.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.
