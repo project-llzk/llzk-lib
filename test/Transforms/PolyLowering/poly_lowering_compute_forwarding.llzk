@@ -1,0 +1,229 @@
+// RUN: llzk-opt -llzk-poly-lowering-pass="max-degree=2" --verify-each %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Resolve the correct result of nested region forwarding. The unrelated local
+  // allocation is harmless, and rebuilt reads must follow the final member write.
+  struct.def @IfForward {
+    struct.member @value : !felt.type
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@IfForward> {
+      %self = struct.new : !struct.type<@IfForward>
+      %unused = struct.new : !struct.type<@IfForward>
+      struct.writem %self[@value] = %a : !struct.type<@IfForward>, !felt.type
+      %flag, %forwarded = scf.if %cond -> (i1, !struct.type<@IfForward>) {
+        %nested = scf.if %cond -> (!struct.type<@IfForward>) {
+          scf.yield %self : !struct.type<@IfForward>
+        } else {
+          scf.yield %self : !struct.type<@IfForward>
+        }
+        scf.yield %cond, %nested : i1, !struct.type<@IfForward>
+      } else {
+        scf.yield %cond, %self : i1, !struct.type<@IfForward>
+      }
+      %updated = felt.mul %a, %a : !felt.type, !felt.type
+      struct.writem %self[@value] = %updated : !struct.type<@IfForward>, !felt.type
+      function.return %forwarded : !struct.type<@IfForward>
+    }
+    function.def @constrain(%self: !struct.type<@IfForward>, %cond: i1, %a: !felt.type) {
+      %value = struct.readm %self[@value] : !struct.type<@IfForward>, !felt.type
+      %product = felt.mul %value, %a : !felt.type, !felt.type
+      %cube = felt.mul %product, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+
+  // Both edges of one predecessor forward the same allocation. A backedge
+  // preserves it, and both returns reuse the resolved block argument.
+  struct.def @CfgForward {
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@CfgForward> {
+      %self = struct.new : !struct.type<@CfgForward>
+      cf.cond_br %cond, ^loop(%cond, %self : i1, !struct.type<@CfgForward>), ^loop(%cond, %self : i1, !struct.type<@CfgForward>)
+    ^loop(%flag: i1, %forwarded: !struct.type<@CfgForward>):
+      cf.cond_br %flag, ^loop(%flag, %forwarded : i1, !struct.type<@CfgForward>), ^exit
+    ^exit:
+      cf.cond_br %cond, ^left, ^right
+    ^left:
+      function.return %forwarded : !struct.type<@CfgForward>
+    ^right:
+      function.return %forwarded : !struct.type<@CfgForward>
+    }
+    function.def @constrain(%self: !struct.type<@CfgForward>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+
+  // Region entry arguments, loop backedges, zero-trip inputs, and region results
+  // all participate in the same forwarding proof.
+  struct.def @LoopForward {
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@LoopForward> {
+      %self = struct.new : !struct.type<@LoopForward>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %for = scf.for %i = %c0 to %c1 step %c1 iter_args(%iter = %self) -> (!struct.type<@LoopForward>) {
+        scf.yield %iter : !struct.type<@LoopForward>
+      }
+      %while = scf.while (%before = %for) : (!struct.type<@LoopForward>) -> !struct.type<@LoopForward> {
+        scf.condition(%cond) %before : !struct.type<@LoopForward>
+      } do {
+      ^bb0(%after: !struct.type<@LoopForward>):
+        scf.yield %after : !struct.type<@LoopForward>
+      }
+      %forwarded = scf.execute_region -> !struct.type<@LoopForward> {
+        cf.br ^yield(%while : !struct.type<@LoopForward>)
+      ^yield(%value: !struct.type<@LoopForward>):
+        scf.yield %value : !struct.type<@LoopForward>
+      }
+      function.return %forwarded : !struct.type<@LoopForward>
+    }
+    function.def @constrain(%self: !struct.type<@LoopForward>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+
+  // Uniqueness is per return, not per function.
+  struct.def @SeparateReturns {
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@SeparateReturns> {
+      cf.cond_br %cond, ^left, ^right
+    ^left:
+      %left = struct.new : !struct.type<@SeparateReturns>
+      function.return %left : !struct.type<@SeparateReturns>
+    ^right:
+      %right = struct.new : !struct.type<@SeparateReturns>
+      function.return %right : !struct.type<@SeparateReturns>
+    }
+    function.def @constrain(%self: !struct.type<@SeparateReturns>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @IfForward {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@IfForward> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@IfForward>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@IfForward>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_1]] : <@IfForward>, !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]]:2 = scf.if %[[VAL_0]] -> (i1, !struct.type<@IfForward>) {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!struct.type<@IfForward>) {
+// CHECK-NEXT:            scf.yield %[[VAL_2]] : !struct.type<@IfForward>
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            scf.yield %[[VAL_2]] : !struct.type<@IfForward>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          scf.yield %[[VAL_0]], %[[VAL_5]] : i1, !struct.type<@IfForward>
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_0]], %[[VAL_2]] : i1, !struct.type<@IfForward>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_6]] : <@IfForward>, !felt.type
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@value] : <@IfForward>, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_8]] : <@IfForward>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]]#1 : !struct.type<@IfForward>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@IfForward>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@value] : <@IfForward>, !felt.type
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_12]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@__llzk_poly_lowering_pass_aux_member_0] : <@IfForward>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_14]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_15]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @CfgForward {
+// CHECK-NEXT:      function.def @compute(%[[VAL_16:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@CfgForward> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.new : <@CfgForward>
+// CHECK-NEXT:        cf.cond_br %[[VAL_16]], ^bb1(%[[VAL_16]], %[[VAL_18]] : i1, !struct.type<@CfgForward>), ^bb1(%[[VAL_16]], %[[VAL_18]] : i1, !struct.type<@CfgForward>)
+// CHECK-NEXT:      ^bb1(%[[VAL_19:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !struct.type<@CfgForward>):
+// CHECK-NEXT:        cf.cond_br %[[VAL_19]], ^bb1(%[[VAL_19]], %[[VAL_20]] : i1, !struct.type<@CfgForward>), ^bb2
+// CHECK-NEXT:      ^bb2:
+// CHECK-NEXT:        cf.cond_br %[[VAL_16]], ^bb3, ^bb4
+// CHECK-NEXT:      ^bb3:
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_17]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_18]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_21]] : <@CfgForward>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_20]] : !struct.type<@CfgForward>
+// CHECK-NEXT:      ^bb4:
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_17]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_18]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_22]] : <@CfgForward>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_20]] : !struct.type<@CfgForward>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_23:[0-9a-zA-Z_\.]+]]: !struct.type<@CfgForward>, %[[VAL_24:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_25]], %[[VAL_25]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_23]][@__llzk_poly_lowering_pass_aux_member_1] : <@CfgForward>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_27]], %[[VAL_26]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_27]], %[[VAL_25]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_28]], %[[VAL_25]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_1 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @LoopForward {
+// CHECK-NEXT:      function.def @compute(%[[VAL_29:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_30:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@LoopForward> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = struct.new : <@LoopForward>
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_35:[0-9a-zA-Z_\.]+]] = %[[VAL_32]] to %[[VAL_33]] step %[[VAL_33]] iter_args(%[[VAL_36:[0-9a-zA-Z_\.]+]] = %[[VAL_31]]) -> (!struct.type<@LoopForward>) {
+// CHECK-NEXT:          scf.yield %[[VAL_36]] : !struct.type<@LoopForward>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_38:[0-9a-zA-Z_\.]+]] = %[[VAL_34]]) : (!struct.type<@LoopForward>) -> !struct.type<@LoopForward> {
+// CHECK-NEXT:          scf.condition(%[[VAL_29]]) %[[VAL_38]] : !struct.type<@LoopForward>
+// CHECK-NEXT:        } do {
+// CHECK-NEXT:        ^bb0(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !struct.type<@LoopForward>):
+// CHECK-NEXT:          scf.yield %[[VAL_39]] : !struct.type<@LoopForward>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = scf.execute_region -> !struct.type<@LoopForward> {
+// CHECK-NEXT:          cf.br ^bb1(%[[VAL_37]] : !struct.type<@LoopForward>)
+// CHECK-NEXT:        ^bb1(%[[VAL_41:[0-9a-zA-Z_\.]+]]: !struct.type<@LoopForward>):
+// CHECK-NEXT:          scf.yield %[[VAL_41]] : !struct.type<@LoopForward>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_30]], %[[VAL_30]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_31]][@__llzk_poly_lowering_pass_aux_member_2] = %[[VAL_42]] : <@LoopForward>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_40]] : !struct.type<@LoopForward>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_43:[0-9a-zA-Z_\.]+]]: !struct.type<@LoopForward>, %[[VAL_44:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_45:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_45]], %[[VAL_45]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_43]][@__llzk_poly_lowering_pass_aux_member_2] : <@LoopForward>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_47]], %[[VAL_46]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_47]], %[[VAL_45]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_48]], %[[VAL_45]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_2 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @SeparateReturns {
+// CHECK-NEXT:      function.def @compute(%[[VAL_49:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_50:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@SeparateReturns> attributes {function.allow_witness} {
+// CHECK-NEXT:        cf.cond_br %[[VAL_49]], ^bb1, ^bb2
+// CHECK-NEXT:      ^bb1:
+// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = struct.new : <@SeparateReturns>
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_50]], %[[VAL_50]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_51]][@__llzk_poly_lowering_pass_aux_member_3] = %[[VAL_52]] : <@SeparateReturns>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_51]] : !struct.type<@SeparateReturns>
+// CHECK-NEXT:      ^bb2:
+// CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = struct.new : <@SeparateReturns>
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_50]], %[[VAL_50]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_53]][@__llzk_poly_lowering_pass_aux_member_3] = %[[VAL_54]] : <@SeparateReturns>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_53]] : !struct.type<@SeparateReturns>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_55:[0-9a-zA-Z_\.]+]]: !struct.type<@SeparateReturns>, %[[VAL_56:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_57:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_57]], %[[VAL_57]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_55]][@__llzk_poly_lowering_pass_aux_member_3] : <@SeparateReturns>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_59]], %[[VAL_58]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_60:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_59]], %[[VAL_57]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_60]], %[[VAL_57]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_3 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
