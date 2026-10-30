@@ -1,7 +1,6 @@
 {
   inputs = {
-    # Temporary dependency on https://github.com/project-llzk/llzk-nix-pkgs/pull/18.
-    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs/codex/mlir-nanobind-python";
+    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs";
     nixpkgs.follows = "llzk-pkgs/nixpkgs";
     flake-utils.follows = "llzk-pkgs/flake-utils";
 
