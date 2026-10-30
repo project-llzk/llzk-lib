@@ -144,6 +144,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('setup.html',''
   <li class="level1">
     <a href="#dev-workflow">Development Workflow </a>
   </li>
+  <li class="level1">
+    <a href="#python-bindings">Python Bindings </a>
+  </li>
 </ul>
 </div>
 <div class="textblock"><p><a class="anchor" id="md_doc_2doxygen_201__setup"></a></p>
@@ -261,6 +264,33 @@ Development Workflow</h1>
 <li>Run clang-tidy on C++ files: <span class="tt">clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)</span></li>
 </ul>
 <p>The build configuration will automatically export <span class="tt">compile_commands.json</span>, so LSP servers such as <span class="tt">clangd</span> should be able to pick up helpful IDE information like include paths, etc.</p>
+<h1 class="doxsection"><a class="anchor" id="python-bindings"></a>
+Python Bindings</h1>
+<p>The Python-enabled package uses the Python, nanobind, and LLVM/MLIR versions from the pinned Nix dependencies. Build and test both the build-tree and installed bindings with:</p>
+<div class="fragment"><div class="line">nix build -L .#llzk-with-python</div>
+<div class="line">nix build -L .#checks.aarch64-darwin.llzk-installcheck-python</div>
+</div><!-- fragment --><p>Use <span class="tt">x86_64-linux</span> instead of <span class="tt">aarch64-darwin</span> on Linux. The normal LLZK build does not enable Python; its passing tests alone do not validate these bindings.</p>
+<p>For development, use the dedicated shell and a separate build directory:</p>
+<div class="fragment"><div class="line">nix develop .#python</div>
+<div class="line">cmake -S . -B build-python -G Ninja -DCMAKE_BUILD_TYPE=Release \</div>
+<div class="line">  -DLLZK_ENABLE_BINDINGS_PYTHON=ON -DLLZK_BUILD_DEVTOOLS=ON</div>
+<div class="line">cmake --build build-python --target check-lit</div>
+</div><!-- fragment --><p>The shell puts <span class="tt">build-python/python</span> and the matching installed MLIR package on <span class="tt">PYTHONPATH</span>. LLZK installs its packages under <span class="tt">&lt;prefix&gt;/python</span>; add that directory to <span class="tt">PYTHONPATH</span> to use an installed build with the same MLIR environment. Outside Nix, install nanobind and MLIR's Python dependencies, build MLIR with <span class="tt">MLIR_ENABLE_BINDINGS_PYTHON=ON</span>, and configure LLZK against that installation. The MLIR Python package must be importable by the configured Python interpreter.</p>
+<div class="fragment"><div class="line"><span class="keyword">from</span> mlir <span class="keyword">import</span> ir</div>
+<div class="line"><span class="keyword">from</span> mlir.dialects <span class="keyword">import</span> llzk <span class="keyword">as</span> core</div>
+<div class="line"><span class="keyword">import</span> llzk</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">with</span> ir.Context() <span class="keyword">as</span> context, ir.Location.unknown():</div>
+<div class="line">    llzk.add_dialects_to_context(context)</div>
+<div class="line">    context.load_all_available_dialects()</div>
+<div class="line">    felt_type = ir.Type.parse(<span class="stringliteral">&quot;!felt.type&quot;</span>)</div>
+<div class="line">    module = ir.Module.create()</div>
+<div class="line">    <span class="keyword">with</span> ir.InsertionPoint(module.body):</div>
+<div class="line">        core.NonDetOp(felt_type)</div>
+<div class="line">    <span class="keyword">assert</span> module.operation.verify()</div>
+</div><!-- fragment --><p>Operation classes are generated from TableGen for the <span class="tt">array</span>, <span class="tt">bool</span>, <span class="tt">cast</span>, <span class="tt">constrain</span>, <span class="tt">felt</span>, <span class="tt">function</span>, <span class="tt">global</span>, <span class="tt">include</span>, <span class="tt"><a class="el" href="namespacellzk.html">llzk</a></span>, <span class="tt">pod</span>, <span class="tt">poly</span>, <span class="tt">ram</span>, <span class="tt">smt_info</span>, <span class="tt">string</span>, <span class="tt">struct</span>, and <span class="tt">verif</span> namespaces. Import them from <span class="tt">mlir.dialects.&lt;namespace&gt;</span>; use <span class="tt">importlib.import_module("mlir.dialects.global")</span> for the Python keyword <span class="tt">global</span>. The earlier <span class="tt">mlir.dialects.llzk_dialect</span> import remains an alias for the core <span class="tt"><a class="el" href="namespacellzk.html">llzk</a></span> module.</p>
+<p>Custom types and attributes support generic <span class="tt">ir.Type.parse</span> and <span class="tt">ir.Attribute.parse</span>, printing, equality, and use in generated builders. Dedicated Python subclasses and convenience constructors for every custom type/attribute are not provided. Backend dialect wrappers are also outside this package's current scope.</p>
+<p>For explicit registration, create an <span class="tt">ir.DialectRegistry</span>, call <span class="tt">llzk.registration.register_dialects(registry)</span>, and append it to a context. Call <span class="tt">llzk.registration.register_passes(registry)</span> once before creating pass pipelines to register core LLZK passes and their context extensions. Append that registry to the context used by the pass manager. Registration makes dialects available for lazy loading during parsing; call <span class="tt">context.load_all_available_dialects()</span> before constructing operations directly or querying operation registration.</p>
 <div class="section_buttons"> <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadLeft">Previous  </th><th class="markdownTableHeadRight">Next  </th></tr>

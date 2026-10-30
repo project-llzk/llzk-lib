@@ -81,5 +81,6 @@ var searchData=
   ['pseudo_20homogeneous_20arrays_78',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
   ['publicattr_79',['PublicAttr',['../dialects.html#publicattr',1,'PublicAttr'],['../r1cs-backend.html#publicattr-1',1,'PublicAttr']]],
   ['pull_20request_80',['Pull Request',['../contribution-guide.html#pull-request',1,'']]],
-  ['pull_20request_20review_81',['Pull Request Review',['../contribution-guide.html#pull-request-review',1,'']]]
+  ['pull_20request_20review_81',['Pull Request Review',['../contribution-guide.html#pull-request-review',1,'']]],
+  ['python_20bindings_82',['Python Bindings',['../setup.html#python-bindings',1,'']]]
 ];

@@ -1,5 +1,6 @@
 var NAVTREEINDEX74 =
 {
+"namespacemembers_func_w.html":[11,1,1,19],
 "namespacemembers_g.html":[11,1,0,6],
 "namespacemembers_h.html":[11,1,0,7],
 "namespacemembers_i.html":[11,1,0,8],
@@ -148,6 +149,7 @@ var NAVTREEINDEX74 =
 "setup.html#dev-workflow":[2,3],
 "setup.html#manual-build-setup":[2,1],
 "setup.html#nix-setup":[2,0],
+"setup.html#python-bindings":[2,4],
 "smt-backend.html":[8,1],
 "smt-backend.html#attributes-35":[8,1,0,0,0,0],
 "smt-backend.html#attributes-36":[8,1,0,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX74 =
 "structExistsOpBuildFuncHelper.html":[13,0,37],
 "structExistsOpBuildFuncHelper.html#a52090a0f532653526aad19abb716e40f":[13,0,37,0],
 "structExistsOpBuildFuncHelper.html#a735b4b003070a4f522ae32dd2428dad7":[13,0,37,1],
-"structExtraMethod.html":[13,0,39],
-"structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de":[13,0,39,2],
-"structExtraMethod.html#a235cdf484b6844a580be4bec84ae7fe5":[13,0,39,1]
+"structExtraMethod.html":[13,0,39]
 };

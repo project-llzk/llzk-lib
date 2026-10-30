@@ -230,5 +230,5 @@ var searchData=
   ['pull_20request_227',['Pull Request',['../contribution-guide.html#pull-request',1,'']]],
   ['pull_20request_20review_228',['Pull Request Review',['../contribution-guide.html#pull-request-review',1,'']]],
   ['pushnamespace_229',['pushNamespace',['../classllzk_1_1SymbolLookupResultUntyped.html#aeb5eef3ca63a212220e08de2be01eb3d',1,'llzk::SymbolLookupResultUntyped']]],
-  ['pybind11_5fmodule_230',['PYBIND11_MODULE',['../LLZKRegistration_8cpp.html#a2859604a2d7f27c4045352a1c593fb86',1,'LLZKRegistration.cpp']]]
+  ['python_20bindings_230',['Python Bindings',['../setup.html#python-bindings',1,'']]]
 ];

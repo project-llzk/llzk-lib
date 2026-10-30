@@ -13,7 +13,7 @@ var searchData=
   ['best_20practices_20checklist_10',['Best Practices Checklist',['../contribution-guide.html#best-practices-checklist',1,'']]],
   ['binarybuffer_11',['BinaryBuffer',['../classllzk_1_1BinaryBuffer.html',1,'llzk']]],
   ['binarybuffer_2eh_12',['BinaryBuffer.h',['../BinaryBuffer_8h.html',1,'']]],
-  ['bindings_13',['Bindings',['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f',1,'llzk::polymorphic::detail::StructSpecializationDiscovery']]],
+  ['bindings_13',['Bindings',['../classllzk_1_1polymorphic_1_1detail_1_1StructSpecializationDiscovery.html#a6df4e2fd04830b727ad6fd73a3c0742f',1,'llzk::polymorphic::detail::StructSpecializationDiscovery::Bindings'],['../setup.html#python-bindings',1,'Python Bindings']]],
   ['bit_5fand_20_3a_3allzk_3a_3afelt_3a_3aandfeltop_14',['&lt;span class=&quot;tt&quot;&gt;felt.bit_and&lt;/span&gt; (llzk::felt::AndFeltOp)',['../dialects.html#feltbit_and-llzkfeltandfeltop',1,'']]],
   ['bit_5fnot_20_3a_3allzk_3a_3afelt_3a_3anotfeltop_15',['&lt;span class=&quot;tt&quot;&gt;felt.bit_not&lt;/span&gt; (llzk::felt::NotFeltOp)',['../dialects.html#feltbit_not-llzkfeltnotfeltop',1,'']]],
   ['bit_5for_20_3a_3allzk_3a_3afelt_3a_3aorfeltop_16',['&lt;span class=&quot;tt&quot;&gt;felt.bit_or&lt;/span&gt; (llzk::felt::OrFeltOp)',['../dialects.html#feltbit_or-llzkfeltorfeltop',1,'']]],

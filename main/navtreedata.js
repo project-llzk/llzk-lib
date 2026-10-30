@@ -38,7 +38,8 @@ var NAVTREE =
       [ "Nix Setup", "setup.html#nix-setup", null ],
       [ "Manual Build Setup", "setup.html#manual-build-setup", null ],
       [ "Building with PCL", "setup.html#building-with-pcl", null ],
-      [ "Development Workflow", "setup.html#dev-workflow", null ]
+      [ "Development Workflow", "setup.html#dev-workflow", null ],
+      [ "Python Bindings", "setup.html#python-bindings", null ]
     ] ],
     [ "Tool Guides", "tools.html", [
       [ "llzk-opt", "tools.html#llzk-opt", [
@@ -639,20 +640,20 @@ var NAVTREEINDEX =
 "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase.html#ab78382fcf0e0c912ee962b6cac76982c",
 "dialects.html#parameters-3",
 "dir_fbb5839660df89f0c7872b7fe52b5d6c.html",
-"llzk_2Util_2Constants_8h.html",
-"namespacellzk.html#a6c6b23d251765a4ab382acebfd6138fd",
-"namespacellzk.html#af49a31336d658a9fdf7604b99a5d9b8b",
-"namespacellzk_1_1pod.html#a0745bd01602f938e292b4e8090425e54",
-"namespacemembers_g.html",
-"structExtraMethod.html#a628197cce6e5ab2dddada3704494664f",
-"structVerifProveOpBuildFuncHelper.html#a78ee6dc6ceffca168a82822b4107546f",
-"structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc",
-"structllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase_1_1Properties.html#a64ccde265dcfef66155bc870ae401024",
-"structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html",
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#addacb94cc418269532f97a0da7a0e68c",
-"structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html#a5bd5834995eff3fb6016a87ed7acb595",
-"structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#abd8376b3c2b0b6652a97c4eec01a06a8",
-"syntax.html#syntax-1"
+"llzk_2Dialect_2DialectRegistration_8h_source.html",
+"namespacellzk.html#a6baf439b511543083ead7e1280076943",
+"namespacellzk.html#af499882a103b0ff3c3b1b7275b7380d6",
+"namespacellzk_1_1pod.html",
+"namespacemembers_func_w.html",
+"structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de",
+"structVerifAssertOpBuildFuncHelper.html#aafde68b0283c8333d551c00dc67a104f",
+"structllzk_1_1IntervalAnalysisContext.html#a83966ad5b76bac673ad192b1f7dd8058",
+"structllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase_1_1Properties.html#a63b2ffe7cdc6069efd05ff84d167bb0a",
+"structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceTrait.html",
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#adb5e70689f37aca469648f662011855a",
+"structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html#a1d2ff6f8c340829203f2e09dff966a7a",
+"structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#aaec85644c372bad27eab0b508305b257",
+"syntax.html#pseudo-homogeneous"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

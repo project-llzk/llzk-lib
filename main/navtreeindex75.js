@@ -1,5 +1,7 @@
 var NAVTREEINDEX75 =
 {
+"structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de":[13,0,39,2],
+"structExtraMethod.html#a235cdf484b6844a580be4bec84ae7fe5":[13,0,39,1],
 "structExtraMethod.html#a628197cce6e5ab2dddada3704494664f":[13,0,39,4],
 "structExtraMethod.html#a660b29e76565e399bc01763065221ff6":[13,0,39,5],
 "structExtraMethod.html#ac390da29009ebcc2985321d0df1ed054":[13,0,39,3],
@@ -247,7 +249,5 @@ var NAVTREEINDEX75 =
 "structUnsignedModFeltOpBuildFuncHelper.html#a151f8414627b31033e64e924308ac0b3":[13,0,128,0],
 "structUnsignedModFeltOpBuildFuncHelper.html#a9d66d28e65327a5577588fc1d225051d":[13,0,128,1],
 "structVerifAssertOpBuildFuncHelper.html":[13,0,129],
-"structVerifAssertOpBuildFuncHelper.html#a943c6ca31bfd046efd93cd04094e2c5f":[13,0,129,1],
-"structVerifAssertOpBuildFuncHelper.html#aafde68b0283c8333d551c00dc67a104f":[13,0,129,0],
-"structVerifProveOpBuildFuncHelper.html":[13,0,132]
+"structVerifAssertOpBuildFuncHelper.html#a943c6ca31bfd046efd93cd04094e2c5f":[13,0,129,1]
 };
