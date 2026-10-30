@@ -1,0 +1,163 @@
+// RUN: llzk-opt -verify-diagnostics %s | FileCheck %s
+
+// Typed symbols with the required field remain valid struct arguments.
+module attributes {llzk.lang} {
+  global.def const @GlobalValue : !felt.type<"bn128"> = 35
+
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @AnyField {
+    poly.param @N : !felt.type
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@AnyField::@S<[@N]>> {
+        %self = struct.new : !struct.type<@AnyField::@S<[@N]>>
+        function.return %self : !struct.type<@AnyField::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@AnyField::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @LocalValue : !felt.type<"bn128">
+    poly.param @DeferredValue
+    poly.param @IndexValue : index
+    poly.param @BoolValue : i1
+    poly.param @FieldlessValue : !felt.type
+
+    struct.def @Use {
+      struct.member @from_global : !struct.type<@T::@S<[@GlobalValue]>>
+      struct.member @from_binding : !struct.type<@T::@S<[@LocalValue]>>
+      struct.member @from_deferred_binding : !struct.type<@T::@S<[@DeferredValue]>>
+      // A fieldless restriction accepts the same known field in concrete and symbolic forms.
+      struct.member @from_concrete_any_field : !struct.type<@AnyField::@S<[#felt<const 35 : !felt.type<"bn128">>]>>
+      struct.member @from_global_any_field : !struct.type<@AnyField::@S<[@GlobalValue]>>
+      struct.member @from_binding_any_field : !struct.type<@AnyField::@S<[@LocalValue]>>
+      // Local numeric forwarding defers value conversion to template normalization.
+      struct.member @felt_to_index : !struct.type<@IndexTarget::@S<[@LocalValue]>>
+      struct.member @bool_to_index : !struct.type<@IndexTarget::@S<[@BoolValue]>>
+      struct.member @index_to_bool : !struct.type<@BoolTarget::@S<[@IndexValue]>>
+      struct.member @index_to_felt : !struct.type<@T::@S<[@IndexValue]>>
+      struct.member @fieldless_to_index : !struct.type<@IndexTarget::@S<[@FieldlessValue]>>
+
+      function.def @compute() -> !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>>
+        function.return %self : !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @IndexTarget {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@IndexTarget::@S<[@N]>> {
+        %self = struct.new : !struct.type<@IndexTarget::@S<[@N]>>
+        function.return %self : !struct.type<@IndexTarget::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@IndexTarget::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @BoolTarget {
+    poly.param @N : i1
+    struct.def @S {
+      function.def @compute() -> !struct.type<@BoolTarget::@S<[@N]>> {
+        %self = struct.new : !struct.type<@BoolTarget::@S<[@N]>>
+        function.return %self : !struct.type<@BoolTarget::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoolTarget::@S<[@N]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @GlobalValue : !felt.type<"bn128"> =  35 : <"bn128">
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : !felt.type<"bn128">
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@T::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@T::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @AnyField {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@AnyField::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@AnyField::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@AnyField::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@AnyField::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @LocalValue : !felt.type<"bn128">
+// CHECK-NEXT:      poly.param @DeferredValue
+// CHECK-NEXT:      poly.param @IndexValue : index
+// CHECK-NEXT:      poly.param @BoolValue : i1
+// CHECK-NEXT:      poly.param @FieldlessValue : !felt.type
+// CHECK-NEXT:      struct.def @Use {
+// CHECK-NEXT:        struct.member @from_global : !struct.type<@T::@S<[@GlobalValue]>>
+// CHECK-NEXT:        struct.member @from_binding : !struct.type<@T::@S<[@LocalValue]>>
+// CHECK-NEXT:        struct.member @from_deferred_binding : !struct.type<@T::@S<[@DeferredValue]>>
+// CHECK-NEXT:        struct.member @from_concrete_any_field : !struct.type<@AnyField::@S<[#felt<const 35 : <"bn128">>]>>
+// CHECK-NEXT:        struct.member @from_global_any_field : !struct.type<@AnyField::@S<[@GlobalValue]>>
+// CHECK-NEXT:        struct.member @from_binding_any_field : !struct.type<@AnyField::@S<[@LocalValue]>>
+// CHECK-NEXT:        struct.member @felt_to_index : !struct.type<@IndexTarget::@S<[@LocalValue]>>
+// CHECK-NEXT:        struct.member @bool_to_index : !struct.type<@IndexTarget::@S<[@BoolValue]>>
+// CHECK-NEXT:        struct.member @index_to_bool : !struct.type<@BoolTarget::@S<[@IndexValue]>>
+// CHECK-NEXT:        struct.member @index_to_felt : !struct.type<@T::@S<[@IndexValue]>>
+// CHECK-NEXT:        struct.member @fieldless_to_index : !struct.type<@IndexTarget::@S<[@FieldlessValue]>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Caller::@Use<[@LocalValue, @DeferredValue, @IndexValue, @BoolValue, @FieldlessValue]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @IndexTarget {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@IndexTarget::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@IndexTarget::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@IndexTarget::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@IndexTarget::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @BoolTarget {
+// CHECK-NEXT:      poly.param @N : i1
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@BoolTarget::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@BoolTarget::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_8]] : !struct.type<@BoolTarget::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@BoolTarget::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

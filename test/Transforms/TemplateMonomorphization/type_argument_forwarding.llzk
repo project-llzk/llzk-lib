@@ -1,0 +1,165 @@
+// RUN: llzk-opt -split-input-file --llzk-monomorphize-templates -verify-diagnostics %s | FileCheck %s --enable-var-scope
+
+// A type-valued parameter can supply a child type argument through a type variable.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[index]>>} {
+  poly.template @Target {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Child {
+      struct.member @value : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> {
+        %self = struct.new : !struct.type<@Target::@Child<[@Ty]>>
+        function.return %self : !struct.type<@Target::@Child<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Child<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @Value : !poly.tvar<@Value>
+    struct.def @Main {
+      struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+      function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@Value]>>
+        %child = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        struct.writem %self[@child] = %child : !struct.type<@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        function.return %self : !struct.type<@Caller::@Main<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@Value]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// CHECK-NEXT:    poly.template @Target {
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Ty>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Target::@Child<[@Ty]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Target::@Child<[@Ty]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Target::@Child<[@Ty]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @Value : !poly.tvar<@Value>
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Caller::@Main<[@Value]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@child] = %[[VAL_3]] : <@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@Caller::@Main<[@Value]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Caller::@Main<[@Value]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @child : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@child] = %[[VAL_6]] : <@Main__spec_0>, !struct.type<@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [index], poly.origin = @Caller::@Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      struct.member @value : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [index], poly.origin = @Target::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:  }
+
+// -----
+
+// An unrestricted parameter remains deferred until its concrete type is supplied.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[index]>>} {
+  poly.template @Target {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Child {
+      struct.member @value : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> {
+        %self = struct.new : !struct.type<@Target::@Child<[@Ty]>>
+        function.return %self : !struct.type<@Target::@Child<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Child<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @Value
+    struct.def @Main {
+      struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+      function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@Value]>>
+        %child = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        struct.writem %self[@child] = %child : !struct.type<@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        function.return %self : !struct.type<@Caller::@Main<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@Value]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// CHECK-NEXT:    poly.template @Target {
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      struct.def @Child {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Ty>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Target::@Child<[@Ty]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Target::@Child<[@Ty]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Target::@Child<[@Ty]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @Value
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Caller::@Main<[@Value]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@child] = %[[VAL_3]] : <@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@Caller::@Main<[@Value]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Caller::@Main<[@Value]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @child : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@child] = %[[VAL_6]] : <@Main__spec_0>, !struct.type<@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [index], poly.origin = @Caller::@Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Child__spec_1 {
+// CHECK-NEXT:      struct.member @value : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@Child__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [index], poly.origin = @Target::@Child, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:  }
