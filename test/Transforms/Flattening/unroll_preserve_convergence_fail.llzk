@@ -1,0 +1,104 @@
+// RUN: llzk-opt -llzk-flatten="max-unroll=2 max-iter=3" -verify-diagnostics %s -o /dev/null
+
+// A chain beyond the local rewrite budget must fail with a local convergence diagnostic,
+// rather than consuming the outer max-iter budget or running without a bound.
+// expected-error @+1 {{greedy rewriting with preserved loops failed to converge after 20 iterations}}
+module attributes {llzk.lang} {
+  function.def @leaf() -> !array.type<? x !felt.type> {
+    %array = array.new : !array.type<4 x !felt.type>
+    function.return %array : !array.type<4 x !felt.type>
+  }
+  function.def @chain0() -> !array.type<? x !felt.type> {
+    %array = function.call @leaf() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain1() -> !array.type<? x !felt.type> {
+    %array = function.call @chain0() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain2() -> !array.type<? x !felt.type> {
+    %array = function.call @chain1() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain3() -> !array.type<? x !felt.type> {
+    %array = function.call @chain2() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain4() -> !array.type<? x !felt.type> {
+    %array = function.call @chain3() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain5() -> !array.type<? x !felt.type> {
+    %array = function.call @chain4() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain6() -> !array.type<? x !felt.type> {
+    %array = function.call @chain5() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain7() -> !array.type<? x !felt.type> {
+    %array = function.call @chain6() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain8() -> !array.type<? x !felt.type> {
+    %array = function.call @chain7() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain9() -> !array.type<? x !felt.type> {
+    %array = function.call @chain8() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain10() -> !array.type<? x !felt.type> {
+    %array = function.call @chain9() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain11() -> !array.type<? x !felt.type> {
+    %array = function.call @chain10() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain12() -> !array.type<? x !felt.type> {
+    %array = function.call @chain11() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain13() -> !array.type<? x !felt.type> {
+    %array = function.call @chain12() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain14() -> !array.type<? x !felt.type> {
+    %array = function.call @chain13() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain15() -> !array.type<? x !felt.type> {
+    %array = function.call @chain14() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain16() -> !array.type<? x !felt.type> {
+    %array = function.call @chain15() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain17() -> !array.type<? x !felt.type> {
+    %array = function.call @chain16() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain18() -> !array.type<? x !felt.type> {
+    %array = function.call @chain17() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain19() -> !array.type<? x !felt.type> {
+    %array = function.call @chain18() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain20() -> !array.type<? x !felt.type> {
+    %array = function.call @chain19() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @preserved() {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %three = arith.constant 3 : index
+    // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2; leaving loop unchanged}}
+    scf.for %iv = %zero to %three step %one {
+    }
+    function.return
+  }
+}

@@ -1,0 +1,99 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+// Annotations are signed mathematical integers even when they exceed 64 bits.
+// Only executed for-loop induction values need to fit the induction type.
+module attributes {llzk.lang} {
+  function.def @wide_negative(%lo: index, %hi: index, %inc: index, %seed: index) -> index {
+    %lb = arith.index_cast %lo : index to i128
+    %ub = arith.index_cast %hi : index to i128
+    %step = arith.index_cast %inc : index to i128
+    %init = arith.index_cast %seed : index to i128
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %init) -> i128 : i128 {
+      %next = arith.addi %acc, %iv : i128
+      scf.yield %next : i128
+    } {llzk.loopbounds = #llzk.loopbounds<-18446744073709551616 to -18446744073709551619 step -2>}
+    %index = arith.index_cast %result : i128 to index
+    function.return %index : index
+  }
+
+  // A negative step wider than 64 bits must retain its sign and magnitude.
+  function.def @wide_step(%lo: index, %hi: index, %inc: index, %seed: index) -> index {
+    %lb = arith.index_cast %lo : index to i128
+    %ub = arith.index_cast %hi : index to i128
+    %step = arith.index_cast %inc : index to i128
+    %init = arith.index_cast %seed : index to i128
+    %ten = arith.constant 10 : i128
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %init) -> i128 : i128 {
+      %shifted = arith.muli %acc, %ten : i128
+      %next = arith.addi %shifted, %iv : i128
+      scf.yield %next : i128
+    } {llzk.loopbounds = #llzk.loopbounds<18446744073709551616 to -18446744073709551617 step -18446744073709551616>}
+    %index = arith.index_cast %result : i128 to index
+    function.return %index : index
+  }
+
+  // Unlike while-to-for conversion, full unrolling need not materialize the
+  // upper bound, step, or final increment in the induction type.
+  function.def @wide_control_narrow_iv(%lo: index, %hi: index, %inc: index, %seed: index) -> index {
+    %lb = arith.index_cast %lo : index to i8
+    %ub = arith.index_cast %hi : index to i8
+    %step = arith.index_cast %inc : index to i8
+    %init = arith.index_cast %seed : index to i8
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %init) -> i8 : i8 {
+      %next = arith.addi %acc, %iv : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<127 to 18446744073709551616 step 18446744073709551616>}
+    %index = arith.index_cast %result : i8 to index
+    function.return %index : index
+  }
+
+  // An empty descending range has zero iterations, including when ceilDiv
+  // rounds a negative fraction to zero. The final before region still runs.
+  function.def @empty_descending(%cond: i1, %seed: index) -> index {
+    %one = arith.constant 1 : index
+    %result = scf.while (%state = %seed) : (index) -> index {
+      %next = arith.addi %state, %one : index
+      scf.condition(%cond) %next : index
+    } do {
+    ^bb0(%state: index):
+      scf.yield %state : index
+    } attributes {llzk.loopbounds = #llzk.loopbounds<-1 to 0 step -2>}
+    function.return %result : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @wide_negative(%[[VAL_0:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.\-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.\-]+]] = arith.constant -18446744073709551618 : i128
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.\-]+]] = arith.constant -18446744073709551616 : i128
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.\-]+]] = arith.index_cast %[[VAL_3]] : index to i128
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.\-]+]] = arith.addi %[[VAL_6]], %[[VAL_5]] : i128
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.\-]+]] = arith.addi %[[VAL_7]], %[[VAL_4]] : i128
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.\-]+]] = arith.index_cast %[[VAL_8]] : i128 to index
+// CHECK-NEXT:      function.return %[[VAL_9]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wide_step(%[[VAL_10:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_12:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_13:[0-9a-zA-Z_\.\-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.\-]+]] = arith.constant -18446744073709551616 : i128
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.\-]+]] = arith.constant 18446744073709551616 : i128
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.\-]+]] = arith.constant 10 : i128
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.\-]+]] = arith.index_cast %[[VAL_13]] : index to i128
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.\-]+]] = arith.muli %[[VAL_17]], %[[VAL_16]] : i128
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.\-]+]] = arith.addi %[[VAL_18]], %[[VAL_15]] : i128
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.\-]+]] = arith.muli %[[VAL_19]], %[[VAL_16]] : i128
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.\-]+]] = arith.muli %[[VAL_20]], %[[VAL_16]] : i128
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.\-]+]] = arith.addi %[[VAL_21]], %[[VAL_14]] : i128
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.\-]+]] = arith.index_cast %[[VAL_22]] : i128 to index
+// CHECK-NEXT:      function.return %[[VAL_23]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wide_control_narrow_iv(%[[VAL_24:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_25:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_26:[0-9a-zA-Z_\.\-]+]]: index, %[[VAL_27:[0-9a-zA-Z_\.\-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.\-]+]] = arith.constant 127 : i8
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.\-]+]] = arith.index_cast %[[VAL_27]] : index to i8
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.\-]+]] = arith.addi %[[VAL_29]], %[[VAL_28]] : i8
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.\-]+]] = arith.index_cast %[[VAL_30]] : i8 to index
+// CHECK-NEXT:      function.return %[[VAL_31]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @empty_descending(%[[VAL_32:[0-9a-zA-Z_\.\-]+]]: i1, %[[VAL_33:[0-9a-zA-Z_\.\-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.\-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.\-]+]] = arith.addi %[[VAL_33]], %[[VAL_34]] : index
+// CHECK-NEXT:      function.return %[[VAL_35]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
