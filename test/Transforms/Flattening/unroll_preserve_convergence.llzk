@@ -1,0 +1,202 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten="max-unroll=2 max-iter=3" -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Baseline: the return type propagates through six calls within the local greedy fixpoint.
+module attributes {llzk.lang} {
+  function.def @leaf() -> !array.type<? x !felt.type> {
+    %array = array.new : !array.type<4 x !felt.type>
+    function.return %array : !array.type<4 x !felt.type>
+  }
+  function.def @chain0() -> !array.type<? x !felt.type> {
+    %array = function.call @leaf() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain1() -> !array.type<? x !felt.type> {
+    %array = function.call @chain0() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain2() -> !array.type<? x !felt.type> {
+    %array = function.call @chain1() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain3() -> !array.type<? x !felt.type> {
+    %array = function.call @chain2() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain4() -> !array.type<? x !felt.type> {
+    %array = function.call @chain3() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain5() -> !array.type<? x !felt.type> {
+    %array = function.call @chain4() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @leaf() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain0() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @leaf() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain1() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @chain0() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain2() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @chain1() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain3() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @chain2() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_4]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain4() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @chain3() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_5]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain5() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @chain4() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_6]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unrelated preserved loop must not force the same propagation chain into extra outer rounds.
+module attributes {llzk.lang} {
+  function.def @leaf() -> !array.type<? x !felt.type> {
+    %array = array.new : !array.type<4 x !felt.type>
+    function.return %array : !array.type<4 x !felt.type>
+  }
+  function.def @chain0() -> !array.type<? x !felt.type> {
+    %array = function.call @leaf() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain1() -> !array.type<? x !felt.type> {
+    %array = function.call @chain0() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain2() -> !array.type<? x !felt.type> {
+    %array = function.call @chain1() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain3() -> !array.type<? x !felt.type> {
+    %array = function.call @chain2() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain4() -> !array.type<? x !felt.type> {
+    %array = function.call @chain3() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @chain5() -> !array.type<? x !felt.type> {
+    %array = function.call @chain4() : () -> !array.type<? x !felt.type>
+    function.return %array : !array.type<? x !felt.type>
+  }
+  function.def @unrelated_loop(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %three = arith.constant 3 : index
+    // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2; leaving loop unchanged}}
+    scf.for %iv = %zero to %three step %one {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @leaf() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain0() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @leaf() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain1() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @chain0() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain2() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @chain1() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain3() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @chain2() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_4]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain4() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @chain3() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_5]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @chain5() -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @chain4() : () -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_6]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unrelated_loop(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      scf.for %[[VAL_12:[0-9a-zA-Z_\.]+]] = %[[VAL_9]] to %[[VAL_11]] step %[[VAL_10]] {
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Unrolling creates loops whose now-constant trip counts exceed the limit.
+// Recheck preservation between local sweeps and emit each warning only once.
+module attributes {llzk.lang} {
+  function.def @preserved(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %three = arith.constant 3 : index
+    // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2; leaving loop unchanged}}
+    scf.for %iv = %zero to %three step %one {
+      constrain.eq %a, %b : !felt.type
+    }
+    function.return
+  }
+
+  function.def @cloned_loops(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %three = arith.constant 3 : index
+    %five = arith.constant 5 : index
+    scf.for %iv = %three to %five step %one {
+      // expected-warning @+2 {{loop trip count 3 exceeds max-unroll limit of 2; leaving loop unchanged}}
+      // expected-warning @+1 {{loop trip count 4 exceeds max-unroll limit of 2; leaving loop unchanged}}
+      scf.for %j = %zero to %iv step %one {
+        constrain.eq %a, %b : !felt.type
+      }
+    }
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserved(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_4]] step %[[VAL_3]] {
+// CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @cloned_loops(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      scf.for %[[VAL_11:[0-9a-zA-Z_\.]+]] = %[[VAL_8]] to %[[VAL_10]] step %[[VAL_9]] {
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      scf.for %[[VAL_13:[0-9a-zA-Z_\.]+]] = %[[VAL_8]] to %[[VAL_12]] step %[[VAL_9]] {
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

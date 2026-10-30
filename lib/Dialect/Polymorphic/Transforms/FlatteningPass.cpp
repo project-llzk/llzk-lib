@@ -421,6 +421,9 @@ struct MatchFailureListener : public RewriterBase::Listener {
   }
 };
 
+/// Reach a local fixpoint while protecting skipped loops from folding and DCE.
+/// Filtered sweeps reconsider new operations and symbol dependencies within this step, with
+/// loop preservation recomputed before admitting new operations to the greedy worklist.
 static LogicalResult
 applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternSet &&patterns) {
   bool currStepModified = false;
@@ -434,16 +437,32 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
         modOp->getRegion(0), std::move(patterns), greedyRewriteConfig, &currStepModified
     );
   } else {
-    // The greedy worklist is LIFO: visit loop bodies before helpers that replace their loops.
-    auto candidates = walkCollect<Operation *, WalkOrder::PreOrder>(
-        modOp.getBodyRegion(), [&preserved](Operation *op) { return !preserved.contains(op); }
-    );
-    // New operations are reconsidered in the next outer round, after checking their loop bounds.
-    // Strictness also prevents operand/user updates from re-enqueuing a preserved loop.
-    result = applyOpPatternsGreedily(
-        candidates, std::move(patterns),
-        greedyRewriteConfig.setStrictness(GreedyRewriteStrictness::ExistingOps), &currStepModified
-    );
+    FrozenRewritePatternSet frozenPatterns(std::move(patterns));
+    // Strictness prevents operand/user updates from re-enqueuing a preserved loop or
+    // admitting a new loop before its bounds have been checked in the next local sweep.
+    greedyRewriteConfig.setStrictness(GreedyRewriteStrictness::ExistingOps);
+    for (int64_t iteration = 0;; ++iteration) {
+      // The operation-list driver does not enforce the region driver's iteration limit.
+      if (iteration == greedyRewriteConfig.getMaxIterations()) {
+        result = modOp.emitError("greedy rewriting with preserved loops failed to converge after ")
+                 << iteration << " iterations";
+        break;
+      }
+      if (iteration != 0) {
+        preserved = tracker.getPreservedLoopOps(modOp);
+      }
+      // The greedy worklist is LIFO: visit loop bodies before helpers that replace their loops.
+      auto candidates = walkCollect<Operation *, WalkOrder::PreOrder>(
+          modOp.getBodyRegion(), [&preserved](Operation *op) { return !preserved.contains(op); }
+      );
+      bool sweepModified = false;
+      result =
+          applyOpPatternsGreedily(candidates, frozenPatterns, greedyRewriteConfig, &sweepModified);
+      currStepModified |= sweepModified;
+      if (failed(result) || failureListener.hadFailure || !sweepModified) {
+        break;
+      }
+    }
   }
   tracker.updateModifiedFlag(currStepModified);
   return failure(result.failed() || failureListener.hadFailure);
