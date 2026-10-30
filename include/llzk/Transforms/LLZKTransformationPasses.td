@@ -177,7 +177,16 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "This pass identifies scf.while loops that have an "
       "induction variable and a uniform step, and converts them "
       "to equivalent scf.for loops, which are preferred by some "
-      "analyses. This pass may introduce some spurious felt/index casts which "
+      "analyses. Annotated loopbounds must have nonnegative bounds and a "
+      "positive step, all within the nonnegative index range. The induction "
+      "value after the final increment must also fit in index; otherwise the "
+      "annotated loop is left unchanged with a warning. Annotated values are "
+      "materialized directly as index constants without field reduction. "
+      "The annotated integer induction variable is converted to its field "
+      "representative when the original variable is a felt. The cast uses "
+      "assert for empty loops or when every executed induction value is "
+      "within the known field, and wrap otherwise. "
+      "This pass may introduce some spurious felt/index casts which "
       "should be cleaned up by --canonicalize.";
 }
 
