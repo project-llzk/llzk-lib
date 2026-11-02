@@ -533,7 +533,11 @@ static Value normalizeWideValue(
   );
 }
 
-/// Add the modulus to a negative value in [-p, p), then truncate to the field width.
+/// Add the modulus p to a negative value in [-p, p), yielding a value in [0, p).
+///
+/// That result has the widened intermediate integer type so the final result must be
+/// truncated to the field's `dstWidth` bit width. Since `[0, p)` fits in that width,
+/// it discards only leading zero bits and preserves the value.
 static Value addModulusIfNegative(
     OpBuilder &builder, Location loc, Value wideValue, Value modulus, unsigned dstWidth
 ) {
