@@ -238,6 +238,7 @@ Classes</h2></td></tr>
 <tr class="memitem:KnownTargetVerifier" id="r_KnownTargetVerifier"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1KnownTargetVerifier.html">KnownTargetVerifier</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shared signature and template-instantiation checks for a resolved call-like target.  <a href="classllzk_1_1KnownTargetVerifier.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LightweightSignalEquivalenceAnalysis" id="r_LightweightSignalEquivalenceAnalysis"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A lightweight, positive-only equivalence analysis for signal values.  <a href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LLZKCallLikeOpInterface" id="r_LLZKCallLikeOpInterface"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LLZKCallLikeOpInterface.html">LLZKCallLikeOpInterface</a></td></tr>
 <tr class="memitem:LLZKDialect" id="r_LLZKDialect"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1LLZKDialect.html">LLZKDialect</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Common LLZK attributes.  <a href="classllzk_1_1LLZKDialect.html#details">More...</a><br /></td></tr>
@@ -431,7 +432,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a3e5cbfb473f83cd708aafe6b6cb706eb" id="r_a3e5cbfb473f83cd708aafe6b6cb706eb"><td class="memItemLeft"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight"><a class="el" href="#a3e5cbfb473f83cd708aafe6b6cb706eb">boolOr</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:a9a5d035608b9efe5cccc5330a8f76c4c" id="r_a9a5d035608b9efe5cccc5330a8f76c4c"><td class="memItemLeft"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight"><a class="el" href="#a9a5d035608b9efe5cccc5330a8f76c4c">boolXor</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:affc2a590a8d539873e13add0e8ad95cb" id="r_affc2a590a8d539873e13add0e8ad95cb"><td class="memItemLeft"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight"><a class="el" href="#affc2a590a8d539873e13add0e8ad95cb">boolNot</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;iv)</td></tr>
-<tr class="memitem:aed690d94112b1e8b9f53827ac473c36a" id="r_aed690d94112b1e8b9f53827ac473c36a"><td class="memItemLeft">Value&#160;</td><td class="memItemRight"><a class="el" href="#aed690d94112b1e8b9f53827ac473c36a">replaceReadWithWrite</a> (Value v)</td></tr>
 <tr class="memitem:af577599d1b29a0347b4009191e02d514" id="r_af577599d1b29a0347b4009191e02d514"><td class="memItemLeft">llvm::raw_ostream &amp;&#160;</td><td class="memItemRight"><a class="el" href="#af577599d1b29a0347b4009191e02d514">operator&lt;&lt;</a> (llvm::raw_ostream &amp;os, const <a class="el" href="classllzk_1_1MemberOverwriteLattice.html">MemberOverwriteLattice</a> &amp;lat)</td></tr>
 <tr class="memitem:aa36cf38143b2f7c509c154458bdb2e49" id="r_aa36cf38143b2f7c509c154458bdb2e49"><td class="memItemLeft">llvm::FailureOr&lt; std::pair&lt; llvm::SetVector&lt; <a class="el" href="#a21c4d99bf342aa12b3700d61bbfa5644">Overwrite</a> &gt;, <a class="el" href="classllzk_1_1FuzzySet.html">FuzzySet</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa36cf38143b2f7c509c154458bdb2e49">analyzeStruct</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef)</td></tr>
 <tr class="memitem:a2c0b5b554723ab6021efb716212874ab" id="r_a2c0b5b554723ab6021efb716212874ab"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a2c0b5b554723ab6021efb716212874ab">createPredecessorPrinterPass</a> ()</td></tr>
@@ -10857,25 +10857,6 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
 <p>Wrapper for <span class="tt">RewriterBase::replaceOpWithNewOp()</span> that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the op in ODS). </p>
 
 <p class="definition">Definition at line <a class="el" href="ConversionUtils_8h_source.html#l00072">72</a> of file <a class="el" href="ConversionUtils_8h_source.html">ConversionUtils.h</a>.</p>
-
-</div>
-</div>
-<a id="aed690d94112b1e8b9f53827ac473c36a" name="aed690d94112b1e8b9f53827ac473c36a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed690d94112b1e8b9f53827ac473c36a">&#9670;&#160;</a></span>replaceReadWithWrite()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Value llzk::replaceReadWithWrite </td>
-          <td>(</td>
-          <td class="paramtype">Value</td>          <td class="paramname"><span class="paramname"><em>v</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html#l00035">35</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html">LightweightSignalEquivalenceAnalysis.cpp</a>.</p>
 
 </div>
 </div>

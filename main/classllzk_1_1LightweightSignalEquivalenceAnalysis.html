@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classllzk_1_1L
 </div><!--header-->
 <div class="contents">
 
+<p>A lightweight, positive-only equivalence analysis for signal values.  
+ <a href="#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="LightweightSignalEquivalenceAnalysis_8h_source.html">LightweightSignalEquivalenceAnalysis.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -142,8 +145,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3734cdc3381c80bb19e37a655e8f6b40" id="r_a3734cdc3381c80bb19e37a655e8f6b40"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a3734cdc3381c80bb19e37a655e8f6b40">areSignalsEquivalent</a> (mlir::Value v1, mlir::Value v2)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8h_source.html#l00018">18</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8h_source.html">LightweightSignalEquivalenceAnalysis.h</a>.</p>
+<div class="textblock"><p>A lightweight, positive-only equivalence analysis for signal values. </p>
+<p>In addition to recursively comparing ordinary SSA producers, the analysis understands value-copy snapshots of POD records. Two POD reads are equivalent when they select the same complete (possibly nested) record path from the same root POD state. Mutation checks are deliberately local to a single block: writes to the selected record (or an enclosing record) invalidate a proof, while writes to disjoint records do not.</p>
+<p>POD snapshots copied through POD records and struct members are followed recursively. Unknown uses, offset-bearing struct-member reads, and control-flow crossings are handled conservatively and do not establish equivalence. POD reads returning struct handles or requiring an independent mutable copy are also rejected because this analysis does not track mutations of the referenced components or returned snapshots. Only successful queries are cached. </p>
+
+<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8h_source.html#l00033">33</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8h_source.html">LightweightSignalEquivalenceAnalysis.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="af8d950d615145e91c989cf9e1d232907" name="af8d950d615145e91c989cf9e1d232907"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af8d950d615145e91c989cf9e1d232907">&#9670;&#160;</a></span>LightweightSignalEquivalenceAnalysis()</h2>
@@ -160,7 +166,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html#l00033">33</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html">LightweightSignalEquivalenceAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html#l00254">254</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html">LightweightSignalEquivalenceAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -184,7 +190,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html#l00051">51</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html">LightweightSignalEquivalenceAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html#l00256">256</a> of file <a class="el" href="LightweightSignalEquivalenceAnalysis_8cpp_source.html">LightweightSignalEquivalenceAnalysis.cpp</a>.</p>
 
 </div>
 </div>

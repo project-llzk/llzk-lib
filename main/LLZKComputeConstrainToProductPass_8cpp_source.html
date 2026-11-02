@@ -293,130 +293,137 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKComputeCon
 <div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    <span class="keywordflow">if</span> (computeStruct != constrainStruct) {</div>
 <div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    }</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="keywordflow">if</span> (compute.getNumOperands() == 0) {</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    }</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0, e = compute-&gt;getNumOperands() - 1; i &lt; e; i++) {</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>      <span class="keywordflow">if</span> (!equivalence.areSignalsEquivalent(compute-&gt;getOperand(i), constrain-&gt;getOperand(i + 1))) {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>      }</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    }</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  };</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="comment">// Count only `ArgOperands` to avoid counting affine-map instantiation operands.</span></div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <span class="keyword">auto</span> computeArgs = compute.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8d81cd945d8f3898b56112f118ef74bd">getArgOperands</a>();</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    <span class="keyword">auto</span> constrainArgs = constrain.getArgOperands();</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    <span class="keywordflow">if</span> (constrainArgs.size() != computeArgs.size() + 1) {</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    }</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0, e = computeArgs.size(); i &lt; e; i++) {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>      <span class="keywordflow">if</span> (!equivalence.areSignalsEquivalent(computeArgs[i], constrainArgs[i + 1])) {</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>      }</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    }</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> compute : computeCalls) {</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <span class="comment">// If there is exactly one @compute that matches a given @constrain, we can align them</span></div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="keyword">auto</span> matches = llvm::filter_to_vector(constrainCalls, [&amp;](CallOp constrain) {</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      <span class="keywordflow">return</span> doCallsMatch(compute, constrain);</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    });</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <span class="keywordflow">if</span> (matches.size() == 1) {</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>      alignedCalls.insert({compute, matches[0]});</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>      computeCalls.remove(compute);</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>      constrainCalls.remove(matches[0]);</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    }</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  }</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keywordflow">if</span> (!computeCalls.empty() &amp;&amp; constrainCalls.empty()) {</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    product.emitWarning()</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>        .append(<span class="stringliteral">&quot;failed to align some @&quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, <span class="stringliteral">&quot; and @&quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>)</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>        .report();</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  }</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [compute, constrain] : alignedCalls) {</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    <span class="comment">// If @A::@compute matches @A::@constrain, recursively align the functions in @A...</span></div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    <span class="keyword">auto</span> calleeTgt = compute.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af459db514098e5cbdaa007b6516d959c">getCalleeTarget</a>(tables);</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    <span class="keywordflow">if</span> (failed(calleeTgt)) {</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    }</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keyword">auto</span> newRoot = calleeTgt-&gt;get()-&gt;getParentOfType&lt;StructDefOp&gt;();</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    assert(newRoot);</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    FuncDefOp newProduct =</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        <a class="code hl_function" href="classllzk_1_1ProductAligner.html#aa5d6889335c1c5370f173be3d1e5b7a8">alignFuncs</a>(newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp());</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="keywordflow">if</span> (!newProduct) {</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    }</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>    <span class="comment">// ...and replace the two calls with a single call to @A::@product</span></div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>    OpBuilder callBuilder(compute);</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    CallOp newCall = <a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a956b90c2daf1f917bb1c2f7ac8263da8">CallOp::create</a>(</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>        callBuilder, callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), newProduct,</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>        compute.getOperands()</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    );</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>    compute-&gt;replaceAllUsesWith(newCall.getResults());</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  }</div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>}</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  };</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> compute : computeCalls) {</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="comment">// If there is exactly one @compute that matches a given @constrain, we can align them</span></div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="keyword">auto</span> matches = llvm::filter_to_vector(constrainCalls, [&amp;](CallOp constrain) {</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>      <span class="keywordflow">return</span> doCallsMatch(compute, constrain);</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    });</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span> </div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    <span class="keywordflow">if</span> (matches.size() == 1) {</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>      alignedCalls.insert({compute, matches[0]});</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>      computeCalls.remove(compute);</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>      constrainCalls.remove(matches[0]);</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    }</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  }</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordflow">if</span> (!computeCalls.empty() &amp;&amp; constrainCalls.empty()) {</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    product.emitWarning()</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>        .append(<span class="stringliteral">&quot;failed to align some @&quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, <span class="stringliteral">&quot; and @&quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>)</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        .report();</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  }</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [compute, constrain] : alignedCalls) {</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    <span class="comment">// If @A::@compute matches @A::@constrain, recursively align the functions in @A...</span></div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    <span class="keyword">auto</span> calleeTgt = compute.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af459db514098e5cbdaa007b6516d959c">getCalleeTarget</a>(tables);</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keywordflow">if</span> (failed(calleeTgt)) {</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    }</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    <span class="keyword">auto</span> newRoot = calleeTgt-&gt;get()-&gt;getParentOfType&lt;StructDefOp&gt;();</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    assert(newRoot);</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    FuncDefOp newProduct =</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>        <a class="code hl_function" href="classllzk_1_1ProductAligner.html#aa5d6889335c1c5370f173be3d1e5b7a8">alignFuncs</a>(newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp());</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    <span class="keywordflow">if</span> (!newProduct) {</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>    }</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    <span class="comment">// ...and replace the two calls with a single call to @A::@product</span></div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    OpBuilder callBuilder(compute);</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    CallOp newCall = <a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a956b90c2daf1f917bb1c2f7ac8263da8">CallOp::create</a>(</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>        callBuilder, callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}),</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>        compute.getResultTypes(), newProduct.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ad1b8b5a39d86f7ddb4329a0a94563b37">getFullyQualifiedName</a>(<span class="keyword">false</span>),</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>        CallOp::toVectorOfValueRange(compute.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#aa869f1fcc88268764557622db72c691b">getMapOperands</a>()), compute.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#af8f08106bd89bc2ec8abf876bf46ad32">getNumDimsPerMapAttr</a>(),</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>        compute.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8d81cd945d8f3898b56112f118ef74bd">getArgOperands</a>()</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>    );</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>    compute-&gt;replaceAllUsesWith(newCall.getResults());</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    compute-&gt;erase();</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    constrain-&gt;erase();</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  }</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>}</div>
 </div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span> </div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span><span class="keywordtype">bool</span> isValidRoot(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> root) {</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> computeFunc = root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ae7a2a5154b073961a3f7ad9a5adbff6b">getComputeFuncOp</a>();</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> constrainFunc = root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ac6582b2a0c2cf764c3c4755abad14af1">getConstrainFuncOp</a>();</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  <span class="keywordflow">if</span> (!computeFunc || !constrainFunc) {</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    root-&gt;emitError()</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>        .append(<span class="stringliteral">&quot;no &quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, <span class="stringliteral">&quot;/&quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>, <span class="stringliteral">&quot; to align&quot;</span>)</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>        .report();</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  }</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span></div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>}</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span> </div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>LogicalResult alignStartingAt(</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> root, SymbolTableCollection &amp;tables,</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    <a class="code hl_class" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a> &amp;equivalence</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>) {</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="keywordflow">if</span> (!isValidRoot(root)) {</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  }</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span> </div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <a class="code hl_class" href="classllzk_1_1ProductAligner.html">ProductAligner</a> aligner {tables, equivalence};</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  <span class="keywordflow">if</span> (!aligner.<a class="code hl_function" href="classllzk_1_1ProductAligner.html#aa5d6889335c1c5370f173be3d1e5b7a8">alignFuncs</a>(root, root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ae7a2a5154b073961a3f7ad9a5adbff6b">getComputeFuncOp</a>(), root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ac6582b2a0c2cf764c3c4755abad14af1">getConstrainFuncOp</a>())) {</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  }</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>}</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span> </div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> llzk::impl::ComputeConstrainToProductPassBase&lt;PassImpl&gt; {</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <span class="keyword">using </span>Base = ComputeConstrainToProductPassBase&lt;PassImpl&gt;;</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span> </div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span><span class="keywordtype">bool</span> isValidRoot(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> root) {</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> computeFunc = root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ae7a2a5154b073961a3f7ad9a5adbff6b">getComputeFuncOp</a>();</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> constrainFunc = root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ac6582b2a0c2cf764c3c4755abad14af1">getConstrainFuncOp</a>();</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span> </div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  <span class="keywordflow">if</span> (!computeFunc || !constrainFunc) {</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    root-&gt;emitError()</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>        .append(<span class="stringliteral">&quot;no &quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, <span class="stringliteral">&quot;/&quot;</span>, <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>, <span class="stringliteral">&quot; to align&quot;</span>)</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>        .report();</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  }</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span></div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span> </div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>}</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span> </div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>LogicalResult alignStartingAt(</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> root, SymbolTableCollection &amp;tables,</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>    <a class="code hl_class" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a> &amp;equivalence</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>) {</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  <span class="keywordflow">if</span> (!isValidRoot(root)) {</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  }</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span> </div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <a class="code hl_class" href="classllzk_1_1ProductAligner.html">ProductAligner</a> aligner {tables, equivalence};</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  <span class="keywordflow">if</span> (!aligner.<a class="code hl_function" href="classllzk_1_1ProductAligner.html#aa5d6889335c1c5370f173be3d1e5b7a8">alignFuncs</a>(root, root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ae7a2a5154b073961a3f7ad9a5adbff6b">getComputeFuncOp</a>(), root.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#ac6582b2a0c2cf764c3c4755abad14af1">getConstrainFuncOp</a>())) {</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  }</div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span> </div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a> = getOperation();</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    StructDefOp root;</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>    SymbolTableCollection tables;</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>    LightweightSignalEquivalenceAnalysis equivalence {</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>        getAnalysis&lt;LightweightSignalEquivalenceAnalysis&gt;()</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    };</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    <span class="comment">// Find the indicated root struct and make sure its a valid place to start aligning</span></div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.walk([&amp;root, <span class="keyword">this</span>](StructDefOp structDef) {</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>      <span class="keywordflow">if</span> (structDef.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a696d722a383a5f32a4811302213b7547">getSymName</a>() == rootStruct) {</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>        root = structDef;</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>      }</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    });</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>}</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span> </div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> llzk::impl::ComputeConstrainToProductPassBase&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  <span class="keyword">using </span>Base = ComputeConstrainToProductPassBase&lt;PassImpl&gt;;</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a> = getOperation();</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    StructDefOp root;</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    SymbolTableCollection tables;</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    LightweightSignalEquivalenceAnalysis equivalence {</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>        getAnalysis&lt;LightweightSignalEquivalenceAnalysis&gt;()</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    };</div>
 <div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span> </div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="keywordflow">if</span> (!root) {</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.emitError().append(<span class="stringliteral">&quot;could not find root struct \&quot;&quot;</span>, rootStruct, <span class="stringliteral">&quot;\&quot;&quot;</span>).report();</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>      signalPassFailure();</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    }</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    <span class="keywordflow">if</span> (failed(alignStartingAt(root, tables, equivalence))) {</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>      signalPassFailure();</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    }</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  }</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>};</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="comment">// Find the indicated root struct and make sure its a valid place to start aligning</span></div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.walk([&amp;root, <span class="keyword">this</span>](StructDefOp structDef) {</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>      <span class="keywordflow">if</span> (structDef.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a696d722a383a5f32a4811302213b7547">getSymName</a>() == rootStruct) {</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>        root = structDef;</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>      }</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    });</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    <span class="keywordflow">if</span> (!root) {</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>      <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.emitError().append(<span class="stringliteral">&quot;could not find root struct \&quot;&quot;</span>, rootStruct, <span class="stringliteral">&quot;\&quot;&quot;</span>).report();</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>      signalPassFailure();</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    }</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    <span class="keywordflow">if</span> (failed(alignStartingAt(root, tables, equivalence))) {</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>      signalPassFailure();</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    }</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  }</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>};</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aInlineStructsPass_8h_html"><div class="ttname"><a href="InlineStructsPass_8h.html">InlineStructsPass.h</a></div></div>
 <div class="ttc" id="aLLZKComputeConstrainToProductPass_8h_html"><div class="ttname"><a href="LLZKComputeConstrainToProductPass_8h.html">LLZKComputeConstrainToProductPass.h</a></div></div>
@@ -425,7 +432,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKComputeCon
 <div class="ttc" id="aLightweightSignalEquivalenceAnalysis_8h_html"><div class="ttname"><a href="LightweightSignalEquivalenceAnalysis_8h.html">LightweightSignalEquivalenceAnalysis.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Ops_8h_html"><div class="ttname"><a href="Struct_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aSymbolHelper_8h_html"><div class="ttname"><a href="SymbolHelper_8h.html">SymbolHelper.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1LightweightSignalEquivalenceAnalysis_html"><div class="ttname"><a href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">llzk::LightweightSignalEquivalenceAnalysis</a></div><div class="ttdef"><b>Definition</b> <a href="LightweightSignalEquivalenceAnalysis_8h_source.html#l00018">LightweightSignalEquivalenceAnalysis.h:18</a></div></div>
+<div class="ttc" id="aclassllzk_1_1LightweightSignalEquivalenceAnalysis_html"><div class="ttname"><a href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">llzk::LightweightSignalEquivalenceAnalysis</a></div><div class="ttdoc">A lightweight, positive-only equivalence analysis for signal values.</div><div class="ttdef"><b>Definition</b> <a href="LightweightSignalEquivalenceAnalysis_8h_source.html#l00033">LightweightSignalEquivalenceAnalysis.h:33</a></div></div>
 <div class="ttc" id="aclassllzk_1_1ProductAligner_html"><div class="ttname"><a href="classllzk_1_1ProductAligner.html">llzk::ProductAligner</a></div><div class="ttdef"><b>Definition</b> <a href="LLZKComputeConstrainToProductPass_8h_source.html#l00022">LLZKComputeConstrainToProductPass.h:22</a></div></div>
 <div class="ttc" id="aclassllzk_1_1ProductAligner_html_a45c40af358082614f7f454a51d0071eb"><div class="ttname"><a href="classllzk_1_1ProductAligner.html#a45c40af358082614f7f454a51d0071eb">llzk::ProductAligner::alignedStructs</a></div><div class="ttdeci">std::vector&lt; component::StructDefOp &gt; alignedStructs</div><div class="ttdef"><b>Definition</b> <a href="LLZKComputeConstrainToProductPass_8h_source.html#l00027">LLZKComputeConstrainToProductPass.h:27</a></div></div>
 <div class="ttc" id="aclassllzk_1_1ProductAligner_html_aa5d6889335c1c5370f173be3d1e5b7a8"><div class="ttname"><a href="classllzk_1_1ProductAligner.html#aa5d6889335c1c5370f173be3d1e5b7a8">llzk::ProductAligner::alignFuncs</a></div><div class="ttdeci">function::FuncDefOp alignFuncs(component::StructDefOp root, function::FuncDefOp compute, function::FuncDefOp constrain)</div><div class="ttdef"><b>Definition</b> <a href="#l00047">LLZKComputeConstrainToProductPass.cpp:47</a></div></div>
@@ -439,13 +446,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKComputeCon
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_a0ebb0aaf38174e75e358f4c30bbc3249"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">llzk::function::CallOp::calleeIsStructConstrain</a></div><div class="ttdeci">bool calleeIsStructConstrain()</div><div class="ttdoc">Return true iff the callee function name is FUNC_NAME_CONSTRAIN within a StructDefOp.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l01004">Ops.cpp:1004</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_a3d5497b458dab3daed12a8caec656159"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#a3d5497b458dab3daed12a8caec656159">llzk::function::CallOp::calleeIsStructCompute</a></div><div class="ttdeci">bool calleeIsStructCompute()</div><div class="ttdoc">Return true iff the callee function name is FUNC_NAME_COMPUTE within a StructDefOp.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00992">Ops.cpp:992</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_a4fc4f9a38b124a0829e71e09f3f9c101"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">llzk::function::CallOp::getCallee</a></div><div class="ttdeci">::mlir::SymbolRefAttr getCallee()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l00566">Ops.cpp.inc:566</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_a8d81cd945d8f3898b56112f118ef74bd"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#a8d81cd945d8f3898b56112f118ef74bd">llzk::function::CallOp::getArgOperands</a></div><div class="ttdeci">::mlir::Operation::operand_range getArgOperands()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00430">Ops.h.inc:430</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_a956b90c2daf1f917bb1c2f7ac8263da8"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#a956b90c2daf1f917bb1c2f7ac8263da8">llzk::function::CallOp::create</a></div><div class="ttdeci">static CallOp create(::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::mlir::TypeRange resultTypes, ::mlir::SymbolRefAttr callee, ::mlir::ValueRange argOperands={}, ::llvm::ArrayRef&lt;::mlir::Attribute &gt; templateParams={})</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l00604">Ops.cpp.inc:604</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_aa869f1fcc88268764557622db72c691b"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#aa869f1fcc88268764557622db72c691b">llzk::function::CallOp::getMapOperands</a></div><div class="ttdeci">::mlir::OperandRangeRange getMapOperands()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00434">Ops.h.inc:434</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_af459db514098e5cbdaa007b6516d959c"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#af459db514098e5cbdaa007b6516d959c">llzk::function::CallOp::getCalleeTarget</a></div><div class="ttdeci">::mlir::FailureOr&lt;::llzk::SymbolLookupResult&lt;::llzk::function::FuncDefOp &gt; &gt; getCalleeTarget(::mlir::SymbolTableCollection &amp;tables)</div><div class="ttdoc">Resolve and return the target FuncDefOp for this CallOp.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l01037">Ops.cpp:1037</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html_af8f08106bd89bc2ec8abf876bf46ad32"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html#af8f08106bd89bc2ec8abf876bf46ad32">llzk::function::CallOp::getNumDimsPerMapAttr</a></div><div class="ttdeci">::mlir::DenseI32ArrayAttr getNumDimsPerMapAttr()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00466">Ops.h.inc:466</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00801">Ops.h.inc:801</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a1528331dfa1145e218ea0e53461039a0"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a1528331dfa1145e218ea0e53461039a0">llzk::function::FuncDefOp::create</a></div><div class="ttdeci">static FuncDefOp create(::mlir::OpBuilder &amp;builder, ::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attrs={}, ::llvm::ArrayRef&lt;::mlir::DictionaryAttr &gt; argAttrs={})</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l01252">Ops.cpp.inc:1252</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a26194f94421533da0cc2af34b7fd56f9"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a26194f94421533da0cc2af34b7fd56f9">llzk::function::FuncDefOp::getFunctionType</a></div><div class="ttdeci">::mlir::FunctionType getFunctionType()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l01229">Ops.cpp.inc:1229</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a2c6888cd468ee9450e0a26d4b0d6bee8"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a2c6888cd468ee9450e0a26d4b0d6bee8">llzk::function::FuncDefOp::setAllowNonNativeFieldOpsAttr</a></div><div class="ttdeci">void setAllowNonNativeFieldOpsAttr(bool newValue=true)</div><div class="ttdoc">Add (resp. remove) the allow_non_native_field_ops attribute to (resp. from) the function def.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00290">Ops.cpp:290</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a3f074a0873a85e4502dc9f958cf5e2d0"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a3f074a0873a85e4502dc9f958cf5e2d0">llzk::function::FuncDefOp::hasAllowNonNativeFieldOpsAttr</a></div><div class="ttdeci">bool hasAllowNonNativeFieldOpsAttr()</div><div class="ttdoc">Return true iff the function def has the allow_non_native_field_ops attribute.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l01017">Ops.h.inc:1017</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ad1b8b5a39d86f7ddb4329a0a94563b37"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ad1b8b5a39d86f7ddb4329a0a94563b37">llzk::function::FuncDefOp::getFullyQualifiedName</a></div><div class="ttdeci">::mlir::SymbolRefAttr getFullyQualifiedName(bool requireParent=true)</div><div class="ttdoc">Return the full name for this function from the root module, including all surrounding symbol table n...</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00477">Ops.cpp:477</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ae71c6dc38ab6cf2859fc1bd6cbb380ac"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">llzk::function::FuncDefOp::getBody</a></div><div class="ttdeci">::mlir::Region &amp; getBody()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00871">Ops.h.inc:871</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1ReturnOp_html_a27ce73b4f5ee88ebaed4489633e6b64a"><div class="ttname"><a href="classllzk_1_1function_1_1ReturnOp.html#a27ce73b4f5ee88ebaed4489633e6b64a">llzk::function::ReturnOp::create</a></div><div class="ttdeci">static ReturnOp create(::mlir::OpBuilder &amp;builder, ::mlir::Location location)</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_8inc_source.html#l01666">Ops.cpp.inc:1666</a></div></div>
 <div class="ttc" id="allzk_2Util_2Constants_8h_html"><div class="ttname"><a href="llzk_2Util_2Constants_8h.html">Constants.h</a></div></div>

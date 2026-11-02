@@ -1,6 +1,5 @@
 var NAVTREEINDEX83 =
 {
-"syntax.html#pseudo-homogeneous":[4,1,0],
 "syntax.html#semantic-rules":[4,2],
 "syntax.html#syntax-1":[4,0],
 "syntax.html#translation-guidelines":[4,3],
