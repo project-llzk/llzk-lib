@@ -1,0 +1,58 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product %s | FileCheck %s
+
+// A POD record retains the same component handle while the component changes.
+// Moving Child::constrain to the compute call would observe value 0 instead of 1.
+!State = !struct.type<@Main>
+!Handles = !pod.type<[@state: !State]>
+module attributes {llzk.lang} {
+  struct.def @Child {
+    function.def @compute(%state: !State) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>, %state: !State) {
+      %value = struct.readm %state[@value] : !State, !felt.type
+      %one = felt.const 1
+      constrain.eq %value, %one : !felt.type
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.member @value : !felt.type {llzk.pub}
+    struct.member @child : !struct.type<@Child>
+    function.def @compute(%handles: !Handles) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %state = pod.read %handles[@state] : !Handles, !State
+      %zero = felt.const 0
+      struct.writem %state[@value] = %zero : !State, !felt.type
+      %child = function.call @Child::@compute(%state) : (!State) -> !struct.type<@Child>
+      struct.writem %self[@child] = %child : !struct.type<@Main>, !struct.type<@Child>
+      // Mutate through the first handle without changing the POD record.
+      %one = felt.const 1
+      struct.writem %state[@value] = %one : !State, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %handles: !Handles) {
+      %child = struct.readm %self[@child] : !struct.type<@Main>, !struct.type<@Child>
+      %state = pod.read %handles[@state] : !Handles, !State
+      function.call @Child::@constrain(%child, %state) : (!struct.type<@Child>, !State) -> ()
+      function.return
+    }
+  }
+}
+
+// NOTE: Checks generated with scripts/generate-test-checks.py and minimized.
+// CHECK-LABEL: struct.def @Main {
+// CHECK: function.def @product(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !pod.type<[@state: !struct.type<@Main>]>)
+// CHECK-NEXT: %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@Main> {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_8:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_6]][@state] : <[@state: !struct.type<@Main>]>, !struct.type<@Main> {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.const 0 {product_source = "compute"}
+// CHECK-NEXT: struct.writem %[[VAL_8]][@value] = %[[VAL_9]] : <@Main>, !felt.type {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @Child::@compute(%[[VAL_8]]) : (!struct.type<@Main>) -> !struct.type<@Child> {product_source = "compute"}
+// CHECK-NEXT: struct.writem %[[VAL_7]][@child] = %[[VAL_10]] : <@Main>, !struct.type<@Child> {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const 1 {product_source = "compute"}
+// CHECK-NEXT: struct.writem %[[VAL_8]][@value] = %[[VAL_11]] : <@Main>, !felt.type {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@child] : <@Main>, !struct.type<@Child> {product_source = "constrain"}
+// CHECK-NEXT: %[[VAL_13:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_6]][@state] : <[@state: !struct.type<@Main>]>, !struct.type<@Main> {product_source = "constrain"}
+// CHECK-NEXT: function.call @Child::@constrain(%[[VAL_12]], %[[VAL_13]]) : (!struct.type<@Child>, !struct.type<@Main>) -> () {product_source = "constrain"}
+// CHECK-NEXT: function.return %[[VAL_7]] : !struct.type<@Main>

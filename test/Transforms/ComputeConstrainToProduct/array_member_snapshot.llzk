@@ -1,0 +1,55 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product %s | FileCheck %s
+
+// The saved member is a snapshot taken before the array mutation. Matching the
+// child calls would constrain the mutated input instead of that snapshot.
+!Values = !array.type<1 x !felt.type>
+module attributes {llzk.lang} {
+  struct.def @Child {
+    function.def @compute(%input: !Values) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>, %input: !Values) {
+      %index = arith.constant 0 : index
+      %value = array.read %input[%index] : !Values, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.member @saved : !Values
+    struct.member @child : !struct.type<@Child>
+    function.def @compute(%inputs: !Values) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      struct.writem %self[@saved] = %inputs : !struct.type<@Main>, !Values
+      %index = arith.constant 0 : index
+      %one = felt.const 1
+      array.write %inputs[%index] = %one : !Values, !felt.type
+      %child = function.call @Child::@compute(%inputs) : (!Values) -> !struct.type<@Child>
+      struct.writem %self[@child] = %child : !struct.type<@Main>, !struct.type<@Child>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %inputs: !Values) {
+      %child = struct.readm %self[@child] : !struct.type<@Main>, !struct.type<@Child>
+      %saved = struct.readm %self[@saved] : !struct.type<@Main>, !Values
+      function.call @Child::@constrain(%child, %saved) : (!struct.type<@Child>, !Values) -> ()
+      function.return
+    }
+  }
+}
+
+// NOTE: Checks generated with scripts/generate-test-checks.py and minimized.
+// CHECK-LABEL:    struct.def @Main {
+// CHECK:      function.def @product(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Main> {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_8]][@saved] = %[[VAL_7]] : <@Main>, !array.type<1 x !felt.type> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 0 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:        array.write %[[VAL_7]]{{\[}}%[[VAL_9]]] = %[[VAL_10]] : <1 x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @Child::@compute(%[[VAL_7]]) : (!array.type<1 x !felt.type>) -> !struct.type<@Child>  {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_8]][@child] = %[[VAL_11]] : <@Main>, !struct.type<@Child> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@child] : <@Main>, !struct.type<@Child> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@saved] : <@Main>, !array.type<1 x !felt.type> {product_source = "constrain"}
+// CHECK-NEXT:        function.call @Child::@constrain(%[[VAL_12]], %[[VAL_13]]) : (!struct.type<@Child>, !array.type<1 x !felt.type>) -> ()  {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@Main>
