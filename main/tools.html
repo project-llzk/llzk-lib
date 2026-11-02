@@ -1058,6 +1058,7 @@ Options</h5>
 </ul>
 <p></em></em></p>
 <p><em><em>The default backend is <span class="tt">interpreter</span>, as the <span class="tt">execution-engine</span> does not currently support all LLZK features due to existing lowering limitations (e.g., in the <span class="tt">-llzk-flattening</span> pass).</em></em></p>
+<p><em><em>The execution engine supports <span class="tt">cast.tofelt</span> with <span class="tt">assert</span> (the default) and <span class="tt">wrap</span> overflow semantics. Index inputs follow the backend's signed 64-bit index convention: <span class="tt">assert</span> requires <span class="tt">0 &lt;= x &lt; p</span>, while <span class="tt">wrap</span> reduces the signed value modulo <span class="tt">p</span> to a representative in <span class="tt">[0, p-1]</span>, including the minimum signed index. Boolean inputs become zero or one in either mode. Reduction preserves the full index value before narrowing to the field representation. Other <span class="tt">cast.tofelt</span> overflow modes and non-assert <span class="tt">cast.toindex</span> modes remain unsupported by the execution engine and produce diagnostics.</em></em></p>
 <p><em><em></em></em></p>
 <h4 class="doxsection"><a class="anchor" id="preprocessing"></a>
 <em><em>Preprocessing</em></em></h4>
