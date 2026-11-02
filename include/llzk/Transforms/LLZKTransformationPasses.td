@@ -88,7 +88,11 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     another control-flow lowering pass before this pass; nested-region, successor-bearing, or
     multi-block constrain functions are rejected instead of being rewritten with
     component-lifetime auxiliary members. Compute functions may contain control flow; auxiliary
-    computations and writes are materialized on every return path.
+    computations and writes are materialized on every return path. When auxiliaries are needed,
+    each returned component must resolve through CFG or region-branch forwarding to one local
+    `struct.new` result that dominates that return. Different returns may use different allocations.
+    Unknown or ambiguous origins and non-dominating allocations are rejected. Auxiliary writes
+    target the resolved allocation immediately before the return, after preceding member updates.
 
     Rebuilding aggregate reads requires stable storage. The pass checks preceding constrain
     operations and compute input mutations using one storage-origin and effect analysis,
