@@ -1,0 +1,4 @@
+fixed:
+  - Enforce declared struct template argument types and felt fields, including nested type arguments in llzk.main, while preserving supported numeric conversions
+  - Reject type variables that reference parameters restricted to value types
+  - Normalize known-field felt arguments to their reduced value when monomorphizing fieldless felt parameters

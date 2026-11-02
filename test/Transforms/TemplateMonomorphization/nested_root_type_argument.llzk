@@ -1,0 +1,73 @@
+// RUN: llzk-opt %s --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s
+
+// A valid nested type argument remains accepted and reaches child specialization.
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@S<[!pod.type<[@child: !array.type<2 x !struct.type<@Inner::@S<[#felt<const 35 : !felt.type<"bn128">>]>>>]>]>>} {
+  poly.template @Inner {
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Inner::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Inner::@S<[@N]>>
+        function.return %self : !struct.type<@Inner::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@S<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @S {
+      struct.member @child : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Outer::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@Outer::@S<[@Ty]>>
+        function.return %self : !struct.type<@Outer::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@S<[@Ty]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@S__spec_0>} {
+// CHECK-NEXT:    poly.template @Inner {
+// CHECK-NEXT:      poly.param @N : !felt.type<"bn128">
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Inner::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Inner::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Inner::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Outer {
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        struct.member @child : !poly.tvar<@Ty>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Outer::@S<[@Ty]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Outer::@S<[@Ty]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@Outer::@S<[@Ty]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Outer::@S<[@Ty]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @S__spec_0 {
+// CHECK-NEXT:      struct.member @child : !pod.type<[@child: !array.type<2 x !struct.type<@S__spec_1>>]>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@S__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@S__spec_0>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@S__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@S__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [!pod.type<[@child: !array.type<2 x !struct.type<@Inner::@S<[#felt<const 35 : <"bn128">>]>>>]>], poly.origin = @Outer::@S, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @S__spec_1 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@S__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@S__spec_1>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@S__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@S__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 35 : <"bn128">> : !felt.type<"bn128">], poly.origin = @Inner::@S, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:  }

@@ -1,0 +1,63 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// A type-variable wrapper cannot turn a known value parameter into a type argument.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[7]>>} {
+  poly.template @Target {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Child {
+      struct.member @value : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> {
+        %self = struct.new : !struct.type<@Target::@Child<[@Ty]>>
+        function.return %self : !struct.type<@Target::@Child<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Child<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    // expected-note@+1 {{parameter declared here}}
+    poly.param @Value : index
+    struct.def @Main {
+      // expected-error@+1 {{type variable '!poly.tvar<@Value>' cannot reference parameter "@Value" with value type 'index'}}
+      struct.member @child : !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+      function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@Value]>>
+        %child = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        struct.writem %self[@child] = %child : !struct.type<@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!poly.tvar<@Value>]>>
+        function.return %self : !struct.type<@Caller::@Main<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@Value]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// The same rule applies inside aggregate type arguments.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[#felt<const 7 : !felt.type<"babybear">>]>>} {
+  poly.template @Target {
+    poly.param @Ty : !poly.tvar<@Ty>
+    struct.def @Child {
+      struct.member @value : !poly.tvar<@Ty>
+      function.def @compute() -> !struct.type<@Target::@Child<[@Ty]>> {
+        %self = struct.new : !struct.type<@Target::@Child<[@Ty]>>
+        function.return %self : !struct.type<@Target::@Child<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Child<[@Ty]>>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    // expected-note@+1 {{parameter declared here}}
+    poly.param @Value : !felt.type<"babybear">
+    struct.def @Main {
+      // expected-error@+1 {{type variable '!poly.tvar<@Value>' cannot reference parameter "@Value" with value type '!felt.type<"babybear">'}}
+      struct.member @child : !struct.type<@Target::@Child<[!pod.type<[@value: !poly.tvar<@Value>]>]>>
+      function.def @compute() -> !struct.type<@Caller::@Main<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@Value]>>
+        %child = function.call @Target::@Child::@compute() : () -> !struct.type<@Target::@Child<[!pod.type<[@value: !poly.tvar<@Value>]>]>>
+        struct.writem %self[@child] = %child : !struct.type<@Caller::@Main<[@Value]>>, !struct.type<@Target::@Child<[!pod.type<[@value: !poly.tvar<@Value>]>]>>
+        function.return %self : !struct.type<@Caller::@Main<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@Value]>>) { function.return }
+    }
+  }
+}

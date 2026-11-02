@@ -118,10 +118,11 @@ FailureOr<ArrayAttr> normalizeTypedArguments(
           }
         } else if (
             auto felt = dyn_cast<FeltConstAttr>(argument);
-            felt && (felt.getType() == feltType || !felt.getType().getFieldName())
+            felt &&
+            (!feltType.hasField() || !felt.getType().hasField() || felt.getType() == feltType)
         ) {
-          // Fieldless arguments acquire the parameter's field below when known;
-          // otherwise their exact raw literals must survive specialization.
+          // Fielded arguments contribute their reduced value, including when the parameter is
+          // fieldless. Fieldless arguments retain their raw literal until a field is known.
           llvm::DynamicAPInt number = felt.getReducedValueOrRaw();
           if (feltType.hasField()) {
             number = feltType.getField().reduce(number);

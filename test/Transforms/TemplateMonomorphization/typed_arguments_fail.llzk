@@ -1,6 +1,6 @@
-// Typed numeric argument conversion rejects out-of-range values.
 // RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
 
+// Typed numeric argument conversion rejects out-of-range values.
 // A field element above the signed index range cannot become an index.
 // expected-error@+1 {{field element #felt<const 9223372036854775808 : <"bn254">> : !felt.type<"bn254"> cannot be converted to index parameter @N: value exceeds the nonnegative signed 64-bit index range}}
 module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#felt<const 9223372036854775808 : !felt.type<"bn254">>]>>} {
@@ -312,6 +312,34 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ChildTemplate::@Child<[#
         function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
       }
       function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A fieldless local binding reaches the same modulus diagnostic as a direct fieldless argument.
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Parent<[#felt<const 7>]>>} {
+  poly.template @Inner {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Inner::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@Inner::@Child<[@N]>>
+        function.return %self : !struct.type<@Inner::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@Child<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @F : !felt.type
+    struct.def @Parent {
+      // expected-error@+1 {{field element #felt<const 7> : !felt.type cannot be converted to index parameter @N: a known field modulus is required}}
+      struct.member @child : !struct.type<@Inner::@Child<[@F]>>
+      function.def @compute() -> !struct.type<@Outer::@Parent<[@F]>> {
+        %self = struct.new : !struct.type<@Outer::@Parent<[@F]>>
+        function.return %self : !struct.type<@Outer::@Parent<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Parent<[@F]>>) { function.return }
     }
   }
 }
