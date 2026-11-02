@@ -1,0 +1,2 @@
+changed:
+  - Require `struct.writem` targets to be direct results of `struct.new` (rejecting writes to components passed as function arguments, returned by calls, or loaded from storage).

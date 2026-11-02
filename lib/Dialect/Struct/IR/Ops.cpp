@@ -742,8 +742,11 @@ LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
-  if (failed(checkSelfType(tables, *getParentRes, getComponent().getType(), *this, "base value"))) {
-    return failure(); // checkSelfType() already emits a sufficient error message
+  // Ensure it targets the result of a 'struct.new' operation in the current function (implied
+  // because `function.def` has `IsolatedFromAbove`). The `struct.new` verifier already ensures
+  // that result has struct type matching the enclosing struct and any template parameters.
+  if (!getComponent().getDefiningOp<CreateStructOp>()) {
+    return emitOpError("requires base value to be a 'struct.new' result");
   }
   // Perform the standard member ref checks.
   return verifySymbolUsesImpl(*this, tables);

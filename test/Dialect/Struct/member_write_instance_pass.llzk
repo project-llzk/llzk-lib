@@ -1,0 +1,46 @@
+// RUN: llzk-opt %s | FileCheck %s
+
+// Writes may target local instances, including across nested region boundaries.
+module attributes {llzk.lang} {
+  struct.def @LocalInstance {
+    struct.member @value : !felt.type
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@LocalInstance> {
+      %self = struct.new : !struct.type<@LocalInstance>
+      struct.writem %self[@value] = %value : !struct.type<@LocalInstance>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %c1 step %c1 {
+        struct.writem %self[@value] = %value : !struct.type<@LocalInstance>, !felt.type
+        %local = struct.new : !struct.type<@LocalInstance>
+        struct.writem %local[@value] = %value : !struct.type<@LocalInstance>, !felt.type
+      }
+      function.return %self : !struct.type<@LocalInstance>
+    }
+
+    function.def @constrain(%self: !struct.type<@LocalInstance>, %value: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @LocalInstance {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@LocalInstance> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@LocalInstance>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@LocalInstance>, !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_3]] {
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@LocalInstance>, !felt.type
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@LocalInstance>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@value] = %[[VAL_0]] : <@LocalInstance>, !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@LocalInstance>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@LocalInstance>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
