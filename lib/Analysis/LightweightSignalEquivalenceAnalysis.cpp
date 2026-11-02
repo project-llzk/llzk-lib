@@ -221,7 +221,7 @@ static bool normalizePodStorage(
 // See through any `poly.unifiable_cast` ops
 Value normalizeAlias(Value pod) {
   if (auto castOp = pod.getDefiningOp<polymorphic::UnifiableCastOp>()) {
-    return normalizeAlias(castOp->getOperand(0));
+    return normalizeAlias(castOp.getInput());
   }
   return pod;
 }
