@@ -3374,7 +3374,7 @@ Results:</h4>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `struct.writem` $component `[` $member_name `]` `=` $val `:` type($component) `,` type($val) attr-dict</div>
 </div><!-- fragment --><p>This operation copies a value to a named member in a struct/component. It does not create a pointer or alias between the source value and the member's storage. When the value has <span class="tt">struct.type</span>, the copied value is an identity-bearing handle to the same component instance.</p>
-<p>A struct can write its own members. However, writing members of other components is not allowed.</p>
+<p>The target component must be a direct result of <span class="tt">struct.new</span>. Combined with function isolation and <span class="tt">struct.new</span> verification, this ensures that the instance is created in the current function and has the enclosing struct's type. Thus, writing to a component passed as a function argument, returned by a call, or loaded from storage is not allowed, even if it has the same struct type.</p>
 <p>Traits: <span class="tt">WitnessGen</span></p>
 <p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Write <a class="el" href="LICENSE_8txt.html#a99e0c7c6bd1082fe4cf97f0912e847d7">on</a> ::mlir::SideEffects::DefaultResource}</span></p>
