@@ -21,6 +21,7 @@
 
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/ValueCopy.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
@@ -39,7 +40,7 @@ namespace llzk {
 
 namespace {
 
-/// Represents an "observation" into a nested POD record; either a directly reading into an SSA
+/// Represents an "observation" into a nested POD record; either by directly reading into an SSA
 /// value via `pod.read`, or copying the contents via a pod-typed `struct.writem`
 struct PodObservation {
   // The root POD being observed
@@ -217,10 +218,18 @@ static bool normalizePodStorage(
   return true;
 }
 
+// See through any `poly.unifiable_cast` ops
+Value normalizeAlias(Value pod) {
+  if (auto castOp = pod.getDefiningOp<polymorphic::UnifiableCastOp>()) {
+    return normalizeAlias(castOp->getOperand(0));
+  }
+  return pod;
+}
+
 static std::optional<PodObservation> normalizePodRead(ReadPodOp read) {
   PodObservation result;
   SmallVector<StringAttr> path {read.getRecordNameAttr()};
-  if (!normalizePodStorage(read.getPodRef(), read, path, result)) {
+  if (!normalizePodStorage(normalizeAlias(read.getPodRef()), read, path, result)) {
     return std::nullopt;
   }
   return result;
@@ -245,15 +254,9 @@ static Value forwardScalarMemberRead(Value value) {
 LightweightSignalEquivalenceAnalysis::LightweightSignalEquivalenceAnalysis(Operation *) {}
 
 bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(Value v1, Value v2) {
-  if (v1 == v2) {
-    return true;
-  }
-  if (equivalentSignals.isEquivalent(v1, v2)) {
-    return true;
-  }
-
   Value originalV1 = v1;
   Value originalV2 = v2;
+
   v1 = forwardScalarMemberRead(v1);
   v2 = forwardScalarMemberRead(v2);
   LLVM_DEBUG(llvm::outs() << "Asking for equivalence between " << v1 << " and " << v2 << '\n');
