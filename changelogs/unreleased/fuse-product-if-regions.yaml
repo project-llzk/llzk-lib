@@ -1,0 +1,5 @@
+added:
+  - Fusion for matching compute/constrain `scf.if` regions in product functions
+
+changed:
+  - Preserve eligible constrain-side signal reads in source order, compatible conditional and yield attributes, conditional source locations, and whether loop bounds use signed or unsigned comparison during product control-flow fusion; leave pairs unfused when matching is ambiguous or movement would reorder observable effects
