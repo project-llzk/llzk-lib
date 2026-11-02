@@ -194,7 +194,7 @@ Functions</h2></td></tr>
 <li><span class="tt">upper_bound</span> and <span class="tt">step</span> do not depend on any loop-carried variables</li>
 <li>The final yielded value of the induction variable does not have uses outside the loop</li>
 </ul>
-<p>This pass begins by identifying the induction variable, lower and upper bounds, and step (<span class="tt">ForOp::parseInfo</span>), then materializes a for loop with these parameters and copies the <span class="tt">before</span> and <span class="tt">after</span> blocks into the body, drops the yielded induction variable, and remaps uses of the other yielded values (<span class="tt">transformWhileToFor</span>). </p>
+<p>This pass begins by identifying the induction variable, lower and upper bounds, and step (<span class="tt">ForOp::parseInfo</span>), then materializes a for loop with these parameters and copies the <span class="tt">before</span> and <span class="tt">after</span> blocks into the body, and remaps uses of the yielded values (<span class="tt">transformWhileToFor</span>). When the condition region is not pure, it is also executed after the for loop using the final yielded values, including the original induction variable. Otherwise, that variable is dropped. </p>
 
 <p class="definition">Definition in file <a class="el" href="LLZKWhileToForPass_8cpp_source.html">LLZKWhileToForPass.cpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
@@ -210,7 +210,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKWhileToForPass_8cpp_source.html#l00052">52</a> of file <a class="el" href="LLZKWhileToForPass_8cpp_source.html">LLZKWhileToForPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKWhileToForPass_8cpp_source.html#l00053">53</a> of file <a class="el" href="LLZKWhileToForPass_8cpp_source.html">LLZKWhileToForPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -226,7 +226,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKWhileToForPass_8cpp_source.html#l00048">48</a> of file <a class="el" href="LLZKWhileToForPass_8cpp_source.html">LLZKWhileToForPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKWhileToForPass_8cpp_source.html#l00049">49</a> of file <a class="el" href="LLZKWhileToForPass_8cpp_source.html">LLZKWhileToForPass.cpp</a>.</p>
 
 </div>
 </div>
