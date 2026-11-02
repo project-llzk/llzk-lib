@@ -594,7 +594,8 @@ private:
       return bind({WitnessVal(field.reduce(maxMask ^ *feltValue))});
     }
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
-      const Field &resultField = intToFeltOp.getType().getField();
+      felt::FeltType resultType = intToFeltOp.getType(); // local avoids dangling ref warning
+      const Field &resultField = resultType.getField();
       auto operand = lookup(intToFeltOp.getValue(), scope);
       if (!operand) {
         return operand.takeError();

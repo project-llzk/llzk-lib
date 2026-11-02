@@ -1,0 +1,214 @@
+// RUN: llzk-opt --llzk-while-to-for --verify-diagnostics %s | FileCheck %s
+
+// These annotations agree with the original BN128 loops; all arithmetic fits the field.
+module attributes {llzk.lang} {
+  // The two body IVs fit in index, but the final increment reaches INT64_MAX + 1.
+  function.def @exit_overflow(%array: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %lo = felt.const 9223372036854775804 : <"bn128">
+    %hi = felt.const 9223372036854775807 : <"bn128">
+    %step = felt.const 2 : <"bn128">
+    %zero = arith.constant 0 : index
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: loopbounds final induction value cannot be represented as an index}}
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      array.write %array[%zero] = %i : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %next = felt.add %i, %step : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<9223372036854775804 to 9223372036854775807 step 2>}
+    function.return
+  }
+
+  // Trip-count rounding and the final value require more than signed 64-bit arithmetic.
+  function.def @wide_exit_overflow(%array: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %lo = felt.const 0 : <"bn128">
+    %hi = felt.const 9223372036854775807 : <"bn128">
+    %step = felt.const 9223372036854775806 : <"bn128">
+    %zero = arith.constant 0 : index
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: loopbounds final induction value cannot be represented as an index}}
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      array.write %array[%zero] = %i : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %next = felt.add %i, %step : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 9223372036854775807 step 9223372036854775806>}
+    function.return
+  }
+
+  // An exact final value of INT64_MAX is representable.
+  function.def @exit_at_index_max(%array: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %lo = felt.const 9223372036854775803 : <"bn128">
+    %hi = felt.const 9223372036854775807 : <"bn128">
+    %step = felt.const 2 : <"bn128">
+    %zero = arith.constant 0 : index
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      array.write %array[%zero] = %i : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %next = felt.add %i, %step : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<9223372036854775803 to 9223372036854775807 step 2>}
+    function.return
+  }
+
+  // Overshooting the exclusive upper bound is safe when the final value still fits.
+  function.def @safe_overshoot(%array: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %lo = felt.const 9223372036854775803 : <"bn128">
+    %hi = felt.const 9223372036854775806 : <"bn128">
+    %step = felt.const 2 : <"bn128">
+    %zero = arith.constant 0 : index
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      array.write %array[%zero] = %i : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %next = felt.add %i, %step : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<9223372036854775803 to 9223372036854775806 step 2>}
+    function.return
+  }
+
+  // The trip-count numerator exceeds INT64_MAX, but the one-iteration loop is safe.
+  function.def @full_index_step(%array: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %lo = felt.const 0 : <"bn128">
+    %hi = felt.const 9223372036854775807 : <"bn128">
+    %step = felt.const 9223372036854775807 : <"bn128">
+    %zero = arith.constant 0 : index
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      array.write %array[%zero] = %i : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %next = felt.add %i, %step : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 9223372036854775807 step 9223372036854775807>}
+    function.return
+  }
+
+  // An empty loop performs no increment, even with a maximal lower bound and step.
+  function.def @empty_inverted_range(%array: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %lo = felt.const 9223372036854775807 : <"bn128">
+    %hi = felt.const 0 : <"bn128">
+    %step = felt.const 9223372036854775807 : <"bn128">
+    %zero = arith.constant 0 : index
+    scf.while (%i = %lo) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+      %cond = bool.cmp lt(%i, %hi) : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.condition(%cond) %i : !felt.type<"bn128">
+    } do {
+    ^bb0(%i: !felt.type<"bn128">):
+      array.write %array[%zero] = %i : !array.type<1 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %next = felt.add %i, %step : !felt.type<"bn128">, !felt.type<"bn128">
+      scf.yield %next : !felt.type<"bn128">
+    } attributes {llzk.loopbounds = #llzk.loopbounds<9223372036854775807 to 0 step 9223372036854775807>}
+    function.return
+  }
+
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @exit_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775804 : <"bn128">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_6]], %[[VAL_2]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.condition(%[[VAL_7]]) %[[VAL_6]] : !felt.type<"bn128">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        array.write %[[VAL_0]]{{\[}}%[[VAL_4]]] = %[[VAL_8]] : <1 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_8]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.yield %[[VAL_9]] : !felt.type<"bn128">
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<9223372036854775804 to 9223372036854775807 step 2>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wide_exit_overflow(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775806 : <"bn128">
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_16:[0-9a-zA-Z_\.]+]] = %[[VAL_11]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_16]], %[[VAL_12]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.condition(%[[VAL_17]]) %[[VAL_16]] : !felt.type<"bn128">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_14]]] = %[[VAL_18]] : <1 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_18]], %[[VAL_13]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.yield %[[VAL_19]] : !felt.type<"bn128">
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 9223372036854775807 step 9223372036854775806>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @exit_at_index_max(%[[VAL_20:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775803 : <"bn128">
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775803 : index
+// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      scf.for %[[VAL_28:[0-9a-zA-Z_\.]+]] = %[[VAL_25]] to %[[VAL_26]] step %[[VAL_27]] {
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_28]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_29]], %[[VAL_22]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_20]]{{\[}}%[[VAL_24]]] = %[[VAL_29]] : <1 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_29]], %[[VAL_23]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<9223372036854775803 to 9223372036854775807 step 2>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @safe_overshoot(%[[VAL_32:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775803 : <"bn128">
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775806 : <"bn128">
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775803 : index
+// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775806 : index
+// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      scf.for %[[VAL_40:[0-9a-zA-Z_\.]+]] = %[[VAL_37]] to %[[VAL_38]] step %[[VAL_39]] {
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_40]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_41]], %[[VAL_34]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_32]]{{\[}}%[[VAL_36]]] = %[[VAL_41]] : <1 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_41]], %[[VAL_35]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<9223372036854775803 to 9223372036854775806 step 2>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @full_index_step(%[[VAL_44:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_47:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_48:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_49:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_50:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_51:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      scf.for %[[VAL_52:[0-9a-zA-Z_\.]+]] = %[[VAL_49]] to %[[VAL_50]] step %[[VAL_51]] {
+// CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_52]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_53]], %[[VAL_46]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_44]]{{\[}}%[[VAL_48]]] = %[[VAL_53]] : <1 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_55:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_53]], %[[VAL_47]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 9223372036854775807 step 9223372036854775807>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @empty_inverted_range(%[[VAL_56:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_57:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_58:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_59:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775807 : <"bn128">
+// CHECK-NEXT:      %[[VAL_60:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_61:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[VAL_62:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_63:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      scf.for %[[VAL_64:[0-9a-zA-Z_\.]+]] = %[[VAL_61]] to %[[VAL_62]] step %[[VAL_63]] {
+// CHECK-NEXT:        %[[VAL_65:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_64]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_66:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_65]], %[[VAL_58]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_56]]{{\[}}%[[VAL_60]]] = %[[VAL_65]] : <1 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_67:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_65]], %[[VAL_59]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<9223372036854775807 to 0 step 9223372036854775807>}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

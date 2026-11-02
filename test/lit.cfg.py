@@ -69,9 +69,14 @@ tools = [
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
 
-llvm_config.with_environment('PYTHONPATH', [
-    os.path.join(config.mlir_obj_dir, 'python_packages', 'llzk'),
-], append_path=True)
+# Keep MLIR's installed package on the path and load LLZK from this build.
+llvm_config.with_system_environment(['PYTHONPATH'])
+if config.enable_bindings_python:
+    config.available_features.add('python-bindings')
+    config.substitutions.append(('%python', shlex.quote(config.python_executable)))
+    llvm_config.with_environment('PYTHONPATH', [
+        os.path.join(config.llzk_obj_root, 'python'),
+    ], append_path=True)
 
 if config.per_test_coverage:
     config.environment["LLVM_PROFILE_FILE"] = "covdata-%p.profraw"

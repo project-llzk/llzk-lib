@@ -1,0 +1,86 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt %t/test.llzk --llzk-while-to-for --verify-diagnostics > %t/fieldless.llzk
+// RUN: FileCheck %s < %t/fieldless.llzk
+// RUN: not llzk-witgen %t/fieldless.llzk --inputs %t/input.json --backend=interpreter 2>&1 | FileCheck %s --check-prefix=FIELD-ERROR
+// RUN: not llzk-witgen %t/fieldless.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=FIELD-ERROR
+// RUN: sed 's/!felt.type/!felt.type<"babybear">/g' %t/test.llzk > %t/original.llzk
+// RUN: sed 's/!felt.type/!felt.type<"babybear">/g' %t/fieldless.llzk > %t/converted.llzk
+// RUN: llzk-witgen %t/original.llzk --inputs %t/input.json > %t/original.json
+// RUN: diff %t/expected.json %t/original.json
+// RUN: llzk-witgen %t/converted.llzk --inputs %t/input.json > %t/converted.json
+// RUN: diff %t/original.json %t/converted.json
+// RUN: llzk-opt %t/converted.llzk --canonicalize > %t/folded.llzk
+// RUN: llzk-witgen %t/folded.llzk --inputs %t/input.json > %t/folded.json
+// RUN: diff %t/original.json %t/folded.json
+
+// Convert while the induction variable is fieldless, then explicitly supply BabyBear
+// before execution: witgen requires concrete fields and does not infer a default.
+// Integer IVs p+1, p+2, p+3 must wrap to 1, 2, 3. Decimal accumulation checks both
+// the sequence and trip count. Runtime wrapping is supported by the interpreter.
+// All source felts are arguments so the substitution also covers every felt type
+// in the printed IR, without needing to specialize fieldless constant attributes.
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @sequence : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "zero"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "one"}, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "four"}, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "ten"}) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 2013265922 : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 2013265925 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_5]] to %[[VAL_6]] step %[[VAL_7]] iter_args(%[[VAL_10:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_9]] : index, !felt.type
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_11]], %[[VAL_2]]) : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_13]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_11]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_14]] : !felt.type
+// CHECK-NEXT:        } {llzk.loopbounds = #llzk.loopbounds<2013265922 to 2013265925 step 1>}
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@sequence] = %[[VAL_8]] : <@Main>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// FIELD-ERROR-LABEL: llzk-witgen error: llzk-witgen failed collecting 'felt.type' fields
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sequence : !felt.type {llzk.pub}
+    function.def @compute(
+      %zero: !felt.type {function.arg_name = "zero"},
+      %one: !felt.type {function.arg_name = "one"},
+      %four: !felt.type {function.arg_name = "four"},
+      %ten: !felt.type {function.arg_name = "ten"}
+    ) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %end, %sequence = scf.while (%i = %one, %acc = %zero) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+        %cond = bool.cmp lt(%i, %four) : !felt.type, !felt.type
+        scf.condition(%cond) %i, %acc : !felt.type, !felt.type
+      } do {
+      ^bb0(%i: !felt.type, %acc: !felt.type):
+        %shifted = felt.mul %acc, %ten : !felt.type, !felt.type
+        %next_acc = felt.add %shifted, %i : !felt.type, !felt.type
+        %next = felt.add %i, %one : !felt.type, !felt.type
+        scf.yield %next, %next_acc : !felt.type, !felt.type
+      } attributes {llzk.loopbounds = #llzk.loopbounds<2013265922 to 2013265925 step 1>}
+      struct.writem %self[@sequence] = %sequence : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %zero: !felt.type, %one: !felt.type, %four: !felt.type, %ten: !felt.type) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{"zero": "0", "one": "1", "four": "4", "ten": "10"}
+
+//--- expected.json
+{
+  "sequence": "123"
+}

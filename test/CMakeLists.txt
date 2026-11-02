@@ -2,11 +2,21 @@
 find_program(LLVM_EXTERNAL_LIT NAMES lit llvm-lit ${LLVM_EXTERNAL_LIT} REQUIRED)
 message(STATUS "Using lit: ${LLVM_EXTERNAL_LIT}")
 
+# LLVM runs LLVM_EXTERNAL_LIT through Python when Python3_EXECUTABLE is set.
+# Nix's lit is a shell wrapper that must run to establish its Python environment.
+# A Python trampoline also works with the executable provided by a manual build.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(LLZK_LIT_EXECUTABLE "${LLVM_EXTERNAL_LIT}")
+configure_file(lit-launcher.py.in lit-launcher.py @ONLY)
+set(LLVM_EXTERNAL_LIT "${CMAKE_CURRENT_BINARY_DIR}/lit-launcher.py")
+
 set(LLZK_TEST_DEPENDS llzk-opt llzk-smt-check llzk-witgen llzk-tblgen llzk-translate r1cs-opt)
 
 set(LLZK_ENABLE_BINDINGS_PYTHON_STRING "False")
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   set(LLZK_ENABLE_BINDINGS_PYTHON_STRING "True")
+  list(APPEND LLZK_TEST_DEPENDS LLZKPythonDialectModules
+       LLZKPythonExtensionModules)
 endif()
 
 set(LLZK_LIT_COMPATIBLE_COVERAGE_STRING "False")

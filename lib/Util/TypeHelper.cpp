@@ -1120,7 +1120,7 @@ verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArra
     llvm::interleaveComma(dimsFromArrReduced, ss, appendOne);
     ss << "] with [";
     llvm::interleaveComma(dimsFromSubArr, ss, appendOne);
-    ss << "]";
+    ss << ']';
     return emitError().append(message);
   }
 

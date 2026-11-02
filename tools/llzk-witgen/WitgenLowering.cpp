@@ -1495,7 +1495,8 @@ private:
       if (failed(operand)) {
         return failure();
       }
-      const Field &resultField = intToFelt.getType().getField();
+      felt::FeltType resultType = intToFelt.getType(); // local avoids dangling ref warning
+      const Field &resultField = resultType.getField();
       auto dstType = IntegerType::get(builder.getContext(), resultField.bitWidth());
       Value lowered;
       if (isa<IndexType>((*operand).getType())) {

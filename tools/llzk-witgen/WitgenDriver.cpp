@@ -200,7 +200,7 @@ static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &opti
 llvm::Expected<llvm::json::Value>
 runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions &options) {
   if (auto err = preprocessModule(moduleOp, options)) {
-    return std::move(err);
+    return err;
   }
 
   FieldSet fields;
