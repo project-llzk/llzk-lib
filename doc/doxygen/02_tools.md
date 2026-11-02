@@ -186,6 +186,15 @@ form used by the witgen tests, namely JSON integers or decimal strings.
 The default backend is `interpreter`, as the `execution-engine` does not currently
 support all LLZK features due to existing lowering limitations (e.g., in the `-llzk-flattening` pass).
 
+The execution engine supports `cast.tofelt` with `assert` (the default) and
+`wrap` overflow semantics. Index inputs follow the backend's signed 64-bit index
+convention: `assert` requires `0 <= x < p`, while `wrap` reduces the signed value
+modulo `p` to a representative in `[0, p-1]`, including the minimum signed index.
+Boolean inputs become zero or one in either mode. Reduction preserves the full
+index value before narrowing to the field representation.
+Other `cast.tofelt` overflow modes and non-assert `cast.toindex` modes remain
+unsupported by the execution engine and produce diagnostics.
+
 #### Preprocessing
 
 Before execution, `llzk-witgen` performs the preprocessing needed to make

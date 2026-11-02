@@ -1,0 +1,65 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt %t/test.llzk --llzk-while-to-for --canonicalize > %t/for.llzk
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %t/for.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/for.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+// Runtime wrapping in a loop body must agree across backends and survive the
+// loopbounds-driven while-to-for conversion, including negative and >= p inputs.
+
+//--- test.llzk
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @negative : !array.type<4 x !felt.type<"babybear">> {llzk.pub}
+    struct.member @above_prime : !array.type<4 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(%zero: !felt.type<"babybear"> {function.arg_name = "zero"}) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %negative = array.new : !array.type<4 x !felt.type<"babybear">>
+      %above_prime = array.new : !array.type<4 x !felt.type<"babybear">>
+      %upper = felt.const 4 : !felt.type<"babybear">
+      %step = felt.const 1 : !felt.type<"babybear">
+      %two = arith.constant 2 : index
+      %prime = arith.constant 2013265921 : index
+      scf.while (%i = %zero) : (!felt.type<"babybear">) -> !felt.type<"babybear"> {
+        %cond = bool.cmp lt(%i, %upper) : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.condition(%cond) %i : !felt.type<"babybear">
+      } do {
+      ^bb0(%i: !felt.type<"babybear">):
+        %index = cast.toindex %i : !felt.type<"babybear">
+        %below = arith.subi %index, %two : index
+        %above = arith.addi %index, %prime : index
+        %a = cast.tofelt wrap %below : index, !felt.type<"babybear">
+        %b = cast.tofelt wrap %above : index, !felt.type<"babybear">
+        array.write %negative[%index] = %a : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+        array.write %above_prime[%index] = %b : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+        %next = felt.add %i, %step : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.yield %next : !felt.type<"babybear">
+      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 4 step 1>}
+      struct.writem %self[@negative] = %negative : !struct.type<@Main>, !array.type<4 x !felt.type<"babybear">>
+      struct.writem %self[@above_prime] = %above_prime : !struct.type<@Main>, !array.type<4 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %zero: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: {
+// CHECK-NEXT:    "above_prime": [
+// CHECK-NEXT:      "0",
+// CHECK-NEXT:      "1",
+// CHECK-NEXT:      "2",
+// CHECK-NEXT:      "3"
+// CHECK-NEXT:    ],
+// CHECK-NEXT:    "negative": [
+// CHECK-NEXT:      "2013265919",
+// CHECK-NEXT:      "2013265920",
+// CHECK-NEXT:      "0",
+// CHECK-NEXT:      "1"
+// CHECK-NEXT:    ]
+// CHECK-NEXT:  }
+
+//--- input.json
+{"zero": "0"}
