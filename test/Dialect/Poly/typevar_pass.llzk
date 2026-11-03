@@ -65,6 +65,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TA {
 // CHECK-NEXT:      poly.param @Ty
@@ -115,6 +116,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // B2 and B3 are equivalent, latter uses the redundant !poly.tvar<@X> instead of just @X
@@ -179,6 +181,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentB1 {
 // CHECK-NEXT:      poly.param @T
@@ -231,6 +234,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // Like the previous but demonstrates the permissiveness of using struct parameters and type variables.
@@ -309,6 +313,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentB4 {
 // CHECK-NEXT:      poly.param @T
@@ -373,6 +378,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // TypeVarType in CreateArrayOp (`array.new`), exact match
@@ -394,6 +400,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentC {
 // CHECK-NEXT:      poly.param @T
@@ -411,6 +418,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // TypeVarType in WriteArrayOp and ReadArrayOp, exact match
@@ -445,6 +453,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentD {
 // CHECK-NEXT:      poly.param @T
@@ -473,6 +482,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // TypeVarType in WriteArrayOp and ReadArrayOp, non-exact match via unification of `tvar`
@@ -509,6 +519,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentE {
 // CHECK-NEXT:      poly.param @T
@@ -539,6 +550,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // TypeVarType in EmitContainmentOp, non-exact match via unification of `tvar`
@@ -576,6 +588,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentF1 {
 // CHECK-NEXT:      poly.param @C : index
@@ -607,6 +620,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -664,6 +678,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TUnaryFelt {
 // CHECK-NEXT:      poly.param @T
@@ -720,6 +735,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -759,6 +775,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentG {
 // CHECK-NEXT:      poly.param @S : index
@@ -791,6 +808,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -868,6 +886,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    module @risc0 {
 // CHECK-NEXT:      struct.def @Reg {
@@ -931,6 +950,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -963,6 +983,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @f {
 // CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
@@ -986,7 +1007,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          function.call @synth::@synth<[?]>() : () -> ()
 // CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@ComponentC::@ComponentC<[]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentC::@ComponentC<[]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentC::@ComponentC<[]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }

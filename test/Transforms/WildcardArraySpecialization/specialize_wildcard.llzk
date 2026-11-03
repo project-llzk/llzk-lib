@@ -32,6 +32,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ComponentD>, %a: !array.type<1 x !felt.type>) { function.return }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @"Log_!a<f:1>" {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !string.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !struct.type<@"Log_!a<f:1>"> attributes {function.allow_witness} {
@@ -45,21 +46,22 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def private @"Log$$extern_!a<f:1>"(!string.type, !array.type<1 x !felt.type>) -> !felt.type attributes {extern}
 // CHECK-NEXT:    function.def @call_log_extern(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = string.new "extern: "
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @"Log$$extern_!a<f:1>"(%[[VAL_7]], %[[VAL_6]]) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @"Log$$extern_!a<f:1>"(%[[VAL_7]], %[[VAL_6]]) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_8]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @ComponentD {
-// CHECK-NEXT:      function.def @compute(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !struct.type<@ComponentD> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = string.new "test: "
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentD>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = function.call @"Log_!a<f:1>"::@compute(%[[VAL_11]], %[[VAL_10]]) : (!string.type, !array.type<1 x !felt.type>) -> !struct.type<@"Log_!a<f:1>">
-// CHECK-NEXT:        function.return %[[VAL_12]] : !struct.type<@ComponentD>
+// CHECK-NEXT:      function.def @compute(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !struct.type<@ComponentD> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = string.new "test: "
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentD>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @"Log_!a<f:1>"::@compute(%[[VAL_10]], %[[VAL_9]]) : (!string.type, !array.type<1 x !felt.type>) -> !struct.type<@"Log_!a<f:1>">
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@ComponentD>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentD>, %[[VAL_16:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentD>, %[[VAL_14:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -99,6 +101,7 @@ module attributes {llzk.lang} {
     function.return %0 : !felt.type
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @"h\1Aead_!a<f:1>"(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = felt.const  0
@@ -135,6 +138,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_16]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -151,6 +155,7 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @"takes_two_!a<f:1>_!a<f:2>"(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) {
 // CHECK-NEXT:      function.return
@@ -160,6 +165,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -173,6 +179,7 @@ module attributes {llzk.lang} {
     function.return %1 : !array.type<1 x !felt.type>
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @"id_!a<f:1>"(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<1 x !felt.type>
@@ -182,6 +189,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<1 x !felt.type>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -201,6 +209,7 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NOT:    struct.def @"Log_!a<f:1>"
 // CHECK-NEXT:    struct.def @Log {

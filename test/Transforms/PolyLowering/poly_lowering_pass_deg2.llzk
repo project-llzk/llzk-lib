@@ -19,6 +19,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
 // CHECK-NEXT:    struct.def @CmpConstraint {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
@@ -40,6 +41,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // Tests that polynomials are lowered to degree 1 before being passed into constraint calls
@@ -78,6 +80,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModA1>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ModA1>} {
 // CHECK-NEXT:    struct.def @ModA2 {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@ModA2> attributes {function.allow_witness} {
@@ -129,6 +132,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModA1>} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_3 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // Like the prior test but with call to `@ModB2::@compute`.
@@ -169,6 +173,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModB1>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ModB1>} {
 // CHECK-NEXT:    struct.def @ModB2 {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@ModB2> attributes {function.allow_witness} {
@@ -222,6 +227,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModB1>} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_3 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 // Tests that polynomials are lowered to degree 1 before being passed into constraint calls
@@ -269,6 +275,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModC1>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ModC1>} {
 // CHECK-NEXT:    struct.def @ModC2 {
 // CHECK-NEXT:      struct.member @val : !felt.type {llzk.pub}
@@ -298,35 +305,35 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModC1>} {
 // CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.new : <@ModC1>
 // CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_13]][@mod2] : <@ModC1>, !struct.type<@ModC2>
 // CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_14]][@val] : <@ModC2>, !felt.type
-// CHECK-NEXT:        %[[CHILD_SQ:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_1] = %[[CHILD_SQ]] : <@ModC1>, !felt.type
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_2] = %[[VAL_16]] : <@ModC1>, !felt.type
-// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_16]], %[[VAL_16]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_3] = %[[VAL_17]] : <@ModC1>, !felt.type
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_16]], %[[VAL_11]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_4] = %[[VAL_18]] : <@ModC1>, !felt.type
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_16]] : <@ModC1>, !felt.type
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_2] = %[[VAL_17]] : <@ModC1>, !felt.type
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_17]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_3] = %[[VAL_18]] : <@ModC1>, !felt.type
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_17]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_4] = %[[VAL_19]] : <@ModC1>, !felt.type
 // CHECK-NEXT:        function.return %[[VAL_13]] : !struct.type<@ModC1>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_19:[0-9a-zA-Z_.-]+]]: !struct.type<@ModC1>, %[[VAL_20:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_21:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_20]], %[[VAL_21]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_19]][@__llzk_poly_lowering_pass_aux_member_2] : <@ModC1>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_23]], %[[VAL_22]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_23]], %[[VAL_23]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_23]], %[[VAL_20]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_19]][@mod2] : <@ModC1>, !struct.type<@ModC2>
-// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_19]][@__llzk_poly_lowering_pass_aux_member_3] : <@ModC1>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_27]], %[[VAL_24]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_19]][@__llzk_poly_lowering_pass_aux_member_4] : <@ModC1>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_20:[0-9a-zA-Z_.-]+]]: !struct.type<@ModC1>, %[[VAL_21:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_22:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_21]], %[[VAL_22]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@__llzk_poly_lowering_pass_aux_member_2] : <@ModC1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_24]], %[[VAL_23]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_24]], %[[VAL_24]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_24]], %[[VAL_21]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@mod2] : <@ModC1>, !struct.type<@ModC2>
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@__llzk_poly_lowering_pass_aux_member_3] : <@ModC1>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_28]], %[[VAL_25]] : !felt.type, !felt.type
-// CHECK-NEXT:        function.call @ModC2::@constrain(%[[VAL_26]], %[[VAL_27]], %[[VAL_28]]) : (!struct.type<@ModC2>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_26]][@val] : <@ModC2>, !felt.type
-// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_29]], %[[VAL_29]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_19]][@__llzk_poly_lowering_pass_aux_member_1] : <@ModC1>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_31]], %[[VAL_30]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_31]], %[[VAL_31]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_19]][@val2] : <@ModC1>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_33]], %[[VAL_32]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@__llzk_poly_lowering_pass_aux_member_4] : <@ModC1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_29]], %[[VAL_26]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.call @ModC2::@constrain(%[[VAL_27]], %[[VAL_28]], %[[VAL_29]]) : (!struct.type<@ModC2>, !felt.type, !felt.type) -> ()
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_27]][@val] : <@ModC2>, !felt.type
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_30]], %[[VAL_30]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@__llzk_poly_lowering_pass_aux_member_1] : <@ModC1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_32]], %[[VAL_31]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_32]], %[[VAL_32]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@val2] : <@ModC1>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_34]], %[[VAL_33]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_1 : !felt.type
@@ -335,6 +342,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@ModC1>} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_4 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
@@ -373,6 +381,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
 // CHECK-NEXT:    struct.def @ExternPayload {
 // CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub}
@@ -388,23 +397,23 @@ module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
 // CHECK-NEXT:    function.def private @extern_wrap(!felt.type) -> !struct.type<@ExternPayload> attributes {extern}
 // CHECK-NEXT:    struct.def @UsesExternPayload {
 // CHECK-NEXT:      struct.member @out : !felt.type
-// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UsesExternPayload> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@UsesExternPayload>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @extern_wrap(%[[VAL_5]]) : (!felt.type) -> !struct.type<@ExternPayload>
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@value] : <@ExternPayload>, !felt.type
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_9]] : <@UsesExternPayload>, !felt.type
-// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@UsesExternPayload>
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UsesExternPayload> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@UsesExternPayload>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @extern_wrap(%[[VAL_4]]) : (!felt.type) -> !struct.type<@ExternPayload>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@value] : <@ExternPayload>, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_7]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_8]] : <@UsesExternPayload>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@UsesExternPayload>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@UsesExternPayload>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @extern_wrap(%[[VAL_11]]) : (!felt.type) -> !struct.type<@ExternPayload>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_12]][@value] : <@ExternPayload>, !felt.type
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@__llzk_poly_lowering_pass_aux_member_0] : <@UsesExternPayload>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_15]], %[[VAL_14]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@out] : <@UsesExternPayload>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_17]], %[[VAL_16]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@UsesExternPayload>, %[[VAL_10:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @extern_wrap(%[[VAL_10]]) : (!felt.type) -> !struct.type<@ExternPayload>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_11]][@value] : <@ExternPayload>, !felt.type
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_12]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@__llzk_poly_lowering_pass_aux_member_0] : <@UsesExternPayload>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@out] : <@UsesExternPayload>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_16]], %[[VAL_15]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
