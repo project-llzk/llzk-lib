@@ -73,40 +73,40 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @BooleanCastRange StructIntervals {
 // CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] in Degenerate(0)
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] in Degenerate(1)
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Degenerate(1)
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] in Entire
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] in Entire
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] in Entire
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: @BooleanCastConstraints StructIntervals {
 // CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Degenerate(1)
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Degenerate(0)
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Degenerate(1)
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] in Degenerate(1)
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] in Degenerate(0)
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Degenerate(1)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: @IndexCastOverflow StructIntervals {
 // CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
 

@@ -5,8 +5,8 @@ function.def @write_pod(%pod: !pod.type<[@n: index]>, %value: index) {
   function.return
 }
 //CHECK-LABEL:  function.def @write_pod(
-//CHECK-SAME:       %[[POD:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index]>, 
-//CHECK-SAME:       %[[VAL:[0-9a-zA-Z_\.]+]]: index) {
+//CHECK-SAME:       %[[POD:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index]>,
+//CHECK-SAME:       %[[VAL:[0-9a-zA-Z_.-]+]]: index) {
 //CHECK-NEXT:      pod.write %[[POD]][@n] = %[[VAL]] : <[@n: index]>, index
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:   }
@@ -18,8 +18,8 @@ function.def @write_pod2(%pod: !pod.type<[@n: index, @y: index]>, %value: index)
   function.return
 }
 //CHECK-LABEL:  function.def @write_pod2(
-//CHECK-SAME:       %[[POD:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @y: index]>, 
-//CHECK-SAME:       %[[VAL:[0-9a-zA-Z_\.]+]]: index)  {
+//CHECK-SAME:       %[[POD:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index, @y: index]>,
+//CHECK-SAME:       %[[VAL:[0-9a-zA-Z_.-]+]]: index)  {
 //CHECK-NEXT:      pod.write %[[POD]][@n] = %[[VAL]] : <[@n: index, @y: index]>, index
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:   }

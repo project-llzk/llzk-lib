@@ -62,17 +62,17 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      struct.member @"f:!s<@Component1B>+f2:!s<@Component1A>+f1" : !felt.type
 // CHECK-NEXT:      struct.member @"f:!s<@Component1B>+f2:!s<@Component1A>+f2" : !felt.type
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 42
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = felt.const 42
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        struct.writem %[[V1]][@"f:!s<@Component1B>+f2:!s<@Component1A>+f1"] = %[[V0]] : <@Main>, !felt.type
 // CHECK-NEXT:        struct.writem %[[V1]][@"f:!s<@Component1B>+f2:!s<@Component1A>+f2"] = %[[V0]] : <@Main>, !felt.type
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = felt.const 42
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@"f:!s<@Component1B>+f2:!s<@Component1A>+f1"] : <@Main>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = felt.const 42
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@"f:!s<@Component1B>+f2:!s<@Component1A>+f1"] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@"f:!s<@Component1B>+f2:!s<@Component1A>+f2"] : <@Main>, !felt.type
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@"f:!s<@Component1B>+f2:!s<@Component1A>+f2"] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V5]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -154,22 +154,22 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      struct.member @"f2:!s<@Component2A>+f1" : index
 // CHECK-NEXT:      struct.member @"f2:!s<@Component2A>+f2" : i1
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = string.new "Hello World"
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant true
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_.-]+]] = string.new "Hello World"
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        struct.writem %[[V3]][@"f2:!s<@Component2A>+f1"] = %[[V0]] : <@Main>, index
 // CHECK-NEXT:        struct.writem %[[V3]][@"f2:!s<@Component2A>+f2"] = %[[V1]] : <@Main>, i1
 // CHECK-NEXT:        struct.writem %[[V3]][@"f1:!s<@Component2B>+f1"] = %[[V2]] : <@Main>, !string.type
 // CHECK-NEXT:        function.return %[[V3]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = string.new "Hello World"
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"f2:!s<@Component2A>+f1"] : <@Main>, index
+// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_.-]+]] = arith.constant true
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = string.new "Hello World"
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"f2:!s<@Component2A>+f1"] : <@Main>, index
 // CHECK-NEXT:        constrain.eq %[[V5]], %[[V9]] : index, index
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"f2:!s<@Component2A>+f2"] : <@Main>, i1
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"f2:!s<@Component2A>+f2"] : <@Main>, i1
 // CHECK-NEXT:        constrain.eq %[[V6]], %[[V10]] : i1, i1
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -247,12 +247,12 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      struct.member @"f3:!s<@Component3A>+f1" : index
 // CHECK-NEXT:      struct.member @"f3:!s<@Component3A>+f2" : i1
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 24 : index
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 76 : index
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 99 : index
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = arith.constant 24 : index
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 76 : index
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 99 : index
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = arith.constant true
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = arith.constant false
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        struct.writem %[[V5]][@"f1:!s<@Component3A>+f1"] = %[[V0]] : <@Main>, index
 // CHECK-NEXT:        struct.writem %[[V5]][@"f1:!s<@Component3A>+f2"] = %[[V3]] : <@Main>, i1
 // CHECK-NEXT:        struct.writem %[[V5]][@"f2:!s<@Component3A>+f1"] = %[[V1]] : <@Main>, index
@@ -261,23 +261,23 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:        struct.writem %[[V5]][@"f3:!s<@Component3A>+f2"] = %[[V3]] : <@Main>, i1
 // CHECK-NEXT:        function.return %[[V5]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V6:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = arith.constant 24 : index
-// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_\.]+]] = arith.constant 76 : index
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = arith.constant 99 : index
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f1"] : <@Main>, index
+// CHECK-NEXT:      function.def @constrain(%[[V6:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = arith.constant 24 : index
+// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_.-]+]] = arith.constant 76 : index
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_.-]+]] = arith.constant 99 : index
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_.-]+]] = arith.constant true
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_.-]+]] = arith.constant false
+// CHECK-NEXT:        %[[V12:[0-9a-zA-Z_.-]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f1"] : <@Main>, index
 // CHECK-NEXT:        constrain.eq %[[V7]], %[[V12]] : index, index
-// CHECK-NEXT:        %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f2"] : <@Main>, i1
+// CHECK-NEXT:        %[[V13:[0-9a-zA-Z_.-]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f2"] : <@Main>, i1
 // CHECK-NEXT:        constrain.eq %[[V10]], %[[V13]] : i1, i1
-// CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f1"] : <@Main>, index
+// CHECK-NEXT:        %[[V14:[0-9a-zA-Z_.-]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f1"] : <@Main>, index
 // CHECK-NEXT:        constrain.eq %[[V8]], %[[V14]] : index, index
-// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f2"] : <@Main>, i1
+// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_.-]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f2"] : <@Main>, i1
 // CHECK-NEXT:        constrain.eq %[[V11]], %[[V15]] : i1, i1
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f1"] : <@Main>, index
+// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_.-]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f1"] : <@Main>, index
 // CHECK-NEXT:        constrain.eq %[[V9]], %[[V16]] : index, index
-// CHECK-NEXT:        %[[V17:[0-9a-zA-Z_\.]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f2"] : <@Main>, i1
+// CHECK-NEXT:        %[[V17:[0-9a-zA-Z_.-]+]] = struct.readm %[[V6]][@"f1:!s<@Component3A>+f2"] : <@Main>, i1
 // CHECK-NEXT:        constrain.eq %[[V10]], %[[V17]] : i1, i1
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -374,29 +374,29 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      struct.member @"f1:!s<@Component4B>+f:!s<@Component4A>+f" : !array.type<4 x !felt.type>
 // CHECK-NEXT:      struct.member @"f2:!s<@Component4C>+f:!s<@Component4A>+f" : !array.type<4 x !felt.type>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 2
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = array.new %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !felt.type>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = felt.const 2
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_.-]+]] = array.new %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !felt.type>
 // CHECK-NEXT:        struct.writem %[[V1]][@"f2:!s<@Component4C>+f:!s<@Component4A>+f"] = %[[V2]] : <@Main>, !array.type<4 x !felt.type>
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = felt.const 3
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = felt.const 4
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = felt.const 5
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = felt.const 6
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.new %[[V3]], %[[V4]], %[[V5]], %[[V6]] : <4 x !felt.type>
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = felt.const 3
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = felt.const 4
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = felt.const 5
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_.-]+]] = felt.const 6
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = array.new %[[V3]], %[[V4]], %[[V5]], %[[V6]] : <4 x !felt.type>
 // CHECK-NEXT:        struct.writem %[[V1]][@"f1:!s<@Component4B>+f:!s<@Component4A>+f"] = %[[V7]] : <@Main>, !array.type<4 x !felt.type>
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = felt.const 2
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = felt.const 3
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = felt.const 4
-// CHECK-NEXT:        %[[V12:[0-9a-zA-Z_\.]+]] = felt.const 5
-// CHECK-NEXT:        %[[V13:[0-9a-zA-Z_\.]+]] = felt.const 6
-// CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"f1:!s<@Component4B>+f:!s<@Component4A>+f"] : <@Main>, !array.type<4 x !felt.type>
-// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = array.new %[[V10]], %[[V11]], %[[V12]], %[[V13]] : <4 x !felt.type>
+// CHECK-NEXT:      function.def @constrain(%[[V8:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_.-]+]] = felt.const 2
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_.-]+]] = felt.const 3
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_.-]+]] = felt.const 4
+// CHECK-NEXT:        %[[V12:[0-9a-zA-Z_.-]+]] = felt.const 5
+// CHECK-NEXT:        %[[V13:[0-9a-zA-Z_.-]+]] = felt.const 6
+// CHECK-NEXT:        %[[V14:[0-9a-zA-Z_.-]+]] = struct.readm %[[V8]][@"f1:!s<@Component4B>+f:!s<@Component4A>+f"] : <@Main>, !array.type<4 x !felt.type>
+// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_.-]+]] = array.new %[[V10]], %[[V11]], %[[V12]], %[[V13]] : <4 x !felt.type>
 // CHECK-NEXT:        constrain.eq %[[V14]], %[[V15]] : !array.type<4 x !felt.type>, !array.type<4 x !felt.type>
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"f2:!s<@Component4C>+f:!s<@Component4A>+f"] : <@Main>, !array.type<4 x !felt.type>
-// CHECK-NEXT:        %[[V17:[0-9a-zA-Z_\.]+]] = array.new %[[V9]], %[[V9]], %[[V9]], %[[V9]] : <4 x !felt.type>
+// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_.-]+]] = struct.readm %[[V8]][@"f2:!s<@Component4C>+f:!s<@Component4A>+f"] : <@Main>, !array.type<4 x !felt.type>
+// CHECK-NEXT:        %[[V17:[0-9a-zA-Z_.-]+]] = array.new %[[V9]], %[[V9]], %[[V9]], %[[V9]] : <4 x !felt.type>
 // CHECK-NEXT:        constrain.eq %[[V16]], %[[V17]] : !array.type<4 x !felt.type>, !array.type<4 x !felt.type>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -445,16 +445,16 @@ module attributes {llzk.lang} {
 // CHECK-LABEL:   struct.def @Component5B {
 // CHECK-NEXT:      struct.member @"f2:!s<@Component5A>+f1" : !felt.type
 // CHECK-NEXT:      struct.member @"f2:!s<@Component5A>+f2" : !felt.type
-// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component5B> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component5B>
+// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Component5B> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component5B>
 // CHECK-NEXT:        struct.writem %[[V1]][@"f2:!s<@Component5A>+f1"] = %[[V0]] : <@Component5B>, !felt.type
 // CHECK-NEXT:        struct.writem %[[V1]][@"f2:!s<@Component5A>+f2"] = %[[V0]] : <@Component5B>, !felt.type
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Component5B>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component5B>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@"f2:!s<@Component5A>+f1"] : <@Component5B>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component5B>, %[[V3:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@"f2:!s<@Component5A>+f1"] : <@Component5B>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@"f2:!s<@Component5A>+f2"] : <@Component5B>, !felt.type
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@"f2:!s<@Component5A>+f2"] : <@Component5B>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V5]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -504,14 +504,14 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      struct.member @"f2:!s<@Component6A>+f1" : !felt.type
 // CHECK-NEXT:      struct.member @"f2:!s<@Component6A>+f2" : !felt.type
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = felt.const 2
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"f2:!s<@Component6A>+f1"] : <@Main>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_.-]+]] = felt.const 2
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = struct.readm %[[V1]][@"f2:!s<@Component6A>+f1"] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V3]], %[[V2]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"f2:!s<@Component6A>+f2"] : <@Main>, !felt.type
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V1]][@"f2:!s<@Component6A>+f2"] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V4]], %[[V2]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -561,16 +561,16 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL:   struct.def @Component7A {
 // CHECK-NEXT:      struct.member @f1 : !felt.type
 // CHECK-NEXT:      struct.member @f2 : !felt.type
-// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component7A> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component7A>
+// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Component7A> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component7A>
 // CHECK-NEXT:        struct.writem %[[V1]][@f1] = %[[V0]] : <@Component7A>, !felt.type
 // CHECK-NEXT:        struct.writem %[[V1]][@f2] = %[[V0]] : <@Component7A>, !felt.type
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Component7A>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component7A>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f1] : <@Component7A>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component7A>, %[[V3:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@f1] : <@Component7A>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f2] : <@Component7A>, !felt.type
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@f2] : <@Component7A>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V5]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -579,13 +579,13 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL:   struct.def @Main {
 // CHECK-NEXT:      struct.member @f2 : !struct.type<@Component7A>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 2
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Component7A::@compute(%[[V0]]) : (!felt.type) -> !struct.type<@Component7A>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = felt.const 2
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_.-]+]] = function.call @Component7A::@compute(%[[V0]]) : (!felt.type) -> !struct.type<@Component7A>
 // CHECK-NEXT:        struct.writem %[[V1]][@f2] = %[[V2]] : <@Main>, !struct.type<@Component7A>
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[V3:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -631,16 +631,16 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL:   struct.def @Component8A {
 // CHECK-NEXT:      struct.member @f1 : !felt.type
 // CHECK-NEXT:      struct.member @f2 : !felt.type
-// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component8A> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component8A>
+// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Component8A> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component8A>
 // CHECK-NEXT:        struct.writem %[[V1]][@f1] = %[[V0]] : <@Component8A>, !felt.type
 // CHECK-NEXT:        struct.writem %[[V1]][@f2] = %[[V0]] : <@Component8A>, !felt.type
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Component8A>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component8A>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f1] : <@Component8A>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component8A>, %[[V3:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@f1] : <@Component8A>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f2] : <@Component8A>, !felt.type
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@f2] : <@Component8A>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V5]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -649,10 +649,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL:   struct.def @Main {
 // CHECK-NEXT:      struct.member @f2 : !struct.type<@Component8A>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -698,14 +698,14 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL:   struct.def @Main {
 // CHECK-NEXT:      struct.member @"fa:!s<@Component9A>+f" : !felt.type
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_.-]+]] = felt.const  12
 // CHECK-NEXT:        struct.writem %[[V0]][@"fa:!s<@Component9A>+f"] = %[[V1]] : <@Main>, !felt.type
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@"fa:!s<@Component9A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@"fa:!s<@Component9A>+f"] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -778,21 +778,21 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:    struct.member @"fa:!s<@Component10A>+f" : !felt.type
 // CHECK-NEXT:    struct.member @"fb:!s<@Component10B>+f" : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = felt.const  12
 // CHECK-NEXT:      struct.writem %[[V0]][@"fa:!s<@Component10A>+f"] = %[[V1]] : <@Main>, !felt.type
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@"fa:!s<@Component10A>+f"] : <@Main>, !felt.type
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = struct.readm %[[V0]][@"fa:!s<@Component10A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
 // CHECK-NEXT:      struct.writem %[[V0]][@"fb:!s<@Component10B>+f"] = %[[V3]] : <@Main>, !felt.type
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"fa:!s<@Component10A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"fa:!s<@Component10A>+f"] : <@Main>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V6]], %[[V5]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"fa:!s<@Component10A>+f"] : <@Main>, !felt.type
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = felt.mul %[[V7]], %[[V7]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"fb:!s<@Component10B>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"fa:!s<@Component10A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_.-]+]] = felt.mul %[[V7]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"fb:!s<@Component10B>+f"] : <@Main>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V8]], %[[V9]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -885,21 +885,21 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:    struct.member @"fa:!s<@Component11A>+f" : !felt.type {llzk.pub}
 // CHECK-NEXT:    struct.member @"fc:!s<@Component11C>+fb:!s<@Component11B>+f" : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = felt.const  12
 // CHECK-NEXT:      struct.writem %[[V0]][@"fa:!s<@Component11A>+f"] = %[[V1]] : <@Main>, !felt.type
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = struct.readm %[[V0]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
 // CHECK-NEXT:      struct.writem %[[V0]][@"fc:!s<@Component11C>+fb:!s<@Component11B>+f"] = %[[V3]] : <@Main>, !felt.type
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V6]], %[[V5]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = felt.mul %[[V7]], %[[V7]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"fc:!s<@Component11C>+fb:!s<@Component11B>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_.-]+]] = felt.mul %[[V7]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@"fc:!s<@Component11C>+fb:!s<@Component11B>+f"] : <@Main>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V8]], %[[V9]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -954,8 +954,8 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @consume_pair(
-// CHECK-SAME:    %[[ARG0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "input.lhs"},
-// CHECK-SAME:    %[[ARG1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "input.rhs"})
+// CHECK-SAME:    %[[ARG0:[0-9a-zA-Z_.-]+]]: !felt.type {function.arg_name = "input.lhs"},
+// CHECK-SAME:    %[[ARG1:[0-9a-zA-Z_.-]+]]: !felt.type {function.arg_name = "input.rhs"})
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
 // -----
@@ -1021,14 +1021,14 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL: struct.def @Component12A {
 // CHECK-NEXT:    struct.member @f : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component12A> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component12A>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component12A>
 // CHECK-NEXT:      struct.writem %[[V1]][@f] = %[[V0]] : <@Component12A>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component12A>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component12A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f] : <@Component12A>, !felt.type
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component12A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@f] : <@Component12A>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -1036,13 +1036,13 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 //
 // CHECK-LABEL: struct.def @Main {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component12A::@compute() : () -> !struct.type<@Component12A>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = function.call @Component12A::@compute() : () -> !struct.type<@Component12A>
 // CHECK-NEXT:      global.write @g = %[[V1]] : !struct.type<@Component12A>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = global.read @g : !struct.type<@Component12A>
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = global.read @g : !struct.type<@Component12A>
 // CHECK-NEXT:      function.call @Component12A::@constrain(%[[V3]]) : (!struct.type<@Component12A>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -1112,14 +1112,14 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL: struct.def @Component13A {
 // CHECK-NEXT:    struct.member @f : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component13A> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component13A>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component13A>
 // CHECK-NEXT:      struct.writem %[[V1]][@f] = %[[V0]] : <@Component13A>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component13A>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component13A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  12
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f] : <@Component13A>, !felt.type
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component13A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = felt.const  12
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_.-]+]] = struct.readm %[[V2]][@f] : <@Component13A>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -1129,16 +1129,16 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:    struct.member @fa : !struct.type<@Component13A>
 // CHECK-NEXT:    struct.member @"fb:!s<@Component13B>+f" : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component13A::@compute() : () -> !struct.type<@Component13A>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = function.call @Component13A::@compute() : () -> !struct.type<@Component13A>
 // CHECK-NEXT:      struct.writem %[[V0]][@fa] = %[[V1]] : <@Main>, !struct.type<@Component13A>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@f] : <@Component13A>, !felt.type
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = struct.readm %[[V1]][@f] : <@Component13A>, !felt.type
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
 // CHECK-NEXT:      struct.writem %[[V0]][@"fb:!s<@Component13B>+f"] = %[[V3]] : <@Main>, !felt.type
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@fa] : <@Main>, !struct.type<@Component13A>
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_.-]+]] = struct.readm %[[V4]][@fa] : <@Main>, !struct.type<@Component13A>
 // CHECK-NEXT:      function.call @Component13A::@constrain(%[[V5]]) : (!struct.type<@Component13A>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }

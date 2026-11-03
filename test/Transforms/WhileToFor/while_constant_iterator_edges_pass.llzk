@@ -67,8 +67,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[LARGE_LO]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-LABEL:   function.def @effectful_preamble() -> !felt.type<"bn128"> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = felt.const  2 : <"bn128">
 // CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_0]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_0]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_0]] : !felt.type<"bn128">, !felt.type<"bn128">

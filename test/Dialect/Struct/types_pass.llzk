@@ -39,10 +39,10 @@ module attributes {llzk.lang} {
 //CHECK-LABEL: struct.def @CJ {
 //CHECK-NEXT:    struct.member @s : !string.type
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@CJ> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CJ>
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@CJ>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@CJ>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@CJ>) attributes {function.allow_constraint} {
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@CJ>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

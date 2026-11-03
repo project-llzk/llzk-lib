@@ -14,7 +14,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: function.def @unused_pod() -> index {
 // CHECK-NOT:     pod.new
 // CHECK-NOT:     pod.write
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index
 // ERR: 'arith.constant' op selected for discardable-allocation cleanup but is not marked with MemAlloc<DiscardableAllocationResource>
 
@@ -33,7 +33,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: function.def @write_only_pod(
 // CHECK-NOT:     pod.new
 // CHECK-NOT:     pod.write
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index
 
 // -----
@@ -54,5 +54,5 @@ module attributes {llzk.lang} {
 // CHECK-NOT:     arith.addi
 // CHECK-NOT:     pod.new
 // CHECK-NOT:     pod.write
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index

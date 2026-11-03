@@ -11,9 +11,9 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]] iter_args(%[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]]) -> (index) {
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_5]] : index
+// CHECK-NEXT:    function.def @trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = scf.for %[[VAL_5:[0-9a-zA-Z_.-]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]] iter_args(%[[VAL_6:[0-9a-zA-Z_.-]+]] = %[[VAL_3]]) -> (index) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_6]], %[[VAL_5]] : index
 // CHECK-NEXT:        scf.yield %[[VAL_7]] : index
 // CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
 // CHECK-NEXT:      function.return %[[VAL_4]] : index
@@ -34,7 +34,7 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @while_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:    function.def @while_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1) {
 // CHECK-NEXT:      scf.while : () -> () {
 // CHECK-NEXT:        scf.condition(%[[VAL_0]])
 // CHECK-NEXT:      } do {
@@ -56,8 +56,8 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @large_annotated_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) {
-// CHECK-NEXT:      scf.for %[[VAL_3:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]] {
+// CHECK-NEXT:    function.def @large_annotated_for(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) {
+// CHECK-NEXT:      scf.for %[[VAL_3:[0-9a-zA-Z_.-]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]] {
 // CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551615 step 1>}
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -77,7 +77,7 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @large_annotated_while(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:    function.def @large_annotated_while(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1) {
 // CHECK-NEXT:      scf.while : () -> () {
 // CHECK-NEXT:        scf.condition(%[[VAL_0]])
 // CHECK-NEXT:      } do {
@@ -102,11 +102,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @large_computed_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 100001 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// CHECK-NEXT:    function.def @large_computed_for(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 100001 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
 // CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return

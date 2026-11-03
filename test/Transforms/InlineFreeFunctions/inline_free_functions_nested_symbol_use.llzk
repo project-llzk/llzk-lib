@@ -22,18 +22,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @helper(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:    function.def @helper(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @lib {
-// CHECK-NEXT:      function.def @helper(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      function.def @helper(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @spec {
-// CHECK-NEXT:      verif.contract @C for @helper (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      verif.contract @C for @helper (%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) {
 // CHECK-NEXT:      }
-// CHECK-NEXT:      verif.contract @Nested for @lib::@helper (%[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      verif.contract @Nested for @lib::@helper (%[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type) {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

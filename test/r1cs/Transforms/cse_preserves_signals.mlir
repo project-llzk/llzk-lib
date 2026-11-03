@@ -15,12 +15,12 @@ module attributes {llzk.lang = "r1cs"} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CHECK-NEXT:    r1cs.circuit @UnusedSignals inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:    r1cs.circuit @UnusedSignals inputs (%[[VAL_0:[0-9a-zA-Z_.-]+]]: !r1cs.signal) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = r1cs.def 3 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
 // CHECK-NEXT:      r1cs.constrain %[[VAL_4]], %[[VAL_4]], %[[VAL_5]] : !r1cs.linear
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

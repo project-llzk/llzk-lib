@@ -13,10 +13,10 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @extract_dynamic_subarray_len(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<?,? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]]] : <?,? x index>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_3]], %[[VAL_2]] : <? x index>
+// CHECK-NEXT:    function.def @extract_dynamic_subarray_len(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<?,? x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]]] : <?,? x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_3]], %[[VAL_2]] : <? x index>
 // CHECK-NEXT:      function.return %[[VAL_4]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -41,13 +41,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @insert_dynamic_subarray_then_len(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<?,? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]]] : <?,? x index>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <?,? x index>
+// CHECK-NEXT:    function.def @insert_dynamic_subarray_then_len(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<?,? x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]]] : <?,? x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <?,? x index>
 // CHECK-NEXT:      array.insert %[[VAL_5]]{{\[}}%[[VAL_2]]] = %[[VAL_4]] : <?,? x index>, <? x index>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_2]]] : <?,? x index>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_6]], %[[VAL_3]] : <? x index>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_2]]] : <?,? x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_6]], %[[VAL_3]] : <? x index>
 // CHECK-NEXT:      function.return %[[VAL_7]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -73,17 +73,17 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @insert_static_nested_row_then_len(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1,2,? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <1,2,? x index>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <?,2,? x index>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <?,2 x none>
+// CHECK-NEXT:    function.def @insert_static_nested_row_then_len(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1,2,? x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <1,2,? x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <?,2,? x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <?,2 x none>
 // CHECK-NEXT:      array.insert %[[VAL_4]]{{\[}}%[[VAL_1]]] = %[[VAL_3]] : <?,2,? x index>, <2,? x index>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <2 x none>
 // CHECK-NEXT:      array.insert %[[VAL_5]]{{\[}}%[[VAL_1]]] = %[[VAL_6]] : <?,2 x none>, <2 x none>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_1]]] : <?,2,? x index>
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_8]], %[[VAL_2]] : <2 x none>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_1]]] : <?,2,? x index>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_8]], %[[VAL_2]] : <2 x none>
 // CHECK-NEXT:      function.return %[[VAL_9]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -111,10 +111,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x !felt.type> {signal}
 // CHECK-NEXT:      struct.member @m_shape : !array.type<? x none>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@SignalCarrier> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@SignalCarrier>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@SignalCarrier>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@SignalCarrier>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@SignalCarrier>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@SignalCarrier>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -143,10 +143,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x !felt.type> {column}
 // CHECK-NEXT:      struct.member @m_shape : !array.type<? x none> {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@ColumnCarrier> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@ColumnCarrier>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@ColumnCarrier>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@ColumnCarrier>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@ColumnCarrier>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@ColumnCarrier>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -176,19 +176,19 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 - 1)>
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0 - 1)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @OffsetColumnCarrier {
 // CHECK-NEXT:      struct.member @m_x : !array.type<? x !felt.type> {column}
 // CHECK-NEXT:      struct.member @m_y : !array.type<? x !felt.type> {column}
 // CHECK-NEXT:      struct.member @m_shape : !array.type<? x none> {column}
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@OffsetColumnCarrier> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@OffsetColumnCarrier>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@OffsetColumnCarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@OffsetColumnCarrier>
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@OffsetColumnCarrier>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@OffsetColumnCarrier>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@m_shape] {(){{\[}}%[[VAL_3]]]} : <@OffsetColumnCarrier>, !array.type<? x none> {tableOffset = #[[$ATTR_0]]}
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_4]], %[[VAL_3]] : <? x none>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@OffsetColumnCarrier>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@m_shape] {(){{\[}}%[[VAL_3]]]} : <@OffsetColumnCarrier>, !array.type<? x none> {tableOffset = #[[$ATTR_0]]}
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_4]], %[[VAL_3]] : <? x none>
 // CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_3]] : index, index
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -219,10 +219,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @m_items_vals : !array.type<?,3 x !felt.type> {column, signal}
 // CHECK-NEXT:      struct.member @m_items_shape : !array.type<? x none>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@NestedCarrierAttrs> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedCarrierAttrs>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@NestedCarrierAttrs>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@NestedCarrierAttrs>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedCarrierAttrs>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@NestedCarrierAttrs>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -243,19 +243,19 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @read_payload(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<?,2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <?,2 x index>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_2]]] : <?,2 x index>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_7]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @read_payload(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<?,2 x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<? x none>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <?,2 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_2]]] : <?,2 x index>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_7]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_9]]] = %[[VAL_8]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_10]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_10]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_12]]] = %[[VAL_11]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_3]]] : <2 x index>, index
 // CHECK-NEXT:      function.return %[[VAL_13]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -278,26 +278,26 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @shared_shape(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <?,3 x index>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <? x none>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_0]]] : <?,3 x index>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <3 x index>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_7]]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @shared_shape(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <?,3 x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <? x none>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_0]]] : <?,3 x index>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <3 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_7]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_9]]] = %[[VAL_8]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_10]]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_10]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_12]]] = %[[VAL_11]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_13]]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_13]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_15]]] = %[[VAL_14]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_2]]] : <3 x index>, index
-// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_4]], %[[VAL_1]] : <? x none>
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_2]]] : <3 x index>, index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_4]], %[[VAL_1]] : <? x none>
 // CHECK-NEXT:      function.return %[[VAL_16]], %[[VAL_17]] : index, index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -330,16 +330,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x index>
 // CHECK-NEXT:      struct.member @m_shape : !array.type<? x none>
 // CHECK-NEXT:      struct.member @out : index
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<?,3 x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<? x none>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@S>
 // CHECK-NEXT:        struct.writem %[[VAL_3]][@m_vals] = %[[VAL_0]] : <@S>, !array.type<?,3 x index>
 // CHECK-NEXT:        struct.writem %[[VAL_3]][@m_shape] = %[[VAL_1]] : <@S>, !array.type<? x none>
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@m_shape] : <@S>, !array.type<? x none>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_4]], %[[VAL_2]] : <? x none>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@m_shape] : <@S>, !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_4]], %[[VAL_2]] : <? x none>
 // CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_5]] : <@S>, index
 // CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@S>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@S>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@S>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !array.type<?,3 x index>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !array.type<? x none>, %[[VAL_9:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -358,8 +358,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_1]], %[[VAL_2]] : <? x none>
+// CHECK-NEXT:    function.def @main(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<?,3 x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<? x none>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_1]], %[[VAL_2]] : <? x none>
 // CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

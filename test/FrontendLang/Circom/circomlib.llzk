@@ -73,27 +73,27 @@ module attributes {llzk.lang = "circom"} {
     // CHECK-LABEL: struct.def @IsZero {
     // CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
     // CHECK-NEXT:    struct.member @inv : !felt.type
-    // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-    // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@IsZero>
-    // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  1
-    // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.inv %[[V0]] : !felt.type
+    // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+    // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@IsZero>
+    // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = felt.const  1
+    // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = felt.inv %[[V0]] : !felt.type
     // CHECK-NEXT:      struct.writem %[[V1]][@inv] = %[[V3]] : <@IsZero>, !felt.type
-    // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = felt.neg %[[V0]] : !felt.type
-    // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = felt.mul %[[V4]], %[[V3]] : !felt.type, !felt.type
-    // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = felt.add %[[V5]], %[[V2]] : !felt.type, !felt.type
+    // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_.-]+]] = felt.neg %[[V0]] : !felt.type
+    // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_.-]+]] = felt.mul %[[V4]], %[[V3]] : !felt.type, !felt.type
+    // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_.-]+]] = felt.add %[[V5]], %[[V2]] : !felt.type, !felt.type
     // CHECK-NEXT:      struct.writem %[[V1]][@out] = %[[V6]] : <@IsZero>, !felt.type
     // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@IsZero>
     // CHECK-NEXT:    }
-    // CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@IsZero>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-    // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = felt.const  0
-    // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.const  1
-    // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@out] : <@IsZero>, !felt.type
-    // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@inv] : <@IsZero>, !felt.type
-    // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = felt.neg %[[V8]] : !felt.type
-    // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = felt.mul %[[V13]], %[[V12]] : !felt.type, !felt.type
-    // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = felt.add %[[V14]], %[[V10]] : !felt.type, !felt.type
+    // CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_.-]+]]: !struct.type<@IsZero>, %[[V8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+    // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_.-]+]] = felt.const  0
+    // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_.-]+]] = felt.const  1
+    // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_.-]+]] = struct.readm %[[V7]][@out] : <@IsZero>, !felt.type
+    // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_.-]+]] = struct.readm %[[V7]][@inv] : <@IsZero>, !felt.type
+    // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_.-]+]] = felt.neg %[[V8]] : !felt.type
+    // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_.-]+]] = felt.mul %[[V13]], %[[V12]] : !felt.type, !felt.type
+    // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_.-]+]] = felt.add %[[V14]], %[[V10]] : !felt.type, !felt.type
     // CHECK-NEXT:      constrain.eq %[[V11]], %[[V15]] : !felt.type, !felt.type
-    // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V11]] : !felt.type, !felt.type
+    // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_.-]+]] = felt.mul %[[V8]], %[[V11]] : !felt.type, !felt.type
     // CHECK-NEXT:      constrain.eq %[[V16]], %[[V9]] : !felt.type, !felt.type
     // CHECK-NEXT:      function.return
     // CHECK-NEXT:    }
@@ -148,29 +148,29 @@ module attributes {llzk.lang = "circom"} {
     // CHECK-LABEL: struct.def @IsEqual {
     // CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
     // CHECK-NEXT:    struct.member @isz : !struct.type<@IsZero>
-    // CHECK-NEXT:    function.def @compute(%[[V17:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@IsEqual> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-    // CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = struct.new : <@IsEqual>
-    // CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-    // CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-    // CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V19]]] : <2 x !felt.type>, !felt.type
-    // CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V20]]] : <2 x !felt.type>, !felt.type
-    // CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = felt.sub %[[V22]], %[[V21]] : !felt.type, !felt.type
-    // CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = function.call @IsZero::@compute(%[[V23]]) : (!felt.type) -> !struct.type<@IsZero>
+    // CHECK-NEXT:    function.def @compute(%[[V17:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) -> !struct.type<@IsEqual> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+    // CHECK-NEXT:      %[[V18:[0-9a-zA-Z_.-]+]] = struct.new : <@IsEqual>
+    // CHECK-NEXT:      %[[V19:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+    // CHECK-NEXT:      %[[V20:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+    // CHECK-NEXT:      %[[V21:[0-9a-zA-Z_.-]+]] = array.read %[[V17]]{{\[}}%[[V19]]] : <2 x !felt.type>, !felt.type
+    // CHECK-NEXT:      %[[V22:[0-9a-zA-Z_.-]+]] = array.read %[[V17]]{{\[}}%[[V20]]] : <2 x !felt.type>, !felt.type
+    // CHECK-NEXT:      %[[V23:[0-9a-zA-Z_.-]+]] = felt.sub %[[V22]], %[[V21]] : !felt.type, !felt.type
+    // CHECK-NEXT:      %[[V24:[0-9a-zA-Z_.-]+]] = function.call @IsZero::@compute(%[[V23]]) : (!felt.type) -> !struct.type<@IsZero>
     // CHECK-NEXT:      struct.writem %[[V18]][@isz] = %[[V24]] : <@IsEqual>, !struct.type<@IsZero>
-    // CHECK-NEXT:      %[[V25:[0-9a-zA-Z_\.]+]] = struct.readm %[[V24]][@out] : <@IsZero>, !felt.type
+    // CHECK-NEXT:      %[[V25:[0-9a-zA-Z_.-]+]] = struct.readm %[[V24]][@out] : <@IsZero>, !felt.type
     // CHECK-NEXT:      struct.writem %[[V18]][@out] = %[[V25]] : <@IsEqual>, !felt.type
     // CHECK-NEXT:      function.return %[[V18]] : !struct.type<@IsEqual>
     // CHECK-NEXT:    }
-    // CHECK-NEXT:    function.def @constrain(%[[V26:[0-9a-zA-Z_\.]+]]: !struct.type<@IsEqual>, %[[V27:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
-    // CHECK-NEXT:      %[[V28:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-    // CHECK-NEXT:      %[[V29:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-    // CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = array.read %[[V27]]{{\[}}%[[V28]]] : <2 x !felt.type>, !felt.type
-    // CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = array.read %[[V27]]{{\[}}%[[V29]]] : <2 x !felt.type>, !felt.type
-    // CHECK-NEXT:      %[[V32:[0-9a-zA-Z_\.]+]] = felt.sub %[[V31]], %[[V30]] : !felt.type, !felt.type
-    // CHECK-NEXT:      %[[V33:[0-9a-zA-Z_\.]+]] = struct.readm %[[V26]][@isz] : <@IsEqual>, !struct.type<@IsZero>
+    // CHECK-NEXT:    function.def @constrain(%[[V26:[0-9a-zA-Z_.-]+]]: !struct.type<@IsEqual>, %[[V27:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+    // CHECK-NEXT:      %[[V28:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+    // CHECK-NEXT:      %[[V29:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+    // CHECK-NEXT:      %[[V30:[0-9a-zA-Z_.-]+]] = array.read %[[V27]]{{\[}}%[[V28]]] : <2 x !felt.type>, !felt.type
+    // CHECK-NEXT:      %[[V31:[0-9a-zA-Z_.-]+]] = array.read %[[V27]]{{\[}}%[[V29]]] : <2 x !felt.type>, !felt.type
+    // CHECK-NEXT:      %[[V32:[0-9a-zA-Z_.-]+]] = felt.sub %[[V31]], %[[V30]] : !felt.type, !felt.type
+    // CHECK-NEXT:      %[[V33:[0-9a-zA-Z_.-]+]] = struct.readm %[[V26]][@isz] : <@IsEqual>, !struct.type<@IsZero>
     // CHECK-NEXT:      function.call @IsZero::@constrain(%[[V33]], %[[V32]]) : (!struct.type<@IsZero>, !felt.type) -> ()
-    // CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = struct.readm %[[V33]][@out] : <@IsZero>, !felt.type
-    // CHECK-NEXT:      %[[V35:[0-9a-zA-Z_\.]+]] = struct.readm %[[V26]][@out] : <@IsEqual>, !felt.type
+    // CHECK-NEXT:      %[[V34:[0-9a-zA-Z_.-]+]] = struct.readm %[[V33]][@out] : <@IsZero>, !felt.type
+    // CHECK-NEXT:      %[[V35:[0-9a-zA-Z_.-]+]] = struct.readm %[[V26]][@out] : <@IsEqual>, !felt.type
     // CHECK-NEXT:      constrain.eq %[[V34]], %[[V35]] : !felt.type, !felt.type
     // CHECK-NEXT:      function.return
     // CHECK-NEXT:    }

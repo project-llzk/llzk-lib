@@ -23,18 +23,18 @@ function.def @constant_index() {
   function.return
 }
 // CHECK-LABEL: function.def @constant_index() {
-// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:    %[[V_1:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:    %[[V_4:[0-9a-zA-Z_\.]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,2 x index>
-// CHECK-NEXT:    %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
-// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
-// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_\.]+]] = array.new %[[V_5]], %[[V_6]] : <2 x index>
+// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:    %[[V_1:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
+// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+// CHECK-NEXT:    %[[V_4:[0-9a-zA-Z_.-]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,2 x index>
+// CHECK-NEXT:    %[[V_5:[0-9a-zA-Z_.-]+]] = arith.constant 9 : index
+// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_.-]+]] = arith.constant 8 : index
+// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_.-]+]] = array.new %[[V_5]], %[[V_6]] : <2 x index>
 // CHECK-NEXT:    array.insert %[[V_4]]{{\[}}%[[V_7]]] = %[[V_8]] : <2,2 x index>, <2 x index>
-// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_\.]+]] = array.new %[[V_6]], %[[V_5]] : <2 x index>
+// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_.-]+]] = array.new %[[V_6]], %[[V_5]] : <2 x index>
 // CHECK-NEXT:    array.insert %[[V_4]]{{\[}}%[[V_9]]] = %[[V_10]] : <2,2 x index>, <2 x index>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
@@ -47,10 +47,10 @@ function.def @empty_index(%0: !felt.type, %1: !felt.type, %z: !array.type<84,22,
   function.return
 }
 // CHECK-LABEL: function.def @empty_index(
-// CHECK-SAME:                         %[[V_0:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-SAME:                         %[[V_1:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-SAME:                         %[[V_2:[0-9a-zA-Z_\.]+]]: !array.type<84,22,67 x !felt.type>) {
-// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <84,22,67 x !felt.type>
+// CHECK-SAME:                         %[[V_0:[0-9a-zA-Z_.-]+]]: !felt.type,
+// CHECK-SAME:                         %[[V_1:[0-9a-zA-Z_.-]+]]: !felt.type,
+// CHECK-SAME:                         %[[V_2:[0-9a-zA-Z_.-]+]]: !array.type<84,22,67 x !felt.type>) {
+// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_.-]+]] = array.new  : <84,22,67 x !felt.type>
 // CHECK-NEXT:    array.insert %[[V_3]][] = %[[V_2]] : <84,22,67 x !felt.type>, <84,22,67 x !felt.type>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
@@ -62,8 +62,8 @@ function.def @trival(%z: !array.type<0 x index>) {
   function.return
 }
 // CHECK-LABEL: function.def @trival(
-// CHECK-SAME:                    %[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<0 x index>) {
-// CHECK-NEXT:    %[[V_1:[0-9a-zA-Z_\.]+]] = array.new  : <0 x index>
+// CHECK-SAME:                    %[[V_0:[0-9a-zA-Z_.-]+]]: !array.type<0 x index>) {
+// CHECK-NEXT:    %[[V_1:[0-9a-zA-Z_.-]+]] = array.new  : <0 x index>
 // CHECK-NEXT:    array.insert %[[V_1]][] = %[[V_0]] : <0 x index>, <0 x index>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
@@ -83,18 +83,18 @@ function.def @doc_example(%r: i1, %s: i1, %t: i1, %x: i1, %y: i1, %z: i1) {
   function.return
 }
 // CHECK-LABEL: function.def @doc_example(
-// CHECK-SAME:                         %[[V_0:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                         %[[V_1:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                         %[[V_2:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                         %[[V_3:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                         %[[V_4:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                         %[[V_5:[0-9a-zA-Z_\.]+]]: i1) {
-// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
-// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_\.]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]] : <3 x i1>
+// CHECK-SAME:                         %[[V_0:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                         %[[V_1:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                         %[[V_2:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                         %[[V_3:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                         %[[V_4:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                         %[[V_5:[0-9a-zA-Z_.-]+]]: i1) {
+// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_.-]+]] = array.new  : <2,3 x i1>
+// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_.-]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]] : <3 x i1>
 // CHECK-NEXT:    array.insert %[[V_6]]{{\[}}%[[V_7]]] = %[[V_8]] : <2,3 x i1>, <3 x i1>
-// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_\.]+]] = array.new %[[V_3]], %[[V_4]], %[[V_5]] : <3 x i1>
+// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_.-]+]] = array.new %[[V_3]], %[[V_4]], %[[V_5]] : <3 x i1>
 // CHECK-NEXT:    array.insert %[[V_6]]{{\[}}%[[V_9]]] = %[[V_10]] : <2,3 x i1>, <3 x i1>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
@@ -128,28 +128,28 @@ function.def @more_dimensions(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
   function.return
 }
 // CHECK-LABEL: function.def @more_dimensions(
-// CHECK-SAME:                             %[[V_0:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                             %[[V_1:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                             %[[V_2:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                             %[[V_3:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                             %[[V_4:[0-9a-zA-Z_\.]+]]: i1,
-// CHECK-SAME:                             %[[V_5:[0-9a-zA-Z_\.]+]]: i1) {
-// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_\.]+]] = array.new  : <2,3,2,3 x i1>
-// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_\.]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]] : <2,3 x i1>
+// CHECK-SAME:                             %[[V_0:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                             %[[V_1:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                             %[[V_2:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                             %[[V_3:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                             %[[V_4:[0-9a-zA-Z_.-]+]]: i1,
+// CHECK-SAME:                             %[[V_5:[0-9a-zA-Z_.-]+]]: i1) {
+// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_.-]+]] = array.new  : <2,3,2,3 x i1>
+// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_.-]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]] : <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_6]]{{\[}}%[[V_7]], %[[V_7]]] = %[[V_10]] : <2,3,2,3 x i1>, <2,3 x i1>
-// CHECK-NEXT:    %[[V_11:[0-9a-zA-Z_\.]+]] = array.new %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]] : <2,3 x i1>
+// CHECK-NEXT:    %[[V_11:[0-9a-zA-Z_.-]+]] = array.new %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]] : <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_6]]{{\[}}%[[V_7]], %[[V_8]]] = %[[V_11]] : <2,3,2,3 x i1>, <2,3 x i1>
-// CHECK-NEXT:    %[[V_12:[0-9a-zA-Z_\.]+]] = array.new %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,3 x i1>
+// CHECK-NEXT:    %[[V_12:[0-9a-zA-Z_.-]+]] = array.new %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_6]]{{\[}}%[[V_7]], %[[V_9]]] = %[[V_12]] : <2,3,2,3 x i1>, <2,3 x i1>
-// CHECK-NEXT:    %[[V_13:[0-9a-zA-Z_\.]+]] = array.new  : <3,2,3 x i1>
-// CHECK-NEXT:    %[[V_14:[0-9a-zA-Z_\.]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]] : <2,3 x i1>
+// CHECK-NEXT:    %[[V_13:[0-9a-zA-Z_.-]+]] = array.new  : <3,2,3 x i1>
+// CHECK-NEXT:    %[[V_14:[0-9a-zA-Z_.-]+]] = array.new %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]] : <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_13]]{{\[}}%[[V_7]]] = %[[V_14]] : <3,2,3 x i1>, <2,3 x i1>
-// CHECK-NEXT:    %[[V_15:[0-9a-zA-Z_\.]+]] = array.new %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]] : <2,3 x i1>
+// CHECK-NEXT:    %[[V_15:[0-9a-zA-Z_.-]+]] = array.new %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]] : <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_13]]{{\[}}%[[V_8]]] = %[[V_15]] : <3,2,3 x i1>, <2,3 x i1>
-// CHECK-NEXT:    %[[V_16:[0-9a-zA-Z_\.]+]] = array.new %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,3 x i1>
+// CHECK-NEXT:    %[[V_16:[0-9a-zA-Z_.-]+]] = array.new %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_13]]{{\[}}%[[V_9]]] = %[[V_16]] : <3,2,3 x i1>, <2,3 x i1>
 // CHECK-NEXT:    array.insert %[[V_6]]{{\[}}%[[V_8]]] = %[[V_13]] : <2,3,2,3 x i1>, <3,2,3 x i1>
 // CHECK-NEXT:    function.return
@@ -181,21 +181,21 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @B : index
 // CHECK-NEXT:      struct.def @UnificationInDims {
 // CHECK-NEXT:        function.def @compute(
-// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>,
-// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !array.type<@B x i1>
+// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_.-]+]]: !array.type<@A x i1>,
+// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_.-]+]]: !array.type<@B x i1>
 // CHECK-SAME:                  ) -> !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[V_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TUnificationInDims::@UnificationInDims<[@A, @B]>>
-// CHECK-NEXT:          %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
-// CHECK-NEXT:          %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[V_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TUnificationInDims::@UnificationInDims<[@A, @B]>>
+// CHECK-NEXT:          %[[V_3:[0-9a-zA-Z_.-]+]] = array.new  : <2,3 x i1>
+// CHECK-NEXT:          %[[V_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:          array.insert %[[V_3]]{{\[}}%[[V_4]]] = %[[V_0]] : <2,3 x i1>, <@A x i1>
-// CHECK-NEXT:          %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[V_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 // CHECK-NEXT:          array.insert %[[V_3]]{{\[}}%[[V_5]]] = %[[V_1]] : <2,3 x i1>, <@B x i1>
 // CHECK-NEXT:          function.return %[[V_2]] : !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.def @constrain(
-// CHECK-SAME:                  %[[V_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>,
-// CHECK-SAME:                  %[[V_7:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>,
-// CHECK-SAME:                  %[[V_8:[0-9a-zA-Z_\.]+]]: !array.type<@B x i1>) attributes {function.allow_constraint} {
+// CHECK-SAME:                  %[[V_6:[0-9a-zA-Z_.-]+]]: !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>,
+// CHECK-SAME:                  %[[V_7:[0-9a-zA-Z_.-]+]]: !array.type<@A x i1>,
+// CHECK-SAME:                  %[[V_8:[0-9a-zA-Z_.-]+]]: !array.type<@B x i1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -228,21 +228,21 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @B
 // CHECK-NEXT:      struct.def @UnificationInTypes {
 // CHECK-NEXT:        function.def @compute(
-// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@A>>,
-// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@B>>
+// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_.-]+]]: !array.type<3 x !poly.tvar<@A>>,
+// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_.-]+]]: !array.type<3 x !poly.tvar<@B>>
 // CHECK-SAME:                  ) -> !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[V_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
-// CHECK-NEXT:          %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
-// CHECK-NEXT:          %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[V_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
+// CHECK-NEXT:          %[[V_3:[0-9a-zA-Z_.-]+]] = array.new  : <2,3 x i1>
+// CHECK-NEXT:          %[[V_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:          array.insert %[[V_3]]{{\[}}%[[V_4]]] = %[[V_0]] : <2,3 x i1>, <3 x !poly.tvar<@A>>
-// CHECK-NEXT:          %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[V_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 // CHECK-NEXT:          array.insert %[[V_3]]{{\[}}%[[V_5]]] = %[[V_1]] : <2,3 x i1>, <3 x !poly.tvar<@B>>
 // CHECK-NEXT:          function.return %[[V_2]] : !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.def @constrain(
-// CHECK-SAME:                  %[[V_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>,
-// CHECK-SAME:                  %[[V_7:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@A>>,
-// CHECK-SAME:                  %[[V_8:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@B>>) attributes {function.allow_constraint} {
+// CHECK-SAME:                  %[[V_6:[0-9a-zA-Z_.-]+]]: !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>,
+// CHECK-SAME:                  %[[V_7:[0-9a-zA-Z_.-]+]]: !array.type<3 x !poly.tvar<@A>>,
+// CHECK-SAME:                  %[[V_8:[0-9a-zA-Z_.-]+]]: !array.type<3 x !poly.tvar<@B>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -257,11 +257,11 @@ function.def @dimensions_unify_affine_with_int_A(%z: !array.type<#map x !felt.ty
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<#map x !felt.type>
   function.return
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
 // CHECK-LABEL: function.def @dimensions_unify_affine_with_int_A(
-// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]] x !felt.type>) {
-// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <44,2 x !felt.type>
-// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-SAME:              %[[V0:[0-9a-zA-Z_.-]+]]: !array.type<#[[$M0]] x !felt.type>) {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_.-]+]] = array.new  : <44,2 x !felt.type>
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:    array.insert %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !felt.type>, <#[[$M0]] x !felt.type>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
@@ -274,11 +274,11 @@ function.def @dimensions_unify_affine_with_int_B(%z: !array.type<#map x !felt.ty
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<#map x !felt.type>
   function.return
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: function.def @dimensions_unify_affine_with_int_B(
-// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]] x !felt.type>) {
-// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <44,2 x !felt.type>
-// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-SAME:              %[[V0:[0-9a-zA-Z_.-]+]]: !array.type<#[[$M0]] x !felt.type>) {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_.-]+]] = array.new  : <44,2 x !felt.type>
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:    array.insert %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !felt.type>, <#[[$M0]] x !felt.type>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }

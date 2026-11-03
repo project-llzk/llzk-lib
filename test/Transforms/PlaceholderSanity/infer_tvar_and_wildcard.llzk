@@ -35,25 +35,25 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @FRT {
 // CHECK-NEXT:      function.def @free_ret() -> !felt.type<"bn128"> {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"bn128">
 // CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type<"bn128">
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @synth {
 // CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
 // CHECK-NEXT:      function.def @synth() {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @FRT::@free_ret() : () -> !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = function.call @FRT::@free_ret() : () -> !felt.type<"bn128">
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @ComponentC {
 // CHECK-NEXT:      struct.def @ComponentC {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@ComponentC::@ComponentC<[]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC::@ComponentC<[]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentC::@ComponentC<[]>>
 // CHECK-NEXT:          function.call @synth::@synth<[?]>() : () -> ()
 // CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@ComponentC::@ComponentC<[]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentC::@ComponentC<[]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentC::@ComponentC<[]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -100,8 +100,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @N
 // CHECK-NEXT:      struct.def @Box {
 // CHECK-NEXT:        struct.member @value : index
-// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@"TBoxForWildcardName_\1A_i"::@Box<[@N]>>
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@"TBoxForWildcardName_\1A_i"::@Box<[@N]>>
 // CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@"TBoxForWildcardName_\1A_i"::@Box<[@N]>>, index
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[@N]>>
 // CHECK-NEXT:        }
@@ -112,25 +112,25 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
 // CHECK-NEXT:      struct.def @Box {
 // CHECK-NEXT:        struct.member @value : !poly.tvar<@T>
-// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TBoxForWildcardName::@Box<[@N, @T]>>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>) -> !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@TBoxForWildcardName::@Box<[@N, @T]>>
 // CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TBoxForWildcardName::@Box<[@N, @T]>>, !poly.tvar<@T>
 // CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>" {
-// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) -> !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>"> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) -> !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_box_array(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) -> index attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>"::@compute(%[[VAL_8]]) : (!array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) -> !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">
+// CHECK-NEXT:    function.def @call_box_array(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>"::@compute(%[[VAL_8]]) : (!array.type<1 x !struct.type<@"TBoxForWildcardName_\1A_i"::@Box<[7]>>>) -> !struct.type<@"WildcardNameTarget_!a<!s<@TBoxForWildcardName_\1A_i::@Box_7>:1>">
 // CHECK-NEXT:      function.return %[[VAL_9]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -41,15 +41,15 @@ module attributes {llzk.lang} {
 
 // NOTE: Checks generated with scripts/generate-test-checks.py and minimized.
 // CHECK-LABEL:    struct.def @Main {
-// CHECK:      function.def @product(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Main> {product_source = "compute"}
+// CHECK:      function.def @product(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.new : <@Main> {product_source = "compute"}
 // CHECK-NEXT:        struct.writem %[[VAL_8]][@saved] = %[[VAL_7]] : <@Main>, !array.type<1 x !felt.type> {product_source = "compute"}
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 0 : index
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "compute"} 0 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = felt.const  1 {product_source = "compute"}
 // CHECK-NEXT:        array.write %[[VAL_7]]{{\[}}%[[VAL_9]]] = %[[VAL_10]] : <1 x !felt.type>, !felt.type {product_source = "compute"}
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @Child::@compute(%[[VAL_7]]) : (!array.type<1 x !felt.type>) -> !struct.type<@Child>  {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @Child::@compute(%[[VAL_7]]) : (!array.type<1 x !felt.type>) -> !struct.type<@Child>  {product_source = "compute"}
 // CHECK-NEXT:        struct.writem %[[VAL_8]][@child] = %[[VAL_11]] : <@Main>, !struct.type<@Child> {product_source = "compute"}
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@child] : <@Main>, !struct.type<@Child> {product_source = "constrain"}
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@saved] : <@Main>, !array.type<1 x !felt.type> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_8]][@child] : <@Main>, !struct.type<@Child> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_8]][@saved] : <@Main>, !array.type<1 x !felt.type> {product_source = "constrain"}
 // CHECK-NEXT:        function.call @Child::@constrain(%[[VAL_12]], %[[VAL_13]]) : (!struct.type<@Child>, !array.type<1 x !felt.type>) -> ()  {product_source = "constrain"}
 // CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@Main>

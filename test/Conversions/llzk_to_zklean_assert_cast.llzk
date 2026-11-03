@@ -10,11 +10,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module @ZKLean attributes {llzk.lang} {
-// CHECK-NEXT:    func.func @bool_cast(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = ZKLeanLean.call @cast.tofelt(%[[VAL_0]]) : (i1) -> !ZKExpr.zkexpr
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"babybear">
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = ZKExpr.Literal %[[VAL_2]]
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = ZKBuilder.ConstrainEq %[[VAL_1]] %[[VAL_3]]
+// CHECK-NEXT:    func.func @bool_cast(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = ZKLeanLean.call @cast.tofelt(%[[VAL_0]]) : (i1) -> !ZKExpr.zkexpr
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = ZKExpr.Literal %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = ZKBuilder.ConstrainEq %[[VAL_1]] %[[VAL_3]]
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
