@@ -454,7 +454,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
 
     // Map fn parameters to args in the call op
     for (auto [arg, operand] : llvm::zip_equal(fn.getArguments(), fnCall.getArgOperands())) {
-      translations.push_back({SourceRef(arg), SourceRefAnalysis::getValueState(solver, operand)});
+      translations.emplace_back(SourceRef(arg), SourceRefAnalysis::getValueState(solver, operand));
     }
     auto &childAnalysis =
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);

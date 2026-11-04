@@ -214,7 +214,7 @@ public:
   createChild(IdType id, Value storedVal, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     std::shared_ptr<ReferenceNode> child = create(id, storedVal);
     child->setCurrentValue(storedVal, valTree);
-    if (child->identifier.isValue() && children.find(child->identifier) == children.end()) {
+    if (child->identifier.isValue() && !children.contains(child->identifier)) {
       ++dynamicChildCount;
     }
     children[child->identifier] = child;
@@ -746,14 +746,12 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       ensure(it != endStates.end(), "unknown end state means we have an unsupported backedge");
       return cloneKnownState(it->second);
     };
-    auto hasBlockState = [&endStates](Block *blockPtr) {
-      return endStates.find(blockPtr) != endStates.end();
-    };
+    auto hasBlockState = [&endStates](Block *blockPtr) { return endStates.contains(blockPtr); };
     std::deque<Block *> frontier;
     DenseSet<Block *> queued;
     DenseSet<Block *> processed;
     auto enqueue = [&](Block *blockPtr) {
-      if (processed.find(blockPtr) == processed.end() && queued.insert(blockPtr).second) {
+      if (!processed.contains(blockPtr) && queued.insert(blockPtr).second) {
         frontier.push_back(blockPtr);
       }
     };
@@ -807,7 +805,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // Update the end states.
       // Since we only support the scf dialect, we should never have any
       // backedges, so we should never already have state for this block.
-      ensure(processed.find(currentBlock) == processed.end(), "backedge");
+      ensure(!processed.contains(currentBlock), "backedge");
       endStates[currentBlock] = std::move(endState);
       processed.insert(currentBlock);
 

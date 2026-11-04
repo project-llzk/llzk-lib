@@ -550,10 +550,10 @@ void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
     ArrayRef<NamedAttribute> attributes, bool isSignal, bool isColumn
 ) {
-  assert(operands.size() == 0u && "mismatched number of parameters");
+  assert(operands.empty() && "mismatched number of parameters");
   odsState.addOperands(operands);
   odsState.addAttributes(attributes);
-  assert(resultTypes.size() == 0u && "mismatched number of return types");
+  assert(resultTypes.empty() && "mismatched number of return types");
   odsState.addTypes(resultTypes);
   if (isColumn) {
     odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();

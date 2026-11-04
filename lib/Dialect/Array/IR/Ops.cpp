@@ -87,10 +87,10 @@ ParseResult CreateArrayOp::parseInferredArrayType(
     OpAsmParser & /*parser*/, llvm::SmallVector<Type, 1> &elementsTypes,
     ArrayRef<OpAsmParser::UnresolvedOperand> elements, Type resultType
 ) {
-  assert(elementsTypes.size() == 0); // it was not yet initialized
+  assert(elementsTypes.empty()); // it was not yet initialized
   // If the '$elements' operand is not empty, then the expected type for the operand
   //  is computed to match the type of the '$result'. Otherwise, it remains empty.
-  if (elements.size() > 0) {
+  if (!elements.empty()) {
     elementsTypes.append(resultTypeToElementsTypes(resultType));
   }
   return success();

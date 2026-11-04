@@ -2017,7 +2017,7 @@ LogicalResult StructIntervals::computeIntervals(
           std::optional<SourceRefLatticeValue> identityVal =
               getIdentitySourceRefState(solver, operand);
           if (identityVal.has_value()) {
-            identityTranslations.push_back({prefix, *identityVal});
+            identityTranslations.emplace_back(prefix, *identityVal);
           }
 
           if (!llvm::isa<ArrayType, StructType, pod::PodType>(operand.getType())) {

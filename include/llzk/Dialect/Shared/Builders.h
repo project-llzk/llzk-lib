@@ -116,14 +116,14 @@ public:
   inline mlir::Region &getBodyRegion() { return static_cast<Derived *>(this)->getBodyRegion(); }
 
   mlir::FailureOr<component::StructDefOp> getStruct(std::string_view structName) const {
-    if (structMap.find(structName) != structMap.end()) {
+    if (structMap.contains(structName)) {
       return structMap.at(structName);
     }
     return mlir::failure();
   }
 
   mlir::FailureOr<function::FuncDefOp> getComputeFn(std::string_view structName) const {
-    if (computeFnMap.find(structName) != computeFnMap.end()) {
+    if (computeFnMap.contains(structName)) {
       return computeFnMap.at(structName);
     }
     return mlir::failure();
@@ -133,7 +133,7 @@ public:
   }
 
   mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) const {
-    if (constrainFnMap.find(structName) != constrainFnMap.end()) {
+    if (constrainFnMap.contains(structName)) {
       return constrainFnMap.at(structName);
     }
     return mlir::failure();
@@ -143,7 +143,7 @@ public:
   }
 
   mlir::FailureOr<function::FuncDefOp> getProductFn(std::string_view structName) const {
-    if (productFnMap.find(structName) != productFnMap.end()) {
+    if (productFnMap.contains(structName)) {
       return productFnMap.at(structName);
     }
     return mlir::failure();
@@ -153,7 +153,7 @@ public:
   }
 
   mlir::FailureOr<function::FuncDefOp> getFreeFunc(std::string_view funcName) const {
-    if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
+    if (freeFuncMap.contains(funcName)) {
       return freeFuncMap.at(funcName);
     }
     return mlir::failure();

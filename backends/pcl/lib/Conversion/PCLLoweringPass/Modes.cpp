@@ -34,6 +34,7 @@
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSet.h>
 
 using namespace mlir;
@@ -133,7 +134,7 @@ void BaseMode::populateStep3ConversionTarget(
 ) {
   target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
   target.addDynamicallyLegalOp<pcl::VarOp>([&replacements](pcl::VarOp op) {
-    return replacements.find(op) == replacements.end();
+    return !replacements.contains(op);
   });
   target.addDynamicallyLegalOp<ModuleOp>([this](ModuleOp op) { return op == getOperation(); });
 }
@@ -170,7 +171,7 @@ DupVarsReplacements BaseMode::collectDupVarsReplacements() {
       if (vars.empty()) {
         continue;
       }
-      std::stable_sort(vars.begin(), vars.end(), [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
+      llvm::stable_sort(vars, [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
         return dom.dominates(lhs.getOperation(), rhs);
       });
       auto fst = vars[0];

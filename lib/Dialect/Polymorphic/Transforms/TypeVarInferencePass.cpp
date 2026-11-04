@@ -49,6 +49,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -103,9 +104,9 @@ using SpecializedTemplateCloneCache = DenseMap<Operation *, llvm::StringMap<Stri
 /// parameter names and symbol paths. This helper preserves the symbol-reference
 /// structure while avoiding repeated leaf extraction at call sites.
 static SmallVector<StringAttr> getStringPieces(SymbolRefAttr ref) {
-  return llvm::to_vector(llvm::map_range(getPieces(ref), [](FlatSymbolRefAttr piece) {
+  return llvm::map_to_vector(getPieces(ref), [](FlatSymbolRefAttr piece) {
     return piece.getAttr();
-  }));
+  });
 }
 
 /// Return the name of a flat symbol attribute, or null for non-symbol/nested refs.

@@ -38,6 +38,7 @@
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/SmallVectorExtras.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -209,10 +210,9 @@ void FuncDefOp::cloneInto(FuncDefOp dest, IRMapping &mapper) {
     newAttrMap.insert({attr.getName(), attr.getValue()});
   }
 
-  auto newAttrs =
-      llvm::to_vector(llvm::map_range(newAttrMap, [](std::pair<StringAttr, Attribute> attrPair) {
+  auto newAttrs = llvm::map_to_vector(newAttrMap, [](std::pair<StringAttr, Attribute> attrPair) {
     return NamedAttribute(attrPair.first, attrPair.second);
-  }));
+  });
   dest->setAttrs(DictionaryAttr::get(getContext(), newAttrs));
 
   // Clone the body.
@@ -435,13 +435,13 @@ LogicalResult
 verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e., have no return types
-  if (funcType.getResults().size() != 0) {
+  if (!funcType.getResults().empty()) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN << "\" must have no return type";
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
   llvm::ArrayRef<Type> inputTypes = funcType.getInputs();
-  if (inputTypes.size() < 1) {
+  if (inputTypes.empty()) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }

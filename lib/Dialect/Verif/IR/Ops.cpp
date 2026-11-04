@@ -1055,7 +1055,7 @@ FailureOr<InvariantTargetOpInterface> InvariantOp::getTarget() {
     }
   }
 
-  if (matches.size() == 0) {
+  if (matches.empty()) {
     return emitOpError() << "no invariant target with label \"" << getLoopName()
                          << "\" found in contract target " << target->get().getNameAttr();
   }

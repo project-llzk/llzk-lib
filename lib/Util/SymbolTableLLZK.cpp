@@ -264,7 +264,7 @@ static SmallVector<SymbolScope, 2> collectSymbolScopes(Operation *symbol, Operat
   // Try to find the first ancestor of 'symbol' that is an ancestor of 'limit'.
   Operation *commonAncestor = symbol->getParentOp();
   do {
-    if (limitAncestors.count(commonAncestor)) {
+    if (limitAncestors.contains(commonAncestor)) {
       break;
     }
   } while ((commonAncestor = commonAncestor->getParentOp()));
