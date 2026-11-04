@@ -171,7 +171,7 @@ template <> struct DOTGraphTraits<const llzk::SymbolDefTreeNode *> : public Defa
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
+  static std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
 };
 
 template <>

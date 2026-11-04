@@ -321,7 +321,7 @@ template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
-  llvm::DynamicAPInt getValue(FeltConstantOp op) const {
+  static llvm::DynamicAPInt getValue(FeltConstantOp op) {
     // PCL accepts fieldless constants with raw signed values and reduces them modulo the prime
     // inferred by `selectPrime()`. However, it requires exactly one declared field across the
     // circuit so it's acceptable to reduce values with the specified prime immediately or hold
@@ -332,7 +332,7 @@ protected:
 
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
-  llvm::DynamicAPInt getValue(arith::ConstantOp op) const {
+  static llvm::DynamicAPInt getValue(arith::ConstantOp op) {
     return llzk::integerAttrToDynamicAPInt(llvm::cast<IntegerAttr>(op.getValue()));
   }
 };

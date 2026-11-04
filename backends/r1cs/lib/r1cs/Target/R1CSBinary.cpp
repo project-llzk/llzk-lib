@@ -203,7 +203,7 @@ private:
     return reduced;
   }
 
-  FailureOr<uint64_t> assignFreshLabel(uint64_t nextLabel, StringRef kind, Location loc) const {
+  static FailureOr<uint64_t> assignFreshLabel(uint64_t nextLabel, StringRef kind, Location loc) {
     if (nextLabel == std::numeric_limits<uint64_t>::max()) {
       return emitError(loc) << "ran out of label ids while assigning a " << kind << " wire";
     }
@@ -360,7 +360,7 @@ private:
     }
   }
 
-  ExportLinearCombination canonicalize(LinearAccumulator &&accumulator) const {
+  static ExportLinearCombination canonicalize(LinearAccumulator &&accumulator) {
     ExportLinearCombination result;
     SmallVector<std::pair<uint32_t, llvm::DynamicAPInt>> sortedTerms;
     sortedTerms.reserve(accumulator.coefficients.size());

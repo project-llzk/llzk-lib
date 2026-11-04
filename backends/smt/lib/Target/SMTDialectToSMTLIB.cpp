@@ -559,7 +559,7 @@ private:
   }
 
   /// Bind an `arith.constant` that already maps directly onto SMT-LIB syntax.
-  LogicalResult emitArithConstant(arith::ConstantOp constOp, EvalContext &ctx) {
+  static LogicalResult emitArithConstant(arith::ConstantOp constOp, EvalContext &ctx) {
     if (constOp->getNumResults() != 1) {
       return constOp.emitOpError("smt-to-smtlib only supports single-result arith.constant");
     }
@@ -1055,7 +1055,7 @@ private:
   }
 
   /// Require that an `smt.check` result region is structurally empty.
-  LogicalResult
+  static LogicalResult
   verifyEmptyCheckRegion(mlir::smt::CheckOp checkOp, StringRef regionName, Region &region) {
     if (!llvm::hasSingleElement(region) || !region.front().without_terminator().empty()) {
       return checkOp.emitOpError()
@@ -1145,7 +1145,7 @@ private:
   }
 
   /// Determine whether a helper body can preserve sharing with `let` bindings.
-  bool helperIsPurelyExpressionBased(func::FuncOp func) const {
+  static bool helperIsPurelyExpressionBased(func::FuncOp func) {
     for (Operation &op : func.getBody().front().without_terminator()) {
       if (isa<smt_info::SMTInfoSetOp, mlir::smt::DeclareFunOp, mlir::smt::AssertOp,
               mlir::smt::PushOp, mlir::smt::PopOp, mlir::smt::CheckOp>(op)) {
@@ -1326,7 +1326,7 @@ private:
   }
 
   /// Render an `arith.constant` as an SMT-LIB literal term.
-  FailureOr<ValueBinding> buildArithConstantExpr(arith::ConstantOp constOp) {
+  static FailureOr<ValueBinding> buildArithConstantExpr(arith::ConstantOp constOp) {
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
       return ValueBinding {formatBoolLiteral(boolAttr.getValue()), /*survivesReset=*/true};
     }

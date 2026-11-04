@@ -167,7 +167,7 @@ public:
   ) const override;
 
   // arr[i, j, k] => (select (select (select arr i) j) k)
-  mlir::Value emitArraySelect(
+  static mlir::Value emitArraySelect(
       mlir::Location loc, mlir::Value array, mlir::ValueRange indices, mlir::OpBuilder &builder
   );
 
