@@ -458,20 +458,20 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 
 } // namespace
 
-LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Additional checks for the compute/constrain/product functions within a struct
   if (StructDefOp parentStructOpt = getParentOfType<StructDefOp>(*this)) {
     // Verify return type restrictions for functions within a StructDefOp
     if (nameIsCompute()) {
-      return verifyFuncTypeCompute(*this, tables, parentStructOpt);
+      return verifyFuncTypeCompute(*this, symbolTables, parentStructOpt);
     } else if (nameIsConstrain()) {
-      return verifyFuncTypeConstrain(*this, tables, parentStructOpt);
+      return verifyFuncTypeConstrain(*this, symbolTables, parentStructOpt);
     } else if (nameIsProduct()) {
-      return verifyFuncTypeProduct(*this, tables, parentStructOpt);
+      return verifyFuncTypeProduct(*this, symbolTables, parentStructOpt);
     }
   }
   // In the general case, verify symbol resolution in all input and output types.
-  return verifyTypeResolution(tables, *this, getFunctionType());
+  return verifyTypeResolution(symbolTables, *this, getFunctionType());
 }
 
 SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
@@ -930,9 +930,9 @@ private:
 
 } // namespace
 
-LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // First, verify symbol resolution in all input and output types.
-  if (failed(verifyTypeResolution(tables, *this, getTypeSignature()))) {
+  if (failed(verifyTypeResolution(symbolTables, *this, getTypeSignature()))) {
     return failure(); // verifyTypeResolution() already emits a sufficient error message
   }
 
@@ -962,7 +962,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
   // checks against the known target function.
-  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(tables, calleeAttr, *this);
+  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(symbolTables, calleeAttr, *this);
   if (failed(tgtOpt)) {
     return this->emitError() << "expected '" << FuncDefOp::getOperationName() << "' named \""
                              << calleeAttr << '"';

@@ -392,21 +392,21 @@ SymbolRefAttr ContractOp::getFullyQualifiedName(bool requireParent) {
   return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
-LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Verify the target of the contract
   FailureOr<ModuleOp> rootRes = getRootModule(getOperation());
   if (failed(rootRes)) {
     return emitOpError().append("could not lookup root module");
   }
   FailureOr<SymbolLookupResultUntyped> targetRes =
-      lookupTopLevelSymbol(tables, getTargetAttr(), rootRes->getOperation());
+      lookupTopLevelSymbol(symbolTables, getTargetAttr(), rootRes->getOperation());
   if (failed(targetRes)) {
     return emitOpError().append("could not find target \"@", getTarget(), "\"");
   }
 
   FunctionType contractTy = getFunctionType();
   // Verify the symbols in the contract argument
-  if (failed(verifyTypeResolution(tables, *this, contractTy))) {
+  if (failed(verifyTypeResolution(symbolTables, *this, contractTy))) {
     // verifyTypeResolution already reports error messages
     return failure();
   }
@@ -815,9 +815,9 @@ private:
 
 } // namespace
 
-LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // First, verify symbol resolution in all input and output types.
-  if (failed(verifyTypeResolution(tables, *this, getTypeSignature()))) {
+  if (failed(verifyTypeResolution(symbolTables, *this, getTypeSignature()))) {
     return failure(); // verifyTypeResolution() already emits a sufficient error message
   }
 
@@ -845,7 +845,7 @@ LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
   // checks against the known target function.
   auto tgtOpt = lookupTopLevelSymbol<ContractOp>(
-      tables, calleeAttr, getParentOfType<ModuleOp>(getOperation())
+      symbolTables, calleeAttr, getParentOfType<ModuleOp>(getOperation())
   );
   if (failed(tgtOpt)) {
     return this->emitError() << "expected '" << ContractOp::getOperationName() << "' named \""

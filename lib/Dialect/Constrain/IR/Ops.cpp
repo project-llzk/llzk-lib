@@ -28,10 +28,10 @@ namespace llzk::constrain {
 // EmitEqualityOp
 //===------------------------------------------------------------------===//
 
-LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+      symbolTables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
   );
 }
 
@@ -41,10 +41,10 @@ Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
 // EmitContainmentOp
 //===------------------------------------------------------------------===//
 
-LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+      symbolTables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
   );
 }
 
