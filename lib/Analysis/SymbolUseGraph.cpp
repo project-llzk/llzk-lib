@@ -315,7 +315,7 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
 }
 
 void SymbolUseGraph::dumpToDotFile(std::string filename) const {
-  std::string title = llvm::DOTGraphTraits<const llzk::SymbolUseGraph *>::getGraphName(this);
+  std::string_view title = llvm::DOTGraphTraits<const llzk::SymbolUseGraph *>::getGraphName(this);
   llvm::WriteGraph(this, "SymbolUseGraph", /*ShortNames*/ false, title, std::move(filename));
 }
 

@@ -20,6 +20,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/DOTGraphTraits.h>
 
+#include <string_view>
 #include <utility>
 
 namespace llzk {
@@ -283,7 +284,8 @@ struct DOTGraphTraits<const llzk::SymbolUseGraph *>
 
   DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<NodeRef>(isSimple) {}
 
-  static std::string getGraphName(GraphType) { return "Symbol Use Graph"; }
+  /// Return the graph title backed by a string literal.
+  static std::string_view getGraphName(GraphType) { return "Symbol Use Graph"; }
 };
 
 } // namespace llvm
