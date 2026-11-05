@@ -66,8 +66,8 @@ jobs:
             -isystem${{ github.workspace }}/build/backends/zklean/include
           style: '' # Disable clang-format; it has a separate workflow.
           tidy-checks: '' # Use .clang-tidy.
-          files-changed-only: true
-          lines-changed-only: true
+          files-changed-only: false
+          lines-changed-only: false
           ignore: 'build|result|third-party'
           step-summary: true
           file-annotations: true
