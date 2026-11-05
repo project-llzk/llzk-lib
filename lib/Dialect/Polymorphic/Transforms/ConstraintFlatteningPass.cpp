@@ -879,7 +879,7 @@ public:
     }
     output.push_back(new Block());
     SmallVector<BoundValue> arguments;
-    for (auto [i, argument] : llvm::enumerate(source.getArguments())) {
+    for (BlockArgument argument : source.getArguments()) {
       Value emitted = output.front().addArgument(argument.getType(), argument.getLoc());
       if (aggregate(argument.getType())) {
         arguments.push_back(bindings.create(argument.getType(), argument, emitted));
