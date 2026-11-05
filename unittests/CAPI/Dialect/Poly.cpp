@@ -22,7 +22,7 @@
 
 TEST_F(CAPITest, llzk_type_var_type_get) {
   auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, mlirStringRefCreateFromCString("T"));
-  EXPECT_NE(t.ptr, (void *)NULL);
+  EXPECT_NE(t.ptr, (void *)nullptr);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_type_var_type_pass) {
@@ -33,13 +33,13 @@ TEST_F(CAPITest, llzk_type_is_a_type_var_type_pass) {
 TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
   auto s = mlirStringAttrGet(context, mlirStringRefCreateFromCString("T"));
   auto t = llzkPoly_TypeVarTypeGetFromAttr(s);
-  EXPECT_NE(t.ptr, (void *)NULL);
+  EXPECT_NE(t.ptr, (void *)nullptr);
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_name_ref) {
   auto s = mlirStringRefCreateFromCString("T");
   auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, s);
-  EXPECT_NE(t.ptr, (void *)NULL);
+  EXPECT_NE(t.ptr, (void *)nullptr);
   EXPECT_TRUE(mlirStringRefEqual(s, llzkPoly_TypeVarTypeGetRefName(t)));
 }
 
@@ -47,7 +47,7 @@ TEST_F(CAPITest, llzk_type_var_type_get_name) {
   auto s = mlirStringRefCreateFromCString("T");
   auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, s);
   auto sym = mlirFlatSymbolRefAttrGet(context, s);
-  EXPECT_NE(t.ptr, (void *)NULL);
+  EXPECT_NE(t.ptr, (void *)nullptr);
   EXPECT_TRUE(mlirAttributeEqual(sym, llzkPoly_TypeVarTypeGetNameRef(t)));
 }
 
@@ -67,7 +67,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build) {
       return llzkPoly_ApplyMapOpBuild(
           builder, location, affine_map_attr,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
@@ -87,7 +87,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
@@ -104,7 +104,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
       return llzkPoly_ApplyMapOpBuildWithAffineExpr(
           builder, location, expr,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
@@ -121,7 +121,7 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op_pass) {
       return llzkPoly_ApplyMapOpBuildWithAffineExpr(
           builder, location, expr,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
@@ -143,7 +143,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, this->affine_map,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
@@ -167,14 +167,14 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
     }
     void doOtherChecks(MlirOperation op) override {
       auto n_dims = llzkPoly_ApplyMapOpGetNumDimOperands(op);
-      llvm::SmallVector<MlirValue> dims(n_dims, MlirValue {.ptr = (void *)NULL});
+      llvm::SmallVector<MlirValue> dims(n_dims, MlirValue {.ptr = (void *)nullptr});
       llzkPoly_ApplyMapOpGetDimOperands(op, dims.data());
       EXPECT_EQ(dims.size(), 0);
     }
@@ -193,14 +193,14 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
-              .values = (const MlirValue *)NULL,
+              .values = (const MlirValue *)nullptr,
               .size = 0,
           }
       );
     }
     void doOtherChecks(MlirOperation op) override {
       auto n_syms = llzkPoly_ApplyMapOpGetNumSymbolOperands(op);
-      llvm::SmallVector<MlirValue> syms(n_syms, {.ptr = (void *)NULL});
+      llvm::SmallVector<MlirValue> syms(n_syms, {.ptr = (void *)nullptr});
       llzkPoly_ApplyMapOpGetSymbolOperands(op, syms.data());
       EXPECT_EQ(syms.size(), 0);
     }

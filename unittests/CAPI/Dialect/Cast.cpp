@@ -48,7 +48,7 @@ TEST_F(CAPITest, llzk_int_to_felt_op_build_with_type_inserts_with_builder) {
       builder, location, wrap(cppGetFeltType(builder)), mlirOperationGetResult(input, 0)
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_EQ(insertions, 1u);
   EXPECT_TRUE(mlirOperationEqual(mlirOperationGetNextInBlock(input), op));
 
