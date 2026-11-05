@@ -372,9 +372,7 @@ static LogicalResult verifyAffineMapOperands(NewPodOp *op, Type retTy) {
   }
 
 LogicalResult NewPodOp::verify() {
-  auto retTy = llvm::dyn_cast<PodType>(getResult().getType());
-  assert(retTy); // per ODS spec of NewPodOp
-
+  PodType retTy = getResult().getType();
   bool failed = false;
   check(
       verifyInitialValues(getInitialValues(), getInitializedRecords().getValue(), retTy, [this]() {
@@ -516,13 +514,7 @@ void NewPodOp::print(OpAsmPrinter &printer) {
 
   os << " : ";
 
-  auto type = getResult().getType();
-  if (auto validType = llvm::dyn_cast<PodType>(type)) {
-    printer.printStrippedAttrOrType(validType);
-  } else {
-    printer.printType(type);
-  }
-
+  printer.printStrippedAttrOrType(getResult().getType());
   printer.printOptionalAttrDict(
       (*this)->getAttrs(),
       {"initializedRecords", "mapOpGroupSizes", "numDimsPerMap", "operandSegmentSizes"}
@@ -619,7 +611,7 @@ void ReadPodOp::writeProperties(DialectBytecodeWriter &writer) {
 }
 
 LogicalResult ReadPodOp::verify() {
-  auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
+  PodType podTy = getPodRef().getType();
   if (!podTy) {
     return emitError("reference operand expected a plain-old-data struct but got ")
            << getPodRef().getType();
@@ -652,7 +644,7 @@ void WritePodOp::writeProperties(DialectBytecodeWriter &writer) {
 }
 
 LogicalResult WritePodOp::verify() {
-  auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
+  PodType podTy = getPodRef().getType();
   if (!podTy) {
     return emitError() << "reference operand expected a plain-old-data struct but got "
                        << getPodRef().getType();

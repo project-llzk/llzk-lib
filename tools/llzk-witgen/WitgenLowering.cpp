@@ -949,9 +949,9 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   if (desiredShape.empty()) {
     desiredShape.push_back(1);
   }
-  auto resultType = llvm::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
+  MemRefType resultType = memref::SubViewOp::inferRankReducedResultType(
       desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
-  ));
+  );
   auto op = memref::SubViewOp::create(
       builder, loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
   );
@@ -1735,10 +1735,8 @@ private:
       if (failed(arrayValue)) {
         return failure();
       }
-      auto lowered = readArrayElement(
-          builder, loc, llvm::cast<array::ArrayType>(readArrayOp.getArrRef().getType()),
-          *arrayValue, indices
-      );
+      auto lowered =
+          readArrayElement(builder, loc, readArrayOp.getArrRef().getType(), *arrayValue, indices);
       if (failed(lowered)) {
         return failure();
       }
@@ -1758,8 +1756,8 @@ private:
         return failure();
       }
       return writeArrayElement(
-          builder, loc, llvm::cast<array::ArrayType>(writeArrayOp.getArrRef().getType()),
-          valueMap[writeArrayOp.getArrRef()], indices, *elementValue
+          builder, loc, writeArrayOp.getArrRef().getType(), valueMap[writeArrayOp.getArrRef()],
+          indices, *elementValue
       );
     }
 

@@ -170,7 +170,7 @@ struct R1CSConstraint {
 
   inline bool isLinearOnly() const { return a.terms.empty() && b.terms.empty(); }
 
-  R1CSConstraint multiply(const R1CSConstraint &other) {
+  R1CSConstraint multiply(const R1CSConstraint &other) const {
     auto isDegZero = [](const R1CSConstraint &constraint) {
       return constraint.a.terms.empty() && constraint.b.terms.empty() && constraint.c.terms.empty();
     };
@@ -485,7 +485,8 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
   }
 
   /// Clone only the validated dependency graph needed for a compute assignment.
-  FailureOr<Value> rebuildAuxiliaryExpression(Value root, OpBuilder &builder, IRMapping &mapping) {
+  static FailureOr<Value>
+  rebuildAuxiliaryExpression(Value root, OpBuilder &builder, IRMapping &mapping) {
     SmallVector<std::pair<Value, bool>> pending {{root, false}};
     while (!pending.empty()) {
       auto [value, expanded] = pending.pop_back_val();
@@ -633,7 +634,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
   }
 
   /// Write each signal path and its LLZK and R1CS IDs directly from the lowering maps.
-  void
+  static void
   emitLayoutCSV(const LLZKLayout &layout, const R1CSWireMap &mapping, llvm::raw_ostream &output) {
     output << "access_path,llzk_layout_id,r1cs_wire_id\n";
     for (auto [layoutId, path] : llvm::enumerate(layout.signalPaths)) {

@@ -100,7 +100,7 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
         if (succeeded(constantIndex)) {
           indices.emplace_back(*constantIndex);
         } else {
-          auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
+          ArrayType arrayType = array.getType();
           assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
           indices.push_back(
               SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
@@ -122,7 +122,7 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
 }
 
 void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
-  if (auto value = llvm::dyn_cast_if_present<Value>(lattice->getAnchor())) {
+  if (Value value = lattice->getAnchor()) {
     if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
       Operation *parent = arg.getOwner()->getParentOp();
       if (llvm::isa_and_present<RegionBranchOpInterface>(parent) &&
@@ -262,7 +262,7 @@ void SourceRefAnalysis::visitExternalCall(
 
   for (auto [result, resultLattice] : llvm::zip(call->getResults(), resultLattices)) {
     SourceRefLatticeValue combined;
-    unsigned resultNum = llvm::cast<OpResult>(result).getResultNumber();
+    unsigned resultNum = result.getResultNumber();
     for (Operation *returnSite : returnSites) {
       auto retVal = static_cast<const Lattice *>(getLatticeElementFor(
                                                      getProgramPointAfter(call.getOperation()),
@@ -308,7 +308,7 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     if (succeeded(constantIndex)) {
       indices.emplace_back(*constantIndex);
     } else {
-      auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
+      ArrayType arrayType = array.getType();
       assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
       indices.push_back(
           SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
@@ -454,7 +454,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
 
     // Map fn parameters to args in the call op
     for (auto [arg, operand] : llvm::zip_equal(fn.getArguments(), fnCall.getArgOperands())) {
-      translations.push_back({SourceRef(arg), SourceRefAnalysis::getValueState(solver, operand)});
+      translations.emplace_back(SourceRef(arg), SourceRefAnalysis::getValueState(solver, operand));
     }
     auto &childAnalysis =
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);

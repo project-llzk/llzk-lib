@@ -1126,7 +1126,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       );
 
       array::ArrayIndexGen indexGen = array::ArrayIndexGen::from(arrayTy);
-      auto arrayRes = llvm::cast<OpResult>(createArray->getResult(0));
+      OpResult arrayRes = createArray->getResult(0);
       for (unsigned i = 0; i < elements.size(); ++i) {
         auto maybeIndices = indexGen.delinearize(i, op->getContext());
         ensure(maybeIndices.has_value(), "could not delinearize array.new element index");
@@ -2017,7 +2017,7 @@ LogicalResult StructIntervals::computeIntervals(
           std::optional<SourceRefLatticeValue> identityVal =
               getIdentitySourceRefState(solver, operand);
           if (identityVal.has_value()) {
-            identityTranslations.push_back({prefix, *identityVal});
+            identityTranslations.emplace_back(prefix, *identityVal);
           }
 
           if (!llvm::isa<ArrayType, StructType, pod::PodType>(operand.getType())) {

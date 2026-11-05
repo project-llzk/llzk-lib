@@ -16,6 +16,7 @@
 #include <llvm/Support/Casting.h>
 
 #include <limits>
+#include <utility>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -191,7 +192,8 @@ LogicalResult CircuitDefOp::verify() {
       return emitError() << '\'' << INPUT_LABELS_ATTR << "' must contain one i64 label per input";
     }
     for (int64_t label : values.asArrayRef()) {
-      if (label < FIRST_SIGNAL_WIRE_ID || label > std::numeric_limits<uint32_t>::max()) {
+      if (std::cmp_less(label, FIRST_SIGNAL_WIRE_ID) ||
+          std::cmp_greater(label, std::numeric_limits<uint32_t>::max())) {
         return emitError() << '\'' << INPUT_LABELS_ATTR << "' must be in [" << FIRST_SIGNAL_WIRE_ID
                            << ", " << std::numeric_limits<uint32_t>::max() << ']';
       }

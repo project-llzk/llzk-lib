@@ -415,7 +415,7 @@ emitLeanFunc(FuncOpTy func, raw_ostream &os, const llvm::DenseSet<StringRef> &st
       std::string name =
           structIndex == 0 ? "strct" : (llvm::Twine("strct") + llvm::Twine(structIndex)).str();
       valueNames[arg] = name;
-      if (structArgNames.find(*structTypeName) == structArgNames.end()) {
+      if (!structArgNames.contains(*structTypeName)) {
         structArgNames[*structTypeName] = name;
       }
       if (structIndex == 0) {

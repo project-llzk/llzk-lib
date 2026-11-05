@@ -62,7 +62,7 @@ public:
       mlir::Operation *producer = current.getDefiningOp();
       // Assert casts may have effects, but their fold hooks succeed only when the
       // range check is satisfied. Other effectful operations remain unknown.
-      if (!producer || producer->getNumRegions() ||
+      if (!producer || producer->getNumRegions() != 0u ||
           (!mlir::isMemoryEffectFree(producer) &&
            !llvm::isa<cast::FeltToIndexOp, cast::IntToFeltOp>(producer))) {
         constants.try_emplace(current, mlir::Attribute());

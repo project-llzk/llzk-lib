@@ -90,7 +90,7 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
 
   /// @brief Generate all tests for a complete enum record
   /// @param enumInfo The enum attribute definition
-  void genCompleteRecord(const EnumInfo &enumInfo) {
+  void genCompleteRecord(const EnumInfo &enumInfo) const {
     // EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.
     if (!getDialectName().empty() &&
         !enumInfo.getCppNamespace().contains_insensitive(getDialectName())) {

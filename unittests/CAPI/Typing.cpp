@@ -47,7 +47,9 @@ TEST_F(TypingTest, is_concrete_type) { EXPECT_TRUE(llzkIsConcreteType(createInde
 
 TEST_F(TypingTest, has_affine_map_attr) { EXPECT_TRUE(!llzkHasAffineMapAttr(createIndexType())); }
 
-TEST_F(TypingTest, type_params_unify_empty) { EXPECT_TRUE(llzkTypeParamsUnify(0, NULL, 0, NULL)); }
+TEST_F(TypingTest, type_params_unify_empty) {
+  EXPECT_TRUE(llzkTypeParamsUnify(0, nullptr, 0, nullptr));
+}
 
 TEST_F(TypingTest, type_params_unify_pass) {
   auto string_ref = mlirStringRefCreateFromCString("N");
@@ -64,8 +66,8 @@ TEST_F(TypingTest, type_params_unify_fail) {
 }
 
 TEST_F(TypingTest, array_attr_type_params_unify_empty) {
-  MlirAttribute lhs = mlirArrayAttrGet(context, 0, NULL);
-  MlirAttribute rhs = mlirArrayAttrGet(context, 0, NULL);
+  MlirAttribute lhs = mlirArrayAttrGet(context, 0, nullptr);
+  MlirAttribute rhs = mlirArrayAttrGet(context, 0, nullptr);
   EXPECT_TRUE(llzkArrayAttrTypeParamsUnify(lhs, rhs));
 }
 
@@ -90,12 +92,12 @@ TEST_F(TypingTest, array_attr_type_params_unify_fail) {
 }
 
 TEST_F(TypingTest, types_unify) {
-  EXPECT_TRUE(llzkTypesUnify(createIndexType(), createIndexType(), 0, NULL));
+  EXPECT_TRUE(llzkTypesUnify(createIndexType(), createIndexType(), 0, nullptr));
 }
 
 TEST_F(TypingTest, is_more_concrete_unification) {
   EXPECT_TRUE(
-      llzkIsMoreConcreteUnification(createIndexType(), createIndexType(), test_callback1, NULL)
+      llzkIsMoreConcreteUnification(createIndexType(), createIndexType(), test_callback1, nullptr)
   );
 }
 

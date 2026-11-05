@@ -210,7 +210,7 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayRejectsDynamicShape) {
 
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
-  arrayValue->elements.push_back(Field::getField(GetParam()).reduce(1));
+  arrayValue->elements.emplace_back(Field::getField(GetParam()).reduce(1));
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -226,10 +226,10 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   arrayValue->type = arrayType;
   auto field = Field::getField(GetParam());
   // Canonicalization must reach every leaf of nested aggregate outputs.
-  arrayValue->elements.push_back(field.prime() + 1);
-  arrayValue->elements.push_back(-field.prime() + 2);
-  arrayValue->elements.push_back(-field.prime() * 2 + 3);
-  arrayValue->elements.push_back(field.prime() * 2 + 4);
+  arrayValue->elements.emplace_back(field.prime() + 1);
+  arrayValue->elements.emplace_back(-field.prime() + 2);
+  arrayValue->elements.emplace_back(-field.prime() * 2 + 3);
+  arrayValue->elements.emplace_back(field.prime() * 2 + 4);
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);

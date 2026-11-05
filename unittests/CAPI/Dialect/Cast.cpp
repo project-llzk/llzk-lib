@@ -48,7 +48,7 @@ TEST_F(CAPITest, llzk_int_to_felt_op_build_with_type_inserts_with_builder) {
       builder, location, wrap(cppGetFeltType(builder)), mlirOperationGetResult(input, 0)
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_EQ(insertions, 1u);
   EXPECT_TRUE(mlirOperationEqual(mlirOperationGetNextInBlock(input), op));
 
@@ -66,7 +66,7 @@ std::unique_ptr<IntToFeltOpBuildFuncHelper> IntToFeltOpBuildFuncHelper::get() {
       MlirOperation op = testClass.createIndexOperation();
       this->forceCleanup = unwrap(op);
       return llzkCast_IntToFeltOpBuildWithType(
-          builder, location, wrap(testClass.cppGetFeltType(builder)), mlirOperationGetResult(op, 0)
+          builder, location, wrap(CAPITest::cppGetFeltType(builder)), mlirOperationGetResult(op, 0)
       );
     }
   };
@@ -83,7 +83,7 @@ std::unique_ptr<FeltToIndexOpBuildFuncHelper> FeltToIndexOpBuildFuncHelper::get(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      mlir::Value val = testClass.cppGenFeltConstant(builder, location);
+      mlir::Value val = CAPITest::cppGenFeltConstant(builder, location);
       MlirAttribute overflowAttr =
           llzkCast_OverflowSemanticsAttrGet(testClass.context, LlzkCastOverflowSemantics_ASSERT);
       return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val), overflowAttr);

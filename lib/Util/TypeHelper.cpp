@@ -114,7 +114,7 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
       outer.ss << "!t<";
-      outer.appendSymName(llvm::cast<TypeVarType>(t).getRefName());
+      outer.appendSymName(t.getRefName());
       outer.ss << '>';
     }
     void caseArray(ArrayType t) {
@@ -293,7 +293,7 @@ class AllowedTypes {
   /// Validates that, if columns are a requirement, the struct type has columns.
   /// If columns are not a requirement returns true early since the pointers required
   /// for lookup may be null.
-  bool validColumns(StructType s) {
+  bool validColumns(StructType s) const {
     if (!must_be_column) {
       return true;
     }
@@ -364,7 +364,8 @@ public:
   // This is the main check for allowed types.
   bool isValidTypeImpl(Type type);
 
-  bool areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) {
+  bool
+  areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) const {
     // In LLZK, the number of array dimensions must always be known, i.e., `hasRank()==true`
     if (dimensionSizes.empty()) {
       if (emitError) {
@@ -488,11 +489,11 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
     AllowedTypes &outer;
     Impl(AllowedTypes &outerRef) : outer(outerRef) {}
 
-    bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
-    bool caseIndex(IndexType) { return !outer.no_int; }
-    bool caseFelt(FeltType) { return !outer.no_felt; }
-    bool caseString(StringType) { return !outer.no_string; }
-    bool caseTypeVar(TypeVarType) { return !outer.no_var; }
+    bool caseBool(IntegerType t) const { return !outer.no_int && t.isSignlessInteger(1); }
+    bool caseIndex(IndexType) const { return !outer.no_int; }
+    bool caseFelt(FeltType) const { return !outer.no_felt; }
+    bool caseString(StringType) const { return !outer.no_string; }
+    bool caseTypeVar(TypeVarType) const { return !outer.no_var; }
     bool caseArray(ArrayType t) {
       return !outer.no_array &&
              outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
@@ -1157,12 +1158,9 @@ bool isFeltOrSimpleFeltAggregate(Type ty) {
     return isFeltOrSimpleFeltAggregate(arrTy.getElementType());
   })
       .Case<PodType>([](auto podTy) {
-    for (auto record : podTy.getRecords()) {
-      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
-        return false;
-      }
-    }
-    return true;
+    return llvm::all_of(podTy.getRecords(), [](auto record) {
+      return isFeltOrSimpleFeltAggregate(record.getType());
+    });
   }).Default([](auto) { return false; });
 }
 

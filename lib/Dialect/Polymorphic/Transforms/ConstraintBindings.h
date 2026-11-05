@@ -169,7 +169,7 @@ public:
       return *value;
     }
     return constraintError(
-        site, (roots[path.root].input || roots[path.root].protections)
+        site, (roots[path.root].input || roots[path.root].protections != 0u)
                   ? "read of uninitialized function input storage"
                   : "read of uninitialized local storage"
     );
@@ -184,7 +184,7 @@ public:
   /// Reject writes based on destination identity, never scalar provenance.
   mlir::LogicalResult writable(AccessPath path, mlir::Operation *site) const {
     const Root &root = roots[path.root];
-    if (root.input || root.storage || root.protections) {
+    if (root.input || root.storage || root.protections != 0u) {
       return constraintError(site, "cannot write to function input or original storage");
     }
     return mlir::success();
