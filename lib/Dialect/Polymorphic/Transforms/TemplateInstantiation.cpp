@@ -95,9 +95,9 @@ public:
     llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
     llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
 
-    ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
+    ((ptr = &ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
       return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
-    }))),
+    })),
      ...);
 
     return TS.Default([&](Attribute a) {

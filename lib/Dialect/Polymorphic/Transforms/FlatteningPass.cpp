@@ -681,7 +681,7 @@ public:
     }
     activeInferences_.emplace_back(func.getOperation(), paramName);
 
-    TemplateTypeConverter tyConv((paramNameToConcrete_));
+    TemplateTypeConverter tyConv(paramNameToConcrete_);
     std::optional<Attribute> inferred;
     bool ambiguous = false;
 
