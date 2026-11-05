@@ -768,7 +768,7 @@ class DiscoveryRun {
       if (failed(evaluateWhile(whileLoop, env, results))) {
         return failure();
       }
-    } else if (op.getNumRegions()) {
+    } else if (op.getNumRegions() != 0u) {
       return op.emitError("unsupported control flow in specialization discovery");
     } else {
       // Local aggregate facts supplement scalar folding; reads from external

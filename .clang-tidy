@@ -37,7 +37,6 @@ Checks:
   - 'readability-container-data-pointer'
   - 'readability-container-size-empty'
   - 'readability-enum-initial-value'
-  - 'readability-implicit-bool-conversion'
   - 'readability-inconsistent-declaration-parameter-name'
   - 'readability-make-member-function-const'
   - 'readability-misplaced-array-index'
@@ -62,6 +61,7 @@ Checks:
   # has many false positives but should be checked occasionally
   - '-bugprone-unchecked-optional-access'
   - '-readability-convert-member-functions-to-static'
+  - '-readability-implicit-bool-conversion'
 CheckOptions:
   # Preserve the defaults and exclude libstdc++'s renamed comparison zero type.
   modernize-use-nullptr.IgnoredTypes: '_CmpUnspecifiedParam;^std::__cmp_cat::__unspec;^std::__cmp_cat::__literal_zero'
