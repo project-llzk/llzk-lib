@@ -32,7 +32,7 @@ using namespace mlir;
 
 class ArrayTypeHelperTests : public LLZKTest {
 protected:
-  ArrayTypeHelperTests() : LLZKTest() {}
+  ArrayTypeHelperTests() = default;
 };
 
 TEST_F(ArrayTypeHelperTests, test_delinearize_too_small) {

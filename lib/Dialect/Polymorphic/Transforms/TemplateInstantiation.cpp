@@ -249,8 +249,7 @@ public:
       /// Instantiated values for the parameter names in `originalType`
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
   )
-      : TypeConverter(), origTy(originalType), newTy(newType),
-        paramNameToValue(paramNameToInstantiatedValue) {
+      : origTy(originalType), newTy(newType), paramNameToValue(paramNameToInstantiatedValue) {
 
     addConversion([](Type inputTy) { return inputTy; });
 

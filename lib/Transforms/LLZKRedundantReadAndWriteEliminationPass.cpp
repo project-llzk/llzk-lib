@@ -479,7 +479,7 @@ private:
 
   template <typename IdType>
   ReferenceNode(IdType id, Value initialVal)
-      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr), children(),
+      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr),
         dynamicChildCount(0) {}
 };
 

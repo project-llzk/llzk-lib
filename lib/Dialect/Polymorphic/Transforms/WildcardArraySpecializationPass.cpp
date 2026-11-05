@@ -357,7 +357,7 @@ public:
       std::optional<StructType> oldStructType = std::nullopt,
       std::optional<StructType> newStructType = std::nullopt
   )
-      : TypeConverter(), arrayReplacements_(arrayReplacements), oldStructType_(oldStructType),
+      : arrayReplacements_(arrayReplacements), oldStructType_(oldStructType),
         newStructType_(newStructType) {
     addConversion([](Type inputTy) { return inputTy; });
 

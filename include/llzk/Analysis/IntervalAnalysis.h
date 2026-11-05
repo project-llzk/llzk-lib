@@ -238,7 +238,7 @@ class IntervalAnalysisLatticeValue
 
 public:
   explicit IntervalAnalysisLatticeValue(ExpressionValue e) : Base(std::move(e)) {}
-  IntervalAnalysisLatticeValue() : Base() {}
+  IntervalAnalysisLatticeValue() = default;
   explicit IntervalAnalysisLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
   IntervalAnalysisLatticeValue(const IntervalAnalysisLatticeValue &) = default;
   IntervalAnalysisLatticeValue(IntervalAnalysisLatticeValue &&) = default;
