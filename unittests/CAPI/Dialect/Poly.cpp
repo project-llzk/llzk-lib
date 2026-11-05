@@ -318,7 +318,7 @@ std::unique_ptr<TemplateExprOpBuildFuncHelper> TemplateExprOpBuildFuncHelper::ge
         auto exprOp = mlir::unwrap_cast<llzk::polymorphic::TemplateExprOp>(retVal);
         mlir::OpBuilder *cppBuilder = unwrap(builder);
         cppBuilder->setInsertionPointToStart(&exprOp.getInitializerRegion().emplaceBlock());
-        mlir::Value val = testClass.cppGenFeltConstant(builder, location);
+        mlir::Value val = CAPITest::cppGenFeltConstant(builder, location);
         llzk::polymorphic::YieldOp::create(*cppBuilder, unwrap(location), val);
       }
       return retVal;
@@ -350,7 +350,7 @@ std::unique_ptr<YieldOpBuildFuncHelper> YieldOpBuildFuncHelper::get() {
         );
         cppBuilder->setInsertionPointToStart(&templateExpr.getInitializerRegion().emplaceBlock());
       }
-      mlir::Value val = testClass.cppGenFeltConstant(builder, location);
+      mlir::Value val = CAPITest::cppGenFeltConstant(builder, location);
       return llzkPoly_YieldOpBuild(builder, location, wrap(val));
     }
   };
@@ -498,7 +498,7 @@ static llzk::polymorphic::TemplateExprOp addTemplateExprOp(
       *cppBuilder, unwrap(location), mlir::StringAttr::get(unwrap(tc.context), name)
   );
   cppBuilder->setInsertionPointToStart(&exprOp.getInitializerRegion().emplaceBlock());
-  mlir::Value val = tc.cppGenFeltConstant(builder, location);
+  mlir::Value val = CAPITest::cppGenFeltConstant(builder, location);
   llzk::polymorphic::YieldOp::create(*cppBuilder, unwrap(location), val);
   cppBuilder->setInsertionPointToEnd(&exprOp->getParentRegion()->back());
   return exprOp;

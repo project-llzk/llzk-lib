@@ -66,7 +66,7 @@ std::unique_ptr<IntToFeltOpBuildFuncHelper> IntToFeltOpBuildFuncHelper::get() {
       MlirOperation op = testClass.createIndexOperation();
       this->forceCleanup = unwrap(op);
       return llzkCast_IntToFeltOpBuildWithType(
-          builder, location, wrap(testClass.cppGetFeltType(builder)), mlirOperationGetResult(op, 0)
+          builder, location, wrap(CAPITest::cppGetFeltType(builder)), mlirOperationGetResult(op, 0)
       );
     }
   };
@@ -83,7 +83,7 @@ std::unique_ptr<FeltToIndexOpBuildFuncHelper> FeltToIndexOpBuildFuncHelper::get(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      mlir::Value val = testClass.cppGenFeltConstant(builder, location);
+      mlir::Value val = CAPITest::cppGenFeltConstant(builder, location);
       MlirAttribute overflowAttr =
           llzkCast_OverflowSemanticsAttrGet(testClass.context, LlzkCastOverflowSemantics_ASSERT);
       return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val), overflowAttr);

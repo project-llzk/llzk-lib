@@ -379,7 +379,7 @@ TEST_F(StructDefTest, llzk_member_def_op_build) {
       setInsertionPointToStructBody(testClass, builder, location);
       return llzkStruct_MemberDefOpBuild(
           builder, location, mlirStringRefCreateFromCString("member"),
-          wrap(testClass.cppGetFeltType(builder)), true, true
+          wrap(CAPITest::cppGetFeltType(builder)), true, true
       );
     }
 
@@ -398,7 +398,7 @@ TEST_F(StructDefTest, llzk_member_def_op_build_with_attrs) {
     ) override {
       setInsertionPointToStructBody(testClass, builder, location);
       auto name = mlirStringAttrGet(testClass.context, mlirStringRefCreateFromCString("member"));
-      auto type = mlirTypeAttrGet(wrap(testClass.cppGetFeltType(builder)));
+      auto type = mlirTypeAttrGet(wrap(CAPITest::cppGetFeltType(builder)));
       return llzkStruct_MemberDefOpBuildWithAttrs(builder, location, name, type, true, false);
     }
 
@@ -423,7 +423,7 @@ TEST_F(StructDefTest, llzk_member_def_op_build_with_named_attrs) {
           ),
           mlirNamedAttributeGet(
               mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("type")),
-              mlirTypeAttrGet(wrap(testClass.cppGetFeltType(builder)))
+              mlirTypeAttrGet(wrap(CAPITest::cppGetFeltType(builder)))
           ),
       };
       return llzkStruct_MemberDefOpBuildWithNamedAttrs(builder, location, 2, attrs, false, true);

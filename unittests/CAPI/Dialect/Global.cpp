@@ -117,7 +117,7 @@ std::unique_ptr<GlobalWriteOpBuildFuncHelper> GlobalWriteOpBuildFuncHelper::get(
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
-      auto value = wrap(testClass.cppGenFeltConstant(builder, location));
+      auto value = wrap(CAPITest::cppGenFeltConstant(builder, location));
       auto name = wrap(mlir::FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr("my_global")));
       return llzkGlobal_GlobalWriteOpBuild(builder, location, value, name);
     }

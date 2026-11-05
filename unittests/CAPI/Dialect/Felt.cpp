@@ -378,7 +378,7 @@ std::unique_ptr<FeltConstantOpBuildFuncHelper> FeltConstantOpBuildFuncHelper::ge
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       auto attr = llzk::felt::FeltConstAttr::get(unwrap(testClass.context), llvm::DynamicAPInt());
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_FeltConstantOpBuild(builder, location, resultType, wrap(attr));
     }
   };
@@ -395,8 +395,8 @@ std::unique_ptr<OrFeltOpBuildFuncHelper> OrFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_OrFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -413,8 +413,8 @@ std::unique_ptr<AndFeltOpBuildFuncHelper> AndFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_AndFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -431,8 +431,8 @@ std::unique_ptr<XorFeltOpBuildFuncHelper> XorFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_XorFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -449,8 +449,8 @@ std::unique_ptr<NotFeltOpBuildFuncHelper> NotFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_NotFeltOpBuild(builder, location, resultType, wrap(val));
     }
   };
@@ -467,8 +467,8 @@ std::unique_ptr<ShlFeltOpBuildFuncHelper> ShlFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_ShlFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -485,8 +485,8 @@ std::unique_ptr<ShrFeltOpBuildFuncHelper> ShrFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_ShrFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -498,8 +498,8 @@ std::unique_ptr<AddFeltOpBuildFuncHelper> AddFeltOpBuildFuncHelper::get() {
   struct Impl : public AddFeltOpBuildFuncHelper {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_AddFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -511,8 +511,8 @@ std::unique_ptr<SubFeltOpBuildFuncHelper> SubFeltOpBuildFuncHelper::get() {
   struct Impl : public SubFeltOpBuildFuncHelper {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_SubFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -524,8 +524,8 @@ std::unique_ptr<MulFeltOpBuildFuncHelper> MulFeltOpBuildFuncHelper::get() {
   struct Impl : public MulFeltOpBuildFuncHelper {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_MulFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -542,8 +542,8 @@ std::unique_ptr<PowFeltOpBuildFuncHelper> PowFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_PowFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -555,8 +555,8 @@ std::unique_ptr<DivFeltOpBuildFuncHelper> DivFeltOpBuildFuncHelper::get() {
   struct Impl : public DivFeltOpBuildFuncHelper {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_DivFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -573,8 +573,8 @@ std::unique_ptr<UnsignedIntDivFeltOpBuildFuncHelper> UnsignedIntDivFeltOpBuildFu
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_UnsignedIntDivFeltOpBuild(
           builder, location, resultType, wrap(val), wrap(val)
       );
@@ -593,8 +593,8 @@ std::unique_ptr<SignedIntDivFeltOpBuildFuncHelper> SignedIntDivFeltOpBuildFuncHe
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_SignedIntDivFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -611,8 +611,8 @@ std::unique_ptr<UnsignedModFeltOpBuildFuncHelper> UnsignedModFeltOpBuildFuncHelp
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_UnsignedModFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -629,8 +629,8 @@ std::unique_ptr<SignedModFeltOpBuildFuncHelper> SignedModFeltOpBuildFuncHelper::
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_SignedModFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
@@ -642,8 +642,8 @@ std::unique_ptr<NegFeltOpBuildFuncHelper> NegFeltOpBuildFuncHelper::get() {
   struct Impl : public NegFeltOpBuildFuncHelper {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_NegFeltOpBuild(builder, location, resultType, wrap(val));
     }
   };
@@ -660,8 +660,8 @@ std::unique_ptr<InvFeltOpBuildFuncHelper> InvFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      auto val = CAPITest::cppGenFeltConstant(builder, location);
+      auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_InvFeltOpBuild(builder, location, resultType, wrap(val));
     }
   };
