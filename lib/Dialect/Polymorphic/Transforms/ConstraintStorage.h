@@ -116,7 +116,7 @@ class ConstraintStorage {
       return constraintError(site, "run llzk-expose-child-members before reading child storage");
     }
     auto rolled = lookupTopLevelSymbol<component::StructDefOp>(
-        tables, llvm::cast<component::StructType>(read.getComponent().getType()).getNameRef(), site
+        tables, read.getComponent().getType().getNameRef(), site
     );
     if (mlir::failed(rolled)) {
       return mlir::failure();
@@ -134,7 +134,7 @@ class ConstraintStorage {
     }
     info.memberType = member.getType();
     info.family = member->getAttrOfType<mlir::ArrayAttr>(FAMILY_ATTR);
-    info.signal = bool(member.getSignal()) || (parent.definition == main && member.hasPublicAttr());
+    info.signal = member.getSignal() || (parent.definition == main && member.hasPublicAttr());
     return mlir::success();
   }
 

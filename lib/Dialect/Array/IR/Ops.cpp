@@ -70,7 +70,7 @@ void CreateArrayOp::build(
 
 LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(symbolTables, *this, llvm::cast<Type>(getType()));
+  return verifyTypeResolution(symbolTables, *this, getType());
 }
 
 void CreateArrayOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {

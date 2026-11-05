@@ -114,7 +114,7 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
       outer.ss << "!t<";
-      outer.appendSymName(llvm::cast<TypeVarType>(t).getRefName());
+      outer.appendSymName(t.getRefName());
       outer.ss << '>';
     }
     void caseArray(ArrayType t) {

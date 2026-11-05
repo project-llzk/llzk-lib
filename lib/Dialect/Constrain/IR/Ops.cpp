@@ -49,7 +49,7 @@ LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &symbolT
 }
 
 LogicalResult EmitContainmentOp::verify() {
-  auto arrType = llvm::cast<ArrayType>(getLhs().getType()); // per the ODS definition
+  ArrayType arrType = getLhs().getType();
   OwningEmitErrorFn errFn = getEmitOpErrFn(this);
 
   if (failed(verifySubArrayOrElementType(errFn, arrType, getRhs().getType()))) {

@@ -512,7 +512,7 @@ static FailureOr<uint32_t> computeFieldSizeBytes(Operation *op, const llvm::Dyna
   uint64_t minBytes = std::max(
       uint64_t(1), (static_cast<uint64_t>(llzk::toAPSInt(prime).getActiveBits()) + 7u) / 8u
   );
-  uint64_t roundedSize = ((static_cast<uint64_t>(minBytes) + 7u) / 8u) * 8u;
+  uint64_t roundedSize = ((minBytes + 7u) / 8u) * 8u;
   if (!std::in_range<uint32_t>(roundedSize)) {
     return op->emitOpError("field size does not fit in a 32-bit header field");
   }

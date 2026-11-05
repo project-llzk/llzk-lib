@@ -1362,10 +1362,10 @@ private:
     if (failed(input)) {
       return failure();
     }
-    auto resultType = cast<mlir::smt::BitVectorType>(op.getResult().getType());
     std::string expr;
     llvm::raw_string_ostream exprStream(expr);
-    exprStream << "((_ int_to_bv " << resultType.getWidth() << ") " << input->text << ')';
+    exprStream << "((_ int_to_bv " << op.getResult().getType().getWidth() << ") " << input->text
+               << ')';
     return ValueBinding {
         std::move(expr),
         input->survivesReset,
@@ -1410,7 +1410,7 @@ private:
       return failure();
     }
     unsigned lowBit = op.getLowBit();
-    unsigned highBit = lowBit + cast<mlir::smt::BitVectorType>(op.getType()).getWidth() - 1;
+    unsigned highBit = lowBit + op.getType().getWidth() - 1;
     std::string expr;
     llvm::raw_string_ostream exprStream(expr);
     exprStream << "((_ extract " << highBit << ' ' << lowBit << ") " << input->text << ')';
