@@ -1,6 +1,7 @@
 HeaderFilterRegex: 'llzk-lib/'
 Checks:
   - 'bugprone-*'
+  - 'clang-analyzer-*'
   - 'llvm-formatv-string'
   - 'llvm-prefer-isa-or-dyn-cast-in-conditionals'
   - 'llvm-redundant-casting'
