@@ -984,7 +984,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ConstraintFlat
 <div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span>    }</div>
 <div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>    output.push_back(<span class="keyword">new</span> Block());</div>
 <div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>    SmallVector&lt;BoundValue&gt; arguments;</div>
-<div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [i, argument] : llvm::enumerate(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>.getArguments())) {</div>
+<div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span>    <span class="keywordflow">for</span> (BlockArgument argument : <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>.getArguments()) {</div>
 <div class="line"><a id="l00883" name="l00883"></a><span class="lineno">  883</span>      Value emitted = output.front().addArgument(argument.getType(), argument.getLoc());</div>
 <div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span>      <span class="keywordflow">if</span> (aggregate(argument.getType())) {</div>
 <div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span>        arguments.push_back(bindings.create(argument.getType(), argument, emitted));</div>
