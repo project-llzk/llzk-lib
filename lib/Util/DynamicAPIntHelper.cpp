@@ -131,7 +131,7 @@ DynamicAPInt operator<<(const DynamicAPInt &lhs, const DynamicAPInt &rhs) {
 DynamicAPInt operator<<(const DynamicAPInt &lhs, int64_t rhs) {
   APSInt bits = toAPSInt(lhs);
   unsigned width = bits.getSignificantBits();
-  if (rhs < 0 || static_cast<uint64_t>(rhs) > numeric_limits<unsigned>::max() - width) {
+  if (rhs < 0 || std::cmp_greater(rhs, numeric_limits<unsigned>::max() - width)) {
     llvm::report_fatal_error("invalid or unrepresentable left shift");
   }
   if (lhs == 0) {
@@ -157,7 +157,7 @@ DynamicAPInt operator>>(const DynamicAPInt &lhs, int64_t rhs) {
     llvm::report_fatal_error("negative right shift");
   }
   APSInt bits = toAPSInt(lhs);
-  if (static_cast<uint64_t>(rhs) >= bits.getSignificantBits()) {
+  if (std::cmp_greater_equal(rhs, bits.getSignificantBits())) {
     return DynamicAPInt(lhs < 0 ? -1 : 0);
   }
   return DynamicAPInt(bits.ashr(checkedCast<unsigned>(rhs)));
