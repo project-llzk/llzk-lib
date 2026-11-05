@@ -267,7 +267,7 @@ public:
 struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
-  ~MatchFailureListener() override {}
+  ~MatchFailureListener() override = default;
 
   void notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
     hadFailure = true;
@@ -482,7 +482,7 @@ class ParameterizedStructUseTypeConverter : public TypeConverter {
 
 public:
   ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
-      : TypeConverter(), tracker_(tracker), cloner(tracker, root) {
+      : tracker_(tracker), cloner(tracker, root) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -681,7 +681,7 @@ public:
     }
     activeInferences_.emplace_back(func.getOperation(), paramName);
 
-    TemplateTypeConverter tyConv((paramNameToConcrete_));
+    TemplateTypeConverter tyConv(paramNameToConcrete_);
     std::optional<Attribute> inferred;
     bool ambiguous = false;
 

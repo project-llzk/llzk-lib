@@ -238,7 +238,7 @@ class IntervalAnalysisLatticeValue
 
 public:
   explicit IntervalAnalysisLatticeValue(ExpressionValue e) : Base(std::move(e)) {}
-  IntervalAnalysisLatticeValue() : Base() {}
+  IntervalAnalysisLatticeValue() = default;
   explicit IntervalAnalysisLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
   IntervalAnalysisLatticeValue(const IntervalAnalysisLatticeValue &) = default;
   IntervalAnalysisLatticeValue(IntervalAnalysisLatticeValue &&) = default;
@@ -377,12 +377,12 @@ private:
     );
   }
 
-  inline bool isConstOp(mlir::Operation *op) const {
+  static inline bool isConstOp(mlir::Operation *op) {
     return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
-  inline bool isBoolConstOp(mlir::Operation *op) const {
+  static inline bool isBoolConstOp(mlir::Operation *op) {
     if (auto constIntOp = llvm::dyn_cast<mlir::arith::ConstantIntOp>(op)) {
       auto valAttr = dyn_cast<mlir::IntegerAttr>(constIntOp.getValue());
       ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
@@ -403,7 +403,7 @@ private:
 
   llvm::SMTExprRef createConstBoolExpr(bool v) const { return smtSolver->mkBoolean(v); }
 
-  bool isArithmeticOp(mlir::Operation *op) const {
+  static bool isArithmeticOp(mlir::Operation *op) {
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
         felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
@@ -429,18 +429,18 @@ private:
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
-  bool isReadOp(mlir::Operation *op) const {
+  static bool isReadOp(mlir::Operation *op) {
     return llvm::isa<
         component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp, pod::ReadPodOp>(op);
   }
 
-  bool isDefinitionOp(mlir::Operation *op) const {
+  static bool isDefinitionOp(mlir::Operation *op) {
     return llvm::isa<
         component::StructDefOp, function::FuncDefOp, component::MemberDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 
-  bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+  static bool isReturnOp(mlir::Operation *op) { return llvm::isa<function::ReturnOp>(op); }
 
   /// @brief Convert an array access op's indices into SourceRef path components.
   /// Constant indices are tracked precisely, while dynamic indices are widened to

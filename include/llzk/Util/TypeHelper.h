@@ -40,7 +40,7 @@ class BuildShortTypeString {
   std::string ret;
   llvm::raw_string_ostream ss;
 
-  BuildShortTypeString() : ret(), ss(ret) {}
+  BuildShortTypeString() : ss(ret) {}
   BuildShortTypeString &append(mlir::Type);
   BuildShortTypeString &append(mlir::ArrayRef<mlir::Attribute>);
   BuildShortTypeString &append(mlir::Attribute);

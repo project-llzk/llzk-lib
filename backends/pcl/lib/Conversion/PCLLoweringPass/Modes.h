@@ -62,7 +62,7 @@ protected:
       const mlir::TypeConverter &tc, mlir::RewritePatternSet &patterns
   ) = 0;
 
-  void populateStep2ConversionTarget(mlir::ConversionTarget &target);
+  static void populateStep2ConversionTarget(mlir::ConversionTarget &target);
 
   /// Populates the set with the patterns used in step 3 of the conversion.
   void populateStep3ConversionPatterns(

@@ -105,7 +105,7 @@ static bool runRemoveDeadValues(MlirContext context, MlirOperation op) {
   mlirPassManagerEnableVerifier(pm, false);            // enable_verifier(false)
   auto opm = mlirPassManagerGetAsOpPassManager(pm);    // as_operation_pass_manager()
   auto pipeline = mlirStringRefCreateFromCString("poly.expr(remove-dead-values)");
-  mlirParsePassPipeline(opm, pipeline, printToStderr, NULL); // utility::parse_pass_pipeline()
+  mlirParsePassPipeline(opm, pipeline, printToStderr, nullptr); // utility::parse_pass_pipeline()
   bool success = mlirPassManagerRunOnOp(pm, op).value != 0;
   mlirPassManagerDestroy(pm);
   return success;

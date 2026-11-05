@@ -29,7 +29,7 @@ std::unique_ptr<EmitEqualityOpBuildFuncHelper> EmitEqualityOpBuildFuncHelper::ge
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructConstrain
       );
-      mlir::Value val = testClass.cppGenFeltConstant(builder, location);
+      mlir::Value val = CAPITest::cppGenFeltConstant(builder, location);
       return llzkConstrain_EmitEqualityOpBuild(builder, location, wrap(val), wrap(val));
     }
   };

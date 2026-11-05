@@ -103,7 +103,7 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
         (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op, bool reportMissing = true) const;
 
     // Verifies that this type references a valid struct, relative to the given `op`.
-    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op) const;
 
     /// Returns wether the struct this type refers to has members marked as columns.
     /// A lookup is necessary first and will forward the failure state if it fails.

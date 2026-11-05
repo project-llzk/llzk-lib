@@ -28,7 +28,7 @@ using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {
 protected:
-  TypeHelperTests() : LLZKTest(), errFn([this]() { return InFlightDiagnosticWrapper(&ctx); }) {}
+  TypeHelperTests() : errFn([this]() { return InFlightDiagnosticWrapper(&ctx); }) {}
 
   OwningEmitErrorFn errFn;
 };

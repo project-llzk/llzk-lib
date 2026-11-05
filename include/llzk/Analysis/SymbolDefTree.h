@@ -16,6 +16,8 @@
 #include <llvm/ADT/SetVector.h>
 #include <llvm/Support/DOTGraphTraits.h>
 
+#include <string_view>
+
 namespace llzk {
 
 class SymbolDefTreeNode {
@@ -169,7 +171,7 @@ template <> struct DOTGraphTraits<const llzk::SymbolDefTreeNode *> : public Defa
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
+  static std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
 };
 
 template <>
@@ -178,7 +180,8 @@ struct DOTGraphTraits<const llzk::SymbolDefTree *>
 
   DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<NodeRef>(isSimple) {}
 
-  static std::string getGraphName(GraphType) { return "Symbol Def Tree"; }
+  /// Return the graph title backed by a string literal.
+  static std::string_view getGraphName(GraphType) { return "Symbol Def Tree"; }
 };
 
 } // namespace llvm

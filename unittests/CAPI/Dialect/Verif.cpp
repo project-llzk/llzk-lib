@@ -165,7 +165,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildAndVerifyInModule) {
       mlirAttributeGetNull()
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
   EXPECT_TRUE(mlirOperationVerify(op));
   EXPECT_TRUE(mlirAttributeEqual(
@@ -194,7 +194,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildFromTarget) {
       mlirIdentifierGet(context, mlirStringRefCreateFromCString("target"))
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
   EXPECT_TRUE(mlirOperationVerify(op));
   EXPECT_TRUE(mlirAttributeEqual(
@@ -223,7 +223,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildFromTargetAttr) {
       createFlatSymbolRefAttr(context, "target")
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
   EXPECT_TRUE(mlirOperationVerify(op));
   EXPECT_TRUE(mlirAttributeEqual(
@@ -259,7 +259,7 @@ module attributes {llzk.lang} {
       mlirIdentifierGet(context, mlirStringRefCreateFromCString("ContractUnderTest")), target
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
   EXPECT_TRUE(mlirOperationVerify(op));
   EXPECT_TRUE(mlirAttributeEqual(llzkVerif_ContractOpGetTarget(op), target));
@@ -294,7 +294,7 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
       mlirAttributeGetNull()
   );
 
-  ASSERT_NE(includeOp.ptr, (void *)NULL);
+  ASSERT_NE(includeOp.ptr, (void *)nullptr);
   EXPECT_TRUE(mlirOperationVerify(includeOp));
   EXPECT_TRUE(!llzkVerif_IncludeOpContractTargetsStruct(includeOp));
   EXPECT_TRUE(mlirTypeEqual(
@@ -303,7 +303,7 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
   ));
 
   MlirOperation callable = llzkVerif_IncludeOpResolveCallable(includeOp);
-  ASSERT_NE(callable.ptr, (void *)NULL);
+  ASSERT_NE(callable.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(callable));
   EXPECT_TRUE(mlirAttributeEqual(
       llzkVerif_ContractOpGetSymName(callable), createStringAttr(context, "Base")

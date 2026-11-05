@@ -59,6 +59,9 @@ namespace {
 
 /// @brief A reference to a value, represented by an SSA value, an attribute
 /// (e.g., a member name or access metadata), or an int (e.g., a constant array index).
+// libstdc++'s variant::emplace calls get on the just-constructed alternative, so
+// the reported bad_variant_access path in the implicit move assignment is unreachable.
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class ReferenceID {
 public:
   explicit ReferenceID(Value v) {
@@ -214,7 +217,7 @@ public:
   createChild(IdType id, Value storedVal, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     std::shared_ptr<ReferenceNode> child = create(id, storedVal);
     child->setCurrentValue(storedVal, valTree);
-    if (child->identifier.isValue() && children.find(child->identifier) == children.end()) {
+    if (child->identifier.isValue() && !children.contains(child->identifier)) {
       ++dynamicChildCount;
     }
     children[child->identifier] = child;
@@ -479,7 +482,7 @@ private:
 
   template <typename IdType>
   ReferenceNode(IdType id, Value initialVal)
-      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr), children(),
+      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr),
         dynamicChildCount(0) {}
 };
 
@@ -746,14 +749,12 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       ensure(it != endStates.end(), "unknown end state means we have an unsupported backedge");
       return cloneKnownState(it->second);
     };
-    auto hasBlockState = [&endStates](Block *blockPtr) {
-      return endStates.find(blockPtr) != endStates.end();
-    };
+    auto hasBlockState = [&endStates](Block *blockPtr) { return endStates.contains(blockPtr); };
     std::deque<Block *> frontier;
     DenseSet<Block *> queued;
     DenseSet<Block *> processed;
     auto enqueue = [&](Block *blockPtr) {
-      if (processed.find(blockPtr) == processed.end() && queued.insert(blockPtr).second) {
+      if (!processed.contains(blockPtr) && queued.insert(blockPtr).second) {
         frontier.push_back(blockPtr);
       }
     };
@@ -807,7 +808,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // Update the end states.
       // Since we only support the scf dialect, we should never have any
       // backedges, so we should never already have state for this block.
-      ensure(processed.find(currentBlock) == processed.end(), "backedge");
+      ensure(!processed.contains(currentBlock), "backedge");
       endStates[currentBlock] = std::move(endState);
       processed.insert(currentBlock);
 

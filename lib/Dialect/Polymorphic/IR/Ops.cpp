@@ -93,16 +93,16 @@ LogicalResult checkForNameConflict(SymbolTableCollection &tables, SymbolOpInterf
 
 } // namespace
 
-LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &tables) {
-  return checkForNameConflict(tables, *this);
+LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  return checkForNameConflict(symbolTables, *this);
 }
 
 //===------------------------------------------------------------------===//
 // TemplateExprOp
 //===------------------------------------------------------------------===//
 
-LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &tables) {
-  if (failed(checkForNameConflict(tables, *this))) {
+LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  if (failed(checkForNameConflict(symbolTables, *this))) {
     return failure(); // checkForNameConflict() already emits a sufficient error message
   }
   // Ensure no symbol used within the initializer region is defined via a `TemplateExprOp`.
@@ -197,8 +197,8 @@ std::optional<Type> TemplateExprOp::getTypeOpt() { return getType(); }
 // ConstReadOp
 //===------------------------------------------------------------------===//
 
-LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(tables, *this);
+LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(symbolTables, *this);
   if (failed(getParentRes)) {
     return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error message
   }
@@ -232,7 +232,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
 
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getType());
+  return verifyTypeResolution(symbolTables, *this, getType());
 }
 
 //===------------------------------------------------------------------===//
