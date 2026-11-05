@@ -497,7 +497,7 @@ std::unique_ptr<ShrFeltOpBuildFuncHelper> ShrFeltOpBuildFuncHelper::get() {
 std::unique_ptr<AddFeltOpBuildFuncHelper> AddFeltOpBuildFuncHelper::get() {
   struct Impl : public AddFeltOpBuildFuncHelper {
     MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    callBuild(const CAPITest &, MlirOpBuilder builder, MlirLocation location) override {
       auto val = CAPITest::cppGenFeltConstant(builder, location);
       auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_AddFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -510,7 +510,7 @@ std::unique_ptr<AddFeltOpBuildFuncHelper> AddFeltOpBuildFuncHelper::get() {
 std::unique_ptr<SubFeltOpBuildFuncHelper> SubFeltOpBuildFuncHelper::get() {
   struct Impl : public SubFeltOpBuildFuncHelper {
     MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    callBuild(const CAPITest &, MlirOpBuilder builder, MlirLocation location) override {
       auto val = CAPITest::cppGenFeltConstant(builder, location);
       auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_SubFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -523,7 +523,7 @@ std::unique_ptr<SubFeltOpBuildFuncHelper> SubFeltOpBuildFuncHelper::get() {
 std::unique_ptr<MulFeltOpBuildFuncHelper> MulFeltOpBuildFuncHelper::get() {
   struct Impl : public MulFeltOpBuildFuncHelper {
     MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    callBuild(const CAPITest &, MlirOpBuilder builder, MlirLocation location) override {
       auto val = CAPITest::cppGenFeltConstant(builder, location);
       auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_MulFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -554,7 +554,7 @@ std::unique_ptr<PowFeltOpBuildFuncHelper> PowFeltOpBuildFuncHelper::get() {
 std::unique_ptr<DivFeltOpBuildFuncHelper> DivFeltOpBuildFuncHelper::get() {
   struct Impl : public DivFeltOpBuildFuncHelper {
     MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    callBuild(const CAPITest &, MlirOpBuilder builder, MlirLocation location) override {
       auto val = CAPITest::cppGenFeltConstant(builder, location);
       auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_DivFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -641,7 +641,7 @@ std::unique_ptr<SignedModFeltOpBuildFuncHelper> SignedModFeltOpBuildFuncHelper::
 std::unique_ptr<NegFeltOpBuildFuncHelper> NegFeltOpBuildFuncHelper::get() {
   struct Impl : public NegFeltOpBuildFuncHelper {
     MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    callBuild(const CAPITest &, MlirOpBuilder builder, MlirLocation location) override {
       auto val = CAPITest::cppGenFeltConstant(builder, location);
       auto resultType = wrap(CAPITest::cppGetFeltType(builder));
       return llzkFelt_NegFeltOpBuild(builder, location, resultType, wrap(val));
