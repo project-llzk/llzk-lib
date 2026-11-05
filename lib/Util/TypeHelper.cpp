@@ -1158,12 +1158,9 @@ bool isFeltOrSimpleFeltAggregate(Type ty) {
     return isFeltOrSimpleFeltAggregate(arrTy.getElementType());
   })
       .Case<PodType>([](auto podTy) {
-    for (auto record : podTy.getRecords()) {
-      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
-        return false;
-      }
-    }
-    return true;
+    return llvm::all_of(podTy.getRecords(), [](auto record) {
+      return isFeltOrSimpleFeltAggregate(record.getType());
+    });
   }).Default([](auto) { return false; });
 }
 

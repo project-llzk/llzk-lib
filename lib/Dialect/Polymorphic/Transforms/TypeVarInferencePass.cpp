@@ -48,6 +48,7 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/StringMap.h>
@@ -485,15 +486,14 @@ public:
     if (!params || params.size() != oldParamOrder_.size()) {
       return false;
     }
-    for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder_, params.getValue())) {
+    return llvm::any_of(llvm::zip_equal(oldParamOrder_, params.getValue()), [this](auto entry) {
+      auto [paramName, attr] = entry;
       if (!removedParams_.contains(paramName)) {
-        continue;
+        return false;
       }
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr); intAttr && isDynamic(intAttr)) {
-        return true;
-      }
-    }
-    return false;
+      auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
+      return intAttr && isDynamic(intAttr);
+    });
   }
 
 private:
@@ -3577,13 +3577,10 @@ static bool sameReplacementTypes(
   if (lhs.size() != rhs.size()) {
     return false;
   }
-  for (const auto &entry : lhs) {
+  return llvm::all_of(lhs, [&rhs](const auto &entry) {
     auto rhsIt = rhs.find(entry.first);
-    if (rhsIt == rhs.end() || rhsIt->second.type != entry.second.type) {
-      return false;
-    }
-  }
-  return true;
+    return rhsIt != rhs.end() && rhsIt->second.type == entry.second.type;
+  });
 }
 
 /// Collect proof facts from a contract into the function it verifies.

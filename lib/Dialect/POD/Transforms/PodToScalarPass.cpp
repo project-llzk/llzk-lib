@@ -341,23 +341,13 @@ inline static PodType splittablePod(Type t) {
 /// Return `true` iff the given range contains any top-level PodType that this pass can split into
 /// scalars.
 inline static bool containsSplittablePodType(ArrayRef<Type> types) {
-  for (Type t : types) {
-    if (splittablePod(t)) {
-      return true;
-    }
-  }
-  return false;
+  return llvm::any_of(types, [](Type t) { return splittablePod(t); });
 }
 
 /// Return `true` iff the given range contains any top-level PodType that this pass can split into
 /// scalars.
 template <typename T> inline static bool containsSplittablePodType(ValueTypeRange<T> types) {
-  for (Type t : types) {
-    if (splittablePod(t)) {
-      return true;
-    }
-  }
-  return false;
+  return llvm::any_of(types, [](Type t) { return splittablePod(t); });
 }
 
 /// If the input ArrayType has a POD element type, return the input, else nullptr.
@@ -1303,13 +1293,10 @@ static bool equivalentArrayInstantiationInfo(
     return false;
   }
 
-  for (auto [lhsGroup, rhsGroup] : llvm::zip_equal(lhs.mapOperandStorage, rhs.mapOperandStorage)) {
-    if (lhsGroup != rhsGroup) {
-      return false;
-    }
-  }
-
-  return true;
+  return llvm::all_of_zip(
+      lhs.mapOperandStorage, rhs.mapOperandStorage,
+      [](const auto &lhsGroup, const auto &rhsGroup) { return lhsGroup == rhsGroup; }
+  );
 }
 
 /// Describe whether a set of leaf arrays shares one recoverable instantiation.
