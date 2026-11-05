@@ -59,6 +59,9 @@ namespace {
 
 /// @brief A reference to a value, represented by an SSA value, an attribute
 /// (e.g., a member name or access metadata), or an int (e.g., a constant array index).
+// libstdc++'s variant::emplace calls get on the just-constructed alternative, so
+// the reported bad_variant_access path in the implicit move assignment is unreachable.
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class ReferenceID {
 public:
   explicit ReferenceID(Value v) {

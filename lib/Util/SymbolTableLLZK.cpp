@@ -37,6 +37,8 @@
 
 #include <llvm/ADT/SmallPtrSet.h>
 
+#include <type_traits>
+
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
@@ -201,10 +203,8 @@ struct SymbolScope {
   /// Walk the symbol uses within this scope, invoking the given callback.
   /// This variant is used when the callback type matches that expected by
   /// 'walkSymbolUses'.
-  template <
-      typename CallbackT,
-      std::enable_if_t<!std::is_same<
-          typename llvm::function_traits<CallbackT>::result_t, void>::value> * = nullptr>
+  template <typename CallbackT>
+    requires(!std::is_same_v<typename llvm::function_traits<CallbackT>::result_t, void>)
   std::optional<WalkResult> walk(CallbackT cback) {
     if (Region *region = llvm::dyn_cast_if_present<Region *>(limit)) {
       return walkSymbolUses(*region, cback);
@@ -213,10 +213,8 @@ struct SymbolScope {
   }
   /// This variant is used when the callback type matches a stripped down type:
   /// void(SymbolTable::SymbolUse use)
-  template <
-      typename CallbackT,
-      std::enable_if_t<std::is_same<
-          typename llvm::function_traits<CallbackT>::result_t, void>::value> * = nullptr>
+  template <typename CallbackT>
+    requires std::is_same_v<typename llvm::function_traits<CallbackT>::result_t, void>
   std::optional<WalkResult> walk(CallbackT cback) {
     return walk([=](SymbolTable::SymbolUse use) { return cback(use), WalkResult::advance(); });
   }
