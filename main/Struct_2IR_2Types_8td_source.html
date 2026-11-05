@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Struct_2IR_2Ty
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>        (::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op, bool reportMissing = true) const;</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    // Verifies that this type references a valid struct, relative to the given `op`.</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op) const;</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    /// Returns wether the struct this type refers to has members marked as columns.</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    /// A lookup is necessary first and will forward the failure state if it fails.</div>

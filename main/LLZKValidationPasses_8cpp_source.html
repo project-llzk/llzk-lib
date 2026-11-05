@@ -171,34 +171,35 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKValidation
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="keyword">auto</span> result = <a class="code hl_function" href="namespacellzk.html#aa36cf38143b2f7c509c154458bdb2e49">analyzeStruct</a>(structDef);</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a99b3da6752cd4ceb3877e85912fc1e00">   42</a></span>    <span class="keywordflow">if</span> (failed(result)) {</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>      signalPassFailure();</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    }</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>      <span class="keywordflow">return</span>;</div>
 <div class="foldopen" id="foldopen00045" data-start="{" data-end="}">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#af066421754e0db642299622ac576d0b3">   45</a></span>    <span class="keyword">const</span> <span class="keyword">auto</span> &amp;[overwrites, written] = *result;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> member : structDef.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a8e1b7b34c6885536a80d104aa58c67e5">getMemberDefs</a>()) {</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#af066421754e0db642299622ac576d0b3">   45</a></span>    }</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keyword">const</span> <span class="keyword">auto</span> &amp;[overwrites, written] = *result;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
 </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#aefe0f908dd48c70ce1580b5e2c835474">   48</a></span>      <span class="keywordflow">if</span> (!written.contains(member.getSymName())) {</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        member-&gt;emitWarning(<span class="stringliteral">&quot;member may not be written to&quot;</span>).report();</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      }</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#aefe0f908dd48c70ce1580b5e2c835474">   48</a></span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> member : structDef.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a8e1b7b34c6885536a80d104aa58c67e5">getMemberDefs</a>()) {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      <span class="keywordflow">if</span> (!written.contains(member.getSymName())) {</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        member-&gt;emitWarning(<span class="stringliteral">&quot;member may not be written to&quot;</span>).report();</div>
 <div class="foldopen" id="foldopen00051" data-start="{" data-end="}">
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a6ab365612c404e4dd67302b131d3b23b">   51</a></span>    }</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [first, over] : overwrites) {</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a6ab365612c404e4dd67302b131d3b23b">   51</a></span>      }</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    }</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
 </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      <span class="keyword">auto</span> diag = over-&gt;emitWarning() &lt;&lt; <span class="stringliteral">&quot;may overwrite &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1component_1_1MemberDefOp.html#a8ed9a8a856fa5cd34bb5b821281a97d3">MemberDefOp::getOperationName</a>()</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                                      &lt;&lt; <span class="stringliteral">&quot;&#39; \&quot;@&quot;</span> &lt;&lt; over.getMemberName() &lt;&lt; <span class="charliteral">&#39;&quot;&#39;</span>;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [first, over] : overwrites) {</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      <span class="keyword">auto</span> diag = over-&gt;emitWarning() &lt;&lt; <span class="stringliteral">&quot;may overwrite &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1component_1_1MemberDefOp.html#a8ed9a8a856fa5cd34bb5b821281a97d3">MemberDefOp::getOperationName</a>()</div>
 <div class="foldopen" id="foldopen00056" data-start="{" data-end="}">
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a308e6cecf4bfa69bf7d003ce065c97c8">   56</a></span>      diag.attachNote(first.getLoc()) &lt;&lt; <span class="stringliteral">&quot;previously written to here&quot;</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      diag.report();</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    }</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a308e6cecf4bfa69bf7d003ce065c97c8">   56</a></span>                                      &lt;&lt; <span class="stringliteral">&quot;&#39; \&quot;@&quot;</span> &lt;&lt; over.getMemberName() &lt;&lt; <span class="charliteral">&#39;&quot;&#39;</span>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      diag.attachNote(first.getLoc()) &lt;&lt; <span class="stringliteral">&quot;previously written to here&quot;</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      diag.report();</div>
 </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    }</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
 <div class="foldopen" id="foldopen00061" data-start="{" data-end="}">
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a82e1ba212b4b0c373936badd5063c07e">   61</a></span>  }</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>};</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html#a82e1ba212b4b0c373936badd5063c07e">   61</a></span>    markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  }</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>};</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>} <span class="comment">// namespace</span></div>
 </div>
 </div>
 <div class="ttc" id="aAnalysisUtil_8h_html"><div class="ttname"><a href="AnalysisUtil_8h.html">AnalysisUtil.h</a></div></div>

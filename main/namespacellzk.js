@@ -356,7 +356,7 @@ var namespacellzk =
     [ "getRootStructDef", "namespacellzk.html#aeffd65314f06aac04ebbb1f3270cf2f4", null ],
     [ "getSelfOrParentOfType", "namespacellzk.html#ad55d77a77dc0f2d6c27bc7b6bedbc952", null ],
     [ "getStructDef", "namespacellzk.html#aeeff538232cefaed065163beccfe7014", null ],
-    [ "getSymbolName", "namespacellzk.html#a3d8de77a26a8e9454e2506ec5beb7e4f", null ],
+    [ "getSymbolName", "namespacellzk.html#a638f2b06bbb5dc9c10a24706c64531be", null ],
     [ "getSymbolName", "namespacellzk.html#a2967ef6a1e31b18da9d1edef010c125f", null ],
     [ "getSymbolsUsedIn", "namespacellzk.html#a434bd89b78e15ac8d5de7e831f47e6e5", null ],
     [ "getSymbolsUsedIn", "namespacellzk.html#a295b6105c3e9acc0c603fae11c21c062", null ],

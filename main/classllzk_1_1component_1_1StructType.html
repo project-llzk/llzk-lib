@@ -150,7 +150,7 @@ Collaboration diagram for llzk::component::StructType:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a4a15a4c241c98465a33145a821191760" id="r_a4a15a4c241c98465a33145a821191760"><td class="memItemLeft">::mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4a15a4c241c98465a33145a821191760">getDefinition</a> (::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op, bool reportMissing=true) const</td></tr>
 <tr class="memdesc:a4a15a4c241c98465a33145a821191760"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the <span class="tt">struct</span> op that defines this struct.  <br /></td></tr>
-<tr class="memitem:ae115a857b6e1bcbaeae6f4e1944c4054" id="r_ae115a857b6e1bcbaeae6f4e1944c4054"><td class="memItemLeft">::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ae115a857b6e1bcbaeae6f4e1944c4054">verifySymbolRef</a> (::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op)</td></tr>
+<tr class="memitem:adf5e931b0e6920c353bfdee5dd112914" id="r_adf5e931b0e6920c353bfdee5dd112914"><td class="memItemLeft">::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#adf5e931b0e6920c353bfdee5dd112914">verifySymbolRef</a> (::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op) const</td></tr>
 <tr class="memitem:a357fb5bc795301d5fd589fb4d536e810" id="r_a357fb5bc795301d5fd589fb4d536e810"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a357fb5bc795301d5fd589fb4d536e810">hasColumns</a> (mlir::SymbolTableCollection &amp;symbolTable, mlir::Operation *op) const</td></tr>
 <tr class="memdesc:a357fb5bc795301d5fd589fb4d536e810"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns wether the struct this type refers to has members marked as columns.  <br /></td></tr>
 <tr class="memitem:a453c43faecfedbc1060785bf25bec691" id="r_a453c43faecfedbc1060785bf25bec691"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a453c43faecfedbc1060785bf25bec691">print</a> (::mlir::AsmPrinter &amp;odsPrinter) const</td></tr>
@@ -611,8 +611,8 @@ Static Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="ae115a857b6e1bcbaeae6f4e1944c4054" name="ae115a857b6e1bcbaeae6f4e1944c4054"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae115a857b6e1bcbaeae6f4e1944c4054">&#9670;&#160;</a></span>verifySymbolRef()</h2>
+<a id="adf5e931b0e6920c353bfdee5dd112914" name="adf5e931b0e6920c353bfdee5dd112914"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf5e931b0e6920c353bfdee5dd112914">&#9670;&#160;</a></span>verifySymbolRef()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -625,7 +625,7 @@ Static Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>&#160;)</td>
+          <td class="paramtype">::mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>&#160;) const</td>
         </tr>
       </table>
 </div><div class="memdoc">

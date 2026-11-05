@@ -952,8 +952,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a0d9aeb3a4eff33c6de180be7a21cf95e" id="r_a0d9aeb3a4eff33c6de180be7a21cf95e"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a0d9aeb3a4eff33c6de180be7a21cf95e">symbolKnownUseEmpty</a> (mlir::Operation *symbol, mlir::Operation *from)</td></tr>
 <tr class="memitem:aee29a2feaddd44d334e64eb4de6dad0f" id="r_aee29a2feaddd44d334e64eb4de6dad0f"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aee29a2feaddd44d334e64eb4de6dad0f">symbolKnownUseEmpty</a> (mlir::StringAttr symbol, mlir::Region *from)</td></tr>
 <tr class="memitem:a84f2b49a9741a01a9ed402e6d6096e3f" id="r_a84f2b49a9741a01a9ed402e6d6096e3f"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a84f2b49a9741a01a9ed402e6d6096e3f">symbolKnownUseEmpty</a> (mlir::Operation *symbol, mlir::Region *from)</td></tr>
-<tr class="memitem:a3d8de77a26a8e9454e2506ec5beb7e4f" id="r_a3d8de77a26a8e9454e2506ec5beb7e4f"><td class="memItemLeft">mlir::StringAttr&#160;</td><td class="memItemRight"><a class="el" href="#a3d8de77a26a8e9454e2506ec5beb7e4f">getSymbolName</a> (mlir::Operation *symbol)</td></tr>
-<tr class="memdesc:a3d8de77a26a8e9454e2506ec5beb7e4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the given symbol operation, or nullptr if no symbol is present.  <br /></td></tr>
+<tr class="memitem:a638f2b06bbb5dc9c10a24706c64531be" id="r_a638f2b06bbb5dc9c10a24706c64531be"><td class="memItemLeft">mlir::StringAttr&#160;</td><td class="memItemRight"><a class="el" href="#a638f2b06bbb5dc9c10a24706c64531be">getSymbolName</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:a638f2b06bbb5dc9c10a24706c64531be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the given symbol operation, or nullptr if no symbol is present.  <br /></td></tr>
 <tr class="memitem:a2967ef6a1e31b18da9d1edef010c125f" id="r_a2967ef6a1e31b18da9d1edef010c125f"><td class="memItemLeft">mlir::StringAttr&#160;</td><td class="memItemRight"><a class="el" href="#a2967ef6a1e31b18da9d1edef010c125f">getSymbolName</a> (mlir::SymbolOpInterface symbol)</td></tr>
 <tr class="memitem:a3840dc2d50d9f0cda122fb59ebaf32ed" id="r_a3840dc2d50d9f0cda122fb59ebaf32ed"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a3840dc2d50d9f0cda122fb59ebaf32ed">assertValidAttrForParamOfType</a> (mlir::Attribute attr)</td></tr>
 <tr class="memitem:aa7d4007c34cbea77abeab21c65e2bd5d" id="r_aa7d4007c34cbea77abeab21c65e2bd5d"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aa7d4007c34cbea77abeab21c65e2bd5d">isValidType</a> (mlir::Type type)</td></tr>
@@ -1768,7 +1768,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00933">933</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00934">934</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -1787,7 +1787,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01087">1087</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01088">1088</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -2982,7 +2982,7 @@ template&lt;typename T, typename U&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00543">543</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00544">544</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -3155,7 +3155,7 @@ template&lt;typename GetNameAttrFn, typename GetSplitSuffixesFn&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00568">568</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00569">569</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4234,7 +4234,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00559">559</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00560">560</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4257,7 +4257,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01021">1021</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01022">1022</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4303,7 +4303,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01029">1029</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01030">1030</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4349,7 +4349,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00994">994</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00995">995</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4434,7 +4434,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00952">952</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00953">953</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5792,8 +5792,8 @@ template&lt;typename OpClass&gt; </div>
 
 </div>
 </div>
-<a id="a3d8de77a26a8e9454e2506ec5beb7e4f" name="a3d8de77a26a8e9454e2506ec5beb7e4f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3d8de77a26a8e9454e2506ec5beb7e4f">&#9670;&#160;</a></span>getSymbolName() <span class="overload">[1/2]</span></h2>
+<a id="a638f2b06bbb5dc9c10a24706c64531be" name="a638f2b06bbb5dc9c10a24706c64531be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a638f2b06bbb5dc9c10a24706c64531be">&#9670;&#160;</a></span>getSymbolName() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -5801,7 +5801,7 @@ template&lt;typename OpClass&gt; </div>
         <tr>
           <td class="memname">mlir::StringAttr llzk::getSymbolName </td>
           <td>(</td>
-          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>symbol</em></span></td><td>)</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -6258,7 +6258,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00555">555</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00556">556</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6536,7 +6536,7 @@ template&lt;typename GraphT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00537">537</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00538">538</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6555,7 +6555,7 @@ template&lt;typename GraphT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00557">557</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00558">558</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6610,7 +6610,7 @@ template&lt;typename GraphT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01153">1153</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01154">1154</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6721,7 +6721,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00965">965</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00966">966</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6841,7 +6841,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00541">541</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00542">542</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6879,7 +6879,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00533">533</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00534">534</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6917,7 +6917,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00535">535</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00536">536</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6973,7 +6973,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00518">518</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00519">519</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7011,7 +7011,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00529">529</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00530">530</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7049,7 +7049,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00524">524</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00525">525</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7087,7 +7087,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00522">522</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00523">523</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7126,7 +7126,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01169">1169</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01167">1167</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7164,7 +7164,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00516">516</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00517">517</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7212,7 +7212,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00245">245</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00243">243</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -7258,7 +7258,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00230">230</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00228">228</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -7301,7 +7301,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00275">275</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00273">273</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -7342,7 +7342,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00237">237</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00235">235</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -8221,7 +8221,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00331">331</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00330">330</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -8845,7 +8845,7 @@ template&lt;unsigned N&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00946">946</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00947">947</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9545,7 +9545,7 @@ template&lt;typename ConcreteOp&gt; </div>
 <p>Register shared C API options before command-line parsing. </p>
 <p>Initialization failures propagate to the caller; do not retry after failure. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00151">151</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00152">152</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -9674,7 +9674,7 @@ template&lt;typename ConcreteOp&gt; </div>
 
 <p>Register the dialect C API test generator before command-line parsing. </p>
 
-<p class="definition">Definition at line <a class="el" href="DialectCAPITestGen_8cpp_source.html#l00089">89</a> of file <a class="el" href="DialectCAPITestGen_8cpp_source.html">DialectCAPITestGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DialectCAPITestGen_8cpp_source.html#l00088">88</a> of file <a class="el" href="DialectCAPITestGen_8cpp_source.html">DialectCAPITestGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -11604,7 +11604,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00939">939</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00940">940</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12163,7 +12163,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00927">927</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00928">928</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12191,7 +12191,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00918">918</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00919">919</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12313,7 +12313,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00959">959</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00960">960</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12395,7 +12395,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01056">1056</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01057">1057</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12441,7 +12441,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01078">1078</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01079">1079</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12520,7 +12520,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01083">1083</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01084">1084</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12543,7 +12543,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01041">1041</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01042">1042</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12743,7 +12743,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01074">1074</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01075">1075</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12878,7 +12878,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01139">1139</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01140">1140</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12909,7 +12909,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 <p>Determine if the <span class="tt">subArrayType</span> is a valid subarray of <span class="tt">arrayType</span>. </p>
 <p><span class="tt">arrayType</span> must be an array of dimension N and <span class="tt">subArrayType</span> must be an array of dimension M, where N &gt; M &gt;= 1. For example, &lt;3,7 x int&gt; is a valid subarray of &lt;5,3,7 x int&gt;, but &lt;8 x int&gt; is not an neither is &lt;3,7 x string&gt;. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01099">1099</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01100">1100</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>

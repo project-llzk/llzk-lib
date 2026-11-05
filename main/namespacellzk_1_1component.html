@@ -177,14 +177,14 @@ Functions</h2></td></tr>
 <tr class="memitem:ab09771ec2fef780c0331f447ddeddf18" id="r_ab09771ec2fef780c0331f447ddeddf18"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab09771ec2fef780c0331f447ddeddf18">verifyInStruct</a> (Operation *op)</td></tr>
 <tr class="memitem:ad44c2fc591ac9b32b32cbdbfffb8201a" id="r_ad44c2fc591ac9b32b32cbdbfffb8201a"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ad44c2fc591ac9b32b32cbdbfffb8201a">isInStructFunctionNamed</a> (Operation *op, char const *funcName)</td></tr>
 <tr class="memitem:a7c0add78dbee2949bf32c4018ca6c019" id="r_a7c0add78dbee2949bf32c4018ca6c019"><td class="memItemLeft">InFlightDiagnostic&#160;</td><td class="memItemRight"><a class="el" href="#a7c0add78dbee2949bf32c4018ca6c019">genCompareErr</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expected, Operation *origin, const char *aspect)</td></tr>
-<tr class="memitem:a8c211e6cb7a97e4702d2f47c90b5021c" id="r_a8c211e6cb7a97e4702d2f47c90b5021c"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a8c211e6cb7a97e4702d2f47c90b5021c">checkSelfType</a> (SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, Type actualType, Operation *origin, const char *aspect)</td></tr>
-<tr class="memdesc:a8c211e6cb7a97e4702d2f47c90b5021c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifies that the given <span class="tt">actualType</span> matches the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> given (i.e., for the "self" type parameter and return of the struct functions).  <br /></td></tr>
+<tr class="memitem:a2a6ffc3679465cf9a0d55742d93d5e72" id="r_a2a6ffc3679465cf9a0d55742d93d5e72"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a2a6ffc3679465cf9a0d55742d93d5e72">checkSelfType</a> (SymbolTableCollection &amp;symbolTables, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, Type actualType, Operation *origin, const char *aspect)</td></tr>
+<tr class="memdesc:a2a6ffc3679465cf9a0d55742d93d5e72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifies that the given <span class="tt">actualType</span> matches the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> given (i.e., for the "self" type parameter and return of the struct functions).  <br /></td></tr>
 <tr class="memitem:a64e7d121bd194737a24fa04c4362500f" id="r_a64e7d121bd194737a24fa04c4362500f"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a64e7d121bd194737a24fa04c4362500f">createExposeChildMembersPass</a> ()</td></tr>
 <tr class="memitem:aeaceebcc15039f63992ad8e49e81d863" id="r_aeaceebcc15039f63992ad8e49e81d863"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aeaceebcc15039f63992ad8e49e81d863">createExposeChildMembersPass</a> (<a class="el" href="structllzk_1_1component_1_1ExposeChildMembersPassOptions.html">ExposeChildMembersPassOptions</a> options)</td></tr>
 <tr class="memitem:ab8f9c24c24400370b1481c20e26702a1" id="r_ab8f9c24c24400370b1481c20e26702a1"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab8f9c24c24400370b1481c20e26702a1">createInlineStructsPass</a> ()</td></tr>
 <tr class="memitem:a009a8e21a023cee8577ff5cec5cec264" id="r_a009a8e21a023cee8577ff5cec5cec264"><td class="memItemLeft">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a009a8e21a023cee8577ff5cec5cec264">createInlineStructsPass</a> (<a class="el" href="structllzk_1_1component_1_1InlineStructsPassOptions.html">InlineStructsPassOptions</a> options)</td></tr>
 <tr class="memitem:a814f1e66493212b02ead85446adb172e" id="r_a814f1e66493212b02ead85446adb172e"><td class="memItemLeft">mlir::InFlightDiagnostic&#160;</td><td class="memItemRight"><a class="el" href="#a814f1e66493212b02ead85446adb172e">genCompareErr</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expected, mlir::Operation *origin, const char *aspect)</td></tr>
-<tr class="memitem:a275b6e87c8fda84b470c5da478fc1203" id="r_a275b6e87c8fda84b470c5da478fc1203"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a275b6e87c8fda84b470c5da478fc1203">checkSelfType</a> (mlir::SymbolTableCollection &amp;symbolTable, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, mlir::Type actualType, mlir::Operation *origin, const char *aspect)</td></tr>
+<tr class="memitem:aef00d006239d27d1f01f1934d64fad10" id="r_aef00d006239d27d1f01f1934d64fad10"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aef00d006239d27d1f01f1934d64fad10">checkSelfType</a> (mlir::SymbolTableCollection &amp;symbolTables, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, mlir::Type actualType, mlir::Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a66d1e367322861867313e5456b20aac0" id="r_a66d1e367322861867313e5456b20aac0"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a66d1e367322861867313e5456b20aac0">isInStruct</a> (mlir::Operation *op)</td></tr>
 <tr class="memdesc:a66d1e367322861867313e5456b20aac0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true iff the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>.  <br /></td></tr>
 <tr class="memitem:a7af9f1bcce4971cde7689dd87399f73e" id="r_a7af9f1bcce4971cde7689dd87399f73e"><td class="memItemLeft">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a7af9f1bcce4971cde7689dd87399f73e">verifyInStruct</a> (mlir::Operation *op)</td></tr>
@@ -203,8 +203,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a408210e204109af2a394a935195c4002" id="r_a408210e204109af2a394a935195c4002"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a408210e204109af2a394a935195c4002">registerTransformationPasses</a> ()</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="a275b6e87c8fda84b470c5da478fc1203" name="a275b6e87c8fda84b470c5da478fc1203"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a275b6e87c8fda84b470c5da478fc1203">&#9670;&#160;</a></span>checkSelfType() <span class="overload">[1/2]</span></h2>
+<a id="aef00d006239d27d1f01f1934d64fad10" name="aef00d006239d27d1f01f1934d64fad10"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef00d006239d27d1f01f1934d64fad10">&#9670;&#160;</a></span>checkSelfType() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -212,7 +212,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">mlir::LogicalResult llzk::component::checkSelfType </td>
           <td>(</td>
-          <td class="paramtype">mlir::SymbolTableCollection &amp;</td>          <td class="paramname"><span class="paramname"><em>symbolTable</em></span>, </td>
+          <td class="paramtype">mlir::SymbolTableCollection &amp;</td>          <td class="paramname"><span class="paramname"><em>symbolTables</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -239,8 +239,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a8c211e6cb7a97e4702d2f47c90b5021c" name="a8c211e6cb7a97e4702d2f47c90b5021c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8c211e6cb7a97e4702d2f47c90b5021c">&#9670;&#160;</a></span>checkSelfType() <span class="overload">[2/2]</span></h2>
+<a id="a2a6ffc3679465cf9a0d55742d93d5e72" name="a2a6ffc3679465cf9a0d55742d93d5e72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a6ffc3679465cf9a0d55742d93d5e72">&#9670;&#160;</a></span>checkSelfType() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -248,7 +248,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">LogicalResult llzk::component::checkSelfType </td>
           <td>(</td>
-          <td class="paramtype">SymbolTableCollection &amp;</td>          <td class="paramname"><span class="paramname"><em>tables</em></span>, </td>
+          <td class="paramtype">SymbolTableCollection &amp;</td>          <td class="paramname"><span class="paramname"><em>symbolTables</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

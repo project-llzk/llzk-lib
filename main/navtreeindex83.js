@@ -1,9 +1,5 @@
 var NAVTREEINDEX83 =
 {
-"syntax.html#semantic-rules":[4,2],
-"syntax.html#syntax-1":[4,0],
-"syntax.html#translation-guidelines":[4,3],
-"syntax.html#types":[4,1],
 "todo.html":[10],
 "tools.html":[3],
 "tools.html#analysis-passes":[3,0,0,0],

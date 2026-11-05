@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ConstraintScal
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      mlir::Operation *producer = current.getDefiningOp();</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      <span class="comment">// Assert casts may have effects, but their fold hooks succeed only when the</span></div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="comment">// range check is satisfied. Other effectful operations remain unknown.</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      <span class="keywordflow">if</span> (!producer || producer-&gt;getNumRegions() ||</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      <span class="keywordflow">if</span> (!producer || producer-&gt;getNumRegions() != 0u ||</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>          (!mlir::isMemoryEffectFree(producer) &amp;&amp;</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>           !llvm::isa&lt;cast::FeltToIndexOp, cast::IntToFeltOp&gt;(producer))) {</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        constants.try_emplace(current, mlir::Attribute());</div>

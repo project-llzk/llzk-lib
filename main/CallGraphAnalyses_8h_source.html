@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('CallGraphAnaly
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">inline</span> <span class="keywordtype">bool</span> isReachableCached(mlir::CallableOpInterface A, mlir::CallableOpInterface B)<span class="keyword"> const </span>{</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keyword">auto</span> it = reachabilityMap.find(A);</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keywordflow">return</span> it != reachabilityMap.<a class="code hl_function" href="classllzk_1_1CallGraph.html#a4367418c4a79a65e924b5fa5c4c84b93">end</a>() &amp;&amp; it-&gt;second.find(B) != it-&gt;second.end();</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keywordflow">return</span> it != reachabilityMap.<a class="code hl_function" href="classllzk_1_1CallGraph.html#a4367418c4a79a65e924b5fa5c4c84b93">end</a>() &amp;&amp; it-&gt;second.contains(B);</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>};</div>
 </div>

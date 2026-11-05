@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('CommonCAPIGen_
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="CAPIGenRegistration_8h_source.html">CAPIGenRegistration.h</a>&quot;</code><br />
+<code>#include &lt;llvm/ADT/SmallVectorExtras.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/StringMap.h&gt;</code><br />
 <code>#include &lt;clang/Basic/FileManager.h&gt;</code><br />
 <code>#include &lt;clang/Basic/LangOptions.h&gt;</code><br />
@@ -145,7 +146,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('CommonCAPIGen_
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for CommonCAPIGen.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="CommonCAPIGen_8cpp__incl.svg" width="2164" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="CommonCAPIGen_8cpp__incl.svg" width="2404" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="CommonCAPIGen_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -227,7 +228,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="a52d398b2ed9f5c7be2710dd433a85132a56f0605c9795b173abd2e34fab7fc164" name="a52d398b2ed9f5c7be2710dd433a85132a56f0605c9795b173abd2e34fab7fc164"></a>Protected&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00309">309</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00310">310</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -249,7 +250,7 @@ Functions</h2></td></tr>
 
 <p>Return the DialectName option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00037">37</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00038">38</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -270,7 +271,7 @@ Functions</h2></td></tr>
 
 <p>Return the FunctionPrefix option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00049">49</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00050">50</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -291,7 +292,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenExtraClassMethods option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00142">142</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00143">143</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -312,7 +313,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenIsA option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00061">61</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00062">62</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -333,7 +334,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpAttributeGetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00093">93</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00094">94</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -354,7 +355,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpAttributeSetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00101">101</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00102">102</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -375,7 +376,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpBuild option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00069">69</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00070">70</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -396,7 +397,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpOperandGetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00077">77</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00078">78</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -417,7 +418,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpOperandSetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00085">85</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00086">86</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -438,7 +439,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpRegionGetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00109">109</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00110">110</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -459,7 +460,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenOpResultGetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00117">117</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00118">118</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -480,7 +481,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenTypeOrAttrGet option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00125">125</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00126">126</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -501,7 +502,7 @@ Functions</h2></td></tr>
 
 <p>Return the GenTypeOrAttrParamGetters option, registering it on first access. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00133">133</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00134">134</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -520,7 +521,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00866">866</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00865">865</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -539,7 +540,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00853">853</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00852">852</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -564,7 +565,7 @@ Functions</h2></td></tr>
 
 <p>Check if a C++ type matches an MLIR type pattern. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00720">720</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00719">719</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -603,7 +604,7 @@ Functions</h2></td></tr>
 </li>
 </ol>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00616">616</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00617">617</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -624,7 +625,7 @@ Functions</h2></td></tr>
 
 <p>Convert C++ type to MLIR C API type. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00736">736</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8cpp_source.html#l00735">735</a> of file <a class="el" href="CommonCAPIGen_8cpp_source.html">CommonCAPIGen.cpp</a>.</p>
 
 </div>
 </div>

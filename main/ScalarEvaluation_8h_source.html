@@ -157,18 +157,19 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ScalarEvaluati
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    llvm::SmallVectorImpl&lt;mlir::OpFoldResult&gt; &amp;results</div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>) {</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="comment">// Assert casts fold only when their range checks are satisfied.</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordflow">if</span> (op-&gt;getNumRegions() || (!mlir::isMemoryEffectFree(op) &amp;&amp;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>                              !llvm::isa&lt;llzk::cast::FeltToIndexOp, llzk::cast::IntToFeltOp&gt;(op))) {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="keywordflow">return</span> mlir::failure();</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  }</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  mlir::Operation *temporary = op-&gt;clone();</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">auto</span> status = temporary-&gt;fold(operands, results);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  temporary-&gt;destroy();</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordflow">return</span> mlir::success(mlir::succeeded(status) &amp;&amp; results.size() == op-&gt;getNumResults());</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>}</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordflow">if</span> (op-&gt;getNumRegions() != 0u ||</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>      (!mlir::isMemoryEffectFree(op) &amp;&amp;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>       !llvm::isa&lt;llzk::cast::FeltToIndexOp, llzk::cast::IntToFeltOp&gt;(op))) {</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keywordflow">return</span> mlir::failure();</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  }</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  mlir::Operation *temporary = op-&gt;clone();</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">auto</span> status = temporary-&gt;fold(operands, results);</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  temporary-&gt;destroy();</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">return</span> mlir::success(mlir::succeeded(status) &amp;&amp; results.size() == op-&gt;getNumResults());</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>}</div>
 </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>} <span class="comment">// namespace llzk::polymorphic::detail</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>} <span class="comment">// namespace llzk::polymorphic::detail</span></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Ops_8h_html"><div class="ttname"><a href="Cast_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aDynamicAPIntHelper_8h_html"><div class="ttname"><a href="DynamicAPIntHelper_8h.html">DynamicAPIntHelper.h</a></div><div class="ttdoc">This file implements helpers for DynamicAPInt operations and conversions that LLVM does not provide.</div></div>

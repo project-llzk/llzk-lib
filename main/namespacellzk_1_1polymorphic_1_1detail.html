@@ -240,16 +240,16 @@ Functions</h2></td></tr>
 <tr class="memdesc:a3ef755b775bd0e79fa69e7e84f14db12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Re-spell struct types nested in <code class="param">templateParams</code> for <code class="param">destinationRoot</code>, resolving their current names from <code class="param">lookupFrom</code>.  <br /></td></tr>
 <tr class="memitem:aa5ce27908a19f4748bf19687b152d4a1" id="r_aa5ce27908a19f4748bf19687b152d4a1"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aa5ce27908a19f4748bf19687b152d4a1">reportDelayedDiagnostics</a> (mlir::Operation *site, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;&amp;diagnostics)</td></tr>
 <tr class="memdesc:aa5ce27908a19f4748bf19687b152d4a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Report diagnostics emitted while substituting a clone, preserving notes and moving notes with unknown locations to the instantiation site.  <br /></td></tr>
-<tr class="memitem:a61f49a0d605e0a32907c033869c9d26c" id="r_a61f49a0d605e0a32907c033869c9d26c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a61f49a0d605e0a32907c033869c9d26c">convertCalleesInPlace</a> (mlir::Operation *op, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings)</td></tr>
-<tr class="memdesc:a61f49a0d605e0a32907c033869c9d26c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rewrite callees rooted at a type parameter using that parameter's struct binding.  <br /></td></tr>
-<tr class="memitem:a10b759a5143c347d94548927ba1a96ff" id="r_a10b759a5143c347d94548927ba1a96ff"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a10b759a5143c347d94548927ba1a96ff">evaluateTemplateExprs</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings)</td></tr>
-<tr class="memdesc:a10b759a5143c347d94548927ba1a96ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add foldable template-expression results to bindings in declaration order.  <br /></td></tr>
+<tr class="memitem:ac5eb293332120cbae31342c9fd4a1ce4" id="r_ac5eb293332120cbae31342c9fd4a1ce4"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac5eb293332120cbae31342c9fd4a1ce4">convertCalleesInPlace</a> (mlir::Operation *op, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;paramNameToValue)</td></tr>
+<tr class="memdesc:ac5eb293332120cbae31342c9fd4a1ce4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rewrite callees rooted at a type parameter using that parameter's struct binding.  <br /></td></tr>
+<tr class="memitem:a73a701b8c3bfbc81c49f408c9d1847eb" id="r_a73a701b8c3bfbc81c49f408c9d1847eb"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a73a701b8c3bfbc81c49f408c9d1847eb">evaluateTemplateExprs</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;paramNameToConcrete)</td></tr>
+<tr class="memdesc:a73a701b8c3bfbc81c49f408c9d1847eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add foldable template-expression results to bindings in declaration order.  <br /></td></tr>
 <tr class="memitem:a675bf66f2609ed68c6027e068d2bd1ec" id="r_a675bf66f2609ed68c6027e068d2bd1ec"><td class="memItemLeft">std::optional&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a675bf66f2609ed68c6027e068d2bd1ec">inferUnifiedParam</a> (const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifyResult, mlir::SymbolRefAttr paramName)</td></tr>
 <tr class="memdesc:a675bf66f2609ed68c6027e068d2bd1ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the callee-side unification-derived value for a template parameter, if any.  <br /></td></tr>
-<tr class="memitem:ab54324a7ce9d114a1a85ab74c453174e" id="r_ab54324a7ce9d114a1a85ab74c453174e"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ab54324a7ce9d114a1a85ab74c453174e">substituteStructBody</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> clone, <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> originalType, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;diagnostics)</td></tr>
-<tr class="memdesc:ab54324a7ce9d114a1a85ab74c453174e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Substitute bindings and self-type references in an already inserted struct clone.  <br /></td></tr>
-<tr class="memitem:ad8b7265ed0aa29bb7287f66d56a34da7" id="r_ad8b7265ed0aa29bb7287f66d56a34da7"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ad8b7265ed0aa29bb7287f66d56a34da7">substituteFunctionBody</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> clone, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;bindings, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;diagnostics)</td></tr>
-<tr class="memdesc:ad8b7265ed0aa29bb7287f66d56a34da7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Substitute bindings in a function clone, including constants and array accesses.  <br /></td></tr>
+<tr class="memitem:a54feb10a723d7d9c0dc9dbfeffbbbf58" id="r_a54feb10a723d7d9c0dc9dbfeffbbbf58"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a54feb10a723d7d9c0dc9dbfeffbbbf58">substituteStructBody</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> newStruct, <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> typeAtDef, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;paramNameToConcrete, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;diagnostics)</td></tr>
+<tr class="memdesc:a54feb10a723d7d9c0dc9dbfeffbbbf58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Substitute bindings and self-type references in an already inserted struct clone.  <br /></td></tr>
+<tr class="memitem:a9d6fccbcc0c12c13083da47f2e0df7de" id="r_a9d6fccbcc0c12c13083da47f2e0df7de"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a9d6fccbcc0c12c13083da47f2e0df7de">substituteFunctionBody</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> newFunc, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;paramNameToConcrete, llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;delayedDiagnostics)</td></tr>
+<tr class="memdesc:a9d6fccbcc0c12c13083da47f2e0df7de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Substitute bindings in a function clone, including constants and array accesses.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -448,8 +448,8 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a id="a61f49a0d605e0a32907c033869c9d26c" name="a61f49a0d605e0a32907c033869c9d26c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a61f49a0d605e0a32907c033869c9d26c">&#9670;&#160;</a></span>convertCalleesInPlace() <span class="overload">[1/2]</span></h2>
+<a id="ac5eb293332120cbae31342c9fd4a1ce4" name="ac5eb293332120cbae31342c9fd4a1ce4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5eb293332120cbae31342c9fd4a1ce4">&#9670;&#160;</a></span>convertCalleesInPlace() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -462,7 +462,7 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>bindings</em></span>&#160;)</td>
+          <td class="paramtype">const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>paramNameToValue</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -491,7 +491,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00614">614</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00613">613</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
@@ -556,12 +556,12 @@ Variables</h2></td></tr>
 <p>Evaluate all <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">TemplateExprOp</a></span>s in <span class="tt">templateOp</span> that can be computed from the currently-known concrete param values in <span class="tt">paramNameToConcrete</span>, and add their results to the map. </p>
 <p>Exprs whose operands are not all concrete are silently skipped (partial instantiation). </p>
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00623">623</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00622">622</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a10b759a5143c347d94548927ba1a96ff" name="a10b759a5143c347d94548927ba1a96ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a10b759a5143c347d94548927ba1a96ff">&#9670;&#160;</a></span>evaluateTemplateExprs() <span class="overload">[2/2]</span></h2>
+<a id="a73a701b8c3bfbc81c49f408c9d1847eb" name="a73a701b8c3bfbc81c49f408c9d1847eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73a701b8c3bfbc81c49f408c9d1847eb">&#9670;&#160;</a></span>evaluateTemplateExprs() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -574,7 +574,7 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>bindings</em></span>&#160;)</td>
+          <td class="paramtype">llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>paramNameToConcrete</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -723,7 +723,7 @@ Variables</h2></td></tr>
 
 <p>Return the callee-side unification-derived value for a template parameter, if any. </p>
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00649">649</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00648">648</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
@@ -939,7 +939,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00495">495</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00494">494</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
@@ -985,7 +985,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00482">482</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00481">481</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
@@ -1088,12 +1088,12 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00675">675</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00674">674</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
-<a id="ad8b7265ed0aa29bb7287f66d56a34da7" name="ad8b7265ed0aa29bb7287f66d56a34da7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad8b7265ed0aa29bb7287f66d56a34da7">&#9670;&#160;</a></span>substituteFunctionBody() <span class="overload">[2/2]</span></h2>
+<a id="a9d6fccbcc0c12c13083da47f2e0df7de" name="a9d6fccbcc0c12c13083da47f2e0df7de"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d6fccbcc0c12c13083da47f2e0df7de">&#9670;&#160;</a></span>substituteFunctionBody() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1101,17 +1101,17 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
         <tr>
           <td class="memname">mlir::LogicalResult llzk::polymorphic::detail::substituteFunctionBody </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em>clone</em></span>, </td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em>newFunc</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>bindings</em></span>, </td>
+          <td class="paramtype">const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>paramNameToConcrete</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>diagnostics</em></span>&#160;)</td>
+          <td class="paramtype">llvm::SmallVector&lt; mlir::Diagnostic &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>delayedDiagnostics</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1121,8 +1121,8 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 
 </div>
 </div>
-<a id="ab54324a7ce9d114a1a85ab74c453174e" name="ab54324a7ce9d114a1a85ab74c453174e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab54324a7ce9d114a1a85ab74c453174e">&#9670;&#160;</a></span>substituteStructBody() <span class="overload">[1/2]</span></h2>
+<a id="a54feb10a723d7d9c0dc9dbfeffbbbf58" name="a54feb10a723d7d9c0dc9dbfeffbbbf58"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54feb10a723d7d9c0dc9dbfeffbbbf58">&#9670;&#160;</a></span>substituteStructBody() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1130,17 +1130,17 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
         <tr>
           <td class="memname">mlir::LogicalResult llzk::polymorphic::detail::substituteStructBody </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a></td>          <td class="paramname"><span class="paramname"><em>clone</em></span>, </td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a></td>          <td class="paramname"><span class="paramname"><em>newStruct</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a></td>          <td class="paramname"><span class="paramname"><em>originalType</em></span>, </td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a></td>          <td class="paramname"><span class="paramname"><em>typeAtDef</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>bindings</em></span>, </td>
+          <td class="paramtype">const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>paramNameToConcrete</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1184,7 +1184,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00654">654</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00653">653</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>
