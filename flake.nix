@@ -149,6 +149,7 @@
                   doxygen
                   graphviz
                   git
+                  pre-commit
 
                   # clang-tidy and clang-format
                   llzk-llvmPackages.clang-tools

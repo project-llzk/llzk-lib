@@ -109,8 +109,10 @@ lines or prose inside a check block. These layout adjustments must not omit any 
 ### Commit your update
 
 Commit the changes once you are happy with them.
-Remember that all code must pass a format check before it can be merged, so consider running clang format
-before pushing your commits. For more information, see \ref dev-workflow "the development workflow section".
+Enable the \ref formatting-hooks "formatting hook" once per clone to check
+formatting before each commit. If it changes files, review and stage those
+changes before retrying the commit. All code must pass the CI formatting
+check before it can be merged.
 
 ### Pull Request
 

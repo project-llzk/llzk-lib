@@ -140,6 +140,56 @@ cmake --build build
 
 Use `-DLLZK_WITH_PCL=OFF` to disable the backend.
 
+# Formatting hooks {#formatting-hooks}
+
+The repository uses [pre-commit](https://pre-commit.com/) and
+[cpp-linter-hooks](https://github.com/cpp-linter/cpp-linter-hooks) to format C, C++,
+header, and TableGen files with the shared `.clang-format` style. Enable the Git
+hook once in each clone; it is not activated automatically.
+
+The Nix development shell includes `pre-commit`. From the repository root, run:
+
+```bash
+nix develop --command bash -c "pre-commit install --install-hooks"
+```
+
+Without Nix, use Python 3.10 or newer to install `pre-commit` in a virtual
+environment, then activate the hook from the repository root:
+
+```bash
+python3 -m venv ~/.venvs/llzk-pre-commit
+source ~/.venvs/llzk-pre-commit/bin/activate
+python -m pip install pre-commit
+pre-commit install --install-hooks
+```
+
+Initial setup and the first hook run download and cache the hook and its pinned
+clang-format version. A separate clang-format installation is not needed for
+the hook. When using Nix, make commits from the development shell.
+
+On each commit, the hook formats whole staged `.c`, `.cpp`, `.h`, and `.td` files,
+excluding `build`, `result`, and `third-party`. If it changes files, the commit
+stops: review the diff, stage the desired changes, and retry the commit. CI also
+checks formatting and reports diagnostics (where permitted).
+
+To run the hook manually on staged files, or on all tracked matching files:
+
+```bash
+nix develop --command bash -c "pre-commit run clang-format"
+nix develop --command bash -c "pre-commit run clang-format --all-files"
+```
+
+Without Nix, run the `pre-commit` commands directly in the virtual environment.
+The hook revision (`rev`) and formatter version (`--version`) are pinned
+separately in `.pre-commit-config.yaml`. When upgrading LLVM, keep the formatter
+pin aligned with the Nix formatter used by CI:
+
+```bash
+nix develop .#debugClang --command bash -c "clang-format --version"
+```
+
+You can also run `clang-format` manually without `pre-commit` using the command shown below.
+
 # Development Workflow {#dev-workflow}
 
 Once you have generated the build configuration and are in the `build` directory,

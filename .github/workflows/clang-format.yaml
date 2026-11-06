@@ -9,8 +9,8 @@ on:
       - '**.td'
 
 permissions:
-  contents: write # Allow cpp-linter to push formatting fixes.
-  pull-requests: write
+  contents: read
+  pull-requests: write # Allow cpp-linter to update PR comments.
 
 jobs:
   run-clang-format:
@@ -22,8 +22,7 @@ jobs:
           # Lint the PR head, including for PRs from forks.
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
-          # Auto-fix uses the checkout credentials to push to the PR branch.
-          persist-credentials: true
+          persist-credentials: false
       - uses: cachix/install-nix-action@v31
         with:
           install_url: https://releases.nixos.org/nix/nix-2.35.2/install
@@ -60,8 +59,8 @@ jobs:
           ignore: 'build|result|third-party'
           step-summary: true
           file-annotations: true
-          # Fork PRs have read-only tokens, so only check formatting there.
-          auto-fix: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          auto-fix: false
+          # Fork PRs have read-only tokens, so skip PR comments there.
           thread-comments: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'update' || 'false' }}
           no-lgtm: false
       - name: Fail on diagnostics
