@@ -68,7 +68,7 @@ public:
 private:
   inline bool isReachableCached(mlir::CallableOpInterface A, mlir::CallableOpInterface B) const {
     auto it = reachabilityMap.find(A);
-    return it != reachabilityMap.end() && it->second.find(B) != it->second.end();
+    return it != reachabilityMap.end() && it->second.contains(B);
   }
 };
 

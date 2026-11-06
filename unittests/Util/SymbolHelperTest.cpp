@@ -27,7 +27,7 @@ using namespace mlir;
 
 class SymbolHelperTests : public LLZKTest {
 protected:
-  SymbolHelperTests() : LLZKTest() {}
+  SymbolHelperTests() = default;
 
   SymbolRefAttr newExample(unsigned numNestedRefs = 0) {
     llvm::SmallVector<FlatSymbolRefAttr> nestedRefs;

@@ -26,7 +26,7 @@ using namespace llzk::polymorphic;
 
 class TypeTests : public LLZKTest {
 protected:
-  TypeTests() : LLZKTest() {}
+  TypeTests() = default;
 };
 
 TEST_F(TypeTests, testArrayTypeCloneSuccessNewType) {

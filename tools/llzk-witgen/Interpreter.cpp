@@ -51,6 +51,9 @@ static bool usesUnsignedCmp(scf::ForOp forOp) {
 }
 
 /// Represent the values yielded by a block or region along with termination state.
+// libstdc++'s variant::emplace calls get on the just-constructed alternative, so
+// the reported bad_variant_access path in the implicit move constructor is unreachable.
+// NOLINTNEXTLINE(bugprone-exception-escape)
 struct BlockResult {
   bool terminated = false;
   llvm::SmallVector<WitnessVal> values;

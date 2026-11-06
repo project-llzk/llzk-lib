@@ -853,7 +853,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
           continue;
         }
 
-        auto rvalueType = llvm::dyn_cast<ArrayType>(insertOp.getRvalue().getType());
+        ArrayType rvalueType = insertOp.getRvalue().getType();
         if (!rvalueType || !llvm::isa<FeltType>(rvalueType.getElementType())) {
           continue;
         }

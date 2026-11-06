@@ -58,27 +58,27 @@ TEST_F(ArrayDialectTests, array_type_get) {
   auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
   auto arr_type = llzkArray_ArrayTypeGetWithDims(createIndexType(), 1, dims);
-  EXPECT_NE(arr_type.ptr, (const void *)NULL);
+  EXPECT_NE(arr_type.ptr, (const void *)nullptr);
 }
 
 TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
   auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
   auto arr_type = llzkArray_ArrayTypeGetWithDims(createIndexType(), 1, dims);
-  EXPECT_NE(arr_type.ptr, (const void *)NULL);
+  EXPECT_NE(arr_type.ptr, (const void *)nullptr);
   EXPECT_TRUE(llzkTypeIsA_Array_ArrayType(arr_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_with_numeric_dims) {
   int64_t dims[2] = {1, 2};
   auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
-  EXPECT_NE(arr_type.ptr, (const void *)NULL);
+  EXPECT_NE(arr_type.ptr, (const void *)nullptr);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_element_type) {
   int64_t dims[2] = {1, 2};
   auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
-  EXPECT_NE(arr_type.ptr, (const void *)NULL);
+  EXPECT_NE(arr_type.ptr, (const void *)nullptr);
   auto elt_type = llzkArray_ArrayTypeGetElementType(arr_type);
   EXPECT_TRUE(mlirTypeEqual(createIndexType(), elt_type));
 }
@@ -86,7 +86,7 @@ TEST_F(ArrayDialectTests, array_type_get_element_type) {
 TEST_F(ArrayDialectTests, array_type_get_num_dims) {
   int64_t dims[2] = {1, 2};
   auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
-  EXPECT_NE(arr_type.ptr, (const void *)NULL);
+  EXPECT_NE(arr_type.ptr, (const void *)nullptr);
   auto n_dims = llzkArray_ArrayTypeGetDimensionSizesCount(arr_type);
   EXPECT_EQ(n_dims, 2);
 }
@@ -94,7 +94,7 @@ TEST_F(ArrayDialectTests, array_type_get_num_dims) {
 TEST_F(ArrayDialectTests, array_type_get_dim) {
   int64_t dims[2] = {1, 2};
   auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
-  EXPECT_NE(arr_type.ptr, (const void *)NULL);
+  EXPECT_NE(arr_type.ptr, (const void *)nullptr);
   auto out_dim = llzkArray_ArrayTypeGetDimensionSizesAt(arr_type, 0);
   auto dim_as_attr = createIndexAttribute(dims[0]);
   EXPECT_TRUE(mlirAttributeEqual(out_dim, dim_as_attr));
@@ -150,7 +150,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
       auto elt_type = testClass.createIndexType();
       auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
       affineOperandsBuilder.nDimsPerMap = -1;
-      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
+      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, nullptr);
       return llzkArray_CreateArrayOpBuildWithMapOperands(
           builder, location, test_type, affineOperandsBuilder
       );

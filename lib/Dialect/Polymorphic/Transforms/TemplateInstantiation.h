@@ -71,13 +71,13 @@ void reportDelayedDiagnostics(
 /// Rewrite callees rooted at a type parameter using that parameter's struct binding.
 /// Other callees and explicit call arguments are left unchanged.
 void convertCalleesInPlace(
-    mlir::Operation *op, const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &bindings
+    mlir::Operation *op, const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToValue
 );
 
 /// Add foldable template-expression results to bindings in declaration order.
 /// Expressions with unresolved operands are skipped to allow partial instantiation.
 void evaluateTemplateExprs(
-    TemplateOp templateOp, llvm::DenseMap<mlir::Attribute, mlir::Attribute> &bindings
+    TemplateOp templateOp, llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
 );
 
 /// Return the callee-side unification-derived value for a template parameter, if any.
@@ -88,8 +88,8 @@ inferUnifiedParam(const UnificationMap &unifyResult, mlir::SymbolRefAttr paramNa
 /// Append materialization warnings for the caller to report at each instantiation site.
 /// Does not clone, insert symbols, infer parameters, inline calls or unroll loops.
 mlir::LogicalResult substituteStructBody(
-    component::StructDefOp clone, component::StructType originalType,
-    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &bindings,
+    component::StructDefOp newStruct, component::StructType typeAtDef,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete,
     llvm::SmallVector<mlir::Diagnostic> &diagnostics
 );
 
@@ -98,8 +98,9 @@ mlir::LogicalResult substituteStructBody(
 /// them and verify nested call targets after applying its own symbol rewrites.
 /// Does not clone, insert symbols, infer parameters, inline calls or unroll loops.
 mlir::LogicalResult substituteFunctionBody(
-    function::FuncDefOp clone, const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &bindings,
-    llvm::SmallVector<mlir::Diagnostic> &diagnostics
+    function::FuncDefOp newFunc,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete,
+    llvm::SmallVector<mlir::Diagnostic> &delayedDiagnostics
 );
 
 } // namespace llzk::polymorphic::detail

@@ -367,7 +367,7 @@ class ConstraintElaborator {
   /// Recognize integer computations by shape, independently of their dialect.
   /// These may be evaluated temporarily, but are never approved output operations.
   static bool isIntegerExpression(Operation &op) {
-    return !op.getNumRegions() && op.getNumResults() && isMemoryEffectFree(&op) &&
+    return op.getNumRegions() == 0u && op.getNumResults() != 0u && isMemoryEffectFree(&op) &&
            llvm::all_of(op.getResultTypes(), [](Type type) {
       return isa<IndexType, IntegerType>(type);
     });
@@ -396,7 +396,7 @@ class ConstraintElaborator {
   /// Evaluate non-native field arithmetic under the given environment.
   /// Require every result to fold to a field constant.
   LogicalResult evaluateNonNative(Operation &op, Environment &frame) {
-    if (op.getNumRegions() || !op.getNumResults() || !isMemoryEffectFree(&op) ||
+    if (op.getNumRegions() != 0u || op.getNumResults() == 0u || !isMemoryEffectFree(&op) ||
         !llvm::all_of(op.getResultTypes(), [](Type type) { return isa<felt::FeltType>(type); })) {
       return constraintError(&op, "lower non-native operations before constraint flattening");
     }
@@ -765,7 +765,7 @@ class ConstraintElaborator {
   /// Check every surviving operation against the flattened-output contract.
   /// This check does not depend on how an operation reached the output region.
   LogicalResult validateOperation(Operation &op) {
-    if (op.getNumRegions()) {
+    if (op.getNumRegions() != 0u) {
       return constraintError(&op, "regions are unsupported in flattened constraints");
     }
     if (isFieldExpression(op) || isa<constrain::EmitEqualityOp>(op)) {
@@ -879,7 +879,7 @@ public:
     }
     output.push_back(new Block());
     SmallVector<BoundValue> arguments;
-    for (auto [i, argument] : llvm::enumerate(source.getArguments())) {
+    for (BlockArgument argument : source.getArguments()) {
       Value emitted = output.front().addArgument(argument.getType(), argument.getLoc());
       if (aggregate(argument.getType())) {
         arguments.push_back(bindings.create(argument.getType(), argument, emitted));

@@ -28,8 +28,9 @@ inline mlir::LogicalResult evaluateScalarOperation(
     llvm::SmallVectorImpl<mlir::OpFoldResult> &results
 ) {
   // Assert casts fold only when their range checks are satisfied.
-  if (op->getNumRegions() || (!mlir::isMemoryEffectFree(op) &&
-                              !llvm::isa<llzk::cast::FeltToIndexOp, llzk::cast::IntToFeltOp>(op))) {
+  if (op->getNumRegions() != 0u ||
+      (!mlir::isMemoryEffectFree(op) &&
+       !llvm::isa<llzk::cast::FeltToIndexOp, llzk::cast::IntToFeltOp>(op))) {
     return mlir::failure();
   }
   mlir::Operation *temporary = op->clone();

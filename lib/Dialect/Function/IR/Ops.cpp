@@ -38,6 +38,7 @@
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/SmallVectorExtras.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -209,10 +210,9 @@ void FuncDefOp::cloneInto(FuncDefOp dest, IRMapping &mapper) {
     newAttrMap.insert({attr.getName(), attr.getValue()});
   }
 
-  auto newAttrs =
-      llvm::to_vector(llvm::map_range(newAttrMap, [](std::pair<StringAttr, Attribute> attrPair) {
+  auto newAttrs = llvm::map_to_vector(newAttrMap, [](std::pair<StringAttr, Attribute> attrPair) {
     return NamedAttribute(attrPair.first, attrPair.second);
-  }));
+  });
   dest->setAttrs(DictionaryAttr::get(getContext(), newAttrs));
 
   // Clone the body.
@@ -435,13 +435,13 @@ LogicalResult
 verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e., have no return types
-  if (funcType.getResults().size() != 0) {
+  if (!funcType.getResults().empty()) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN << "\" must have no return type";
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
   llvm::ArrayRef<Type> inputTypes = funcType.getInputs();
-  if (inputTypes.size() < 1) {
+  if (inputTypes.empty()) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
@@ -458,20 +458,20 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 
 } // namespace
 
-LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Additional checks for the compute/constrain/product functions within a struct
   if (StructDefOp parentStructOpt = getParentOfType<StructDefOp>(*this)) {
     // Verify return type restrictions for functions within a StructDefOp
     if (nameIsCompute()) {
-      return verifyFuncTypeCompute(*this, tables, parentStructOpt);
+      return verifyFuncTypeCompute(*this, symbolTables, parentStructOpt);
     } else if (nameIsConstrain()) {
-      return verifyFuncTypeConstrain(*this, tables, parentStructOpt);
+      return verifyFuncTypeConstrain(*this, symbolTables, parentStructOpt);
     } else if (nameIsProduct()) {
-      return verifyFuncTypeProduct(*this, tables, parentStructOpt);
+      return verifyFuncTypeProduct(*this, symbolTables, parentStructOpt);
     }
   }
   // In the general case, verify symbol resolution in all input and output types.
-  return verifyTypeResolution(tables, *this, getFunctionType());
+  return verifyTypeResolution(symbolTables, *this, getFunctionType());
 }
 
 SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
@@ -930,9 +930,9 @@ private:
 
 } // namespace
 
-LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // First, verify symbol resolution in all input and output types.
-  if (failed(verifyTypeResolution(tables, *this, getTypeSignature()))) {
+  if (failed(verifyTypeResolution(symbolTables, *this, getTypeSignature()))) {
     return failure(); // verifyTypeResolution() already emits a sufficient error message
   }
 
@@ -962,7 +962,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
   // checks against the known target function.
-  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(tables, calleeAttr, *this);
+  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(symbolTables, calleeAttr, *this);
   if (failed(tgtOpt)) {
     return this->emitError() << "expected '" << FuncDefOp::getOperationName() << "' named \""
                              << calleeAttr << '"';

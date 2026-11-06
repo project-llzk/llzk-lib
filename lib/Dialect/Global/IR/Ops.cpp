@@ -277,9 +277,9 @@ void GlobalDefOp::print(OpAsmPrinter &p) {
   p.printOptionalAttrDict((*this)->getAttrs(), {"constant", "sym_name", "type", "initial_value"});
 }
 
-LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getType());
+  return verifyTypeResolution(symbolTables, *this, getType());
 }
 
 namespace {
@@ -438,8 +438,8 @@ verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) 
 
 } // namespace
 
-LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  auto tgt = verifySymbolUsesImpl(*this, tables);
+LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  auto tgt = verifySymbolUsesImpl(*this, symbolTables);
   if (failed(tgt)) {
     return failure();
   }
@@ -458,7 +458,7 @@ LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
         .report();
   }
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getType());
+  return verifyTypeResolution(symbolTables, *this, getType());
 }
 
 // Custom implementation to deserialize bytecode produced before version 3,
@@ -492,8 +492,8 @@ void GlobalReadOp::getEffects(
   }
 }
 
-LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
-  auto tgt = verifySymbolUsesImpl(*this, tables);
+LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  auto tgt = verifySymbolUsesImpl(*this, symbolTables);
   if (failed(tgt)) {
     return failure();
   }

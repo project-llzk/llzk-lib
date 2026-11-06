@@ -12,6 +12,7 @@
 #include "llzk/Util/Compare.h"
 
 #include <numeric>
+#include <string>
 
 using namespace mlir;
 
@@ -104,8 +105,9 @@ parseAttrDictWithWarnings(OpAsmParser &parser, NamedAttrList &extraAttrs, Operat
   // Ignore, with warnings, any attributes that are specified and shouldn't be
   for (StringAttr skipName : state.name.getAttributeNames()) {
     if (extraAttrs.erase(skipName)) {
-      auto msg = "Ignoring attribute '" + skipName.getValue() +
-                 "' because it must be computed automatically.";
+      std::string msg = ("Ignoring attribute '" + skipName.getValue() +
+                         "' because it must be computed automatically.")
+                            .str();
       mlir::emitWarning(parser.getEncodedSourceLoc(loc), msg).report();
     }
   }

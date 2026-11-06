@@ -28,10 +28,10 @@ namespace llzk::constrain {
 // EmitEqualityOp
 //===------------------------------------------------------------------===//
 
-LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+      symbolTables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
   );
 }
 
@@ -41,15 +41,15 @@ Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
 // EmitContainmentOp
 //===------------------------------------------------------------------===//
 
-LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+      symbolTables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
   );
 }
 
 LogicalResult EmitContainmentOp::verify() {
-  auto arrType = llvm::cast<ArrayType>(getLhs().getType()); // per the ODS definition
+  ArrayType arrType = getLhs().getType();
   OwningEmitErrorFn errFn = getEmitOpErrFn(this);
 
   if (failed(verifySubArrayOrElementType(errFn, arrType, getRhs().getType()))) {
