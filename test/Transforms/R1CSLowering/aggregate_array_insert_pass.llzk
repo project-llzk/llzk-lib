@@ -1,0 +1,30 @@
+// RUN: %python %S/check-aggregate-copies.py llzk-opt llzk-witgen llzk-translate %s %t
+
+// Case: array-insert
+// Mutation of a copied aggregate must leave its source or stored value intact.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%x: !felt.type<"babybear"> {llzk.pub}) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %zero = arith.constant 0 : index
+      %z = felt.const 0 : !felt.type<"babybear">
+      %p = pod.new { @v = %x } : !pod.type<[@v: !felt.type<"babybear">]>
+      %row = array.new %p : !array.type<1 x !pod.type<[@v: !felt.type<"babybear">]>>
+      %grid = array.new : !array.type<1,1 x !pod.type<[@v: !felt.type<"babybear">]>>
+      array.insert %grid[%zero] = %row : !array.type<1,1 x !pod.type<[@v: !felt.type<"babybear">]>>, !array.type<1 x !pod.type<[@v: !felt.type<"babybear">]>>
+      %copy = array.read %row[%zero] : !array.type<1 x !pod.type<[@v: !felt.type<"babybear">]>>, !pod.type<[@v: !felt.type<"babybear">]>
+      pod.write %copy[@v] = %z : !pod.type<[@v: !felt.type<"babybear">]>, !felt.type<"babybear">
+      array.write %row[%zero] = %copy : !array.type<1 x !pod.type<[@v: !felt.type<"babybear">]>>, !pod.type<[@v: !felt.type<"babybear">]>
+      %original = array.read %grid[%zero, %zero] : !array.type<1,1 x !pod.type<[@v: !felt.type<"babybear">]>>, !pod.type<[@v: !felt.type<"babybear">]>
+      %value = pod.read %original[@v] : !pod.type<[@v: !felt.type<"babybear">]>, !felt.type<"babybear">
+      struct.writem %self[@out] = %value : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"babybear"> {llzk.pub}) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %x : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
