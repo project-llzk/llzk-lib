@@ -57,29 +57,29 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: function.def @call_observes_first_write(
-// CHECK: pod.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
-// CHECK: function.call @observe_pod(%{{[0-9a-zA-Z_.]+}}) : (!pod.type<[@field: index]>) -> ()
-// CHECK: pod.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK: pod.write {{.*}} = %[[ONE:[0-9a-zA-Z_.-]+]] : <[@field: index]>, index
+// CHECK: function.call @observe_pod(%{{[0-9a-zA-Z_.-]+}}) : (!pod.type<[@field: index]>) -> ()
+// CHECK: pod.write {{.*}} = %[[TWO:[0-9a-zA-Z_.-]+]] : <[@field: index]>, index
 // CHECK-NOT: pod.read
 // CHECK: function.return %[[TWO]] : index
 
 // CHECK-LABEL: function.def @constraint_observes_first_write(
-// CHECK: pod.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK: pod.write {{.*}} = %[[ONE:[0-9a-zA-Z_.-]+]] : <[@field: index]>, index
 // CHECK: constrain.eq {{.*}} : !pod.type<[@field: index]>, !pod.type<[@field: index]>
-// CHECK: pod.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <[@field: index]>, index
+// CHECK: pod.write {{.*}} = %[[TWO:[0-9a-zA-Z_.-]+]] : <[@field: index]>, index
 // CHECK-NOT: pod.read
 // CHECK: function.return %[[TWO]] : index
 
 // CHECK-LABEL: function.def @call_observes_first_array_write(
-// CHECK: array.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <1 x index>, index
-// CHECK: function.call @observe_array(%{{[0-9a-zA-Z_.]+}}) : (!array.type<1 x index>) -> ()
-// CHECK: array.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK: array.write {{.*}} = %[[ONE:[0-9a-zA-Z_.-]+]] : <1 x index>, index
+// CHECK: function.call @observe_array(%{{[0-9a-zA-Z_.-]+}}) : (!array.type<1 x index>) -> ()
+// CHECK: array.write {{.*}} = %[[TWO:[0-9a-zA-Z_.-]+]] : <1 x index>, index
 // CHECK-NOT: array.read
 // CHECK: function.return %[[TWO]] : index
 
 // CHECK-LABEL: function.def @constraint_observes_first_array_write(
-// CHECK: array.write {{.*}} = %[[ONE:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK: array.write {{.*}} = %[[ONE:[0-9a-zA-Z_.-]+]] : <1 x index>, index
 // CHECK: constrain.eq {{.*}} : !array.type<1 x index>, !array.type<1 x index>
-// CHECK: array.write {{.*}} = %[[TWO:[0-9a-zA-Z_.]+]] : <1 x index>, index
+// CHECK: array.write {{.*}} = %[[TWO:[0-9a-zA-Z_.-]+]] : <1 x index>, index
 // CHECK-NOT: array.read
 // CHECK: function.return %[[TWO]] : index
