@@ -7,6 +7,12 @@
 // RUN: llzk-opt %t/converted.llzk --canonicalize > %t/folded.llzk
 // RUN: llzk-witgen %t/folded.llzk --inputs %t/input.json > %t/folded.json
 // RUN: diff %t/original.json %t/folded.json
+// RUN: llzk-opt %t/test.llzk --llzk-flatten > %t/unrolled.llzk
+// RUN: llzk-witgen %t/unrolled.llzk --inputs %t/input.json > %t/unrolled.json
+// RUN: diff %t/original.json %t/unrolled.json
+// RUN: llzk-opt %t/converted.llzk --llzk-flatten > %t/converted-unrolled.llzk
+// RUN: llzk-witgen %t/converted-unrolled.llzk --inputs %t/input.json > %t/converted-unrolled.json
+// RUN: diff %t/original.json %t/converted-unrolled.json
 
 // Both annotations match the source loops' field values and iteration counts.
 // Decimal accumulation makes the output sensitive to the order and number of iterations.

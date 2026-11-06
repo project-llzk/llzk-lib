@@ -1,0 +1,107 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten="max-unroll=2" -verify-diagnostics %s | FileCheck --enable-var-scope --check-prefix=ROLLED %s
+// RUN: llzk-opt -split-input-file -llzk-flatten="max-unroll=3" %s | FileCheck --enable-var-scope %s
+
+// The same loops stay rolled above a custom limit and expand exactly at that limit.
+
+module attributes {llzk.lang} {
+  function.def @annotated_for(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %three = arith.constant 3 : index
+    %one = arith.constant 1 : index
+    // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2}}
+    scf.for %iv = %zero to %three step %one {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 1>}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @annotated_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// ROLLED-LABEL: module attributes {llzk.lang} {
+// ROLLED-NEXT:    function.def @annotated_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// ROLLED-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// ROLLED-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// ROLLED-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// ROLLED-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// ROLLED-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// ROLLED-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 1>}
+// ROLLED-NEXT:      function.return
+// ROLLED-NEXT:    }
+// ROLLED-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @annotated_while(%cond: i1, %a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2}}
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      constrain.eq %a, %b : !felt.type, !felt.type
+      scf.yield
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 1>}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @annotated_while(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// ROLLED-LABEL: module attributes {llzk.lang} {
+// ROLLED-NEXT:    function.def @annotated_while(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// ROLLED-NEXT:      scf.while : () -> () {
+// ROLLED-NEXT:        scf.condition(%[[VAL_0]])
+// ROLLED-NEXT:      } do {
+// ROLLED-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_2]] : !felt.type, !felt.type
+// ROLLED-NEXT:        scf.yield
+// ROLLED-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 1>}
+// ROLLED-NEXT:      function.return
+// ROLLED-NEXT:    }
+// ROLLED-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @computed_for(%a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %three = arith.constant 3 : index
+    %one = arith.constant 1 : index
+    // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2}}
+    scf.for %iv = %zero to %three step %one {
+      constrain.eq %a, %b : !felt.type, !felt.type
+    }
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @computed_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// ROLLED-LABEL: module attributes {llzk.lang} {
+// ROLLED-NEXT:    function.def @computed_for(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// ROLLED-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// ROLLED-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// ROLLED-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// ROLLED-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// ROLLED-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// ROLLED-NEXT:      }
+// ROLLED-NEXT:      function.return
+// ROLLED-NEXT:    }
+// ROLLED-NEXT:  }

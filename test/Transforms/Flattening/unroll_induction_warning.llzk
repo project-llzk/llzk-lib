@@ -1,0 +1,153 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Preserve the original loop when its last annotated induction value does not fit.
+  function.def @induction_overflow(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
+    %lb = arith.index_cast %lb_index : index to i8
+    %ub = arith.index_cast %ub_index : index to i8
+    %step = arith.index_cast %step_index : index to i8
+    %seed_int = arith.index_cast %seed : index to i8
+    // expected-warning @+1 {{llzk.loopbounds induction value does not fit the loop induction type; leaving loop unchanged}}
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed_int) -> i8 : i8 {
+      %next = arith.addi %acc, %iv : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<127 to 129 step 1>}
+    %result_index = arith.index_cast %result : i8 to index
+    function.return %result_index : index
+  }
+
+  // Unsigned induction values must fit the unsigned range.
+  function.def @unsigned_overflow(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
+    %lb = arith.index_cast %lb_index : index to i8
+    %ub = arith.index_cast %ub_index : index to i8
+    %step = arith.index_cast %step_index : index to i8
+    %seed_int = arith.index_cast %seed : index to i8
+    // expected-warning @+1 {{llzk.loopbounds induction value does not fit the loop induction type; leaving loop unchanged}}
+    %result = scf.for unsigned %iv = %lb to %ub step %step iter_args(%acc = %seed_int) -> i8 : i8 {
+      %next = arith.addi %acc, %iv : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<255 to 257 step 1>}
+    %result_index = arith.index_cast %result : i8 to index
+    function.return %result_index : index
+  }
+
+  // Check the first endpoint too, including descending annotations.
+  function.def @descending_overflow(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
+    %lb = arith.index_cast %lb_index : index to i8
+    %ub = arith.index_cast %ub_index : index to i8
+    %step = arith.index_cast %step_index : index to i8
+    %seed_int = arith.index_cast %seed : index to i8
+    // expected-warning @+1 {{llzk.loopbounds induction value does not fit the loop induction type; leaving loop unchanged}}
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed_int) -> i8 : i8 {
+      %next = arith.addi %acc, %iv : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<-129 to -131 step -1>}
+    %result_index = arith.index_cast %result : i8 to index
+    function.return %result_index : index
+  }
+
+  // Neither a statically empty loop nor its enclosing false branch may fold away.
+  function.def @guarded_overflow(%seed: index) -> index {
+    %false = arith.constant false
+    %zero = arith.constant 0 : i8
+    %one = arith.constant 1 : i8
+    %seed_int = arith.index_cast %seed : index to i8
+    %result = scf.if %false -> i8 {
+      // expected-warning @+1 {{llzk.loopbounds induction value does not fit the loop induction type; leaving loop unchanged}}
+      %loop = scf.for %iv = %zero to %zero step %one iter_args(%acc = %seed_int) -> i8 : i8 {
+        %next = arith.addi %acc, %iv : i8
+        scf.yield %next : i8
+      } {llzk.loopbounds = #llzk.loopbounds<128 to 129 step 1>}
+      scf.yield %loop : i8
+    } else {
+      scf.yield %seed_int : i8
+    }
+    %result_index = arith.index_cast %result : i8 to index
+    function.return %result_index : index
+  }
+
+  // Unused and zero-trip induction values need not fit. These expansions also force
+  // another fixpoint round, without repeating the warnings above.
+  function.def @unmaterialized_values(%lb_index: index, %ub_index: index, %step_index: index, %seed: index) -> index {
+    %lb = arith.index_cast %lb_index : index to i8
+    %ub = arith.index_cast %ub_index : index to i8
+    %step = arith.index_cast %step_index : index to i8
+    %seed_int = arith.index_cast %seed : index to i8
+    %one = arith.constant 1 : i8
+    %empty = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed_int) -> i8 : i8 {
+      %next = arith.addi %acc, %iv : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<128 to 128 step 1>}
+    %unused = scf.for %iv = %lb to %ub step %step iter_args(%acc = %empty) -> i8 : i8 {
+      %next = arith.addi %acc, %one : i8
+      scf.yield %next : i8
+    } {llzk.loopbounds = #llzk.loopbounds<128 to 130 step 1>}
+    %result_index = arith.index_cast %unused : i8 to index
+    function.return %result_index : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @induction_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_0]] : index to i8
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_1]] : index to i8
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_2]] : index to i8
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_3]] : index to i8
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_4]] to %[[VAL_5]] step %[[VAL_6]] iter_args(%[[VAL_10:[0-9a-zA-Z_\.]+]] = %[[VAL_7]]) -> (i8)  : i8 {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_10]], %[[VAL_9]] : i8
+// CHECK-NEXT:        scf.yield %[[VAL_11]] : i8
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<127 to 129 step 1>}
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_8]] : i8 to index
+// CHECK-NEXT:      function.return %[[VAL_12]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unsigned_overflow(%[[VAL_13:[0-9a-zA-Z_\.]+]]: index, %[[VAL_14:[0-9a-zA-Z_\.]+]]: index, %[[VAL_15:[0-9a-zA-Z_\.]+]]: index, %[[VAL_16:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_13]] : index to i8
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_14]] : index to i8
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_15]] : index to i8
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_16]] : index to i8
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = scf.for unsigned %[[VAL_22:[0-9a-zA-Z_\.]+]] = %[[VAL_17]] to %[[VAL_18]] step %[[VAL_19]] iter_args(%[[VAL_23:[0-9a-zA-Z_\.]+]] = %[[VAL_20]]) -> (i8)  : i8 {
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_23]], %[[VAL_22]] : i8
+// CHECK-NEXT:        scf.yield %[[VAL_24]] : i8
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<255 to 257 step 1>}
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_21]] : i8 to index
+// CHECK-NEXT:      function.return %[[VAL_25]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @descending_overflow(%[[VAL_26:[0-9a-zA-Z_\.]+]]: index, %[[VAL_27:[0-9a-zA-Z_\.]+]]: index, %[[VAL_28:[0-9a-zA-Z_\.]+]]: index, %[[VAL_29:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_26]] : index to i8
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_27]] : index to i8
+// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_28]] : index to i8
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_29]] : index to i8
+// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_35:[0-9a-zA-Z_\.]+]] = %[[VAL_30]] to %[[VAL_31]] step %[[VAL_32]] iter_args(%[[VAL_36:[0-9a-zA-Z_\.]+]] = %[[VAL_33]]) -> (i8)  : i8 {
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_36]], %[[VAL_35]] : i8
+// CHECK-NEXT:        scf.yield %[[VAL_37]] : i8
+// CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<-129 to -131 step -1>}
+// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_34]] : i8 to index
+// CHECK-NEXT:      function.return %[[VAL_38]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @guarded_overflow(%[[VAL_39:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_40:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 0 : i8
+// CHECK-NEXT:      %[[VAL_42:[0-9a-zA-Z_\.]+]] = arith.constant 1 : i8
+// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_39]] : index to i8
+// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_40]] -> (i8) {
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_46:[0-9a-zA-Z_\.]+]] = %[[VAL_41]] to %[[VAL_41]] step %[[VAL_42]] iter_args(%[[VAL_47:[0-9a-zA-Z_\.]+]] = %[[VAL_43]]) -> (i8)  : i8 {
+// CHECK-NEXT:          %[[VAL_48:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_47]], %[[VAL_46]] : i8
+// CHECK-NEXT:          scf.yield %[[VAL_48]] : i8
+// CHECK-NEXT:        } {llzk.loopbounds = #llzk.loopbounds<128 to 129 step 1>}
+// CHECK-NEXT:        scf.yield %[[VAL_45]] : i8
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_43]] : i8
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_49:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_44]] : i8 to index
+// CHECK-NEXT:      function.return %[[VAL_49]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unmaterialized_values(%[[VAL_50:[0-9a-zA-Z_\.]+]]: index, %[[VAL_51:[0-9a-zA-Z_\.]+]]: index, %[[VAL_52:[0-9a-zA-Z_\.]+]]: index, %[[VAL_53:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_54:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_53]] : index to i8
+// CHECK-NEXT:      %[[VAL_55:[0-9a-zA-Z_\.]+]] = arith.constant 1 : i8
+// CHECK-NEXT:      %[[VAL_56:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_54]], %[[VAL_55]] : i8
+// CHECK-NEXT:      %[[VAL_57:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_56]], %[[VAL_55]] : i8
+// CHECK-NEXT:      %[[VAL_58:[0-9a-zA-Z_\.]+]] = arith.index_cast %[[VAL_57]] : i8 to index
+// CHECK-NEXT:      function.return %[[VAL_58]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+

@@ -1,0 +1,53 @@
+// RUN: llzk-opt -llzk-full-struct-inlining="flattening={max-unroll=2}" -verify-diagnostics %s | FileCheck %s
+// RUN: llzk-opt -llzk-full-inlining="flattening={max-unroll=2}" -verify-diagnostics %s -o /dev/null
+
+// Enclosing pipelines must forward the unrolling limit to flattening.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @a : !felt.type
+    struct.member @b : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      struct.writem %self[@a] = %a : !struct.type<@Main>, !felt.type
+      struct.writem %self[@b] = %b : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>, %input_a: !felt.type, %input_b: !felt.type) {
+      %a = struct.readm %self[@a] : !struct.type<@Main>, !felt.type
+      %b = struct.readm %self[@b] : !struct.type<@Main>, !felt.type
+      %zero = arith.constant 0 : index
+      %three = arith.constant 3 : index
+      %one = arith.constant 1 : index
+      // expected-warning @+1 {{loop trip count 3 exceeds max-unroll limit of 2}}
+      scf.for %iv = %zero to %three step %one {
+        constrain.eq %a, %b : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @a : !felt.type
+// CHECK-NEXT:      struct.member @b : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@a] = %[[VAL_0]] : <@Main>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@b] = %[[VAL_1]] : <@Main>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@a] : <@Main>, !felt.type
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@b] : <@Main>, !felt.type
+// CHECK-NEXT:        scf.for %[[VAL_11:[0-9a-zA-Z_\.]+]] = %[[VAL_8]] to %[[VAL_7]] step %[[VAL_6]] {
+// CHECK-NEXT:          constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
