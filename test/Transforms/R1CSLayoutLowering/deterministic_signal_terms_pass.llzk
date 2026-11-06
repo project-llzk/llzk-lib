@@ -54,18 +54,18 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
 // CHECK-NEXT:    r1cs.circuit @Main {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.const 0 : !r1cs.linear
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_5]], -1 : !r1cs.linear
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_7]], 2 : !r1cs.linear
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_6]], %[[VAL_8]] : !r1cs.linear
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_9]], %[[VAL_10]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = r1cs.def 3 : !r1cs.signal
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = r1cs.const 0 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = r1cs.mul_const %[[VAL_5]], -1 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = r1cs.mul_const %[[VAL_7]], 2 : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = r1cs.add %[[VAL_6]], %[[VAL_8]] : !r1cs.linear
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = r1cs.add %[[VAL_9]], %[[VAL_10]] : !r1cs.linear
 // CHECK-NEXT:      r1cs.constrain %[[VAL_3]], %[[VAL_4]], %[[VAL_11]] : !r1cs.linear
 // CHECK-NEXT:    } {r1cs.input_labels = array<i64>}
 // CHECK-NEXT:  }

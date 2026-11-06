@@ -36,25 +36,25 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL:  struct.def @IsZero {
 // CHECK-NEXT:     struct.member @bit : !felt.type
-// CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@IsZero>
-// CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = bool.cmp eq(%[[A0]], %[[Z]])
-// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = scf.if %[[T0]] -> (!felt.type) {
+// CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@IsZero>
+// CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.-]+]] = felt.const 0
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = bool.cmp eq(%[[A0]], %[[Z]])
+// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.-]+]] = scf.if %[[T0]] -> (!felt.type) {
 // CHECK-NEXT:         scf.yield %[[Z]] : !felt.type
 // CHECK-NEXT:       } else {
-// CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = felt.const 1
+// CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.-]+]] = felt.const 1
 // CHECK-NEXT:         scf.yield %[[T2]] : !felt.type
 // CHECK-NEXT:       }
 // CHECK-NEXT:       struct.writem %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !felt.type
 // CHECK-NEXT:       function.return %[[SELF]]
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !struct.type<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = struct.readm %[[SELF]][@bit] : <@IsZero>, !felt.type
-// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = felt.const 1
-// CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = felt.sub %[[T0]], %[[T1]]
-// CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = felt.mul %[[T0]], %[[T2]]
-// CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.]+]] = felt.const 0
+// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@IsZero>, %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = struct.readm %[[SELF]][@bit] : <@IsZero>, !felt.type
+// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.-]+]] = felt.const 1
+// CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.-]+]] = felt.sub %[[T0]], %[[T1]]
+// CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.-]+]] = felt.mul %[[T0]], %[[T2]]
+// CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.-]+]] = felt.const 0
 // CHECK-NEXT:       constrain.eq %[[T3]], %[[T4]] : !felt.type, !felt.type
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
@@ -85,19 +85,19 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL:  struct.def @C {
 // CHECK-NEXT:    struct.member @data : !felt.type
-// CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.]+]]: !felt.type) -> !struct.type<@C> attributes {function.allow_witness} {
-// CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@C>
-// CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = bool.cmp ne(%[[A0]], %[[T0]])
+// CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@C> attributes {function.allow_witness} {
+// CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@C>
+// CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.-]+]] = felt.const 0
+// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = bool.cmp ne(%[[A0]], %[[T0]])
 // CHECK-NEXT:     scf.if %[[T1]] {
 // CHECK-NEXT:       struct.writem %[[SELF]][@data] = %[[A1]] : <@C>, !felt.type
 // CHECK-NEXT:     }
 // CHECK-NEXT:     function.return %[[SELF]]
 // CHECK-NEXT:   }
 // CHECK-NEXT:   function.def @constrain(
-// CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.]+]]: !struct.type<@C>,
-// CHECK-SAME:        %[[A0:[0-9a-zA-Z_.]+]]: !felt.type,
-// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@C>,
+// CHECK-SAME:        %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type,
+// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:     function.return
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

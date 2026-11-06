@@ -16,11 +16,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TFoo {
 // CHECK-NEXT:      struct.def @Foo {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@TFoo::@Foo<[]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TFoo::@Foo<[]>>
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = string.new "this is a string"
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TFoo::@Foo<[]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = string.new "this is a string"
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TFoo::@Foo<[]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TFoo::@Foo<[]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@TFoo::@Foo<[]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }

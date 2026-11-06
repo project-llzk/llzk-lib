@@ -374,10 +374,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"babybear">
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  134217726 : <"babybear">
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1592717054 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 2013265920 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"babybear">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = felt.const  134217726 : <"babybear">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 1592717054 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 2013265920 : index
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_1]]) : (!felt.type<"babybear">) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()
@@ -517,9 +517,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-LABEL:   function.def @trunc() attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  7059779437489773633646340506914701874621185009112317347175358107333056201400 : <"grumpkin">
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 4332616871279656262 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  7059779437489773633646340506914701874621185009112317347175358107333056201400 : <"grumpkin">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 12 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 4332616871279656262 : index
 // CHECK-NEXT:      function.call @use_felt(%[[VAL_0]]) : (!felt.type<"grumpkin">) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_1]]) : (index) -> ()
 // CHECK-NEXT:      function.call @use_index(%[[VAL_2]]) : (index) -> ()

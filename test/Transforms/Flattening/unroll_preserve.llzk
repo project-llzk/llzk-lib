@@ -24,15 +24,15 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @originally_zero(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_2]] step %[[VAL_3]] {
+// CHECK-NEXT:    function.def @originally_zero(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_4:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_2]] step %[[VAL_3]] {
 // CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 1>}
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @within_limit(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @within_limit(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
 // CHECK-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
@@ -53,10 +53,10 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @originally_one(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_3]] {
+// CHECK-NEXT:    function.def @originally_one(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_4:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_3]] {
 // CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:      } {llzk.loopbounds = #llzk.loopbounds<0 to 18446744073709551616 step 1>}
 // CHECK-NEXT:      function.return
@@ -79,8 +79,8 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @originally_false(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:    function.def @originally_false(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant false
 // CHECK-NEXT:      scf.while : () -> () {
 // CHECK-NEXT:        scf.condition(%[[VAL_2]])
 // CHECK-NEXT:      } do {
@@ -110,13 +110,13 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @under_false_if(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:    function.def @under_false_if(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant false
 // CHECK-NEXT:      scf.if %[[VAL_5]] {
-// CHECK-NEXT:        scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// CHECK-NEXT:        scf.for %[[VAL_6:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
 // CHECK-NEXT:          constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -145,14 +145,14 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @nested(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_5]] {
-// CHECK-NEXT:        scf.for %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_4]] step %[[VAL_5]] {
-// CHECK-NEXT:          scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_5]] {
+// CHECK-NEXT:    function.def @nested(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_6:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_5]] {
+// CHECK-NEXT:        scf.for %[[VAL_7:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_4]] step %[[VAL_5]] {
+// CHECK-NEXT:          scf.for %[[VAL_8:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_5]] {
 // CHECK-NEXT:            constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:          } {llzk.loopbounds = #llzk.loopbounds<0 to 2 step 1>}
 // CHECK-NEXT:        }
@@ -177,10 +177,10 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @empty_computed() {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : i128
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 18446744073709551616 : i128
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : i128
-// CHECK-NEXT:      scf.for %[[VAL_3:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]]  : i128 {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : i128
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 18446744073709551616 : i128
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 1 : i128
+// CHECK-NEXT:      scf.for %[[VAL_3:[0-9a-zA-Z_.-]+]] = %[[VAL_0]] to %[[VAL_1]] step %[[VAL_2]]  : i128 {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -216,17 +216,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @ArrayTypes {
 // CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      function.def @preserved_array_types(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:      function.def @preserved_array_types(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !felt.type>
 // CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <1 x !felt.type>, !felt.type
-// CHECK-NEXT:        scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_1]] to %[[VAL_3]] step %[[VAL_2]] {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_1]]] : <1 x !felt.type>, !felt.type
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:        scf.for %[[VAL_5:[0-9a-zA-Z_.-]+]] = %[[VAL_1]] to %[[VAL_3]] step %[[VAL_2]] {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_1]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.new  : <4 x !felt.type>
 // CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <4 x !felt.type>, !felt.type
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <4 x !felt.type>, !felt.type
 // CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_0]] : !felt.type, !felt.type
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.return

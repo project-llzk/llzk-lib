@@ -27,11 +27,11 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  function.def @split(%arg0: index) -> (index, index) {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 //CHECK-NEXT:     function.return %arg0, %[[T1]] : index, index
 //CHECK-NEXT:   }
 //CHECK-LABEL:  function.def @user(%arg0: index) -> (index, index) {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]]:2 = function.call @split(%arg0) : (index) -> (index, index)
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]]:2 = function.call @split(%arg0) : (index) -> (index, index)
 //CHECK-NEXT:     function.return %[[T1]]#0, %[[T1]]#1 : index, index
 //CHECK-NEXT:   }
 // -----
@@ -112,7 +112,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Target {
 // CHECK-NEXT:      poly.param @N
 // CHECK-NEXT:      function.def @id() -> index {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:        function.return %[[VAL_0]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -122,13 +122,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Caller {
 // CHECK-NEXT:      poly.param @P
 // CHECK-NEXT:      poly.expr @E {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
 // CHECK-NEXT:        poly.yield %[[VAL_1]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @use() -> index {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Target::@id<[@P]>() : () -> index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @Target::@id<[@E]>() : () -> index
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @Target::@id<[@globals::@G]>() : () -> index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @Target::@id<[@P]>() : () -> index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @Target::@id<[@E]>() : () -> index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = function.call @Target::@id<[@globals::@G]>() : () -> index
 // CHECK-NEXT:        function.return %[[VAL_4]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

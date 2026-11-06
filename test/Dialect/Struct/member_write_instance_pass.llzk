@@ -27,19 +27,19 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @LocalInstance {
 // CHECK-NEXT:      struct.member @value : !felt.type
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@LocalInstance> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@LocalInstance>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@LocalInstance> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@LocalInstance>
 // CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@LocalInstance>, !felt.type
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_3]] {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        scf.for %[[VAL_4:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_3]] {
 // CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@LocalInstance>, !felt.type
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@LocalInstance>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@LocalInstance>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@value] = %[[VAL_0]] : <@LocalInstance>, !felt.type
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@LocalInstance>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@LocalInstance>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalInstance>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

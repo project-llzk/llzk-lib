@@ -40,21 +40,21 @@ module attributes {llzk.lang} {
 
 // IR-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
 // IR-NEXT:    func.func @SignedLiterals() -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// IR-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 2013265920
-// IR-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 2013265879
-// IR-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.const 841097757
-// IR-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.const 1172168162
-// IR-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "minus_one" true
-// IR-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.var "minus_42" true
-// IR-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pcl.var "large_negative" true
-// IR-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.var "large_positive" true
-// IR-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_0]]
+// IR-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = pcl.const 2013265920
+// IR-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.const 2013265879
+// IR-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = pcl.const 841097757
+// IR-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = pcl.const 1172168162
+// IR-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = pcl.var "minus_one" true
+// IR-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = pcl.var "minus_42" true
+// IR-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = pcl.var "large_negative" true
+// IR-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = pcl.var "large_positive" true
+// IR-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_0]]
 // IR-NEXT:      pcl.assert %[[VAL_8]]
-// IR-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_5]], %[[VAL_1]]
+// IR-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_5]], %[[VAL_1]]
 // IR-NEXT:      pcl.assert %[[VAL_9]]
-// IR-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_6]], %[[VAL_2]]
+// IR-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_6]], %[[VAL_2]]
 // IR-NEXT:      pcl.assert %[[VAL_10]]
-// IR-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7]], %[[VAL_3]]
+// IR-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_7]], %[[VAL_3]]
 // IR-NEXT:      pcl.assert %[[VAL_11]]
 // IR-NEXT:      return %[[VAL_4]], %[[VAL_5]], %[[VAL_6]], %[[VAL_7]] : !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt
 // IR-NEXT:    }

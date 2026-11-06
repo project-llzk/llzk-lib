@@ -36,7 +36,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    module @lib {
 // CHECK-NEXT:      struct.def @Main {
 // CHECK-NEXT:        function.def @product() -> !struct.type<@lib::@Main> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@lib::@Main>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@lib::@Main>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@lib::@Main>
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -44,11 +44,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@out] : <@Main>, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

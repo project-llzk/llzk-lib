@@ -33,7 +33,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
@@ -71,7 +71,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
@@ -114,7 +114,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type

@@ -21,8 +21,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: func.func @A(
-// CHECK:         %[[EQ1:[0-9a-zA-Z_\.]+]] = pcl.eq %arg0, %arg1
-// CHECK:         %[[EQ2:[0-9a-zA-Z_\.]+]] = pcl.eq %arg1, %arg2
-// CHECK:         %[[IFF:[0-9a-zA-Z_\.]+]] = pcl.iff %[[EQ1]], %[[EQ2]]
-// CHECK:         %[[XOR:[0-9a-zA-Z_\.]+]] = pcl.not %[[IFF]]
-// CHECK:         %[[USE:[0-9a-zA-Z_\.]+]] = pcl.and %[[XOR]], %[[EQ1]]
+// CHECK:         %[[EQ1:[0-9a-zA-Z_.-]+]] = pcl.eq %arg0, %arg1
+// CHECK:         %[[EQ2:[0-9a-zA-Z_.-]+]] = pcl.eq %arg1, %arg2
+// CHECK:         %[[IFF:[0-9a-zA-Z_.-]+]] = pcl.iff %[[EQ1]], %[[EQ2]]
+// CHECK:         %[[XOR:[0-9a-zA-Z_.-]+]] = pcl.not %[[IFF]]
+// CHECK:         %[[USE:[0-9a-zA-Z_.-]+]] = pcl.and %[[XOR]], %[[EQ1]]

@@ -14,11 +14,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @signed_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : i128
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 18446744073709551616 : i128
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : i128
-// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]]  : i128 {
+// CHECK-NEXT:    function.def @signed_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : i128
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 18446744073709551616 : i128
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : i128
+// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]]  : i128 {
 // CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
@@ -40,11 +40,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @unsigned_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : i128
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 18446744073709551616 : i128
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : i128
-// CHECK-NEXT:      scf.for unsigned %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]]  : i128 {
+// CHECK-NEXT:    function.def @unsigned_trip_count_overflow(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : i128
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 18446744073709551616 : i128
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : i128
+// CHECK-NEXT:      scf.for unsigned %[[VAL_5:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]]  : i128 {
 // CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
@@ -68,11 +68,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @trip_count_fits_uint64(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : i128
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 18446744073709551615 : i128
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : i128
-// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]]  : i128 {
+// CHECK-NEXT:    function.def @trip_count_fits_uint64(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : i128
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 18446744073709551615 : i128
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : i128
+// CHECK-NEXT:      scf.for %[[VAL_5:[0-9a-zA-Z_.-]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]]  : i128 {
 // CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return

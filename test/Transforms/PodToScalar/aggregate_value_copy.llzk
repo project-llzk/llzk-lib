@@ -20,8 +20,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @nested_pod_read_and_write_copies(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:    function.def @nested_pod_read_and_write_copies(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -49,8 +49,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @nested_array_read_and_write_copies(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:    function.def @nested_array_read_and_write_copies(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -78,10 +78,10 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @conditional_aggregate_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.select %[[VAL_0]], %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT:    function.def @conditional_aggregate_write(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 9 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.select %[[VAL_0]], %[[VAL_2]], %[[VAL_1]] : index
 // CHECK-NEXT:      function.return %[[VAL_3]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -112,8 +112,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @recursive_pod_array_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:    function.def @recursive_pod_array_copy(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -143,24 +143,24 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @conditional_array_write_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:    function.def @conditional_array_write_snapshot(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <2 x index>
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.new  : <2 x index>
 // CHECK-NEXT:        array.write %[[VAL_8]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
 // CHECK-NEXT:        array.write %[[VAL_8]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
 // CHECK-NEXT:        scf.yield %[[VAL_8]] : !array.type<2 x index>
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[VAL_6]] : !array.type<2 x index>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_2]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_2]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <2 x index>, index
 // CHECK-NEXT:      function.return %[[VAL_9]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -190,8 +190,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @loop_array_read_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:    function.def @loop_array_read_snapshot(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -224,24 +224,24 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @conditional_external_nested_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:    function.def @conditional_external_nested_pod(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <2 x index>
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
 // CHECK-NEXT:      array.write %[[VAL_6]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x index>) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.new  : <2 x index>
 // CHECK-NEXT:        array.write %[[VAL_8]]{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <2 x index>, index
 // CHECK-NEXT:        array.write %[[VAL_8]]{{\[}}%[[VAL_5]]] = %[[VAL_4]] : <2 x index>, index
 // CHECK-NEXT:        scf.yield %[[VAL_8]] : !array.type<2 x index>
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[VAL_6]] : !array.type<2 x index>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_2]]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_2]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_5]]] : <2 x index>, index
 // CHECK-NEXT:      function.return %[[VAL_9]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -264,7 +264,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @virtual_pod_array_read_copy(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @virtual_pod_array_read_copy(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -295,8 +295,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @branch_read_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:    function.def @branch_read_snapshot(%[[VAL_0:[0-9a-zA-Z_.-]+]]: i1) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

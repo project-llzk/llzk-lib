@@ -6,7 +6,7 @@ function.def @fold_no_operands() -> index {
 }
 // CHECK-LABEL: module {
 // CHECK-NEXT:    function.def @fold_no_operands() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 12 : index
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -21,7 +21,7 @@ function.def @fold_constant_operands() -> index {
 }
 // CHECK-LABEL: module {
 // CHECK-NEXT:    function.def @fold_constant_operands() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 13 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 13 : index
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -33,11 +33,11 @@ function.def @preserve_dynamic_operand(%arg0: index) -> index {
   %x = poly.applymap(%arg0)[%c3] #map
   function.return %x : index
 }
-// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
 // CHECK-LABEL: module {
-// CHECK-NEXT:    function.def @preserve_dynamic_operand(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[VAL_0]]){{\[}}%[[VAL_1]]] #[[$ATTR_0]]
+// CHECK-NEXT:    function.def @preserve_dynamic_operand(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = poly.applymap (%[[VAL_0]]){{\[}}%[[VAL_1]]] #[[$ATTR_0]]
 // CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

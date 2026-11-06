@@ -26,14 +26,14 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@out] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_5]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -70,15 +70,15 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_4]], %[[VAL_4]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_5]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@out] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_8]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -135,27 +135,27 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def private @abort()
 // CHECK-NEXT:    struct.def @Helper {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Helper> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Helper>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Helper>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Helper>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Helper>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Helper>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      struct.member @h : !struct.type<@Helper>
 // CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@h] : <@Main>, !struct.type<@Helper>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@h] : <@Main>, !struct.type<@Helper>
 // CHECK-NEXT:        function.call @Helper::@constrain(%[[VAL_8]]) : (!struct.type<@Helper>) -> ()
 // CHECK-NEXT:        function.call @abort() : () -> ()
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@out] : <@Main>, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@out] : <@Main>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_7]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

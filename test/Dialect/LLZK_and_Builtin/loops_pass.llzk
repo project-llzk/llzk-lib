@@ -21,19 +21,19 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @ComponentA {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@ComponentA>
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = scf.while (%[[A1:[0-9a-zA-Z_.]+]] = %[[A0]]) : (!felt.type) -> !felt.type {
-//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.]+]] = arith.constant true
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentA>
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = scf.while (%[[A1:[0-9a-zA-Z_.-]+]] = %[[A0]]) : (!felt.type) -> !felt.type {
+//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant true
 //CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !felt.type
 //CHECK-NEXT:       } do {
-//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.]+]]: !felt.type):
-//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = felt.add %[[A2]], %[[A2]]
+//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.-]+]]: !felt.type):
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.-]+]] = felt.add %[[A2]], %[[A2]]
 //CHECK-NEXT:         scf.yield %[[T2]] : !felt.type
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !struct.type<@ComponentA>, %[[A0:[0-9a-zA-Z_.]+]]: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentA>, %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -60,19 +60,19 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @ComponentA {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@ComponentA>
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.while (%[[A1:[0-9a-zA-Z_\.]+]] = %[[A0]]) : (!felt.type) -> !felt.type {
-//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant true
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentA>
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = scf.while (%[[A1:[0-9a-zA-Z_.-]+]] = %[[A0]]) : (!felt.type) -> !felt.type {
+//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant true
 //CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !felt.type
 //CHECK-NEXT:       } do {
-//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_\.]+]]: !felt.type):
-//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = felt.add %[[A2]], %[[A2]]
+//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.-]+]]: !felt.type):
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.-]+]] = felt.add %[[A2]], %[[A2]]
 //CHECK-NEXT:         scf.yield %[[T2]] : !felt.type
 //CHECK-NEXT:       } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !struct.type<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentA>, %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -99,21 +99,21 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @ComponentA {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentA>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@ComponentA>
-//CHECK-NEXT:       %[[LB:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:       %[[UB:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-//CHECK-NEXT:       %[[ST:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB]] to %[[UB]] step %[[ST]]
-//CHECK-SAME:         iter_args(%[[T1:[0-9a-zA-Z_\.]+]] = %[[A1]]) -> (!felt.type) {
-//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = felt.add %[[A0]], %[[T1]]
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type,
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@ComponentA>  attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentA>
+//CHECK-NEXT:       %[[LB:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+//CHECK-NEXT:       %[[UB:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+//CHECK-NEXT:       %[[ST:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = scf.for %[[IV:[0-9a-zA-Z_.-]+]] = %[[LB]] to %[[UB]] step %[[ST]]
+//CHECK-SAME:         iter_args(%[[T1:[0-9a-zA-Z_.-]+]] = %[[A1]]) -> (!felt.type) {
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.-]+]] = felt.add %[[A0]], %[[T1]]
 //CHECK-NEXT:         scf.yield %[[T2]] : !felt.type
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !struct.type<@ComponentA>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentA>,
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }

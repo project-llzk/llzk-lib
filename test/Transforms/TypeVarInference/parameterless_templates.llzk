@@ -9,7 +9,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @NoParamsOnly {
-// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:        function.return %[[VAL_0]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -34,12 +34,12 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @NoParamsBeforeTVar {
-// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:        function.return %[[VAL_0]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @ResolveTVar {
-// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:        function.return %[[VAL_1]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

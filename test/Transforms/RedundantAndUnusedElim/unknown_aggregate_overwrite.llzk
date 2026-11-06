@@ -37,22 +37,22 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: function.def @pod_record_overwritten_by_call(
-// CHECK-SAME: %[[INITIAL:[0-9a-zA-Z_.]+]]: index, %[[REPLACEMENT:[0-9a-zA-Z_.]+]]: index) -> index
-// CHECK: %[[INITIAL_ARRAY:[0-9a-zA-Z_.]+]] = array.new %[[INITIAL]] : <1 x index>
-// CHECK: %[[POD:[0-9a-zA-Z_.]+]] = pod.new { @items = %[[INITIAL_ARRAY]] } : <[@items: !array.type<1 x index>]>
-// CHECK: %[[CALL_RESULT:[0-9a-zA-Z_.]+]] = function.call @make_array(%[[REPLACEMENT]]) : (index) -> !array.type<1 x index>
+// CHECK-SAME: %[[INITIAL:[0-9a-zA-Z_.-]+]]: index, %[[REPLACEMENT:[0-9a-zA-Z_.-]+]]: index) -> index
+// CHECK: %[[INITIAL_ARRAY:[0-9a-zA-Z_.-]+]] = array.new %[[INITIAL]] : <1 x index>
+// CHECK: %[[POD:[0-9a-zA-Z_.-]+]] = pod.new { @items = %[[INITIAL_ARRAY]] } : <[@items: !array.type<1 x index>]>
+// CHECK: %[[CALL_RESULT:[0-9a-zA-Z_.-]+]] = function.call @make_array(%[[REPLACEMENT]]) : (index) -> !array.type<1 x index>
 // CHECK: pod.write %[[POD]][@items] = %[[CALL_RESULT]] : <[@items: !array.type<1 x index>]>, !array.type<1 x index>
-// CHECK: %[[ITEMS:[0-9a-zA-Z_.]+]] = pod.read %[[POD]][@items] : <[@items: !array.type<1 x index>]>, !array.type<1 x index>
-// CHECK: %[[ZERO:[0-9a-zA-Z_.]+]] = arith.constant 0 : index
-// CHECK: %[[OBSERVED:[0-9a-zA-Z_.]+]] = array.read %[[ITEMS]][%[[ZERO]]] : <1 x index>, index
+// CHECK: %[[ITEMS:[0-9a-zA-Z_.-]+]] = pod.read %[[POD]][@items] : <[@items: !array.type<1 x index>]>, !array.type<1 x index>
+// CHECK: %[[ZERO:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK: %[[OBSERVED:[0-9a-zA-Z_.-]+]] = array.read %[[ITEMS]][%[[ZERO]]] : <1 x index>, index
 // CHECK: function.return %[[OBSERVED]] : index
 
 // CHECK-LABEL: function.def @array_element_overwritten_by_call(
-// CHECK-SAME: %[[INITIAL:[0-9a-zA-Z_.]+]]: index, %[[REPLACEMENT:[0-9a-zA-Z_.]+]]: index) -> index
-// CHECK: %[[MATRIX:[0-9a-zA-Z_.]+]] = array.new : <1,1 x index>
-// CHECK: %[[ZERO:[0-9a-zA-Z_.]+]] = arith.constant 0 : index
-// CHECK: %[[CALL_RESULT:[0-9a-zA-Z_.]+]] = function.call @make_array(%[[REPLACEMENT]]) : (index) -> !array.type<1 x index>
+// CHECK-SAME: %[[INITIAL:[0-9a-zA-Z_.-]+]]: index, %[[REPLACEMENT:[0-9a-zA-Z_.-]+]]: index) -> index
+// CHECK: %[[MATRIX:[0-9a-zA-Z_.-]+]] = array.new : <1,1 x index>
+// CHECK: %[[ZERO:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK: %[[CALL_RESULT:[0-9a-zA-Z_.-]+]] = function.call @make_array(%[[REPLACEMENT]]) : (index) -> !array.type<1 x index>
 // CHECK: array.insert %[[MATRIX]][%[[ZERO]]] = %[[CALL_RESULT]] : <1,1 x index>, <1 x index>
-// CHECK: %[[ITEMS:[0-9a-zA-Z_.]+]] = array.extract %[[MATRIX]][%[[ZERO]]] : <1,1 x index>
-// CHECK: %[[OBSERVED:[0-9a-zA-Z_.]+]] = array.read %[[ITEMS]][%[[ZERO]]] : <1 x index>, index
+// CHECK: %[[ITEMS:[0-9a-zA-Z_.-]+]] = array.extract %[[MATRIX]][%[[ZERO]]] : <1,1 x index>
+// CHECK: %[[OBSERVED:[0-9a-zA-Z_.-]+]] = array.read %[[ITEMS]][%[[ZERO]]] : <1 x index>, index
 // CHECK: function.return %[[OBSERVED]] : index

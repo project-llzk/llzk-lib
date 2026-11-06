@@ -109,6 +109,6 @@ function.def @wide_prime() -> !felt.type<"bn254"> {
   function.return %c : !felt.type<"bn254">
 }
 // CHECK-LABEL:   function.def @wide_prime() -> !felt.type<"bn254"> {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  17 : <"bn254">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = felt.const  17 : <"bn254">
 // CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn254">
 // CHECK-NEXT:    }

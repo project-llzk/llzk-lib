@@ -147,7 +147,7 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: poly.template @"TPF_!s<@P>_\1A" {
-// CHECK:        function.def @make(%{{[0-9a-zA-Z_\.]+}}: !poly.tvar<@T>) -> !struct.type<@P> attributes {function.allow_witness} {
+// CHECK:        function.def @make(%{{[0-9a-zA-Z_.-]+}}: !poly.tvar<@T>) -> !struct.type<@P> attributes {function.allow_witness} {
 // CHECK:          function.call @P::@compute() : () -> !struct.type<@P>
 // CHECK-NOT:      @S::@compute
 // CHECK:          function.return

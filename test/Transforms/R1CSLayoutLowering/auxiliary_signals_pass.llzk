@@ -40,21 +40,21 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CONVERT-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CONVERT-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CONVERT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CONVERT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 6 : !r1cs.signal
-// CONVERT-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
+// CONVERT-NEXT:    r1cs.circuit @Main inputs (%[[VAL_0:[0-9a-zA-Z_.-]+]]: !r1cs.signal, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !r1cs.signal, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !r1cs.signal, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !r1cs.signal) {
+// CONVERT-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CONVERT-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = r1cs.def 6 : !r1cs.signal
+// CONVERT-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_0]] : !r1cs.signal to !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_5]] : !r1cs.signal to !r1cs.linear
 // CONVERT-NEXT:      r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_12]] : !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_3]] : !r1cs.signal to !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = r1cs.add %[[VAL_11]], %[[VAL_12]] : !r1cs.linear
 // CONVERT-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_13]] : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
-// CONVERT-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = r1cs.add %[[VAL_11]], %[[VAL_14]] : !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = r1cs.mul_const %[[VAL_8]], -1 : !r1cs.linear
+// CONVERT-NEXT:      %[[VAL_15:[0-9a-zA-Z_.-]+]] = r1cs.add %[[VAL_11]], %[[VAL_14]] : !r1cs.linear
 // CONVERT-NEXT:      r1cs.constrain %[[VAL_9]], %[[VAL_10]], %[[VAL_15]] : !r1cs.linear
 // CONVERT-NEXT:    } {r1cs.input_labels = array<i64: 2, 3, 4, 5>}
 // CONVERT-NEXT:  }
@@ -62,24 +62,24 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // PREPARE-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // PREPARE-NEXT:    struct.def @Main {
 // PREPARE-NEXT:      struct.member @out : !felt.type<"babybear"> {llzk.pub}
-// PREPARE-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear"> {function.arg_name = "a"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear"> {function.arg_name = "b"}, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear"> {function.arg_name = "c"}, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear"> {function.arg_name = "d"}) -> !struct.type<@Main> attributes {function.allow_witness} {
-// PREPARE-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// PREPARE-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_2]], %[[VAL_3]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_5]], %[[VAL_6]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear"> {function.arg_name = "a"}, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear"> {function.arg_name = "b"}, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear"> {function.arg_name = "c"}, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear"> {function.arg_name = "d"}) -> !struct.type<@Main> attributes {function.allow_witness} {
+// PREPARE-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// PREPARE-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_2]], %[[VAL_3]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_5]], %[[VAL_6]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        struct.writem %[[VAL_4]][@out] = %[[VAL_7]] : <@Main>, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        struct.writem %[[VAL_4]][@__llzk_r1cs_lowering_pass_aux_member_0] = %[[VAL_8]] : <@Main>, !felt.type<"babybear">
 // PREPARE-NEXT:        function.return %[[VAL_4]] : !struct.type<@Main>
 // PREPARE-NEXT:      }
-// PREPARE-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_constraint} {
-// PREPARE-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_11]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_12]], %[[VAL_13]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_14]], %[[VAL_15]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@out] : <@Main>, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@__llzk_r1cs_lowering_pass_aux_member_0] : <@Main>, !felt.type<"babybear">
+// PREPARE-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_10:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">, %[[VAL_12:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">, %[[VAL_13:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">) attributes {function.allow_constraint} {
+// PREPARE-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_10]], %[[VAL_11]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_12]], %[[VAL_13]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_14]], %[[VAL_15]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_17:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@out] : <@Main>, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@__llzk_r1cs_lowering_pass_aux_member_0] : <@Main>, !felt.type<"babybear">
 // PREPARE-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_14]] : !felt.type<"babybear">, !felt.type<"babybear">
-// PREPARE-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_18]], %[[VAL_15]] : !felt.type<"babybear">, !felt.type<"babybear">
+// PREPARE-NEXT:        %[[VAL_19:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_18]], %[[VAL_15]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        constrain.eq %[[VAL_19]], %[[VAL_17]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        constrain.eq %[[VAL_19]], %[[VAL_17]] : !felt.type<"babybear">, !felt.type<"babybear">
 // PREPARE-NEXT:        function.return

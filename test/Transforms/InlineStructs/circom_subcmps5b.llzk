@@ -90,18 +90,18 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubC
 // CHECK-NEXT:        struct.member @o : !felt.type<"bn128"> {llzk.pub}
 // CHECK-NEXT:        struct.member @"n:!s<@Nop::@Nop>+o" : !felt.type<"bn128"> {llzk.pub}
 // CHECK-NEXT:        struct.member @n$inputs_i : !felt.type<"bn128">
-// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) -> !struct.type<@SubCmp::@SubCmp> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@SubCmp::@SubCmp>
-// CHECK-NEXT:          struct.writem %[[VAL_6]][@"n:!s<@Nop::@Nop>+o"] = %[[VAL_5]] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@"n:!s<@Nop::@Nop>+o"] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
-// CHECK-NEXT:          struct.writem %[[VAL_6]][@o] = %[[VAL_7]] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
-// CHECK-NEXT:          struct.writem %[[VAL_6]][@n$inputs_i] = %[[VAL_5]] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
-// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@SubCmp::@SubCmp>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) -> !struct.type<@SubCmp::@SubCmp> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@SubCmp::@SubCmp>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@"n:!s<@Nop::@Nop>+o"] = %[[VAL_0]] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_1]][@"n:!s<@Nop::@Nop>+o"] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@o] = %[[VAL_2]] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@n$inputs_i] = %[[VAL_0]] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@SubCmp::@SubCmp>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@SubCmp::@SubCmp>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@n$inputs_i] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@"n:!s<@Nop::@Nop>+o"] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
-// CHECK-NEXT:          constrain.eq %[[VAL_12]], %[[VAL_11]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SubCmp::@SubCmp>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@n$inputs_i] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@"n:!s<@Nop::@Nop>+o"] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:          constrain.eq %[[VAL_6]], %[[VAL_5]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }

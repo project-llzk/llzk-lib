@@ -455,17 +455,17 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @Root {
-// CHECK: function.def @product(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !pod.type<[@root: !struct.type<@Root>]>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Root> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
-// CHECK-NEXT: %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@Root> {product_source = "compute"}
+// CHECK: function.def @product(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !pod.type<[@root: !struct.type<@Root>]>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Root> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT: %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.new : <@Root> {product_source = "compute"}
 // CHECK-NEXT: pod.write %[[VAL_4]][@root] = %[[VAL_7]] : <[@root: !struct.type<@Root>]>, !struct.type<@Root> {product_source = "compute"}
-// CHECK-NEXT: %[[VAL_8:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_4]][@root] : <[@root: !struct.type<@Root>]>, !struct.type<@Root> {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_8:[0-9a-zA-Z_.-]+]] = pod.read %[[VAL_4]][@root] : <[@root: !struct.type<@Root>]>, !struct.type<@Root> {product_source = "compute"}
 // CHECK-NEXT: struct.writem %[[VAL_7]][@value] = %[[VAL_5]] : <@Root>, !felt.type {product_source = "compute"}
-// CHECK-NEXT: %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@value] : <@Root>, !felt.type {product_source = "compute"}
-// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @AliasedMemberRead::@compute(%[[VAL_9]]) : (!felt.type) -> !struct.type<@AliasedMemberRead>  {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_8]][@value] : <@Root>, !felt.type {product_source = "compute"}
+// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @AliasedMemberRead::@compute(%[[VAL_9]]) : (!felt.type) -> !struct.type<@AliasedMemberRead>  {product_source = "compute"}
 // CHECK-NEXT: struct.writem %[[VAL_7]][@child] = %[[VAL_10]] : <@Root>, !struct.type<@AliasedMemberRead> {product_source = "compute"}
 // CHECK-NEXT: struct.writem %[[VAL_7]][@value] = %[[VAL_6]] : <@Root>, !felt.type {product_source = "compute"}
-// CHECK-NEXT: %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@child] : <@Root>, !struct.type<@AliasedMemberRead> {product_source = "constrain"}
-// CHECK-NEXT: %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@value] : <@Root>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT: %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@child] : <@Root>, !struct.type<@AliasedMemberRead> {product_source = "constrain"}
+// CHECK-NEXT: %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@value] : <@Root>, !felt.type {product_source = "constrain"}
 // CHECK-NEXT: function.call @AliasedMemberRead::@constrain(%[[VAL_11]], %[[VAL_12]]) : (!struct.type<@AliasedMemberRead>, !felt.type) -> ()  {product_source = "constrain"}
 // CHECK-NEXT: function.return %[[VAL_7]] : !struct.type<@Root>
 

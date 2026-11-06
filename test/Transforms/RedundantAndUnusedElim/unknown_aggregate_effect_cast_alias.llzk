@@ -18,12 +18,12 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @unknown_effect_through_cast_keeps_original_array_read(%[[VALUE:[0-9a-zA-Z_.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[ARRAY:[0-9a-zA-Z_.]+]] = array.new %[[VALUE]] : <1 x !felt.type>
-// CHECK-NEXT:      %[[ZERO:[0-9a-zA-Z_.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_.]+]] = poly.unifiable_cast %[[ARRAY]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+// CHECK-NEXT:    function.def @unknown_effect_through_cast_keeps_original_array_read(%[[VALUE:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[ARRAY:[0-9a-zA-Z_.-]+]] = array.new %[[VALUE]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[ZERO:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[ARRAY]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
 // CHECK-NEXT:      "test.mutate"(%[[CAST]]) : (!array.type<1 x !felt.type>) -> ()
-// CHECK-NEXT:      %[[OBSERVED:[0-9a-zA-Z_.]+]] = array.read %[[ARRAY]]{{\[}}%[[ZERO]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[OBSERVED:[0-9a-zA-Z_.-]+]] = array.read %[[ARRAY]]{{\[}}%[[ZERO]]] : <1 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[OBSERVED]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

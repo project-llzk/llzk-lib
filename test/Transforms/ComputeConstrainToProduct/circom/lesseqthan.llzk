@@ -241,16 +241,16 @@ module attributes {llzk.lang, llzk.main = !struct.type<@LessEqThan_2>} {
 }
 
 // CHECK-LABEL: struct.def @LessEqThan_2 {
-// CHECK:       function.def @product(%[[LE_IN:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@LessEqThan_2> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness, llzk.derived} {
-// CHECK:         %[[LE_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@LessEqThan_2> {product_source = "compute"}
-// CHECK:         %[[LE_POD:[0-9a-zA-Z_\.]+]] = pod.new { @count = %{{.*}} }  : <[@count: index, @comp: !struct.type<@LessThan_1>, @params: !pod.type<[]>]> {product_source = "compute"}
-// CHECK:         %[[LE_INPUTS:[0-9a-zA-Z_\.]+]] = pod.new : <[@in: !array.type<2 x !felt.type>]> {product_source = "compute"}
+// CHECK:       function.def @product(%[[LE_IN:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) -> !struct.type<@LessEqThan_2> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness, llzk.derived} {
+// CHECK:         %[[LE_SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@LessEqThan_2> {product_source = "compute"}
+// CHECK:         %[[LE_POD:[0-9a-zA-Z_.-]+]] = pod.new { @count = %{{.*}} }  : <[@count: index, @comp: !struct.type<@LessThan_1>, @params: !pod.type<[]>]> {product_source = "compute"}
+// CHECK:         %[[LE_INPUTS:[0-9a-zA-Z_.-]+]] = pod.new : <[@in: !array.type<2 x !felt.type>]> {product_source = "compute"}
 // CHECK:         pod.write %[[LE_INPUTS]][@in] = %{{.*}} : <[@in: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type> {product_source = "compute"}
-// CHECK:         %[[LE_PROD_ARG:[0-9a-zA-Z_\.]+]] = pod.read %[[LE_INPUTS]][@in] : <[@in: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type> {product_source = "compute"}
-// CHECK:         %[[LE_PROD_COMP:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@compute(%[[LE_PROD_ARG]]) : (!array.type<2 x !felt.type>) -> !struct.type<@LessThan_1> {product_source = "compute"}
+// CHECK:         %[[LE_PROD_ARG:[0-9a-zA-Z_.-]+]] = pod.read %[[LE_INPUTS]][@in] : <[@in: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type> {product_source = "compute"}
+// CHECK:         %[[LE_PROD_COMP:[0-9a-zA-Z_.-]+]] = function.call @LessThan_1::@compute(%[[LE_PROD_ARG]]) : (!array.type<2 x !felt.type>) -> !struct.type<@LessThan_1> {product_source = "compute"}
 // CHECK:         pod.write %[[LE_POD]][@comp] = %[[LE_PROD_COMP]] : <[@count: index, @comp: !struct.type<@LessThan_1>, @params: !pod.type<[]>]>, !struct.type<@LessThan_1> {product_source = "compute"}
 // CHECK:         struct.writem %[[LE_SELF]][@lt$inputs] = %[[LE_INPUTS]] : <@LessEqThan_2>, !pod.type<[@in: !array.type<2 x !felt.type>]> {product_source = "compute"}
-// CHECK:         %[[LE_COMP:[0-9a-zA-Z_\.]+]] = pod.read %[[LE_POD]][@comp] : <[@count: index, @comp: !struct.type<@LessThan_1>, @params: !pod.type<[]>]>, !struct.type<@LessThan_1> {product_source = "compute"}
+// CHECK:         %[[LE_COMP:[0-9a-zA-Z_.-]+]] = pod.read %[[LE_POD]][@comp] : <[@count: index, @comp: !struct.type<@LessThan_1>, @params: !pod.type<[]>]>, !struct.type<@LessThan_1> {product_source = "compute"}
 // CHECK:         struct.writem %[[LE_SELF]][@lt] = %[[LE_COMP]] : <@LessEqThan_2>, !struct.type<@LessThan_1> {product_source = "compute"}
 // CHECK:         function.call @LessThan_1::@constrain(%{{.*}}, %{{.*}}) : (!struct.type<@LessThan_1>, !array.type<2 x !felt.type>) -> ()  {product_source = "constrain"}
 // CHECK:         function.return %[[LE_SELF]] : !struct.type<@LessEqThan_2>

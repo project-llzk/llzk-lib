@@ -22,12 +22,12 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @lower_duplicate_forward(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_3:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) : (index) -> index {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_3]] : index
+// CHECK-NEXT:    function.def @lower_duplicate_forward(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = scf.while (%[[VAL_3:[0-9a-zA-Z_.-]+]] = %[[VAL_1]]) : (index) -> index {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_3]] : index
 // CHECK-NEXT:        scf.condition(%[[VAL_4]]) %[[VAL_3]] : index
 // CHECK-NEXT:      } do {
-// CHECK-NEXT:      ^bb0(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:      ^bb0(%[[VAL_5:[0-9a-zA-Z_.-]+]]: index):
 // CHECK-NEXT:        scf.yield %[[VAL_0]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_2]] : index
@@ -66,7 +66,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @scalarize_live_parent_snapshot(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @scalarize_live_parent_snapshot(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -103,8 +103,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @scalarize_mutated_live_parent(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:    function.def @scalarize_mutated_live_parent(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
