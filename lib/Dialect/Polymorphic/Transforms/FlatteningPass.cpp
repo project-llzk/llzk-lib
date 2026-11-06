@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
@@ -690,6 +691,20 @@ public:
 
     addConversion([this](ArrayType inputTy) {
       return inputTy.cloneWith(convertType(inputTy.getElementType()));
+    });
+
+    addConversion([this](pod::PodType inputTy) -> pod::PodType {
+      SmallVector<pod::RecordAttr> convertedRecords;
+      for (pod::RecordAttr record : inputTy.getRecords()) {
+        Type convertedType = convertType(record.getType());
+        if (!convertedType) {
+          return {};
+        }
+        convertedRecords.push_back(
+            pod::RecordAttr::get(inputTy.getContext(), record.getName(), convertedType)
+        );
+      }
+      return pod::PodType::get(inputTy.getContext(), convertedRecords);
     });
   }
 };
