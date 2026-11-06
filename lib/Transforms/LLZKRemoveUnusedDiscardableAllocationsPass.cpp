@@ -57,9 +57,8 @@ static FailureOr<bool> collectRemovableUsers(
     Operation *allocator, SmallVectorImpl<Operation *> &usersToErase, const DataLayout &dataLayout
 ) {
   if (allocator->getNumResults() != 1) {
-    allocator->emitOpError()
-        << "selected for discardable-allocation cleanup but does not have one result";
-    return failure();
+    return allocator->emitOpError()
+           << "selected for discardable-allocation cleanup but does not have one result";
   }
 
   Value allocation = allocator->getResult(0);
@@ -200,7 +199,7 @@ class PassImpl : public llzk::impl::RemoveUnusedDiscardableAllocationsPassBase<P
   void runOnOperation() override {
     ModuleOp module = getOperation();
     if (allocatorOpName.empty()) {
-      module.emitError() << "requires non-empty 'allocator-op' option";
+      module.emitError("requires non-empty 'allocator-op' option");
       signalPassFailure();
       return;
     }

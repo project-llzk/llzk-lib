@@ -11,6 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CAPIGenRegistration.h"
 #include "CommonAttrOrTypeCAPIGen.h"
 #include "CommonCAPIGen.h"
 
@@ -56,10 +57,12 @@ static bool emitAttrCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os)
   return false;
 }
 
-static mlir::GenRegistration genAttrCAPIHeader(
-    "gen-attr-capi-header", "Generate attribute C API header declarations", &emitAttrCAPIHeader
-);
+void llzk::registerAttrCAPIGenerators() {
+  static mlir::GenRegistration genAttrCAPIHeader(
+      "gen-attr-capi-header", "Generate attribute C API header declarations", &emitAttrCAPIHeader
+  );
 
-static mlir::GenRegistration genAttrCAPIImpl(
-    "gen-attr-capi-impl", "Generate attribute C API implementations", &emitAttrCAPIImpl
-);
+  static mlir::GenRegistration genAttrCAPIImpl(
+      "gen-attr-capi-impl", "Generate attribute C API implementations", &emitAttrCAPIImpl
+  );
+}

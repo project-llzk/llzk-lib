@@ -5,8 +5,8 @@ function.def @read_pod(%pod: !pod.type<[@n: index]>) ->  index {
   function.return %r: index
 }
 //CHECK-LABEL:  function.def @read_pod(
-//CHECK-SAME:       %[[POD:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index]>) ->  index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.read %[[POD]][@n] : <[@n: index]>, index
+//CHECK-SAME:       %[[POD:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index]>) ->  index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.read %[[POD]][@n] : <[@n: index]>, index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }
 
@@ -17,7 +17,7 @@ function.def @read_pod2(%pod: !pod.type<[@n: index, @y: index]>) ->  index {
   function.return %r: index
 }
 //CHECK-LABEL:  function.def @read_pod2(
-//CHECK-SAME:       %[[POD:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @y: index]>) ->  index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.read %[[POD]][@n] : <[@n: index, @y: index]>, index
+//CHECK-SAME:       %[[POD:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index, @y: index]>) ->  index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.read %[[POD]][@n] : <[@n: index, @y: index]>, index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }

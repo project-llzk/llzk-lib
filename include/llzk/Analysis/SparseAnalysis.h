@@ -149,26 +149,26 @@ public:
     setAllToEntryStates(resultLattices);
   }
 
-  /// Given an operation with possible region control-flow, the lattices of the
-  /// operands, and a region successor, compute the lattice values for block
-  /// arguments that are not accounted for by the branching control flow (ex. the
-  /// bounds of loops). By default, this method marks all such lattice elements
-  /// as having reached a pessimistic fixpoint. `firstIndex` is the index of the
-  /// first element of `argLattices` that is set by control-flow.
+  /// Given an operation with possible region control-flow, the lattices of the operands, and a
+  /// region successor, compute the lattice values for block arguments that are not accounted for by
+  /// the branching control flow (ex. the bounds of loops). By default, this method marks all such
+  /// lattice elements as having reached a pessimistic fixpoint. Upstream MLIR provides the
+  /// non-successor inputs and their lattice states directly.
   virtual void visitNonControlFlowArguments(
-      mlir::Operation * /*op*/, const mlir::RegionSuccessor &successor,
-      mlir::ArrayRef<StateT *> argLattices, unsigned firstIndex
+      mlir::Operation * /*op*/, const mlir::RegionSuccessor & /*successor*/,
+      mlir::ValueRange nonSuccessorInputs, mlir::ArrayRef<StateT *> nonSuccessorInputLattices
   ) {
-    setAllToEntryStates(argLattices.take_front(firstIndex));
-    setAllToEntryStates(argLattices.drop_front(firstIndex + successor.getSuccessorInputs().size()));
+    assert(nonSuccessorInputs.size() == nonSuccessorInputLattices.size() && "size mismatch");
+    setAllToEntryStates(nonSuccessorInputLattices);
   }
 
 protected:
   /// Get the lattice element for a value.
   StateT *getLatticeElement(mlir::Value value) override { return getOrCreate<StateT>(value); }
 
-  /// Get the lattice element for a value and create a dependency on the provided
-  /// program point.
+  /// Get the lattice element for a value and create a dependency on the provided program point.
+  /// Intentionally hide the nonvirtual base method to return the concrete lattice type.
+  // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
   const StateT *getLatticeElementFor(mlir::ProgramPoint *point, mlir::Value value) {
     return static_cast<const StateT *>(
         mlir::dataflow::AbstractSparseForwardDataFlowAnalysis::getLatticeElementFor(point, value)
@@ -211,11 +211,13 @@ private:
 
   void visitNonControlFlowArgumentsImpl(
       mlir::Operation *op, const mlir::RegionSuccessor &successor,
-      mlir::ArrayRef<AbstractSparseLattice *> argLattices, unsigned firstIndex
+      mlir::ValueRange nonSuccessorInputs,
+      mlir::ArrayRef<AbstractSparseLattice *> nonSuccessorInputLattices
   ) override {
     visitNonControlFlowArguments(
-        op, successor, {reinterpret_cast<StateT *const *>(argLattices.begin()), argLattices.size()},
-        firstIndex
+        op, successor, nonSuccessorInputs,
+        {reinterpret_cast<StateT *const *>(nonSuccessorInputLattices.begin()),
+         nonSuccessorInputLattices.size()}
     );
   }
 

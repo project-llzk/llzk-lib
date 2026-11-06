@@ -1,0 +1,153 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt --llzk-r1cs-lowering -split-input-file -verify-diagnostics %t/residual.llzk
+// RUN: llzk-opt --llzk-full-r1cs-lowering -split-input-file -verify-diagnostics %t/residual.llzk
+// RUN: llzk-opt --canonicalize --llzk-r1cs-lowering -split-input-file -verify-diagnostics %t/foldable.llzk
+// RUN: llzk-opt --llzk-full-r1cs-lowering -split-input-file -verify-diagnostics %t/foldable.llzk
+
+//--- residual.llzk
+// Constraint extraction must not discard a failing cast whose result is unused.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %prime = arith.constant 2013265921 : index
+      // expected-error@+1 {{R1CS lowering does not support effectful 'cast.tofelt' operations}}
+      %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %prime = arith.constant -1 : index
+      // expected-error@+1 {{R1CS lowering does not support effectful 'cast.tofelt' operations}}
+      %unused = cast.tofelt %prime : index, !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// INT64_MAX + 1 is a valid bn254 felt, but an asserting cast cannot represent
+// it as an index. The unused assertion must survive until lowering rejects it.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) attributes {function.allow_non_native_field_ops} {
+      %too_large = felt.const 9223372036854775808 : !felt.type<"bn254">
+      // expected-error@+1 {{R1CS lowering does not support effectful 'cast.toindex' operations}}
+      %unused = cast.toindex assert %too_large : !felt.type<"bn254">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"bn254">
+      %one = felt.const 1 : !felt.type<"bn254">
+      constrain.eq %out, %one : !felt.type<"bn254">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The default overflow mode also asserts. A dynamic operand must retain its
+// range check even when the cast contributes nothing to an equality constraint.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"bn254">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
+      // expected-error@+1 {{R1CS lowering does not support effectful 'cast.toindex' operations}}
+      %unused = cast.toindex %input : !felt.type<"bn254">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"bn254">
+      constrain.eq %out, %input : !felt.type<"bn254">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Unused non-assert casts have no range-check effect and can still be discarded,
+// including by the standalone lowering pass without prior canonicalization.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"bn254">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
+      %sat = cast.toindex sat %input : !felt.type<"bn254">
+      %wrap = cast.toindex wrap %input : !felt.type<"bn254">
+      %trunc = cast.toindex trunc %input : !felt.type<"bn254">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"bn254">
+      constrain.eq %out, %input : !felt.type<"bn254">
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Every BabyBear value fits in an index. Unused assertions on dynamic inputs
+// are accepted by direct lowering as well as the full pipeline.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+      %implicit = cast.toindex %input : !felt.type<"babybear">
+      %explicit = cast.toindex assert %input : !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %flag = bool.cmp eq(%out, %input) : !felt.type<"babybear">, !felt.type<"babybear">
+      %boolean = cast.tofelt %flag : i1, !felt.type<"babybear">
+      %fieldless = cast.tofelt assert %flag : i1
+      constrain.eq %out, %input : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+//--- foldable.llzk
+// Valid assertions at both endpoints of the index safe range fold away before
+// R1CS lowering. They must not cause the full pipeline to reject the circuit.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) attributes {function.allow_non_native_field_ops} {
+      %zero = felt.const 0 : !felt.type<"bn254">
+      %max = felt.const 9223372036854775807 : !felt.type<"bn254">
+      %lower = cast.toindex %zero : !felt.type<"bn254">
+      %upper = cast.toindex assert %max : !felt.type<"bn254">
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"bn254">
+      constrain.eq %out, %max : !felt.type<"bn254">
+      function.return
+    }
+  }
+}

@@ -40,10 +40,28 @@ def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
 }
 
 def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
-  let summary = "Annotation with the bounds of a loop";
+  let summary = "Trusted annotation with the bounds of a loop";
   let description = [{
-    This attribute holds information useful for the analysis of loops.
-    Holds the bounds of the loop and the step size.
+    This attribute indicates the loop variable's lower bound (inclusive), upper
+    bound (exclusive), and nonzero step size. Positive and negative steps are
+    allowed; a zero step is a verification error.
+
+    All three values are signed mathematical integers of arbitrary precision,
+    not field elements. They are interpreted without reduction modulo any field,
+    even when the loop variable has a felt type. For example, a step equal to
+    the field modulus denotes that integer increment, not zero.
+
+    For a felt loop variable over a field of modulus `p`, the body receives the
+    field representative of the integer induction value: `(lower + k * step)
+    mod p` on iteration `k`, starting at zero. Loop control uses the unreduced
+    integer bounds and step. The producer must ensure both this sequence of
+    field values and the number of iterations agree with the original loop;
+    reduction modulo `p` does not preserve ordering or termination conditions.
+
+    These attributes are trusted unconditionally, so the producer must ensure
+    these values agree with the loop's behavior. Passes are not required to
+    produce an error diagnostic if the values specified by the attribute
+    contradict the IR itself; incorrect annotations can change program behavior.
 
     Example:
 
@@ -56,19 +74,21 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
     ```
   }];
 
-  let parameters =
-      (ins APIntParameter<"Loop variable lower bound (inclusive)">:$lower,
-          APIntParameter<"Loop variable upper bound (exclusive)">:$upper,
-          APIntParameter<"Loop variable step/increment">:$step);
+  let parameters = (ins DynamicAPIntParameter<
+                        "Loop variable lower bound (inclusive)">:$lower,
+      DynamicAPIntParameter<"Loop variable upper bound (exclusive)">:$upper,
+      DynamicAPIntParameter<"Nonzero loop variable step/increment">:$step);
 
-  let builders = [AttrBuilder<
-      (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper,
-          "::llvm::APInt":$step),
-      [{ return $_get(context, ::llzk::APIntValue(std::move(lower)),
-          ::llzk::APIntValue(std::move(upper)),
-          ::llzk::APIntValue(std::move(step))); }]>];
+  let builders = [AttrBuilder<(ins "const ::llvm::DynamicAPInt &":$lower,
+                                  "const ::llvm::DynamicAPInt &":$upper,
+                                  "const ::llvm::DynamicAPInt &":$step),
+                              [{ return $_get(context,
+          ::llzk::DynamicAPIntValue(lower),
+          ::llzk::DynamicAPIntValue(upper),
+          ::llzk::DynamicAPIntValue(step)); }]>];
 
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
+  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_ATTRS

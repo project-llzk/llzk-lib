@@ -1,0 +1,52 @@
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates=max-specializations=2 --verify-diagnostics
+
+// Struct and free-function clones share the specialization limit.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @first() { function.return }
+  function.def @second() { function.return }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      function.call @first() : () -> ()
+      // expected-error@+1 {{template monomorphization specialization limit exceeded}}
+      function.call @second() : () -> ()
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// -----
+
+// Main and three Child specializations exceed the configured two-specialization limit.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  struct.def @Main {
+    // expected-error@+1 {{template monomorphization specialization limit exceeded}}
+    struct.member @children : !array.type<3 x !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>>
+    function.def @compute() -> !struct.type<@Main> {
+      %zero = arith.constant 0 : index
+      %three = arith.constant 3 : index
+      %one = arith.constant 1 : index
+      scf.for %i = %zero to %three step %one {
+        %child = function.call @Child::@Child::@compute(){(%i)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+      }
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}

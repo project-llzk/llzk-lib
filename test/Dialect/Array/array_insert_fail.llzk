@@ -14,7 +14,7 @@ function.def @should_use_array.write(%elem: !string.type) {
   %r = array.new : !array.type<44,2 x !string.type>
   %0 = arith.constant 0 : index
   array.write %r[%0,%0] = %elem : !array.type<44,2 x !string.type>, !string.type
-  // expected-error@+1 {{custom op 'array.insert' invalid kind of Type specified}}
+  // expected-error@+1 {{custom op 'array.insert' invalid kind of type specified: expected array.type, but found '!string.type'}}
   array.insert %r[%0,%0] = %elem : !array.type<44,2 x !string.type>, !string.type
   function.return
 }

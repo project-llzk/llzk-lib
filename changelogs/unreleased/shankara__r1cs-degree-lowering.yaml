@@ -1,0 +1,4 @@
+added:
+  - Add main-only and mark-auxiliary-signals options to polynomial degree lowering for signal-layout consumers.
+changed:
+  - Support array and POD reads in degree computation and rebuild aggregate reads in compute when creating auxiliary assignments.

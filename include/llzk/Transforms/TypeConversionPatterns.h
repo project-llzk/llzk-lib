@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
@@ -74,11 +75,11 @@ inline bool defaultLegalityCheck(const mlir::TypeConverter &tyConv, mlir::Operat
 }
 
 /// Lists all LLZK op classes that may contain a StructType in their results or attributes.
-static struct OpClassesWithStructTypes {
+struct OpClassesWithStructTypes {
 
   /// Ops in this subset define the general builder function:
   /// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
-  const std::tuple<
+  using WithGeneralBuilder = std::tuple<
       // clang-format off
       array::ArrayLengthOp,
       array::ReadArrayOp,
@@ -96,24 +97,63 @@ static struct OpClassesWithStructTypes {
       global::GlobalDefOp,
       global::GlobalReadOp,
       global::GlobalWriteOp,
+      llzk::NonDetOp,
       pod::ReadPodOp,
       pod::WritePodOp,
       polymorphic::UnifiableCastOp,
       polymorphic::ConstReadOp
       // clang-format on
-      >
-      WithGeneralBuilder {};
+      >;
 
   /// Ops in this subset do NOT define the general builder function (see above), so they cannot use
   /// `GeneralTypeReplacePattern`. A custom `OpConversionPattern` is needed to convert these ops.
   ///
   /// The `newGeneralRewritePatternSet()` function provides a default `OpConversionPattern` for
   /// each of these with benefit 0, allowing more specific higher-benefit patterns to override.
-  const std::tuple<function::CallOp, array::CreateArrayOp, pod::NewPodOp> NoGeneralBuilder {};
-
-} OpClassesWithStructTypes;
+  using NoGeneralBuilder = std::tuple<function::CallOp, array::CreateArrayOp, pod::NewPodOp>;
+};
 
 namespace {
+
+/// Convert the result types of `scf.execute_region` while keeping its region in
+/// the dialect conversion worklist. MLIR's SCF structural conversion patterns
+/// do not currently cover this operation.
+class ExecuteRegionTypeConversionPattern
+    : public mlir::OpConversionPattern<mlir::scf::ExecuteRegionOp> {
+public:
+  using OpConversionPattern::OpConversionPattern;
+
+  mlir::LogicalResult matchAndRewrite(
+      mlir::scf::ExecuteRegionOp op, OneToNOpAdaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override {
+    mlir::SmallVector<mlir::Type> newResultTypes;
+    mlir::SmallVector<unsigned> resultOffsets {0};
+    for (mlir::Type resultType : op.getResultTypes()) {
+      if (mlir::failed(getTypeConverter()->convertTypes(resultType, newResultTypes))) {
+        return rewriter.notifyMatchFailure(op, "could not convert result type");
+      }
+      resultOffsets.push_back(newResultTypes.size());
+    }
+
+    if (mlir::failed(rewriter.convertRegionTypes(&op.getRegion(), *getTypeConverter()))) {
+      return rewriter.notifyMatchFailure(op, "could not convert region types");
+    }
+
+    auto newOp = mlir::scf::ExecuteRegionOp::create(rewriter, op.getLoc(), newResultTypes);
+    newOp->setAttrs(op->getAttrs());
+    rewriter.inlineRegionBefore(op.getRegion(), newOp.getRegion(), newOp.getRegion().end());
+
+    mlir::SmallVector<mlir::ValueRange> replacements;
+    replacements.reserve(op.getNumResults());
+    for (unsigned i = 0; i < op.getNumResults(); ++i) {
+      replacements.push_back(
+          newOp.getResults().slice(resultOffsets[i], resultOffsets[i + 1] - resultOffsets[i])
+      );
+    }
+    rewriter.replaceOpWithMultiple(op, replacements);
+    return mlir::success();
+  }
+};
 
 /// Pattern for ops that define the general builder:
 ///   `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
@@ -264,7 +304,7 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   auto inserter = [&](auto... opClasses) {
     patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
   };
-  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
+  std::apply(inserter, OpClassesWithStructTypes::WithGeneralBuilder {});
   applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   // Special cases for ops where GeneralTypeReplacePattern doesn't work
   patterns.add<
@@ -274,6 +314,20 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   // Add builtin FunctionType and SCF op converters
   mlir::populateFunctionOpInterfaceTypeConversionPattern<function::FuncDefOp>(patterns, tyConv);
   mlir::scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
+  patterns.add<ExecuteRegionTypeConversionPattern>(tyConv, ctx);
+  target.addDynamicallyLegalOp<mlir::scf::ExecuteRegionOp>([&](mlir::scf::ExecuteRegionOp op) {
+    return tyConv.isLegal(op.getResultTypes());
+  });
+  target.addDynamicallyLegalOp<mlir::scf::YieldOp>([&](mlir::scf::YieldOp op) {
+    mlir::Operation *parent = op->getParentOp();
+    if (!llvm::isa<
+            mlir::scf::ExecuteRegionOp, mlir::scf::ForOp, mlir::scf::IfOp, mlir::scf::WhileOp>(
+            parent
+        )) {
+      return true;
+    }
+    return tyConv.isLegal(op.getOperandTypes());
+  });
   return patterns;
 }
 

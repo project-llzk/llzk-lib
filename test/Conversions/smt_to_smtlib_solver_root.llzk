@@ -9,7 +9,7 @@ module {
   }
 
   smt.solver () : () -> () {
-    smt.set_info ":llzk-root" "module"
+    smt_info.set ":llzk-root" "module"
     smt.set_logic "ALL"
     %neg_one = smt.int.constant -1
     %two = smt.int.constant 2

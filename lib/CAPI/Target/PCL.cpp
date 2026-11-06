@@ -14,7 +14,6 @@
 #include <mlir-c/Support.h>
 
 #include <mlir/CAPI/Support.h>
-#include <mlir/Support/LogicalResult.h>
 
 #if LLZK_WITH_PCL
 

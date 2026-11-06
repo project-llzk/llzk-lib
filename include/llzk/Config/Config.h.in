@@ -9,12 +9,20 @@
 
 #pragma once
 
+/// LLZK version string configured by CMake for this build.
 #define LLZK_VERSION_STRING "${CMAKE_PROJECT_VERSION}"
+/// Major component of the configured LLZK version.
 #define LLZK_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR}
+/// Minor component of the configured LLZK version.
 #define LLZK_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR}
+/// Patch component of the configured LLZK version.
 #define LLZK_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH}
 
+/// Project homepage URL configured by CMake.
 #define LLZK_URL "${CMAKE_PROJECT_HOMEPAGE_URL}"
 
+/// Resolved PCL build setting: 1 when PCL support is enabled, otherwise 0.
 #cmakedefine01 LLZK_WITH_PCL_BOOL
+/// Public PCL feature flag; use `#if LLZK_WITH_PCL` to guard PCL-dependent code.
+/// Always defined to 0 or 1, so `#ifdef` does not test whether PCL is enabled.
 #define LLZK_WITH_PCL LLZK_WITH_PCL_BOOL

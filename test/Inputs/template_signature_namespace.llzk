@@ -1,0 +1,24 @@
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Target::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Target::@Box<[@T]>>
+        function.return %self : !struct.type<@Target::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Box<[@T]>>) {
+        function.return
+      }
+    }
+
+    function.def @accept(%value: !struct.type<@Target::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Base for @Target::@accept (%value: !struct.type<@Target::@Box<[@T]>>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+}

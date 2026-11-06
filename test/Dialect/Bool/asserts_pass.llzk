@@ -26,16 +26,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponent01 {
 // CHECK-NEXT:      poly.param @C
 // CHECK-NEXT:      struct.def @Component01 {
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TComponent01::@Component01<[@C]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent01::@Component01<[@C]>>
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_0]], %[[VAL_2]]) : !felt.type, !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@TComponent01::@Component01<[@C]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@TComponent01::@Component01<[@C]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = bool.cmp gt(%[[VAL_0]], %[[VAL_2]]) : !felt.type, !felt.type
 // CHECK-NEXT:          bool.assert %[[VAL_3]]
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponent01::@Component01<[@C]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent01::@Component01<[@C]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_5]], %[[VAL_6]]) : !felt.type, !felt.type
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@TComponent01::@Component01<[@C]>>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = bool.cmp gt(%[[VAL_5]], %[[VAL_6]]) : !felt.type, !felt.type
 // CHECK-NEXT:          bool.assert %[[VAL_7]]
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -50,8 +50,8 @@ function.def @test_in_global_func(%a: !felt.type, %b: !felt.type) -> i1 {
   function.return %c : i1
 }
 //CHECK-LABEL: function.def @test_in_global_func
-//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> i1 {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A0]], %[[A1]])
+//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) -> i1 {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = bool.cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:    bool.assert %[[T0]]
 //CHECK-NEXT:    function.return %[[T0]] : i1
 //CHECK-NEXT:  }
@@ -62,7 +62,7 @@ function.def @just_assert(%c: i1) -> i1 {
   function.return %c : i1
 }
 //CHECK-LABEL: function.def @just_assert
-//CHECK-SAME:  (%[[A:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+//CHECK-SAME:  (%[[A:[0-9a-zA-Z_.-]+]]: i1) -> i1 {
 //CHECK-NEXT:    bool.assert %[[A]]
 //CHECK-NEXT:    function.return %[[A]] : i1
 //CHECK-NEXT:  }
@@ -73,7 +73,7 @@ function.def @assert_with_message(%c: i1) -> i1 {
   function.return %c : i1
 }
 //CHECK-LABEL: function.def @assert_with_message
-//CHECK-SAME:  (%[[A:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+//CHECK-SAME:  (%[[A:[0-9a-zA-Z_.-]+]]: i1) -> i1 {
 //CHECK-NEXT:    bool.assert %[[A]], "Expected a `true` value"
 //CHECK-NEXT:    function.return %[[A]] : i1
 //CHECK-NEXT:  }

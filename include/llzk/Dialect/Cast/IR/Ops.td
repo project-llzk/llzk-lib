@@ -23,16 +23,54 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 class CastOp<string mnemonic, list<Trait> traits = []>
-    : NaryOpBase<CastDialect, mnemonic, LLZK_FeltType.builderCall, traits>;
+    : NaryOpBase<
+          CastDialect, mnemonic, LLZK_FeltType.builderCall,
+          traits#[DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
+                  DeclareOpInterfaceMethods<ConditionallySpeculatable>]> {
+  let extraClassDefinition = [{
+    /// Model possible assertion failure as program termination, like bool.assert.
+    void $cppClass::getEffects(
+        ::llvm::SmallVectorImpl<::mlir::MemoryEffects::EffectInstance> &effects
+    ) {
+      if (canCastAssertFail(getValue().getType(), getOverflow())) {
+        effects.emplace_back(::mlir::MemoryEffects::Write::get());
+      }
+    }
+
+    /// Only infallible casts may execute on paths where they were not present.
+    ::mlir::Speculation::Speculatability $cppClass::getSpeculatability() {
+      return canCastAssertFail(getValue().getType(), getOverflow())
+                 ? ::mlir::Speculation::NotSpeculatable
+                 : ::mlir::Speculation::Speculatable;
+    }
+  }];
+}
 
 def LLZK_IntToFeltOp
     : CastOp<
-          "tofelt", [Pure,
-                     DeclareOpInterfaceMethods<
-                         InferTypeOpInterface, ["isCompatibleReturnTypes"]>]> {
+          "tofelt", [DeclareOpInterfaceMethods<
+                        InferTypeOpInterface, ["isCompatibleReturnTypes"]>]> {
   let summary = "convert an integer into a field element";
   let description = [{
     This operation converts a supported integer type value into a field element value.
+    Boolean (`i1`) values map to zero or one, while `index` values are interpreted
+    as signed integers. The overflow mode determines how values outside the
+    target field's safe range are handled. For `index` inputs, the default
+    `assert` mode fails on such values, even when the result is unused, and
+    cannot be speculated. Boolean inputs always fit in every field, so their
+    casts are side-effect-free and speculatable in every mode, even when the
+    result field is unspecified.
+    The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
+
+    The `trunc` mode keeps the low `k = bitwidth(p)` bits, then reduces modulo
+    the target field's prime `p`: `(value mod 2^k) mod p`, with nonnegative
+    remainders. The result is always in `[0, p)`. This differs from `wrap`,
+    which reduces the original integer directly modulo `p`. For example, with
+    `p = 7`, truncating `-1` keeps the bits `111` and reduces `7` to `0`, while
+    wrapping `-1` yields `6`.
+
+    Constant folding defers casts whose result field is unspecified, whose
+    operand is unknown, or whose `assert` range check fails.
 
     Example:
 
@@ -66,14 +104,25 @@ def LLZK_IntToFeltOp
     );
   }];
 
-  let hasCanonicalizeMethod = 1;
+  let hasFolder = 1;
 }
 
-def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
+def LLZK_FeltToIndexOp : CastOp<"toindex", [NotFieldNative]> {
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow use
     as an array index or loop bound.
+
+    The default `assert` overflow mode fails when the value is outside the
+    index safe range, even when the result is unused, and cannot be speculated.
+    If the source has a declared field whose maximum canonical value `p-1`
+    fits in the index safe range, the assertion cannot fail, so the cast is
+    side-effect-free and speculatable. Unspecified fields remain conservative.
+    The `sat`, `wrap`, and `trunc` modes are side-effect-free and speculatable.
+
+    Constant folding reduces the operand in its field before applying the
+    overflow mode and returns an index constant. Folding defers when the field
+    is unspecified or the `assert` range check fails.
 
     Example:
     ```llzk
@@ -102,7 +151,7 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
     );
   }];
 
-  let hasCanonicalizeMethod = 1;
+  let hasFolder = 1;
 }
 
 #endif // LLZK_CAST_OPS

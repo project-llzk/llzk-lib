@@ -21,12 +21,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentE1 {
 // CHECK-NEXT:      poly.param @A
 // CHECK-NEXT:      struct.def @ComponentE1 {
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TComponentE1::@ComponentE1<[@A]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentE1::@ComponentE1<[@A]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@TComponentE1::@ComponentE1<[@A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@TComponentE1::@ComponentE1<[@A]>>
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponentE1::@ComponentE1<[@A]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentE1::@ComponentE1<[@A]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@TComponentE1::@ComponentE1<[@A]>>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.read_const @A : !felt.type
 // CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -52,7 +52,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @Num
 // CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
 // CHECK-NEXT:      function.def @compute() -> !poly.tvar<@Ty> {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @Num : !poly.tvar<@Ty>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = poly.read_const @Num : !poly.tvar<@Ty>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !poly.tvar<@Ty>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

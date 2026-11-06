@@ -92,7 +92,7 @@ the same reason as `-llzk-full-struct-inlining`.
 
 ### `-llzk-full-r1cs-lowering`
 
-_Lower polynomial constraints to R1CS._
+_Lower polynomial constraints to R1CS using full polynomial lowering._
 
 Runs the following passes in order:
 
@@ -100,5 +100,56 @@ Runs the following passes in order:
 2. `-llzk-r1cs-lowering`
 3. MLIR's `-cse`
 
-The polynomial-lowering stage prepares flattened, degree-two constraints for
-R1CS conversion. CSE then removes redundant `r1cs.to_linear` operations.
+### `-llzk-constraint-flattening-r1cs-lowering`
+
+_Monomorphize and flatten main constraints, lower degree, and convert layout signals to R1CS._
+
+Runs the following passes in order:
+
+1. `-llzk-constraint-flattening`
+2. `-llzk-poly-lowering-pass` with `main-only=true max-degree=2`
+3. `-llzk-r1cs-lowering`
+4. MLIR's `-cse`
+
+Degree lowering processes the flattened main constrain body and marks generated
+auxiliaries as signals. The R1CS conversion pass validates degree at
+most two, prepares additional R1CS auxiliaries, builds the signal layout, and
+converts storage paths directly to wires. Array, POD, and component storage
+remain intact until conversion.
+
+Both R1CS pipelines accept `output-llzk=<file>` and `output-layout=<file>`.
+Alongside the R1CS IR returned through `-o`, these write the LLZK with auxiliary
+fields and assignments in `@compute`, and the access-path/layout-ID/R1CS-ID CSV.
+See the R1CS backend documentation for an example.
+
+### `-llzk-constraint-flattening`
+
+_Monomorphize templates and expand main constrain while retaining component storage._
+
+Runs these passes in order:
+
+1. MLIR's `-canonicalize`
+2. `-llzk-monomorphize-templates`
+3. `-llzk-expose-child-members`
+4. MLIR's `-canonicalize`
+5. `-llzk-flatten-constraints`
+
+Inline includes and lower symbolic non-native constraint arithmetic before this
+pipeline. Constant non-native arithmetic is evaluated during expansion using
+the current call and loop bindings. Specialization discovery and constraint
+expansion share scalar folding and integer/field conversion logic, so known
+template and loop values use the same arithmetic semantics in both stages.
+Canonicalization removes frontend `scf.execute_region` wrappers before
+monomorphization and folds specialized constants before expansion.
+Control flow and all array indices must resolve statically;
+aggregate function inputs are read-only. The pass expands concrete constrain
+bodies and eliminates local aggregate storage while retaining the original
+component layout and ordinary scalar arithmetic. Family handles retain their
+rolled types, with concrete member read types validated against the selected
+specialization and exposed template declarations. Consumers must support these
+reads through rolled handles; `-llzk-array-to-scalar` currently does not.
+
+Only scalar felt equality constraints are supported. Array equality,
+`constrain.in`, live non-signal storage reads, recursion, and undefined or
+multi-block callees are rejected. See `-llzk-flatten-constraints` for the binding
+model, diagnostics, and supported control flow.

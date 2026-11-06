@@ -1,0 +1,37 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+#outer = affine_map<()[s0] -> (s0)>
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+!Holder = !pod.type<[@pairs: !array.type<#outer x !Pair>]>
+// A symbolic array-of-POD read cannot cross a call boundary until its split payload arrays can be
+// copied independently.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !array.type<#outer x !Pair>) -> index {
+    %c0 = arith.constant 0 : index
+    %len = array.len %arr, %c0 : !array.type<#outer x !Pair>
+    function.return %len : index
+  }
+
+  function.def @main(%holder: !Holder) -> index {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'pairs': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
+    %pairs = pod.read %holder[@pairs] : !Holder, !array.type<#outer x !Pair>
+    %len = function.call @sink(%pairs) : (!array.type<#outer x !Pair>) -> index
+    function.return %len : index
+  }
+}
+
+// -----
+
+#outer = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index, @y: !felt.type]>
+!Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
+// Returning a symbolic array-of-POD read would likewise expose an uncopyable aggregate value.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @get_items(%p: !Outer) -> !array.type<#outer x !Item> {
+    // expected-note@+1 {{cannot lower value-copy read of POD record 'items': dynamic or symbolic payload arrays cannot be copied independently; flatten or resolve array shapes first}}
+    %items = pod.read %p[@items] : !Outer, !array.type<#outer x !Item>
+    function.return %items : !array.type<#outer x !Item>
+  }
+}

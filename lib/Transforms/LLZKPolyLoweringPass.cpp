@@ -17,11 +17,13 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/LoweringUtils.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
+#include <mlir/Interfaces/ControlFlowInterfaces.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
@@ -86,18 +88,122 @@ private:
   Location loc;
 };
 
+/// Resolves forwarded compute values to a single local allocation. Successful
+/// proofs and region forwarding maps are cached for the lifetime of the rebuild.
+class ComputeAllocationResolver {
+public:
+  explicit ComputeAllocationResolver(FuncDefOp func) : computeFunc(func) {}
+
+  /// Returns the unique originating struct.new result, or null if any source is
+  /// unknown, multiple allocations are possible, or a cycle has no known origin.
+  Value resolve(Value value) {
+    DenseSet<Value> visited;
+    DenseMap<Value, SmallVector<Value>> users;
+    SmallVector<Value> pending {value}, grounded;
+    Value allocation;
+    while (!pending.empty()) {
+      Value current = pending.pop_back_val();
+      if (!current) {
+        return nullptr;
+      }
+      if (!visited.insert(current).second) {
+        continue;
+      }
+
+      Value origin = allocations.lookup(current);
+      if (!origin && current.getDefiningOp<CreateStructOp>()) {
+        if (current.getDefiningOp()->getParentOfType<FuncDefOp>() != computeFunc) {
+          return nullptr;
+        }
+        origin = current;
+      }
+      if (origin) {
+        if (allocation && allocation != origin) {
+          return nullptr;
+        }
+        allocation = origin;
+        grounded.push_back(current);
+        continue;
+      }
+
+      SmallVector<Value> sources;
+      if (failed(collectSources(current, sources)) || sources.empty()) {
+        return nullptr;
+      }
+      for (Value source : sources) {
+        users[source].push_back(current);
+        pending.push_back(source);
+      }
+    }
+
+    // Every visited value must reach a proven origin. Merely revisiting a value
+    // on a backedge must not certify an otherwise ungrounded forwarding cycle.
+    DenseSet<Value> proven;
+    while (!grounded.empty()) {
+      Value current = grounded.pop_back_val();
+      if (proven.insert(current).second) {
+        llvm::append_range(grounded, users.lookup(current));
+      }
+    }
+    if (proven.size() != visited.size()) {
+      return nullptr;
+    }
+    for (Value current : visited) {
+      allocations[current] = allocation;
+    }
+    return allocation;
+  }
+
+private:
+  /// Collects all incoming operands, including distinct edges from one CFG
+  /// predecessor and entry/backedge transfers of region-based control flow.
+  LogicalResult collectSources(Value value, SmallVectorImpl<Value> &sources) {
+    Operation *regionBranch = value.getDefiningOp();
+    if (auto argument = dyn_cast<BlockArgument>(value)) {
+      Block *block = argument.getOwner();
+      for (BlockOperand &use : block->getUses()) {
+        auto branch = dyn_cast<BranchOpInterface>(use.getOwner());
+        if (!branch) {
+          return failure();
+        }
+        sources.push_back(
+            branch.getSuccessorOperands(use.getOperandNumber())[argument.getArgNumber()]
+        );
+      }
+      if (!block->isEntryBlock()) {
+        return success();
+      }
+      regionBranch = block->getParentOp();
+    }
+
+    auto branch = dyn_cast_if_present<RegionBranchOpInterface>(regionBranch);
+    if (!branch) {
+      return failure();
+    }
+    auto [it, inserted] = regionSources.try_emplace(regionBranch);
+    if (inserted) {
+      branch.getSuccessorInputOperandMapping(it->second);
+    }
+    auto sourceIt = it->second.find(value);
+    if (sourceIt == it->second.end()) {
+      return failure();
+    }
+    for (OpOperand *operand : sourceIt->second) {
+      sources.push_back(operand->get());
+    }
+    return success();
+  }
+
+  FuncDefOp computeFunc;
+  DenseMap<Value, Value> allocations;
+  DenseMap<Operation *, RegionBranchInverseSuccessorMapping> regionSources;
+};
+
 class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   using Base = PolyLoweringPassBase<PassImpl>;
   using Base::Base;
 
   unsigned auxCounter = 0;
-
-  static void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
-    modOp.walk([&structDefs](StructDefOp structDef) {
-      structDefs.push_back(structDef);
-      return WalkResult::skip();
-    });
-  }
 
   /// Records a dependency from the current aux assignment to a prerequisite.
   static void addAuxDependency(
@@ -217,7 +323,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (llvm::isa<FeltConstantOp>(defOp)) {
         return memo[val] = 0;
       }
-      if (llvm::isa<NonDetOp, MemberReadOp>(defOp)) {
+      if (llvm::isa<NonDetOp, MemberReadOp, array::ReadArrayOp, pod::ReadPodOp>(defOp)) {
         return memo[val] = 1;
       }
       if (auto add = llvm::dyn_cast<AddFeltOp>(defOp)) {
@@ -335,13 +441,16 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (lhs == rhs && eraseMul) {
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
+        if (mainOnly || markAuxiliarySignals) {
+          auxMember.setSignal(true);
+        }
 
-        auto auxVal = builder.create<MemberReadOp>(
-            lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
+        auto auxVal = MemberReadOp::create(
+            builder, lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
         );
         auxAssignments.push_back({auxName, lhs, auxVal});
         Location loc = builder.getFusedLoc({auxVal.getLoc(), lhs.getLoc()});
-        auto eqOp = builder.create<EmitEqualityOp>(loc, auxVal, lhs);
+        auto eqOp = EmitEqualityOp::create(builder, loc, auxVal, lhs);
 
         // Memoize auxVal as degree 1
         degreeMemo[auxVal] = 1;
@@ -363,15 +472,18 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         // Create auxiliary member for toFactor
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxMember = addAuxMember(structDef, auxName, toFactor.getType());
+        if (mainOnly || markAuxiliarySignals) {
+          auxMember.setSignal(true);
+        }
 
         // Read back as MemberReadOp (new SSA value)
-        auto auxVal = builder.create<MemberReadOp>(
-            toFactor.getLoc(), toFactor.getType(), selfVal, auxMember.getNameAttr()
+        auto auxVal = MemberReadOp::create(
+            builder, toFactor.getLoc(), toFactor.getType(), selfVal, auxMember.getNameAttr()
         );
 
         // Emit constraint: auxVal == toFactor
         Location loc = builder.getFusedLoc({auxVal.getLoc(), toFactor.getLoc()});
-        auto eqOp = builder.create<EmitEqualityOp>(loc, auxVal, toFactor);
+        auto eqOp = EmitEqualityOp::create(builder, loc, auxVal, toFactor);
         auxAssignments.push_back({auxName, toFactor, auxVal});
         // Update memoization
         rewrites[toFactor] = auxVal;
@@ -388,7 +500,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       }
 
       // Now lhs * rhs fits within degree bound
-      auto mulVal = builder.create<MulFeltOp>(lhs.getLoc(), lhs.getType(), lhs, rhs);
+      auto mulVal = MulFeltOp::create(builder, lhs.getLoc(), lhs.getType(), lhs, rhs);
       if (eraseMul) {
         mulOp->replaceAllUsesWith(mulVal);
         mulOp->erase();
@@ -424,15 +536,18 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     // call arguments must be represented by an auxiliary member read.
     std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
     MemberDefOp auxMember = addAuxMember(structDef, auxName, loweredVal.getType());
+    if (mainOnly || markAuxiliarySignals) {
+      auxMember.setSignal(true);
+    }
 
     OpBuilder builder(callOp);
     Value selfVal = constrainFunc.getSelfValueFromConstrain();
-    auto auxVal = builder.create<MemberReadOp>(
-        loweredVal.getLoc(), loweredVal.getType(), selfVal, auxMember.getNameAttr()
+    auto auxVal = MemberReadOp::create(
+        builder, loweredVal.getLoc(), loweredVal.getType(), selfVal, auxMember.getNameAttr()
     );
 
     Location loc = builder.getFusedLoc({auxVal.getLoc(), loweredVal.getLoc()});
-    builder.create<EmitEqualityOp>(loc, auxVal, loweredVal);
+    EmitEqualityOp::create(builder, loc, auxVal, loweredVal);
     auxAssignments.push_back({auxName, loweredVal, auxVal});
 
     degreeMemo[auxVal] = 1;
@@ -661,7 +776,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     if (!activeArrays.insert(arrayValue).second) {
       return emitAmbiguousContainmentRhs(containOp, "cyclic array update");
     }
-    auto cleanup = llvm::make_scope_exit([&]() { activeArrays.erase(arrayValue); });
+    auto cleanup = llvm::scope_exit([&]() { activeArrays.erase(arrayValue); });
 
     MLIRContext *ctx = arrayType.getContext();
 
@@ -738,7 +853,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
           continue;
         }
 
-        auto rvalueType = llvm::dyn_cast<ArrayType>(insertOp.getRvalue().getType());
+        ArrayType rvalueType = insertOp.getRvalue().getType();
         if (!rvalueType || !llvm::isa<FeltType>(rvalueType.getElementType())) {
           continue;
         }
@@ -973,8 +1088,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
         if (modified) {
           OpBuilder builder(callOp);
-          builder.create<CallOp>(
-              callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
+          CallOp::create(
+              builder, callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
               CallOp::toVectorOfValueRange(callOp.getMapOperands()), callOp.getNumDimsPerMap(),
               newOperands
           );
@@ -986,25 +1101,42 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     return success();
   }
 
-  /// Recreates each auxiliary computation before every compute return and writes it through the
-  /// path-specific returned component value.
+  /// Recreates auxiliaries before every compute return, writing through its unique
+  /// local allocation. The allocation must dominate the return; writes never move
+  /// across control flow or earlier member updates.
   static LogicalResult rebuildInCompute(
       FuncDefOp constrainFunc, FuncDefOp computeFunc,
       const SmallVector<AuxAssignment> &auxAssignments
   ) {
+    if (auxAssignments.empty()) {
+      return success();
+    }
     SmallVector<unsigned> orderedAuxAssignments;
     orderedAuxAssignments.reserve(auxAssignments.size());
     if (failed(orderAuxAssignments(auxAssignments, orderedAuxAssignments))) {
       return failure();
     }
 
+    ComputeAllocationResolver allocations(computeFunc);
+    DominanceInfo dominance(computeFunc);
     for (Block &computeBlock : computeFunc.getBody()) {
       auto returnOp = llvm::dyn_cast<ReturnOp>(computeBlock.getTerminator());
       if (!returnOp) {
         continue;
       }
 
-      Value selfVal = returnOp.getOperands().front();
+      Value selfVal = allocations.resolve(returnOp.getOperands().front());
+      if (!selfVal) {
+        return returnOp.emitOpError(
+            "poly lowering requires the returned component to resolve to one local 'struct.new' "
+            "result"
+        );
+      }
+      if (!dominance.dominates(selfVal, returnOp)) {
+        return returnOp.emitOpError(
+            "poly lowering requires the returned component's 'struct.new' to dominate the return"
+        );
+      }
       OpBuilder builder(returnOp);
       DenseMap<Value, Value> rebuildMemo;
       rebuildMemo[constrainFunc.getSelfValueFromConstrain()] = selfVal;
@@ -1016,9 +1148,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         if (!rebuiltExpr) {
           return failure();
         }
-        builder.create<MemberWriteOp>(
-            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
-            rebuiltExpr
+        MemberWriteOp::create(
+            builder, assign.computedValue.getLoc(), selfVal,
+            builder.getStringAttr(assign.auxMemberName), rebuiltExpr
         );
         if (assign.auxValue) {
           // Reuse the expression just written so later aux producers do not need an
@@ -1043,6 +1175,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
 
     auto moduleRes = moduleOp.walk([this](StructDefOp structDef) -> WalkResult {
+      if (mainOnly && !structDef.isMainComponent()) {
+        return WalkResult::advance();
+      }
       try {
         if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
           return WalkResult::interrupt();

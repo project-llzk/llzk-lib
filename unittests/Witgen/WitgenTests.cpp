@@ -13,6 +13,7 @@
 #include "ValueModel.h"
 #include "WitgenDriver.h"
 #include "WitgenUtils.h"
+#include "Wtns.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
@@ -24,7 +25,9 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Parser/Parser.h>
 
-#include <climits>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/FileUtilities.h>
+
 #include <limits>
 #include <random>
 
@@ -101,6 +104,7 @@ TEST_P(WitgenFieldTests, DefaultValueFailsOnUninitializedRead) {
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rng(0);
   auto value = witgen::defaultValue(
       feltType, tables, nullptr, field->get(), witgen::UninitializedBehavior::Fail, &rng
@@ -118,7 +122,9 @@ TEST_P(WitgenFieldTests, RandomDefaultValueIsSeeded) {
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngA(1234);
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngB(1234);
   auto lhs = witgen::defaultValue(
       arrayType, tables, nullptr, field->get(), witgen::UninitializedBehavior::Random, &rngA
@@ -158,7 +164,9 @@ TEST_P(WitgenFieldTests, SharedRandomHelpersAreSeeded) {
   auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngA(1234);
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rngB(1234);
 
   EXPECT_EQ(
@@ -172,6 +180,7 @@ TEST_P(WitgenFieldTests, RandomFieldHelperReturnsReducedValues) {
   auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rng(1234);
   for (size_t i = 0; i < 16; ++i) {
     auto value = witgen::randomFieldElement(rng, field->get());
@@ -201,7 +210,7 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayRejectsDynamicShape) {
 
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
-  arrayValue->elements.push_back(Field::getField(GetParam()).reduce(1));
+  arrayValue->elements.emplace_back(Field::getField(GetParam()).reduce(1));
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -216,10 +225,11 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
   auto field = Field::getField(GetParam());
-  arrayValue->elements.push_back(field.reduce(1));
-  arrayValue->elements.push_back(field.reduce(2));
-  arrayValue->elements.push_back(field.reduce(3));
-  arrayValue->elements.push_back(field.reduce(4));
+  // Canonicalization must reach every leaf of nested aggregate outputs.
+  arrayValue->elements.emplace_back(field.prime() + 1);
+  arrayValue->elements.emplace_back(-field.prime() + 2);
+  arrayValue->elements.emplace_back(-field.prime() * 2 + 3);
+  arrayValue->elements.emplace_back(field.prime() * 2 + 4);
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -240,14 +250,86 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   EXPECT_EQ((*second)[1].getAsString(), "4");
 }
 
-TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
-  llvm::DynamicAPInt value = llzk::toDynamicAPInt(
-      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
+TEST_P(WitgenFieldTests, SerializeFeltCanonicalizesWithoutChangingRuntimeValue) {
+  auto feltType = felt::FeltType::get(&ctx, GetParam());
+  const Field &field = Field::getField(GetParam());
+  std::string maxText;
+  llvm::raw_string_ostream(maxText) << field.maxVal();
+  const std::pair<llvm::DynamicAPInt, std::string> cases[] = {
+      {field.maxVal(), maxText},
+      {field.prime(), "0"},
+      {field.prime() + 1, "1"},
+      {llvm::DynamicAPInt(-1), maxText}
+  };
+
+  SymbolTableCollection tables;
+  for (const auto &[raw, expected] : cases) {
+    witgen::WitnessVal runtimeValue = raw;
+    auto json = witgen::serializeJSONValue(runtimeValue, feltType, tables, nullptr);
+    ASSERT_TRUE(static_cast<bool>(json)) << llvm::toString(json.takeError());
+    EXPECT_EQ(json->getAsString(), expected);
+    EXPECT_EQ(std::get<llvm::DynamicAPInt>(runtimeValue), raw);
+  }
+}
+
+TEST_F(WitgenTests, SerializeFeltRequiresDeclaredField) {
+  SymbolTableCollection tables;
+  auto json =
+      witgen::serializeJSONValue(llvm::DynamicAPInt(0), felt::FeltType::get(&ctx), tables, nullptr);
+  ASSERT_FALSE(json);
+  EXPECT_EQ(llvm::toString(json.takeError()), "felt JSON output requires a declared field");
+}
+
+TEST_P(WitgenFieldTests, WtnsRejectsNoncanonicalWitnessValues) {
+  auto source = substituteFieldName(
+      R"mlir(
+    module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+      struct.def @Main {
+        struct.member @out : !felt.type<"babybear"> {llzk.pub}
+        function.def @compute(%input: !felt.type<"babybear"> {function.arg_name = "input"})
+            -> !struct.type<@Main> {
+          %self = struct.new : !struct.type<@Main>
+          struct.writem %self[@out] = %input : !struct.type<@Main>, !felt.type<"babybear">
+          function.return %self : !struct.type<@Main>
+        }
+        function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) {
+          function.return
+        }
+      }
+    }
+  )mlir",
+      GetParam()
   );
-  value += llvm::DynamicAPInt(1);
-  auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test overflow");
-  ASSERT_FALSE(static_cast<bool>(checked));
-  EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
+  auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(static_cast<bool>(module));
+  const Field &field = Field::getField(GetParam());
+  llvm::SmallString<128> outputPath;
+  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile("llzk-noncanonical", "wtns", outputPath));
+  llvm::FileRemover removeOutput(outputPath);
+
+  // Even values that fit the field's storage width must be rejected at this
+  // boundary. Canonicalization belongs to the producer, not the WTNS writer.
+  for (const auto &value :
+       {llvm::DynamicAPInt(-1), field.prime(), field.prime() + 1,
+        (field.one() << llvm::DynamicAPInt(field.bitWidth())) - 1}) {
+    std::string text;
+    llvm::raw_string_ostream(text) << value;
+    SCOPED_TRACE(text);
+    for (bool invalidInput : {false, true}) {
+      const std::string key = invalidInput ? "input" : "out";
+      SCOPED_TRACE(key);
+      llvm::json::Value witness = llvm::json::Object {
+          {"inputs", llvm::json::Object {{"input", invalidInput ? text : "0"}}},
+          {"signals", llvm::json::Object {{"out", invalidInput ? "0" : text}}}
+      };
+      auto error = witgen::writeWtns(*module, witness, field, outputPath);
+      EXPECT_EQ(
+          llvm::toString(std::move(error)),
+          "full witness value '" + key +
+              (value < 0 ? "' is not a non-negative integer" : "' is outside the field")
+      );
+    }
+  }
 }
 
 TEST_F(WitgenTests, JSONDiffReportsScalarMismatchAtPath) {
@@ -298,6 +380,7 @@ TEST_P(WitgenFieldTests, NestedAggregateFailModeMaterializesMonostate) {
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
+  // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
   std::mt19937_64 rng(0);
   auto value = witgen::defaultValue(
       arrayType, tables, nullptr, field->get(), witgen::UninitializedBehavior::Fail, &rng
@@ -370,6 +453,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(2)};
@@ -410,6 +494,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesNegativeUnsignedForBounds) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(1), int64_t(2)};
@@ -444,6 +529,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenFalse) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {false};
@@ -478,6 +564,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenTrue) {
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {true};
@@ -490,7 +577,7 @@ TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenTrue) {
 
 TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
   auto field = Field::getField("goldilocks");
-  auto overflowingValue = field.reduce(llvm::APInt(64, uint64_t(1) << 63));
+  auto overflowingValue = field.reduce(toDynamicAPInt(llvm::APInt(64, uint64_t(1) << 63U)));
 
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
@@ -510,6 +597,7 @@ TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
 
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       *module, tables, field, witgen::UninitializedBehavior::Zero, std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {overflowingValue};
@@ -547,6 +635,7 @@ TEST_P(WitgenFieldTests, InterpreterFailsDuringFinalWitnessSerialization) {
   SymbolTableCollection tables;
   witgen::Interpreter interpreter(
       *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Fail,
+      // NOLINTNEXTLINE(bugprone-random-generator-seed): Fixed seed for reproducible tests.
       std::mt19937_64(0)
   );
   interpreter.setOutputScope(witgen::OutputScope::Public);

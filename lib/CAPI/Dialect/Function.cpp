@@ -69,7 +69,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     MlirNamedAttribute const *attrs
 ) {
   return llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
-      builder, location, name, funcType, numAttrs, attrs, /*numArgAttrs=*/0, /*argAttrs=*/NULL
+      builder, location, name, funcType, numAttrs, attrs, /*numArgAttrs=*/0, /*argAttrs=*/nullptr
   );
 }
 
@@ -78,7 +78,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     MlirAttribute const *argAttrs
 ) {
   return llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
-      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/NULL, numArgAttrs, argAttrs
+      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/nullptr, numArgAttrs, argAttrs
   );
 }
 
@@ -86,7 +86,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Function, FuncDefOp, WithoutAttrs, MlirStringRef name, MlirType funcType
 ) {
   return llzkFunction_FuncDefOpBuildWithAttrs(
-      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/NULL
+      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/nullptr
   );
 }
 
@@ -231,4 +231,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
                    )
                )
   );
+}
+
+MlirType llzkFunction_CallOpGetTypeSignature(MlirOperation inp) {
+  return wrap(llvm::cast<CallOp>(unwrap(inp)).getTypeSignature());
 }

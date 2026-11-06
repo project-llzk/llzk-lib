@@ -29,12 +29,12 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Component01 {
 // CHECK-NEXT:    struct.member @out : !array.type<1,5,9 x index>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component01> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = array.new  : <1,5,9 x index>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = array.new  : <1,5,9 x index>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component01>
 // CHECK-NEXT:      struct.writem %[[V1]][@out] = %[[V0]] : <@Component01>, !array.type<1,5,9 x index>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component01>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component01>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -74,23 +74,23 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M0:.+]] = affine_map<(d0, d1) -> (d0 + d1)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0, d1) -> (d0 + d1)>
 // CHECK-LABEL: struct.def @Component02 {
 // CHECK-NEXT:    struct.member @out : !array.type<1,#[[$M0]],9 x index>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Component02> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.new{(%[[V3]], %[[V0]])} : <1,#[[$M0]],9 x index>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@Component02> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_.-]+]] = arith.constant 5 : index
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_.-]+]] = array.new{(%[[V3]], %[[V0]])} : <1,#[[$M0]],9 x index>
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V1]]] = %[[V5]] : <1,#[[$M0]],9 x index>, index
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V2]]] = %[[V4]] : <1,#[[$M0]],9 x index>, index
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_.-]+]] = struct.new : <@Component02>
 // CHECK-NEXT:      struct.writem %[[V7]][@out] = %[[V6]] : <@Component02>, !array.type<1,#[[$M0]],9 x index>
 // CHECK-NEXT:      function.return %[[V7]] : !struct.type<@Component02>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Component02>, %[[V9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_.-]+]]: !struct.type<@Component02>, %[[V9:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -129,25 +129,25 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
-// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M1:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 + 2)>
 // CHECK-LABEL: struct.def @Component03 {
 // CHECK-NEXT:    struct.member @a : !array.type<5 x index>
 // CHECK-NEXT:    struct.member @b : !array.type<5 x index>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Component03> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component03>
-// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]], (%[[V4]])} : <#[[$M1]],#[[$M2]],5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.extract %[[V5]]{{\[}}%[[V2]], %[[V2]]] : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@Component03> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Component03>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_.-]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]], (%[[V4]])} : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_.-]+]] = array.extract %[[V5]]{{\[}}%[[V2]], %[[V2]]] : <#[[$M1]],#[[$M2]],5 x index>
 // CHECK-NEXT:        struct.writem %[[V3]][@a] = %[[V6]] : <@Component03>, !array.type<5 x index>
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.extract %[[V5]]{{\[}}%[[V2]], %[[V1]]] : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = array.extract %[[V5]]{{\[}}%[[V2]], %[[V1]]] : <#[[$M1]],#[[$M2]],5 x index>
 // CHECK-NEXT:        struct.writem %[[V3]][@b] = %[[V7]] : <@Component03>, !array.type<5 x index>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Component03>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Component03>, %[[V9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_.-]+]]: !struct.type<@Component03>, %[[V9:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -189,26 +189,26 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M3:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
+// CHECK: #[[$M3:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
 // CHECK-LABEL: struct.def @Component04 {
 // CHECK-NEXT:    struct.member @f : index
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Component04> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component04>
-// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],2,5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.read %[[V5]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V5]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
-// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],3,5 x index>
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V8]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V8]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = arith.addi %[[V9]], %[[V10]] : index
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@Component04> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Component04>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_.-]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],2,5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_.-]+]] = array.read %[[V5]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = array.read %[[V5]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
+// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],3,5 x index>
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_.-]+]] = array.read %[[V8]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_.-]+]] = array.read %[[V8]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_.-]+]] = arith.addi %[[V9]], %[[V10]] : index
 // CHECK-NEXT:        struct.writem %[[V3]][@f] = %[[V11]] : <@Component04>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Component04>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !struct.type<@Component04>, %[[V13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_.-]+]]: !struct.type<@Component04>, %[[V13:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -250,30 +250,30 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M4:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M4:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 + 2)>
 // CHECK-LABEL: struct.def @Component05 {
 // CHECK-NEXT:    struct.member @f : index
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Component05> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05>
-// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]])} : <1,#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]])} : <#[[$M4]],5 x index>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@Component05> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Component05>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_.-]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]])} : <1,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]])} : <#[[$M4]],5 x index>
 // CHECK-NEXT:        array.insert %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.len %[[V5]], %[[V1]] : <1,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = array.len %[[V5]], %[[V1]] : <1,#[[$M4]],5 x index>
 // CHECK-NEXT:        struct.writem %[[V3]][@f] = %[[V7]] : <@Component05>, index
 // CHECK-NEXT:      }
-// CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]])} : <2,#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]])} : <#[[$M4]],5 x index>
+// CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_.-]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_.-]+]] = array.new{(%[[V8]])} : <2,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_.-]+]] = array.new{(%[[V8]])} : <#[[$M4]],5 x index>
 // CHECK-NEXT:        array.insert %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = array.len %[[V9]], %[[V1]] : <2,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_.-]+]] = array.len %[[V9]], %[[V1]] : <2,#[[$M4]],5 x index>
 // CHECK-NEXT:        struct.writem %[[V3]][@f] = %[[V11]] : <@Component05>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Component05>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05>, %[[V13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_.-]+]]: !struct.type<@Component05>, %[[V13:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -311,31 +311,31 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M5:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
-// CHECK: #[[$M6:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK: #[[$M5:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M6:[0-9a-zA-Z_.-]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
 // CHECK-LABEL: struct.def @Component05B {
 // CHECK-NEXT:    struct.member @f : index
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Component05B> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05B>
-// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]])} : <1,#[[$M5]],5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]), (){{\[}}%[[V2]], %[[V4]]]} : <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@Component05B> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Component05B>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_.-]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]])} : <1,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_.-]+]] = array.new{(%[[V4]]), (){{\[}}%[[V2]], %[[V4]]]} : <#[[$M5]],#[[$M6]] x index>
 // CHECK-NEXT:        array.insert %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.len %[[V5]], %[[V1]] : <1,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_.-]+]] = array.len %[[V5]], %[[V1]] : <1,#[[$M5]],5 x index>
 // CHECK-NEXT:        struct.writem %[[V3]][@f] = %[[V7]] : <@Component05B>, index
 // CHECK-NEXT:      }
-// CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]])} : <2,#[[$M5]],5 x index>
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]]), (){{\[}}%[[V1]], %[[V8]]]} : <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_.-]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_.-]+]] = array.new{(%[[V8]])} : <2,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_.-]+]] = array.new{(%[[V8]]), (){{\[}}%[[V1]], %[[V8]]]} : <#[[$M5]],#[[$M6]] x index>
 // CHECK-NEXT:        array.insert %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = array.len %[[V9]], %[[V1]] : <2,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_.-]+]] = array.len %[[V9]], %[[V1]] : <2,#[[$M5]],5 x index>
 // CHECK-NEXT:        struct.writem %[[V3]][@f] = %[[V11]] : <@Component05B>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Component05B>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05B>, %[[V13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_.-]+]]: !struct.type<@Component05B>, %[[V13:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -372,19 +372,19 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @test06() -> !array.type<14,6,3 x !felt.type> {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = array.new  : <14,6,3 x !felt.type>
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_.-]+]] = array.new  : <14,6,3 x !felt.type>
 // CHECK-NEXT:    function.return %[[V0]] : !array.type<14,6,3 x !felt.type>
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
 // CHECK-NEXT:    struct.member @a : !array.type<14,6,3 x !felt.type>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @test06() : () -> !array.type<14,6,3 x !felt.type>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = function.call @test06() : () -> !array.type<14,6,3 x !felt.type>
 // CHECK-NEXT:      struct.writem %[[V0]][@a] = %[[V1]] : <@Main>, !array.type<14,6,3 x !felt.type>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -412,17 +412,17 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 mod 0)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 mod 0)>
 // CHECK-LABEL: struct.def @Component10 {
 // CHECK-NEXT:    struct.member @out : !array.type<#[[$M0]] x index>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component10> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component10>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new{(%[[V0]])} : <#[[$M0]] x index>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component10>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = array.new{(%[[V0]])} : <#[[$M0]] x index>
 // CHECK-NEXT:      struct.writem %[[V1]][@out] = %[[V2]] : <@Component10>, !array.type<#[[$M0]] x index>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component10>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Component10>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_.-]+]]: !struct.type<@Component10>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

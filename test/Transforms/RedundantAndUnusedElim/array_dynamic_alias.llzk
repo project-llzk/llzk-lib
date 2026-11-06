@@ -114,87 +114,123 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @dynamic_then_constant_alias(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
+// CHECK-NEXT:    function.def @dynamic_then_constant_alias(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
 // CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_0]]] = %[[VAL_1]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constant_then_dynamic_alias(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.const  3
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_7]], %[[VAL_7]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @constant_then_dynamic_alias(%[[VAL_6:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = felt.const  3
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_7]], %[[VAL_7]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_11]]] = %[[VAL_8]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_6]]] = %[[VAL_9]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_11]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_11]]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_12]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constant_index_reuse() -> !felt.type {
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.const  3
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_13]], %[[VAL_13]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_.-]+]] = felt.const  3
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_13]], %[[VAL_13]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
 // CHECK-NEXT:      array.write %[[VAL_16]]{{\[}}%[[VAL_17]]] = %[[VAL_14]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      array.write %[[VAL_16]]{{\[}}%[[VAL_18]]] = %[[VAL_15]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_14]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @inserted_dynamic_subarray_alias(%[[VAL_19:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_20]], %[[VAL_20]] : <2 x !felt.type>
+// CHECK-NEXT:    function.def @inserted_dynamic_subarray_alias(%[[VAL_19:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_20]], %[[VAL_20]] : <2 x !felt.type>
 // CHECK-NEXT:      array.write %[[VAL_22]]{{\[}}%[[VAL_19]]] = %[[VAL_20]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_.-]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.insert %[[VAL_23]]{{\[}}%[[VAL_24]]] = %[[VAL_22]] : <2,2 x !felt.type>, <2 x !felt.type>
 // CHECK-NEXT:      array.write %[[VAL_23]]{{\[}}%[[VAL_24]], %[[VAL_24]]] = %[[VAL_21]] : <2,2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_23]]{{\[}}%[[VAL_24]], %[[VAL_19]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_23]]{{\[}}%[[VAL_24]], %[[VAL_19]]] : <2,2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_25]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @dynamic_then_constant_insert_alias(%[[VAL_26:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2 x !felt.type> {
-// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_27]], %[[VAL_27]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_28]], %[[VAL_28]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = array.new  : <2,2,2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @dynamic_then_constant_insert_alias(%[[VAL_26:[0-9a-zA-Z_.-]+]]: index) -> !array.type<2 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_27]], %[[VAL_27]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_28]], %[[VAL_28]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_.-]+]] = array.new  : <2,2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.insert %[[VAL_31]]{{\[}}%[[VAL_32]], %[[VAL_26]]] = %[[VAL_29]] : <2,2,2 x !felt.type>, <2 x !felt.type>
 // CHECK-NEXT:      array.insert %[[VAL_31]]{{\[}}%[[VAL_32]], %[[VAL_32]]] = %[[VAL_30]] : <2,2,2 x !felt.type>, <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_31]]{{\[}}%[[VAL_32]], %[[VAL_26]]] : <2,2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_31]]{{\[}}%[[VAL_32]], %[[VAL_26]]] : <2,2,2 x !felt.type>
 // CHECK-NEXT:      function.return %[[VAL_33]] : !array.type<2 x !felt.type>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @dynamic_alias_through_if(%[[VAL_34:[0-9a-zA-Z_\.]+]]: index, %[[VAL_35:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_36]], %[[VAL_36]] : <2 x !felt.type>
+// CHECK-NEXT:    function.def @dynamic_alias_through_if(%[[VAL_34:[0-9a-zA-Z_.-]+]]: index, %[[VAL_35:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_38:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_36]], %[[VAL_36]] : <2 x !felt.type>
 // CHECK-NEXT:      array.write %[[VAL_38]]{{\[}}%[[VAL_34]]] = %[[VAL_36]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_35]] -> (!felt.type) {
-// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_.-]+]] = scf.if %[[VAL_35]] -> (!felt.type) {
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:        array.write %[[VAL_38]]{{\[}}%[[VAL_40]]] = %[[VAL_37]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_38]]{{\[}}%[[VAL_34]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_38]]{{\[}}%[[VAL_34]]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:        scf.yield %[[VAL_41]] : !felt.type
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[VAL_36]] : !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_39]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constant_write_then_dynamic_read_then_constant_write(%[[VAL_42:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = felt.const  0
-// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_43]], %[[VAL_43]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @constant_write_then_dynamic_read_then_constant_write(%[[VAL_42:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_.-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_43]], %[[VAL_43]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_47:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_46]]{{\[}}%[[VAL_47]]] = %[[VAL_44]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_46]]{{\[}}%[[VAL_42]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_48:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_46]]{{\[}}%[[VAL_42]]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      array.write %[[VAL_46]]{{\[}}%[[VAL_47]]] = %[[VAL_45]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_48]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A second loop iteration observes the preceding iteration's write, not the
+  // pre-loop value. The loop-body read must therefore remain.
+  function.def @loop_write_keeps_read(
+      %before: !felt.type, %after: !felt.type
+  ) -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %before : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    %two = arith.constant 2 : index
+    %one = arith.constant 1 : index
+    %result = scf.for %iv = %zero to %two step %one iter_args(%unused = %before) -> (!felt.type) {
+      %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      array.write %array[%zero] = %after : !array.type<1 x !felt.type>, !felt.type
+      scf.yield %observed : !felt.type
+    }
+    function.return %result : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @loop_write_keeps_read(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = scf.for %[[VAL_7:[0-9a-zA-Z_.-]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_5]] iter_args(%[[VAL_8:[0-9a-zA-Z_.-]+]] = %[[VAL_0]]) -> (!felt.type) {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_3]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_9]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_6]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -237,25 +273,25 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @mixed_constant_prefix_dynamic_suffix(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @mixed_constant_prefix_dynamic_suffix(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_1]] : <2,2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_0]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_0]]] : <2,2 x !felt.type>, !felt.type
 // CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_2]] : <2,2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @dynamic_extract_preserves_subtree_write(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @dynamic_extract_preserves_subtree_write(%[[VAL_6:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_10]], %[[VAL_10]]] = %[[VAL_7]] : <2,2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_9]]{{\[}}%[[VAL_6]]] : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_9]]{{\[}}%[[VAL_6]]] : <2,2 x !felt.type>
 // CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_10]], %[[VAL_10]]] = %[[VAL_8]] : <2,2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_10]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_10]]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_12]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -284,18 +320,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @sibling_region_dynamic_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @sibling_region_dynamic_read(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_1]] -> (!felt.type) {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = scf.if %[[VAL_1]] -> (!felt.type) {
 // CHECK-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_4]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:        scf.yield %[[VAL_4]] : !felt.type
 // CHECK-NEXT:      } else {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:        scf.yield %[[VAL_8]] : !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
@@ -326,18 +362,79 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @zero_index_insert_region(%[[VAL_9:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  0
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_10]], %[[VAL_10]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_11]], %[[VAL_11]] : <2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_9]] -> (!felt.type) {
+// CHECK-NEXT:    function.def @zero_index_insert_region(%[[VAL_9:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_10]], %[[VAL_10]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_11]], %[[VAL_11]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_.-]+]] = scf.if %[[VAL_9]] -> (!felt.type) {
 // CHECK-NEXT:        array.insert %[[VAL_12]][] = %[[VAL_13]] : <2 x !felt.type>, <2 x !felt.type>
 // CHECK-NEXT:        scf.yield %[[VAL_11]] : !felt.type
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[VAL_10]] : !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_15]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A write in a one-armed conditional is not guaranteed to reach the read.
+  function.def @one_armed_if_write_keeps_read(
+      %before: !felt.type, %after: !felt.type, %cond: i1
+  ) -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %before : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    scf.if %cond {
+      array.write %array[%zero] = %after : !array.type<1 x !felt.type>, !felt.type
+    }
+    %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @one_armed_if_write_keeps_read(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      scf.if %[[VAL_2]] {
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // The loop may execute zero times, so its write cannot determine the
+  // post-loop read.
+  function.def @zero_trip_loop_write_keeps_post_loop_read(
+      %before: !felt.type, %after: !felt.type, %end: index
+  ) -> !felt.type attributes {function.allow_witness} {
+    %array = array.new %before : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    scf.for %iv = %zero to %end step %one {
+      array.write %array[%zero] = %after : !array.type<1 x !felt.type>, !felt.type
+    }
+    %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @zero_trip_loop_write_keeps_post_loop_read(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      scf.for %[[VAL_6:[0-9a-zA-Z_.-]+]] = %[[VAL_4]] to %[[VAL_2]] step %[[VAL_5]] {
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -31,6 +31,69 @@
 
 constexpr unsigned SEVEN = 7;
 
+TEST_F(CAPITest, FullPCLLoweringPipelineCAPI) {
+  mlir::DialectRegistry registry;
+  pcl::registerDialects(registry);
+  unwrap(context)->appendDialectRegistry(registry);
+  mlirContextLoadAllAvailableDialects(context);
+  llzkRegisterPCLConversionPassPipelines();
+
+  constexpr const char *source = R"mlir(
+    module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+      struct.def @Main {
+        struct.member @out : !array.type<2 x !felt.type<"bn128">> {llzk.pub}
+        function.def @compute(%in: !felt.type<"bn128">) -> !struct.type<@Main> {
+          %self = struct.new : <@Main>
+          function.return %self : !struct.type<@Main>
+        }
+        function.def @constrain(%self: !struct.type<@Main>, %in: !felt.type<"bn128">) {
+          %out = struct.readm %self[@out] : <@Main>, !array.type<2 x !felt.type<"bn128">>
+          %c0 = arith.constant 0 : index
+          %c1 = arith.constant 1 : index
+          %a = array.read %out[%c0] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          %b = array.read %out[%c1] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+          constrain.eq %a, %in : !felt.type<"bn128">, !felt.type<"bn128">
+          constrain.eq %b, %in : !felt.type<"bn128">, !felt.type<"bn128">
+          function.return
+        }
+      }
+    }
+  )mlir";
+
+  // Exercise both direct construction and registration for textual pipelines.
+  for (bool parsePipeline : {false, true}) {
+    auto module = mlirModuleCreateParse(context, mlirStringRefCreateFromCString(source));
+    ASSERT_FALSE(mlirModuleIsNull(module));
+    auto manager = mlirPassManagerCreate(context);
+    auto opManager = mlirPassManagerGetAsOpPassManager(manager);
+    if (parsePipeline) {
+      std::string diagnostics;
+      auto callback = [](MlirStringRef text, void *data) {
+        static_cast<std::string *>(data)->append(text.data, text.length);
+      };
+      EXPECT_TRUE(mlirLogicalResultIsSuccess(mlirParsePassPipeline(
+          opManager, mlirStringRefCreateFromCString("builtin.module(llzk-full-pcl-lowering)"),
+          callback, &diagnostics
+      ))) << diagnostics;
+    } else {
+      llzkBuildFullPCLLoweringPipeline(opManager);
+    }
+    EXPECT_TRUE(
+        mlirLogicalResultIsSuccess(mlirPassManagerRunOnOp(manager, mlirModuleGetOperation(module)))
+    );
+    auto lowered = unwrap(module);
+    EXPECT_TRUE(lowered->hasAttr(PCL_PRIME_ATTR_NAME));
+    auto functions = lowered.getOps<mlir::func::FuncOp>();
+    ASSERT_FALSE(functions.empty());
+    EXPECT_EQ((*functions.begin()).getFunctionType().getNumResults(), 2u);
+    unsigned assertions = 0;
+    lowered.walk([&](pcl::AssertOp) { ++assertions; });
+    EXPECT_EQ(assertions, 2u);
+    mlirPassManagerDestroy(manager);
+    mlirModuleDestroy(module);
+  }
+}
+
 constexpr std::string_view EXPECTED_PCL_MODULE_1 =
     // clang-format off
     "(prime-number 7)\n\n"
@@ -47,23 +110,23 @@ TEST_F(CAPITest, exportPclModule) {
   llvm::raw_string_ostream ss(output_text);
   auto *ctx = unwrap(context);
   mlir::DialectRegistry registry;
-  pcl::registerAllDialects(registry);
+  pcl::registerDialects(registry);
   ctx->appendDialectRegistry(registry);
   ctx->loadAllAvailableDialects();
 
   mlir::OpBuilder builder(ctx);
 
-  auto module = builder.create<mlir::ModuleOp>(builder.getUnknownLoc());
+  auto module = mlir::ModuleOp::create(builder, builder.getUnknownLoc());
   module->setDiscardableAttr(
       builder.getStringAttr(PCL_PRIME_ATTR_NAME),
-      pcl::PrimeAttr::get(ctx, llvm::APInt(/*numBits=*/4, /*val=*/SEVEN))
+      pcl::PrimeAttr::get(ctx, llvm::DynamicAPInt(SEVEN))
   );
   {
     mlir::OpBuilder::InsertionGuard guard(builder);
     builder.setInsertionPointToStart(module.getBody());
 
-    auto func = builder.create<mlir::func::FuncOp>(
-        builder.getUnknownLoc(), builder.getStringAttr("A"),
+    auto func = mlir::func::FuncOp::create(
+        builder, builder.getUnknownLoc(), builder.getStringAttr("A"),
         builder.getFunctionType({pcl::FeltType::get(ctx)}, {pcl::FeltType::get(ctx)})
     );
 
@@ -75,11 +138,11 @@ TEST_F(CAPITest, exportPclModule) {
       builder.setInsertionPointToStart(&block);
 
       auto inVar = block.getArgument(0);
-      auto outVar = builder.create<pcl::VarOp>(builder.getUnknownLoc(), "out", true);
-      auto eq = builder.create<pcl::CmpEqOp>(builder.getUnknownLoc(), inVar, outVar);
-      builder.create<pcl::AssertOp>(builder.getUnknownLoc(), eq);
+      auto outVar = pcl::VarOp::create(builder, builder.getUnknownLoc(), "out", true);
+      auto eq = pcl::CmpEqOp::create(builder, builder.getUnknownLoc(), inVar, outVar);
+      pcl::AssertOp::create(builder, builder.getUnknownLoc(), eq);
 
-      builder.create<mlir::func::ReturnOp>(builder.getUnknownLoc(), mlir::ValueRange({outVar}));
+      mlir::func::ReturnOp::create(builder, builder.getUnknownLoc(), mlir::ValueRange({outVar}));
     }
   }
 

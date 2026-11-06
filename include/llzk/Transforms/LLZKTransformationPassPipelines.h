@@ -30,6 +30,15 @@ struct StructInliningFlatteningOptions
       llvm::cl::init(1000)
   };
 
+  Option<uint64_t> unrollIterationLimit {
+      *this, "max-unroll",
+      llvm::cl::desc(
+          "maximum trip count for each loop unrolled; exceeding it warns and leaves the loop "
+          "unchanged"
+      ),
+      llvm::cl::init(100000)
+  };
+
   Option<polymorphic::FlatteningCleanupMode> cleanupMode {
       *this, "cleanup",
       llvm::cl::desc(
@@ -42,7 +51,9 @@ struct StructInliningFlatteningOptions
 
   polymorphic::FlatteningPassOptions createPassOptions() const {
     return polymorphic::FlatteningPassOptions {
-        .iterationLimit = iterationLimit, .cleanupMode = cleanupMode
+        .iterationLimit = iterationLimit,
+        .unrollIterationLimit = unrollIterationLimit,
+        .cleanupMode = cleanupMode
     };
   }
 };
@@ -126,6 +137,9 @@ void buildProductProgramPipeline(mlir::OpPassManager &);
 void buildFullStructInliningPipeline(mlir::OpPassManager &, const FullStructInliningConfig &);
 
 void buildFullInliningPipeline(mlir::OpPassManager &, const FullStructInliningConfig &);
+
+/// Canonicalize, monomorphize templates, expose child members, and expand main constrain.
+void buildConstraintFlatteningPipeline(mlir::OpPassManager &);
 
 void registerTransformationPassPipelines();
 

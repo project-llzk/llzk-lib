@@ -1,25 +1,69 @@
 HeaderFilterRegex: 'llzk-lib/'
-Checks: bugprone-*,
-        -bugprone-branch-clone,
-        -bugprone-easily-swappable-parameters,
-        -bugprone-unchecked-optional-access, // has many false positives but should be checked occasionally
-        llvm-twine-local,
-        llvm-prefer-isa-or-dyn-cast-in-conditionals,
-        misc-definitions-in-headers,
-        misc-uniqueptr-reset-release,
-        misc-static-assert,
-        misc-redundant-expression,
-        misc-header-include-cycle,
-        misc-unused-parameters,
-        modernize-make-shared,
-        modernize-make-unique,
-        modernize-deprecated-headers,
-        modernize-use-override,
-        performance-*,
-        readability-qualified-auto,
-        readability-redundant-smartptr-get,
-        readability-redundant-string-cstr,
-        readability-simplify-boolean-expr,
-        readability-simplify-subscript-expr,
-        readability-string-compare,
-        readability-uniqueptr-delete-release
+Checks:
+  - 'bugprone-*'
+  - 'clang-analyzer-*'
+  - 'llvm-formatv-string'
+  - 'llvm-prefer-isa-or-dyn-cast-in-conditionals'
+  - 'llvm-redundant-casting'
+  - 'llvm-twine-local'
+  - 'llvm-use-ranges'
+  - 'llvm-use-vector-utils'
+  - 'misc-confusable-identifiers'
+  - 'misc-definitions-in-headers'
+  - 'misc-header-include-cycle'
+  - 'misc-misleading-bidirectional'
+  - 'misc-misleading-identifier'
+  - 'misc-misplaced-const'
+  - 'misc-redundant-expression'
+  - 'misc-throw-by-value-catch-by-reference'
+  - 'misc-uniqueptr-reset-release'
+  - 'misc-unused-parameters'
+  - 'modernize-deprecated-headers'
+  - 'modernize-make-shared'
+  - 'modernize-make-unique'
+  - 'modernize-use-bool-literals'
+  - 'modernize-use-constraints'
+  - 'modernize-use-emplace'
+  - 'modernize-use-equals-default'
+  - 'modernize-use-equals-delete'
+  - 'modernize-use-integer-sign-comparison'
+  - 'modernize-use-nullptr'
+  - 'modernize-use-override'
+  - 'modernize-use-starts-ends-with'
+  - 'modernize-use-std-bit'
+  - 'modernize-use-string-view'
+  - 'modernize-use-structured-binding'
+  - 'performance-*'
+  - 'readability-container-contains'
+  - 'readability-container-data-pointer'
+  - 'readability-container-size-empty'
+  - 'readability-enum-initial-value'
+  - 'readability-inconsistent-declaration-parameter-name'
+  - 'readability-make-member-function-const'
+  - 'readability-misplaced-array-index'
+  - 'readability-qualified-auto'
+  - 'readability-redundant-casting'
+  - 'readability-redundant-member-init'
+  - 'readability-redundant-parentheses'
+  - 'readability-redundant-smartptr-get'
+  - 'readability-redundant-string-cstr'
+  - 'readability-redundant-string-init'
+  - 'readability-reference-to-constructed-temporary'
+  - 'readability-simplify-boolean-expr'
+  - 'readability-simplify-subscript-expr'
+  - 'readability-static-accessed-through-instance'
+  - 'readability-string-compare'
+  - 'readability-uniqueptr-delete-release'
+  - 'readability-use-anyofallof'
+  - '-bugprone-branch-clone'
+  - '-bugprone-easily-swappable-parameters'
+  # has false positives due to glibc 2.44's variadic assert
+  - '-misc-static-assert'
+  # has many false positives but should be checked occasionally
+  - '-bugprone-unchecked-optional-access'
+  - '-readability-convert-member-functions-to-static'
+  - '-readability-implicit-bool-conversion'
+CheckOptions:
+  # Preserve the defaults and exclude libstdc++'s renamed comparison zero type.
+  modernize-use-nullptr.IgnoredTypes: '_CmpUnspecifiedParam;^std::__cmp_cat::__unspec;^std::__cmp_cat::__literal_zero'
+  readability-implicit-bool-conversion.AllowPointerConditions: true

@@ -17,6 +17,7 @@
 
 #include <climits>
 #include <cstdint>
+#include <limits>
 
 namespace llzk {
 
@@ -28,11 +29,20 @@ public:
 
   void writeBytes(llvm::ArrayRef<char> bytes) { buffer_.append(bytes.begin(), bytes.end()); }
 
-  void writeFieldElement(uint32_t size, const llvm::DynamicAPInt &value) {
-    llvm::APInt exact = toExactWidthAPInt(value, size * CHAR_BIT);
-    for (uint32_t i = 0; i < size; ++i) {
-      buffer_.push_back(static_cast<char>(exact.extractBitsAsZExtValue(8, i * 8)));
+  /// Append an unsigned fixed-width field encoding, rejecting overflow and negatives.
+  /// On failure the buffer is unchanged.
+  llvm::Error writeFieldElement(uint32_t size, const llvm::DynamicAPInt &value) {
+    if (size == 0 || size > std::numeric_limits<unsigned>::max() / CHAR_BIT) {
+      return llvm::createStringError(llvm::inconvertibleErrorCode(), "invalid field encoding size");
     }
+    auto exact = checkedToAPInt(value, size * CHAR_BIT, false);
+    if (!exact) {
+      return exact.takeError();
+    }
+    for (uint32_t i = 0; i < size; ++i) {
+      buffer_.push_back(static_cast<char>(exact->extractBitsAsZExtValue(8, i * 8)));
+    }
+    return llvm::Error::success();
   }
 
   uint64_t size() const { return static_cast<uint64_t>(buffer_.size()); }

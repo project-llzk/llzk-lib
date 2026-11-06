@@ -12,13 +12,19 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "pcl/Conversion/ConversionPassPipelines.h"
 #include "pcl/Conversion/ConversionPasses.h" // IWYU pragma: keep
+
+#include "llzk-c/Target/PCL.h"
 
 #include <mlir/CAPI/Pass.h>
 
-#include "pcl/Conversion/ConversionPasses.capi.h.inc"
-
 using namespace pcl;
 
-// Impl
 #include "pcl/Conversion/ConversionPasses.capi.cpp.inc"
+
+void llzkRegisterPCLConversionPassPipelines(void) { pcl::registerConversionPassPipelines(); }
+
+void llzkBuildFullPCLLoweringPipeline(MlirOpPassManager passManager) {
+  pcl::buildFullPCLLoweringPipeline(*unwrap(passManager));
+}

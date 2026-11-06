@@ -9,7 +9,6 @@
 
 #include "pcl/Dialect/IR/Ops.h"
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "pcl/Dialect/IR/Attrs.h"
 
 #include <mlir/IR/MLIRContext.h>
@@ -53,7 +52,7 @@ template <typename Op> std::optional<PrimeAttr> getFieldPrime(Op &op) {
   return attr;
 }
 
-/// Used in the `isIdentity` and `isZero` callbacks for identifing if the queried value
+/// Used in the `isIdentity` and `isAnnihilator` callbacks for identifing if the queried value
 /// is the LHS or the RHS of the operation.
 enum class Side : std::uint8_t { Lhs, Rhs };
 
@@ -69,7 +68,7 @@ enum class Side : std::uint8_t { Lhs, Rhs };
 template <typename T, typename Op>
 OpFoldResult foldBinaryOp(
     Op &op, typename Op::FoldAdaptor adaptor, llvm::function_ref<T(T, T)> opFn,
-    llvm::function_ref<bool(T, Side)> isIdentity, llvm::function_ref<bool(T, Side)> isZero,
+    llvm::function_ref<bool(T, Side)> isIdentity, llvm::function_ref<bool(T, Side)> isAnnihilator,
     llvm::function_ref<OpFoldResult(T)> factory = nullptr
 ) {
   auto factoryFn = [factory](auto value) -> OpFoldResult {
@@ -93,10 +92,10 @@ OpFoldResult foldBinaryOp(
   }
 
   // If either side is "zero", then the operation is canceled out and return the "zero" attribute.
-  if (lhs && isZero(lhs, Side::Lhs)) {
+  if (lhs && isAnnihilator(lhs, Side::Lhs)) {
     return factoryFn(lhs);
   }
-  if (rhs && isZero(rhs, Side::Rhs)) {
+  if (rhs && isAnnihilator(rhs, Side::Rhs)) {
     return factoryFn(rhs);
   }
   // If either side is the identity, return the other side.
@@ -124,8 +123,8 @@ OpFoldResult foldBinaryOp(
 template <typename Op, typename Fn>
 OpFoldResult tryFoldBinaryFeltOp(
     Op &op, typename Op::FoldAdaptor adaptor, Fn opFn,
-    llvm::function_ref<bool(const APInt &, Side)> isIdentity,
-    llvm::function_ref<bool(const APInt &, Side)> isZero
+    llvm::function_ref<bool(const llvm::DynamicAPInt &, Side)> isIdentity,
+    llvm::function_ref<bool(const llvm::DynamicAPInt &, Side)> isAnnihilator
 ) {
   auto prime = getFieldPrime(op);
   if (!prime) {
@@ -139,8 +138,8 @@ OpFoldResult tryFoldBinaryFeltOp(
     );
   }, [&prime, isIdentity](FeltAttr value, auto side) {
     return isIdentity(prime->reduce(value).getValue(), side);
-  }, [&prime, isZero](FeltAttr value, auto side) {
-    return isZero(prime->reduce(value).getValue(), side);
+  }, [&prime, isAnnihilator](FeltAttr value, auto side) {
+    return isAnnihilator(prime->reduce(value).getValue(), side);
   }, [&prime](auto value) { return prime->reduce(value); });
 }
 
@@ -161,43 +160,6 @@ OpFoldResult foldCmpOp(Op &op, typename Op::FoldAdaptor adaptor, Fn opFn) {
   rhs = prime->reduce(rhs);
 
   return pcl::BoolAttr::get(op->getContext(), opFn(lhs.getValue(), rhs.getValue()));
-}
-
-/// Helper for doing unsigned addition on field elements represented by `APInt`s.
-///
-/// Adjusts the bit width to the correct size before adding. The caller is
-/// responsible of wrapping the value back into the field if it's intended to
-/// continue representing a field element.
-static APInt safeAdd(const APInt &lhs, const APInt &rhs) {
-  auto w = std::max({lhs.getBitWidth(), rhs.getBitWidth()}) + 1;
-  auto lhsExt = lhs.zext(w);
-  auto rhsExt = rhs.zext(w);
-  return lhsExt + rhsExt;
-}
-
-/// Helper for doing unsigned subtraction on field elements represented by `APInt`s.
-///
-/// Adjusts the bit width to the correct size before subtracting. The caller is
-/// responsible of wrapping the value back into the field if it's intended to
-/// continue representing a field element.
-static APInt safeSub(const APInt &lhs, const APInt &rhs) {
-  auto w = std::max({lhs.getBitWidth(), rhs.getBitWidth()}) + 1;
-  auto lhsExt = lhs.zext(w);
-  auto rhsExt = rhs.zext(w);
-  return lhsExt - rhsExt;
-}
-
-/// Helper for doing unsigned multiplication on field elements represented by `APInt`s.
-///
-/// Adjusts the bit width to the correct size before multiplying. The caller is
-/// responsible of wrapping the value back into the field if it's intended to
-/// continue representing a field element.
-static APInt safeMul(const APInt &lhs, const APInt &rhs) {
-  /// Add an extra +1 just to be safe.
-  auto w = lhs.getBitWidth() + rhs.getBitWidth() + 1;
-  auto lhsExt = lhs.zext(w);
-  auto rhsExt = rhs.zext(w);
-  return lhsExt * rhsExt;
 }
 
 /// Pattern for folding "double negations". It is generalized to any pattern
@@ -233,10 +195,8 @@ template <typename Op> struct FoldDoubleNeg : public OpRewritePattern<Op> {
 
 OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
   return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
-    return safeAdd(lhs, rhs);
-  }, [](const auto &value, auto) { return value.isZero(); }, [](const auto &, auto) {
-    return false;
-  });
+    return lhs + rhs;
+  }, [](const auto &value, auto) { return value == 0; }, [](const auto &, auto) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -276,7 +236,7 @@ struct RewriteXTimesMinus1ToNegX : public OpRewritePattern<MulOp> {
   }
 
 private:
-  FailureOr<Value> matchOperands(MulOp op, PrimeAttr prime) const {
+  static FailureOr<Value> matchOperands(MulOp op, PrimeAttr prime) {
     auto lhs = matchOperandsImpl(op.getLhs(), op.getRhs(), prime);
     if (succeeded(lhs)) {
       return lhs;
@@ -284,20 +244,20 @@ private:
     return matchOperandsImpl(op.getRhs(), op.getLhs(), prime);
   }
 
-  FailureOr<Value> matchOperandsImpl(Value lhs, Value rhs, PrimeAttr prime) const {
+  static FailureOr<Value> matchOperandsImpl(Value lhs, Value rhs, PrimeAttr prime) {
     auto feltAttr = getAttr(lhs);
     if (!feltAttr) {
       return failure();
     }
     // If p - v != 1, ignore this case.
-    if (!safeSub(prime.getValue(), prime.reduce(feltAttr).getValue()).isOne()) {
+    if (prime.getValue() - prime.reduce(feltAttr).getValue() != 1) {
       return failure();
     }
 
     return rhs;
   }
 
-  FeltAttr getAttr(Value v) const {
+  static FeltAttr getAttr(Value v) {
     Attribute attr;
     if (!matchPattern(v, m_Constant(&attr))) {
       return FeltAttr();
@@ -309,10 +269,8 @@ private:
 
 OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
   return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
-    return safeMul(lhs, rhs);
-  }, [](auto &value, auto) { return value.isOne(); }, [](auto &value, auto) {
-    return value.isZero();
-  });
+    return lhs * rhs;
+  }, [](auto &value, auto) { return value == 1; }, [](auto &value, auto) { return value == 0; });
 }
 
 void MulOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
@@ -351,7 +309,7 @@ struct ZeroMinusXToNegX : public OpRewritePattern<SubOp> {
 
   LogicalResult matchAndRewrite(SubOp op, PatternRewriter &rewriter) const override {
     auto lhsAttr = getLhsAttr(op);
-    if (!lhsAttr || !lhsAttr.getValue().isZero()) {
+    if (!lhsAttr || lhsAttr.getValue() != 0) {
       return failure();
     }
     rewriter.replaceOpWithNewOp<NegOp>(op, op.getRhs());
@@ -359,7 +317,7 @@ struct ZeroMinusXToNegX : public OpRewritePattern<SubOp> {
   }
 
 private:
-  FeltAttr getLhsAttr(SubOp op) const {
+  static FeltAttr getLhsAttr(SubOp op) {
     Attribute attr;
     if (!matchPattern(op.getLhs(), m_Constant(&attr))) {
       return FeltAttr();
@@ -375,17 +333,14 @@ void SubOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext
 }
 
 OpFoldResult SubOp::fold(FoldAdaptor adaptor) {
-  return tryFoldBinaryFeltOp(
-      *this, adaptor, [](const auto &lhs, const auto &rhs, const auto &prime) {
-    // (lhs - rhs) mod p == (lhs + (p - rhs)) mod p iff 0 <= lhs < p and 0 <= rhs < p.
-    // The `tryFoldBinaryFeltOp` helper ensures `lhs` and `rhs` are inside the field, so the
-    // assumption above is safe.
-    return safeAdd(lhs, safeSub(prime, rhs));
+  return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
+    // DynamicAPInt can represent negative values and `tryFoldBinaryFeltOp()` reduces
+    // the result modulo the prime into the canonical nonnegative range.
+    return lhs - rhs;
   }, [](auto &value, auto side) {
     // lhs - 0 = lhs
-    return side == Side::Rhs && value.isZero();
-  }, [](auto &, auto) { return false; }
-  );
+    return side == Side::Rhs && value == 0;
+  }, [](auto &, auto) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -429,7 +384,7 @@ struct FoldEqBoolean : public OpRewritePattern<CmpEqOp> {
 
 private:
   /// Matches the assertion to a pattern.
-  FailureOr<FoldedEq> matchAssertion(CmpEqOp op) const {
+  static FailureOr<FoldedEq> matchAssertion(CmpEqOp op) {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
     if (succeeded(lhsMatch)) {
       return lhsMatch;
@@ -439,7 +394,7 @@ private:
   }
 
   /// Simpler pattern that assumes only LHS can be the constant.
-  FailureOr<FoldedEq> matchAssertionImpl(Value lhs, Value rhs) const {
+  static FailureOr<FoldedEq> matchAssertionImpl(Value lhs, Value rhs) {
     Attribute attr;
     auto rhsAsBool = llvm::dyn_cast_if_present<AsFeltOp>(rhs.getDefiningOp());
 
@@ -452,10 +407,10 @@ private:
     }
 
     if (auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr)) {
-      if (feltAttr.getValue().isZero()) {
+      if (feltAttr.getValue() == 0) {
         return FoldedEq {.value = rhsAsBool.getValue(), .constValue = false};
       }
-      if (feltAttr.getValue().isOne()) {
+      if (feltAttr.getValue() == 1) {
         return FoldedEq {.value = rhsAsBool.getValue(), .constValue = true};
       }
     }
@@ -506,7 +461,7 @@ struct FoldEqOfZeroAndSum : public OpRewritePattern<CmpEqOp> {
 private:
   /// Picks the operands of the add op `X` and `Y` for creating
   /// the new eq operation as `(= X Y)`
-  std::pair<Value, Value> pickOperands(AddOp op, PatternRewriter &rewriter) const {
+  static std::pair<Value, Value> pickOperands(AddOp op, PatternRewriter &rewriter) {
     auto X = op.getLhs();
     auto Y = op.getRhs();
     auto Xop = llvm::dyn_cast_if_present<NegOp>(X.getDefiningOp());
@@ -518,12 +473,12 @@ private:
       return {X, Yop.getValue()};
     }
 
-    auto negOp = rewriter.create<NegOp>(op.getLoc(), Y);
+    auto negOp = NegOp::create(rewriter, op.getLoc(), Y);
     return {X, negOp};
   }
 
   /// Matches the assertion to a pattern.
-  AddOp matchAssertion(CmpEqOp op) const {
+  static AddOp matchAssertion(CmpEqOp op) {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
     if (lhsMatch) {
       return lhsMatch;
@@ -533,14 +488,14 @@ private:
   }
 
   /// Simpler pattern that assumes only LHS can be the constant.
-  AddOp matchAssertionImpl(Value lhs, Value rhs) const {
+  static AddOp matchAssertionImpl(Value lhs, Value rhs) {
     Attribute attr;
 
     if (!matchPattern(lhs, m_Constant(&attr))) {
       return AddOp();
     }
     auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr);
-    if (!feltAttr || !feltAttr.getValue().isZero()) {
+    if (!feltAttr || feltAttr.getValue() != 0) {
       return AddOp();
     }
 
@@ -565,7 +520,7 @@ struct FoldEqOfZeroAndSub : public OpRewritePattern<CmpEqOp> {
 
 private:
   /// Matches the assertion to a pattern.
-  SubOp matchAssertion(CmpEqOp op) const {
+  static SubOp matchAssertion(CmpEqOp op) {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
     if (lhsMatch) {
       return lhsMatch;
@@ -575,14 +530,14 @@ private:
   }
 
   /// Simpler pattern that assumes only LHS can be the constant.
-  SubOp matchAssertionImpl(Value lhs, Value rhs) const {
+  static SubOp matchAssertionImpl(Value lhs, Value rhs) {
     Attribute attr;
 
     if (!matchPattern(lhs, m_Constant(&attr))) {
       return SubOp();
     }
     auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr);
-    if (!feltAttr || !feltAttr.getValue().isZero()) {
+    if (!feltAttr || feltAttr.getValue() != 0) {
       return SubOp();
     }
 
@@ -609,7 +564,7 @@ void CmpEqOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRConte
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpLtOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.ult(rhs); });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs < rhs; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -617,7 +572,7 @@ OpFoldResult CmpLtOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpLeOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.ule(rhs); });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs <= rhs; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -625,7 +580,7 @@ OpFoldResult CmpLeOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpGtOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.ugt(rhs); });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs > rhs; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -633,7 +588,7 @@ OpFoldResult CmpGtOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpGeOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.uge(rhs); });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs >= rhs; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -662,12 +617,7 @@ OpFoldResult AsFeltOp::fold(FoldAdaptor adaptor) {
   if (!attr) {
     return nullptr;
   }
-  auto prime = getFieldPrime(*this);
-  // If the prime is not available use BW=2. Once the prime is available other folding operations
-  // will take care of adjusting the width.
-  return FeltAttr::get(
-      getContext(), APInt(prime ? prime->getBitWidth() : 2, attr.getValue() ? 1 : 0)
-  );
+  return FeltAttr::get(getContext(), llvm::DynamicAPInt(attr.getValue() ? 1 : 0));
 }
 
 //===----------------------------------------------------------------------===//

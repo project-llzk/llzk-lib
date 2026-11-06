@@ -1,4 +1,4 @@
-include_directories(${MLIR_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR})
+include_directories(${MLIR_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR} ${LLZK_INCLUDE_DIR})
 
 set(LLVM_TARGET_DEFINITIONS Dialect.td)
 mlir_tablegen(Dialect.h.inc -gen-dialect-decls -dialect=r1cs)

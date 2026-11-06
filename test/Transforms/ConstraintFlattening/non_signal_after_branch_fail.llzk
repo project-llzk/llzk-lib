@@ -1,0 +1,22 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+// Reject live non-signal storage even after expanding a static branch.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @intermediate : !felt.type
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %true = arith.constant true
+      scf.if %true {
+        constrain.eq %x, %x : !felt.type, !felt.type
+      }
+      // expected-error @+1 {{live unresolved non-signal scalar storage}}
+      %read = struct.readm %self[@intermediate] : !struct.type<@Main>, !felt.type
+      constrain.eq %read, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

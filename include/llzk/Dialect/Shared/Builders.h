@@ -116,14 +116,14 @@ public:
   inline mlir::Region &getBodyRegion() { return static_cast<Derived *>(this)->getBodyRegion(); }
 
   mlir::FailureOr<component::StructDefOp> getStruct(std::string_view structName) const {
-    if (structMap.find(structName) != structMap.end()) {
+    if (structMap.contains(structName)) {
       return structMap.at(structName);
     }
     return mlir::failure();
   }
 
   mlir::FailureOr<function::FuncDefOp> getComputeFn(std::string_view structName) const {
-    if (computeFnMap.find(structName) != computeFnMap.end()) {
+    if (computeFnMap.contains(structName)) {
       return computeFnMap.at(structName);
     }
     return mlir::failure();
@@ -133,7 +133,7 @@ public:
   }
 
   mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) const {
-    if (constrainFnMap.find(structName) != constrainFnMap.end()) {
+    if (constrainFnMap.contains(structName)) {
       return constrainFnMap.at(structName);
     }
     return mlir::failure();
@@ -143,7 +143,7 @@ public:
   }
 
   mlir::FailureOr<function::FuncDefOp> getProductFn(std::string_view structName) const {
-    if (productFnMap.find(structName) != productFnMap.end()) {
+    if (productFnMap.contains(structName)) {
       return productFnMap.at(structName);
     }
     return mlir::failure();
@@ -153,7 +153,7 @@ public:
   }
 
   mlir::FailureOr<function::FuncDefOp> getFreeFunc(std::string_view funcName) const {
-    if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
+    if (freeFuncMap.contains(funcName)) {
       return freeFuncMap.at(funcName);
     }
     return mlir::failure();
@@ -314,6 +314,8 @@ public:
 
   /* Getter methods */
 
+  /// Provide the template body for ModuleLikeBuilder's CRTP dispatch.
+  // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
   mlir::Region &getBodyRegion() { return myTemplate.getBodyRegion(); }
 
   /// Get the associated template of this builder.
@@ -352,7 +354,7 @@ public:
 
     auto nameAttr = builder.getStringAttr(name);
 
-    builder.create<polymorphic::TemplateParamOp>(loc, nameAttr, type);
+    polymorphic::TemplateParamOp::create(builder, loc, nameAttr, type);
 
     return *this;
   }
@@ -377,7 +379,7 @@ public:
 
     auto nameAttr = builder.getStringAttr(name);
 
-    builder.create<polymorphic::TemplateExprOp>(loc, nameAttr);
+    polymorphic::TemplateExprOp::create(builder, loc, nameAttr);
 
     return *this;
   }
@@ -423,6 +425,8 @@ public:
 
   /* Getter methods */
 
+  /// Provide the module body for ModuleLikeBuilder's CRTP dispatch.
+  // NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
   mlir::Region &getBodyRegion() { return myModule.getBodyRegion(); }
 
   /// Get the associated module of this builder.

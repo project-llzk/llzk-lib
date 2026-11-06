@@ -35,7 +35,12 @@ llvm::Expected<WitnessVal> parseJSONValue(
     mlir::Operation *origin
 );
 
+/// Render a runtime field element as its canonical decimal string without
+/// modifying the raw runtime value.
+llvm::json::Value serializeFeltToJSON(const llvm::DynamicAPInt &value, const Field &field);
+
 /// Serialize one runtime value into the user-facing JSON output format.
+/// Felt leaves require a declared field and are reduced to canonical representatives.
 llvm::Expected<llvm::json::Value> serializeJSONValue(
     const WitnessVal &value, mlir::Type type, mlir::SymbolTableCollection &tables,
     mlir::Operation *origin, SerializationMode mode = SerializationMode::PublicOutputsOnly

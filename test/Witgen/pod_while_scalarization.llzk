@@ -1,0 +1,52 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/expected.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --check-output %t/expected.json | FileCheck %s
+// RUN: llzk-opt -llzk-pod-to-scalar %t/test.llzk -o %t/optimized.llzk
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input.json --check-output %t/expected.json | FileCheck %s
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input.json --backend=execution-engine --check-output %t/expected.json | FileCheck %s
+
+// CHECK: output matched expected JSON
+
+//--- test.llzk
+
+!F = !felt.type<"babybear">
+!State = !pod.type<[@value: !F]>
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !F {llzk.pub}
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %f0 = felt.const 0 : !F
+      %f1 = felt.const 1 : !F
+      %f2 = felt.const 2 : !F
+      %state = pod.new : !State
+      pod.write %state[@value] = %f0 : !State, !F
+      %result:2 = scf.while (%i = %f0, %pod = %state) : (!F, !State) -> (!F, !State) {
+        %condition = bool.cmp lt(%i, %f2) : !F, !F
+        scf.condition(%condition) %i, %pod : !F, !State
+      } do {
+      ^bb0(%i: !F, %pod: !State):
+        %value = pod.read %pod[@value] : !State, !F
+        %nextValue = felt.add %value, %f1 : !F, !F
+        pod.write %pod[@value] = %nextValue : !State, !F
+        %nextI = felt.add %i, %f1 : !F, !F
+        scf.yield %nextI, %pod : !F, !State
+      }
+      %out = pod.read %result#1[@value] : !State, !F
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !F
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}
+
+//--- expected.json
+{"out": "2"}

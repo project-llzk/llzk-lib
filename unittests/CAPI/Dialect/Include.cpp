@@ -25,7 +25,7 @@ TEST_F(CAPITest, llzk_include_op_build_inferred_context) {
       mlirStringRefCreateFromCString("test.mlir")
   );
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   mlirOpBuilderDestroy(builder);
   mlirModuleDestroy(module);
 }

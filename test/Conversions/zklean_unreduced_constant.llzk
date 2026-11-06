@@ -1,0 +1,24 @@
+// RUN: llzk-opt --convert-llzk-to-zklean --mlir-print-op-generic %s | llzk-translate --zklean-to-lean | FileCheck %s
+
+// No canonicalization: the consumer must interpret N modulo its field prime.
+module attributes {llzk.lang, llzk.main = !struct.type<@ReducedConstant>} {
+  struct.def @ReducedConstant {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@ReducedConstant> {
+      %self = struct.new : !struct.type<@ReducedConstant>
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      struct.writem %self[@out] = %c : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      function.return %self : !struct.type<@ReducedConstant>
+    }
+    function.def @constrain(%self: !struct.type<@ReducedConstant>) {
+      %out = struct.readm %self[@out] : !struct.type<@ReducedConstant>, !felt.type<"babybear">
+      %c = felt.const 2013265928 : !felt.type<"babybear">
+      constrain.eq %out, %c : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: def ReducedConstant__constrain [Field f] (strct : ReducedConstant f) : ZKBuilder f PUnit := do
+// CHECK-NEXT:    let v0 := strct.out
+// CHECK-NEXT:    let v1 := 7
+// CHECK-NEXT:    constrainEq v0 v1

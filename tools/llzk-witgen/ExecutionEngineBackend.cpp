@@ -30,7 +30,10 @@
 #include <mlir/Conversion/IndexToLLVM/IndexToLLVM.h>
 #include <mlir/Conversion/MemRefToLLVM/MemRefToLLVM.h>
 #include <mlir/Conversion/Passes.h>
+#include <mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
+#include <mlir/Conversion/VectorToLLVM/ConvertVectorToLLVM.h>
+#include <mlir/Dialect/LLVMIR/Transforms/InlinerInterfaceImpl.h>
 #include <mlir/Dialect/MemRef/Transforms/Passes.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/ExecutionEngine/CRunnerUtils.h>
@@ -48,12 +51,21 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
 using namespace mlir;
 
 namespace llzk::witgen {
 
 namespace {
+
+/// Flush buffered JIT assertion diagnostics before aborting the process.
+[[noreturn]] static void abortWithFlushedStdout() {
+  // cf.assert lowers to puts followed by abort, which may not flush stdout.
+  std::fflush(stdout);
+  std::abort();
+}
 
 /// Hold one raw memref descriptor and its backing storage bytes.
 struct BufferPack {
@@ -111,12 +123,11 @@ static llvm::Error buildDescriptor(BufferPack &buffer) {
   if (!rank) {
     return rank.takeError();
   }
-  auto descriptorSize = llvm::DynamicAPInt(sizeof(void *)) * 2;
+  constexpr int64_t descriptorSize = sizeof(void *) * 2;
   auto shapeAndStrideCount = llvm::DynamicAPInt(1) + *rank + *rank;
-  auto dynamicPart = llvm::DynamicAPInt(sizeof(int64_t)) * shapeAndStrideCount;
+  auto dynamicPart = static_cast<int64_t>(sizeof(int64_t)) * shapeAndStrideCount;
   auto totalSize = descriptorSize + dynamicPart;
-  auto checkedTotalSize =
-      checkedDynamicAPIntToSize(totalSize, "execution-engine memref descriptor");
+  auto checkedTotalSize = checkedToSize(totalSize, "execution-engine memref descriptor");
   if (!checkedTotalSize) {
     return checkedTotalSize.takeError();
   }
@@ -168,7 +179,7 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
   }
   buffer.storage.resize(storageBytes);
   if (auto error = buildDescriptor(buffer)) {
-    return std::move(error);
+    return error;
   }
   return buffer;
 }
@@ -185,8 +196,11 @@ storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &val
   if (!elemBytesU) {
     return elemBytesU.takeError();
   }
-  llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
-  llvm::StoreIntToMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
+  auto raw = checkedToAPInt(value, buffer.feltBitWidth, false);
+  if (!raw) {
+    return raw.takeError();
+  }
+  llvm::StoreIntToMemory(*raw, buffer.storage.data() + byteOffset, *elemBytesU);
   return llvm::Error::success();
 }
 
@@ -241,19 +255,18 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
 
 /// Render one field element buffer entry as the stable JSON decimal string form.
 static llvm::Expected<llvm::json::Value>
-feltElementToJSON(const BufferPack &buffer, size_t flatIndex) {
+feltElementToJSON(const BufferPack &buffer, size_t flatIndex, const Field &field) {
   auto element = loadElement(buffer, flatIndex);
   if (!element) {
     return element.takeError();
   }
-  std::string rendered;
-  llvm::raw_string_ostream(rendered) << *element;
-  return llvm::json::Value(rendered);
+  return serializeFeltToJSON(*element, field);
 }
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
-static llvm::Expected<llvm::json::Value>
-bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) {
+static llvm::Expected<llvm::json::Value> bufferToJSONArray(
+    const BufferPack &buffer, const Field &field, size_t dimIndex, size_t flatOffset
+) {
   if (dimIndex == SIZE_MAX) {
     return makeError("execution-engine JSON output would overflow size_t");
   }
@@ -269,7 +282,7 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
       if (overflow) {
         return makeError("execution-engine JSON output would overflow size_t");
       }
-      auto element = feltElementToJSON(buffer, elementOffset);
+      auto element = feltElementToJSON(buffer, elementOffset, field);
       if (!element) {
         return element.takeError();
       }
@@ -292,7 +305,7 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
     if (overflow) {
       return makeError("execution-engine JSON output would overflow size_t");
     }
-    auto subArray = bufferToJSONArray(buffer, dimIndex + 1, nextOffset);
+    auto subArray = bufferToJSONArray(buffer, field, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();
     }
@@ -302,11 +315,12 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
 }
 
 /// Serialize one public output buffer into the user-facing JSON value.
-static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) {
+static llvm::Expected<llvm::json::Value>
+bufferToJSON(const BufferPack &buffer, const Field &field) {
   if (isa<felt::FeltType>(buffer.originalType)) {
-    return feltElementToJSON(buffer, 0);
+    return feltElementToJSON(buffer, 0, field);
   }
-  return bufferToJSONArray(buffer, 0, 0);
+  return bufferToJSONArray(buffer, field, 0, 0);
 }
 
 /// Lower the module through the shared LLZK-to-core witgen passes.
@@ -330,7 +344,7 @@ static llvm::Error finalizeExecutionEngineModule(ModuleOp moduleOp) {
   pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::memref::createExpandStridedMetadataPass());
   pm.addPass(mlir::createLowerAffinePass());
-  pm.addPass(mlir::createConvertSCFToCFPass());
+  pm.addPass(mlir::createSCFToControlFlowPass());
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::createConvertToLLVMPass());
@@ -435,7 +449,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
       return buffer.takeError();
     }
     if (auto err = fillInputBuffer(*buffer, parsed)) {
-      return std::move(err);
+      return err;
     }
     inputBuffers.push_back(std::move(*buffer));
   }
@@ -455,18 +469,21 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
   {
     DialectRegistry registry;
+    // WTNS lowering may run the inliner in this context after LLVM is loaded.
+    mlir::LLVM::registerInlinerInterface(registry);
     mlir::arith::registerConvertArithToLLVMInterface(registry);
     mlir::cf::registerConvertControlFlowToLLVMInterface(registry);
     mlir::registerConvertFuncToLLVMInterface(registry);
     mlir::index::registerConvertIndexToLLVMInterface(registry);
     mlir::registerConvertMemRefToLLVMInterface(registry);
     mlir::ub::registerConvertUBToLLVMInterface(registry);
+    mlir::vector::registerConvertVectorToLLVMInterface(registry);
     (*loweredModule)->getContext()->appendDialectRegistry(registry);
     (*loweredModule)->getContext()->loadAllAvailableDialects();
   }
   maybeDumpModule(**loweredModule, options.dumpJITCore, "llzk-witgen JIT core");
   if (auto err = finalizeExecutionEngineModule(**loweredModule)) {
-    return std::move(err);
+    return err;
   }
   maybeDumpModule(**loweredModule, options.dumpJITLLVM, "llzk-witgen JIT LLVM");
 
@@ -483,6 +500,9 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     llvm::orc::SymbolMap symbolMap;
     symbolMap[interner("memrefCopy")] = {
         llvm::orc::ExecutorAddr::fromPtr(&memrefCopy), llvm::JITSymbolFlags::Exported
+    };
+    symbolMap[interner("abort")] = {
+        llvm::orc::ExecutorAddr::fromPtr(&abortWithFlushedStdout), llvm::JITSymbolFlags::Exported
     };
     return symbolMap;
   });
@@ -503,13 +523,13 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
 
   if (auto err = (*maybeEngine)->invokePacked("_mlir_ciface___llzk_witgen_main", packedArgs)) {
-    return std::move(err);
+    return err;
   }
 
   llvm::SmallVector<llvm::json::Value> serializedOutputs;
   serializedOutputs.reserve(outputBuffers.size());
   for (const BufferPack &buffer : outputBuffers) {
-    auto serialized = bufferToJSON(buffer);
+    auto serialized = bufferToJSON(buffer, field);
     if (!serialized) {
       return serialized.takeError();
     }

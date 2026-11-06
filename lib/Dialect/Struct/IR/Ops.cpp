@@ -119,12 +119,12 @@ static inline InFlightDiagnostic structFuncDefError(Operation *origin) {
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
 /// parameter and return of the struct functions).
 LogicalResult checkSelfType(
-    SymbolTableCollection &tables, StructDefOp expectedStruct, Type actualType, Operation *origin,
-    const char *aspect
+    SymbolTableCollection &symbolTables, StructDefOp expectedStruct, Type actualType,
+    Operation *origin, const char *aspect
 ) {
   if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
     auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(tables, actualStructType.getNameRef(), origin);
+        lookupTopLevelSymbol<StructDefOp>(symbolTables, actualStructType.getNameRef(), origin);
     if (failed(actualStructOpt)) {
       return origin->emitError().append(
           "could not find '", StructDefOp::getOperationName(), "' named \"",
@@ -145,7 +145,7 @@ LogicalResult checkSelfType(
       // To make error messages more consistent and meaningful, if the parameters don't match
       // because the actual type uses symbols that are not defined, generate an error about the
       // undefined symbol(s).
-      if (failed(verifyParamsOfType(tables, actualTypeParams, actualStructType, origin))) {
+      if (failed(verifyParamsOfType(symbolTables, actualTypeParams, actualStructType, origin))) {
         return failure();
       }
       // Otherwise, generate an error stating the parent struct type must be used.
@@ -365,8 +365,10 @@ LogicalResult StructDefOp::verifyRegions() {
           }
         }
         // Also check if the member complies with output signal restrictions
-        else if (isMainComponent() && member.hasPublicAttr() &&
-                 failed(checkMainFuncOutputSignalType(member.getType(), *this))) {
+        else if (
+            isMainComponent() && member.hasPublicAttr() &&
+            failed(checkMainFuncOutputSignalType(member.getType(), *this))
+        ) {
           // checkMainFuncOutputSignalType already emits a sufficient error message
           return failure();
         }
@@ -374,19 +376,19 @@ LogicalResult StructDefOp::verifyRegions() {
     }
 
     if (!foundCompute.has_value() && foundConstrain.has_value()) {
-      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_CONSTRAIN
-                                                << "\", missing \"@" << FUNC_NAME_COMPUTE << "\"";
+      return structFuncDefError(getOperation())
+             << "found \"@" << FUNC_NAME_CONSTRAIN << "\", missing \"@" << FUNC_NAME_COMPUTE << '"';
     }
     if (!foundConstrain.has_value() && foundCompute.has_value()) {
-      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_COMPUTE
-                                                << "\", missing \"@" << FUNC_NAME_CONSTRAIN << "\"";
+      return structFuncDefError(getOperation())
+             << "found \"@" << FUNC_NAME_COMPUTE << "\", missing \"@" << FUNC_NAME_CONSTRAIN << '"';
     }
   }
 
   if (!foundCompute.has_value() && !foundConstrain.has_value() && !foundProduct.has_value()) {
     return structFuncDefError(getOperation())
            << "could not find \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
-           << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\"";
+           << "\", or \"@" << FUNC_NAME_CONSTRAIN << '"';
   }
 
   // Check which funcs are present and not marked with {llzk.derived}
@@ -417,7 +419,7 @@ LogicalResult StructDefOp::verifyRegions() {
     return attachDerivedNotes(
         structFuncDefError(getOperation())
         << "could not find non-derived \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
-        << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\""
+        << "\", or \"@" << FUNC_NAME_CONSTRAIN << '"'
     );
   }
 
@@ -548,10 +550,10 @@ void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
     ArrayRef<NamedAttribute> attributes, bool isSignal, bool isColumn
 ) {
-  assert(operands.size() == 0u && "mismatched number of parameters");
+  assert(operands.empty() && "mismatched number of parameters");
   odsState.addOperands(operands);
   odsState.addAttributes(attributes);
-  assert(resultTypes.size() == 0u && "mismatched number of return types");
+  assert(resultTypes.empty() && "mismatched number of return types");
   odsState.addTypes(resultTypes);
   if (isColumn) {
     odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();
@@ -592,9 +594,9 @@ verifyMemberDefTypeImpl(Type memberType, SymbolTableCollection &tables, Operatio
   }
 }
 
-LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   Type memberType = this->getType();
-  if (failed(verifyMemberDefTypeImpl(memberType, tables, *this))) {
+  if (failed(verifyMemberDefTypeImpl(memberType, symbolTables, *this))) {
     return failure();
   }
 
@@ -602,7 +604,7 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     return success();
   }
   // If the member is marked as a column only a small subset of types are allowed.
-  if (!isValidColumnType(getType(), tables, *this)) {
+  if (!isValidColumnType(getType(), symbolTables, *this)) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
                             "structs with columns, but has type "
                          << getType();
@@ -688,12 +690,12 @@ MemberRefOpInterface::getMemberDefOp(SymbolTableCollection &tables) {
   return getMemberDefOpImpl(*this, tables, getStructType());
 }
 
-LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  auto member = findMember(*this, tables);
+LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  auto member = findMember(*this, symbolTables);
   if (failed(member)) {
     return failure();
   }
-  if (failed(verifySymbolUsesImpl(*this, tables, *member))) {
+  if (failed(verifySymbolUsesImpl(*this, symbolTables, *member))) {
     return failure();
   }
   // If the member is not a column and an offset was specified then fail to validate
@@ -715,7 +717,7 @@ LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Defaults to failure
   FailureOr<SymbolLookupResult<StructDefOp>> contractTarget;
   if (auto contractParent = getParentOfType<ContractOp>(*this)) {
-    contractTarget = contractParent.getStructTarget(tables);
+    contractTarget = contractParent.getStructTarget(symbolTables);
   }
   StructDefOp memberParentStruct = memberParentRes.value();
   bool correctContractTarget =
@@ -734,17 +736,20 @@ LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   return success();
 }
 
-LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure the write op only targets members in the current struct.
   FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
-  if (failed(checkSelfType(tables, *getParentRes, getComponent().getType(), *this, "base value"))) {
-    return failure(); // checkSelfType() already emits a sufficient error message
+  // Ensure it targets the result of a 'struct.new' operation in the current function (implied
+  // because `function.def` has `IsolatedFromAbove`). The `struct.new` verifier already ensures
+  // that result has struct type matching the enclosing struct and any template parameters.
+  if (!getComponent().getDefiningOp<CreateStructOp>()) {
+    return emitOpError("requires base value to be a 'struct.new' result");
   }
   // Perform the standard member ref checks.
-  return verifySymbolUsesImpl(*this, tables);
+  return verifySymbolUsesImpl(*this, symbolTables);
 }
 
 //===------------------------------------------------------------------===//
@@ -809,12 +814,12 @@ void CreateStructOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "self");
 }
 
-LogicalResult CreateStructOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult CreateStructOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
-  if (failed(checkSelfType(tables, *getParentRes, this->getType(), *this, "result"))) {
+  if (failed(checkSelfType(symbolTables, *getParentRes, this->getType(), *this, "result"))) {
     return failure();
   }
   return success();

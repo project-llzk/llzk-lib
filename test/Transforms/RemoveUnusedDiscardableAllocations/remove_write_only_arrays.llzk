@@ -13,7 +13,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: function.def @unused_array() -> index {
 // CHECK-NOT:     array.new
 // CHECK-NOT:     arith.constant 7
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index
 // ERR: 'arith.constant' op selected for discardable-allocation cleanup but is not marked with MemAlloc<DiscardableAllocationResource>
 
@@ -32,7 +32,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: function.def @write_only_array(
 // CHECK-NOT:     array.new
 // CHECK-NOT:     array.write
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index
 
 // -----
@@ -52,7 +52,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: function.def @write_only_multi_element_array(
 // CHECK-NOT:     array.new
 // CHECK-NOT:     array.write
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index
 
 // -----
@@ -68,9 +68,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: function.def @read_keeps_allocation(
-// CHECK:         %[[ARRAY:[0-9a-zA-Z_\.]+]] = array.new
+// CHECK:         %[[ARRAY:[0-9a-zA-Z_.-]+]] = array.new
 // CHECK:         array.write %[[ARRAY]]
-// CHECK:         %[[LOADED:[0-9a-zA-Z_\.]+]] = array.read %[[ARRAY]]
+// CHECK:         %[[LOADED:[0-9a-zA-Z_.-]+]] = array.read %[[ARRAY]]
 // CHECK:         function.return %[[LOADED]] : index
 
 // -----
@@ -90,5 +90,5 @@ module attributes {llzk.lang} {
 // CHECK-NOT:     arith.addi
 // CHECK-NOT:     array.new
 // CHECK-NOT:     array.write
-// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK:         %[[RET:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index

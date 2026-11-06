@@ -1,0 +1,101 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+// Reject a symbolic affine map used by a field constraint.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %map = poly.applymap(%i)[%j] affine_map<(d)[s] -> (d * 2 + s)>
+      %value = cast.tofelt %map : index
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject a direct symbolic index-to-felt conversion.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // The conversion itself must be checked even without a producer op.
+      // expected-error @+1 {{field conversion requires a compile-time integer}}
+      %value = cast.tofelt %i : index
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject symbolic wider-integer intermediates used by a field constraint.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // Integer widths other than index/i1 cannot bypass the output contract.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %wide = arith.index_cast %i : index to i64
+      %index = arith.index_cast %wide : i64 to index
+      %value = cast.tofelt %index : index
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject a direct symbolic boolean-to-felt conversion.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: i1, %j: i1, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: i1, %j: i1, %x: !felt.type) attributes {llzk.derived} {
+      // The conversion itself must be checked even without a producer op.
+      // expected-error @+1 {{field conversion requires a compile-time integer}}
+      %value = cast.tofelt %i : i1
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

@@ -37,19 +37,33 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
 }
-// CHECK-LABEL:   struct.def @Reg {
-// CHECK-NEXT:      struct.member @"$super:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
-// CHECK-NEXT:      struct.member @"reg:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
-// CHECK-NEXT:        struct.writem %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] = %[[VAL_0]] : <@Reg>, !felt.type
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Reg>
+
+// CHECK-LABEL: module attributes {llzk.lang = "zirgen"} {
+// CHECK-NEXT:    struct.def @NondetReg {
+// CHECK-NEXT:      struct.member @inner : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@NondetReg> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@NondetReg>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@inner] = %[[VAL_0]] : <@NondetReg>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@NondetReg>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@"$super:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@NondetReg>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Reg {
+// CHECK-NEXT:      struct.member @"$super:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      struct.member @"reg:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Reg>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@"reg:!s<@NondetReg>+inner"] = %[[VAL_4]] : <@Reg>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Reg>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Reg>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@"$super:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

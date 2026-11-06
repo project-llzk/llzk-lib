@@ -139,7 +139,23 @@ void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConf
 // Pipeline registration.
 //===----------------------------------------------------------------------===//
 
+void buildConstraintFlatteningPipeline(OpPassManager &pm) {
+  // Inline frontend execute_region wrappers before specialization discovery.
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(polymorphic::createTemplateMonomorphizationPass());
+  pm.addPass(component::createExposeChildMembersPass());
+  // Fold specialized constants and remove empty branches before expansion.
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(polymorphic::createConstraintFlatteningPass());
+}
+
 void registerTransformationPassPipelines() {
+  PassPipelineRegistration<>(
+      "llzk-constraint-flattening",
+      "Monomorphize templates, expose child members, and expand main constrain",
+      buildConstraintFlatteningPipeline
+  );
+
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops",
       "Remove unnecessary operations, such as redundant reads or repeated constraints",

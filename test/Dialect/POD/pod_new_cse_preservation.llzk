@@ -27,10 +27,10 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: function.def @compute(
-// CHECK-SAME:    %[[A:[0-9a-zA-Z_\.]+]]: index
-// CHECK-SAME:    %[[B:[0-9a-zA-Z_\.]+]]: index
-// CHECK:         %[[X:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: index]>
-// CHECK:         %[[Y:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: index]>
+// CHECK-SAME:    %[[A:[0-9a-zA-Z_.-]+]]: index
+// CHECK-SAME:    %[[B:[0-9a-zA-Z_.-]+]]: index
+// CHECK:         %[[X:[0-9a-zA-Z_.-]+]] = pod.new : <[@n: index]>
+// CHECK:         %[[Y:[0-9a-zA-Z_.-]+]] = pod.new : <[@n: index]>
 // CHECK:         pod.write %[[X]][@n] = %[[A]]
-// CHECK:         %[[R:[0-9a-zA-Z_\.]+]] = pod.read %[[Y]][@n]
+// CHECK:         %[[R:[0-9a-zA-Z_.-]+]] = pod.read %[[Y]][@n]
 // CHECK:         struct.writem {{.*}}[@out] = %[[R]]

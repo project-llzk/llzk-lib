@@ -285,3 +285,26 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@WildcardRequiresTypeVarParam2>) { function.return }
   }
 }
+
+// -----
+
+// A constant global must satisfy a template parameter restriction even when
+// that parameter cannot be inferred from the callee's function signature.
+module attributes {llzk.lang} {
+  global.def const @F : !felt.type = 7
+
+  poly.template @GlobalFunc {
+    poly.param @N : index
+
+    function.def @id() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+
+  function.def @use() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@F' is not compatible with parameter "@N" type restriction 'index'}}
+    %value = function.call @GlobalFunc::@id<[@F]>() : () -> index
+    function.return %value : index
+  }
+}

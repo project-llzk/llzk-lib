@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Util/LLZKLayout.h"
 
 #include <mlir/IR/Operation.h>
 
@@ -79,23 +80,21 @@ static LogicalResult appendSignalLeafBindings(
     return success();
   }
 
-  origin->emitError("signal members in llzk-witgen must be felts, felt arrays, or PODs of felts");
-  return failure();
+  return origin->emitError(
+      "signal members in llzk-witgen must be felts, felt arrays, or PODs of felts"
+  );
 }
 
 /// Append recursively selected signal leaves from one struct container.
 static LogicalResult appendStructSignalBindings(
     component::StructDefOp def, SymbolTableCollection &tables, Operation *origin,
-    SmallVectorImpl<OutputBinding> &out, bool includePrivateMainFelts,
-    ArrayRef<std::string> prefix = {}
+    SmallVectorImpl<OutputBinding> &out, ArrayRef<std::string> prefix = {}
 ) {
   for (component::MemberDefOp member : def.getMemberDefs()) {
     llvm::SmallVector<std::string> path(prefix.begin(), prefix.end());
     path.push_back(member.getSymName().str());
 
-    bool isR1CSMember =
-        includePrivateMainFelts && def.isMainComponent() && isa<felt::FeltType>(member.getType());
-    if (memberIsSignal(def, member) || isR1CSMember) {
+    if (memberIsSignal(def, member)) {
       if (failed(appendSignalLeafBindings(member.getType(), path, out, origin))) {
         return failure();
       }
@@ -112,16 +111,13 @@ static LogicalResult appendStructSignalBindings(
 
     auto structType = dyn_cast<component::StructType>(member.getType());
     if (!structType) {
-      member.emitError("non-struct signal container is unsupported in llzk-witgen");
-      return failure();
+      return member.emitError("non-struct signal container is unsupported in llzk-witgen");
     }
     auto defLookup = structType.getDefinition(tables, origin);
     if (failed(defLookup)) {
       return failure();
     }
-    if (failed(appendStructSignalBindings(
-            defLookup->get(), tables, origin, out, includePrivateMainFelts, path
-        ))) {
+    if (failed(appendStructSignalBindings(defLookup->get(), tables, origin, out, path))) {
       return failure();
     }
   }
@@ -150,7 +146,7 @@ insertLeafJSON(llvm::json::Object &root, ArrayRef<std::string> path, llvm::json:
 
 /// Return `true` iff the member is considered a witness signal.
 bool memberIsSignal(component::StructDefOp owner, component::MemberDefOp member) {
-  return member.getSignal() || (owner.isMainComponent() && member.hasPublicAttr());
+  return isLayoutSignalMember(member, owner.isMainComponent());
 }
 
 /// Collect stable JSON bindings for the main compute inputs.
@@ -185,9 +181,7 @@ FailureOr<llvm::SmallVector<OutputBinding>> collectOutputBindings(
     return bindings;
   }
 
-  if (failed(appendStructSignalBindings(
-          mainDef, tables, origin, bindings, scope == OutputScope::R1CSWitness
-      ))) {
+  if (failed(appendStructSignalBindings(mainDef, tables, origin, bindings))) {
     return failure();
   }
   return bindings;

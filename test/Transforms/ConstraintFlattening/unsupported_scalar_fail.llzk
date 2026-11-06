@@ -1,0 +1,15 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      // expected-error @+1 {{llzk-flatten-constraints: unsupported: floating-point results are not supported in flattened constraints}}
+      %float = arith.constant 1.0 : f32
+      function.return
+    }
+  }
+}

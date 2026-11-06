@@ -77,7 +77,8 @@ def LLZK_GlobalReadOp
           "read", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
   let summary = "read value of a global";
   let description = [{
-    This operation reads the value of a named global. Reads marked `const` must target
+    This operation copies the value of a named global. The result is a value copy,
+    not a pointer or alias to the global's storage. Reads marked `const` must target
     a global declared with the `const` modifier and thus have no memory effects.
   }];
 
@@ -104,7 +105,8 @@ def LLZK_GlobalWriteOp
                     MemoryEffects<[MemWrite<GlobalMemoryResource>]>]> {
   let summary = "write value to a global";
   let description = [{
-    This operation writes a value to a named global.
+    This operation copies a value to a named global. It does not create a pointer or
+    alias between the source value and the global's storage.
     Not allowed for globals declared with the "const" modifier.
   }];
 

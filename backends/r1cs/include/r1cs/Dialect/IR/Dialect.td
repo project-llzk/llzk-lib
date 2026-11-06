@@ -16,7 +16,6 @@ def R1CSDialect : Dialect {
   let name = "r1cs";
   let summary = "R1CS";
   let cppNamespace = "::r1cs";
-  let usePropertiesForAttributes = 0;
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
 }

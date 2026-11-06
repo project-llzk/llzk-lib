@@ -2,8 +2,8 @@ include_directories(${MLIR_INCLUDE_DIRS} ${ZKLEAN_INCLUDE_DIR} ${LLZK_INCLUDE_DI
 
 set(LLVM_TARGET_DEFINITIONS "Passes.td")
 mlir_tablegen(ConversionPasses.h.inc -gen-pass-decls -name Conversion)
-mlir_tablegen(ConversionPasses.capi.h.inc -gen-pass-capi-header --prefix Conversion)
-mlir_tablegen(ConversionPasses.capi.cpp.inc -gen-pass-capi-impl --prefix Conversion)
+mlir_tablegen(ConversionPasses.capi.h.inc -gen-pass-capi-header --prefix ZKLeanConversion)
+mlir_tablegen(ConversionPasses.capi.cpp.inc -gen-pass-capi-impl --prefix ZKLeanConversion)
 
 add_public_tablegen_target(ConversionsIncGen)
 add_dependencies(ZKLeanDialectHeaders ConversionsIncGen)

@@ -21,6 +21,7 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/IR/Value.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Debug.h>
 
 #include <numeric>
@@ -116,7 +117,7 @@ mlir::ChangeResult SourceRefLatticeValue::write(
       ensure(idx.isIndexRange(), "wrong type of index for SourceRef array write");
       hasRangedIndex = true;
       auto [low, high] = idx.getIndexRange();
-      const int64_t lowValue(low), highValue(high);
+      const int64_t lowValue(low), highValue = idx.hasUnboundedUpperBound() ? dim : int64_t(high);
       for (int64_t indexValue = lowValue; indexValue < highValue; ++indexValue) {
         for (size_t prefix : selected) {
           next.push_back(prefix * dim + indexValue);
@@ -183,18 +184,16 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
       ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
       if (idx.isIndex()) {
         int64_t idxVal(idx.getIndex());
-        std::transform(
-            currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
-            [&currDim, &idxVal](size_t j) { return j * currDim + idxVal; }
-        );
+        llvm::transform(currIdxs, std::back_inserter(newIdxs), [&currDim, &idxVal](size_t j) {
+          return j * currDim + idxVal;
+        });
       } else {
         auto [low, high] = idx.getIndexRange();
-        int64_t lowInt(low), highInt(high);
+        int64_t lowInt(low), highInt = idx.hasUnboundedUpperBound() ? currDim : int64_t(high);
         for (int64_t idxVal = lowInt; idxVal < highInt; idxVal++) {
-          std::transform(
-              currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
-              [&currDim, &idxVal](size_t j) { return j * currDim + idxVal; }
-          );
+          llvm::transform(currIdxs, std::back_inserter(newIdxs), [&currDim, &idxVal](size_t j) {
+            return j * currDim + idxVal;
+          });
         }
       }
 
@@ -313,7 +312,7 @@ SourceRefLatticeValue::elementwiseTransform(
         res |= mlir::ChangeResult::Change;
       }
     }
-    newVal.getScalarValue() = indexed;
+    newVal.getScalarValue() = std::move(indexed);
   } else {
     for (auto &elem : newVal.getArrayValue()) {
       auto transformedElem = elem->elementwiseTransform(transform);

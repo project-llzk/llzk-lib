@@ -20,6 +20,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/DOTGraphTraits.h>
 
+#include <string_view>
 #include <utility>
 
 namespace llzk {
@@ -161,7 +162,6 @@ class SymbolUseGraph {
       mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path, SymbolUseGraphNode *predecessorNode
   );
 
-  SymbolUseGraphNode *getSymbolUserNode(const mlir::SymbolTable::SymbolUse &u);
   void buildGraph(mlir::Operation *symbolTableOp);
 
   // Friend declarations for the specializations of GraphTraits
@@ -275,7 +275,7 @@ template <> struct DOTGraphTraits<const llzk::SymbolUseGraphNode *> : public Def
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(true); }
+  static std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(true); }
 };
 
 template <>
@@ -284,11 +284,8 @@ struct DOTGraphTraits<const llzk::SymbolUseGraph *>
 
   DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<NodeRef>(isSimple) {}
 
-  static std::string getGraphName(GraphType) { return "Symbol Use Graph"; }
-
-  std::string getNodeLabel(NodeRef n, GraphType g) {
-    return DOTGraphTraits<NodeRef>::getNodeLabel(n, g);
-  }
+  /// Return the graph title backed by a string literal.
+  static std::string_view getGraphName(GraphType) { return "Symbol Use Graph"; }
 };
 
 } // namespace llvm

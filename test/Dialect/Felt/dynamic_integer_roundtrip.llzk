@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s > %t.text
+// RUN: llzk-opt -emit-bytecode %s | llzk-opt > %t.bytecode-text
+// RUN: diff %t.text %t.bytecode-text
+// RUN: llzk-opt -emit-bytecode %s > %t.first
+// RUN: llzk-opt -emit-bytecode %t.first > %t.second
+// RUN: cmp %t.first %t.second
+
+// The `llzk.loopbounds` here exercises bytecode round trips for large signed loop bounds and a negative step.
+module attributes {llzk.lang, test.bounds = #llzk.loopbounds<-18446744073709551617 to 18446744073709551616 step -1>} {
+  function.def @signed_literals() {
+    %a = felt.const -1
+    %b = felt.const -18446744073709551617
+    %c = felt.const 18446744073709551615
+    %d = felt.const 340282366920938463463374607431768211455
+    %e = felt.const 0
+    function.return
+  }
+}

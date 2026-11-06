@@ -57,10 +57,10 @@ module attributes {llzk.lang = "llzk"} {
     }
 }
 
-// CHECK: %[[ARR:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF:[0-9a-zA-Z_\.]+]][@arr]
-// CHECK-NEXT: %[[INP0:[0-9a-zA-Z_\.]+]] = array.read %[[INPUT:[0-9a-zA-Z_\.]+]]{{\[}}%[[C0:[0-9a-zA-Z_\.]+]]]
-// CHECK-NEXT: %[[ARR0:[0-9a-zA-Z_\.]+]] = array.read %[[ARR]]{{\[}}%[[C0]]]
+// CHECK: %[[ARR:[0-9a-zA-Z_.-]+]] = struct.readm %[[SELF:[0-9a-zA-Z_.-]+]][@arr]
+// CHECK-NEXT: %[[INP0:[0-9a-zA-Z_.-]+]] = array.read %[[INPUT:[0-9a-zA-Z_.-]+]]{{\[}}%[[C0:[0-9a-zA-Z_.-]+]]]
+// CHECK-NEXT: %[[ARR0:[0-9a-zA-Z_.-]+]] = array.read %[[ARR]]{{\[}}%[[C0]]]
 // CHECK-NEXT: constrain.eq %[[ARR0]], %[[INP0]]
 // CHECK-NEXT: scf.for
 // CHECK: } {product_source = "fused"}
-// CHECK-NEXT: struct.writem %[[SELF]][@arr] = %[[COMP_ARR:[0-9a-zA-Z_\.]+]] : {{.*}} {product_source = "compute"}
+// CHECK-NEXT: struct.writem %[[SELF]][@arr] = %[[COMP_ARR:[0-9a-zA-Z_.-]+]] : {{.*}} {product_source = "compute"}

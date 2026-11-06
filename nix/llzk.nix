@@ -17,6 +17,11 @@ in
 stdenv.mkDerivation {
   pname = "llzk-${lib.toLower cmakeBuildType}";
   inherit version;
+
+  # LLVM's CMake configuration selects libc++'s extensive hardening mode.
+  # Do not let the Nix Clang wrapper also define the fast mode.
+  hardeningDisable = [ "libcxxhardeningfast" ];
+
   src =
     let
       src0 = lib.cleanSource (builtins.path {
@@ -39,10 +44,8 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ cmake ninja ];
   buildInputs = [
     clang.dev mlir_pkg z3.lib 
-  ] ++ lib.optionals mlir_pkg.hasPythonBindings [
-    mlir_pkg.python
-    mlir_pkg.pythonDeps
-  ];
+  ] ++ lib.optionals mlir_pkg.hasPythonBindings [ mlir_pkg.python ]
+    ++ lib.optionals mlir_pkg.hasPythonBindings mlir_pkg.pythonDeps;
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"

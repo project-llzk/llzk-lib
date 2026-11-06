@@ -17,7 +17,8 @@ target_link_libraries(
     MLIRHeaders
   PRIVATE
     LLZKDialect
-    SMTDialect
+    MLIRSMT
+    SMTInfoDialect
     LLZKBoolDialect
 )
 

@@ -114,7 +114,7 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
       outer.ss << "!t<";
-      outer.appendSymName(llvm::cast<TypeVarType>(t).getRefName());
+      outer.appendSymName(t.getRefName());
       outer.ss << '>';
     }
     void caseArray(ArrayType t) {
@@ -155,7 +155,7 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     ia.getValue().print(ss, !isUnsigned);
   } else if (auto fa = llvm::dyn_cast<FeltConstAttr>(a)) {
     ss << "f<";
-    fa.getValue().print(ss, false);
+    fa.getRawValue().print(ss);
     if (StringAttr fieldName = fa.getFieldName()) {
       // The byte length prevents field delimiters from colliding with adjacent parameters. For
       // example, `a>_f<36:b` followed by 37 and `a` followed by `b>_f<37` would otherwise render
@@ -293,7 +293,7 @@ class AllowedTypes {
   /// Validates that, if columns are a requirement, the struct type has columns.
   /// If columns are not a requirement returns true early since the pointers required
   /// for lookup may be null.
-  bool validColumns(StructType s) {
+  bool validColumns(StructType s) const {
     if (!must_be_column) {
       return true;
     }
@@ -364,7 +364,8 @@ public:
   // This is the main check for allowed types.
   bool isValidTypeImpl(Type type);
 
-  bool areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) {
+  bool
+  areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) const {
     // In LLZK, the number of array dimensions must always be known, i.e., `hasRank()==true`
     if (dimensionSizes.empty()) {
       if (emitError) {
@@ -488,11 +489,11 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
     AllowedTypes &outer;
     Impl(AllowedTypes &outerRef) : outer(outerRef) {}
 
-    bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
-    bool caseIndex(IndexType) { return !outer.no_int; }
-    bool caseFelt(FeltType) { return !outer.no_felt; }
-    bool caseString(StringType) { return !outer.no_string; }
-    bool caseTypeVar(TypeVarType) { return !outer.no_var; }
+    bool caseBool(IntegerType t) const { return !outer.no_int && t.isSignlessInteger(1); }
+    bool caseIndex(IndexType) const { return !outer.no_int; }
+    bool caseFelt(FeltType) const { return !outer.no_felt; }
+    bool caseString(StringType) const { return !outer.no_string; }
+    bool caseTypeVar(TypeVarType) const { return !outer.no_var; }
     bool caseArray(ArrayType t) {
       return !outer.no_array &&
              outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
@@ -729,6 +730,21 @@ struct UnifierImpl {
 
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
+      // Equal syntax in an included signature still refers to the included namespace.
+      if (!rhsRevPrefix.empty()) {
+        if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
+          return structTypesUnify(lhsStruct, llvm::cast<StructType>(rhs));
+        }
+        if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhs)) {
+          return arrayTypesUnify(lhsArray, llvm::cast<ArrayType>(rhs));
+        }
+        if (auto lhsPod = llvm::dyn_cast<PodType>(lhs)) {
+          return podTypesUnify(lhsPod, llvm::cast<PodType>(rhs));
+        }
+        if (auto lhsFunction = llvm::dyn_cast<FunctionType>(lhs)) {
+          return functionTypesUnify(lhsFunction, llvm::cast<FunctionType>(rhs));
+        }
+      }
       return true;
     }
     if (overrideSuccess && overrideSuccess(lhs, rhs)) {
@@ -821,6 +837,11 @@ private:
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
     if (lhsAttr == rhsAttr) {
+      if (!rhsRevPrefix.empty()) {
+        if (auto lhsType = llvm::dyn_cast<TypeAttr>(lhsAttr)) {
+          return typesUnify(lhsType.getValue(), llvm::cast<TypeAttr>(rhsAttr).getValue());
+        }
+      }
       return true;
     }
     // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter
@@ -1100,7 +1121,7 @@ verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArra
     llvm::interleaveComma(dimsFromArrReduced, ss, appendOne);
     ss << "] with [";
     llvm::interleaveComma(dimsFromSubArr, ss, appendOne);
-    ss << "]";
+    ss << ']';
     return emitError().append(message);
   }
 
@@ -1137,12 +1158,9 @@ bool isFeltOrSimpleFeltAggregate(Type ty) {
     return isFeltOrSimpleFeltAggregate(arrTy.getElementType());
   })
       .Case<PodType>([](auto podTy) {
-    for (auto record : podTy.getRecords()) {
-      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
-        return false;
-      }
-    }
-    return true;
+    return llvm::all_of(podTy.getRecords(), [](auto record) {
+      return isFeltOrSimpleFeltAggregate(record.getType());
+    });
   }).Default([](auto) { return false; });
 }
 

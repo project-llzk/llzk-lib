@@ -24,7 +24,7 @@
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
 
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 
 // Include the generated CAPI
 #include "llzk/Dialect/POD/IR/Attrs.capi.h.inc"

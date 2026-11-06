@@ -88,16 +88,38 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     another control-flow lowering pass before this pass; nested-region, successor-bearing, or
     multi-block constrain functions are rejected instead of being rewritten with
     component-lifetime auxiliary members. Compute functions may contain control flow; auxiliary
-    computations and writes are materialized on every return path.
+    computations and writes are materialized on every return path. When auxiliaries are needed,
+    each returned component must resolve through CFG or region-branch forwarding to one local
+    `struct.new` result that dominates that return. Different returns may use different allocations.
+    Unknown or ambiguous origins and non-dominating allocations are rejected. Auxiliary writes
+    target the resolved allocation immediately before the return, after preceding member updates.
+
+    Rebuilding aggregate reads requires stable storage. The pass checks preceding constrain
+    operations and compute input mutations using one storage-origin and effect analysis,
+    including helper bodies. Read-only helpers and disjoint allocations are supported.
+    Unknown effects, external helpers, recursive call cycles, and uncertain storage origins
+    are conservatively rejected when they may affect a reconstructed read. Different
+    subpaths and aggregate copies are not proven disjoint by this analysis.
+
+    With `main-only=true`, only llzk.main is processed and generated auxiliaries
+    are marked as signals so a subsequent signal layout includes them. This is
+    used after constraint flattening, which retains source definitions and
+    aggregate storage reads. `mark-auxiliary-signals=true` also marks auxiliaries
+    when lowering all components.
 
     This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`
     pipeline, which includes additional cleanup passes to ensure correctness and optimal
     performance.
   }];
-  let options = [Option<"maxDegree", "max-degree", "unsigned",
-                        /* default */ "2",
-                        "Maximum degree of constraint polynomials "
-                        "(default 2, minimum 2)">,
+  let options =
+      [Option<"mainOnly", "main-only", "bool", "false",
+              "Lower only llzk.main and mark generated auxiliaries as signals">,
+       Option<"markAuxiliarySignals", "mark-auxiliary-signals", "bool", "false",
+              "Mark generated auxiliaries as signals for R1CS layout">,
+       Option<"maxDegree", "max-degree", "unsigned",
+              /* default */ "2",
+              "Maximum degree of constraint polynomials "
+              "(default 2, minimum 2)">,
   ];
 }
 
@@ -135,12 +157,15 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
   let description = [{
     Inlines `function.call` operations inside `function.def` bodies when the
     target is a free `function.def` directly inside the pass's root
-    `builtin.module`. Calls to functions in nested or included modules, and
-    calls outside `function.def` bodies, are left unchanged. After inlining,
-    root free functions that have no remaining symbol uses anywhere in the
-    module are erased. This cleanup applies to every non-external root free
-    function, regardless of its symbol visibility or whether any call to it
-    was inlined.
+    `builtin.module` or within a nested module or template if every symbol
+    reference in the function can be resolved from the root module. Calls
+    to other nested functions, included functions, and calls outside
+    `function.def` bodies are left unchanged.
+
+    After inlining, free functions that have no remaining symbol uses anywhere
+    in the module are erased. This cleanup applies to every non-external free
+    function within the pass's root module, regardless of its symbol visibility
+    or whether any call to it was inlined.
 
     Inlining is best effort: free functions that participate in a call
     cycle are skipped (inlining one would re-materialize its calls
@@ -152,12 +177,26 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let summary =
       "Converts scf.while loops to equivalent scf.for loops when possible";
-  let description =
-      "This pass identifies scf.while loops that have an "
-      "induction variable and a uniform step, and converts them "
-      "to equivalent scf.for loops, which are preferred by some "
-      "analyses. This pass may introduce some spurious felt/index casts which "
-      "should be cleaned up by --canonicalize.";
+  let description = [{
+    This pass identifies scf.while loops that have an induction variable and
+    a uniform step, and converts them to equivalent scf.for loops, which are
+    preferred by some analyses.
+
+    Annotated loopbounds must have nonnegative bounds and a positive step,
+    all within the nonnegative index range. The induction value after the
+    final increment must also fit in index; otherwise the annotated loop is
+    left unchanged with a warning. Annotated values are materialized directly
+    as index constants without field reduction. However, when the original
+    variable is a felt, the conversion to its field representative is necessary
+    and the cast uses `assert` overflow semantics for empty loops or when every
+    executed induction value is within the known field, and `wrap` otherwise.
+
+    Condition regions containing non-pure operations also execute after
+    the scf.for loop using the final loop-carried values.
+
+    This pass may introduce some spurious felt/index casts which should be
+    cleaned up by --canonicalize.
+  }];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

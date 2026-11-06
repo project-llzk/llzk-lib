@@ -54,7 +54,7 @@ static inline bool hasEmptyParamList(StructType t) {
 /// Convert StructType with empty parameter list to one with no parameters.
 class EmptyParamListStructTypeConverter : public TypeConverter {
 public:
-  EmptyParamListStructTypeConverter() : TypeConverter() {
+  EmptyParamListStructTypeConverter() {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -138,7 +138,7 @@ public:
       return failure();
     }
     // Insert new ModuleOp at location of the current template.
-    ModuleOp newOp = rewriter.create<ModuleOp>(op.getLoc(), adaptor.getSymName());
+    ModuleOp newOp = ModuleOp::create(rewriter, op.getLoc(), adaptor.getSymName());
     // Move the current body into the module and erase the now-empty template op.
     // First, clear body region of the new module to prepare for `inlineRegionBefore`.
     Region &newOpBody = newOp.getBodyRegion();

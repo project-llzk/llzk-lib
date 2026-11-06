@@ -1,0 +1,32 @@
+// A clone cannot retain reads of template expressions with unknown values.
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics
+
+// Division by zero leaves E unknown; report the member that requests Child<3>.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @ChildTemplate {
+    poly.param @N : index
+    poly.expr @E {
+      %n = poly.read_const @N : index
+      %zero = arith.constant 0 : index
+      %value = arith.divsi %n, %zero : index
+      poly.yield %value : index
+    }
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@ChildTemplate::@Child<[@N]>> {
+        %e = poly.read_const @E : index
+        %s = struct.new : !struct.type<@ChildTemplate::@Child<[@N]>>
+        function.return %s : !struct.type<@ChildTemplate::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@ChildTemplate::@Child<[@N]>>) { function.return }
+    }
+  }
+  struct.def @Main {
+    // expected-error@+1 {{template expression @E could not be evaluated for '!struct.type<@ChildTemplate::@Child<[3]>>'}}
+    struct.member @child : !struct.type<@ChildTemplate::@Child<[3]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %s = struct.new : !struct.type<@Main>
+      function.return %s : !struct.type<@Main>
+    }
+    function.def @constrain(%s: !struct.type<@Main>) { function.return }
+  }
+}

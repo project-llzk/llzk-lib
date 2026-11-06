@@ -34,6 +34,11 @@ using namespace string;
 
 namespace {
 
+/// Compare opaque pointers using the standard library's strict total pointer order.
+static inline std::strong_ordering comparePointers(const void *lhs, const void *rhs) {
+  return std::compare_three_way {}(lhs, rhs);
+}
+
 std::strong_ordering
 compareDynamicAPInt(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs) {
   if (lhs < rhs) {
@@ -92,6 +97,15 @@ compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceR
 
 /* SourceRefIndex */
 
+SourceRefIndex SourceRefIndex::forArrayDimension(int64_t size) {
+  assert((size >= 0 || ShapedType::isDynamic(size)) && "invalid array dimension");
+  return SourceRefIndex(llvm::DynamicAPInt(0), llvm::DynamicAPInt(size));
+}
+
+bool SourceRefIndex::hasUnboundedUpperBound() const {
+  return isIndexRange() && getIndexRange().second == ShapedType::kDynamic;
+}
+
 void SourceRefIndex::print(raw_ostream &os) const {
   if (isMember()) {
     os << '@' << getMember().getName();
@@ -101,7 +115,7 @@ void SourceRefIndex::print(raw_ostream &os) const {
     os << getIndex();
   } else {
     auto [low, high] = getIndexRange();
-    if (ShapedType::isDynamic(int64_t(high))) {
+    if (hasUnboundedUpperBound()) {
       os << "<dynamic>";
     } else {
       os << low << ':' << high;
@@ -154,17 +168,10 @@ std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) cons
 
 size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   if (c.isIndex()) {
-    // We don't hash the index directly, because the built-in LLVM hash includes
-    // the bitwidth of the APInt in the hash, which is undesirable for this application.
-    // i.e., We want a N-bit version of x to hash to the same value as an M-bit version of X,
-    // because our equality checks would consider them equal regardless of bitwidth.
-    APSInt idx = toAPSInt(c.getIndex());
-    unsigned requiredBits = idx.getSignificantBits();
-    auto hash = llvm::hash_value(idx.trunc(requiredBits));
-    return hash;
+    return hashDynamicAPInt(c.getIndex());
   } else if (c.isIndexRange()) {
     auto r = c.getIndexRange();
-    return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
+    return llvm::hash_combine(hashDynamicAPInt(std::get<0>(r)), hashDynamicAPInt(std::get<1>(r)));
   } else if (c.isPodRecord()) {
     return llvm::hash_value(c.getPodRecordName());
   } else {
@@ -175,7 +182,7 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
 bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
   if (isIndex() && rhs.isIndexRange()) {
     auto [low, high] = rhs.getIndexRange();
-    return low <= getIndex() && getIndex() < high;
+    return low <= getIndex() && (rhs.hasUnboundedUpperBound() || getIndex() < high);
   }
   if (isIndexRange() && rhs.isIndex()) {
     return rhs.overlaps(*this);
@@ -183,7 +190,12 @@ bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
   if (isIndexRange() && rhs.isIndexRange()) {
     auto [lhsLow, lhsHigh] = getIndexRange();
     auto [rhsLow, rhsHigh] = rhs.getIndexRange();
-    return lhsLow < rhsHigh && rhsLow < lhsHigh;
+    if ((!hasUnboundedUpperBound() && lhsLow >= lhsHigh) ||
+        (!rhs.hasUnboundedUpperBound() && rhsLow >= rhsHigh)) {
+      return false;
+    }
+    return (rhs.hasUnboundedUpperBound() || lhsLow < rhsHigh) &&
+           (hasUnboundedUpperBound() || rhsLow < lhsHigh);
   }
   return *this == rhs;
 }
@@ -232,7 +244,7 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
     if (auto cmp = *getInputNum() <=> *rhs.getInputNum(); cmp != std::strong_ordering::equal) {
       return cmp;
     }
-    if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+    if (auto cmp = comparePointers(getAsOpaquePointer(), rhs.getAsOpaquePointer());
         cmp != std::strong_ordering::equal) {
       return cmp;
     }
@@ -241,7 +253,7 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
   case SortCategory::CreateStruct:
   case SortCategory::NonDet:
   case SortCategory::RootResult: {
-    if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+    if (auto cmp = comparePointers(getAsOpaquePointer(), rhs.getAsOpaquePointer());
         cmp != std::strong_ordering::equal) {
       return cmp;
     }
@@ -252,12 +264,18 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
         cmp != std::strong_ordering::equal) {
       return cmp;
     }
-    return getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+    return comparePointers(getAsOpaquePointer(), rhs.getAsOpaquePointer());
   }
   case SortCategory::ConstantIndex:
     return compareDynamicAPInt(*getConstantIndexValue(), *rhs.getConstantIndexValue());
   case SortCategory::ConstantFelt:
-    return compareDynamicAPInt(*getConstantFeltValue(), *rhs.getConstantFeltValue());
+    // Constant identity includes the type as well as the field representative.
+    if (auto cmp =
+            comparePointers(getType().getAsOpaquePointer(), rhs.getType().getAsOpaquePointer());
+        cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+    return compareDynamicAPInt(getConstantIdentityValue(), rhs.getConstantIdentityValue());
   }
 
   llvm_unreachable("unhandled SourceRef category compare");
@@ -593,7 +611,7 @@ static bool shouldPrintNamedCallResult(
 
 void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
-    os << "<felt.const: " << *getConstantFeltValue() << '>';
+    os << "<felt.const: " << getConstantIdentityValue() << '>';
   } else if (isConstantIndex()) {
     os << "<index: " << *getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
@@ -651,10 +669,30 @@ void SourceRef::print(raw_ostream &os) const {
   }
 }
 
+FailureOr<DynamicAPInt> SourceRef::getConstantValue(const Field &field) const {
+  if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
+    // Honor the declared prime first (per semantics of `felt.const`); only fieldless literals
+    // use the raw fallback. Regardless, the value is then reduced via the specified `Field`.
+    return field.reduce(feltConst->getValue().getReducedValueOrRaw());
+  }
+  return getConstantIndexValue();
+}
+
+DynamicAPInt SourceRef::getConstantIdentityValue() const {
+  if (auto feltConst = getDefiningOp<FeltConstantOp>(); succeeded(feltConst)) {
+    // Identity uses representatives for specified fields, but must distinguish
+    // exact raw literals when no field is available to establish congruence.
+    return feltConst->getValue().getReducedValueOrRaw();
+  }
+  auto index = getConstantIndexValue();
+  ensure(succeeded(index), "expected a numeric constant reference");
+  return *index;
+}
+
 bool SourceRef::operator==(const SourceRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
-    DynamicAPInt lhsVal = *getConstantValue(), rhsVal = *rhs.getConstantValue();
+    DynamicAPInt lhsVal = getConstantIdentityValue(), rhsVal = rhs.getConstantIdentityValue();
     return getType() == rhs.getType() && lhsVal == rhsVal;
   }
   return constant == rhs.constant && value == rhs.value && llvm::equal(getPath(), rhs.getPath());
@@ -672,7 +710,7 @@ std::strong_ordering SourceRef::operator<=>(const SourceRef &rhs) const {
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
   if (val.isConstantInt()) {
-    return llvm::hash_combine(val.getType(), *val.getConstantValue());
+    return llvm::hash_combine(val.getType(), hashDynamicAPInt(val.getConstantIdentityValue()));
   } else if (val.isTemplateConstant()) {
     return llvm::hash_value(val.getAsOpaquePointer());
   } else {

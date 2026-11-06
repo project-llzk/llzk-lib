@@ -1,0 +1,111 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json > %t/original.json
+// RUN: diff %t/expected.json %t/original.json
+// RUN: llzk-opt %t/test.llzk --llzk-flatten --verify-diagnostics > %t/unrolled.llzk
+// RUN: llzk-witgen %t/unrolled.llzk --inputs %t/input.json > %t/unrolled.json
+// RUN: diff %t/original.json %t/unrolled.json
+
+// All annotations match the source's felt sequence and trip count. A separate
+// counter terminates each loop, including the loop with a step equal to p.
+// Decimal accumulation observes the order and number of executed field values.
+
+//--- test.llzk
+!F = !felt.type<"babybear">
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @negative : !F {llzk.pub}
+    struct.member @wide_positive : !F {llzk.pub}
+    struct.member @wide_negative : !F {llzk.pub}
+    struct.member @modulus_step : !F {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %zero = felt.const 0 : <"babybear">
+      %ten = felt.const 10 : <"babybear">
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+
+      // Integer IVs -2, ... with step 1; 3 iterations.
+      %negative_start = felt.const 2013265919 : <"babybear">
+      %negative_step = felt.const 1 : <"babybear">
+      %negative_count = arith.constant 3 : index
+      %negative:3 = scf.while (%iv = %negative_start, %k = %c0, %acc = %zero) : (!F, index, !F) -> (!F, index, !F) {
+        %cond = arith.cmpi slt, %k, %negative_count : index
+        scf.condition(%cond) %iv, %k, %acc : !F, index, !F
+      } do {
+      ^bb0(%iv: !F, %k: index, %acc: !F):
+        %shifted = felt.mul %acc, %ten : !F, !F
+        %next_acc = felt.add %shifted, %iv : !F, !F
+        %next_iv = felt.add %iv, %negative_step : !F, !F
+        %next_k = arith.addi %k, %c1 : index
+        scf.yield %next_iv, %next_k, %next_acc : !F, index, !F
+      } attributes {llzk.loopbounds = #llzk.loopbounds<-2 to 1 step 1>}
+      struct.writem %self[@negative] = %negative#2 : !struct.type<@Main>, !F
+
+      // Integer IVs 2433889153647126270488299329028097, ... with step 1; 3 iterations.
+      %wide_positive_start = felt.const 1 : <"babybear">
+      %wide_positive_step = felt.const 1 : <"babybear">
+      %wide_positive_count = arith.constant 3 : index
+      %wide_positive:3 = scf.while (%iv = %wide_positive_start, %k = %c0, %acc = %zero) : (!F, index, !F) -> (!F, index, !F) {
+        %cond = arith.cmpi slt, %k, %wide_positive_count : index
+        scf.condition(%cond) %iv, %k, %acc : !F, index, !F
+      } do {
+      ^bb0(%iv: !F, %k: index, %acc: !F):
+        %shifted = felt.mul %acc, %ten : !F, !F
+        %next_acc = felt.add %shifted, %iv : !F, !F
+        %next_iv = felt.add %iv, %wide_positive_step : !F, !F
+        %next_k = arith.addi %k, %c1 : index
+        scf.yield %next_iv, %next_k, %next_acc : !F, index, !F
+      } attributes {llzk.loopbounds = #llzk.loopbounds<2433889153647126270488299329028097 to 2433889153647126270488299329028100 step 1>}
+      struct.writem %self[@wide_positive] = %wide_positive#2 : !struct.type<@Main>, !F
+
+      // Integer IVs -2433889153647126270488299329028093, ... with step -1; 3 iterations.
+      %wide_negative_start = felt.const 3 : <"babybear">
+      %wide_negative_step = felt.const 2013265920 : <"babybear">
+      %wide_negative_count = arith.constant 3 : index
+      %wide_negative:3 = scf.while (%iv = %wide_negative_start, %k = %c0, %acc = %zero) : (!F, index, !F) -> (!F, index, !F) {
+        %cond = arith.cmpi slt, %k, %wide_negative_count : index
+        scf.condition(%cond) %iv, %k, %acc : !F, index, !F
+      } do {
+      ^bb0(%iv: !F, %k: index, %acc: !F):
+        %shifted = felt.mul %acc, %ten : !F, !F
+        %next_acc = felt.add %shifted, %iv : !F, !F
+        %next_iv = felt.add %iv, %wide_negative_step : !F, !F
+        %next_k = arith.addi %k, %c1 : index
+        scf.yield %next_iv, %next_k, %next_acc : !F, index, !F
+      } attributes {llzk.loopbounds = #llzk.loopbounds<-2433889153647126270488299329028093 to -2433889153647126270488299329028096 step -1>}
+      struct.writem %self[@wide_negative] = %wide_negative#2 : !struct.type<@Main>, !F
+
+      // Integer IVs 1, ... with step 2013265921; 2 iterations.
+      %modulus_step_start = felt.const 1 : <"babybear">
+      %modulus_step_step = felt.const 0 : <"babybear">
+      %modulus_step_count = arith.constant 2 : index
+      %modulus_step:3 = scf.while (%iv = %modulus_step_start, %k = %c0, %acc = %zero) : (!F, index, !F) -> (!F, index, !F) {
+        %cond = arith.cmpi slt, %k, %modulus_step_count : index
+        scf.condition(%cond) %iv, %k, %acc : !F, index, !F
+      } do {
+      ^bb0(%iv: !F, %k: index, %acc: !F):
+        %shifted = felt.mul %acc, %ten : !F, !F
+        %next_acc = felt.add %shifted, %iv : !F, !F
+        %next_iv = felt.add %iv, %modulus_step_step : !F, !F
+        %next_k = arith.addi %k, %c1 : index
+        scf.yield %next_iv, %next_k, %next_acc : !F, index, !F
+      } attributes {llzk.loopbounds = #llzk.loopbounds<1 to 4026531843 step 2013265921>}
+      struct.writem %self[@modulus_step] = %modulus_step#2 : !struct.type<@Main>, !F
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}
+
+//--- expected.json
+{
+  "modulus_step": "11",
+  "negative": "2013265711",
+  "wide_negative": "321",
+  "wide_positive": "123"
+}

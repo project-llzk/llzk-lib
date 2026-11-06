@@ -1,0 +1,24 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    // Derived methods can carry internal index parameters, while the public
+    // product entry point retains a signal-only signature.
+    function.def @product(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @compute(%i: index, %j: index, %x: !felt.type) -> !struct.type<@Main> attributes {llzk.derived} {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %i: index, %j: index, %x: !felt.type) attributes {llzk.derived} {
+      // A comparison used as a field expression must not escape as native SSA.
+      // expected-error @+1 {{structural operation requires a compile-time value}}
+      %cmp = arith.cmpi slt, %i, %j : index
+      %value = cast.tofelt %cmp : i1
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}

@@ -1,0 +1,4 @@
+added:
+  - Allow R1CS circuits to specify input wire IDs with r1cs.input_labels and validate their ordering independently of source-language metadata.
+changed:
+  - Preserve circuit attributes through assembly round trips and use explicit input IDs during binary export when supplied.

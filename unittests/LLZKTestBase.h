@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/DialectRegistration.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <mlir/IR/Location.h>
@@ -22,9 +22,9 @@ protected:
   mlir::MLIRContext ctx;
   mlir::Location loc;
 
-  LLZKTest() : ctx(), loc(llzk::getUnknownLoc(&ctx)) {
+  LLZKTest() : loc(llzk::getUnknownLoc(&ctx)) {
     mlir::DialectRegistry registry;
-    llzk::registerAllDialects(registry);
+    llzk::registerDialects(registry);
     ctx.appendDialectRegistry(registry);
     ctx.loadAllAvailableDialects();
   }

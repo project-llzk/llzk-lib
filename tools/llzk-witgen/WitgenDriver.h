@@ -36,7 +36,7 @@ enum class OutputScope : std::uint8_t {
   Public,
   /// Emit inputs plus public outputs and members marked as witness signals.
   FullWitness,
-  /// Emit inputs plus every scalar main member needed to construct an R1CS witness.
+  /// Emit inputs plus declared signals needed to construct an R1CS witness.
   R1CSWitness,
 };
 

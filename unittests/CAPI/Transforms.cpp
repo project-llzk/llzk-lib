@@ -65,20 +65,20 @@ static polymorphic::TemplateExprOp buildPolyExpr(MLIRContext *ctx, bool includeD
   auto loc = UnknownLoc::get(ctx);
 
   OpBuilder bldr(ctx);
-  auto expr = bldr.create<polymorphic::TemplateExprOp>(loc, bldr.getStringAttr("Sub_12@269"));
+  auto expr = polymorphic::TemplateExprOp::create(bldr, loc, bldr.getStringAttr("Sub_12@269"));
   bldr.setInsertionPointToStart(&expr.getInitializerRegion().emplaceBlock());
 
   auto feltTy = felt::FeltType::get(ctx, bldr.getStringAttr("bn128"));
-  auto const12 = felt::FeltConstAttr::get(ctx, APInt(64, 12), feltTy);
+  auto const12 = felt::FeltConstAttr::get(ctx, llvm::DynamicAPInt(12), feltTy);
   if (includeDeadValue) {
     // Create a dead value that should be eliminated by the DVE pass.
     // Suppress `clang-tidy` since it's intentional.
     // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
-    auto _ = bldr.create<felt::FeltConstantOp>(loc, const12);
+    auto _ = felt::FeltConstantOp::create(bldr, loc, const12);
   }
-  auto constOp = bldr.create<felt::FeltConstantOp>(loc, const12);
-  auto negOp = bldr.create<felt::NegFeltOp>(loc, constOp.getResult());
-  bldr.create<polymorphic::YieldOp>(loc, negOp.getResult());
+  auto constOp = felt::FeltConstantOp::create(bldr, loc, const12);
+  auto negOp = felt::NegFeltOp::create(bldr, loc, constOp.getResult());
+  polymorphic::YieldOp::create(bldr, loc, negOp.getResult());
 
   return expr;
 }
@@ -105,7 +105,7 @@ static bool runRemoveDeadValues(MlirContext context, MlirOperation op) {
   mlirPassManagerEnableVerifier(pm, false);            // enable_verifier(false)
   auto opm = mlirPassManagerGetAsOpPassManager(pm);    // as_operation_pass_manager()
   auto pipeline = mlirStringRefCreateFromCString("poly.expr(remove-dead-values)");
-  mlirParsePassPipeline(opm, pipeline, printToStderr, NULL); // utility::parse_pass_pipeline()
+  mlirParsePassPipeline(opm, pipeline, printToStderr, nullptr); // utility::parse_pass_pipeline()
   bool success = mlirPassManagerRunOnOp(pm, op).value != 0;
   mlirPassManagerDestroy(pm);
   return success;

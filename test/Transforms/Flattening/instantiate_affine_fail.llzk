@@ -58,13 +58,11 @@ module attributes {llzk.lang} {
       function.def @compute() -> !struct.type<@TComponent02::@Component02<[@A,@B]>> {
         %self = struct.new : !struct.type<@TComponent02::@Component02<[@A,@B]>>
         %0 = array.new : !array.type<@A x !felt.type>
-        // expected-note@+2 {{type written here is '!array.type<@A x !felt.type>'}}
-        // expected-note@+1 {{type written here is '!array.type<2 x !felt.type>'}}
+        // expected-note@+1 {{type written here is '!array.type<@A x !felt.type>'}}
         struct.writem %self[@f] = %0 : !struct.type<@TComponent02::@Component02<[@A,@B]>>, !array.type<@A x !felt.type>
         %n = arith.constant 5 : index
         %1 = array.new : !array.type<@B x !felt.type>
-        // expected-note@+2 {{type written here is '!array.type<@B x !felt.type>'}}
-        // expected-note@+1 {{type written here is '!array.type<3 x !felt.type>'}}
+        // expected-note@+1 {{type written here is '!array.type<@B x !felt.type>'}}
         struct.writem %self[@f] = %1 : !struct.type<@TComponent02::@Component02<[@A,@B]>>, !array.type<@B x !felt.type>
         function.return %self: !struct.type<@TComponent02::@Component02<[@A,@B]>>
       }

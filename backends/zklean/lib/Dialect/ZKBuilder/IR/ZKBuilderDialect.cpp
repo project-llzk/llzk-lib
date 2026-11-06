@@ -28,8 +28,6 @@ namespace llzk::zkbuilder {
 
 void ZKBuilderDialect::initialize() {
   // clang-format off
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderTypes.cpp.inc"

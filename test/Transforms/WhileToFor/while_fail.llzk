@@ -8,7 +8,7 @@ module attributes {llzk.lang} {
     %f0 = felt.const 0
     %f1 = felt.const 1
     %f10 = felt.const 10
-    // expected-warning@+1 {{failed to transform op: could not identify step}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: could not identify step}}
     %end, %total = scf.while (%i = %f1, %sum = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
       %cond = bool.cmp lt(%i, %f10)
       scf.condition(%cond) %i, %sum : !felt.type, !felt.type
@@ -35,7 +35,7 @@ module attributes {llzk.lang} {
     %f1 = felt.const 1
 
     // This looks like a proper for loop, but the upper bound is not constant so it can't be converted
-    // expected-warning@+2 {{failed to transform op: upper bound may not be constant}}
+    // expected-warning@+2 {{'llzk-while-to-for' failed to transform loop: upper bound may not be constant}}
     // expected-note@+1 {{depends on loop-carried value}}
     %result:2 = scf.while (%i = %f0, %ub = %f1) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
       %cond = bool.cmp lt(%i, %ub)
@@ -65,7 +65,7 @@ module attributes {llzk.lang} {
     %f2 = felt.const 2
     %f5 = felt.const 5
 
-    // expected-warning@+1 {{failed to transform op: final ivar value unsafe to drop}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: final ivar value unsafe to drop}}
     %final = scf.while (%i = %f0) : (!felt.type) -> !felt.type {
       %cond = bool.cmp lt(%i, %f5)
       scf.condition(%cond) %i : !felt.type
@@ -93,7 +93,7 @@ module attributes {llzk.lang} {
     %f2 = felt.const 2
     %f5 = felt.const 5
 
-    // expected-warning@+1 {{failed to transform op: could not identify an induction variable}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: could not identify an induction variable}}
     scf.while (%i = %f0) : (!felt.type) -> !felt.type {
       %i2 = felt.mul %i, %i
       %cond = bool.cmp lt(%i2, %f5) : !felt.type
@@ -119,7 +119,7 @@ module attributes {llzk.lang} {
     %f2 = felt.const 2
     %f5 = felt.const 5
 
-    // expected-warning@+1 {{failed to transform op: step may not be constant}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: step may not be constant}}
     scf.while (%i = %f0) : (!felt.type) -> !felt.type {
       %cond = bool.cmp lt(%i, %f5) : !felt.type
       scf.condition(%cond) %i : !felt.type
@@ -147,7 +147,7 @@ module attributes {llzk.lang} {
     %f1 = felt.const 1
     %f5 = felt.const 5
 
-    // expected-warning@+1 {{failed to transform op: block arguments not passed through from preamble to body}}
+    // expected-warning@+1 {{'llzk-while-to-for' failed to transform loop: block arguments not passed through from preamble to body}}
     %result:3 = scf.while (%i = %f0, %total = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type, !felt.type) {
       %cond = bool.cmp lt(%i, %f5) : !felt.type
       %i2 = felt.mul %i, %i

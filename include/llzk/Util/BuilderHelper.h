@@ -20,7 +20,7 @@ namespace llzk {
 template <typename OpClass, typename... Args>
 inline OpClass delegate_to_build(mlir::Location location, Args &&...args) {
   mlir::OpBuilder builder(location->getContext());
-  return builder.create<OpClass>(location, std::forward<Args>(args)...);
+  return OpClass::create(builder, location, std::forward<Args>(args)...);
 }
 
 template <typename OpClass>

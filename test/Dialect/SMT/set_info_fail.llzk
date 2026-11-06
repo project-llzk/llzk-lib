@@ -3,9 +3,9 @@
 // ----- invalid-key.mlir
 module {
   smt.solver () : () -> () {
-    smt.set_info "status" sat
+    smt_info.set "status" sat
     smt.yield
   }
 }
 
-// CHECK: error: custom op 'smt.set_info' keyword must start with ':'
+// CHECK: error: custom op 'smt_info.set' keyword must start with ':'

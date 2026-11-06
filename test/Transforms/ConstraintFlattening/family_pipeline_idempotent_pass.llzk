@@ -1,0 +1,5 @@
+// RUN: llzk-opt %S/family_pipeline_pass.llzk --llzk-constraint-flattening -o %t
+// RUN: llzk-opt %t --llzk-flatten-constraints -o %t.again
+// RUN: diff %t %t.again
+
+// Reapplying flattening preserves the monomorphized family output.
