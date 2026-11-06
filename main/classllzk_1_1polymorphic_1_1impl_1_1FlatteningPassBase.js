@@ -16,5 +16,6 @@ var classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase =
     [ "createFlatteningPass", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112", null ],
     [ "createFlatteningPass", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a75b9d31d1ee603d2fc920c1b0129a84c", null ],
     [ "cleanupMode", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a40f5b5fa1ac902e6cd91cdd3dccb604f", null ],
-    [ "iterationLimit", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#aa5262637ccc7799080ea562783dc6de3", null ]
+    [ "iterationLimit", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#aa5262637ccc7799080ea562783dc6de3", null ],
+    [ "unrollIterationLimit", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a0dcc80549392fa3a31f0836e86bce968", null ]
 ];

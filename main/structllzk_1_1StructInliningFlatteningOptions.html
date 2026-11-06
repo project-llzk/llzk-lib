@@ -157,6 +157,7 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a3d6886c8be007024b9e69148062c6bfc" id="r_a3d6886c8be007024b9e69148062c6bfc"><td class="memItemLeft">Option&lt; unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a3d6886c8be007024b9e69148062c6bfc">iterationLimit</a></td></tr>
+<tr class="memitem:acfb80d31969616e7b294208f24828578" id="r_acfb80d31969616e7b294208f24828578"><td class="memItemLeft">Option&lt; uint64_t &gt;&#160;</td><td class="memItemRight"><a class="el" href="#acfb80d31969616e7b294208f24828578">unrollIterationLimit</a></td></tr>
 <tr class="memitem:a7206f4363ad92cba72a91e3bd2ab9966" id="r_a7206f4363ad92cba72a91e3bd2ab9966"><td class="memItemLeft">Option&lt; <a class="el" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">polymorphic::FlatteningCleanupMode</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a7206f4363ad92cba72a91e3bd2ab9966">cleanupMode</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
@@ -187,7 +188,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8h_source.html#l00043">43</a> of file <a class="el" href="LLZKTransformationPassPipelines_8h_source.html">LLZKTransformationPassPipelines.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8h_source.html#l00052">52</a> of file <a class="el" href="LLZKTransformationPassPipelines_8h_source.html">LLZKTransformationPassPipelines.h</a>.</p>
 
 </div>
 </div>
@@ -214,7 +215,7 @@ Public Attributes</h2></td></tr>
 <div class="line">  }</div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">llzk::polymorphic::FlatteningCleanupMode::Unspecified</a></div><div class="ttdeci">@ Unspecified</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00014">TransformationPassEnums.h.inc:14</a></div></div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8h_source.html#l00033">33</a> of file <a class="el" href="LLZKTransformationPassPipelines_8h_source.html">LLZKTransformationPassPipelines.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8h_source.html#l00042">42</a> of file <a class="el" href="LLZKTransformationPassPipelines_8h_source.html">LLZKTransformationPassPipelines.h</a>.</p>
 
 </div>
 </div>
@@ -235,6 +236,30 @@ Public Attributes</h2></td></tr>
 <div class="line">  }</div>
 </div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8h_source.html#l00028">28</a> of file <a class="el" href="LLZKTransformationPassPipelines_8h_source.html">LLZKTransformationPassPipelines.h</a>.</p>
+
+</div>
+</div>
+<a id="acfb80d31969616e7b294208f24828578" name="acfb80d31969616e7b294208f24828578"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acfb80d31969616e7b294208f24828578">&#9670;&#160;</a></span>unrollIterationLimit</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Option&lt;uint64_t&gt; llzk::StructInliningFlatteningOptions::unrollIterationLimit</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{</div>
+<div class="line">      *<span class="keyword">this</span>, <span class="stringliteral">&quot;max-unroll&quot;</span>,</div>
+<div class="line">      llvm::cl::desc(</div>
+<div class="line">          <span class="stringliteral">&quot;maximum trip count for each loop unrolled; exceeding it warns and leaves the loop &quot;</span></div>
+<div class="line">          <span class="stringliteral">&quot;unchanged&quot;</span></div>
+<div class="line">      ),</div>
+<div class="line">      llvm::cl::init(100000)</div>
+<div class="line">  }</div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPassPipelines_8h_source.html#l00033">33</a> of file <a class="el" href="LLZKTransformationPassPipelines_8h_source.html">LLZKTransformationPassPipelines.h</a>.</p>
 
 </div>
 </div>

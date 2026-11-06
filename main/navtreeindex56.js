@@ -181,6 +181,8 @@ var NAVTREEINDEX56 =
 "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aef60a06fbb5222a660c7cc186316f5c1":[13,0,1,13,1,1,0],
 "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html":[11,0,3,17,1,2],
 "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html":[13,0,1,13,1,2],
+"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a0dcc80549392fa3a31f0836e86bce968":[11,0,3,17,1,2,17],
+"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a0dcc80549392fa3a31f0836e86bce968":[13,0,1,13,1,2,17],
 "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112":[11,0,3,17,1,2,13],
 "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112":[13,0,1,13,1,2,13],
 "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a1eeedbb067f8dd3477a89bac53a9d00a":[11,0,3,17,1,2,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX56 =
 "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aeb198c1baf937d749bf0ebd7ea923031":[13,0,1,13,1,3,7],
 "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aeb9e6048ecbddba7f50254f68ec46a54":[11,0,3,17,1,3,10],
 "classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aeb9e6048ecbddba7f50254f68ec46a54":[13,0,1,13,1,3,10],
-"classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aefed14f6b6c3c35d13e35aa7992ff8f5":[11,0,3,17,1,3,12],
-"classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aefed14f6b6c3c35d13e35aa7992ff8f5":[13,0,1,13,1,3,12],
-"classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html":[11,0,3,17,1,4]
+"classllzk_1_1polymorphic_1_1impl_1_1TemplateMonomorphizationPassBase.html#aefed14f6b6c3c35d13e35aa7992ff8f5":[11,0,3,17,1,3,12]
 };

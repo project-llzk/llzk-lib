@@ -702,12 +702,13 @@ Options</h5>
 <p>Performs the following transformations:</p><ul>
 <li>Instantiate <span class="tt">affine_map</span> parameters of StructType and ArrayType to constant values using the arguments at the instantiation site</li>
 <li>Replace parameterized structs with flattened (i.e., no parameter) versions of those structs based on requested return type at calls to <span class="tt">compute()</span> functions and unroll loops</li>
-<li>Unroll loops</li>
+<li>Unroll loops. When present, trusted <span class="tt">llzk.loopbounds</span> annotations determine the trip count. A warning is emitted if this differs from a statically computed count, but the annotation still takes precedence. Loops exceeding <span class="tt">max-unroll</span> remain rolled. Array type instantiation and propagation still run inside their bodies.</li>
 </ul>
 <h5 class="doxsection"><a class="anchor" id="options-12"></a>
 Options</h5>
-<div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
-<div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
+<div class="fragment"><div class="line">-max-iter   : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
+<div class="line">-max-unroll : Maximum trip count for each loop unrolled, including annotated loops. Exceeding this limit warns and leaves the loop unchanged. A value of zero only permits removal of zero-trip loops.</div>
+<div class="line">-cleanup    : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
 </div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-flatten-constraints"></a>
 <span class="tt">-llzk-flatten-constraints</span></h4>
 <p><em>Expand main constrain into straight-line constraints</em></p>

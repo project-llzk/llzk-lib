@@ -335,82 +335,92 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Polymorphic_2T
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    - Replace parameterized structs with flattened (i.e., no parameter)</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      versions of those structs based on requested return type at calls</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>      to `compute()` functions and unroll loops</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    - Unroll loops</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  }];</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  // Implementation note: These options should be kept in sync with</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  let options =</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>      [Option&lt;&quot;iterationLimit&quot;, &quot;max-iter&quot;, &quot;unsigned&quot;,</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>              /* default */ &quot;1000&quot;,</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>              &quot;Maximum number of times the pass will run if a fixpoint &quot;</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>              &quot;is not reached earlier. Unrolling loops can provide more &quot;</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>              &quot;opportunities for instantiating structs but the converse &quot;</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>              &quot;is true as well. Thus, the pass will run multiple times &quot;</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>              &quot;until no further changes can be made or the upper limit &quot;</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>              &quot;provided in this option is reached.&quot;&gt;,</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>       Option&lt;&quot;cleanupMode&quot;, &quot;cleanup&quot;,</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>              &quot;::llzk::polymorphic::FlatteningCleanupMode&quot;,</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>              /* default */</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>              &quot;::llzk::polymorphic::FlatteningCleanupMode::Unspecified&quot;,</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>              FlatteningCleanupModeDescription.r, [{::llvm::cl::values(</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Unspecified,</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Unspecified),</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>                           &quot;Use the cleanup mode specified by the calling pipeline (defaults to `preimage` if not specified).&quot;),</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Disabled,</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Disabled),</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>                           &quot;No definitions are deleted.&quot;),</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Preimage,</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Preimage),</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>                           &quot;Only definitions that were replaced with concrete instantiations are deleted.&quot;),</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot,</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot),</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>                           &quot;All definitions that cannot be reached by a use-def chain from some concrete definition are deleted.&quot;),</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::MainAsRoot,</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::MainAsRoot),</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>                           &quot;All definitions that cannot be reached by a use-def chain from the \&quot;Main\&quot; struct are deleted.&quot;)</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>          )}]&gt;,</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  ];</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>}</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>def WildcardArraySpecializationPass</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>    : LLZKPass&lt;&quot;llzk-specialize-wildcard-arrays&quot;&gt; {</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  let summary =</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>      &quot;Refine wildcard array casts and specialize concrete call targets&quot;;</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  let description = [{</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    Refines `poly.unifiable_cast` results when wildcard `array.type` dimensions can be replaced</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    with concrete integer sizes from the input type. Then specializes free functions, extern</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span> </div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    This pass is intended to run after `llzk-flatten`. It iterates to a fixpoint so newly-refined</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    cast result types can enable further callable specialization in later iterations.</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  }];</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  let options = [Option&lt;&quot;iterationLimit&quot;, &quot;max-iter&quot;, &quot;unsigned&quot;,</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>                        /* default */ &quot;1000&quot;,</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                        &quot;Maximum number of iterations before the pass gives up &quot;</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>                        &quot;reaching a fixpoint.&quot;&gt;];</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>}</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>def TypeVarInferencePass : LLZKPass&lt;&quot;llzk-infer-tvar&quot;&gt; {</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  let summary = &quot;Infer concrete function types for polymorphic type variables&quot;;</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  let description = [{</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    Infers concrete replacements for `!poly.tvar` template parameters from operations in</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    `function.def` or `poly.expr` bodies, such as `poly.unifiable_cast` between a type variable</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    and a more concrete type (which means for maximum effect you should run it before other</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    optimization passes that can remove `poly.unifiable_cast`). Rewrites affected function</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    signatures and body types, removes redundant casts, drops resolved `poly.param` declarations,</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    and updates call-site template parameter lists.</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    - Unroll loops. When present, trusted `llzk.loopbounds` annotations</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>      determine the trip count. A warning is emitted if this differs from</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>      a statically computed count, but the annotation still takes precedence.</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>      Loops exceeding `max-unroll` remain rolled. Array type instantiation</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>      and propagation still run inside their bodies.</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  }];</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  // Implementation note: These options should be kept in sync with</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  let options =</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>      [Option&lt;&quot;iterationLimit&quot;, &quot;max-iter&quot;, &quot;unsigned&quot;,</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>              /* default */ &quot;1000&quot;,</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>              &quot;Maximum number of times the pass will run if a fixpoint &quot;</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>              &quot;is not reached earlier. Unrolling loops can provide more &quot;</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>              &quot;opportunities for instantiating structs but the converse &quot;</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>              &quot;is true as well. Thus, the pass will run multiple times &quot;</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>              &quot;until no further changes can be made or the upper limit &quot;</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>              &quot;provided in this option is reached.&quot;&gt;,</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>       Option&lt;</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>           &quot;unrollIterationLimit&quot;, &quot;max-unroll&quot;, &quot;uint64_t&quot;,</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>           /* default */ &quot;100000&quot;,</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>           &quot;Maximum trip count for each loop unrolled, including annotated &quot;</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>           &quot;loops. Exceeding this limit warns and leaves the loop unchanged. &quot;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>           &quot;A value of zero only permits removal of zero-trip loops.&quot;&gt;,</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>       Option&lt;&quot;cleanupMode&quot;, &quot;cleanup&quot;,</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>              &quot;::llzk::polymorphic::FlatteningCleanupMode&quot;,</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>              /* default */</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>              &quot;::llzk::polymorphic::FlatteningCleanupMode::Unspecified&quot;,</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>              FlatteningCleanupModeDescription.r, [{::llvm::cl::values(</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Unspecified,</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Unspecified),</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>                           &quot;Use the cleanup mode specified by the calling pipeline (defaults to `preimage` if not specified).&quot;),</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Disabled,</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Disabled),</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>                           &quot;No definitions are deleted.&quot;),</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Preimage,</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Preimage),</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>                           &quot;Only definitions that were replaced with concrete instantiations are deleted.&quot;),</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot,</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot),</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>                           &quot;All definitions that cannot be reached by a use-def chain from some concrete definition are deleted.&quot;),</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::MainAsRoot,</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::MainAsRoot),</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>                           &quot;All definitions that cannot be reached by a use-def chain from the \&quot;Main\&quot; struct are deleted.&quot;)</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>          )}]&gt;,</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  ];</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>}</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>def WildcardArraySpecializationPass</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    : LLZKPass&lt;&quot;llzk-specialize-wildcard-arrays&quot;&gt; {</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  let summary =</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      &quot;Refine wildcard array casts and specialize concrete call targets&quot;;</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  let description = [{</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    Refines `poly.unifiable_cast` results when wildcard `array.type` dimensions can be replaced</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    with concrete integer sizes from the input type. Then specializes free functions, extern</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    This pass is intended to run after `llzk-flatten`. It iterates to a fixpoint so newly-refined</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    cast result types can enable further callable specialization in later iterations.</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  }];</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  let options = [Option&lt;&quot;iterationLimit&quot;, &quot;max-iter&quot;, &quot;unsigned&quot;,</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>                        /* default */ &quot;1000&quot;,</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>                        &quot;Maximum number of iterations before the pass gives up &quot;</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>                        &quot;reaching a fixpoint.&quot;&gt;];</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>}</div>
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    The pass also creates template-local instantiated versions of functions for each</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>    type-variable replacement. The `llzk-flatten` pass performs similar instantiation of type</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    variables but only as part of its more extensive lowering and flattening, all of which may</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    not be desired in some cases (hence the utility of this pass).</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span> </div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    This pass may result in `poly.template` containing no `poly.param` or `poly.expr`. Run</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    `llzk-drop-empty-templates` after this pass to simplify these templates.</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  }];</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>}</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>def TypeVarInferencePass : LLZKPass&lt;&quot;llzk-infer-tvar&quot;&gt; {</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  let summary = &quot;Infer concrete function types for polymorphic type variables&quot;;</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  let description = [{</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    Infers concrete replacements for `!poly.tvar` template parameters from operations in</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    `function.def` or `poly.expr` bodies, such as `poly.unifiable_cast` between a type variable</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    and a more concrete type (which means for maximum effect you should run it before other</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    optimization passes that can remove `poly.unifiable_cast`). Rewrites affected function</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    signatures and body types, removes redundant casts, drops resolved `poly.param` declarations,</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    and updates call-site template parameter lists.</div>
 <div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>#endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    The pass also creates template-local instantiated versions of functions for each</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>    type-variable replacement. The `llzk-flatten` pass performs similar instantiation of type</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    variables but only as part of its more extensive lowering and flattening, all of which may</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    not be desired in some cases (hence the utility of this pass).</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>    This pass may result in `poly.template` containing no `poly.param` or `poly.expr`. Run</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    `llzk-drop-empty-templates` after this pass to simplify these templates.</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  }];</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>}</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>#endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

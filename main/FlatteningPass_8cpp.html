@@ -154,10 +154,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Concepts_8h_source.html">llzk/Util/Concepts.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Debug_8h_source.html">llzk/Util/Debug.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="DynamicAPIntHelper_8h_source.html">llzk/Util/DynamicAPIntHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolHelper_8h_source.html">llzk/Util/SymbolHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolLookup_8h_source.html">llzk/Util/SymbolLookup.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolTableLLZK_8h_source.html">llzk/Util/SymbolTableLLZK.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Walk_8h_source.html">llzk/Util/Walk.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Affine/IR/AffineOps.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/Affine/LoopUtils.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
@@ -168,6 +170,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <code>#include &lt;mlir/IR/BuiltinAttributes.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinTypes.h&gt;</code><br />
+<code>#include &lt;mlir/IR/IRMapping.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Matchers.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/InferTypeOpInterface.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassManager.h&gt;</code><br />
 <code>#include &lt;mlir/Support/LLVM.h&gt;</code><br />
@@ -180,6 +184,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 <code>#include &lt;llvm/ADT/DepthFirstIterator.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/StringExtras.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/TypeSwitch.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Debug.h&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
@@ -189,7 +194,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('FlatteningPass
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for FlatteningPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="FlatteningPass_8cpp__incl.svg" width="7404" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="FlatteningPass_8cpp__incl.svg" width="7336" height="671"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="FlatteningPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -239,7 +244,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00073">73</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00078">78</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -255,7 +260,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00066">66</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00071">71</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>

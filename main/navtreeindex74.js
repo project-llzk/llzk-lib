@@ -1,5 +1,7 @@
 var NAVTREEINDEX74 =
 {
+"namespacemembers_func_v.html":[11,1,1,18],
+"namespacemembers_func_w.html":[11,1,1,19],
 "namespacemembers_g.html":[11,1,0,6],
 "namespacemembers_h.html":[11,1,0,7],
 "namespacemembers_i.html":[11,1,0,8],
@@ -247,7 +249,5 @@ var NAVTREEINDEX74 =
 "structEnsureConstrainOpBuildFuncHelper.html#a321ab77381b6509349214d68de5ca5b5":[13,0,36,1],
 "structExistsOpBuildFuncHelper.html":[13,0,37],
 "structExistsOpBuildFuncHelper.html#a52090a0f532653526aad19abb716e40f":[13,0,37,0],
-"structExistsOpBuildFuncHelper.html#a735b4b003070a4f522ae32dd2428dad7":[13,0,37,1],
-"structExtraMethod.html":[13,0,39],
-"structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de":[13,0,39,2]
+"structExistsOpBuildFuncHelper.html#a735b4b003070a4f522ae32dd2428dad7":[13,0,37,1]
 };
