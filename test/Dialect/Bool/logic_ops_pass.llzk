@@ -326,7 +326,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-//CHECK: #[[$ATTR_1:.+]] = affine_map<(d0) -> (d0 * 2)>
+//CHECK: #[[$ATTR_1:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 * 2)>
 //CHECK-LABEL:  function.def @f_forall
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>>) -> i1 attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = bool.forall %[[T2:[0-9a-zA-Z_.-]+]]: !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>> in %[[A0]] : !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>> {
@@ -370,7 +370,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-//CHECK: #[[$ATTR_1:.+]] = affine_map<(d0) -> (d0 * 2)>
+//CHECK: #[[$ATTR_1:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 * 2)>
 //CHECK-LABEL:  function.def @f_exists
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>>) -> i1 attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = bool.exists %[[T2:[0-9a-zA-Z_.-]+]]: !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>> in %[[A0]] : !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>> {
