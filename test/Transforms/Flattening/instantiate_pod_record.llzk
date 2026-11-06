@@ -33,22 +33,22 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TComponent_252_Component {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent_252_Component> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent_252_Component>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TComponent_252_Component>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TComponent_252_Component>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent_252_Component>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TComponent_252_Component>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !pod.type<[@comp: !struct.type<@TComponent_252_Component>]>
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponent_252_Component::@compute() : () -> !struct.type<@TComponent_252_Component>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@comp: !struct.type<@TComponent_252_Component>]>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @TComponent_252_Component::@compute() : () -> !struct.type<@TComponent_252_Component>
 // CHECK-NEXT:        pod.write %[[VAL_2]][@comp] = %[[VAL_3]] : <[@comp: !struct.type<@TComponent_252_Component>]>, !struct.type<@TComponent_252_Component>
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

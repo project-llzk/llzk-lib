@@ -35,4 +35,4 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: struct.def @nondet_template_5_NondetStruct {
-// CHECK:  %{{.*}} = llzk.nondet : !struct.type<@nondet_template_5_NondetStruct> {product_source = "compute"}
+// CHECK:  %{{[0-9a-zA-Z_.-]+}} = llzk.nondet : !struct.type<@nondet_template_5_NondetStruct> {product_source = "compute"}
