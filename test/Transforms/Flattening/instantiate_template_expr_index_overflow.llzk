@@ -1,0 +1,51 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// The largest signed index is still a valid array dimension when a poly.expr
+// converts a Goldilocks field element using the default assert overflow mode.
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@T<[0]>>} {
+  poly.template @T {
+    poly.param @N : index
+    poly.expr @size {
+      %input = felt.const 9223372036854775807 : <"goldilocks">
+      %result = cast.toindex %input : !felt.type<"goldilocks">
+      poly.yield %result : index
+    }
+    struct.def @T {
+      struct.member @values : !array.type<@size x !felt.type<"goldilocks">>
+      function.def @compute() -> !struct.type<@T::@T<[@N]>> {
+        %self = struct.new : !struct.type<@T::@T<[@N]>>
+        function.return %self : !struct.type<@T::@T<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@T<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// A Goldilocks residue of 2^63 must not fold to a negative index. Refusing the
+// overflow leaves @size unevaluated, so flattening diagnoses the unresolved
+// expression instead of instantiating an array with a negative dimension.
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@T<[0]>>} {
+  poly.template @T {
+    poly.param @N : index
+    poly.expr @size {
+      %input = felt.const 9223372036854775808 : <"goldilocks">
+      %result = cast.toindex %input : !felt.type<"goldilocks">
+      poly.yield %result : index
+    }
+    struct.def @T {
+      // expected-error@+1 {{'struct.member' op references unknown symbol "@size"}}
+      struct.member @values : !array.type<@size x !felt.type<"goldilocks">>
+      function.def @compute() -> !struct.type<@T::@T<[@N]>> {
+        %self = struct.new : !struct.type<@T::@T<[@N]>>
+        function.return %self : !struct.type<@T::@T<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@T<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
