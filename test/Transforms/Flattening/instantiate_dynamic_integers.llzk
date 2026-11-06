@@ -26,21 +26,21 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   function.def @"IntegerValues_-3_values"() -> (!felt.type<"babybear">, !felt.type<"babybear">) {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  -3 : <"babybear">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  -3 : <"babybear">
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_0]] : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   function.def @"IntegerValues_f<-18446744073709551617:8:babybear>_values"() -> (!felt.type<"babybear">, !felt.type<"babybear">) {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  -18446744073709551617 : <"babybear">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  -18446744073709551617 : <"babybear">
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_0]] : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   function.def @IntegerValues_255_values() -> (!felt.type<"babybear">, !felt.type<"babybear">) {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  255 : <"babybear">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  255 : <"babybear">
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_0]] : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   function.def @IntegerValues_1_values() -> (!felt.type<"babybear">, !felt.type<"babybear">) {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.\-]+]] = felt.const  1 : <"babybear">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  1 : <"babybear">
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_0]] : !felt.type<"babybear">, !felt.type<"babybear">
 // CHECK-NEXT:    }

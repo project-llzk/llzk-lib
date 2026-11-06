@@ -21,12 +21,12 @@ module attributes {llzk.lang = "llzk"} {
 
 // CHECK-LABEL: struct.def @ComputeMultiBlockAuxScope
 // CHECK:         function.def @compute
-// CHECK:           %[[ENTRY_SELF:.+]] = struct.new
-// CHECK:           %[[ENTRY_MUL:.+]] = felt.mul
+// CHECK:           %[[ENTRY_SELF:[0-9a-zA-Z_.-]+]] = struct.new
+// CHECK:           %[[ENTRY_MUL:[0-9a-zA-Z_.-]+]] = felt.mul
 // CHECK:           struct.writem %[[ENTRY_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[ENTRY_MUL]]
 // CHECK:           function.return %[[ENTRY_SELF]]
 // CHECK:         ^bb{{[0-9]+}}:
-// CHECK:           %[[LATE_SELF:.+]] = struct.new
-// CHECK:           %[[LATE_MUL:.+]] = felt.mul
+// CHECK:           %[[LATE_SELF:[0-9a-zA-Z_.-]+]] = struct.new
+// CHECK:           %[[LATE_MUL:[0-9a-zA-Z_.-]+]] = felt.mul
 // CHECK:           struct.writem %[[LATE_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[LATE_MUL]]
 // CHECK:           function.return %[[LATE_SELF]]

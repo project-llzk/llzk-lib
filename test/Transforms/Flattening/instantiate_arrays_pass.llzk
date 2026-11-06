@@ -74,7 +74,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M0:.+]] = affine_map<(d0, d1) -> (d0 + d1)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0, d1) -> (d0 + d1)>
 // CHECK-LABEL: struct.def @Component02 {
 // CHECK-NEXT:    struct.member @out : !array.type<1,#[[$M0]],9 x index>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@Component02> attributes {function.allow_witness} {

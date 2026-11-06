@@ -42,7 +42,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$M0:.+]] = affine_map<(d0) -> (d0)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
 //
 // CHECK-LABEL: poly.template @"TZip_f_f_\1A" {
 // CHECK-NEXT:    poly.param @N
