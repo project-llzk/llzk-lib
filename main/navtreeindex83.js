@@ -1,5 +1,6 @@
 var NAVTREEINDEX83 =
 {
+"syntax.html":[4],
 "syntax.html#mathematical-integers-and-fixed-width-encodings":[4,3,0],
 "syntax.html#pseudo-homogeneous":[4,1,0],
 "syntax.html#semantic-rules":[4,2],

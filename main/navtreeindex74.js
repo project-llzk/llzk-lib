@@ -147,10 +147,11 @@ var NAVTREEINDEX74 =
 "r1cs-backend.html#types-7":[8,0,0,2],
 "setup.html":[2],
 "setup.html#building-with-pcl":[2,2],
-"setup.html#dev-workflow":[2,3],
+"setup.html#dev-workflow":[2,4],
+"setup.html#formatting-hooks":[2,3],
 "setup.html#manual-build-setup":[2,1],
 "setup.html#nix-setup":[2,0],
-"setup.html#python-bindings":[2,4],
+"setup.html#python-bindings":[2,5],
 "smt-backend.html":[8,1],
 "smt-backend.html#attributes-35":[8,1,0,0,0,0],
 "smt-backend.html#attributes-36":[8,1,0,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX74 =
 "structEnsureConstrainOpBuildFuncHelper.html#a2d333462389246b8f4144ddc7ca24738":[13,0,36,0],
 "structEnsureConstrainOpBuildFuncHelper.html#a321ab77381b6509349214d68de5ca5b5":[13,0,36,1],
 "structExistsOpBuildFuncHelper.html":[13,0,37],
-"structExistsOpBuildFuncHelper.html#a52090a0f532653526aad19abb716e40f":[13,0,37,0],
-"structExistsOpBuildFuncHelper.html#a735b4b003070a4f522ae32dd2428dad7":[13,0,37,1]
+"structExistsOpBuildFuncHelper.html#a52090a0f532653526aad19abb716e40f":[13,0,37,0]
 };

@@ -142,6 +142,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('setup.html',''
     <a href="#building-with-pcl">Building with PCL </a>
   </li>
   <li class="level1">
+    <a href="#formatting-hooks">Formatting hooks </a>
+  </li>
+  <li class="level1">
     <a href="#dev-workflow">Development Workflow </a>
   </li>
   <li class="level1">
@@ -248,6 +251,24 @@ Building with PCL</h1>
 <div class="fragment"><div class="line">cmake -S . -B build -DLLZK_WITH_PCL=ON</div>
 <div class="line">cmake --build build</div>
 </div><!-- fragment --><p>Use <span class="tt">-DLLZK_WITH_PCL=OFF</span> to disable the backend.</p>
+<h1 class="doxsection"><a class="anchor" id="formatting-hooks"></a>
+Formatting hooks</h1>
+<p>The repository uses <a href="https://pre-commit.com/">pre-commit</a> and <a href="https://github.com/cpp-linter/cpp-linter-hooks">cpp-linter-hooks</a> to format C, C++, header, and TableGen files with the shared <span class="tt">.clang-format</span> style. Enable the Git hook once in each clone; it is not activated automatically.</p>
+<p>The Nix development shell includes <span class="tt">pre-commit</span>. From the repository root, run:</p>
+<div class="fragment"><div class="line">nix develop --command bash -c &quot;pre-commit install --install-hooks&quot;</div>
+</div><!-- fragment --><p>Without Nix, use Python 3.10 or newer to install <span class="tt">pre-commit</span> in a virtual environment, then activate the hook from the repository root:</p>
+<div class="fragment"><div class="line">python3 -m venv ~/.venvs/llzk-pre-commit</div>
+<div class="line">source ~/.venvs/llzk-pre-commit/bin/activate</div>
+<div class="line">python -m pip install pre-commit</div>
+<div class="line">pre-commit install --install-hooks</div>
+</div><!-- fragment --><p>Initial setup and the first hook run download and cache the hook and its pinned clang-format version. A separate clang-format installation is not needed for the hook. When using Nix, make commits from the development shell.</p>
+<p>On each commit, the hook formats whole staged <span class="tt">.c</span>, <span class="tt">.cpp</span>, <span class="tt">.h</span>, and <span class="tt">.td</span> files, excluding <span class="tt">build</span>, <span class="tt">result</span>, and <span class="tt">third-party</span>. If it changes files, the commit stops: review the diff, stage the desired changes, and retry the commit. CI also checks formatting and reports diagnostics (where permitted).</p>
+<p>To run the hook manually on staged files, or on all tracked matching files:</p>
+<div class="fragment"><div class="line">nix develop --command bash -c &quot;pre-commit run clang-format&quot;</div>
+<div class="line">nix develop --command bash -c &quot;pre-commit run clang-format --all-files&quot;</div>
+</div><!-- fragment --><p>Without Nix, run the <span class="tt">pre-commit</span> commands directly in the virtual environment. The hook revision (<span class="tt">rev</span>) and formatter version (<span class="tt">--version</span>) are pinned separately in <span class="tt">.pre-commit-config.yaml</span>. When upgrading LLVM, keep the formatter pin aligned with the Nix formatter used by CI:</p>
+<div class="fragment"><div class="line">nix develop .#debugClang --command bash -c &quot;clang-format --version&quot;</div>
+</div><!-- fragment --><p>You can also run <span class="tt">clang-format</span> manually without <span class="tt">pre-commit</span> using the command shown below.</p>
 <h1 class="doxsection"><a class="anchor" id="dev-workflow"></a>
 Development Workflow</h1>
 <p>Once you have generated the build configuration and are in the <span class="tt">build</span> directory, you can run the following commands:</p>

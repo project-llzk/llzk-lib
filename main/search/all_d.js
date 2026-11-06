@@ -48,5 +48,6 @@ var searchData=
   ['hasunreducedinterval_45',['hasUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a92765712c15e7b01df0025e6838ecc72',1,'llzk::ExpressionValue']]],
   ['headergenerator_46',['HeaderGenerator',['../structHeaderGenerator.html',1,'']]],
   ['homogeneous_20arrays_47',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
-  ['http_48',['http',['../LICENSE_8txt.html#a94615be87ac36e4d954e52531ff7c50b',1,'LICENSE.txt']]]
+  ['hooks_48',['Formatting hooks',['../setup.html#formatting-hooks',1,'']]],
+  ['http_49',['http',['../LICENSE_8txt.html#a94615be87ac36e4d954e52531ff7c50b',1,'LICENSE.txt']]]
 ];

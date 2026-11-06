@@ -38,6 +38,7 @@ var NAVTREE =
       [ "Nix Setup", "setup.html#nix-setup", null ],
       [ "Manual Build Setup", "setup.html#manual-build-setup", null ],
       [ "Building with PCL", "setup.html#building-with-pcl", null ],
+      [ "Formatting hooks", "setup.html#formatting-hooks", null ],
       [ "Development Workflow", "setup.html#dev-workflow", null ],
       [ "Python Bindings", "setup.html#python-bindings", null ]
     ] ],
@@ -645,15 +646,15 @@ var NAVTREEINDEX =
 "namespacellzk.html#af49520457eaff34f68f6c3defa2571ae",
 "namespacellzk_1_1mlir__patch.html",
 "namespacemembers_func_v.html",
-"structExtraMethod.html",
-"structVerifAssertOpBuildFuncHelper.html#a943c6ca31bfd046efd93cd04094e2c5f",
+"structExistsOpBuildFuncHelper.html#a735b4b003070a4f522ae32dd2428dad7",
+"structVerifAssertOpBuildFuncHelper.html",
 "structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc",
 "structllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase_1_1Properties.html#a63b2ffe7cdc6069efd05ff84d167bb0a",
 "structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceTrait.html",
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#adb5e70689f37aca469648f662011855a",
 "structllzk_1_1polymorphic_1_1detail_1_1DiscoveryAggregate.html",
 "structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#a9b3aba133468549abab59e92654f7e77",
-"syntax.html#mathematical-integers-and-fixed-width-encodings"
+"syntax.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

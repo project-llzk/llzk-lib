@@ -234,7 +234,7 @@ Generate FileCheck directives</h3>
 <p>LLZK tests should have <span class="tt">// RUN:</span> on the first line(s) followed by a blank line. Any necessary check lines shold follow the input IR. In a multi-test file each individual test should have a brief description before the test input and any necessary check lines after the input but before the next <span class="tt">// -----</span> separator. Keep the generated indentation and SSA substitutions, with no blank lines or prose inside a check block. These layout adjustments must not omit any transformed output.</p>
 <h2 class="doxsection"><a class="anchor" id="commit-your-update"></a>
 Commit your update</h2>
-<p>Commit the changes once you are happy with them. Remember that all code must pass a format check before it can be merged, so consider running clang format before pushing your commits. For more information, see <a class="el" href="setup.html#dev-workflow" title="Development Workflow">the development workflow section</a>.</p>
+<p>Commit the changes once you are happy with them. Enable the <a class="el" href="setup.html#formatting-hooks" title="Formatting hooks">formatting hook</a> once per clone to check formatting before each commit. If it changes files, review and stage those changes before retrying the commit. All code must pass the CI formatting check before it can be merged.</p>
 <h2 class="doxsection"><a class="anchor" id="pull-request"></a>
 Pull Request</h2>
 <p>When you are finished with the changes, create a <em>pull request</em>, also known as a PR. External PRs must link to the approved issue or issues they resolve.</p>
