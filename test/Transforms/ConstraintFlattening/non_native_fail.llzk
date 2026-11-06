@@ -1,0 +1,33 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints -split-input-file --verify-diagnostics -o /dev/null
+
+// Reject field division before expansion.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      // expected-error @+1 {{lower non-native operations before constraint flattening}}
+      %div = felt.div %x, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reject field inversion before expansion.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) attributes {function.allow_non_native_field_ops} {
+      // expected-error @+1 {{lower non-native operations before constraint flattening}}
+      %inverse = felt.inv %x : !felt.type
+      function.return
+    }
+  }
+}

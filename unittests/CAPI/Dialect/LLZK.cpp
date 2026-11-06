@@ -20,7 +20,7 @@
 
 TEST_F(CAPITest, llzk_public_attr_get) {
   auto attr = llzkLlzk_PublicAttrGet(context);
-  EXPECT_NE(attr.ptr, (void *)NULL);
+  EXPECT_NE(attr.ptr, (void *)nullptr);
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
@@ -34,7 +34,7 @@ TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
 
   MlirOperation op = llzkLlzk_NonDetOpBuild(builder, location, createIndexType());
 
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Llzk_NonDetOp(op));
 
   mlirOperationDestroy(op);

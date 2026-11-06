@@ -1,0 +1,30 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt --llzk-to-smt-no-cf-naive -split-input-file -verify-diagnostics %s
+
+// Non-assert casts with live results still require an unsupported encoding.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product(%input: index, %felt: !felt.type<"bn254">) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      // expected-error@+1 {{failed to legalize operation 'cast.tofelt' that was explicitly marked illegal}}
+      %cast = cast.tofelt sat %input : index, !felt.type<"bn254">
+      constrain.eq %cast, %felt : !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @product(%input: index, %felt: !felt.type<"bn254">) -> !struct.type<@Main>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@Main>
+      // expected-error@+1 {{failed to legalize operation 'cast.toindex' that was explicitly marked illegal}}
+      %cast = cast.toindex sat %felt : !felt.type<"bn254">
+      %checked = cast.tofelt assert %cast : index, !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+  }
+}

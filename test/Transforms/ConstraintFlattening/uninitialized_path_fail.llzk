@@ -1,0 +1,22 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %local = array.new : !array.type<2 x !felt.type>
+      array.write %local[%zero] = %x : !array.type<2 x !felt.type>, !felt.type
+      %copy = array.new %x, %x : !array.type<2 x !felt.type>
+      // Overwriting a subtree also removes its formerly initialized leaves.
+      array.insert %copy[] = %local : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+      // expected-error @+1 {{read of uninitialized local storage}}
+      %read = array.read %copy[%one] : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}

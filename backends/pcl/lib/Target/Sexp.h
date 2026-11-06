@@ -14,6 +14,9 @@
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <type_traits>
+#include <utility>
+
 #define DEBUG_TYPE "sexp"
 
 namespace pcl {
@@ -28,10 +31,13 @@ public:
   virtual void setParen(char) {}
 };
 
-/// An atom is a reference to an object that can be printed.
+/// An atom stores a printable value.
 template <typename T> class Atom : public SexpElt {
   T val;
-  explicit Atom(T VAL) : val(std::move(VAL)) {};
+  /// Copies an lvalue directly into the stored value.
+  explicit Atom(const T &VAL) : val(VAL) {};
+  /// Moves an rvalue into storage when the value type supports moving.
+  explicit Atom(T &&VAL) : val(std::move(VAL)) {};
   friend SexpCtx;
 
 public:
@@ -68,12 +74,13 @@ class SexpCtx {
   llvm::BumpPtrAllocator allocator;
 
 public:
-  template <typename T> Sexp atom(T val) {
+  /// Creates an atom that stores a decayed value, forwarding the input to it.
+  template <typename T> Sexp atom(T &&val) {
 // This is a known GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmismatched-new-delete"
     LLVM_DEBUG({ llvm::dbgs() << "[Sexp] Creating atom with value: " << val << '\n'; });
-    return Sexp(new (allocator) detail::Atom<T>(std::move(val)));
+    return Sexp(new (allocator) detail::Atom<std::decay_t<T>>(std::forward<T>(val)));
 #pragma GCC diagnostic pop
   }
 
@@ -94,7 +101,7 @@ public:
   /// Creates a new atomic s-expression.
   ///
   /// Doesn't add it to the list of pending expressions.
-  template <typename T> Sexp atom(T val) { return ctx.atom(std::move(val)); }
+  template <typename T> Sexp atom(T &&val) { return ctx.atom(std::forward<T>(val)); }
 
   /// Creates a new s-expression.
   ///

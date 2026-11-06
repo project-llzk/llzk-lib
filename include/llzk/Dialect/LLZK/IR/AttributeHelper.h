@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/StreamHelper.h"
 
 #include <mlir/IR/DialectImplementation.h>
@@ -33,38 +34,60 @@ template <> struct mlir::FieldParser<llvm::APInt> {
 
 namespace llzk {
 
-/// Storage key for APInts whose numeric value is independent of bit width.
-class APIntValue {
+/// Attribute storage adapter providing numeric hashing for DynamicAPInt.
+///
+/// This is meant as a thin adaptor for storing DynamicAPInt in attribute storage generated
+/// by tablegen. It should not generally be used outside of attribute storage contexts.
+/// Public accessors on the attribute expose the underlying value directly rather than
+/// exposing this wrapper.
+class DynamicAPIntValue {
 public:
-  APIntValue(llvm::APInt apInt) : value(std::move(apInt)) {}
+  DynamicAPIntValue(const llvm::DynamicAPInt &integer) : value(integer) {}
 
-  const llvm::APInt &getValue() const { return value; }
-  operator const llvm::APInt &() const { return value; }
+  /// Borrow the owned integer.
+  ///
+  /// The returned reference must not outlive this wrapper. For the expected use case of
+  /// wrappers held in attribute storage, its lifetime is that of the owning MLIRContext
+  /// so this borrow is safe. References obtained from temporary instances of this wrapper
+  /// must not be held beyond the full expression that creates the wrapper.
+  operator const llvm::DynamicAPInt &() const { return value; }
 
-  friend bool operator==(const APIntValue &lhs, const APIntValue &rhs) {
-    return llvm::APInt::isSameValue(lhs.value, rhs.value);
+  friend bool operator==(const DynamicAPIntValue &a, const DynamicAPIntValue &b) {
+    return a.value == b.value;
   }
 
-  friend llvm::hash_code hash_value(const APIntValue &key) {
-    unsigned activeBits = key.value.getActiveBits();
-    llvm::APInt canonical = key.value.trunc(activeBits == 0 ? 1 : activeBits);
-    return llvm::hash_value(canonical);
+  friend llvm::hash_code hash_value(const DynamicAPIntValue &key) {
+    return hashDynamicAPInt(key.value);
   }
 
 private:
-  llvm::APInt value;
+  llvm::DynamicAPInt value;
 };
 
-inline mlir::FailureOr<APIntValue> parseAPIntValue(mlir::AsmParser &parser) {
-  mlir::FailureOr<llvm::APInt> value = mlir::FieldParser<llvm::APInt>::parse(parser);
+/// Parse MLIR's signed integer literal and discard its encoding width.
+inline mlir::FailureOr<DynamicAPIntValue> parseDynamicAPIntValue(mlir::AsmParser &parser) {
+  auto value = mlir::FieldParser<llvm::APInt>::parse(parser);
   if (mlir::failed(value)) {
     return mlir::failure();
   }
-  return APIntValue(std::move(*value));
+  return DynamicAPIntValue(llvm::DynamicAPInt(*value));
 }
 
-inline llvm::APInt toAPInt(int64_t i) { return llvm::APInt(64, i); }
-inline int64_t fromAPInt(const llvm::APInt &i) { return i.getSExtValue(); }
+/// Decode an MLIR integer using its signedness; signless i1 denotes a boolean.
+/// Other signless integers and index values use signed interpretation.
+inline llvm::DynamicAPInt integerAttrToDynamicAPInt(mlir::IntegerAttr attr) {
+  auto type = llvm::dyn_cast<mlir::IntegerType>(attr.getType());
+  bool isUnsigned = type && (type.isUnsigned() || (type.isSignless() && type.getWidth() == 1));
+  return isUnsigned ? toDynamicAPInt(attr.getValue()) : llvm::DynamicAPInt(attr.getValue());
+}
+
+/// Extract a verified MLIR index value; malformed internal IR is a fatal error.
+inline int64_t fromAPInt(const llvm::APInt &i) {
+  if (!i.isSignedIntN(64)) {
+    llvm::report_fatal_error("integer is not representable as an index");
+  }
+  return i.getSExtValue();
+}
 
 inline bool isNullOrEmpty(mlir::ArrayAttr a) { return !a || a.empty(); }
 inline bool isNullOrEmpty(mlir::DenseArrayAttr a) { return !a || a.empty(); }

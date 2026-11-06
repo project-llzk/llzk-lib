@@ -59,17 +59,6 @@ template <typename OpClass> inline OpClass getParentOfType(mlir::Operation *op) 
   return {};
 }
 
-/// Return true if the parameter has a parent/ancestor op that is an instance of one
-/// of the template type arguments.
-template <typename... OpTys> bool hasParentThatIsa(mlir::Operation *op) {
-  while ((op = op->getParentOp())) {
-    if (llvm::isa<OpTys...>(op)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /// See `LLZKSymbolTable` ODS documentation for details.
 template <typename TypeClass>
 // Suppress false positive from `clang-tidy`
@@ -88,35 +77,6 @@ public:
     }
     return mlir::success();
   }
-};
-
-/// See `HasAncestor` ODS documentation for details.
-template <typename Ancestor, typename... Ancestors> struct HasAncestor {
-  template <typename ConcreteType>
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
-  struct Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
-    static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
-      if (hasParentThatIsa<Ancestor, Ancestors...>(op)) {
-        return mlir::success();
-      }
-      auto diag = op->emitOpError();
-
-      if constexpr (sizeof...(Ancestors) == 0) {
-        diag << "must have an ancestor of type '" << Ancestor::getOperationName() << '\'';
-      } else {
-        diag << "must have an ancestor of one of the following types: ";
-        llvm::interleaveComma(
-            llvm::ArrayRef<llvm::StringLiteral>(
-                {Ancestor::getOperationName(), Ancestors::getOperationName()...}
-            ),
-            diag, [&diag](auto name) { diag << '\'' << name << '\''; }
-        );
-      }
-
-      return diag;
-    }
-  };
 };
 
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to

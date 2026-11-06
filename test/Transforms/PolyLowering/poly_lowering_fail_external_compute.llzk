@@ -1,0 +1,30 @@
+// RUN: llzk-opt -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @ExternalCompute {
+    // expected-error@+1 {{poly lowering requires a compute body to materialize auxiliary values}}
+    function.def private @compute(%a: !felt.type) -> !struct.type<@ExternalCompute>
+
+    function.def @constrain(%self: !struct.type<@ExternalCompute>, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An external compute needs no body when the constraints require no auxiliary values.
+module attributes {llzk.lang = "llzk"} {
+  struct.def @ExternalComputeWithoutAux {
+    function.def private @compute(%a: !felt.type) -> !struct.type<@ExternalComputeWithoutAux>
+
+    function.def @constrain(%self: !struct.type<@ExternalComputeWithoutAux>, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      constrain.eq %square, %a : !felt.type
+      function.return
+    }
+  }
+}

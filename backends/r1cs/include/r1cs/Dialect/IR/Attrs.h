@@ -9,12 +9,12 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributeInterfaces.h>
 #include <mlir/IR/DialectImplementation.h>
 
-// need to include APSInt.h for Attrs.h.inc
-#include <llvm/ADT/APSInt.h>
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
 #include "r1cs/Dialect/IR/Attrs.h.inc"

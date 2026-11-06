@@ -74,17 +74,18 @@ build the rest of the dependencies and LLZK:
 ```bash
 # Start from llzk repo top level.
 
+# LLVM's install tree must be outside the LLZK source tree.
+export INSTALL_ROOT="$(dirname "$(pwd -P)")/llzk-llvm-install-root"
+mkdir -p "$INSTALL_ROOT"
+
 # First, build LLVM + MLIR
+rm -rf third-party
 mkdir third-party
 pushd third-party
 export THIRD_PARTY="$PWD"
 
-# This is where llvm will be installed.
-export INSTALL_ROOT="$THIRD_PARTY/llvm-install-root"
-mkdir "$INSTALL_ROOT"
-
-# Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)
-git clone https://github.com/llvm/llvm-project.git -b llvmorg-20.1.8 --depth 1
+# Configure LLVM build
+git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.3 --depth 1
 pushd llvm-project
 mkdir build
 pushd build
@@ -101,34 +102,93 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_INSTALL_UTILS=on \
   -DLLVM_ENABLE_Z3_SOLVER=on
 
-# Note that using llvm dylib will cause llzk to be linked to the built LLVM
-# dylib; if you'd like llzk to be used independent of the build folder, you
-# should leave off the dylib settings.
-
+# Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)
 cmake --build .
 cmake --build . --target install
 popd # back to llvm-project
 popd # back to third-party
 popd # back to top level
 
-# Use an alias to avoid "prefixed in the source directory" CMake error.
-ln -s $INSTALL_ROOT ~/llvm-install-root-llzklib
-export INSTALL_ROOT=~/llvm-install-root-llzklib
 export LIT_PATH=$PWD/third-party/llvm-project/llvm/utils/lit/lit.py
 
 # Generate LLZK build configuration.
 # You can set BUILD_TESTING=off if you don't want to enable tests.
 # You can set CMAKE_BUILD_TYPE=DebWithSans if you want to enable sanitizers.
-mkdir build && cd build
+rm -rf build
+mkdir build
+pushd build
 cmake .. -GNinja \
   -DLLVM_ROOT="$INSTALL_ROOT" \
   -DLLVM_DIR="$INSTALL_ROOT"/lib/cmake/llvm \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
   -DClang_DIR="$INSTALL_ROOT"/lib/cmake/clang \
   -DLLVM_EXTERNAL_LIT="$LIT_PATH" \
-  -DGTEST_ROOT="$INSTALL_ROOT" \
   -DLLZK_BUILD_DEVTOOLS=ON
 ```
+
+# Building with PCL
+
+The bundled \ref pcl-backend "PCL backend" is enabled by default
+(`LLZK_WITH_PCL=AUTO`), including with `nix build`. To enable it explicitly, add
+`-DLLZK_WITH_PCL=ON` to the LLZK CMake configuration command above. For an existing
+build, run from the repository root (inside `nix develop` when using Nix):
+
+```bash
+cmake -S . -B build -DLLZK_WITH_PCL=ON
+cmake --build build
+```
+
+Use `-DLLZK_WITH_PCL=OFF` to disable the backend.
+
+# Formatting hooks {#formatting-hooks}
+
+The repository uses [pre-commit](https://pre-commit.com/) and
+[cpp-linter-hooks](https://github.com/cpp-linter/cpp-linter-hooks) to format C, C++,
+header, and TableGen files with the shared `.clang-format` style. Enable the Git
+hook once in each clone; it is not activated automatically.
+
+The Nix development shell includes `pre-commit`. From the repository root, run:
+
+```bash
+nix develop --command bash -c "pre-commit install --install-hooks"
+```
+
+Without Nix, use Python 3.10 or newer to install `pre-commit` in a virtual
+environment, then activate the hook from the repository root:
+
+```bash
+python3 -m venv ~/.venvs/llzk-pre-commit
+source ~/.venvs/llzk-pre-commit/bin/activate
+python -m pip install pre-commit
+pre-commit install --install-hooks
+```
+
+Initial setup and the first hook run download and cache the hook and its pinned
+clang-format version. A separate clang-format installation is not needed for
+the hook. When using Nix, make commits from the development shell.
+
+On each commit, the hook formats whole staged `.c`, `.cpp`, `.h`, and `.td` files,
+excluding `build`, `result`, and `third-party`. If it changes files, the commit
+stops: review the diff, stage the desired changes, and retry the commit. CI also
+checks formatting and reports diagnostics (where permitted).
+
+To run the hook manually on staged files, or on all tracked matching files:
+
+```bash
+nix develop --command bash -c "pre-commit run clang-format"
+nix develop --command bash -c "pre-commit run clang-format --all-files"
+```
+
+Without Nix, run the `pre-commit` commands directly in the virtual environment.
+The hook revision (`rev`) and formatter version (`--version`) are pinned
+separately in `.pre-commit-config.yaml`. When upgrading LLVM, keep the formatter
+pin aligned with the Nix formatter used by CI:
+
+```bash
+nix develop .#debugClang --command bash -c "clang-format --version"
+```
+
+You can also run `clang-format` manually without `pre-commit` using the command shown below.
 
 # Development Workflow {#dev-workflow}
 
@@ -150,6 +210,73 @@ you can run the following commands:
 The build configuration will automatically export `compile_commands.json`, so
 LSP servers such as `clangd` should be able to pick up helpful IDE information
 like include paths, etc.
+
+# Python Bindings
+
+The Python-enabled package uses the Python, nanobind, and LLVM/MLIR versions
+from the pinned Nix dependencies. Build and test both the build-tree and
+installed bindings with:
+
+```sh
+nix build -L .#llzk-with-python
+nix build -L .#checks.aarch64-darwin.llzk-installcheck-python
+```
+
+Use `x86_64-linux` instead of `aarch64-darwin` on Linux. The normal LLZK build
+does not enable Python; its passing tests alone do not validate these bindings.
+
+For development, use the dedicated shell and a separate build directory:
+
+```sh
+nix develop .#python
+cmake -S . -B build-python -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DLLZK_ENABLE_BINDINGS_PYTHON=ON -DLLZK_BUILD_DEVTOOLS=ON
+cmake --build build-python --target check-lit
+```
+
+The shell puts `build-python/python` and the matching installed MLIR package on
+`PYTHONPATH`. LLZK installs its packages under `<prefix>/python`; add that
+directory to `PYTHONPATH` to use an installed build with the same MLIR environment.
+Outside Nix, install nanobind and MLIR's Python dependencies, build MLIR with
+`MLIR_ENABLE_BINDINGS_PYTHON=ON`, and configure LLZK against that installation.
+The MLIR Python package must be importable by the configured Python interpreter.
+
+```python
+from mlir import ir
+from mlir.dialects import llzk as core
+import llzk
+
+with ir.Context() as context, ir.Location.unknown():
+    llzk.add_dialects_to_context(context)
+    context.load_all_available_dialects()
+    felt_type = ir.Type.parse("!felt.type")
+    module = ir.Module.create()
+    with ir.InsertionPoint(module.body):
+        core.NonDetOp(felt_type)
+    assert module.operation.verify()
+```
+
+Operation classes are generated from TableGen for the `array`, `bool`, `cast`,
+`constrain`, `felt`, `function`, `global`, `include`, `llzk`, `pod`, `poly`, `ram`,
+`smt_info`, `string`, `struct`, and `verif` namespaces. Import them from
+`mlir.dialects.<namespace>`; use `importlib.import_module("mlir.dialects.global")`
+for the Python keyword `global`. The earlier `mlir.dialects.llzk_dialect` import
+remains an alias for the core `llzk` module.
+
+Custom types and attributes support generic `ir.Type.parse` and
+`ir.Attribute.parse`, printing, equality, and use in generated builders. Dedicated
+Python subclasses and convenience constructors for every custom type/attribute
+are not provided. Backend dialect wrappers are also outside this package's
+current scope.
+
+For explicit registration, create an `ir.DialectRegistry`, call
+`llzk.registration.register_dialects(registry)`, and append it to a context.
+Call `llzk.registration.register_passes(registry)` once before creating pass
+pipelines to register core LLZK passes and their context extensions. Append that
+registry to the context used by the pass manager. Registration makes dialects
+available for lazy loading during parsing; call
+`context.load_all_available_dialects()` before constructing operations directly
+or querying operation registration.
 
 <div class="section_buttons">
 | Previous          |                              Next |

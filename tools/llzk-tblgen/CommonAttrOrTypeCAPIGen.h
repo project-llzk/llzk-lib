@@ -34,6 +34,17 @@ struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
 
   /// @brief Generate regular getter for non-ArrayRef type parameter
   virtual void genParameterGetterDecl(mlir::StringRef cppType) const {
+    if (isDynamicAPIntType(cppType)) {
+      os << llvm::formatv(
+          R"(
+/// Print the exact signed decimal '{5}' value. The callback must copy the text to retain it.
+MLIR_CAPI_EXPORTED void {0}{2}_{3}Get{4}(Mlir{1}, MlirStringCallback callback, void *userData);
+)",
+          getFunctionPrefix(), kind, dialectNameCapitalized, className, paramNameCapitalized,
+          paramName
+      );
+      return;
+    }
     static constexpr char fmt[] = R"(
 /// Get '{5}' parameter from a {6}::{3} {1}.
 MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
@@ -42,7 +53,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,               // {0}
+        getFunctionPrefix(),          // {0}
         kind,                         // {1}
         dialectNameCapitalized,       // {2}
         className,                    // {3}
@@ -67,7 +78,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
     mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,                   // {0}
+        getFunctionPrefix(),              // {0}
         kind,                             // {1}
         dialectNameCapitalized,           // {2}
         className,                        // {3}
@@ -103,7 +114,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
 
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
@@ -116,24 +127,24 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
     mlir::tblgen::Dialect defDialect = def.getDialect();
 
     // Generate for the selected dialect only
-    if (defDialect.getName() != DialectName) {
+    if (defDialect.getName() != getDialectName()) {
       return;
     }
 
     this->setNamespaceAndClassName(defDialect, def.getCppClassName());
 
     // Generate IsA check
-    if (GenIsA) {
+    if (getGenIsA()) {
       this->genIsADecl();
     }
 
     // Generate default Get builder if not skipped
-    if (GenTypeOrAttrGet && !def.skipDefaultBuilders()) {
+    if (getGenTypeOrAttrGet() && !def.skipDefaultBuilders()) {
       this->genDefaultGetBuilderDecl(def);
     }
 
     // Generate parameter getters
-    if (GenTypeOrAttrParamGetters) {
+    if (getGenTypeOrAttrParamGetters()) {
       for (const auto &param : def.getParameters()) {
         this->setParamName(param.getName());
         mlir::StringRef cppType = param.getCppType();
@@ -146,7 +157,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
     }
 
     // Generate extra class method declarations
-    if (GenExtraClassMethods) {
+    if (getGenExtraClassMethods()) {
       std::optional<mlir::StringRef> extraDecls = def.getExtraDecls();
       if (extraDecls.has_value()) {
         this->genExtraMethods(extraDecls.value());
@@ -176,6 +187,8 @@ struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
 
   void genPrologue() const override {
     os << R"(
+#include <mlir/IR/Diagnostics.h>
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -203,7 +216,7 @@ intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
     mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,                            // {0}
+        getFunctionPrefix(),                       // {0}
         kind,                                      // {1}
         dialectNameCapitalized,                    // {2}
         className,                                 // {3}
@@ -214,6 +227,19 @@ intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
   }
 
   virtual void genParameterGetterImpl(mlir::StringRef cppType) const {
+    if (isDynamicAPIntType(cppType)) {
+      os << llvm::formatv(
+          R"(
+void {0}{2}_{3}Get{4}(Mlir{1} inp, MlirStringCallback callback, void *userData) {{
+  std::string text;
+  llvm::raw_string_ostream(text) << llvm::cast<{3}>(unwrap(inp)).get{4}();
+  callback(wrap(llvm::StringRef(text)), userData);
+}
+)",
+          getFunctionPrefix(), kind, dialectNameCapitalized, className, paramNameCapitalized
+      );
+      return;
+    }
     static constexpr char fmt[] = R"(
 {5} {0}{2}_{3}Get{4}(Mlir{1} inp) {{
   return {6}(llvm::cast<{3}>(unwrap(inp)).get{4}());
@@ -223,7 +249,7 @@ intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,                        // {0}
+        getFunctionPrefix(),                   // {0}
         kind,                                  // {1}
         dialectNameCapitalized,                // {2}
         className,                             // {3}
@@ -238,7 +264,7 @@ intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
     static constexpr char fmt[] = R"(
 Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
   {6}
-  return wrap({3}::get(unwrap(ctx){5}));
+  return wrap({3}::{7}unwrap(ctx){5}));
 }
  )";
     assert(!className.empty() && "className must be set");
@@ -283,7 +309,15 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
 
         // Add unwrapping if needed
         argListStream << ", ";
-        if (isPrimitiveType(cppType)) {
+        if (isDynamicAPIntType(cppType)) {
+          prefixStream << "auto " << pName << "Integer = llzk::parseDynamicAPInt(unwrap(" << pName
+                       << "));\n";
+          prefixStream
+              << "if (!" << pName
+              << "Integer) { mlir::emitError(mlir::UnknownLoc::get(unwrap(ctx)), llvm::toString("
+              << pName << "Integer.takeError())); return {nullptr}; }\n";
+          argListStream << "*" << pName << "Integer";
+        } else if (isPrimitiveType(cppType)) {
           argListStream << pName;
         } else if (capiType == "MlirAttribute" || capiType == "MlirType") {
           // Needs additional cast to the specific attribute/type class
@@ -297,13 +331,19 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
 
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
+        getFunctionPrefix(),    // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
         className,              // {3}
         paramListBuffer,        // {4}
         argListBuffer,          // {5}
-        prefixBuffer            // {6}
+        prefixBuffer,           // {6}
+        def.genVerifyDecl() && llvm::any_of(
+                                   def.getParameters(),
+                                   [](const auto &p) { return isDynamicAPIntType(p.getCppType()); }
+                               )
+            ? "getChecked(mlir::UnknownLoc::get(unwrap(ctx)), "
+            : "get(" // {7}
     );
   }
 
@@ -311,24 +351,24 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
     mlir::tblgen::Dialect defDialect = def.getDialect();
 
     // Generate for the selected dialect only
-    if (defDialect.getName() != DialectName) {
+    if (defDialect.getName() != getDialectName()) {
       return;
     }
 
     this->setNamespaceAndClassName(defDialect, def.getCppClassName());
 
     // Generate IsA check implementation
-    if (GenIsA) {
+    if (getGenIsA()) {
       this->genIsAImpl();
     }
 
     // Generate default Get builder implementation if not skipped
-    if (GenTypeOrAttrGet && !def.skipDefaultBuilders()) {
+    if (getGenTypeOrAttrGet() && !def.skipDefaultBuilders()) {
       this->genDefaultGetBuilderImpl(def);
     }
 
     // Generate parameter getter implementations
-    if (GenTypeOrAttrParamGetters) {
+    if (getGenTypeOrAttrParamGetters()) {
       for (const auto &param : def.getParameters()) {
         this->setParamName(param.getName());
         mlir::StringRef cppType = param.getCppType();
@@ -341,7 +381,7 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
     }
 
     // Generate extra class method implementations
-    if (GenExtraClassMethods) {
+    if (getGenExtraClassMethods()) {
       std::optional<mlir::StringRef> extraDecls = def.getExtraDecls();
       if (extraDecls.has_value()) {
         this->genExtraMethods(extraDecls.value());

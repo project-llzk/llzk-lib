@@ -19,15 +19,15 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @emiteq_in_loop {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@emiteq_in_loop> attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emiteq_in_loop>
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@emiteq_in_loop> attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@emiteq_in_loop>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emiteq_in_loop>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_.-]+]]: !struct.type<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A2:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_.-]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
 //CHECK-NEXT:         constrain.eq %[[A1]], %[[A2]] : !felt.type, !felt.type
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return
@@ -55,13 +55,13 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @emiteq_in_deep_branches {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: !felt.type,
-//CHECK-SAME:      %[[A4:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@emiteq_in_deep_branches>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emiteq_in_deep_branches>
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: i1, %[[A1:[0-9a-zA-Z_.-]+]]: i1, %[[A2:[0-9a-zA-Z_.-]+]]: i1, %[[A3:[0-9a-zA-Z_.-]+]]: !felt.type,
+//CHECK-SAME:      %[[A4:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@emiteq_in_deep_branches>  attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@emiteq_in_deep_branches>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emiteq_in_deep_branches>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_.-]+]]: !struct.type<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_.-]+]]: i1,
+//CHECK-SAME:      %[[A2:[0-9a-zA-Z_.-]+]]: i1, %[[A3:[0-9a-zA-Z_.-]+]]: i1, %[[A4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
@@ -93,17 +93,17 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @emitin_in_loop {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) -> !struct.type<@emitin_in_loop>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emitin_in_loop>
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !array.type<5 x !felt.type>) -> !struct.type<@emitin_in_loop>  attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@emitin_in_loop>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emitin_in_loop>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emitin_in_loop>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A2:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_.-]+]]: !struct.type<@emitin_in_loop>,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A2:[0-9a-zA-Z_.-]+]]: !array.type<5 x !felt.type>) attributes {function.allow_constraint} {
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_.-]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
 //CHECK-NEXT:         constrain.in %[[A2]], %[[A1]] : <5 x !felt.type>, !felt.type
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return
@@ -131,13 +131,13 @@ module attributes {llzk.lang} {
   }
 }
 //CHECK-LABEL:  struct.def @emitin_in_deep_branches {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !array.type<5 x index>) -> !struct.type<@emitin_in_deep_branches>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emitin_in_deep_branches>
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.-]+]]: i1, %[[A1:[0-9a-zA-Z_.-]+]]: i1, %[[A2:[0-9a-zA-Z_.-]+]]: i1,
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_.-]+]]: index, %[[A4:[0-9a-zA-Z_.-]+]]: !array.type<5 x index>) -> !struct.type<@emitin_in_deep_branches>  attributes {function.allow_witness} {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@emitin_in_deep_branches>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emitin_in_deep_branches>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !array.type<5 x index>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_.-]+]]: !struct.type<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_.-]+]]: i1, %[[A2:[0-9a-zA-Z_.-]+]]: i1,
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_.-]+]]: i1, %[[A4:[0-9a-zA-Z_.-]+]]: index, %[[A5:[0-9a-zA-Z_.-]+]]: !array.type<5 x index>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
@@ -280,11 +280,11 @@ module attributes {llzk.lang} {
 }
 //CHECK-LABEL: struct.def @verifyTargetAttributes_is_not_too_restrictive {
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@verifyTargetAttributes_is_not_too_restrictive> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@verifyTargetAttributes_is_not_too_restrictive>
+//CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@verifyTargetAttributes_is_not_too_restrictive>
 //CHECK-NEXT:      function.call @S::@global_fun() : () -> ()
 //CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@verifyTargetAttributes_is_not_too_restrictive>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@verifyTargetAttributes_is_not_too_restrictive>) attributes {function.allow_constraint} {
+//CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@verifyTargetAttributes_is_not_too_restrictive>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

@@ -1,0 +1,50 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Fully specialized members also work without compute-side writes.
+  struct.def @Concrete {
+    struct.member @value : !array.type<3 x !felt.type> {llzk.pub}
+    function.def @compute() -> !struct.type<@Concrete> {
+      %self = struct.new : !struct.type<@Concrete>
+      function.return %self : !struct.type<@Concrete>
+    }
+    function.def @constrain(%self: !struct.type<@Concrete>) {
+      %value = struct.readm %self[@value] : !struct.type<@Concrete>, !array.type<3 x !felt.type>
+      constrain.eq %value, %value : !array.type<3 x !felt.type>
+      function.return
+    }
+  }
+
+  // A wildcard is an IntegerAttr, but is not a fully specialized dimension.
+  struct.def @Wildcard {
+    struct.member @value : !array.type<? x !felt.type> {llzk.pub}
+    function.def @compute(%input: !array.type<3 x !felt.type>) -> !struct.type<@Wildcard> {
+      %self = struct.new : !struct.type<@Wildcard>
+      struct.writem %self[@value] = %input : !struct.type<@Wildcard>, !array.type<3 x !felt.type>
+      function.return %self : !struct.type<@Wildcard>
+    }
+    function.def @constrain(%self: !struct.type<@Wildcard>, %input: !array.type<3 x !felt.type>) {
+      function.return
+    }
+  }
+
+  // The wildcard check must also reach arrays nested in POD records.
+  struct.def @NestedWildcard {
+    struct.member @value : !pod.type<[@items: !array.type<? x !felt.type>]>
+    function.def @compute(%input: !pod.type<[@items: !array.type<3 x !felt.type>]>) -> !struct.type<@NestedWildcard> {
+      %self = struct.new : !struct.type<@NestedWildcard>
+      struct.writem %self[@value] = %input : !struct.type<@NestedWildcard>, !pod.type<[@items: !array.type<3 x !felt.type>]>
+      function.return %self : !struct.type<@NestedWildcard>
+    }
+    function.def @constrain(%self: !struct.type<@NestedWildcard>, %input: !pod.type<[@items: !array.type<3 x !felt.type>]>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:    struct.def @Concrete {
+// CHECK-NEXT:      struct.member @value : !array.type<3 x !felt.type> {llzk.pub}
+// CHECK-LABEL:    struct.def @Wildcard {
+// CHECK-NEXT:      struct.member @value : !array.type<3 x !felt.type> {llzk.pub}
+// CHECK-LABEL:    struct.def @NestedWildcard {
+// CHECK-NEXT:      struct.member @value : !pod.type<[@items: !array.type<3 x !felt.type>]>

@@ -8,10 +8,10 @@ function.def @arr_constant_index() -> !array.type<3 x index> {
   function.return %r: !array.type<3 x index>
 }
 //CHECK-LABEL:  function.def @arr_constant_index() -> !array.type<3 x index> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 45 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 214 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]] : <3 x index>
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 45 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 214 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_.-]+]] = array.new %[[T1]], %[[T2]], %[[T3]] : <3 x index>
 //CHECK-NEXT:     function.return %[[T4]] : !array.type<3 x index>
 //CHECK-NEXT:   }
 // -----
@@ -23,10 +23,10 @@ function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
   function.return %r: !array.type<4 x index>
 }
 //CHECK-LABEL:  function.def @arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !array.type<4 x index> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 324 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 999 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> !array.type<4 x index> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 324 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 999 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
 //CHECK-NEXT:     function.return %[[T3]] : !array.type<4 x index>
 //CHECK-NEXT:   }
 // -----
@@ -38,10 +38,10 @@ function.def @arr_mix_index(%a: index, %b: index) -> !array.type<2,2 x index> {
   function.return %r: !array.type<2,2 x index>
 }
 //CHECK-LABEL:  function.def @arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2,2 x index> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 324 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 999 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2,2 x index>
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> !array.type<2,2 x index> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 324 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 999 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2,2 x index>
 //CHECK-NEXT:     function.return %[[T3]] : !array.type<2,2 x index>
 //CHECK-NEXT:   }
 // -----
@@ -51,12 +51,12 @@ function.def @arr_3D(%0: index, %1: index, %2: index, %3: index, %4: index, %5: 
   function.return %r: !array.type<2,2,2 x index>
 }
 //CHECK-LABEL:  function.def @arr_3D
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index,
-//CHECK-SAME:    %[[A2:[0-9a-zA-Z_\.]+]]: index, %[[A3:[0-9a-zA-Z_\.]+]]: index,
-//CHECK-SAME:    %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: index,
-//CHECK-SAME:    %[[A6:[0-9a-zA-Z_\.]+]]: index, %[[A7:[0-9a-zA-Z_\.]+]]: index)
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index,
+//CHECK-SAME:    %[[A2:[0-9a-zA-Z_.-]+]]: index, %[[A3:[0-9a-zA-Z_.-]+]]: index,
+//CHECK-SAME:    %[[A4:[0-9a-zA-Z_.-]+]]: index, %[[A5:[0-9a-zA-Z_.-]+]]: index,
+//CHECK-SAME:    %[[A6:[0-9a-zA-Z_.-]+]]: index, %[[A7:[0-9a-zA-Z_.-]+]]: index)
 //CHECK-SAME:   -> !array.type<2,2,2 x index> {
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[A2]], %[[A3]], %[[A4]], %[[A5]], %[[A6]], %[[A7]] : <2,2,2 x index>
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = array.new %[[A0]], %[[A1]], %[[A2]], %[[A3]], %[[A4]], %[[A5]], %[[A6]], %[[A7]] : <2,2,2 x index>
 //CHECK-NEXT:     function.return %[[T3]] : !array.type<2,2,2 x index>
 //CHECK-NEXT:   }
 // -----
@@ -68,10 +68,10 @@ function.def @arr_arr_mix_index(%a: index, %b: index) -> !array.type<2 , 2 x ind
   function.return %r: !array.type<2 , 2 x index>
 }
 //CHECK-LABEL:  function.def @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2,2 x index> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 343245 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 345 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2,2 x index>
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> !array.type<2,2 x index> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 343245 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 345 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2,2 x index>
 //CHECK-NEXT:     function.return %[[T3]] : !array.type<2,2 x index>
 //CHECK-NEXT:   }
 // -----
@@ -83,9 +83,9 @@ function.def @arr_constant_felt() -> !array.type<2 x !felt.type> {
   function.return %r: !array.type<2 x !felt.type>
 }
 //CHECK-LABEL:  function.def @arr_constant_felt() -> !array.type<2 x !felt.type> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 6744573456376
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = felt.const 381928390103509
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]] : <2 x !felt.type>
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = felt.const 6744573456376
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = felt.const 381928390103509
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = array.new %[[T1]], %[[T2]] : <2 x !felt.type>
 //CHECK-NEXT:     function.return %[[T3]] : !array.type<2 x !felt.type>
 //CHECK-NEXT:   }
 // -----
@@ -95,9 +95,9 @@ function.def @arr_params_felt(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d
   function.return %r: !array.type<4 x !felt.type>
 }
 //CHECK-LABEL:  function.def @arr_params_felt
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type,
-//CHECK-SAME:    %[[A2:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A3:[0-9a-zA-Z_\.]+]]: !felt.type) -> !array.type<4 x !felt.type> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[A2]], %[[A3]] : <4 x !felt.type>
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type,
+//CHECK-SAME:    %[[A2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A3:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<4 x !felt.type> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = array.new %[[A0]], %[[A1]], %[[A2]], %[[A3]] : <4 x !felt.type>
 //CHECK-NEXT:     function.return %[[T1]] : !array.type<4 x !felt.type>
 //CHECK-NEXT:   }
 // -----
@@ -107,7 +107,7 @@ function.def @arr_uninitialized() -> !array.type<3 x index> {
   function.return %r: !array.type<3 x index>
 }
 //CHECK-LABEL:  function.def @arr_uninitialized() -> !array.type<3 x index> {
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new : <3 x index>
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_.-]+]] = array.new : <3 x index>
 //CHECK-NEXT:     function.return %[[T4]] : !array.type<3 x index>
 //CHECK-NEXT:   }
 // -----
@@ -117,7 +117,7 @@ function.def @arr_uninitialized_multi() -> !array.type<3,4,5 x index> {
   function.return %r: !array.type<3,4,5 x index>
 }
 //CHECK-LABEL:  function.def @arr_uninitialized_multi() -> !array.type<3,4,5 x index> {
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new : <3,4,5 x index>
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_.-]+]] = array.new : <3,4,5 x index>
 //CHECK-NEXT:     function.return %[[T4]] : !array.type<3,4,5 x index>
 //CHECK-NEXT:   }
 // -----
@@ -142,16 +142,16 @@ function.def @test_all_forms_of_affine_map_instantiation() -> !at {
   %r = array.new { (%a)[%b], ()[%c], (%d) } : !at  // { operandSegmentSizes = array<i32: 0, 4> }
   function.return %r: !at
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
-// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
+// CHECK: #[[$M1:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 + 2)>
 //
 // CHECK-LABEL: function.def @test_all_forms_of_affine_map_instantiation() ->
 // CHECK-SAME:             !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type> {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
-// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = array.new{(%[[V0]]){{\[}}%[[V1]]], (){{\[}}%[[V2]]], (%[[V3]])} : <#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 6 : index
+// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_.-]+]] = array.new{(%[[V0]]){{\[}}%[[V1]]], (){{\[}}%[[V2]]], (%[[V3]])} : <#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>
 // CHECK-NEXT:    function.return %[[V4]] : !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>
 // CHECK-NEXT:  }

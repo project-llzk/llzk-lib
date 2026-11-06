@@ -1,0 +1,10 @@
+changed:
+  - Upgrade LLVM, MLIR, and Clang from 20.1.8 to 23.1.0
+  - Use MLIR's upstream SMT dialect in place of LLZK's vendored SMT dialect
+  - Removed `smt.int.neg` op and generate `smt.int.sub 0, x` instead
+  - Renamed `smt.set_info` to `smt_info.set`
+  - CAPI:
+    - "LLZK no longer provides `mlirOperationReplaceUsesOfWith`; use MLIR's upstream C API version"
+
+fixed:
+  - Installed CMake targets now propagate LLVM and MLIR include paths to consumers

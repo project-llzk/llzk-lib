@@ -39,33 +39,33 @@ module attributes {llzk.lang, llzk.main = !struct.type<@TIsZero_0::@IsZero_0>} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_IsZero_0(%[[IN:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-DAG: %[[OUTC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
-// CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
-// CHECK: %[[OUTW_LO:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[OUTW]], %{{[0-9a-zA-Z_\.]+}}
-// CHECK: %[[OUTW_HI:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[OUTW]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: func.func @smt_IsZero_0(%[[IN:[0-9a-zA-Z_.-]+]]: !smt.int) {
+// CHECK-DAG: %[[OUTC:[0-9a-zA-Z_.-]+]] = smt.declare_fun "out_c" : !smt.int
+// CHECK-DAG: %[[OUTW:[0-9a-zA-Z_.-]+]] = smt.declare_fun "out_w" : !smt.int
+// CHECK: %[[OUTW_LO:[0-9a-zA-Z_.-]+]] = smt.int.cmp ge %[[OUTW]], %{{[0-9a-zA-Z_.-]+}}
+// CHECK: %[[OUTW_HI:[0-9a-zA-Z_.-]+]] = smt.int.cmp le %[[OUTW]], %{{[0-9a-zA-Z_.-]+}}
 // CHECK: smt.assert %[[OUTW_LO]]
 // CHECK: smt.assert %[[OUTW_HI]]
-// CHECK-DAG: %[[INVC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv_c" : !smt.int
-// CHECK-DAG: %[[INVW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv_w" : !smt.int
-// CHECK: %[[INVSYM:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv" : !smt.int
-// CHECK: %[[INV_LO:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[INVSYM]], %{{[0-9a-zA-Z_\.]+}}
-// CHECK: %[[INV_HI:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[INVSYM]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK-DAG: %[[INVC:[0-9a-zA-Z_.-]+]] = smt.declare_fun "inv_c" : !smt.int
+// CHECK-DAG: %[[INVW:[0-9a-zA-Z_.-]+]] = smt.declare_fun "inv_w" : !smt.int
+// CHECK: %[[INVSYM:[0-9a-zA-Z_.-]+]] = smt.declare_fun "inv" : !smt.int
+// CHECK: %[[INV_LO:[0-9a-zA-Z_.-]+]] = smt.int.cmp ge %[[INVSYM]], %{{[0-9a-zA-Z_.-]+}}
+// CHECK: %[[INV_HI:[0-9a-zA-Z_.-]+]] = smt.int.cmp le %[[INVSYM]], %{{[0-9a-zA-Z_.-]+}}
 // CHECK: smt.assert %[[INV_LO]]
 // CHECK: smt.assert %[[INV_HI]]
-// CHECK: %[[ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
-// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[IN]], %[[INVSYM]]
-// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[PROD]], %[[ONE]]
-// CHECK: %[[MODP:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[DIFF]], %{{[0-9a-zA-Z_\.]+}}
-// CHECK: %[[PROD_EQ_ONE:[0-9a-zA-Z_\.]+]] = smt.eq %[[MODP]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
-// CHECK: %[[OPERAND_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[IN]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
-// CHECK: %[[INV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[INVSYM]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
-// CHECK: %[[INV_CONSTRAINT:[0-9a-zA-Z_\.]+]] = smt.ite %[[OPERAND_ZERO]], %[[INV_ZERO]], %[[PROD_EQ_ONE]] : !smt.bool
+// CHECK: %[[ONE:[0-9a-zA-Z_.-]+]] = smt.int.constant 1
+// CHECK: %[[PROD:[0-9a-zA-Z_.-]+]] = smt.int.mul %[[IN]], %[[INVSYM]]
+// CHECK: %[[DIFF:[0-9a-zA-Z_.-]+]] = smt.int.sub %[[PROD]], %[[ONE]]
+// CHECK: %[[MODP:[0-9a-zA-Z_.-]+]] = smt.int.mod %[[DIFF]], %{{[0-9a-zA-Z_.-]+}}
+// CHECK: %[[PROD_EQ_ONE:[0-9a-zA-Z_.-]+]] = smt.eq %[[MODP]], %{{[0-9a-zA-Z_.-]+}} : !smt.int
+// CHECK: %[[OPERAND_ZERO:[0-9a-zA-Z_.-]+]] = smt.eq %[[IN]], %{{[0-9a-zA-Z_.-]+}} : !smt.int
+// CHECK: %[[INV_ZERO:[0-9a-zA-Z_.-]+]] = smt.eq %[[INVSYM]], %{{[0-9a-zA-Z_.-]+}} : !smt.int
+// CHECK: %[[INV_CONSTRAINT:[0-9a-zA-Z_.-]+]] = smt.ite %[[OPERAND_ZERO]], %[[INV_ZERO]], %[[PROD_EQ_ONE]] : !smt.bool
 // CHECK: smt.assert %[[INV_CONSTRAINT]]
-// CHECK: %[[INV_ASSIGN:[0-9a-zA-Z_\.]+]] = smt.eq %[[INVW]], %[[INVSYM]] : !smt.int
+// CHECK: %[[INV_ASSIGN:[0-9a-zA-Z_.-]+]] = smt.eq %[[INVW]], %[[INVSYM]] : !smt.int
 // CHECK: smt.assert %[[INV_ASSIGN]]
 // CHECK: smt.int.mod
-// CHECK: %[[ZERO_PROD_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[ZERO_PROD_EQ:[0-9a-zA-Z_.-]+]] = smt.eq %{{[0-9a-zA-Z_.-]+}}, %{{[0-9a-zA-Z_.-]+}} : !smt.int
 // CHECK: smt.assert %[[ZERO_PROD_EQ]]
 // CHECK-NOT: smt.declare_fun "felt_inv_q"
 // CHECK-NOT: smt.declare_fun "member_write_q"

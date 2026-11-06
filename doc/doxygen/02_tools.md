@@ -27,37 +27,85 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/AnalysisPasses.md
 
-### General Transformation Passes
+### Transformation Passes
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKTransformationPasses.md
-
-### 'array' Dialect Transformation Passes
-
 \include{doc,raise=1} build/doc/mlir/passes/array/TransformationPasses.md
-
-### 'polymorphic' Dialect Transformation Passes
-
+\include{doc,raise=1} build/doc/mlir/passes/bool/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/include/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/pcl/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/pod/TransformationPasses.md
 \include{doc,raise=1} build/doc/mlir/passes/polymorphic/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/struct/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/PCLConversionPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/R1CSTransformationPasses.md
 
 ### Validation Passes
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKValidationPasses.md
 
+### Predefined Pipelines
+
+\include{doc,raise=1} doc/includes/pipelines.md
+
 # llzk-translate {#llzk-translate}
 
-`llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends 
+`llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends
 specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++).
 `llzk-translate -h` will show a list of all available flags and options.
 
 The tool expects that the IR has already been converted to the backend's dialect IR. For example:
 
-```sh 
+```sh
 llzk-opt <input.llzk> --llzk-to-pcl | llzk-translate --pcl-to-lisp
 ```
+
+The `--llzk-generate-layout` pipeline monomorphizes LLZK IR and exports its
+logical felt-signal layout:
+
+```sh
+llzk-translate circuit.llzk --llzk-generate-layout -o circuit.llzk-layout
+```
+
+For already monomorphized IR, `--llzk-layout` exports the layout directly.
+Both commands require main to define a `@constrain` function; product-only main
+components are unsupported.
+
+The text format starts with a layout map header and a `# signals` section.
+Each line gives a signal ID and a storage path, such as
+`signal 0<TAB>main["children"][0]["out"]`. IDs start at zero and cover every
+declared signal, including unused signals. A member's `{signal}` annotation
+marks signal storage; unmarked felt intermediates receive no IDs. Main's
+inputs and public output members are implicit signals. Child components are
+traversed to find their annotated members. Struct members and POD fields
+follow declaration order, expanding each field fully before moving to the next.
+Arrays follow numeric index order, with the last dimension varying fastest.
+Constrain arguments come first in signature order, followed by the main
+instance's members. The
+`main` root identifies the main instance; `arg["name"]` or `argN` identifies
+an argument to its constrain function. Argument names are display labels; the
+in-memory paths start with `"main"` or `"arg"` and the argument's signature
+position, so root names are separate from signal IDs. Non-felt
+scalars and empty arrays contribute no signals.
+
+Array dimensions must be concrete. Rolled arrays of parameterized structs use
+the monomorphizer's `poly.family` metadata to select a concrete specialization
+at each element, including struct fields inside POD elements. Missing mappings
+are diagnosed, as are ambiguous specialization IDs and mismatched origins. The
+exporter trusts the monomorphizer's mapping of indices to specialization arguments;
+passes that change specializations must keep this metadata consistent. Unrelated
+specialization metadata does not block export. The exporter inspects storage declarations without evaluating
+function bodies. It assigns logical signal IDs independently of backend wires
+and auxiliary variables; later lowering can attach a wire-to-signal mapping.
+The C++ `buildLLZKLayout` API returns the paths indexed by ID, and `getSignalId`
+looks up an ID by path. Renaming clone symbols or repeating monomorphization
+does not change IDs for the same declarations. Reordering fields changes IDs.
 
 #### LLZK-Specific Options
 
 ```
+--llzk-generate-layout  Monomorphizes LLZK and exports the logical signal layout
+--llzk-layout           Exports the logical LLZK signal layout
 --pcl-to-lisp           Translates from PCL IR to PCL lisp
 --smt-to-smtlib         Translates from SMT to SMTLIB
 --zklean-to-lean        Translates from zkLean dialects IR to Lean code
@@ -111,7 +159,8 @@ form used by the witgen tests, namely JSON integers or decimal strings.
   - The output JSON contains only the public outputs of the main component.
   - Public struct members become JSON object fields.
   - Public felt arrays become JSON arrays.
-  - Field element leaves are rendered as decimal strings.
+  - Field element leaves are reduced to canonical representatives in `[0, p-1]`
+    and rendered as decimal strings.
 - `--output-scope=full-witness`
   - The output JSON contains two top-level objects: `inputs` and `signals`.
   - `inputs` records the main `compute()` arguments using their
@@ -121,8 +170,8 @@ form used by the witgen tests, namely JSON integers or decimal strings.
     struct, including both public and private signals.
   - Non-signal leaves are omitted, though non-signal struct containers may
     still appear when needed to reach nested signals.
-  - Felt arrays remain JSON arrays and field element leaves remain decimal
-    strings.
+  - Felt arrays remain JSON arrays and field element leaves use the same
+    canonical decimal strings as public outputs.
 
 #### Backends
 
@@ -136,6 +185,15 @@ form used by the witgen tests, namely JSON integers or decimal strings.
 
 The default backend is `interpreter`, as the `execution-engine` does not currently
 support all LLZK features due to existing lowering limitations (e.g., in the `-llzk-flattening` pass).
+
+The execution engine supports `cast.tofelt` with `assert` (the default) and
+`wrap` overflow semantics. Index inputs follow the backend's signed 64-bit index
+convention: `assert` requires `0 <= x < p`, while `wrap` reduces the signed value
+modulo `p` to a representative in `[0, p-1]`, including the minimum signed index.
+Boolean inputs become zero or one in either mode. Reduction preserves the full
+index value before narrowing to the field representation.
+Other `cast.tofelt` overflow modes and non-assert `cast.toindex` modes remain
+unsupported by the execution engine and produce diagnostics.
 
 #### Preprocessing
 
@@ -155,7 +213,7 @@ they can be fully resolved by the preprocessing pipeline before execution.
 `llzk-smt-check` runs an external SMT solver on an SMT-LIB 2 script and reports
 the result of each `check-sat` stage. It is intended to consume the staged
 SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including explicit metadata
-produced from `smt.set_info` ops such as `(set-info :llzk-stage "pre")` and
+produced from `smt_info.set` ops such as `(set-info :llzk-stage "pre")` and
 `(set-info :status unsat)`.
 
 #### Basic Usage
@@ -171,12 +229,12 @@ as helpers that may be called from within that solver body. Exported scripts
 preserve any `smt.set_logic` operation in that solver and otherwise begin with
 the conservative fallback `(set-logic ALL)`. Any staged metadata consumed by
 `llzk-smt-check` must be introduced explicitly in the SMT dialect IR using
-`smt.set_info`, for example:
+`smt_info.set`, for example:
 
 ```mlir
-smt.set_info ":llzk-root" "CheckGate"
-smt.set_info ":llzk-stage" "pre"
-smt.set_info ":status" unsat
+smt_info.set ":llzk-root" "CheckGate"
+smt_info.set ":llzk-stage" "pre"
+smt_info.set ":status" unsat
 ```
 
 `smt.check` lowers only to a bare `(check-sat)`. Because SMT-LIB scripts cannot

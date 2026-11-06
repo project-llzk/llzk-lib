@@ -41,6 +41,7 @@ class PassImpl : public llzk::impl::MemberWriteValidatorPassBase<PassImpl> {
     auto result = analyzeStruct(structDef);
     if (failed(result)) {
       signalPassFailure();
+      return;
     }
     const auto &[overwrites, written] = *result;
 

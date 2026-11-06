@@ -150,7 +150,7 @@ class ModuleEmitter {
   }
 
   /// Emits the s-expression that closes a module: `(end-module)`.
-  void emitModuleFooter(pcl::Sexps &S) { S.push(S.sexp({S.atom("end-module")})); }
+  static void emitModuleFooter(pcl::Sexps &S) { S.push(S.sexp({S.atom("end-module")})); }
 
   /// Emits an input declaration.
   template <typename T> void emitInput(pcl::Sexps &S, T name) {
@@ -302,7 +302,7 @@ class ModuleEmitter {
                .Case<pcl::NegOp>([this, &S](auto op) { return emitUnaryExpr("-", op, S); })
                .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op.getValue(), S); })
                .Case<pcl::VarOp>([this, &S](auto op) { return S.atom(ns.get(op)); })
-               .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getValueAPInt()); })
+               .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getIntegerValue()); })
                .Case<func::CallOp>([this, &S, v](auto) {
       // If we encounter a call we need to emit the value as a variable,
       // since we preload all the call outputs into the environment.

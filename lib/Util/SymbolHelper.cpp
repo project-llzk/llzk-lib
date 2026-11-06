@@ -15,19 +15,26 @@
 #include "llzk/Util/SymbolHelper.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/TypeHelper.h"
 
+#include <mlir/AsmParser/AsmParser.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Operation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+
+#include <algorithm>
 
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
@@ -37,9 +44,28 @@ namespace llzk {
 
 using namespace array;
 using namespace component;
+using namespace felt;
 using namespace function;
 using namespace global;
 using namespace polymorphic;
+
+void eraseEmptyNestedModules(ModuleOp rootModule) {
+  SmallVector<ModuleOp> emptyModules;
+  rootModule.walk<WalkOrder::PostOrder>([&](ModuleOp module) {
+    if (module == rootModule) {
+      return;
+    }
+    Region &region = module.getBodyRegion();
+    if (region.empty() || region.front().empty()) { // ModuleOp has the SingleBlock trait.
+      emptyModules.push_back(module);
+    }
+  });
+
+  for (ModuleOp module : emptyModules) {
+    LLVM_DEBUG(llvm::dbgs() << "Removing empty module " << module.getName() << '\n');
+    module.erase();
+  }
+}
 
 namespace {
 
@@ -61,21 +87,19 @@ public:
   RootPathBuilder(RootSelector whichRoot, Operation *origin, ModuleOp *foundRoot)
       : _whichRoot(whichRoot), _origin(origin), _foundRoot(foundRoot) {}
 
-  /// Traverse ModuleOp ancestors of `from` and add their names to `path` until the (closest or
-  /// furthest, based on RootSelector argument) ModuleOp with the `LANG_ATTR_NAME` attribute is
-  /// reached. If a ModuleOp without a name is reached or a ModuleOp with the `LANG_ATTR_NAME`
-  /// attribute is never found, produce an error (referencing the `origin` Operation). The name
-  /// of the root module itself is not added to the path.
-  ///
-  /// Returns the module containing the LANG_ATTR_NAME attribute.
+  /// Collect module and template names into \p path while finding a module with
+  /// the LANG_ATTR_NAME attribute starting at \p from. CLOSEST stops before adding
+  /// that root's name. FURTHEST traverses all ancestors and includes named roots
+  /// and named modules above them, returning the outermost module with the
+  /// LANG_ATTR_NAME attribute. An unnamed module before finding a root, or the
+  /// absence of any root, produces an error at the origin operation.
   FailureOr<ModuleOp> collectPathToRoot(Operation *from, std::vector<FlatSymbolRefAttr> &path) {
     Operation *check = from;
     ModuleOp currRoot = nullptr;
     do {
       if (ModuleOp m = llvm::dyn_cast_if_present<ModuleOp>(check)) {
-        // We need this attribute restriction because some stages of parsing have
-        //  an extra module wrapping the top-level module from the input file.
-        // This module, even if it has a name, does not contribute to path names.
+        // Parsing may wrap the input in an extra module; llzk.lang identifies
+        // the program's lookup root independently of that wrapper.
         if (m->hasAttr(LANG_ATTR_NAME)) {
           if (_whichRoot == RootSelector::CLOSEST) {
             return m;
@@ -295,6 +319,51 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   }
 }
 
+FailureOr<SymbolRefAttr> getPathRelativeToAncestor(
+    SymbolOpInterface symbol, ModuleOp ancestor, llvm::function_ref<InFlightDiagnostic()> emitError
+) {
+  Operation *definition = symbol.getOperation();
+  if (definition == ancestor || !ancestor->isAncestor(definition)) {
+    if (emitError) {
+      auto diagnostic = emitError();
+      if (definition == ancestor) {
+        diagnostic << " cannot be named relative to itself; a strict descendant is required";
+        diagnostic.attachNote(ancestor.getLoc())
+            << "symbol and supplied module are the same operation";
+      } else {
+        diagnostic << " is not visible from module \""
+                   << ancestor.getSymName().value_or("<unnamed>") << '"';
+        diagnostic.attachNote(definition->getLoc())
+            << "symbol is defined outside the supplied module";
+        diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
+      }
+    }
+    return failure();
+  }
+  SmallVector<FlatSymbolRefAttr> path;
+  for (Operation *current = definition; current != ancestor; current = current->getParentOp()) {
+    if (current != definition && !current->hasTrait<OpTrait::SymbolTable>()) {
+      continue;
+    }
+    auto name = llzk::getSymbolName(current);
+    if (!name) {
+      if (emitError) {
+        auto diagnostic = emitError();
+        diagnostic << " cannot be named relative to module \""
+                   << ancestor.getSymName().value_or("<unnamed>")
+                   << "\" because an intervening symbol table is unnamed";
+        diagnostic.attachNote(current->getLoc())
+            << "unnamed symbol table prevents forming a symbol path";
+        diagnostic.attachNote(ancestor.getLoc()) << "symbol path must start from this module";
+      }
+      return failure();
+    }
+    path.push_back(FlatSymbolRefAttr::get(name));
+  }
+  std::reverse(path.begin(), path.end());
+  return asSymbolRefAttr(path);
+}
+
 FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
   return RootPathBuilder(RootSelector::CLOSEST, from, nullptr).collectPathToRoot(from, path);
@@ -371,6 +440,51 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
   }
 }
 
+FailureOr<SymbolLookupResult<StructDefOp>>
+getRootStructDef(SymbolTableCollection &tables, Operation *lookupFrom, StringRef symbolPath) {
+  symbolPath = symbolPath.trim();
+  if (symbolPath.empty()) {
+    return getMainInstanceDef(tables, lookupFrom);
+  }
+  std::string symbolText = symbolPath.str();
+  if (symbolText.front() != '@') {
+    symbolText.insert(symbolText.begin(), '@');
+  }
+  SymbolRefAttr symbol;
+  std::string parseError;
+  {
+    // Report parser details at the caller's location instead of the temporary buffer.
+    ScopedDiagnosticHandler handler(lookupFrom->getContext(), [&](Diagnostic &diagnostic) {
+      if (diagnostic.getSeverity() == DiagnosticSeverity::Error) {
+        parseError = diagnostic.str();
+      }
+      return success();
+    });
+    symbol = dyn_cast_or_null<SymbolRefAttr>(parseAttribute(symbolText, lookupFrom->getContext()));
+  }
+  if (!symbol) {
+    auto diagnostic = lookupFrom->emitError();
+    diagnostic << "invalid root struct symbol path '" << symbolPath << '\'';
+    if (!parseError.empty()) {
+      diagnostic << ": " << parseError;
+    }
+    return diagnostic;
+  }
+  auto found = lookupTopLevelSymbol(tables, symbol, lookupFrom, false);
+  if (failed(found)) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' does not resolve to a symbol";
+  }
+  Operation *definition = found->get();
+  SymbolLookupResult<StructDefOp> root(std::move(*found));
+  if (!root) {
+    return lookupFrom->emitError()
+           << "root struct symbol path '" << symbolPath << "' references a '"
+           << definition->getName() << "'; expected a 'struct.def'";
+  }
+  return root;
+}
+
 FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {
   if (auto contract = origin->getParentOfType<verif::ContractOp>()) {
     FailureOr<SymbolLookupResultUntyped> targetRes =
@@ -385,6 +499,169 @@ FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, 
   }
 
   return getParentOfType<TemplateOp>(origin);
+}
+
+LogicalResult
+verifyTemplateParamSymbol(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *origin) {
+  if (symbol.getNestedReferences().empty()) {
+    FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
+    if (failed(parent)) {
+      return failure();
+    }
+    if (*parent &&
+        parent->getConstNamed<TemplateSymbolBindingOpInterface>(symbol.getRootReference())) {
+      return success();
+    }
+  }
+
+  auto lookupRes = lookupTopLevelSymbol(tables, symbol, origin);
+  if (failed(lookupRes)) {
+    return failure();
+  }
+  auto global = llvm::dyn_cast<GlobalDefOp>(lookupRes->get());
+  if (!global) {
+    return origin->emitOpError() << "template argument '" << symbol << "' refers to a '"
+                                 << lookupRes->get()->getName() << "' which is not allowed";
+  }
+  if (!global.isConstant()) {
+    return origin->emitOpError() << "template argument '" << symbol
+                                 << "' refers to a global that is not marked as 'const'";
+  }
+  return success();
+}
+
+LogicalResult verifyTemplateParamValueCompatibility(
+    Operation *origin, Attribute value, TemplateParamOp targetParam
+) {
+  std::optional<Type> declaredType = targetParam.getTypeOpt();
+
+  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(value); intAttr && isDynamic(intAttr)) {
+    if (!declaredType || !llvm::isa<TypeVarType>(*declaredType)) {
+      auto diag = origin->emitOpError().append(
+          "wildcard `?` can only be used for template parameters with `!poly.tvar` "
+          "type restriction, but parameter \"@",
+          targetParam.getName(), "\" has "
+      );
+      if (declaredType) {
+        diag.append("type restriction ", *declaredType);
+      } else {
+        diag.append("no type restriction");
+      }
+      return diag;
+    }
+    return success();
+  }
+
+  if (auto symbol = llvm::dyn_cast<SymbolRefAttr>(value)) {
+    SymbolTableCollection tables;
+    if (failed(verifyTemplateParamSymbol(tables, symbol, origin))) {
+      return failure();
+    }
+    if (!declaredType) {
+      return success();
+    }
+    bool resolvedLocal = false;
+    bool compatible = false;
+    if (symbol.getNestedReferences().empty()) {
+      FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, origin);
+      if (failed(parentTemplate)) {
+        return failure();
+      }
+      if (*parentTemplate) {
+        auto binding = parentTemplate->getConstNamed<TemplateSymbolBindingOpInterface>(
+            symbol.getRootReference()
+        );
+        if (binding) {
+          resolvedLocal = true;
+          compatible = !binding.getTypeOpt() || typesUnify(*binding.getTypeOpt(), *declaredType);
+        }
+      }
+    }
+    // `verifyTemplateParamSymbol` establishes that this is a constant global, but the global's
+    // type is not otherwise constrained when the parameter is absent from the callee signature.
+    // Resolve it here to enforce the explicit template parameter restriction.
+    if (!resolvedLocal) {
+      FailureOr<SymbolLookupResultUntyped> lookupRes = lookupTopLevelSymbol(tables, symbol, origin);
+      if (failed(lookupRes)) {
+        return failure();
+      }
+      auto global = llvm::cast<GlobalDefOp>(lookupRes->get());
+      assert(global.isConstant() && "already verified by verifyTemplateParamSymbol");
+      compatible = typesUnify(global.getType(), *declaredType);
+    }
+    if (!compatible) {
+      return origin->emitOpError().append(
+          "instantiation value '", value, "' is not compatible with parameter \"@",
+          targetParam.getName(), "\" type restriction ", *declaredType
+      );
+    }
+    return success();
+  }
+
+  if (!declaredType) {
+    return success();
+  }
+  bool compatible = false;
+  if (llvm::isa<TypeVarType>(*declaredType)) {
+    compatible = llvm::isa<TypeAttr>(value);
+  } else if (llvm::isa<FeltType>(*declaredType)) {
+    compatible = llvm::isa<FeltConstAttr, IntegerAttr>(value) &&
+                 isValidConstReadType(llvm::cast<TypedAttr>(value).getType());
+  } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
+    compatible = llvm::isa<IntegerAttr>(value) &&
+                 isValidConstReadType(llvm::cast<TypedAttr>(value).getType());
+  } else {
+    llvm_unreachable("inconsistent with `isValidConstReadType()`");
+  }
+  if (!compatible) {
+    return origin->emitOpError().append(
+        "instantiation value '", value, "' is not compatible with parameter \"@",
+        targetParam.getName(), "\" type restriction ", *declaredType
+    );
+  }
+  return success();
+}
+
+LogicalResult verifyTemplateParamValuesCompatibility(
+    Operation *origin, ArrayAttr explicitParams,
+    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs
+) {
+  assert(!isNullOrEmpty(explicitParams) && "pre-condition");
+  assert(explicitParams.size() == llvm::range_size(targetParamDefs) && "pre-condition");
+  for (auto [targetParam, value] : llvm::zip_equal(targetParamDefs, explicitParams.getValue())) {
+    if (failed(verifyTemplateParamValueCompatibility(origin, value, targetParam))) {
+      return failure();
+    }
+  }
+  return success();
+}
+
+LogicalResult verifyTemplateParamsMatchInferred(
+    Operation *origin, ArrayAttr explicitParams,
+    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs,
+    const UnificationMap &unifications
+) {
+  assert(!isNullOrEmpty(explicitParams) && "pre-condition");
+  assert((explicitParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
+
+  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, explicitParams.getValue())) {
+    // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+      if (isDynamic(intAttr)) {
+        continue;
+      }
+    }
+    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
+    // A null entry represents conflicting inferred bindings. It may include symbolic values
+    // that become equal after instantiating an enclosing template, so defer validation.
+    if (it != unifications.end() && it->second && !typeParamsUnify({attr}, {it->second})) {
+      return origin->emitOpError().append(
+          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
+          "\" conflicts with value '", it->second, "' inferred from function type signature"
+      );
+    }
+  }
+  return success();
 }
 
 LogicalResult verifyParamOfType(
@@ -412,11 +689,15 @@ LogicalResult verifyParamOfType(
   if (failed(lookupRes)) {
     return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
   }
-  Operation *foundOp = lookupRes->get();
-  if (!llvm::isa<GlobalDefOp>(foundOp)) {
+  auto global = llvm::dyn_cast<GlobalDefOp>(lookupRes->get());
+  if (!global) {
     return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
-                               << " refers to a '" << foundOp->getName()
+                               << " refers to a '" << lookupRes->get()->getName()
                                << "' which is not allowed";
+  }
+  if (!global.isConstant()) {
+    return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
+                               << " refers to a global that is not marked as 'const'";
   }
   return success();
 }
@@ -493,7 +774,19 @@ LogicalResult verifyTypeResolution(SymbolTableCollection &tables, Operation *ori
     }
     return verifyTypeResolution(tables, origin, aTy.getElementType());
   } else if (TypeVarType vTy = llvm::dyn_cast<TypeVarType>(ty)) {
-    return verifyParamOfType(tables, vTy.getNameRef(), vTy, origin);
+    // Unlike other type parameters, a type variable may only name a parameter
+    // of the enclosing template; it cannot resolve to a global.
+    FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
+    if (failed(parent)) {
+      return failure();
+    }
+    TemplateOp templateOp = *parent;
+    if (templateOp && templateOp.getConstNamed<TemplateParamOp>(vTy.getNameRef())) {
+      return success();
+    }
+    return origin->emitError() << "type variable " << vTy
+                               << " must reference a parameter of its enclosing " << '\''
+                               << TemplateOp::getOperationName() << '\'';
   } else {
     return success();
   }

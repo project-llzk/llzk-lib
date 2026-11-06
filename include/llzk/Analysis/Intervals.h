@@ -105,7 +105,7 @@ public:
   /* Utility for hashing unreduced intervals */
   struct Hash {
     unsigned operator()(const UnreducedInterval &ui) const {
-      return llvm::hash_value(ui.a) ^ llvm::hash_value(ui.b);
+      return llvm::hash_combine(hashDynamicAPInt(ui.a), hashDynamicAPInt(ui.b));
     }
   };
 
@@ -135,6 +135,7 @@ private:
 /* Interval */
 
 /// @brief Intervals over a finite field. Based on the Picus implementation.
+///
 /// An interval may be:
 /// - Empty
 /// - Entire (meaning any value across the entire field)
@@ -147,13 +148,13 @@ private:
 ///
 /// Internal range can be further split into 3 categories:
 /// (A) a, b < p/2.                                             E.g., [10, 12]
-/// (B) a, b > p/2.       OR: a, b \in {-p/2, 0}.               E.g., [p-4, p-2] === [-4, -2]
+/// (B) a, b > p/2.       OR: a, b in {-p/2, 0}.               E.g., [p-4, p-2] === [-4, -2]
 /// (C) a < p/2, b > p/2.                                       E.g., [p/2 - 5, p/2 + 5]
 ///
 /// External range can be further split into 3 categories:
-/// (D) a, b < p/2.       OR: a \in {-p, -p/2}, b \in {0, p/2}. E.g., [12, 10] === [-p+12, 10]
-/// (E) a, b > p/2.       OR: a \in {-p/2, 0} , b \in {p/2, p}. E.g., [p-2, p-4] === [-2, p-4]
-/// (F) a > p/2, b < p/2. OR: a \in {-p/2, 0} , b \in {0, p/2}. E.g., [p/2 + 5, p/2 - 5]
+/// (D) a, b < p/2.       OR: a in {-p, -p/2}, b in {0, p/2}. E.g., [12, 10] === [-p+12, 10]
+/// (E) a, b > p/2.       OR: a in {-p/2, 0} , b in {p/2, p}. E.g., [p-2, p-4] === [-2, p-4]
+/// (F) a > p/2, b < p/2. OR: a in {-p/2, 0} , b in {0, p/2}. E.g., [p/2 + 5, p/2 - 5]
 /// === [-p/2 + 5, p/2 - 5]
 ///
 /// <------------------------------------------------------------->
@@ -327,7 +328,10 @@ public:
 
   template <Type... Types> bool is() const { return ((ty == Types) || ...); }
 
-  bool operator==(const Interval &rhs) const { return ty == rhs.ty && a == rhs.a && b == rhs.b; }
+  /// Compare interval type, endpoints, and field prime, independently of field names.
+  bool operator==(const Interval &rhs) const {
+    return ty == rhs.ty && a == rhs.a && b == rhs.b && getField() == rhs.getField();
+  }
 
   /* Getters */
 
@@ -341,8 +345,10 @@ public:
   /* Utility */
   struct Hash {
     unsigned operator()(const Interval &i) const {
-      return std::hash<const Field *> {}(&i.field.get()) ^ std::hash<Type> {}(i.ty) ^
-             llvm::hash_value(i.a) ^ llvm::hash_value(i.b);
+      return llvm::hash_combine(
+          std::hash<Type> {}(i.ty), Field::Hash {}(i.getField()), hashDynamicAPInt(i.a),
+          hashDynamicAPInt(i.b)
+      );
     }
   };
 

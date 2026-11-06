@@ -57,7 +57,7 @@ FailureOr<SymbolLookupResult<StructDefOp>> StructType::getDefinition(
   return res;
 }
 
-LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Operation *op) {
+LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Operation *op) const {
   return getDefinition(symbolTable, op);
 }
 

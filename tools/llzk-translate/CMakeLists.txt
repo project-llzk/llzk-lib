@@ -7,6 +7,9 @@ target_link_libraries(
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRTranslateLib
     LLZKDialectHeaders
+    LLZKDialectRegistration
+    LLZKUtil
+    LLZKPolymorphicDialect
     MLIRIR
     R1CSTarget
     SMTTarget

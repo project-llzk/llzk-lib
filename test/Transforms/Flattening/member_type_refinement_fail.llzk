@@ -1,0 +1,20 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// Wildcard declarations still require checking all writes before refinement.
+module attributes {llzk.lang} {
+  struct.def @ConflictingWrites {
+    // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writem' with different value types}}
+    struct.member @value : !array.type<? x !felt.type>
+    function.def @compute(%first: !array.type<2 x !felt.type>, %second: !array.type<3 x !felt.type>) -> !struct.type<@ConflictingWrites> {
+      %self = struct.new : !struct.type<@ConflictingWrites>
+      // expected-note@+1 {{type written here is '!array.type<2 x !felt.type>'}}
+      struct.writem %self[@value] = %first : !struct.type<@ConflictingWrites>, !array.type<2 x !felt.type>
+      // expected-note@+1 {{type written here is '!array.type<3 x !felt.type>'}}
+      struct.writem %self[@value] = %second : !struct.type<@ConflictingWrites>, !array.type<3 x !felt.type>
+      function.return %self : !struct.type<@ConflictingWrites>
+    }
+    function.def @constrain(%self: !struct.type<@ConflictingWrites>, %first: !array.type<2 x !felt.type>, %second: !array.type<3 x !felt.type>) {
+      function.return
+    }
+  }
+}

@@ -30,7 +30,7 @@ protected:
   mlir::OwningOpRef<mlir::ModuleOp> mod;
   ModuleBuilder builder;
 
-  ModuleBuilderTests() : LLZKTest(), mod(createLLZKModule(&ctx)), builder(mod.get()) {}
+  ModuleBuilderTests() : mod(createLLZKModule(&ctx)), builder(mod.get()) {}
 
   void SetUp() override {
     // Create a new module and builder for each test.
@@ -43,14 +43,16 @@ class TemplateBuilderTests : public LLZKTest {
 protected:
   mlir::OwningOpRef<mlir::ModuleOp> mod;
 
-  TemplateBuilderTests() : LLZKTest(), mod(createLLZKModule(&ctx)) {}
+  TemplateBuilderTests() : mod(createLLZKModule(&ctx)) {}
 
   polymorphic::TemplateOp createTemplate(mlir::Location location) {
     mlir::OpBuilder builder(&ctx);
 
     builder.setInsertionPointToStart(mod->getBody());
 
-    return builder.create<polymorphic::TemplateOp>(location, builder.getStringAttr("testTemplate"));
+    return polymorphic::TemplateOp::create(
+        builder, location, builder.getStringAttr("testTemplate")
+    );
   }
 };
 

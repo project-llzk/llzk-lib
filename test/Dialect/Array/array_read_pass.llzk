@@ -9,11 +9,11 @@ function.def @arr_constant_index() -> index {
   function.return %i: index
 }
 //CHECK-LABEL:  function.def @arr_constant_index() -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 45 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 214 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]] : <3 x index>
-//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_\.]+]] = array.read %[[T4]][%[[T3]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 45 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 214 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_.-]+]] = array.new %[[T1]], %[[T2]], %[[T3]] : <3 x index>
+//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_.-]+]] = array.read %[[T4]][%[[T3]]] : <3 x index>, index
 //CHECK-NEXT:     function.return %[[T5]] : index
 //CHECK-NEXT:   }
 // -----
@@ -27,12 +27,12 @@ function.def @arr_mix_index(%a: index, %b: index) -> index {
   function.return %v: index
 }
 //CHECK-LABEL:  function.def @arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 324 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 999 : index
-//CHECK-NEXT:     %[[I:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.read %[[T3]][%[[I]]] : <4 x index>, index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 324 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 999 : index
+//CHECK-NEXT:     %[[I:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_.-]+]] = array.read %[[T3]][%[[I]]] : <4 x index>, index
 //CHECK-NEXT:     function.return %[[T4]] : index
 //CHECK-NEXT:   }
 // -----
@@ -51,17 +51,17 @@ function.def @arr_arr_mix_index(%a: !array.type<3 x index>) -> index {
   function.return %f: index
 }
 //CHECK-LABEL:  function.def @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<3 x index>) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 343245 : index
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 345 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2344 : index
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new %[[T3]], %[[T1]], %[[T2]] : <3 x index>
-//CHECK-NEXT:     %[[I:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:     %[[T7:[0-9a-zA-Z_\.]+]] = array.read %[[A0]][%[[I]]] : <3 x index>, index
-//CHECK-NEXT:     %[[T8:[0-9a-zA-Z_\.]+]] = array.read %[[A0]][%[[I]]] : <3 x index>, index
-//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = array.read %[[A0]][%[[I]]] : <3 x index>, index
-//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_\.]+]] = array.new %[[T7]], %[[T8]], %[[T9]], %[[T1]], %[[T2]], %[[T3]] : <2,3 x index>
-//CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = array.read %[[T5]][%[[I]], %[[I]]] : <2,3 x index>, index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: !array.type<3 x index>) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 343245 : index
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_.-]+]] = arith.constant 345 : index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_.-]+]] = arith.constant 2344 : index
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_.-]+]] = array.new %[[T3]], %[[T1]], %[[T2]] : <3 x index>
+//CHECK-NEXT:     %[[I:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:     %[[T7:[0-9a-zA-Z_.-]+]] = array.read %[[A0]][%[[I]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T8:[0-9a-zA-Z_.-]+]] = array.read %[[A0]][%[[I]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_.-]+]] = array.read %[[A0]][%[[I]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_.-]+]] = array.new %[[T7]], %[[T8]], %[[T9]], %[[T1]], %[[T2]], %[[T3]] : <2,3 x index>
+//CHECK-NEXT:     %[[T6:[0-9a-zA-Z_.-]+]] = array.read %[[T5]][%[[I]], %[[I]]] : <2,3 x index>, index
 //CHECK-NEXT:     function.return %[[T6]] : index
 //CHECK-NEXT:   }
 // -----
@@ -73,9 +73,9 @@ function.def @arr_arr_mix_index(%a: !array.type<3,4 x index>) -> index {
   function.return %e: index
 }
 //CHECK-LABEL:  function.def @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<3,4 x index>) -> index {
-//CHECK-NEXT:     %[[I0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:     %[[I1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-//CHECK-NEXT:     %[[T0:[0-9a-zA-Z_\.]+]] = array.read %[[A0]][%[[I0]], %[[I1]]] : <3,4 x index>, index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: !array.type<3,4 x index>) -> index {
+//CHECK-NEXT:     %[[I0:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:     %[[I1:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
+//CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.-]+]] = array.read %[[A0]][%[[I0]], %[[I1]]] : <3,4 x index>, index
 //CHECK-NEXT:     function.return %[[T0]] : index
 //CHECK-NEXT:   }

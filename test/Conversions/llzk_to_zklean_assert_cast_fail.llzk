@@ -1,0 +1,9 @@
+// RUN: llzk-opt --convert-llzk-to-zklean -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  function.def @index_cast(%value: index) attributes {function.allow_constraint} {
+    // expected-error@+1 {{ZKLean conversion cannot preserve cast.tofelt assert for an index}}
+    %unused = cast.tofelt %value : index, !felt.type<"babybear">
+    function.return
+  }
+}

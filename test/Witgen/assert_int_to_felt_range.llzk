@@ -1,0 +1,22 @@
+// RUN: python3 %S/Runner/assert_int_to_felt_range.py llzk-witgen %s %t
+
+// The driver varies the field and offset, and checks used and unused casts in
+// both witgen backends. The input keeps the index dynamic through JIT lowering.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%input: !felt.type<"babybear"> {function.arg_name = "input"}) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %base = cast.toindex %input : !felt.type<"babybear">
+      %offset = arith.constant 0 : index
+      %value = arith.addi %base, %offset : index
+      %converted = cast.tofelt assert %value : index, !felt.type<"babybear">
+      %zero = felt.const 0 : !felt.type<"babybear">
+      struct.writem %self[@out] = %converted : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}

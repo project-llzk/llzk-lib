@@ -40,7 +40,7 @@ class BuildShortTypeString {
   std::string ret;
   llvm::raw_string_ostream ss;
 
-  BuildShortTypeString() : ret(), ss(ret) {}
+  BuildShortTypeString() : ss(ret) {}
   BuildShortTypeString &append(mlir::Type);
   BuildShortTypeString &append(mlir::ArrayRef<mlir::Attribute>);
   BuildShortTypeString &append(mlir::Attribute);
@@ -145,15 +145,9 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
 
-enum class Side : std::uint8_t { EMPTY = 0, LHS, RHS, TOMB };
+enum class Side : std::uint8_t { LHS, RHS };
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &val) {
   switch (val) {
-  case Side::EMPTY:
-    os << "EMPTY";
-    break;
-  case Side::TOMB:
-    os << "TOMB";
-    break;
   case Side::LHS:
     os << "LHS";
     break;
@@ -170,9 +164,8 @@ inline Side reverse(Side in) {
     return Side::RHS;
   case Side::RHS:
     return Side::LHS;
-  default:
-    return in;
   }
+  return in;
 }
 
 } // namespace llzk
@@ -180,8 +173,6 @@ inline Side reverse(Side in) {
 namespace llvm {
 template <> struct DenseMapInfo<llzk::Side> {
   using T = llzk::Side;
-  static inline T getEmptyKey() { return T::EMPTY; }
-  static inline T getTombstoneKey() { return T::TOMB; }
   static unsigned getHashValue(const T &val) {
     using UT = std::underlying_type_t<T>;
     return llvm::DenseMapInfo<UT>::getHashValue(static_cast<UT>(val));
@@ -210,7 +201,7 @@ uint64_t computeEmitEqCardinality(mlir::Type type);
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
 /// found (i.e., multiple Occurrences of a specific `SymbolRefAttr` on the same side map to
-/// different Attributes from the other side). The mapped value will be `nullptr`.
+/// different Attributes from the other side), the mapped value will be `nullptr`.
 ///
 /// This map is used by the `llzk-flatten` pass to replace struct parameter `SymbolRefAttr` with
 /// static concrete values to produce the flattened versions of structs.
@@ -291,8 +282,9 @@ inline bool singletonTypeListsUnify(
 ///
 /// The types `i1`, `index`, `felt.type`, and `string.type` are concrete whereas `poly.tvar` is
 /// not (because it may be substituted with any type during struct instantiation). When considering
-/// the attributes with `array.type` and `struct.type` types, we define IntegerAttr and TypeAttr
-/// as concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
+/// the attributes within `array.type` and `struct.type` types, we define IntegerAttr and TypeAttr
+/// as concrete then (in decreasing order) AffineMapAttr, SymbolRefAttr, and finally the wildcard
+/// (i.e. `?`) attribute as least concrete.
 bool isMoreConcreteUnification(
     mlir::Type oldTy, mlir::Type newTy,
     llvm::function_ref<bool(mlir::Type oldTy, mlir::Type newTy)> knownOldToNew = nullptr

@@ -93,16 +93,16 @@ LogicalResult checkForNameConflict(SymbolTableCollection &tables, SymbolOpInterf
 
 } // namespace
 
-LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &tables) {
-  return checkForNameConflict(tables, *this);
+LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  return checkForNameConflict(symbolTables, *this);
 }
 
 //===------------------------------------------------------------------===//
 // TemplateExprOp
 //===------------------------------------------------------------------===//
 
-LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &tables) {
-  if (failed(checkForNameConflict(tables, *this))) {
+LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  if (failed(checkForNameConflict(symbolTables, *this))) {
     return failure(); // checkForNameConflict() already emits a sufficient error message
   }
   // Ensure no symbol used within the initializer region is defined via a `TemplateExprOp`.
@@ -149,21 +149,36 @@ LogicalResult TemplateExprOp::verifyRegions() {
            << YieldOp::getOperationName() << '\'';
   }
   // Check or ops with side-effects that are not allowed within `poly.expr`.
-  Operation *illegalOp = nullptr;
-  auto walkRes = block.walk([&illegalOp](Operation *p) {
-    // Note: If side-effect traits are added to ops in the future, this check should
-    // be updated to check for those traits instead of specific op types.
-    if (llvm::isa<global::GlobalRefOpInterface, function::CallOp>(p)) {
-      illegalOp = p;
+  std::optional<InFlightDiagnostic> illegalOpDiagnostic;
+  auto walkRes = block.walk([&illegalOpDiagnostic](Operation *p) {
+    auto emitIllegalOpError = [&illegalOpDiagnostic, p](const Twine &description) {
+      illegalOpDiagnostic.emplace(
+          p->emitOpError() << description << " is not allowed within a `"
+                           << TemplateExprOp::getOperationName() << "` initializer"
+      );
+    };
+    // Note: If memory-effect traits are added to call ops in the future,
+    // this check should be updated to check for those traits as well.
+    if (llvm::isa<function::CallOp>(p)) {
+      emitIllegalOpError(Twine("'") + p->getName().getStringRef() + "' op");
+      return WalkResult::interrupt();
+    }
+    if (llvm::isa<global::GlobalRefOpInterface>(p) && !isMemoryEffectFree(p)) {
+      if (llvm::isa<global::GlobalReadOp>(p)) {
+        emitIllegalOpError(
+            Twine("'") + global::GlobalReadOp::getOperationName() + "' op without `const`"
+        );
+      } else {
+        emitIllegalOpError(Twine("'") + p->getName().getStringRef() + "' op");
+      }
       return WalkResult::interrupt();
     }
     return WalkResult::advance();
   });
   if (walkRes.wasInterrupted()) {
-    assert(illegalOp); // was set in the walk above
-    return illegalOp->emitOpError().append(
-        "is not allowed within a `", TemplateExprOp::getOperationName(), "` initializer"
-    );
+    assert(illegalOpDiagnostic); // set in the walk above
+    illegalOpDiagnostic->report();
+    return failure();
   }
   return success();
 }
@@ -182,8 +197,8 @@ std::optional<Type> TemplateExprOp::getTypeOpt() { return getType(); }
 // ConstReadOp
 //===------------------------------------------------------------------===//
 
-LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(tables, *this);
+LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
+  FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(symbolTables, *this);
   if (failed(getParentRes)) {
     return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error message
   }
@@ -217,7 +232,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
 
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getType());
+  return verifyTypeResolution(symbolTables, *this, getType());
 }
 
 //===------------------------------------------------------------------===//

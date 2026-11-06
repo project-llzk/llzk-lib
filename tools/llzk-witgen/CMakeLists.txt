@@ -23,7 +23,6 @@ target_link_libraries(
     MLIRArithDialect
     MLIRControlFlowDialect
     MLIRFuncDialect
-    MLIRFuncInlinerExtension
     MLIRAffineToStandard
     MLIRIR
     MLIRPass
@@ -41,7 +40,9 @@ target_link_libraries(
     MLIRConvertToLLVMPass
     MLIRExecutionEngine
     MLIRFuncToLLVM
+    MLIRFuncInlinerExtension
     MLIRIndexToLLVM
+    MLIRLLVMIRTransforms
     MLIRLLVMToLLVMIRTranslation
     MLIRMemRefToLLVM
     MLIRMemRefTransforms
@@ -50,6 +51,7 @@ target_link_libraries(
     MLIRTargetLLVMIRExport
     MLIRTransforms
     MLIRUBToLLVM
+    MLIRVectorToLLVM
     R1CSTransforms
     mlir_c_runner_utils
 )

@@ -76,7 +76,7 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
     // Last, remove unused structs if configured
     if (removeStructs) {
       removeUnusedStructs(ctx);
-      removeEmptyModules();
+      eraseEmptyNestedModules(getOperation());
     }
   }
 
@@ -247,27 +247,6 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
       if (unusedStructs.empty()) {
         updateUnusedStructs();
       }
-    }
-  }
-
-  /// @brief Remove nested `module` ops with empty body.
-  void removeEmptyModules() {
-    SmallVector<ModuleOp> emptyModules;
-
-    ModuleOp rootModOp = getOperation();
-    rootModOp.walk<WalkOrder::PostOrder>([&](ModuleOp modOp) {
-      if (modOp == rootModOp) {
-        return;
-      }
-      Region &region = modOp.getBodyRegion();
-      if (region.empty() || region.front().empty()) { // module has `SingleBlock` trait
-        emptyModules.push_back(modOp);
-      }
-    });
-
-    for (ModuleOp modOp : emptyModules) {
-      LLVM_DEBUG(llvm::dbgs() << "Removing empty module " << modOp.getName() << '\n');
-      modOp->erase();
     }
   }
 };

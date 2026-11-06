@@ -155,6 +155,20 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
+  module @Local {
+    function.def @accept(%value: index) {
+      function.return
+    }
+  }
+
+  function.def @reject_local_module(%value: !felt.type) {
+    // expected-error@+1 {{'function.call' op operand type mismatch: expected type 'index', but found '!felt.type' for operand number 0}}
+    function.call @Local::@accept(%value) : (!felt.type) -> ()
+    function.return
+  }
+}
+// -----
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) { // expected-note {{callee defined here}}
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index
@@ -271,5 +285,44 @@ module attributes {llzk.lang} {
     // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!felt.type', but found '!felt.type<"bn128">' for operand number 0}}
     function.call @unspecified_arg(%0) : (!felt.type<"bn128">) -> ()
     function.return
+  }
+}
+
+// -----
+
+// Unknown, wrong-kind, and mutable-global symbols cannot instantiate template parameters.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N
+    function.def @id() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+  function.def @use() -> index {
+    // expected-error@+1 {{'function.call' op references unknown symbol "@Missing"}}
+    %missing = function.call @Target::@id<[@Missing]>() : () -> index
+    function.return %missing : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N
+    function.def @id() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+  function.def @NotAnArgument() -> index {
+    %zero = arith.constant 0 : index
+    function.return %zero : index
+  }
+  function.def @use() -> index {
+    // expected-error@+1 {{'function.call' op template argument '@NotAnArgument' refers to a 'function.def' which is not allowed}}
+    %value = function.call @Target::@id<[@NotAnArgument]>() : () -> index
+    function.return %value : index
   }
 }

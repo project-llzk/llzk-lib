@@ -1,0 +1,4 @@
+changed:
+  - Convert flattened LLZK constraints using one wire per signal-layout leaf and assign R1CS IDs independently of LLZK layout order.
+  - Create R1CS auxiliary signal fields, defining constraints, and assignments in compute before generating the signal layout.
+  - Require storage reads in R1CS constraints to resolve to declared signal leaves.

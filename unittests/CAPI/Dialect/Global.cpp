@@ -54,21 +54,21 @@ static MlirOperation create_global_def_op(
 
 TEST_F(CAPITest, llzk_operation_is_a_global_def_op_pass) {
   auto op = create_global_def_op(context, "G", false, createIndexType(), std::nullopt);
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkOperationIsA_Global_GlobalDefOp(op));
   mlirOperationDestroy(op);
 }
 
 TEST_F(CAPITest, llzk_global_def_op_is_constant_1) {
   auto op = create_global_def_op(context, "G", false, createIndexType(), std::nullopt);
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(!llzkGlobal_GlobalDefOpIsConstant(op));
   mlirOperationDestroy(op);
 }
 
 TEST_F(CAPITest, llzk_global_def_op_is_constant_2) {
   auto op = create_global_def_op(context, "G", true, createIndexType(), createIndexAttribute(1));
-  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_NE(op.ptr, (void *)nullptr);
   EXPECT_TRUE(llzkGlobal_GlobalDefOpIsConstant(op));
   mlirOperationDestroy(op);
 }
@@ -98,7 +98,9 @@ std::unique_ptr<GlobalReadOpBuildFuncHelper> GlobalReadOpBuildFuncHelper::get() 
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto name = wrap(mlir::FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr("my_global")));
-      return llzkGlobal_GlobalReadOpBuild(builder, location, testClass.createIndexType(), name);
+      return llzkGlobal_GlobalReadOpBuild(
+          builder, location, testClass.createIndexType(), MlirAttribute {}, name
+      );
     }
   };
   return std::make_unique<Impl>();
@@ -115,7 +117,7 @@ std::unique_ptr<GlobalWriteOpBuildFuncHelper> GlobalWriteOpBuildFuncHelper::get(
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
-      auto value = wrap(testClass.cppGenFeltConstant(builder, location));
+      auto value = wrap(CAPITest::cppGenFeltConstant(builder, location));
       auto name = wrap(mlir::FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr("my_global")));
       return llzkGlobal_GlobalWriteOpBuild(builder, location, value, name);
     }

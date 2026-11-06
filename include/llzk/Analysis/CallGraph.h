@@ -132,8 +132,6 @@ private:
     using SourceInfo = mlir::DenseMapInfo<CallGraphNode *>;
     using BaseInfo = mlir::DenseMapInfo<llvm::PointerIntPair<CallGraphNode *, 2, Edge::Kind>>;
 
-    static Edge getEmptyKey() { return Edge(nullptr, BaseInfo::getEmptyKey()); }
-    static Edge getTombstoneKey() { return Edge(nullptr, BaseInfo::getTombstoneKey()); }
     static unsigned getHashValue(const Edge &edge) {
       return SourceInfo::getHashValue(edge.source) ^ BaseInfo::getHashValue(edge.targetAndKind);
     }

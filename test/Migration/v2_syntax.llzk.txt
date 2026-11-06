@@ -43,6 +43,11 @@ module attributes {
     global.def       @score : !array.type<2,1,2 x !felt.type>     = [1, 2, 3, 4]
     global.def       @f     : !felt.type                          = #felt<const 1 : !felt.type<"bn128">>
     global.def       @g     : !felt.type<"babybear">              = #felt<const 4 : !felt.type>
+
+    global.def const @array_refined : !array.type<3 x !felt.type>
+        = [2, #felt<const 3 : !felt.type<"bn128">>, #felt<const 4>]
+    global.def const @array_adopted : !array.type<2 x !felt.type<"bn128">>
+        = [#felt<const 5>, #felt<const 6>]
   }
 
   // ── @Box ──────────────────────────────────────────────────────────────────

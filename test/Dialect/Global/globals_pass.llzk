@@ -51,7 +51,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    global.def @c2s : !struct.type<@TComponent01A::@Component01A<[!string.type]>>
 // CHECK-NEXT:    global.def @c2i : !struct.type<@TComponent01A::@Component01A<[23423]>>
 // CHECK-NEXT:    global.def @c2a : !struct.type<@TComponent01A::@Component01A<[!array.type<2,2 x i1>]>>
-
 // -----
 
 // TEST: initialized globals
@@ -81,8 +80,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: global.def @f : !felt.type = 35
 // CHECK-NEXT: global.def @a1i : !array.type<1 x index> = [2]
 // CHECK-NEXT: global.def @a2s : !array.type<2 x !string.type> = ["hello", "world"]
-// CHECK-NEXT: global.def @a4b : !array.type<2,2 x i1> = [0, 1, 1, 0]
-// CHECK-NEXT: global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [6, 12134, 45523, 15623]
+// CHECK-NEXT: global.def @a4b : !array.type<2,2 x i1> = [false, true, true, false]
+// CHECK-NEXT: global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [ 6,  12134,  45523,  15623]
 // -----
 
 // TEST: GlobalReadOp in "compute()"
@@ -90,7 +89,7 @@ module attributes {llzk.lang} {
   global.def const @g : !felt.type = 23452
   struct.def @Component02 {
     function.def @compute() -> !struct.type<@Component02> {
-      %t = global.read @g : !felt.type
+      %t = global.read const @g : !felt.type
       %self = struct.new : !struct.type<@Component02>
       function.return %self : !struct.type<@Component02>
     }
@@ -100,11 +99,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: global.def const @g : !felt.type = 23452
 // CHECK-LABEL: struct.def @Component02 {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component02> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = global.read const @g : !felt.type
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component02>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component02>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component02>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component02>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -119,7 +118,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@Component03>
     }
     function.def @constrain(%self: !struct.type<@Component03>) {
-      %t = global.read @g : i1
+      %t = global.read const @g : i1
       function.return
     }
   }
@@ -127,11 +126,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: global.def const @g : i1 = false
 // CHECK-LABEL: struct.def @Component03 {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component03> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component03>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@Component03>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Component03>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component03>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = global.read @g : i1
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_.-]+]]: !struct.type<@Component03>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_.-]+]] = global.read const @g : i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -141,13 +140,13 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   global.def const @g : !string.type = "Hello"
   function.def @test() -> !string.type {
-    %t = global.read @g : !string.type
+    %t = global.read const @g : !string.type
     function.return %t : !string.type
   }
 }
 // CHECK-LABEL: global.def const @g : !string.type = "Hello"
 // CHECK-LABEL: function.def @test() -> !string.type {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = global.read @g : !string.type
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_.-]+]] = global.read const @g : !string.type
 // CHECK-NEXT:    function.return %[[V0]] : !string.type
 // CHECK-NEXT:  }
 // -----
@@ -168,12 +167,12 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: global.def @g : !felt.type = 125
 // CHECK-LABEL: struct.def @Component04 {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component04> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 99999
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_.-]+]] = felt.const 99999
 // CHECK-NEXT:      global.write @g = %[[V0]] : !felt.type
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component04>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component04>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component04>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component04>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component04>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -210,17 +209,17 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    global.def const @N : index = 3
-// CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) {
+// CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComponent05A {
 // CHECK-NEXT:      poly.param @Z
 // CHECK-NEXT:      struct.def @Component05A {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent05A::@Component05A<[@Z]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent05A::@Component05A<[@Z]>>
+// CHECK-NEXT:          %[[V1:[0-9a-zA-Z_.-]+]] = struct.new : <@TComponent05A::@Component05A<[@Z]>>
 // CHECK-NEXT:          function.return %[[V1]] : !struct.type<@TComponent05A::@Component05A<[@Z]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent05A::@Component05A<[@Z]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[V2:[0-9a-zA-Z_.-]+]]: !struct.type<@TComponent05A::@Component05A<[@Z]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -228,10 +227,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Component05B {
 // CHECK-NEXT:      struct.member @f : !struct.type<@TComponent05A::@Component05A<[@N]>>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Component05B> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05B>
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Component05B>
 // CHECK-NEXT:        function.return %[[V3]] : !struct.type<@Component05B>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05B>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_.-]+]]: !struct.type<@Component05B>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -273,24 +272,69 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @Z
 // CHECK-NEXT:      struct.def @Component06 {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent06::@Component06<[@Z]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent06::@Component06<[@Z]>>
+// CHECK-NEXT:          %[[V0:[0-9a-zA-Z_.-]+]] = struct.new : <@TComponent06::@Component06<[@Z]>>
 // CHECK-NEXT:          function.return %[[V0]] : !struct.type<@TComponent06::@Component06<[@Z]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent06::@Component06<[@Z]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[V1:[0-9a-zA-Z_.-]+]]: !struct.type<@TComponent06::@Component06<[@Z]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = function.call @TComponent06::@Component06::@compute() : () -> !struct.type<@TComponent06::@Component06<[4]>>
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_.-]+]] = function.call @TComponent06::@Component06::@compute() : () -> !struct.type<@TComponent06::@Component06<[4]>>
 // CHECK-NEXT:        global.write @gvar = %[[V2]] : !struct.type<@TComponent06::@Component06<[4]>>
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[V3]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = global.read @gvar : !struct.type<@TComponent06::@Component06<[4]>>
+// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_.-]+]] = global.read @gvar : !struct.type<@TComponent06::@Component06<[4]>>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// TEST: initialized felt globals resolve their declared type to match the initializer.
+module attributes {llzk.lang} {
+  global.def const @refined : !felt.type = #felt<const 35 : !felt.type<"bn128">>
+  global.def const @adopted : !felt.type<"bn128"> = 16
+  global.def const @array : !array.type<2 x !felt.type> = [#felt<const 1 : !felt.type<"bn128">>, 2]
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @refined : !felt.type<"bn128"> =  35 : <"bn128">
+// CHECK-NEXT:    global.def const @adopted : !felt.type<"bn128"> =  16 : <"bn128">
+// CHECK-NEXT:    global.def const @array : !array.type<2 x !felt.type<"bn128">> = [ 1 : <"bn128">,  2 : <"bn128">]
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  // TEST: signed and unsigned integer initializers preserve their numeric values.
+  global.def const @signed_min : !array.type<1 x index> = [-128 : si8]
+  global.def const @signed_max : !array.type<1 x index> = [127 : si8]
+  global.def const @signed_neg1 : !array.type<1 x index> = [-1 : si8]
+  global.def const @wide_signed_neg1 : !array.type<1 x index> = [-1 : si128]
+  global.def const @wide_signed_min : !array.type<1 x index> = [-9223372036854775808 : si128]
+  global.def const @unsigned_min : !array.type<1 x index> = [0 : ui8]
+  global.def const @unsigned_max : !array.type<1 x index> = [255 : ui8]
+  // see `globals_fail.llzk` for `-1 : ui8` and `i8` cases
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @signed_min : !array.type<1 x index> = [-128]
+// CHECK-NEXT:    global.def const @signed_max : !array.type<1 x index> = [127]
+// CHECK-NEXT:    global.def const @signed_neg1 : !array.type<1 x index> = [-1]
+// CHECK-NEXT:    global.def const @wide_signed_neg1 : !array.type<1 x index> = [-1]
+// CHECK-NEXT:    global.def const @wide_signed_min : !array.type<1 x index> = [-9223372036854775808]
+// CHECK-NEXT:    global.def const @unsigned_min : !array.type<1 x index> = [0]
+// CHECK-NEXT:    global.def const @unsigned_max : !array.type<1 x index> = [255]
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @neg1_idx_type : !array.type<1 x index> = [-1 : index]
+  global.def const @neg1_idx_notype : !array.type<1 x index> = [-1]
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @neg1_idx_type : !array.type<1 x index> = [-1]
+// CHECK-NEXT:    global.def const @neg1_idx_notype : !array.type<1 x index> = [-1]
 // CHECK-NEXT:  }

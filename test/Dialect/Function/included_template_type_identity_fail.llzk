@@ -1,0 +1,32 @@
+// RUN: llzk-opt -I %input_dir -verify-diagnostics %s
+
+// An omitted argument cannot infer through a caller-local struct whose raw path matches a struct
+// in an included target signature; the included definition is qualified by the alias namespace.
+module attributes {llzk.lang} {
+  include.from "Inputs/template_signature_namespace.llzk" as @Lib
+
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Target::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Target::@Box<[@T]>>
+        function.return %self : !struct.type<@Target::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Box<[@T]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @reject_local_box(%value: !struct.type<@Target::@Box<[@T]>>) {
+      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!struct.type<@Target::@Box<[@T]>>' from included target "@Lib::@Target::@accept", but found '!struct.type<@Target::@Box<[@T]>>' for operand number 0}}
+      function.call @Lib::@Target::@accept(%value) :
+          (!struct.type<@Target::@Box<[@T]>>) -> ()
+      function.return
+    }
+  }
+}

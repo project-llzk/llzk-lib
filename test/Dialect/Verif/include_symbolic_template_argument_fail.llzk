@@ -1,0 +1,18 @@
+// RUN: llzk-opt -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @Spec {
+    poly.param @N
+    function.def @entry() { function.return }
+    verif.contract @Base for @Spec::@entry () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  global.def @Mutable : index = 7
+  function.def @wrapper_entry() { function.return }
+  verif.contract @Wrapper for @wrapper_entry () {
+    // expected-error@+1 {{'verif.include' op template argument '@Mutable' refers to a global that is not marked as 'const'}}
+    verif.include @Spec::@Base<[@Mutable]>() : () -> ()
+  }
+}

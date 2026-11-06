@@ -16,32 +16,28 @@
 
 #include "llzk/Analysis/SymbolDefTree.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
-#include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/Constrain/IR/Ops.h"
-#include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/Global/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/Shared/TypeConversionPatterns.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Util/TypeHelper.h"
+#include "llzk/Transforms/TypeConversionPatterns.h"
 
-#include <mlir/Dialect/Arith/IR/Arith.h>
-#include <mlir/Dialect/SCF/IR/SCF.h>
-#include <mlir/Dialect/SCF/Transforms/Patterns.h>
-#include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/Operation.h>
-#include <mlir/IR/PatternMatch.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Debug.h>
+
+#include <string>
+#include <tuple>
+#include <utility>
 
 #define DEBUG_TYPE "poly-dialect-shared"
 
@@ -173,28 +169,26 @@ public:
   void checkEnded(bool) override {}
 };
 
-/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
-/// and in `AdditionalOpClasses`.
-/// Additional legality checks can be included for certain ops that will run along with the default
-/// check. For an op to be considered legal all checks (default plus additional checks if any) must
-/// return true.
+/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op
+/// legality based on the given `TypeConverter` for Ops listed in both type aliases of
+/// `OpClassesWithStructTypes` and in `AdditionalOpClasses`. Additional legality checks can
+/// be included for certain ops that will run along with the default check. For an op to be
+/// considered legal all checks (default plus additional checks if any) must return true.
 template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 mlir::ConversionTarget newConverterDefinedTarget(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, AdditionalChecks &&...checks
 ) {
   static EmptyLegalityCheckCallback empty;
   return newConverterDefinedTargetWithCallback<AdditionalOpClasses...>(
-      tyConv, ctx, empty, (std::forward<AdditionalChecks>(checks))...
+      tyConv, ctx, empty, std::forward<AdditionalChecks>(checks)...
   );
 }
 
-/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
-/// and in `AdditionalOpClasses`.
-/// Additional legality checks can be included for certain ops that will run along with the default
-/// check. For an op to be considered legal all checks (default plus additional checks if any) must
-/// return true.
+/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op
+/// legality based on the given `TypeConverter` for Ops listed in both type aliases of
+/// `OpClassesWithStructTypes` and in `AdditionalOpClasses`. Additional legality checks can
+/// be included for certain ops that will run along with the default check. For an op to be
+/// considered legal all checks (default plus additional checks if any) must return true.
 template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 mlir::ConversionTarget newConverterDefinedTargetWithCallback(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, LegalityCheckCallback &cb,
@@ -219,8 +213,8 @@ mlir::ConversionTarget newConverterDefinedTargetWithCallback(
       return legality;
     });
   };
-  std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
-  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
+  std::apply(inserter, OpClassesWithStructTypes::NoGeneralBuilder {});
+  std::apply(inserter, OpClassesWithStructTypes::WithGeneralBuilder {});
   applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   return target;
 }

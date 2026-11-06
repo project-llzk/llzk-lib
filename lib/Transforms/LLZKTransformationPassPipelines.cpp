@@ -47,7 +47,17 @@ void buildFullStructInliningPipelineImpl(
   if (flattening.cleanupMode == polymorphic::FlatteningCleanupMode::Unspecified) {
     flattening.cleanupMode = polymorphic::FlatteningCleanupMode::MainAsRoot;
   }
+
+  // Circom-style loops are commonly emitted as scf.while operations whose bounds are
+  // field constants converted to index values. Normalize the loops and fold those
+  // conversions before flattening so the unroller can determine their trip counts.
+  pm.addPass(createWhileToForPass());
+  pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(polymorphic::createFlatteningPass(flattening));
+
+  // Unrolling substitutes constant induction variables into array accesses. Materialize
+  // those constant indices before array-to-scalar requires them to be attributes.
+  pm.addPass(mlir::createCanonicalizerPass());
 
   // Run pod-to-scalar first because it is able to split `pod.type` used as array element type
   // (into parallel arrays) so it should be able to fully remove all `pod.type` usages.
@@ -129,7 +139,23 @@ void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConf
 // Pipeline registration.
 //===----------------------------------------------------------------------===//
 
+void buildConstraintFlatteningPipeline(OpPassManager &pm) {
+  // Inline frontend execute_region wrappers before specialization discovery.
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(polymorphic::createTemplateMonomorphizationPass());
+  pm.addPass(component::createExposeChildMembersPass());
+  // Fold specialized constants and remove empty branches before expansion.
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(polymorphic::createConstraintFlatteningPass());
+}
+
 void registerTransformationPassPipelines() {
+  PassPipelineRegistration<>(
+      "llzk-constraint-flattening",
+      "Monomorphize templates, expose child members, and expand main constrain",
+      buildConstraintFlatteningPipeline
+  );
+
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops",
       "Remove unnecessary operations, such as redundant reads or repeated constraints",

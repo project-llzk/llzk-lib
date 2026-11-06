@@ -1,0 +1,35 @@
+// RUN: llzk-opt -llzk-pod-to-scalar -verify-diagnostics %s
+
+!State = !pod.type<[@value: index]>
+
+// A nested yield forwards the POD at the same numeric position as its while argument.
+// It is not the while region's terminator and must not bypass the unsupported-use check.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @nested_forward(%choose: i1, %count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %other = pod.new : !State
+    pod.write %other[@value] = %count : !State, index
+    // expected-note@+1 {{cannot scalarize carried POD: carried POD has an unsupported use or is forwarded in a different position}}
+    %result:3 = scf.while (%pod = %state, %i = %count, %seen = %seed)
+        : (!State, index, index) -> (!State, index, index) {
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %pod, %i, %seen : !State, index, index
+    } do {
+    ^bb0(%pod: !State, %i: index, %seen: index):
+      %selected = scf.if %choose -> !State {
+        scf.yield %pod : !State
+      } else {
+        scf.yield %other : !State
+      }
+      %value = pod.read %selected[@value] : !State, index
+      pod.write %pod[@value] = %i : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %pod, %next, %value : !State, index, index
+    }
+    function.return %result#2 : index
+  }
+}

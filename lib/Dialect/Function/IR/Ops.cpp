@@ -15,17 +15,17 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
-#include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/Shared/KnownTargetVerifier.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -33,17 +33,18 @@
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
+#include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/SmallVectorExtras.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Function/IR/Ops.cpp.inc"
 
 using namespace mlir;
-using namespace llzk::felt;
 using namespace llzk::component;
 using namespace llzk::polymorphic;
 
@@ -173,8 +174,8 @@ void FuncDefOp::build(
     return;
   }
   assert(type.getNumInputs() == argAttrs.size());
-  function_interface_impl::addArgAndResultAttrs(
-      builder, state, argAttrs, /*resultAttrs=*/std::nullopt, getArgAttrsAttrName(state.name),
+  call_interface_impl::addArgAndResultAttrs(
+      builder, state, argAttrs, /*resultAttrs=*/ {}, getArgAttrsAttrName(state.name),
       getResAttrsAttrName(state.name)
   );
 }
@@ -209,10 +210,9 @@ void FuncDefOp::cloneInto(FuncDefOp dest, IRMapping &mapper) {
     newAttrMap.insert({attr.getName(), attr.getValue()});
   }
 
-  auto newAttrs =
-      llvm::to_vector(llvm::map_range(newAttrMap, [](std::pair<StringAttr, Attribute> attrPair) {
+  auto newAttrs = llvm::map_to_vector(newAttrMap, [](std::pair<StringAttr, Attribute> attrPair) {
     return NamedAttribute(attrPair.first, attrPair.second);
-  }));
+  });
   dest->setAttrs(DictionaryAttr::get(getContext(), newAttrs));
 
   // Clone the body.
@@ -435,13 +435,13 @@ LogicalResult
 verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e., have no return types
-  if (funcType.getResults().size() != 0) {
+  if (!funcType.getResults().empty()) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN << "\" must have no return type";
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
   llvm::ArrayRef<Type> inputTypes = funcType.getInputs();
-  if (inputTypes.size() < 1) {
+  if (inputTypes.empty()) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
@@ -458,43 +458,55 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 
 } // namespace
 
-LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Additional checks for the compute/constrain/product functions within a struct
   if (StructDefOp parentStructOpt = getParentOfType<StructDefOp>(*this)) {
     // Verify return type restrictions for functions within a StructDefOp
     if (nameIsCompute()) {
-      return verifyFuncTypeCompute(*this, tables, parentStructOpt);
+      return verifyFuncTypeCompute(*this, symbolTables, parentStructOpt);
     } else if (nameIsConstrain()) {
-      return verifyFuncTypeConstrain(*this, tables, parentStructOpt);
+      return verifyFuncTypeConstrain(*this, symbolTables, parentStructOpt);
     } else if (nameIsProduct()) {
-      return verifyFuncTypeProduct(*this, tables, parentStructOpt);
+      return verifyFuncTypeProduct(*this, symbolTables, parentStructOpt);
     }
   }
   // In the general case, verify symbol resolution in all input and output types.
-  return verifyTypeResolution(tables, *this, getFunctionType());
+  return verifyTypeResolution(symbolTables, *this, getFunctionType());
 }
 
 SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
   return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
-Value FuncDefOp::getSelfValueFromCompute() {
-  assert(nameIsCompute()); // skip inStruct check to allow dangling functions
+namespace {
+
+static Value getSelfValueFromWitnessGen(FuncDefOp funcDefOp, Twine name) {
   // Get the single block of the function body
-  Region &body = getBody();
-  assert(!body.empty() && "compute() function body is empty");
-  Block &block = body.back();
+  Region &body = funcDefOp.getBody();
+  ensure(!body.empty(), name + "() function body must not be empty");
 
   // The terminator should be the return op
-  Operation *terminator = block.getTerminator();
-  assert(terminator && "compute() function has no terminator");
+  Operation *terminator = body.back().getTerminator();
+  ensure(terminator, name + "() function must have a terminator op");
   auto retOp = llvm::dyn_cast<ReturnOp>(terminator);
   if (!retOp) {
     llvm::errs() << "Expected '" << ReturnOp::getOperationName() << "' but found '"
                  << terminator->getName() << "'\n";
-    llvm_unreachable("compute() function must end with ReturnOp");
+    ensure(false, name + "() function must end with ReturnOp");
   }
   return retOp.getOperands().front();
+}
+
+} // namespace
+
+Value FuncDefOp::getSelfValueFromCompute() {
+  assert(nameIsCompute()); // skip inStruct check to allow dangling functions
+  return getSelfValueFromWitnessGen(*this, "compute");
+}
+
+Value FuncDefOp::getSelfValueFromProduct() {
+  assert(nameIsProduct()); // skip inStruct check to allow dangling functions
+  return getSelfValueFromWitnessGen(*this, "product");
 }
 
 Value FuncDefOp::getSelfValueFromConstrain() {
@@ -553,8 +565,7 @@ LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationSta
       return failure();
     }
     if (attr.size() > static_cast<int64_t>(sizeof(propStorage) / sizeof(int32_t))) {
-      reader.emitError("size mismatch for operand/result_segment_size");
-      return failure();
+      return reader.emitError("size mismatch for operand/result_segment_size");
     }
     llvm::copy(ArrayRef<int32_t>(attr), propStorage.begin());
   }
@@ -622,119 +633,6 @@ void CallOp::build(
   );
   props.setCallee(callee);
   addTemplateParams<CallOp>(odsBuilder, props, templateParams);
-}
-
-LogicalResult
-CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplateParamOp targetParam) {
-  // A wildcard `?` (represented as kDynamic) defers inference to a later pass.
-  // It is only valid for parameters with a `!poly.tvar` type restriction.
-  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(paramFromCallOp)) {
-    if (isDynamic(intAttr)) {
-      std::optional<Type> declaredType = targetParam.getTypeOpt();
-      if (!declaredType || !llvm::isa<TypeVarType>(*declaredType)) {
-        auto diag = this->emitOpError().append(
-            "wildcard `?` can only be used for template parameters with `!poly.tvar` "
-            "type restriction, but parameter \"@",
-            targetParam.getName(), "\" has "
-        );
-        if (declaredType) {
-          diag.append("type restriction ", *declaredType);
-        } else {
-          diag.append("no type restriction");
-        }
-        return diag;
-      }
-      return success();
-    }
-  }
-  if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
-    bool compatible = false;
-    if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromCallOp)) {
-      if (sym.getNestedReferences().empty()) {
-        SymbolTableCollection tables;
-        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
-        if (failed(parentTemplate)) {
-          return failure();
-        }
-        if (TemplateOp p = *parentTemplate) {
-          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
-          if (binding) {
-            // Once we know it references a template symbol binding, assume it's compatible unless
-            // the optional type is present and doesn't unify with the declared type.
-            if (std::optional<Type> actualType = binding.getTypeOpt()) {
-              compatible = typesUnify(*actualType, *declaredType);
-            } else {
-              compatible = true;
-            }
-          }
-        }
-      }
-    } else if (llvm::isa<TypeVarType>(*declaredType)) {
-      compatible = llvm::isa<TypeAttr>(paramFromCallOp);
-    } else if (llvm::isa<FeltType>(*declaredType)) {
-      compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromCallOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromCallOp).getType());
-    } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
-      // Note: Just like struct type instantiation, there is no restriction on passing a
-      // larger value to an `i1`. The flattening pass will treat 0 as false and any other
-      // value as true (but give a warning if it's not 1).
-      compatible = llvm::isa<IntegerAttr>(paramFromCallOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromCallOp).getType());
-    } else {
-      // Note: `declaredType` is restricted by `isValidConstReadType()`
-      llvm_unreachable("inconsistent with `isValidConstReadType()`");
-    }
-    if (!compatible) {
-      // Tested in call_with_template_params_fail.llzk
-      return this->emitOpError().append(
-          "instantiation value '", paramFromCallOp, "' is not compatible with parameter \"@",
-          targetParam.getName(), "\" type restriction ", *declaredType
-      );
-    }
-  }
-  return success();
-}
-
-LogicalResult CallOp::verifyTemplateParamCompatibility(
-    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs
-) {
-  ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
-  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
-
-  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
-    if (failed(verifyTemplateParamCompatibility(attr, paramOp))) {
-      return failure();
-    }
-  }
-  return success();
-}
-
-LogicalResult CallOp::verifyTemplateParamsMatchInferred(
-    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs,
-    const UnificationMap &unifications
-) {
-  ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
-  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
-
-  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
-    // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
-    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-      if (isDynamic(intAttr)) {
-        continue;
-      }
-    }
-    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
-      // Tested in call_with_template_params_fail.llzk
-      return this->emitOpError().append(
-          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
-      );
-    }
-  }
-  return success();
 }
 
 namespace {
@@ -827,85 +725,31 @@ protected:
 
 struct KnownTargetVerifier : public CallOpVerifier {
   KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncDefOp> &&tgtRes)
-      : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        includeSymNames(tgtRes.getNamespace()) {}
+      : CallOpVerifier(c, tgtRes.get().getSymName()), shared(c, tgtRes) {}
 
   LogicalResult verifyTargetAttributes() override {
-    return CallOpVerifier::verifyTargetAttributesMatch(tgt);
+    return CallOpVerifier::verifyTargetAttributesMatch(shared.getTarget());
   }
 
   LogicalResult verifyInputs() override {
-    return verifyTypesMatch(callOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
+    return shared.verifyTypesMatch(
+        callOp->getArgOperands().getTypes(), shared.getTargetType().getInputs(), "operand"
+    );
   }
 
   LogicalResult verifyOutputs() override {
-    return verifyTypesMatch(callOp->getResultTypes(), tgtType.getResults(), "result");
+    return shared.verifyTypesMatch(
+        callOp->getResultTypes(), shared.getTargetType().getResults(), "result"
+    );
   }
 
   LogicalResult verifyTemplateParams() override {
-    Operation *tgtOp = tgt.getOperation();
+    Operation *tgtOp = shared.getTarget().getOperation();
     if (isInStruct(tgtOp)) {
       // Struct function calls cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();
     } else if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
-      // When the target function is a free function within a TemplateOp, the CallOp may have
-      // template parameter instantiations that must be checked against the template parameters.
-      // - If the function type signature references all template parameters, then the parameter
-      //   instantiation list on the CallOp is optional, otherwise it's required.
-      // - If present, the instantiation list must provide a value for every template parameter
-      //   and the value must be type-compatible with the parameter's declared type (if any).
-      // - If present, the instantiation list must result in a function type signature that can
-      //   be unified with the CallOp's operand and result types.
-      auto realParams = tgtOpParent.getConstOps<TemplateParamOp>();
-      ArrayAttr callParams = callOp->getTemplateParamsAttr();
-
-      // When there is no instantiation list, just ensure that it's not required.
-      if (isNullOrEmpty(callParams)) {
-        llvm::SmallDenseSet<SymbolRefAttr> referencedInSignature;
-        llzk::getSymbolsUsedIn(tgtType.getInputs(), referencedInSignature);
-        llzk::getSymbolsUsedIn(tgtType.getResults(), referencedInSignature);
-
-        bool allParamsReferenced = llvm::all_of(realParams, [&](TemplateParamOp p) {
-          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
-        });
-        if (allParamsReferenced) {
-          return success();
-        }
-        // Tested in call_with_template_params_fail.llzk
-        return callOp->emitOpError().append(
-            "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
-            "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
-            "\" appear in the function type signature"
-        );
-      }
-
-      // Ensure `forceIntAttrTypes()` was successful on the CallOp's template parameters.
-      if (failed(llzk::forceIntAttrTypes(callParams.getValue(), [this] {
-        return llzk::InFlightDiagnosticWrapper(this->callOp->emitOpError());
-      }))) {
-        return failure();
-      }
-
-      // The instantiation list is present. Check it has exactly one entry per template param.
-      size_t numTemplateParams = llvm::range_size(realParams);
-      if (callParams.size() != numTemplateParams) {
-        // Tested in call_with_template_params_fail.llzk
-        return callOp->emitOpError().append(
-            "template instantiation has ", callParams.size(), " parameter(s) but \"@",
-            tgtOpParent.getSymName(), "\" expects ", numTemplateParams, " template parameter(s)"
-        );
-      }
-
-      // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(callOp->verifyTemplateParamCompatibility(realParams))) {
-        return failure();
-      }
-
-      // Check that the provided instantiation values are consistent with what type unification
-      // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult = callOp->unifyTypeSignature(tgtType);
-      assert(succeeded(unifyResult) && "already checked by `verifyInputs()` and `verifyOutputs()`");
-      return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
+      return shared.verifyTemplateInstantiation(tgtOpParent);
     } else {
       // Non-template functions cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();
@@ -914,7 +758,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
 
   LogicalResult verifyAffineMapParams() override {
     if ((FunctionKind::StructCompute == tgtKind || FunctionKind::StructProduct == tgtKind) &&
-        isInStruct(tgt.getOperation())) {
+        isInStruct(shared.getTarget().getOperation())) {
       // Return type should be a single StructType. If that is not the case here, just bail without
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
@@ -941,29 +785,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
   }
 
 private:
-  template <typename T>
-  LogicalResult
-  verifyTypesMatch(ValueTypeRange<T> callOpTypes, ArrayRef<Type> tgtTypes, const char *aspect) {
-    if (tgtTypes.size() != callOpTypes.size()) {
-      return callOp->emitOpError()
-          .append("incorrect number of ", aspect, "s for callee, expected ", tgtTypes.size())
-          .attachNote(tgt.getLoc())
-          .append("callee defined here");
-    }
-    for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
-      if (!typesUnify(callOpTypes[i], tgtTypes[i], includeSymNames)) {
-        return callOp->emitOpError().append(
-            aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ", callOpTypes[i],
-            " for ", aspect, " number ", i
-        );
-      }
-    }
-    return success();
-  }
-
-  FuncDefOp tgt;
-  FunctionType tgtType;
-  std::vector<llvm::StringRef> includeSymNames;
+  llzk::KnownTargetVerifier<CallOp, FuncDefOp> shared;
 };
 
 /// Version of checkSelfType() that performs the subset of verification checks that can be done when
@@ -1108,9 +930,9 @@ private:
 
 } // namespace
 
-LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // First, verify symbol resolution in all input and output types.
-  if (failed(verifyTypeResolution(tables, *this, getTypeSignature()))) {
+  if (failed(verifyTypeResolution(symbolTables, *this, getTypeSignature()))) {
     return failure(); // verifyTypeResolution() already emits a sufficient error message
   }
 
@@ -1140,25 +962,12 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
   // checks against the known target function.
-  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(tables, calleeAttr, *this);
+  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(symbolTables, calleeAttr, *this);
   if (failed(tgtOpt)) {
     return this->emitError() << "expected '" << FuncDefOp::getOperationName() << "' named \""
                              << calleeAttr << '"';
   }
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
-}
-
-FunctionType CallOp::getTypeSignature() {
-  return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
-}
-
-FailureOr<UnificationMap> CallOp::unifyTypeSignature(FunctionType other) {
-  UnificationMap unifications;
-  if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
-    return unifications;
-  } else {
-    return failure();
-  }
 }
 
 namespace {
@@ -1203,9 +1012,26 @@ Value CallOp::getSelfValueFromCompute() {
   return getResults().front();
 }
 
+Value CallOp::getSelfValueFromProduct() {
+  assert(calleeIsStructProduct());
+  return getResults().front();
+}
+
 Value CallOp::getSelfValueFromConstrain() {
   assert(calleeIsStructConstrain());
   return getArgOperands().front();
+}
+
+Value CallOp::getSelfValue() {
+  if (calleeIsStructConstrain()) {
+    return getSelfValueFromConstrain();
+  } else if (calleeIsStructCompute()) {
+    return getSelfValueFromCompute();
+  } else if (calleeIsStructProduct()) {
+    return getSelfValueFromProduct();
+  } else {
+    return nullptr;
+  }
 }
 
 FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
@@ -1231,15 +1057,6 @@ CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 /// Set the callee for this operation.
 void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(llvm::cast<SymbolRefAttr>(callee));
-}
-
-SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
-  llvm::SmallVector<ValueRange, 4> output;
-  output.reserve(input.size());
-  for (OperandRange r : input) {
-    output.push_back(r);
-  }
-  return output;
 }
 
 Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {

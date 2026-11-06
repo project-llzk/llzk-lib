@@ -1,0 +1,14 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// expected-error@+1{{field modulus must be at least 2}}
+module attributes {llzk.lang, llzk.fields = #felt.field<"negative_modulus", -7>} {}
+
+// -----
+
+// expected-error@+1{{field modulus must be at least 2}}
+module attributes {llzk.lang, llzk.fields = #felt.field<"zero_modulus", 0>} {}
+
+// -----
+
+// expected-error@+1{{field modulus must be at least 2}}
+module attributes {llzk.lang, llzk.fields = #felt.field<"unit_modulus", 1>} {}

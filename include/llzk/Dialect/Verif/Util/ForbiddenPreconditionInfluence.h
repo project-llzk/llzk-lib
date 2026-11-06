@@ -35,8 +35,8 @@ namespace llzk::verif {
 /// make sense.
 enum class ForbiddenPreconditionInfluence : uint8_t {
   None = 0,
-  StructMember = 1 << 0,
-  FunctionReturn = 1 << 1,
+  StructMember = 1U << 0U,
+  FunctionReturn = 1U << 1U,
 };
 
 /// Summary of forbidden precondition influence along with representative source
@@ -131,14 +131,6 @@ struct CallableSummaryKey {
 };
 
 struct CallableSummaryKeyInfo : llvm::DenseMapInfo<CallableSummaryKey> {
-  static CallableSummaryKey getEmptyKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getEmptyKey(), {}, 0};
-  }
-
-  static CallableSummaryKey getTombstoneKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getTombstoneKey(), {}, 0};
-  }
-
   static unsigned getHashValue(const CallableSummaryKey &key) {
     return llvm::hash_combine(
         key.callable, key.resultNumber,
@@ -194,14 +186,6 @@ struct IncludedContractSummaryKey {
 };
 
 struct IncludedContractSummaryKeyInfo : llvm::DenseMapInfo<IncludedContractSummaryKey> {
-  static IncludedContractSummaryKey getEmptyKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getEmptyKey(), {}};
-  }
-
-  static IncludedContractSummaryKey getTombstoneKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getTombstoneKey(), {}};
-  }
-
   static unsigned getHashValue(const IncludedContractSummaryKey &key) {
     return llvm::hash_combine(
         key.contract, key.inheritedControlInfluence,

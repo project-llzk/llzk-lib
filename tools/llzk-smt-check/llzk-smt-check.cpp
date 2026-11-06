@@ -25,6 +25,7 @@
 
 #include <array>
 #include <cstdlib>
+#include <exception>
 #include <optional>
 #include <string>
 #include <system_error>
@@ -70,13 +71,6 @@ struct TempFileCleanup {
     }
   }
 };
-
-static cl::opt<std::string> InputFilename(cl::Positional, cl::Required);
-static cl::opt<std::string>
-    SolverBinary("solver-binary", cl::desc("SMT solver executable"), cl::init("z3"));
-static cl::opt<bool> Quiet("quiet", cl::desc("Suppress per-stage summaries"));
-static cl::opt<bool>
-    DumpRawOutput("dump-raw-output", cl::desc("Print raw solver stdout after the stage summaries"));
 
 StringRef stringify(SatResult result) {
   switch (result) {
@@ -380,6 +374,15 @@ void printSolverFailure(const SolverInvocationResult &invocation) {
 } // namespace
 
 static int runMain(int argc, char **argv) {
+  cl::opt<std::string> InputFilename(cl::Positional, cl::Required);
+  cl::opt<std::string> SolverBinary(
+      "solver-binary", cl::desc("SMT solver executable"), cl::init("z3")
+  );
+  cl::opt<bool> Quiet("quiet", cl::desc("Suppress per-stage summaries"));
+  cl::opt<bool> DumpRawOutput(
+      "dump-raw-output", cl::desc("Print raw solver stdout after the stage summaries")
+  );
+
   sys::PrintStackTraceOnErrorSignal(StringRef());
   setBugReportMsg(
       "PLEASE submit a bug report to " BUG_REPORT_URL

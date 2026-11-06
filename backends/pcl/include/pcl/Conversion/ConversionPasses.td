@@ -17,7 +17,9 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
       "Rewrite constraints to be compatible with PCL constraints used by Picus";
   let description = [{
       Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
-      This pass currently expects the flattening and inlining passes to be run prior to its use.
+      This pass expects concrete structs and scalar members. Use `llzk-full-pcl-lowering`
+      to normalize loops, flatten templates, and scalarize PODs and arrays first while
+      preserving component boundaries.
     }];
   let dependentDialects = [
       // clang-format off

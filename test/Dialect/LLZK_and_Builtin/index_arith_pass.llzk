@@ -7,7 +7,7 @@ function.def @f_constant() -> index {
   function.return %0: index
 }
 //CHECK-LABEL:  function.def @f_constant() -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
@@ -17,8 +17,8 @@ function.def @f_add(%a: index, %b: index) -> index {
   function.return %c: index
 }
 //CHECK-LABEL:  function.def @f_add
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.addi %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.addi %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
@@ -28,8 +28,8 @@ function.def @f_sub(%a: index, %b: index) -> index {
   function.return %c: index
 }
 //CHECK-LABEL:  function.def @f_sub
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.subi %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.subi %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
@@ -39,8 +39,8 @@ function.def @f_mul(%a: index, %b: index) -> index {
   function.return %c: index
 }
 //CHECK-LABEL:  function.def @f_mul
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.muli %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.muli %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
@@ -50,8 +50,8 @@ function.def @f_div(%a: index, %b: index) -> index {
   function.return %c: index
 }
 //CHECK-LABEL:  function.def @f_div
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.divui %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.divui %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
@@ -61,8 +61,8 @@ function.def @f_eq(%a: index, %b: index) -> i1 {
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_eq
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.cmpi eq, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -72,8 +72,8 @@ function.def @f_ne(%a: index, %b: index) -> i1 {
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_ne
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.cmpi ne, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -83,8 +83,8 @@ function.def @f_slt(%a: index, %b: index) -> i1 {
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_slt
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.cmpi slt, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -94,8 +94,8 @@ function.def @f_sle(%a: index, %b: index) -> i1 {
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_sle
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi sle, %[[A0]], %[[A1]] : index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_.-]+]]: index, %[[A1:[0-9a-zA-Z_.-]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = arith.cmpi sle, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----

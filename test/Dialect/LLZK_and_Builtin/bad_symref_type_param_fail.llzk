@@ -38,7 +38,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
+  // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
   function.def private @in_return_deep() ->
     !array.type<2 x !struct.type<@TA::@A<[
       !array.type<2 x !struct.type<@TA::@A<[
@@ -81,7 +81,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
+  // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
   function.def private @in_arg_deep(
     !array.type<2 x !struct.type<@TA::@A<[
       !struct.type<@TA::@A<[
@@ -237,7 +237,7 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   function.def private @id(%a: !felt.type) -> !felt.type
   function.def @callop_unknown_in_return_type(%a: !felt.type) {
-    // expected-error@+1 {{'function.call' op references unknown symbol "@Unknown"}}
+    // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
     %sum = function.call @id(%a) : (!felt.type) -> (!poly.tvar<@Unknown>)
     function.return
   }
@@ -312,7 +312,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   struct.def @MemberDefOpWithUnknownTypeVar {
-    // expected-error@+1 {{'struct.member' op references unknown symbol "@Unknown"}}
+    // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
     struct.member @ret: !poly.tvar<@Unknown>
     function.def @compute() -> !struct.type<@MemberDefOpWithUnknownTypeVar> {
       %self = struct.new : !struct.type<@MemberDefOpWithUnknownTypeVar>
@@ -332,7 +332,7 @@ module attributes {llzk.lang} {
         function.return %self : !struct.type<@TConstReadWithUnknown::@ConstReadWithUnknown<[@T]>>
       }
       function.def @constrain(%self: !struct.type<@TConstReadWithUnknown::@ConstReadWithUnknown<[@T]>>) {
-        // expected-error@+1 {{'poly.read_const' op references unknown symbol "@Unknown"}}
+        // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
         %0 = poly.read_const @T : !poly.tvar<@Unknown>
         function.return
       }
@@ -368,7 +368,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@MemberReadWithUnknownInResultTypeVar>
     }
     function.def @constrain(%self: !struct.type<@MemberReadWithUnknownInResultTypeVar>) {
-      // expected-error@+1 {{'struct.readm' op references unknown symbol "@Unknown"}}
+      // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
       %0 = struct.readm %self[@f] : !struct.type<@MemberReadWithUnknownInResultTypeVar>, !poly.tvar<@Unknown>
       function.return
     }
@@ -480,7 +480,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   function.def @ReadArrayOp_unknown_result_tvar(%arr: !array.type<5 x !felt.type>, %k: index) {
-    // expected-error@+1 {{'array.read' op references unknown symbol "@Unknown"}}
+    // expected-error@+1 {{type variable '!poly.tvar<@Unknown>' must reference a parameter of its enclosing 'poly.template'}}
     %v = array.read %arr[%k] : !array.type<5 x !felt.type>, !poly.tvar<@Unknown>
     function.return
   }

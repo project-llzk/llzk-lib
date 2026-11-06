@@ -44,12 +44,12 @@ module attributes {llzk.lang = "llzk"} {
 }
 
 // CHECK-LABEL: scf.for
-// CHECK-SAME:          %[[VAL_0:[0-9a-zA-Z_\.]+]] =
-// CHECK-SAME:          %[[VAL_1:[0-9a-zA-Z_\.]+]] to
-// CHECK-SAME:          %[[VAL_2:[0-9a-zA-Z_\.]+]] step
-// CHECK-SAME:          %[[VAL_3:[0-9a-zA-Z_\.]+]] {
-// CHECK-NEXT:    array.write %[[VAL_4:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] = %[[VAL_5:[0-9a-zA-Z_\.]+]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
-// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-SAME:          %[[VAL_0:[0-9a-zA-Z_.-]+]] =
+// CHECK-SAME:          %[[VAL_1:[0-9a-zA-Z_.-]+]] to
+// CHECK-SAME:          %[[VAL_2:[0-9a-zA-Z_.-]+]] step
+// CHECK-SAME:          %[[VAL_3:[0-9a-zA-Z_.-]+]] {
+// CHECK-NEXT:    array.write %[[VAL_4:[0-9a-zA-Z_.-]+]]{{\[}}%[[VAL_0]]] = %[[VAL_5:[0-9a-zA-Z_.-]+]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7:[0-9a-zA-Z_.-]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:    constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:  } {product_source = "fused"}
 // CHECK-NEXT: struct.writem %self[@arr] = %[[VAL_4]]

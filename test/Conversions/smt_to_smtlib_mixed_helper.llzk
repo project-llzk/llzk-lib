@@ -14,8 +14,8 @@ module {
     %zero = smt.int.constant 0
     %ok = smt.eq %value, %zero : !smt.int
     smt.assert %ok
-    smt.set_info ":llzk-stage" "target"
-    smt.set_info ":status" sat
+    smt_info.set ":llzk-stage" "target"
+    smt_info.set ":status" sat
     smt.check sat {
       smt.yield
     } unknown {

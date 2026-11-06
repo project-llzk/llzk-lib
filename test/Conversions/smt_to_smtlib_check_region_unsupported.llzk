@@ -6,7 +6,7 @@
 module {
   smt.solver () : () -> () {
     smt.check sat {
-      smt.set_info ":llzk-stage" "sat"
+      smt_info.set ":llzk-stage" "sat"
       smt.yield
     } unknown {
       smt.yield

@@ -15,6 +15,10 @@
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributeInterfaces.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
+
+#include <optional>
+
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/Felt/IR/Attrs.h.inc"

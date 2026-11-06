@@ -1,0 +1,50 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json > %t/original.json
+// RUN: diff %t/expected.json %t/original.json
+// RUN: llzk-opt %t/test.llzk --llzk-while-to-for --verify-diagnostics > %t/converted.llzk
+// RUN: llzk-witgen %t/converted.llzk --inputs %t/input.json > %t/converted.json
+// RUN: diff %t/original.json %t/converted.json
+// RUN: llzk-witgen %t/converted.llzk --inputs %t/input.json --backend=execution-engine > %t/engine.json
+// RUN: diff %t/original.json %t/engine.json
+// RUN: llzk-opt %t/converted.llzk --canonicalize > %t/folded.llzk
+// RUN: llzk-witgen %t/folded.llzk --inputs %t/input.json --backend=execution-engine > %t/folded.json
+// RUN: diff %t/original.json %t/folded.json
+
+// Every executed IV is in BabyBear. Selecting assert preserves execution-engine support
+// before canonicalization as well as after it, without requiring runtime wrapping.
+
+//--- test.llzk
+!F = !felt.type<"babybear">
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sum : !F {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %zero = felt.const 0 : <"babybear">
+      %one = felt.const 1 : <"babybear">
+      %ten = felt.const 10 : <"babybear">
+      %end, %sum = scf.while (%i = %zero, %acc = %zero) : (!F, !F) -> (!F, !F) {
+        %cond = bool.cmp lt(%i, %ten) : !F, !F
+        scf.condition(%cond) %i, %acc : !F, !F
+      } do {
+      ^bb0(%i: !F, %acc: !F):
+        %next_acc = felt.add %acc, %i : !F, !F
+        %next = felt.add %i, %one : !F, !F
+        scf.yield %next, %next_acc : !F, !F
+      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
+      struct.writem %self[@sum] = %sum : !struct.type<@Main>, !F
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{}
+
+//--- expected.json
+{
+  "sum": "45"
+}

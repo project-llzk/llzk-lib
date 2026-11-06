@@ -11,15 +11,15 @@ function.def @read_pod(%pod: !pod.type<[@n: index]>) ->  index {
 function.def @read_pod(%pod: !pod.type<[@n: index]>) ->  !felt.type {
   // expected-error@+1 {{'pod.read' op has wrong result type; expected 'index', got '!felt.type'}}
   %r = pod.read %pod[@n] : !pod.type<[@n: index]>, !felt.type
-  function.return %r: !felt.type 
+  function.return %r: !felt.type
 }
 
 // -----
 
 function.def @read_pod(%pod: !felt.type) ->  !felt.type {
-  // expected-error@+1 {{custom op 'pod.read' invalid kind of Type specified}}
+  // expected-error@+1 {{custom op 'pod.read' invalid kind of type specified: expected pod.type, but found '!felt.type'}}
   %r = pod.read %pod[@n] : !felt.type, !felt.type
-  function.return %r: !felt.type 
+  function.return %r: !felt.type
 }
 
 // -----

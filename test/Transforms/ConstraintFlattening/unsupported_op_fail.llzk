@@ -1,0 +1,19 @@
+// RUN: llzk-opt %s --llzk-flatten-constraints --verify-diagnostics -o /dev/null
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %array = array.new %x : !array.type<1 x !felt.type>
+      %zero = arith.constant 0 : index
+      array.write %array[%zero] = %x : !array.type<1 x !felt.type>, !felt.type
+      // Array storage is supported; the containment constraint itself needs lowering.
+      // expected-error @+1 {{llzk-flatten-constraints: unsupported operation 'constrain.in': containment constraints require lowering before constraint flattening}}
+      constrain.in %array, %x : !array.type<1 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}

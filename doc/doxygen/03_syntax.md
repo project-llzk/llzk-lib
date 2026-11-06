@@ -6,7 +6,7 @@
 
 The root `module` in LLZK IR must have the `llzk.lang` attribute with an optional string that is typically used to indicate the source language. The root `module` can contain any number of `struct.def`, `function.def`, or other `module` ops. The `struct.def` op is the foundation of LLZK IR and is used to describe each component in a circuit. It can contain any number of data members, a `compute()` function that holds the witness generation code, and a `constrain()` function that holds the constraint generation code. No other functions may appear within a `struct.def`.
 
-Here is a simple example of LLZK IR translated from the circomlib [and gate](\ref circomlib-and-gate):
+Here is a simple example of LLZK IR translated from the circomlib [and gate][circomlib-and-gate]:
 
 ```mlir
 module attributes {llzk.lang = "circom"} {
@@ -34,17 +34,18 @@ module attributes {llzk.lang = "circom"} {
 - `index`: (MLIR builtin) Machine integer.
 - `felt.type`: Finite field element.
 - `array.type<N x E>`: Aggregate type with indexed [pseudo-homogeneous](\ref pseudo-homogeneous) elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes. Each dimension size can be specified as an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when creating arrays within a loop where the dimension size depends on the loop iteration variable).
-- `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated `struct.def` where each parameter can be an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), a type used to instantiate a `poly.tvar<@N>` (see below), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when the parameter of a templated `struct.type` depends on a loop iteration variable).
+- `struct.type<[..]>`: Identity-bearing, pointer-like handle to a mutable component instance defined by a `struct.def`, rather than a bag of member values. Copying a struct value preserves the identity of the referenced component and does not duplicate its members, signals, or tables. Structs generally correlate to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated `struct.def` where each parameter can be an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), a type used to instantiate a `poly.tvar<@N>` (see below), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when the parameter of a templated `struct.type` depends on a loop iteration variable).
 - `pod.type<..>`: Plain Old Data aggregate type with named heterogeneous elements. Unlike `struct.type`, there is no associated named declaration, the type itself specifies all constituent element types. It can be used more freely than `struct.type` since it has fewer restrictions on modifications.
 - `poly.tvar<@N>`: Placeholder type variable within a templated `struct.def` that may be instantiated with different types.
 - `string.type`: Sequence of characters.
 
 ### Pseudo-homogeneous arrays {#pseudo-homogeneous}
 
-LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantiated with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](\ref test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.
+LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantiated with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](https://github.com/project-llzk/llzk-lib/blob/main/test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.
 
 ## Semantic Rules
 
+- A type in an included function or contract signature resolves under the `include.from` alias, even if its printed path matches a type in the caller.
 - Each `array.new` operation creates a fresh mutable array allocation. Two identical `array.new` operations are not interchangeable when either result may be read or written. The same is true for `pod.new`.
 - A `function.def` argument may have `function.arg_name = "..."` to preserve the source-level argument name independently from the SSA name printed by MLIR. The value must be a non-empty, untyped string attribute; typed string attributes such as `"x" : i1` are rejected. Attached argument names must be unique within the function. Argument-splitting transforms derive names for generated arguments, such as `input[0]` for array elements or `self.member` for struct members.
 - Ops marked with the `WitnessGen` trait can only be used in functions with the `allow_witness` attribute (`compute()` within `struct.def` has this by default). Similarly, ops marked with the `ConstraintGen` trait can only be used in functions with the `allow_constraint` attribute (`constrain()` within `struct.def` has this by default).
@@ -55,10 +56,61 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 
 - The frontend translation for each source language to LLZK IR should be as simple as possible since this will be repeated effort for each source language. To expand support of frontend languages, we welcome proposals of new high-level syntax along with a translation of that syntax to existing LLZK syntax.
 - To promote reusable infrastructure, transformations or optimizations should be performed on the LLZK IR rather than the source language, whenever possible. We welcome PRs to LLZK-lib for reusable passes.
-- Loops can be represented with either `scf.for` or `scf.while` and the optional `llzk.loopbounds` attribute can be added to specify known iteration information.
+- Loops can be represented with either `scf.for` or `scf.while` and the optional `llzk.loopbounds` attribute can be added to specify the loop variable's lower bound (inclusive), upper bound (exclusive), and nonzero step size. All three values are signed mathematical integers of arbitrary precision, not field elements, and are interpreted without reduction modulo any field, even when the loop variable has a felt type. For example, a step equal to the field modulus denotes that integer increment, not zero. For a felt loop variable over a field of modulus `p`, the body receives `(lower + k * step) mod p` on iteration `k`, starting at zero, while loop control uses the unreduced integers. These attributes are trusted unconditionally, so the producer must ensure both the sequence of field values and the number of iterations agree with the original loop. Reduction modulo `p` does not preserve ordering or termination conditions.
 - Frontend translations should attach accurate source line information to operations via the `Location` whenever possible.
 - Only the outermost module should have the `llzk.lang` attribute (because the presence of that attribute is used to determine the “root” symbol table for symbol resolution).
 - All inner modules must be named because their names are used to build the fully-qualified path names for symbol references.
 - All references to functions and types must use fully-qualified paths.
 
 [circomlib-and-gate]: https://github.com/iden3/circomlib/blob/master/circuits/gates.circom#L29-L35
+
+### Mathematical integers and fixed-width encodings
+
+LLZK's arbitrary-precision arithmetic uses signed mathematical integers. Bitwise
+AND, OR, and XOR use infinite two's-complement sign extension. Field reduction
+maps an integer into `[0, p)`; signed field operations interpret that representative
+using the field's signed threshold. A storage width is not part of an integer's
+numeric identity.
+
+Conversions to machine integers, MLIR integer values, and binary encodings must
+specify the signed interpretation and check that the value fits. C++ clients can
+use `parseDynamicAPInt`, `checkedToAPInt`, `checkedToInt64`, `checkedToUInt64`, and
+`checkedToSize` to report invalid input and overflow without depending on assertions.
+`toSignedDynamicAPInt(ArrayRef<uint64_t>)` decodes 64-bit limbs in
+least-significant-first order as a signed two's-complement integer. The top bit of
+the highest (last) limb is the sign bit; an empty array represents zero.
+`FeltConstAttr::get` and `FieldSpecAttr::get` accept this same signed limb format.
+To represent a positive value whose highest data limb has its top bit set, append
+a zero limb at the most-significant end of the array. For example, `{UINT64_MAX}`
+represents `-1`, while `{UINT64_MAX, 0}` represents `2^64 - 1`. A field modulus
+below two is invalid: `FieldSpecAttr::get` requires a valid modulus, while
+`FieldSpecAttr::getChecked` emits a diagnostic and returns a null attribute for
+an invalid modulus.
+
+Felt constant attributes store the exact signed literal, including when their
+field is unspecified. For example, `felt.const -1` retains `-1`; in a field of
+modulus `p`, arithmetic consumes its representative `p - 1`. Attribute equality
+compares the literal and type, so `-1` and `p - 1` need not be the same attribute.
+
+The C API accepts signed decimal `MlirStringRef` values for felt constants, field
+moduli, and loop bounds. Invalid decimal text produces a diagnostic and a null
+attribute. Numeric getters deliver the complete decimal value to an
+`MlirStringCallback`; callers must copy the callback text if they need to retain
+it. Native `int64_t` felt convenience constructors are also available.
+
+Numeric bytecode payloads for felt constants, field specifications, and loop bounds
+use minimal signed two's-complement encodings. Only payload tags corresponding to
+these signed encodings are accepted.
+
+C++ mathematical-integer builders accept `DynamicAPInt`. The owning
+`DynamicAPIntValue` storage adapter supplies canonical numeric hashing to MLIR
+while public accessors return `DynamicAPInt` directly.
+`APInt`/`APSInt` uses implement MLIR, LLVM bitvector, parser, and binary encoding
+boundaries. Boolean and explicitly unsigned MLIR integers decode as nonnegative;
+other signless integers and index values use signed interpretation.
+
+Arithmetic right shift uses sign extension and handles arbitrarily large counts.
+Exact left shift rejects negative or unrepresentable counts; allocation remains
+proportional to the result size. Felt left shifts compute a modular power of two,
+so their memory usage does not scale with the numeric shift count. Binary field
+encoders require nonnegative, fitting values and return errors on overflow.

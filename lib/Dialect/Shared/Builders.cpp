@@ -42,70 +42,70 @@ void addLangAttrForLLZKDialect(ModuleOp mod) {
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchFreeFunc(std::string_view funcName) {
-  if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
+  if (freeFuncMap.contains(funcName)) {
     llvm::report_fatal_error("global function " + Twine(funcName) + " already exists!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureFreeFnExists(std::string_view funcName) {
-  if (freeFuncMap.find(funcName) == freeFuncMap.end()) {
+  if (!freeFuncMap.contains(funcName)) {
     llvm::report_fatal_error("global function " + Twine(funcName) + " does not exist!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchStruct(std::string_view structName) {
-  if (structMap.find(structName) != structMap.end()) {
+  if (structMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already exists!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureStructExists(std::string_view structName) {
-  if (structMap.find(structName) == structMap.end()) {
+  if (!structMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " does not exist!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchComputeFn(std::string_view structName) {
-  if (computeFnMap.find(structName) != computeFnMap.end()) {
+  if (computeFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already has a compute function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureComputeFnExists(std::string_view structName) {
-  if (computeFnMap.find(structName) == computeFnMap.end()) {
+  if (!computeFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " has no compute function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchConstrainFn(std::string_view structName) {
-  if (constrainFnMap.find(structName) != constrainFnMap.end()) {
+  if (constrainFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already has a constrain function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureConstrainFnExists(std::string_view structName) {
-  if (constrainFnMap.find(structName) == constrainFnMap.end()) {
+  if (!constrainFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " has no constrain function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchProductFn(std::string_view structName) {
-  if (productFnMap.find(structName) != productFnMap.end()) {
+  if (productFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already has a product function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureProductFnExists(std::string_view structName) {
-  if (productFnMap.find(structName) == productFnMap.end()) {
+  if (!productFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " has no product function!");
   }
 }
@@ -115,7 +115,7 @@ Derived &ModuleLikeBuilder<Derived>::insertEmptyStruct(std::string_view structNa
   ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(this->getBodyRegion());
-  auto structDef = opBuilder.create<StructDefOp>(loc, StringAttr::get(context, structName));
+  auto structDef = StructDefOp::create(opBuilder, loc, StringAttr::get(context, structName));
   // populate the initial region
   (void)structDef.getRegion().emplaceBlock();
   structMap[structName] = structDef;
@@ -127,8 +127,8 @@ template <typename Derived>
 FuncDefOp ModuleLikeBuilder<Derived>::buildComputeFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
+  auto fnOp = FuncDefOp::create(
+      opBuilder, loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
       FunctionType::get(context, {}, {op.getType()})
   );
   fnOp.setAllowWitnessAttr();
@@ -153,8 +153,8 @@ template <typename Derived>
 FuncDefOp ModuleLikeBuilder<Derived>::buildConstrainFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
+  auto fnOp = FuncDefOp::create(
+      opBuilder, loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
       FunctionType::get(context, {op.getType()}, {})
   );
   fnOp.setAllowConstraintAttr();
@@ -179,8 +179,8 @@ template <typename Derived>
 FuncDefOp ModuleLikeBuilder<Derived>::buildProductFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
+  auto fnOp = FuncDefOp::create(
+      opBuilder, loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
       FunctionType::get(context, {}, {op.getType()})
   );
   fnOp.setAllowWitnessAttr();
@@ -213,7 +213,7 @@ Derived &ModuleLikeBuilder<Derived>::insertComputeCall(
   auto calleeFn = computeFnMap.at(callee.getName());
 
   OpBuilder builder(callerFn.getBody());
-  builder.create<CallOp>(callLoc, calleeFn);
+  CallOp::create(builder, callLoc, calleeFn);
   return static_cast<Derived &>(*this);
 }
 
@@ -243,18 +243,18 @@ Derived &ModuleLikeBuilder<Derived>::insertConstrainCall(
   // Insert the member declaration op
   {
     OpBuilder builder(caller.getBodyRegion());
-    builder.create<MemberDefOp>(memberDefLoc, memberName, calleeTy);
+    MemberDefOp::create(builder, memberDefLoc, memberName, calleeTy);
   }
 
   // Insert the constrain function ops
   {
     OpBuilder builder(callerFn.getBody());
 
-    auto member = builder.create<MemberReadOp>(
-        callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), memberName
+    auto member = MemberReadOp::create(
+        builder, callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), memberName
     );
-    builder.create<CallOp>(
-        callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}
+    CallOp::create(
+        builder, callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}
     );
   }
   return static_cast<Derived &>(*this);
@@ -277,7 +277,7 @@ Derived &ModuleLikeBuilder<Derived>::insertFreeFunc(
   ensureNoSuchFreeFunc(funcName);
 
   OpBuilder opBuilder(this->getBodyRegion());
-  auto funcDef = opBuilder.create<FuncDefOp>(loc, funcName, type);
+  auto funcDef = FuncDefOp::create(opBuilder, loc, funcName, type);
   auto *block = funcDef.addEntryBlock();
   if (fnBody) {
     OpBuilder::InsertionGuard guard(opBuilder);
@@ -297,20 +297,20 @@ Derived &ModuleLikeBuilder<Derived>::insertFreeCall(
   FuncDefOp calleeFn = freeFuncMap.at(callee);
 
   OpBuilder builder(caller.getBody());
-  builder.create<CallOp>(callLoc, calleeFn);
+  CallOp::create(builder, callLoc, calleeFn);
   return static_cast<Derived &>(*this);
 }
 
 /* ModuleBuilder */
 
 void ModuleBuilder::ensureNoSuchTemplate(std::string_view templateName) {
-  if (templateMap.find(templateName) != templateMap.end()) {
+  if (templateMap.contains(templateName)) {
     llvm::report_fatal_error("template " + Twine(templateName) + " already exists!");
   }
 }
 
 void ModuleBuilder::ensureTemplateExists(std::string_view templateName) {
-  if (templateMap.find(templateName) == templateMap.end()) {
+  if (!templateMap.contains(templateName)) {
     llvm::report_fatal_error("template " + Twine(templateName) + " does not exist!");
   }
 }
@@ -320,11 +320,11 @@ ModuleBuilder::insertTemplate(std::string_view templateName, Location loc, unsig
   ensureNoSuchTemplate(templateName);
 
   OpBuilder opBuilder(myModule.getBodyRegion());
-  auto templateDef = opBuilder.create<TemplateOp>(loc, StringAttr::get(context, templateName));
+  auto templateDef = TemplateOp::create(opBuilder, loc, StringAttr::get(context, templateName));
   opBuilder.setInsertionPointToStart(&templateDef.getBodyRegion().emplaceBlock());
   for (unsigned i = 0; i < numParams; ++i) {
-    opBuilder.create<TemplateParamOp>(
-        loc, StringAttr::get(context, 'T' + std::to_string(i)), TypeAttr()
+    TemplateParamOp::create(
+        opBuilder, loc, StringAttr::get(context, 'T' + std::to_string(i)), TypeAttr()
     );
   }
 
@@ -335,13 +335,13 @@ ModuleBuilder::insertTemplate(std::string_view templateName, Location loc, unsig
 }
 
 void ModuleBuilder::ensureNoSuchNestedModule(std::string_view moduleName) {
-  if (nestedModuleMap.find(moduleName) != nestedModuleMap.end()) {
+  if (nestedModuleMap.contains(moduleName)) {
     llvm::report_fatal_error("nested module " + Twine(moduleName) + " already exists!");
   }
 }
 
 void ModuleBuilder::ensureNestedModuleExists(std::string_view moduleName) {
-  if (nestedModuleMap.find(moduleName) == nestedModuleMap.end()) {
+  if (!nestedModuleMap.contains(moduleName)) {
     llvm::report_fatal_error("nested module " + Twine(moduleName) + " does not exist!");
   }
 }
@@ -350,7 +350,7 @@ ModuleBuilder &ModuleBuilder::insertNestedModule(std::string_view moduleName, Lo
   ensureNoSuchNestedModule(moduleName);
 
   OpBuilder opBuilder(myModule.getBodyRegion());
-  auto nestedMod = opBuilder.create<ModuleOp>(loc);
+  auto nestedMod = ModuleOp::create(opBuilder, loc);
   nestedMod.setSymName(moduleName);
 
   auto key = *nestedMod.getSymName();

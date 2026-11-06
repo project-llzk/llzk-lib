@@ -47,10 +47,6 @@ bool randomBoolValue(std::mt19937_64 &rng);
 /// Convert one static dimension to `size_t`, rejecting dynamic or invalid sizes.
 llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context);
 
-/// Convert a `DynamicAPInt` into `size_t` after validating its range.
-llvm::Expected<size_t>
-checkedDynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::StringRef context);
-
 /// Return the static element count for one shape, rejecting dynamic sizes.
 llvm::Expected<size_t>
 getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef context);

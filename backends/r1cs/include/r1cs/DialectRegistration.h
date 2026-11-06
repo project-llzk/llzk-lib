@@ -6,11 +6,24 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+//
+/// \file
+/// Declares dialect and pass registration functions for R1CS backend.
+//
+//===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include <mlir/IR/DialectRegistry.h>
+namespace mlir {
+class DialectRegistry;
+} // namespace mlir
 
 namespace r1cs {
-void registerAllDialects(mlir::DialectRegistry &registry);
-}
+
+/// Register the R1CS dialect in \p registry.
+void registerDialects(mlir::DialectRegistry &registry);
+
+/// Register R1CS transformation passes and pipelines in the global pass registry.
+void registerPasses(mlir::DialectRegistry &registry);
+
+} // namespace r1cs

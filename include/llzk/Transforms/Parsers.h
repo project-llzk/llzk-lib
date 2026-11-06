@@ -16,7 +16,6 @@
 
 #include <mlir/Pass/Pass.h>
 
-#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -185,48 +184,6 @@ public:
 
     Val.str = options.str();
     return false;
-  }
-};
-
-// Parser for APInt
-template <> class parser<APInt> : public basic_parser<APInt> {
-public:
-  parser(Option &O) : basic_parser(O) {}
-
-  bool parse(Option &O, StringRef, StringRef Arg, APInt &Val) {
-    if (Arg.empty()) {
-      return O.error("empty integer literal");
-    }
-    if (!all_of(Arg, [](char c) { return isDigit(c); })) {
-      return O.error("arg must be in base 10 (digits).");
-    }
-    // Decimal-only: allocate a safe width then shrink.
-    unsigned bits = std::max(1u, 4u * llzk::checkedCast<unsigned>(Arg.size()));
-    APInt tmp(bits, Arg, 10);
-    unsigned active = tmp.getActiveBits();
-    if (active == 0) {
-      active = 1;
-    }
-    Val = tmp.zextOrTrunc(active);
-    return false;
-  }
-
-  // Prints how the passed option differs from the default one specified in the pass
-  // For example, if V = 17 and Default = 11 then it should print
-  // [OptionName] 17 (default: 11)
-  void printOptionDiff(
-      const Option &O, const APInt &V, const OptionValue<APInt> &Default, size_t GlobalWidth
-  ) const {
-    std::string Cur = llvm::toString(V, 10, false);
-
-    std::string Def = "<unspecified>";
-    if (Default.hasValue()) {
-      const APInt &D = Default.getValue();
-      Def = llvm::toString(D, 10, false);
-    }
-
-    printOptionName(O, GlobalWidth);
-    llvm::outs() << Cur << " (default: " << Def << ")\n";
   }
 };
 

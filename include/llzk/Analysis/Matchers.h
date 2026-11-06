@@ -48,13 +48,13 @@ auto m_CommutativeOp(LhsMatcher lhs, RhsMatcher rhs) {
   return CommutativeMatcher<LhsMatcher, RhsMatcher, OpType>(lhs, rhs);
 }
 
-/// @brief Matches and optionally captures a SourceRef base value, which is either
-/// a member read or a block argument (i.e., an input to a @constrain or @compute function).
+/// @brief Matches and optionally captures a SourceRef base value, which is either a member
+/// read or a block argument (i.e., an input to a `@constrain` or `@compute` function).
 struct RefValueCapture {
   mlir::Value *what;
   RefValueCapture(mlir::Value *capture) : what(capture) {}
 
-  bool match(mlir::Value v) {
+  bool match(mlir::Value v) const {
     if (isa<mlir::BlockArgument>(v) ||
         isa_and_present<component::MemberReadOp>(v.getDefiningOp())) {
       if (what) {
@@ -75,7 +75,7 @@ struct ConstantCapture {
   felt::FeltConstantOp *what;
   ConstantCapture(felt::FeltConstantOp *capture) : what(capture) {}
 
-  bool match(mlir::Value v) {
+  bool match(mlir::Value v) const {
     if (auto match = dyn_cast_if_present<felt::FeltConstantOp>(v.getDefiningOp())) {
       if (what) {
         *what = match;

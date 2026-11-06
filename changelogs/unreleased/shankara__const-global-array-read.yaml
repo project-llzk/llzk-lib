@@ -1,0 +1,2 @@
+fixed:
+  - Fold statically indexed scalar reads from constant global arrays during array-to-scalar lowering without materializing the full array. Preserve copies with writes, dynamic indices, or escaping uses.

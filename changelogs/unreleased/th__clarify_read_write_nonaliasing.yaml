@@ -1,0 +1,3 @@
+fixed:
+  - Clarified documentation for read-like and write-like ops to specify copy semantics.
+  - Use copy semantics rather than aliasing in `llzk-redundant-read-write-pass`.

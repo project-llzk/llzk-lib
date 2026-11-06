@@ -1,0 +1,4 @@
+// RUN: llzk-opt %s --llzk-expose-child-members="root-struct=@Root::" --verify-diagnostics -o /dev/null
+
+// expected-error @+1 {{invalid root struct symbol path '@Root::': expected nested symbol reference identifier}}
+module attributes {llzk.lang} {}

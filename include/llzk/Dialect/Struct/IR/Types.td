@@ -27,10 +27,16 @@ class StructDialectType<string name, string typeMnemonic,
 def LLZK_StructType : StructDialectType<"Struct", "type"> {
   let summary = "circuit component";
   let description = [{
-    Type of a `struct` op instance. For structs that contain template parameters,
+    Type of a `struct` op instance. Struct values are identity-bearing, pointer-like
+    handles to mutable component instances rather than bags of member values. Copying
+    a struct value copies the handle and preserves the identity of the referenced
+    component; it does not duplicate the component's members, signals, or tables.
+
+    For structs that contain template parameters,
     the type must contain a list of attributes that instantiate the template
     parameters, one per parameter. Each attribute must be one of the following:
-      - IntegerAttr (with IndexType), specifying a fixed parameter value
+      - IntegerAttr (with IndexType), specifying a fixed parameter value; the
+        wildcard (`?`) is not allowed
       - SymbolRefAttr, specifying a parameter value defined by a struct parameter
         or global constant
       - AffineMapAttr, for an array of struct elements whose template parameters
@@ -97,7 +103,7 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
         (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op, bool reportMissing = true) const;
 
     // Verifies that this type references a valid struct, relative to the given `op`.
-    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op) const;
 
     /// Returns wether the struct this type refers to has members marked as columns.
     /// A lookup is necessary first and will forward the failure state if it fails.

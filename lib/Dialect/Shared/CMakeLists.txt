@@ -18,7 +18,10 @@ install(TARGETS LLZKDialectShared EXPORT LLZKTargets)
 
 add_library(LLZKSharedOpInterfaces)
 target_sources(LLZKSharedOpInterfaces
-               PRIVATE DiscardableAllocationOpInterfaces.cpp)
+               PRIVATE
+               CallLikeOpInterfaces.cpp
+               DiscardableAllocationOpInterfaces.cpp
+               ValueCopy.cpp)
 target_link_libraries(LLZKSharedOpInterfaces PUBLIC LLZKDialectHeaders MLIRHeaders MLIRIR)
 llzk_target_add_mlir_link_settings(LLZKSharedOpInterfaces)
 install(TARGETS LLZKSharedOpInterfaces EXPORT LLZKTargets)

@@ -21,10 +21,13 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
   let mnemonic = "type";
   let summary = "finite field element";
   let description = [{
-    An element of a finite field. The field can be specified (e.g.,
-    !felt.type<"bn254">) or left unspecified (!felt.type), to be filled in by the
-    backend consumer of LLZK IR.
+    An element of a finite field. The field can be specified (e.g., !felt.type<"bn254">)
+    or left unspecified (!felt.type), to be filled in by the backend consumer of LLZK IR.
     Leaving the field unspecified may reduce the power of certain transformation passes.
+
+    For a field with prime modulus `p`, a felt denotes a residue modulo `p`, with its
+    canonical representative in `[0, p)`. An unreduced integer representation does not
+    denote a distinct value outside this range.
 
     Backends are responsible for performing conversions between felts of different
     fields. If a circuit needs to encode translations between fields, the circuit

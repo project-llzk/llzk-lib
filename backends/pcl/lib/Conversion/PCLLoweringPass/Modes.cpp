@@ -14,22 +14,27 @@
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SMT/IR/SMTDialect.h>
 #include <mlir/IR/Dominance.h>
+#include <mlir/IR/Matchers.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSet.h>
 
 using namespace mlir;
@@ -44,13 +49,39 @@ using namespace llzk;
 
 BaseMode::BaseMode(ModuleOp op) : module(op), usedFreeFunctions(op), temps(op) {}
 
+LogicalResult BaseMode::validateIntToFeltCasts(const llvm::DynamicAPInt &prime) {
+  auto res = getOperation()->walk([&](cast::IntToFeltOp op) -> WalkResult {
+    if (isStep1LegalOp(op) || isMemoryEffectFree(op)) {
+      return WalkResult::advance();
+    }
+    // PCL arithmetic is modular. A comparison after converting an index to a
+    // PCL felt cannot distinguish, for example, p from 0 or -1 from p - 1.
+    IntegerAttr constant;
+    if (!matchPattern(op.getValue(), m_Constant(&constant))) {
+      return op.emitError(
+          "PCL lowering cannot preserve cast.tofelt assert for a non-constant index"
+      );
+    }
+    auto value = integerAttrToDynamicAPInt(constant);
+    if (value < 0 || value >= prime) {
+      return op.emitError("cast.tofelt assert input is outside the field range [0, p-1]");
+    }
+    return WalkResult::advance();
+  });
+  return failure(res.wasInterrupted());
+}
+
 bool BaseMode::isStep1LegalOp(Operation *op) {
   if (auto structDefOp = op->getParentOfType<StructDefOp>()) {
     auto funcDefOp = op->getParentOfType<FuncDefOp>();
     // Legal if either:
     //  - Not within a function definition.
     //  - The containing function definition is not the struct's constrain function.
-    return !funcDefOp || structDefOp.getConstrainFuncOp() != funcDefOp;
+    // Check the parent and name directly because the previous getConstrainFuncOp()
+    // lookup linearly scanned the struct's symbols for every operation, making
+    // legality checks expensive on large structs.
+    return !funcDefOp || funcDefOp->getParentOp() != structDefOp.getOperation() ||
+           !funcDefOp.nameIsConstrain();
   }
 
   auto funcDefOp = op->getParentOfType<FuncDefOp>();
@@ -66,22 +97,22 @@ void BaseMode::populateStep1ConversionTarget(ConversionTarget &target) {
   target.addDynamicallyLegalDialect<
       // clang-format off
       LLZKDialect,
-      array::ArrayDialect, 
-      boolean::BoolDialect, 
-      component::StructDialect, 
-      constrain::ConstrainDialect, 
-      function::FunctionDialect, 
+      array::ArrayDialect,
+      boolean::BoolDialect,
+      component::StructDialect,
+      constrain::ConstrainDialect,
+      function::FunctionDialect,
       global::GlobalDialect,
-      include::IncludeDialect, 
-      pod::PODDialect, 
-      polymorphic::PolymorphicDialect, 
+      include::IncludeDialect,
+      pod::PODDialect,
+      polymorphic::PolymorphicDialect,
       ram::RAMDialect,
       scf::SCFDialect,
-      smt::SMTDialect, 
-      string::StringDialect, 
-      verif::VerifDialect, 
+      mlir::smt::SMTDialect,
+      string::StringDialect,
+      verif::VerifDialect,
       arith::ArithDialect,
-      cast::CastDialect, 
+      cast::CastDialect,
       felt::FeltDialect
       // clang-format on
       >([this](Operation *op) { return isStep1LegalOp(op); });
@@ -103,7 +134,7 @@ void BaseMode::populateStep3ConversionTarget(
 ) {
   target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
   target.addDynamicallyLegalOp<pcl::VarOp>([&replacements](pcl::VarOp op) {
-    return replacements.find(op) == replacements.end();
+    return !replacements.contains(op);
   });
   target.addDynamicallyLegalOp<ModuleOp>([this](ModuleOp op) { return op == getOperation(); });
 }
@@ -140,7 +171,7 @@ DupVarsReplacements BaseMode::collectDupVarsReplacements() {
       if (vars.empty()) {
         continue;
       }
-      std::stable_sort(vars.begin(), vars.end(), [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
+      llvm::stable_sort(vars, [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
         return dom.dominates(lhs.getOperation(), rhs);
       });
       auto fst = vars[0];
@@ -156,11 +187,17 @@ DupVarsReplacements BaseMode::collectDupVarsReplacements() {
 // FullLoweringMode
 //===----------------------------------------------------------------------===//
 
-LogicalResult FullLoweringMode::runStep1() {
+LogicalResult FullLoweringMode::runStep1(const llvm::DynamicAPInt &prime) {
+  if (failed(validateIntToFeltCasts(prime))) {
+    return failure();
+  }
+
   ConversionTarget target(getContext());
+  // Step 1 preserves symbol definitions. Discard the cache before step 2.
+  SymbolTableCollection tables;
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionPatterns(tc, patterns, tables);
   populateStep1ConversionTarget(target);
 
   return applyFullConversion(getOperation(), target, std::move(patterns));
@@ -170,17 +207,25 @@ LogicalResult FullLoweringMode::runStep1() {
 // StubbedLoweringMode
 //===----------------------------------------------------------------------===//
 
-LogicalResult StubbedLoweringMode::runStep1() {
+LogicalResult StubbedLoweringMode::runStep1(const llvm::DynamicAPInt &prime) {
   if (failed(analyze())) {
     return failure();
   }
   checkAnalysisResult();
 
+  // Unsupported free functions are now stubs. Validate the remaining casts
+  // before conversion loses their original integer values.
+  if (failed(validateIntToFeltCasts(prime))) {
+    return failure();
+  }
+
   // After the analysis, do the conversion as normal.
   ConversionTarget target(getContext());
+  // Step 1 preserves symbol definitions. Discard the cache before step 2.
+  SymbolTableCollection tables;
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionPatterns(tc, patterns, tables);
   populateStep1ConversionTarget(target);
 
   return applyFullConversion(getOperation(), target, std::move(patterns));
@@ -188,9 +233,11 @@ LogicalResult StubbedLoweringMode::runStep1() {
 
 LogicalResult StubbedLoweringMode::analyze() {
   ConversionTarget target(getContext());
+  // Step 1 preserves symbol definitions. Discard the cache before step 2.
+  SymbolTableCollection tables;
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionPatterns(tc, patterns, tables);
   populateStep1ConversionTarget(target);
 
   return applyAnalysisConversion(

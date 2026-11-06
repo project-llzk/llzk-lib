@@ -72,15 +72,31 @@ def ConstraintDependencyGraphPrinterPass
 
 def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
   let summary = "Print interval analysis results for all LLZK structs.";
+  let description = [{
+    An explicit `field` overrides the detected field for interval arithmetic,
+    but preserves the declared-field semantics of `felt.const`. A literal `N`
+    with declared modulus `p` is first interpreted as `N mod p`, then reduced
+    into the analysis field of modulus `q`: `(N mod p) mod q`. Fieldless
+    constants are reduced directly as `N mod q`.
+
+    For example, `felt.const 8` in a field of modulus `7` contributes `1` when
+    analyzed with modulus `5`, both before and after constant canonicalization.
+    The option changes the analysis field; it does not retarget declared felt
+    types or reinterpret their literals as raw integers in another field.
+  }];
   let options =
       [OutputStreamOption,
-       Option<"fieldName", "field", "std::string", /* default */ "\"\"",
-              "The field to use for interval analysis. If supplied, this "
-              "always overrides the module's detected field. If omitted, the "
-              "pass first tries to detect a single field from the enclosing "
-              "module's felt usage and otherwise falls back to bn128. "
-              "Supported fields: bn128/bn254, babybear, goldilocks, grumpkin, "
-              "koalabear, mersenne31">,
+       Option<
+           "fieldName", "field", "std::string", /* default */ "\"\"",
+           "The field to use for interval analysis. If supplied, this "
+           "always overrides the module's detected field. If omitted, the "
+           "pass first tries to detect a single field from the enclosing "
+           "module's felt usage and otherwise falls back to bn128. "
+           "Constants retain their declared-field meaning before reduction "
+           "in the analysis field; fieldless literals use the analysis field "
+           "directly. "
+           "Supported fields: bn128/bn254, babybear, goldilocks, grumpkin, "
+           "koalabear, mersenne31">,
        Option<"propagateInputConstraints", "propagate-input-constraints",
               "bool", /* default */ "false",
               "Whether to propagate constraints on inputs from @constrain to "

@@ -12,6 +12,7 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
@@ -27,33 +28,132 @@ using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {
 protected:
-  TypeHelperTests() : LLZKTest(), errFn([this]() { return InFlightDiagnosticWrapper(&ctx); }) {}
+  TypeHelperTests() : errFn([this]() { return InFlightDiagnosticWrapper(&ctx); }) {}
 
   OwningEmitErrorFn errFn;
 };
 
-TEST_F(TypeHelperTests, test_arrayTypesUnify_withDynamic_1) {
+TEST_F(TypeHelperTests, test_arrayTypesUnify_withWildcard_1) {
   IndexType tyIndex = IndexType::get(&ctx);
   ArrayType a = ArrayType::get(tyIndex, {2, ShapedType::kDynamic});
   ArrayType b = ArrayType::get(tyIndex, {2, 5});
   ASSERT_TRUE(arrayTypesUnify(a, b));
 }
 
-TEST_F(TypeHelperTests, test_arrayTypesUnify_withDynamic_2) {
+TEST_F(TypeHelperTests, test_arrayTypesUnify_withWildcard_2) {
   IndexType tyIndex = IndexType::get(&ctx);
   ArrayType a = ArrayType::get(tyIndex, {2, ShapedType::kDynamic});
   ArrayType b = ArrayType::get(tyIndex, {ShapedType::kDynamic, 5});
   ASSERT_TRUE(arrayTypesUnify(a, b));
 }
 
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {ShapedType::kDynamic});
+  ArrayType staticArray = ArrayType::get(feltTy, {1});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, staticArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, staticArray));
+  ASSERT_FALSE(isMoreConcreteUnification(staticArray, wildcardArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension3) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {4, 5, ShapedType::kDynamic});
+  ArrayType staticArray = ArrayType::get(feltTy, {4, 5, 6});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, staticArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, staticArray));
+  ASSERT_FALSE(isMoreConcreteUnification(staticArray, wildcardArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimensionsMix) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType firstArray = ArrayType::get(feltTy, {ShapedType::kDynamic, 2});
+  ArrayType secondArray = ArrayType::get(feltTy, {2, ShapedType::kDynamic});
+
+  ASSERT_TRUE(typesUnify(firstArray, secondArray));
+  ASSERT_FALSE(isMoreConcreteUnification(firstArray, secondArray));
+  ASSERT_FALSE(isMoreConcreteUnification(secondArray, firstArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardAndSymbolRefDimension) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {ShapedType::kDynamic});
+  ArrayType symbolRefArray = ArrayType::get(feltTy, {FlatSymbolRefAttr::get(&ctx, "N")});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, symbolRefArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, symbolRefArray));
+  ASSERT_FALSE(isMoreConcreteUnification(symbolRefArray, wildcardArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardAndAffineMapDimension) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {ShapedType::kDynamic});
+  auto aff = AffineMapAttr::get(OpBuilder(&ctx).getDimIdentityMap());
+  ArrayType affineMapArray = ArrayType::get(feltTy, {aff});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, affineMapArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, affineMapArray));
+  ASSERT_FALSE(isMoreConcreteUnification(affineMapArray, wildcardArray));
+}
+
 TEST_F(TypeHelperTests, test_structTypesUnify) {
+  // StructType itself cannot be created with `?` in its parameter list.
+  // Instead, test that a nested ArrayType as a TypeAttr in the list passes.
   IndexType tyIndex = IndexType::get(&ctx);
-  Attribute i1 = IntegerAttr::get(tyIndex, 128);
-  Attribute i2 = IntegerAttr::get(tyIndex, ShapedType::kDynamic);
-  StructType a = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {i1});
-  StructType b = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {i2});
-  // `false` because StructType does not allow `kDynamic`
-  ASSERT_FALSE(structTypesUnify(a, b));
+  Attribute t1 = TypeAttr::get(ArrayType::get(tyIndex, {242, ShapedType::kDynamic}));
+  Attribute t2 = TypeAttr::get(ArrayType::get(tyIndex, {ShapedType::kDynamic, 5}));
+  StructType a = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {t1});
+  StructType b = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {t2});
+  ASSERT_TRUE(structTypesUnify(a, b));
+}
+
+// Equal raw types can resolve to different symbols under the RHS namespace, including when nested
+// in TypeAttr parameters.
+TEST_F(TypeHelperTests, test_typesUnify_equalRecursiveTypesRespectRhsPrefix) {
+  SymbolRefAttr targetBoxName = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Box")}
+  );
+  SymbolRefAttr includedBoxName = SymbolRefAttr::get(
+      &ctx, "Lib",
+      ArrayRef<FlatSymbolRefAttr> {
+          FlatSymbolRefAttr::get(&ctx, "Target"), FlatSymbolRefAttr::get(&ctx, "Box")
+      }
+  );
+  StructType targetBox = StructType::get(targetBoxName);
+  StructType includedBox = StructType::get(includedBoxName);
+  SymbolRefAttr targetHolderName = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Holder")}
+  );
+  SymbolRefAttr includedHolderName = SymbolRefAttr::get(
+      &ctx, "Lib",
+      ArrayRef<FlatSymbolRefAttr> {
+          FlatSymbolRefAttr::get(&ctx, "Target"), FlatSymbolRefAttr::get(&ctx, "Holder")
+      }
+  );
+  StructType targetHolder =
+      StructType::get(targetHolderName, ArrayRef<Attribute> {TypeAttr::get(targetBox)});
+  StructType includedHolder =
+      StructType::get(includedHolderName, ArrayRef<Attribute> {TypeAttr::get(includedBox)});
+  StructType collidingHolder =
+      StructType::get(includedHolderName, ArrayRef<Attribute> {TypeAttr::get(targetBox)});
+  ArrayType targetArray = ArrayType::get(targetBox, {2});
+  PodType targetPod = PodType::get(
+      &ctx, ArrayRef {RecordAttr::get(&ctx, StringAttr::get(&ctx, "value"), targetBox)}
+  );
+  FunctionType targetFunction = FunctionType::get(&ctx, {IndexType::get(&ctx)}, {targetBox});
+  llvm::StringRef includedNamespace = "Lib";
+  ArrayRef<llvm::StringRef> rhsPrefix(&includedNamespace, 1);
+
+  EXPECT_TRUE(typesUnify(includedBox, targetBox, rhsPrefix));
+  EXPECT_TRUE(typesUnify(includedHolder, targetHolder, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetBox, targetBox, rhsPrefix));
+  EXPECT_FALSE(typesUnify(collidingHolder, targetHolder, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetArray, targetArray, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetPod, targetPod, rhsPrefix));
+  EXPECT_FALSE(typesUnify(targetFunction, targetFunction, rhsPrefix));
+  EXPECT_TRUE(typesUnify(IndexType::get(&ctx), IndexType::get(&ctx), rhsPrefix));
 }
 
 TEST_F(TypeHelperTests, test_podTypesUnify_Pass) {
@@ -137,5 +237,27 @@ TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI256) {
         }
       },
       "error: value is too large for `index` type: -1"
+  );
+}
+
+TEST_F(TypeHelperTests, test_forceIntToIndexType_fromSignedI128) {
+  IntegerType signedI128 = IntegerType::get(&ctx, 128, IntegerType::SignednessSemantics::Signed);
+  for (const APInt &value : {APInt::getAllOnes(128), APInt::getSignedMinValue(64).sext(128)}) {
+    FailureOr<IntegerAttr> normalized = forceIntType(IntegerAttr::get(signedI128, value), errFn);
+    ASSERT_TRUE(succeeded(normalized));
+    ASSERT_EQ(normalized->getValue().sext(128), value);
+  }
+}
+
+TEST_F(TypeHelperTests, test_forceIntToIndexType_rejectsOutOfRangeSignedI128) {
+  IntegerType signedI128 = IntegerType::get(&ctx, 128, IntegerType::SignednessSemantics::Signed);
+  IntegerAttr a = IntegerAttr::get(signedI128, APInt::getMaxValue(64).zext(128));
+  ASSERT_DEATH(
+      {
+        if (failed(forceIntType(a, errFn))) {
+          std::abort();
+        }
+      },
+      "error: value is too large for `index` type"
   );
 }

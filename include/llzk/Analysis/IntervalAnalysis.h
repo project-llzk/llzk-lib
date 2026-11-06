@@ -238,7 +238,7 @@ class IntervalAnalysisLatticeValue
 
 public:
   explicit IntervalAnalysisLatticeValue(ExpressionValue e) : Base(std::move(e)) {}
-  IntervalAnalysisLatticeValue() : Base() {}
+  IntervalAnalysisLatticeValue() = default;
   explicit IntervalAnalysisLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
   IntervalAnalysisLatticeValue(const IntervalAnalysisLatticeValue &) = default;
   IntervalAnalysisLatticeValue(IntervalAnalysisLatticeValue &&) = default;
@@ -377,12 +377,12 @@ private:
     );
   }
 
-  inline bool isConstOp(mlir::Operation *op) const {
+  static inline bool isConstOp(mlir::Operation *op) {
     return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
-  inline bool isBoolConstOp(mlir::Operation *op) const {
+  static inline bool isBoolConstOp(mlir::Operation *op) {
     if (auto constIntOp = llvm::dyn_cast<mlir::arith::ConstantIntOp>(op)) {
       auto valAttr = dyn_cast<mlir::IntegerAttr>(constIntOp.getValue());
       ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
@@ -403,7 +403,7 @@ private:
 
   llvm::SMTExprRef createConstBoolExpr(bool v) const { return smtSolver->mkBoolean(v); }
 
-  bool isArithmeticOp(mlir::Operation *op) const {
+  static bool isArithmeticOp(mlir::Operation *op) {
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
         felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
@@ -429,18 +429,18 @@ private:
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
-  bool isReadOp(mlir::Operation *op) const {
+  static bool isReadOp(mlir::Operation *op) {
     return llvm::isa<
         component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp, pod::ReadPodOp>(op);
   }
 
-  bool isDefinitionOp(mlir::Operation *op) const {
+  static bool isDefinitionOp(mlir::Operation *op) {
     return llvm::isa<
         component::StructDefOp, function::FuncDefOp, component::MemberDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 
-  bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+  static bool isReturnOp(mlir::Operation *op) { return llvm::isa<function::ReturnOp>(op); }
 
   /// @brief Convert an array access op's indices into SourceRef path components.
   /// Constant indices are tracked precisely, while dynamic indices are widened to
@@ -503,9 +503,9 @@ struct IntervalAnalysisContext {
 template <> struct std::hash<llzk::IntervalAnalysisContext> {
   size_t operator()(const llzk::IntervalAnalysisContext &c) const {
     return llvm::hash_combine(
+        llzk::Field::Hash {}(c.getField()),
         std::hash<const llzk::IntervalDataFlowAnalysis *> {}(c.intervalDFA),
         std::hash<const llvm::SMTSolver *> {}(c.smtSolver.get()),
-        std::hash<const llzk::Field *> {}(&c.getField()),
         std::hash<bool> {}(c.propagateInputConstraints),
         std::hash<bool> {}(c.trackUnreducedIntervals)
     );
@@ -514,8 +514,6 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
 
 namespace llzk {
 
-// Suppress false positive from `clang-tidy`
-// NOLINTNEXTLINE(bugprone-exception-escape)
 class StructIntervals {
 public:
   /// @brief Compute the struct intervals.
@@ -526,6 +524,7 @@ public:
   /// @param am A module-level analysis manager. This analysis manager needs to originate
   /// from a module-level analysis (i.e., for the `mod` module) so that analyses
   /// for other constraints can be queried via the getChildAnalysis method.
+  /// @param ctx
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
@@ -610,7 +609,7 @@ public:
       return mlir::failure();
     }
     inProgressContexts.insert(ctx);
-    auto cleanup = llvm::make_scope_exit([this, &ctx] { inProgressContexts.erase(ctx); });
+    auto cleanup = llvm::scope_exit([this, &ctx] { inProgressContexts.erase(ctx); });
 
     auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, am, ctx);
     if (mlir::failed(computeRes)) {
@@ -670,30 +669,10 @@ private:
 namespace llvm {
 
 template <> struct DenseMapInfo<llzk::ExpressionValue> {
-
-  static SMTExprRef getEmptyExpr() {
-    static const auto *emptyPtr = reinterpret_cast<SMTExprRef>(1);
-    return emptyPtr;
-  }
-  static SMTExprRef getTombstoneExpr() {
-    static const auto *tombstonePtr = reinterpret_cast<SMTExprRef>(2);
-    return tombstonePtr;
-  }
-
-  static llzk::ExpressionValue getEmptyKey() {
-    return llzk::ExpressionValue(llzk::Field::getField("bn128"), getEmptyExpr());
-  }
-  static inline llzk::ExpressionValue getTombstoneKey() {
-    return llzk::ExpressionValue(llzk::Field::getField("bn128"), getTombstoneExpr());
-  }
   static unsigned getHashValue(const llzk::ExpressionValue &e) {
     return llzk::ExpressionValue::Hash {}(e);
   }
   static bool isEqual(const llzk::ExpressionValue &lhs, const llzk::ExpressionValue &rhs) {
-    if (lhs.getExpr() == getEmptyExpr() || lhs.getExpr() == getTombstoneExpr() ||
-        rhs.getExpr() == getEmptyExpr() || rhs.getExpr() == getTombstoneExpr()) {
-      return lhs.getExpr() == rhs.getExpr();
-    }
     return lhs == rhs;
   }
 };

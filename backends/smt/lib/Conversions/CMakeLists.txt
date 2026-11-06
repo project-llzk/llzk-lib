@@ -2,6 +2,7 @@ add_library(SMTConversions)
 
 target_sources(
   SMTConversions PRIVATE
+    CAPI.cpp
     SMTLoweringCommon.cpp
     SMTLoweringPass.cpp
     SMTNaiveLoweringPass.cpp
@@ -21,7 +22,7 @@ target_link_libraries(
     MLIRHeaders
   PRIVATE
     LLZKDialect
-    SMTDialect
+    MLIRSMT
 )
 
 

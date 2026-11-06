@@ -50,7 +50,11 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
       }
     } else {
       const std::string capiType = mapCppTypeToCapiType(cppType);
-      if (isPrimitiveType(cppType)) {
+      if (isDynamicAPIntType(cppType)) {
+        paramsStream << llvm::formatv(
+            "    auto {0} = mlirStringRefCreateFromCString(\"0\");\n", pName
+        );
+      } else if (isPrimitiveType(cppType)) {
         paramsStream << llvm::formatv("    {0} {1} = 0;\n", capiType, pName);
       } else if (isType && capiType == "MlirType") {
         paramsStream << llvm::formatv("    auto {0} = createIndexType();\n", pName);

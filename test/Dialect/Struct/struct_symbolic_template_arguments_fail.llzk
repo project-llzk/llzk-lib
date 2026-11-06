@@ -1,0 +1,18 @@
+// RUN: llzk-opt -verify-diagnostics %s
+
+// Symbolic struct arguments cannot use mutable globals.
+module attributes {llzk.lang} {
+  poly.template @Box {
+    poly.param @N
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Box::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Box::@S<[@N]>>
+        function.return %self : !struct.type<@Box::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Box::@S<[@N]>>) { function.return }
+    }
+  }
+  global.def @Mutable : index = 7
+  // expected-error@+1 {{ref "@Mutable" in type '!struct.type<@Box::@S<[@Mutable]>>' refers to a global that is not marked as 'const'}}
+  function.def @use(%value: !struct.type<@Box::@S<[@Mutable]>>) { function.return }
+}

@@ -21,6 +21,20 @@ namespace llzk {
 
 using namespace component;
 
+LogicalResult LoopBoundsAttr::verify(
+    llvm::function_ref<InFlightDiagnostic()> emitError,
+    // TableGen requires these parameters to be passed by value.
+    DynamicAPIntValue,            // NOLINT(performance-unnecessary-value-param)
+    DynamicAPIntValue,            // NOLINT(performance-unnecessary-value-param)
+    DynamicAPIntValue stepWrapper // NOLINT(performance-unnecessary-value-param)
+) {
+  const llvm::DynamicAPInt &step = stepWrapper;
+  if (step == 0) {
+    return emitError() << "loopbounds step must be nonzero";
+  }
+  return success();
+}
+
 FailureOr<StructType> getTypeFromLlzkMainAttr(ModuleOp op, Attribute attr) {
   assert(op);   // pre-condition
   assert(attr); // pre-condition

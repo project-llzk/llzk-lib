@@ -13,3 +13,22 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+
+    struct.def @Generic {
+      function.def @compute() -> !struct.type<@T::@Generic<[@N]>> {
+        %self = struct.new : !struct.type<@T::@Generic<[@N]>>
+        function.return %self : !struct.type<@T::@Generic<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Generic<[@N]>>) { function.return }
+    }
+  }
+
+  // expected-error@+1 {{wildcard '?' is not allowed as struct type parameter}}
+  function.def private @takes_wildcard_param(!struct.type<@T::@Generic<[?]>>)
+}

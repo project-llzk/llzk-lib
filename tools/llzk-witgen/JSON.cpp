@@ -131,7 +131,11 @@ static llvm::Expected<int64_t> jsonToInt(const llvm::json::Value *json) {
 static llvm::Expected<llvm::DynamicAPInt>
 jsonToFelt(const llvm::json::Value *json, const Field &field) {
   if (std::optional<llvm::StringRef> str = json->getAsString()) {
-    return field.reduce(toDynamicAPInt(*str));
+    auto value = parseDynamicAPInt(*str);
+    if (!value) {
+      return value.takeError();
+    }
+    return field.reduce(*value);
   }
   if (std::optional<int64_t> integer = json->getAsInteger()) {
     return field.reduce(*integer);
@@ -192,12 +196,10 @@ static llvm::Expected<WitnessVal> parseJSONArray(
   return arrayValue;
 }
 
-/// Render a field element as a decimal string for JSON output.
-static llvm::Expected<llvm::json::Value> feltToJSON(const llvm::DynamicAPInt &value) {
+llvm::json::Value serializeFeltToJSON(const llvm::DynamicAPInt &value, const Field &field) {
   std::string rendered;
-  llvm::raw_string_ostream os(rendered);
-  os << value;
-  return llvm::json::Value(os.str());
+  llvm::raw_string_ostream(rendered) << field.reduce(value);
+  return llvm::json::Value(rendered);
 }
 
 /// Serialize a flattened LLZK array into nested JSON arrays.
@@ -302,12 +304,15 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     SerializationMode mode
 ) {
   return llvm::TypeSwitch<Type, llvm::Expected<llvm::json::Value>>(type)
-      .Case([&](felt::FeltType) -> llvm::Expected<llvm::json::Value> {
+      .Case([&](felt::FeltType feltType) -> llvm::Expected<llvm::json::Value> {
     auto feltValue = asFelt(value);
     if (!feltValue) {
       return feltValue.takeError();
     }
-    return feltToJSON(*feltValue);
+    if (!feltType.hasField()) {
+      return makeError("felt JSON output requires a declared field");
+    }
+    return serializeFeltToJSON(*feltValue, feltType.getField());
   })
       .Case([&](array::ArrayType arrayType) -> llvm::Expected<llvm::json::Value> {
     auto arrayValue = asArray(value);

@@ -17,7 +17,7 @@ add_subdirectory(Include)
 add_subdirectory(POD)
 add_subdirectory(LLZK)
 add_subdirectory(Polymorphic)
-add_subdirectory(SMT)
+add_subdirectory(SMTInfo)
 add_subdirectory(String)
 add_subdirectory(Struct)
 add_subdirectory(Verif)
@@ -25,11 +25,13 @@ add_subdirectory(Verif)
 # Registration of dialects
 add_library(LLZKDialectRegistration)
 add_library(LLZK::DialectRegistration ALIAS LLZKDialectRegistration)
-target_sources(LLZKDialectRegistration PRIVATE InitDialects.cpp)
+target_sources(LLZKDialectRegistration PRIVATE DialectRegistration.cpp)
 target_link_libraries(
   LLZKDialectRegistration PUBLIC LLZKAllDialects ${LLZK_DEP_DIALECT_LIBS}
-                                 LLZKDialectHeaders
-                                 LLZK::LLZKTransforms)
+                                 LLZKDialectHeaders MLIRSMT SMTInfoDialect
+                                 LLZK::LLZKTransforms
+                         PRIVATE SMTConversions LLZKValidators
+                                 MLIRFuncInlinerExtension)
 llzk_target_add_mlir_link_settings(LLZKDialectRegistration)
 
 install(TARGETS LLZKDialectRegistration EXPORT LLZKTargets)

@@ -23,6 +23,9 @@ PCLTypeConverter::PCLTypeConverter() {
 
   addConversion([](IntegerType t) -> Type { return BoolType::get(t.getContext()); });
 
+  // Index constants and stub arguments use PCL felts.
+  addConversion([](IndexType t) { return FeltType::get(t.getContext()); });
+
   addConversion([](llzk::felt::FeltType t) { return FeltType::get(t.getContext()); });
 
   addSourceMaterialization(
@@ -30,7 +33,7 @@ PCLTypeConverter::PCLTypeConverter() {
     if (values.size() != 1) {
       return nullptr;
     }
-    return builder.create<UnrealizedConversionCastOp>(location, t, values[0]).getResult(0);
+    return UnrealizedConversionCastOp::create(builder, location, t, values[0]).getResult(0);
   }
   );
 
@@ -40,7 +43,7 @@ PCLTypeConverter::PCLTypeConverter() {
       return nullptr;
     }
 
-    return builder.create<UnrealizedConversionCastOp>(location, t, values[0]).getResult(0);
+    return UnrealizedConversionCastOp::create(builder, location, t, values[0]).getResult(0);
   }
   );
 
@@ -70,7 +73,7 @@ PCLTypeConverter::PCLTypeConverter() {
     if (values.size() != 1 || !llvm::isa<BoolType>(values[0].getType())) {
       return nullptr;
     }
-    return builder.create<AsFeltOp>(location, values[0]);
+    return AsFeltOp::create(builder, location, values[0]);
   }
   );
 
@@ -86,10 +89,10 @@ PCLTypeConverter::PCLTypeConverter() {
       return nullptr;
     }
 
-    llvm::APInt zeroValue;
-    auto zero = builder.create<ConstOp>(location, FeltAttr::get(builder.getContext(), zeroValue));
-    auto eqOp = builder.create<CmpEqOp>(location, values[0], zero);
-    return builder.create<NotOp>(location, eqOp);
+    llvm::DynamicAPInt zeroValue;
+    auto zero = ConstOp::create(builder, location, FeltAttr::get(builder.getContext(), zeroValue));
+    auto eqOp = CmpEqOp::create(builder, location, values[0], zero);
+    return NotOp::create(builder, location, eqOp);
   }
   );
 }

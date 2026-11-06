@@ -1,0 +1,47 @@
+// Regression for project-llzk/circom#454.
+// RUN: llzk-opt -llzk-full-r1cs-lowering --verify-each %s | FileCheck %s
+// RUN: llzk-opt -llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
+
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@IsZero>} {
+  struct.def @IsZero {
+    struct.member @out : !felt.type<"goldilocks"> {llzk.pub, signal}
+    struct.member @inv : !felt.type<"goldilocks"> {signal}
+
+    function.def @compute(%in: !felt.type<"goldilocks">) -> !struct.type<@IsZero> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : !struct.type<@IsZero>
+      %zero = felt.const 0 : !felt.type<"goldilocks">
+      %nonzero = bool.cmp ne(%in, %zero) : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      %inv = scf.if %nonzero -> !felt.type<"goldilocks"> {
+        %one = felt.const 1 : !felt.type<"goldilocks">
+        %inverse = felt.div %one, %in : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+        struct.writem %self[@inv] = %inverse : !struct.type<@IsZero>, !felt.type<"goldilocks">
+        scf.yield %inverse : !felt.type<"goldilocks">
+      } else {
+        struct.writem %self[@inv] = %zero : !struct.type<@IsZero>, !felt.type<"goldilocks">
+        scf.yield %zero : !felt.type<"goldilocks">
+      }
+      %neg_in = felt.neg %in : !felt.type<"goldilocks">
+      %product = felt.mul %neg_in, %inv : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      %one = felt.const 1 : !felt.type<"goldilocks">
+      %out = felt.add %product, %one : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      struct.writem %self[@out] = %out : !struct.type<@IsZero>, !felt.type<"goldilocks">
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(%self: !struct.type<@IsZero>, %in: !felt.type<"goldilocks">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %out = struct.readm %self[@out] : !struct.type<@IsZero>, !felt.type<"goldilocks">
+      %inv = struct.readm %self[@inv] : !struct.type<@IsZero>, !felt.type<"goldilocks">
+      %neg_in = felt.neg %in : !felt.type<"goldilocks">
+      %product = felt.mul %neg_in, %inv : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      %one = felt.const 1 : !felt.type<"goldilocks">
+      %expected_out = felt.add %product, %one : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      constrain.eq %out, %expected_out : !felt.type<"goldilocks">
+      %zero_product = felt.mul %in, %out : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      %zero = felt.const 0 : !felt.type<"goldilocks">
+      constrain.eq %zero_product, %zero : !felt.type<"goldilocks">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: r1cs.circuit @IsZero

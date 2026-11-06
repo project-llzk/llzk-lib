@@ -282,7 +282,10 @@ def LLZK_MemberReadOp
                                 MemoryEffects<[MemRead]>]> {
   let summary = "read value of a struct member";
   let description = [{
-    This operation reads the value of a named member in a struct/component.
+    This operation copies the value of a named member in a struct/component.
+    The result is a value copy, not a pointer or alias to the member's storage.
+    When the member itself has `struct.type`, the copied value is an
+    identity-bearing handle to the same component instance.
 
     A struct can read its own members regardless of whether they are marked as
     public (i.e., with the `llzk.pub` attribute) or private (members without the
@@ -352,10 +355,16 @@ def LLZK_MemberWriteOp
     : MemberRefOpBase<"writem", [WitnessGen, MemoryEffects<[MemWrite]>]> {
   let summary = "write value to a struct member";
   let description = [{
-    This operation writes a value to a named member in a struct/component.
+    This operation copies a value to a named member in a struct/component.
+    It does not create a pointer or alias between the source value and the member's
+    storage. When the value has `struct.type`, the copied value is an
+    identity-bearing handle to the same component instance.
 
-    A struct can write its own members. However, writing members of other components
-    is not allowed.
+    The target component must be a direct result of `struct.new`. Combined with
+    function isolation and `struct.new` verification, this ensures that the instance
+    is created in the current function and has the enclosing struct's type. Thus,
+    writing to a component passed as a function argument, returned by a call, or
+    loaded from storage is not allowed, even if it has the same struct type.
   }];
   let isRead = 0;
 

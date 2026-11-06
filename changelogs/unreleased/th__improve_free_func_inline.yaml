@@ -1,0 +1,5 @@
+fixed:
+  - "`llzk-inline-free-functions` no longer rejects non-flat symbol references by checking their nested name components independently."
+
+changed:
+  - "`llzk-inline-free-functions` cleanup now removes unused functions in nested modules and templates."
