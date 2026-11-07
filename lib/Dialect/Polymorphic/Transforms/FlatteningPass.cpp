@@ -1267,9 +1267,11 @@ private:
           bindings[FlatSymbolRefAttr::get(paramOp.getSymNameAttr())] = value;
         }
       }
-      return bindings;
     }
 
+    // Explicit wildcards and unresolved enclosing parameters can still acquire concrete
+    // bindings from the nested call's signature. Preserve concrete explicit arguments as
+    // the source of truth and fill only the remaining parameters from that evidence.
     FailureOr<UnificationMap> unifyResult =
         nestedCall.unifyTypeSignature(nestedTgt.getFunctionType());
     if (failed(unifyResult)) {
@@ -1277,6 +1279,9 @@ private:
     }
     for (TemplateParamOp paramOp : nestedParams) {
       auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+      if (bindings.contains(paramName)) {
+        continue;
+      }
       if (std::optional<Attribute> value = inferUnifiedParam(*unifyResult, paramName)) {
         Attribute convertedValue = enclosingTyConv.convertAttr(*value);
         if (isConcreteAttr(convertedValue)) {
