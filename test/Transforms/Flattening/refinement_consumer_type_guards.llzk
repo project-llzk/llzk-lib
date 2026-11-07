@@ -75,11 +75,11 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK:      struct.def @ContainmentRhsHolder {
 // CHECK:        struct.member @item : !array.type<#[[$ATTR_1]] x !felt.type> {column}
-// CHECK:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %{{.*}}[@item] : <@ContainmentRhsHolder>, !array.type<#[[$ATTR_1]] x !felt.type>
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %{{.*}}[@item] : <@ContainmentRhsHolder>, !array.type<#[[$ATTR_1]] x !felt.type>
 // CHECK:          constrain.in %{{.*}}, %[[VAL_2]] : <3 x !felt.type>, !array.type<#[[$ATTR_1]] x !felt.type>
 
 // -----
@@ -116,14 +116,14 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.def @Holder {
 // CHECK-NEXT:        struct.member @value : !poly.tvar<@T> {column}
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@THolderA::@Holder<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@THolderA::@Holder<[@T]>>
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <0 x !felt.type>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@THolderA::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = array.new  : <0 x !felt.type>
 // CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_1]] : <@THolderA::@Holder<[@T]>>, !array.type<0 x !felt.type>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@THolderA::@Holder<[@T]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@THolderA::@Holder<[@T]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@value] : <@THolderA::@Holder<[@T]>>, !poly.tvar<@T>
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@THolderA::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@value] : <@THolderA::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !felt.type>
 // CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !poly.tvar<@T>, !array.type<1 x !felt.type>
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -185,24 +185,24 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCellB_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCellB_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCellB_1_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCellB_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCellB_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCellB_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCellB_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCellB_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCellB_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCellB_0_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCellB_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCellB_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCellB_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCellB_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @consume1(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TCellB_1_Cell>) {
+// CHECK-NEXT:    function.def @consume1(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@TCellB_1_Cell>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @THolderB {
@@ -210,15 +210,15 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.def @Holder {
 // CHECK-NEXT:        struct.member @value : !poly.tvar<@T> {column}
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@THolderB::@Holder<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@THolderB::@Holder<[@T]>>
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCellB_0_Cell::@compute() : () -> !struct.type<@TCellB_0_Cell>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@THolderB::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCellB_0_Cell::@compute() : () -> !struct.type<@TCellB_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@value] = %[[VAL_6]] : <@THolderB::@Holder<[@T]>>, !struct.type<@TCellB_0_Cell>
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@value] : <@THolderB::@Holder<[@T]>>, !poly.tvar<@T>
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_7]] : (!poly.tvar<@T>) -> !struct.type<@TCellB_1_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_5]][@value] : <@THolderB::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_7]] : (!poly.tvar<@T>) -> !struct.type<@TCellB_1_Cell>
 // CHECK-NEXT:          function.call @consume1(%[[VAL_8]]) : (!struct.type<@TCellB_1_Cell>) -> ()
 // CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@THolderB::@Holder<[@T]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@THolderB::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@THolderB::@Holder<[@T]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -281,17 +281,17 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     struct.def @Holder {
 // CHECK-NEXT:       struct.member @items : !array.type<1 x !poly.tvar<@T>> {column}
 // CHECK-NEXT:       function.def @compute() -> !struct.type<@THolderC::@Holder<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:         %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@THolderC::@Holder<[@T]>>
-// CHECK-NEXT:         %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCellC_0_Cell::@compute() : () -> !struct.type<@TCellC_0_Cell>
-// CHECK-NEXT:         %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_7]] : <1 x !struct.type<@TCellC_0_Cell>>
+// CHECK-NEXT:         %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:         %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@THolderC::@Holder<[@T]>>
+// CHECK-NEXT:         %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCellC_0_Cell::@compute() : () -> !struct.type<@TCellC_0_Cell>
+// CHECK-NEXT:         %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_7]] : <1 x !struct.type<@TCellC_0_Cell>>
 // CHECK-NEXT:         struct.writem %[[VAL_6]][@items] = %[[VAL_8]] : <@THolderC::@Holder<[@T]>>, !array.type<1 x !struct.type<@TCellC_0_Cell>>
-// CHECK-NEXT:         %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@items] : <@THolderC::@Holder<[@T]>>, !array.type<1 x !poly.tvar<@T>>
-// CHECK-NEXT:         %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_5]]] : <1 x !poly.tvar<@T>>, !poly.tvar<@T>
+// CHECK-NEXT:         %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items] : <@THolderC::@Holder<[@T]>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:         %[[VAL_10:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_5]]] : <1 x !poly.tvar<@T>>, !poly.tvar<@T>
 // CHECK-NEXT:         function.call @consume1(%[[VAL_10]]) : (!poly.tvar<@T>) -> ()
 // CHECK-NEXT:         function.return %[[VAL_6]] : !struct.type<@THolderC::@Holder<[@T]>>
 // CHECK-NEXT:       }
-// CHECK-NEXT:       function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@THolderC::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:       function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@THolderC::@Holder<[@T]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:         function.return
 // CHECK-NEXT:       }
 // CHECK-NEXT:     }
@@ -395,5 +395,5 @@ module attributes {llzk.lang} {
 // CHECK:      struct.def @Holder {
 // CHECK:      struct.member @item : !poly.tvar<@T> {column}
 // CHECK:      function.def @constrain(%{{.*}}: !struct.type<@TPodInitializerHolder::@Holder<[@T]>>) attributes {function.allow_constraint} {
-// CHECK:        %[[POD_READ:[0-9a-zA-Z_\.]+]] = struct.readm %{{.*}}[@item] : <@TPodInitializerHolder::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK:        %[[POD_READ:[0-9a-zA-Z_.-]+]] = struct.readm %{{.*}}[@item] : <@TPodInitializerHolder::@Holder<[@T]>>, !poly.tvar<@T>
 // CHECK:        %{{.*}} = pod.new { @item = %[[POD_READ]] } : <[@item: !poly.tvar<@T>]>

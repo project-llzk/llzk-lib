@@ -31,21 +31,21 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @template_collision_4_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:    function.def @template_collision_4_f(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <4 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @template_collision_4_f_0(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:    function.def @template_collision_4_f_0(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) -> !array.type<4 x !felt.type> {
 // CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<4 x !felt.type>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
-// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @template_collision_4_f_0(%[[VAL_4]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @template_collision_4_f_0(%[[VAL_4]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

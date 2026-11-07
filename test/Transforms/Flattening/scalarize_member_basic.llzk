@@ -53,20 +53,20 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -74,23 +74,23 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
 // CHECK-NEXT:      struct.member @first : !struct.type<@TCell_0_Cell> {column}
-// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        scf.if %[[VAL_4]] {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@first] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -152,20 +152,20 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -174,18 +174,18 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      struct.member @items_2 : !struct.type<@TCell_1_Cell> {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_2] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -244,42 +244,42 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Holder {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
-// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        scf.if %[[VAL_4]] {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -340,44 +340,44 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Holder {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
-// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        scf.if %[[VAL_4]] {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_10]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@value] : <@TCell_0_Cell>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_12]][@value] : <@TCell_0_Cell>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -446,20 +446,20 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -469,22 +469,22 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @first : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      struct.member @second : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read-again", whole_source = "whole"}
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read", whole_source = "whole"}
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read-again", whole_source = "whole"}
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read", whole_source = "whole"}
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@first] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@second] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -553,20 +553,20 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TPair_0_0_Pair {
 // CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_0_0_Pair> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_0_0_Pair>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair_0_0_Pair>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TPair_0_0_Pair>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_0_0_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair_0_0_Pair>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TPair_1_1_Pair {
 // CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_1_1_Pair> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_1_1_Pair>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair_1_1_Pair>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TPair_1_1_Pair>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_1_1_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair_1_1_Pair>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -575,10 +575,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.def @Pair {
 // CHECK-NEXT:        struct.member @value : !felt.type {column}
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_0"::@Pair<[@A]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"TPair_\1A_0"::@Pair<[@A]>>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_0"::@Pair<[@A]>>
 // CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"TPair_\1A_0"::@Pair<[@A]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"TPair_\1A_0"::@Pair<[@A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_0"::@Pair<[@A]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -588,10 +588,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.def @Pair {
 // CHECK-NEXT:        struct.member @value : !felt.type {column}
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A"::@Pair<[@B]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_0_\1A"::@Pair<[@B]>>
 // CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -600,26 +600,26 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TPair_0_0_Pair> {column}
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TPair_1_1_Pair> {column}
 // CHECK-NEXT:      struct.member @first : !struct.type<@TPair_0_0_Pair> {column}
-// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_.-]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        scf.if %[[VAL_8]] {
-// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TPair_0_0_Pair::@compute() : () -> !struct.type<@TPair_0_0_Pair>
-// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_10]] : (!struct.type<@TPair_0_0_Pair>) -> !struct.type<@TPair_0_0_Pair>
-// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TPair_1_1_Pair::@compute() : () -> !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @TPair_0_0_Pair::@compute() : () -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_10]] : (!struct.type<@TPair_0_0_Pair>) -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @TPair_1_1_Pair::@compute() : () -> !struct.type<@TPair_1_1_Pair>
 // CHECK-NEXT:          struct.writem %[[VAL_9]][@items_0] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_0_Pair>
 // CHECK-NEXT:          struct.writem %[[VAL_9]][@items_1] = %[[VAL_12]] : <@Holder>, !struct.type<@TPair_1_1_Pair>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @TPair_0_0_Pair::@compute() : () -> !struct.type<@TPair_0_0_Pair>
-// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_13]] : (!struct.type<@TPair_0_0_Pair>) -> !struct.type<@TPair_0_0_Pair>
-// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @TPair_1_1_Pair::@compute() : () -> !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = function.call @TPair_0_0_Pair::@compute() : () -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_13]] : (!struct.type<@TPair_0_0_Pair>) -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_.-]+]] = function.call @TPair_1_1_Pair::@compute() : () -> !struct.type<@TPair_1_1_Pair>
 // CHECK-NEXT:          struct.writem %[[VAL_9]][@items_0] = %[[VAL_14]] : <@Holder>, !struct.type<@TPair_0_0_Pair>
 // CHECK-NEXT:          struct.writem %[[VAL_9]][@items_1] = %[[VAL_15]] : <@Holder>, !struct.type<@TPair_1_1_Pair>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@items_0] : <@Holder>, !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@items_0] : <@Holder>, !struct.type<@TPair_0_0_Pair>
 // CHECK-NEXT:        struct.writem %[[VAL_9]][@first] = %[[VAL_16]] : <@Holder>, !struct.type<@TPair_0_0_Pair>
 // CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_18:[0-9a-zA-Z_.-]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -690,30 +690,30 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_2_Cell {
 // CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_2_Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_2_Cell>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_2_Cell>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TCell_2_Cell>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_2_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_2_Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -722,28 +722,28 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
 // CHECK-NEXT:      struct.member @items_2 : !struct.type<@TCell_2_Cell> {column}
 // CHECK-NEXT:      struct.member @first : !struct.type<@TCell_0_Cell> {column}
-// CHECK-NEXT:      function.def @compute(%[[VAL_6:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      function.def @compute(%[[VAL_6:[0-9a-zA-Z_.-]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        scf.if %[[VAL_6]] {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TCell_2_Cell::@compute() : () -> !struct.type<@TCell_2_Cell>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @TCell_2_Cell::@compute() : () -> !struct.type<@TCell_2_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_2] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_2_Cell>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @TCell_2_Cell::@compute() : () -> !struct.type<@TCell_2_Cell>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = function.call @TCell_2_Cell::@compute() : () -> !struct.type<@TCell_2_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_0] = %[[VAL_11]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_1] = %[[VAL_12]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_2] = %[[VAL_13]] : <@Holder>, !struct.type<@TCell_2_Cell>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_7]][@first] = %[[VAL_14]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_7]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_16:[0-9a-zA-Z_.-]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

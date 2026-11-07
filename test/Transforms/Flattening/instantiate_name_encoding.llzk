@@ -89,16 +89,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: function.def @"T_!s<@a>_!s<@b>_!s<@c>_value"() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-LABEL: function.def @"T_!s<@a>_!s<@b>_!s<@c>_value_0"() -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 7 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-LABEL: function.def @main() -> index {
-// CHECK:         %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"T_!s<@a>_!s<@b>_!s<@c>_value"() : () -> index
-// CHECK:         %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"T_!s<@a>_!s<@b>_!s<@c>_value_0"() : () -> index
+// CHECK:         %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @"T_!s<@a>_!s<@b>_!s<@c>_value"() : () -> index
+// CHECK:         %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @"T_!s<@a>_!s<@b>_!s<@c>_value_0"() : () -> index
 
 // -----
 

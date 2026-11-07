@@ -114,7 +114,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK:          function.def @instantiate_nondet() attributes {function.allow_witness} {
-// CHECK-NEXT:       %{{[0-9a-zA-Z_\.]+}} = llzk.nondet : !struct.type<@TCell_0_Cell> {product_source = "direct"}
+// CHECK-NEXT:       %{{[0-9a-zA-Z_.-]+}} = llzk.nondet : !struct.type<@TCell_0_Cell> {product_source = "direct"}
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // -----

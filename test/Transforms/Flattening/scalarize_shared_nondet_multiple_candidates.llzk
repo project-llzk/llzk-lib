@@ -38,6 +38,6 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @multiple_candidates() attributes {function.allow_witness} {
-// CHECK:         %[[SHARED:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK:         %[[SHARED:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
 // CHECK:         function.call @consume0(%[[SHARED]]) : (!struct.type<@TCell_0_Cell>) -> ()
 // CHECK-NEXT:    function.call @consume0(%[[SHARED]]) : (!struct.type<@TCell_0_Cell>) -> ()

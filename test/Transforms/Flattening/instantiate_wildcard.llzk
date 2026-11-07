@@ -92,20 +92,20 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @CallOuterAggregateExplicit {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateExplicit> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterAggregateExplicit>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterAggregateExplicit>
 // CHECK-NEXT:        function.call @OuterAggregateExplicit_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateExplicit>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterAggregateExplicit>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterAggregateExplicit>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.call @OuterAggregateExplicit_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:    function.def @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterAggregateExplicit_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.call @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -149,20 +149,20 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @CallOuterExplicitInput {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterExplicitInput> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterExplicitInput>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterExplicitInput>
 // CHECK-NEXT:        function.call @OuterExplicitInput_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterExplicitInput>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterExplicitInput>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterExplicitInput>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.call @OuterExplicitInput_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerExplicitInput_f_consume(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:    function.def @InnerExplicitInput_f_consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterExplicitInput_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type<"bn128">
 // CHECK-NEXT:      function.call @InnerExplicitInput_f_consume(%[[VAL_3]]) : (!felt.type<"bn128">) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -206,20 +206,20 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @CallOuterAggregateElementExplicit {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateElementExplicit> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterAggregateElementExplicit>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterAggregateElementExplicit>
 // CHECK-NEXT:        function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateElementExplicit>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterAggregateElementExplicit>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterAggregateElementExplicit>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerAggregateElementExplicit_f_consume(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:    function.def @InnerAggregateElementExplicit_f_consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterAggregateElementExplicit_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.call @InnerAggregateElementExplicit_f_consume(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -265,20 +265,20 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @CallOuterAggregateElementBody {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateElementBody> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterAggregateElementBody>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterAggregateElementBody>
 // CHECK-NEXT:        function.call @OuterAggregateElementBody_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateElementBody>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterAggregateElementBody>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterAggregateElementBody>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.call @OuterAggregateElementBody_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerAggregateElementBody_f_consume(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:    function.def @InnerAggregateElementBody_f_consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterAggregateElementBody_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.call @InnerAggregateElementBody_f_consume(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -507,17 +507,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @LocalCastAggregateCaller {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@LocalCastAggregateCaller> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@LocalCastAggregateCaller>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@LocalCastAggregateCaller>
 // CHECK-NEXT:        function.call @LocalCastAggregate_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@LocalCastAggregateCaller>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@LocalCastAggregateCaller>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalCastAggregateCaller>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.call @LocalCastAggregate_f_wrap() : () -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @LocalCastAggregate_f_wrap() {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
