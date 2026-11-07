@@ -1,8 +1,5 @@
 // RUN: llzk-opt -llzk-flatten %s | FileCheck %s
 
-// A generic destination member accepts both writes initially. Refining the source read to
-// array<0> would make the array<1> sibling write incompatible. Keep the source generic so the
-// destination's independent writes are not incorrectly forced to agree.
 module attributes {llzk.lang} {
   struct.def @Holder {
     struct.member @source : !array.type<? x !felt.type> {column}

@@ -201,7 +201,7 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     - Instantiate the main struct, when one is specified.
     - Instantiate parameterized structs and free functions when concrete
       template arguments are available at use sites.
-    - Replace instantiated `poly.const_read` uses, symbolic member table
+    - Replace instantiated `poly.read_const` uses, symbolic member table
       offsets, wildcard array reads/writes, and callees rooted at concrete
       template parameters inside cloned bodies.
     - Unroll loops with statically-known trip counts. When present, trusted
