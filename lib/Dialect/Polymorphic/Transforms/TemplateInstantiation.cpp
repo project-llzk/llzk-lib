@@ -137,25 +137,9 @@ public:
       return op->emitOpError().append("could not convert result type ", origResTy);
     }
 
-    if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
-      replaceOpWithNewOp<FeltConstantOp>(
-          rewriter, op, FeltConstAttr::get(getContext(), integerAttrToDynamicAPInt(a), ty)
-      );
-      return success();
-    }
-
-    if (llvm::isa<IndexType>(newResTy)) {
-      replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-      return success();
-    }
-
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-      if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, false);
-        return success();
-      }
-      if (!attrValue.isOne()) {
+      if (!attrValue.isZero() && !attrValue.isOne()) {
         Location opLoc = op.getLoc();
         Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
         diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
@@ -167,7 +151,10 @@ public:
             << "\" for this specialization";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
+    }
+    if (Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a)) {
+      replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+      rewriter.replaceOp(op, replacement);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
@@ -176,7 +163,15 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+    Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a);
+    assert(replacement && "felt template values must materialize as felt constants");
+    replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+    rewriter.replaceOp(op, replacement);
     return success();
   }
 };
@@ -477,6 +472,28 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
 } // namespace
 
 namespace llzk::polymorphic::detail {
+
+Value materializeTemplateConstant(
+    OpBuilder &builder, Location loc, Type resultType, Attribute value
+) {
+  if (auto integer = dyn_cast<IntegerAttr>(value)) {
+    if (auto type = dyn_cast<FeltType>(resultType)) {
+      return FeltConstantOp::create(
+          builder, loc,
+          FeltConstAttr::get(builder.getContext(), integerAttrToDynamicAPInt(integer), type)
+      );
+    }
+    if (isa<IndexType>(resultType)) {
+      return arith::ConstantIndexOp::create(builder, loc, fromAPInt(integer.getValue()));
+    }
+    if (resultType.isSignlessInteger(1)) {
+      return arith::ConstantIntOp::create(builder, loc, resultType, !integer.getValue().isZero());
+    }
+  } else if (auto felt = dyn_cast<FeltConstAttr>(value)) {
+    return FeltConstantOp::create(builder, loc, felt);
+  }
+  return nullptr;
+}
 
 void reportDelayedDiagnostics(Operation *site, SmallVector<Diagnostic> &&diagnostics) {
   DiagnosticEngine &engine = site->getContext()->getDiagEngine();

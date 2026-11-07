@@ -62,6 +62,13 @@ mlir::FailureOr<mlir::ArrayAttr> rebaseTemplateParams(
     mlir::Operation *lookupFrom, mlir::ModuleOp destinationRoot, mlir::Operation *requestSite
 );
 
+/// Materialize a template value as a constant of the requested type, or return null
+/// when no supported constant operation can represent it. Callers diagnose lossy
+/// conversions, including nonzero integers interpreted as booleans.
+mlir::Value materializeTemplateConstant(
+    mlir::OpBuilder &builder, mlir::Location loc, mlir::Type resultType, mlir::Attribute value
+);
+
 /// Report diagnostics emitted while substituting a clone, preserving notes and
 /// moving notes with unknown locations to the instantiation site.
 void reportDelayedDiagnostics(

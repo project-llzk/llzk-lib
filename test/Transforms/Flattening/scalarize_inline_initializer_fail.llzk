@@ -1,0 +1,45 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consume0(%value: !struct.type<@TCell::@Cell<[0]>>) {
+    function.return
+  }
+
+  function.def @consume1(%value: !struct.type<@TCell::@Cell<[1]>>) {
+    function.return
+  }
+
+  function.def @shared_initializer() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+
+    // expected-error@+1 {{cannot scalarize array because a shared nondeterministic initializer requires incompatible specialized types}}
+    %local = array.new %generic, %generic : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %first = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    // expected-note@-1 {{array index [0 : index] is read with specialized type '!struct.type<@TCell_0_Cell>'}}
+    // expected-note@+1 {{array index [1 : index] is read with specialized type '!struct.type<@TCell_1_Cell>'}}
+    %second = array.read %local[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    function.call @consume0(%first) : (!struct.type<@TCell::@Cell<[0]>>) -> ()
+    function.call @consume1(%second) : (!struct.type<@TCell::@Cell<[1]>>) -> ()
+    function.return
+  }
+}

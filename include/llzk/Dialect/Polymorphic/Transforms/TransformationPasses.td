@@ -198,16 +198,27 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
   let summary = "Flatten structs and unroll loops";
   let description = [{
     Performs the following transformations:
-    - Instantiate `affine_map` parameters of StructType and ArrayType
-      to constant values using the arguments at the instantiation site
-    - Replace parameterized structs with flattened (i.e., no parameter)
-      versions of those structs based on requested return type at calls
-      to `compute()` functions and unroll loops
-    - Unroll loops. When present, trusted `llzk.loopbounds` annotations
-      determine the trip count. A warning is emitted if this differs from
-      a statically computed count, but the annotation still takes precedence.
-      Loops exceeding `max-unroll` remain rolled. Array type instantiation
-      and propagation still run inside their bodies.
+    - Instantiate the main struct, when one is specified.
+    - Instantiate parameterized structs and free functions when concrete
+      template arguments are available at use sites.
+    - Replace instantiated `poly.read_const` uses, symbolic member table
+      offsets, wildcard array reads/writes, and callees rooted at concrete
+      template parameters inside cloned bodies.
+    - Unroll loops with statically-known trip counts. When present, trusted
+      `llzk.loopbounds` annotations determine the trip count. A warning is
+      emitted if this differs from a statically computed count, but the
+      annotation still takes precedence. Loops exceeding `max-unroll` remain
+      rolled. Array type instantiation and propagation still run inside their
+      bodies.
+    - Fold `affine_map` parameters of StructType and ArrayType to constant
+      values using the operands at the instantiation site.
+    - Scalarize pseudo-homogeneous arrays whose static elements refine to
+      different concrete types after instantiation.
+    - Propagate refined types through arrays, members, calls, returns, inferred
+      result types, and unifiable casts until a fixpoint is reached.
+    - Clean up unused parameterized definitions according to the selected
+      cleanup mode, remove empty templates, and remove unused discardable
+      array allocations.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.
