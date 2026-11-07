@@ -3468,15 +3468,11 @@ static bool canRefineMemberReadUsersToType(
       if (arrayInsert.getRvalue() != result) {
         return false;
       }
-      auto refinedArrayType = llvm::dyn_cast<ArrayType>(refinedType);
-      if (!refinedArrayType) {
-        return false;
-      }
-      // array.insert's rvalue is not retagged when the member read is refined. Its destination
-      // must therefore already require the selected subarray type exactly; concrete affine
-      // specializations that unify before instantiation can otherwise diverge later.
-      Type refinedRvalueType = refinedArrayType.getSelectionType(arrayInsert.getIndices().size());
-      if (refinedRvalueType !=
+      // The refined read already has the complete inserted subarray type. Only select the
+      // destination dimensions; selecting the read again would discard its leading dimensions.
+      // Require exact agreement because affine specializations that unify before instantiation
+      // can otherwise diverge later.
+      if (refinedType !=
           arrayInsert.getArrRefType().getSelectionType(arrayInsert.getIndices().size())) {
         return false;
       }
