@@ -2411,10 +2411,16 @@ static CallOp replaceStructConstraintCallWithSpecializedWitness(
   StructType structType = llvm::cast<StructType>(specializedWitness.getType());
   SymbolRefAttr callee =
       appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-  return replaceOpWithNewOp<CallOp>(
+  // Argument and result dictionaries are inherent properties, so the replacement wrapper only
+  // preserves the discardable attributes. The operand/result ordering does not change here.
+  ArrayAttr argAttrs = call.getArgAttrsAttr(), resAttrs = call.getResAttrsAttr();
+  CallOp replacement = replaceOpWithNewOp<CallOp>(
       rewriter, call, call.getResultTypes(), callee,
       CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
   );
+  replacement.setArgAttrsAttr(argAttrs);
+  replacement.setResAttrsAttr(resAttrs);
+  return replacement;
 }
 
 /// Materialize a specialized nondeterministic witness after its source and retarget constraints.
