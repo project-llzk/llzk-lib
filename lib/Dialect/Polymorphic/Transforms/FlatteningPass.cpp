@@ -782,6 +782,212 @@ collectDeferredMemberStructFamilies(ModuleOp module, const ConversionTracker &tr
   return deferred;
 }
 
+/// Reject incompatible requirements connected by shared witnesses and member declarations.
+/// This only checks unification: a compatible type need not have a representable common refinement.
+/// No conversion or IR mutation occurs while collecting and checking the component.
+class NonDetMemberTypeVerifier {
+  ModuleOp module;
+  const ConversionTracker &tracker;
+  SymbolTableCollection tables;
+  DenseSet<Operation *> visited;
+  DenseSet<Operation *> indexedStructs;
+  DenseMap<Operation *, SmallVector<MemberWriteOp>> writesByMember;
+  DenseMap<Operation *, SymbolRefAttr> comparisonNames;
+  DenseMap<std::pair<Type, Operation *>, Type> normalizedTypes;
+  SmallVector<SymbolLookupResult<StructDefOp>> resolvedDefinitions;
+
+  /// Normalize instantiated families and namespace spellings for comparison, preserving parameters.
+  Type normalize(Type type, Operation *scope) {
+    auto key = std::make_pair(type, scope);
+    if (auto cached = normalizedTypes.lookup(key)) {
+      return cached;
+    }
+    Type normalized = type;
+    if (auto structure = dyn_cast<StructType>(type)) {
+      if (auto preimage = tracker.getPreimage(structure)) {
+        normalized = normalize(*preimage, module);
+      } else {
+        auto definition = structure.getDefinition(tables, scope);
+        if (failed(definition)) {
+          return {};
+        }
+        Operation *family = definition->get();
+        auto [name, inserted] = comparisonNames.try_emplace(family);
+        if (inserted) {
+          // These private names are used only by typesUnify, never published in IR or diagnostics.
+          name->second = FlatSymbolRefAttr::get(
+              type.getContext(), "__nondet_family_" + std::to_string(comparisonNames.size())
+          );
+          resolvedDefinitions.push_back(std::move(*definition));
+        }
+        SymbolRefAttr comparisonName = name->second;
+        SmallVector<Attribute> params;
+        if (structure.getParams()) {
+          for (Attribute param : structure.getParams()) {
+            if (auto typed = dyn_cast<TypeAttr>(param)) {
+              Type nested = normalize(typed.getValue(), scope);
+              if (!nested) {
+                return {};
+              }
+              param = TypeAttr::get(nested);
+            }
+            params.push_back(param);
+          }
+        }
+        normalized =
+            params.empty()
+                ? StructType::get(comparisonName)
+                : StructType::get(comparisonName, ArrayAttr::get(type.getContext(), params));
+      }
+    } else if (auto array = dyn_cast<ArrayType>(type)) {
+      Type element = normalize(array.getElementType(), scope);
+      if (!element) {
+        return {};
+      }
+      normalized = array.cloneWith(element);
+    } else if (auto podType = dyn_cast<pod::PodType>(type)) {
+      SmallVector<pod::RecordAttr> records;
+      for (auto record : podType.getRecords()) {
+        Type nested = normalize(record.getType(), scope);
+        if (!nested) {
+          return {};
+        }
+        records.push_back(pod::RecordAttr::get(type.getContext(), record.getName(), nested));
+      }
+      normalized = pod::PodType::get(type.getContext(), records);
+    }
+    if (normalized) {
+      normalizedTypes.try_emplace(key, normalized);
+    }
+    return normalized;
+  }
+
+  /// Index only reached struct bodies; unrelated modules need not be revisited for one witness.
+  LogicalResult indexWriters(MemberDefOp member) {
+    auto owner = member->getParentOfType<StructDefOp>();
+    if (!indexedStructs.insert(owner).second) {
+      return success();
+    }
+    WalkResult result = owner.walk([&](MemberWriteOp write) {
+      auto definition = write.getMemberDefOp(tables);
+      if (failed(definition)) {
+        return WalkResult::interrupt();
+      }
+      writesByMember[definition->get()].push_back(write);
+      return WalkResult::advance();
+    });
+    return failure(result.wasInterrupted());
+  }
+
+public:
+  /// Construct a read-only checker for the current IR; discard it before changing that IR.
+  NonDetMemberTypeVerifier(ModuleOp root, const ConversionTracker &conversions)
+      : module(root), tracker(conversions) {}
+
+  /// Check a witness's connected member-write requirements, including a cached replacement.
+  /// Resolve an optional cached replacement in its original scope.
+  LogicalResult verifyComponent(NonDetOp witness, Value extraValue = {}) {
+    if (!isa<StructType>(witness.getType())) {
+      return success();
+    }
+    // Module checking shares visited nodes; mutation-time callers use a fresh checker.
+    if (visited.contains(witness) && !extraValue) {
+      return success();
+    }
+    struct Requirement {
+      Type normalized;
+      Type original;
+      Operation *origin;
+    };
+    SmallVector<Requirement> requirements;
+    DenseSet<Type> seenTypes;
+    auto addRequirement = [&](Type type, Operation *origin) -> LogicalResult {
+      Type comparison = normalize(type, origin);
+      if (!comparison) {
+        return failure();
+      }
+      if (!seenTypes.insert(comparison).second) {
+        return success();
+      }
+      requirements.push_back({comparison, type, origin});
+      return success();
+    };
+    if (extraValue && failed(addRequirement(extraValue.getType(), extraValue.getDefiningOp()))) {
+      return failure();
+    }
+    DenseSet<Operation *> componentVisited;
+    DenseSet<Operation *> memberWrites;
+    SmallVector<Operation *> pending {witness};
+    while (!pending.empty()) {
+      Operation *node = pending.pop_back_val();
+      if (!componentVisited.insert(node).second) {
+        continue;
+      }
+      visited.insert(node);
+      if (auto nondet = dyn_cast<NonDetOp>(node)) {
+        if (failed(addRequirement(nondet.getType(), nondet))) {
+          return failure();
+        }
+        for (OpOperand &use : nondet.getResult().getUses()) {
+          auto write = dyn_cast<MemberWriteOp>(use.getOwner());
+          if (!write || write.getVal() != nondet.getResult()) {
+            continue;
+          }
+          auto member = write.getMemberDefOp(tables);
+          if (failed(member)) {
+            return failure();
+          }
+          pending.push_back(member->get());
+        }
+        continue;
+      }
+      auto member = llvm::cast<MemberDefOp>(node);
+      if (failed(addRequirement(member.getType(), member)) || failed(indexWriters(member))) {
+        return failure();
+      }
+      for (MemberWriteOp write : writesByMember[member]) {
+        memberWrites.insert(write);
+        if (failed(addRequirement(write.getVal().getType(), write))) {
+          return failure();
+        }
+        if (auto other = write.getVal().getDefiningOp<NonDetOp>()) {
+          pending.push_back(other);
+        }
+      }
+    }
+    // A single write has no shared refinement to coordinate; retain its existing verifier errors.
+    if (memberWrites.size() < 2 && !extraValue) {
+      return success();
+    }
+    for (size_t i = 0; i < requirements.size(); ++i) {
+      const Requirement &current = requirements[i];
+      for (const Requirement &previous : ArrayRef(requirements).take_front(i)) {
+        // Unification is not transitive: a generic type may unify with two conflicting types.
+        if (!typesUnify(previous.normalized, current.normalized)) {
+          auto diagnostic = witness.emitError(
+              "cannot refine shared nondeterministic witness because member writes require "
+              "incompatible types"
+          );
+          diagnostic.attachNote(previous.origin->getLoc())
+              << "first required type: " << previous.original;
+          diagnostic.attachNote(current.origin->getLoc())
+              << "conflicting required type: " << current.original;
+          return failure();
+        }
+      }
+    }
+    return success();
+  }
+
+  /// Check every connected witness component before conversion can mutate types or clone symbols.
+  LogicalResult verifyModule() {
+    WalkResult result = module.walk([&](NonDetOp witness) {
+      return failed(verifyComponent(witness)) ? WalkResult::interrupt() : WalkResult::advance();
+    });
+    return failure(result.wasInterrupted());
+  }
+};
+
 namespace Step1_InstantiateStructs {
 
 /// Implements cloning a `StructDefOp` for a specific instantiation site, using the concrete
@@ -1153,17 +1359,31 @@ getComplementaryStructRefinement(StructType lhs, StructType rhs, const Conversio
 /// Convert nondeterministic result types when a shared witness is refined to an instantiated type.
 class NonDetOpPattern : public OpConversionPattern<NonDetOp> {
   ConversionTracker *tracker_;
+  ModuleOp rootModule_;
+  bool &hadConflict_;
 
 public:
   /// Construct the nondeterministic value conversion pattern.
-  NonDetOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker *tracker = nullptr)
-      : OpConversionPattern<NonDetOp>(converter, ctx, /*benefit=*/1), tracker_(tracker) {}
+  NonDetOpPattern(
+      TypeConverter &converter, MLIRContext *ctx, ConversionTracker *tracker, ModuleOp rootModule,
+      bool &hadConflict
+  )
+      : OpConversionPattern<NonDetOp>(converter, ctx, /*benefit=*/1), tracker_(tracker),
+        rootModule_(rootModule), hadConflict_(hadConflict) {}
 
   /// Rebuild the op with a type refined jointly with directly written member types.
   LogicalResult
   matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    if (hadConflict_) {
+      return failure();
+    }
+    if (tracker_ && failed(NonDetMemberTypeVerifier(rootModule_, *tracker_).verifyComponent(op))) {
+      hadConflict_ = true;
+      return failure();
+    }
     Type replacementInputType = op.getType();
     SmallVector<MemberDefOp> refinedMemberDefs;
+    bool canRefineAllMembers = true;
     if (tracker_) {
       SymbolTableCollection tables;
       for (OpOperand &use : op.getResult().getUses()) {
@@ -1183,24 +1403,41 @@ public:
         std::optional<StructType> commonType =
             getComplementaryStructRefinement(witnessType, memberType, *tracker_);
         if (!commonType) {
+          // A compatible but unsupported join must not commit a successful prefix of the uses.
+          // Conflicting requirements are rejected by the shared-witness preflight.
+          canRefineAllMembers = false;
           continue;
         }
         replacementInputType = *commonType;
         refinedMemberDefs.push_back(memberDef->get());
       }
     }
+    if (!canRefineAllMembers) {
+      replacementInputType = op.getType();
+      refinedMemberDefs.clear();
+    }
 
     Type newType = getTypeConverter()->convertType(replacementInputType);
     if (!newType) {
       return op->emitError("Could not convert Op result type.");
     }
-    for (MemberDefOp memberDef : refinedMemberDefs) {
-      rewriter.modifyOpInPlace(memberDef, [&memberDef, &newType]() { memberDef.setType(newType); });
-    }
-    if (newType == op.getType()) {
+    bool witnessChanged = newType != op.getType();
+    bool membersChanged = llvm::any_of(refinedMemberDefs, [newType](MemberDefOp member) {
+      return member.getType() != newType;
+    });
+    if (!witnessChanged && !membersChanged) {
       return failure();
     }
-    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    for (MemberDefOp memberDef : refinedMemberDefs) {
+      if (memberDef.getType() != newType) {
+        rewriter.modifyOpInPlace(memberDef, [&memberDef, &newType]() {
+          memberDef.setType(newType);
+        });
+      }
+    }
+    if (witnessChanged) {
+      replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    }
     return success();
   }
 };
@@ -1257,6 +1494,10 @@ public:
 /// Run struct instantiation and call/member rewrites for the current module.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
+  if (failed(NonDetMemberTypeVerifier(modOp, tracker).verifyModule())) {
+    return failure();
+  }
+  bool hadConflict = false;
   auto deferredFamilies = collectDeferredMemberStructFamilies(modOp, tracker);
   if (failed(deferredFamilies)) {
     return failure();
@@ -1269,9 +1510,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   });
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
-  patterns.add<NonDetOpPattern>(tyConv, ctx, &tracker);
+  patterns.add<NonDetOpPattern>(tyConv, ctx, &tracker, modOp, hadConflict);
   patterns.add<MemberWriteRefinedNonDetPattern>(tyConv, ctx);
-  return applyPartialConversion(modOp, target, std::move(patterns));
+  LogicalResult result = applyPartialConversion(modOp, target, std::move(patterns));
+  return failure(failed(result) || hadConflict);
 }
 
 /// Create an instantiated clone of the struct type specified by the `MAIN_ATTR_NAME` attribute
@@ -6720,12 +6962,17 @@ public:
 /// Update the type of MemberWriteOp value based on updated types from MemberDefOp.
 class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp> {
   ConversionTracker &tracker_;
+  ModuleOp rootModule_;
+  bool &hadConflict_;
   mutable DenseMap<Value, Value> typedNondetReplacements_;
 
 public:
   /// Construct the member-write value propagation pattern.
-  UpdateMemberWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
+  UpdateMemberWriteValFromDef(
+      MLIRContext *ctx, ConversionTracker &tracker, ModuleOp rootModule, bool &hadConflict
+  )
+      : OpRewritePattern(ctx, 3), tracker_(tracker), rootModule_(rootModule),
+        hadConflict_(hadConflict) {}
 
   /// Update a member write operand type from its referenced member definition.
   LogicalResult matchAndRewrite(MemberWriteOp op, PatternRewriter &rewriter) const override {
@@ -6738,6 +6985,21 @@ public:
     Value oldValue = op.getVal();
     Type newValueType = def->get().getType();
     auto cachedReplacement = typedNondetReplacements_.find(oldValue);
+    if (hadConflict_) {
+      return failure();
+    }
+    if (auto witness = oldValue.getDefiningOp<NonDetOp>();
+        witness && (oldValue.getType() != newValueType ||
+                    cachedReplacement != typedNondetReplacements_.end())) {
+      Value extraValue =
+          cachedReplacement == typedNondetReplacements_.end() ? Value() : cachedReplacement->second;
+      if (failed(
+              NonDetMemberTypeVerifier(rootModule_, tracker_).verifyComponent(witness, extraValue)
+          )) {
+        hadConflict_ = true;
+        return failure();
+      }
+    }
     if (cachedReplacement != typedNondetReplacements_.end()) {
       FailureOr<Value> convertedValue = materializeValueForMemberWrite(
           op.getLoc(), oldValue, newValueType, rewriter, tracker_, typedNondetReplacements_
@@ -6793,6 +7055,10 @@ public:
 /// Run all type-propagation patterns to a local fixpoint for the current iteration.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
+  if (failed(NonDetMemberTypeVerifier(modOp, tracker).verifyModule())) {
+    return failure();
+  }
+  bool hadConflict = false;
   RewritePatternSet patterns(ctx);
   patterns.add<
       // Benefit of this one must be higher than rules that would propagate the type in the opposite
@@ -6800,18 +7066,19 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       //  benefit = 6
       UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
       //  benefit = 3
-      UpdateFreeFuncCallOpTypes,          // CallOp, targeting non-struct functions
-      UpdateFuncTypeFromReturn,           // FuncDefOp
-      UpdateNewArrayElemFromWrite,        // CreateArrayOp
-      UpdateArrayElemFromArrRead,         // ReadArrayOp
-      UpdateArrayElemFromArrWrite,        // WriteArrayOp
-      UpdateMemberDefTypeFromWrite,       // MemberDefOp
-      UpdateMemberReadValFromDef,         // MemberReadOp
-      UpdateUnifiableCastResultFromInput, // UnifiableCastOp
-      UpdateMemberWriteValFromDef         // MemberWriteOp
+      UpdateFreeFuncCallOpTypes,         // CallOp, targeting non-struct functions
+      UpdateFuncTypeFromReturn,          // FuncDefOp
+      UpdateNewArrayElemFromWrite,       // CreateArrayOp
+      UpdateArrayElemFromArrRead,        // ReadArrayOp
+      UpdateArrayElemFromArrWrite,       // WriteArrayOp
+      UpdateMemberDefTypeFromWrite,      // MemberDefOp
+      UpdateMemberReadValFromDef,        // MemberReadOp
+      UpdateUnifiableCastResultFromInput // UnifiableCastOp
       >(ctx, tracker);
+  patterns.add<UpdateMemberWriteValFromDef>(ctx, tracker, modOp, hadConflict);
 
-  return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
+  LogicalResult result = applyAndFoldGreedily(modOp, tracker, std::move(patterns));
+  return failure(failed(result) || hadConflict);
 }
 } // namespace Step6_PropagateTypes
 
