@@ -5910,6 +5910,125 @@ static bool isFullySpecializedMemberType(Type type) {
   }).wasInterrupted();
 }
 
+/// Return whether a member type references a type variable, optionally limited to candidate
+/// bindings. Inspect struct parameters and their preimages without mistaking unrelated symbol names
+/// for type variables, so unrelated generic writes cannot delay this member's refinement.
+static bool referencesMemberTypeVar(
+    Type type, const DenseMap<TypeVarType, Type> *bindings, const ConversionTracker &tracker
+) {
+  return type
+      .walk([&](Type nestedType) {
+    if (auto variable = dyn_cast<TypeVarType>(nestedType);
+        variable && (!bindings || bindings->contains(variable))) {
+      return WalkResult::interrupt();
+    }
+    if (auto structType = dyn_cast<StructType>(nestedType)) {
+      if (ArrayAttr params = structType.getParams()) {
+        for (Attribute param : params) {
+          if (auto name = dyn_cast<FlatSymbolRefAttr>(param);
+              name && (!bindings || bindings->contains(TypeVarType::get(name)))) {
+            return WalkResult::interrupt();
+          }
+        }
+      }
+      if (auto preimage = tracker.getPreimage(structType);
+          preimage && referencesMemberTypeVar(*preimage, bindings, tracker)) {
+        return WalkResult::interrupt();
+      }
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
+/// Collect type-variable bindings at matching positions within member and written types.
+/// Aggregate shapes belong to their members, while each nested type variable denotes a shared
+/// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
+/// When checking a sibling, skip subtrees unrelated to the candidate bindings.
+static bool collectMemberTypeVarBindings(
+    Type declaredType, Type writtenType, const ConversionTracker &tracker,
+    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
+    const DenseMap<TypeVarType, Type> *relevantBindings = nullptr
+) {
+  if (!referencesMemberTypeVar(declaredType, relevantBindings, tracker)) {
+    return true;
+  }
+  if (auto variable = dyn_cast<TypeVarType>(declaredType)) {
+    bindings.emplace_back(variable, writtenType);
+    return true;
+  }
+  if (auto declaredArray = dyn_cast<ArrayType>(declaredType)) {
+    auto writtenArray = dyn_cast<ArrayType>(writtenType);
+    if (!writtenArray ||
+        writtenArray.getDimensionSizes().size() < declaredArray.getDimensionSizes().size()) {
+      return false;
+    }
+    // Array-valued bindings flatten into the enclosing array's trailing dimensions.
+    return collectMemberTypeVarBindings(
+        declaredArray.getElementType(),
+        writtenArray.getSelectionType(declaredArray.getDimensionSizes().size()), tracker, bindings,
+        relevantBindings
+    );
+  }
+  if (auto declaredPod = dyn_cast<pod::PodType>(declaredType)) {
+    auto writtenPod = dyn_cast<pod::PodType>(writtenType);
+    if (!writtenPod || declaredPod.getRecords().size() != writtenPod.getRecords().size()) {
+      return false;
+    }
+    for (auto [declaredRecord, writtenRecord] :
+         llvm::zip_equal(declaredPod.getRecords(), writtenPod.getRecords())) {
+      if (declaredRecord.getName() != writtenRecord.getName() ||
+          !collectMemberTypeVarBindings(
+              declaredRecord.getType(), writtenRecord.getType(), tracker, bindings, relevantBindings
+          )) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (auto declaredStruct = dyn_cast<StructType>(declaredType)) {
+    auto writtenStruct = dyn_cast<StructType>(writtenType);
+    if (!writtenStruct) {
+      return false;
+    }
+    // Concrete and partially instantiated structs hide their original parameter lists.
+    while (auto preimage = tracker.getPreimage(declaredStruct)) {
+      declaredStruct = *preimage;
+    }
+    while (auto preimage = tracker.getPreimage(writtenStruct)) {
+      writtenStruct = *preimage;
+    }
+    if (declaredStruct.getNameRef() != writtenStruct.getNameRef()) {
+      return false;
+    }
+    ArrayAttr declaredParams = declaredStruct.getParams();
+    ArrayAttr writtenParams = writtenStruct.getParams();
+    if (!declaredParams || !writtenParams) {
+      return !declaredParams && !writtenParams;
+    }
+    if (declaredParams.size() != writtenParams.size()) {
+      return false;
+    }
+    for (auto [declaredParam, writtenParam] : llvm::zip_equal(declaredParams, writtenParams)) {
+      auto writtenTypeParam = dyn_cast<TypeAttr>(writtenParam);
+      if (!writtenTypeParam) {
+        continue;
+      }
+      if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
+        if (!collectMemberTypeVarBindings(
+                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, bindings,
+                relevantBindings
+            )) {
+          return false;
+        }
+      } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
+        // A type-valued argument identifies this symbolic parameter as a type binding.
+        bindings.emplace_back(TypeVarType::get(name), writtenTypeParam.getValue());
+      }
+    }
+  }
+  return true;
+}
+
 /// Update the type of MemberDefOp instances by checking the updated types from MemberWriteOp.
 class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
   ConversionTracker &tracker_;
@@ -5994,13 +6113,45 @@ public:
       }
     }
 
-    // A template type variable denotes one shared binding across every member that declares it.
-    // Before declining a read refinement for one member, detect incompatible concrete writes to a
-    // sibling with the same variable; otherwise each member can remain (or become) independently
-    // concrete and conceal an unsatisfiable template binding.
-    if (auto tvarOpTy = llvm::dyn_cast<TypeVarType>(op.getType())) {
+    // Infer shared template bindings from the positions of type variables, including those
+    // inside arrays, POD records and struct parameters. Comparing the complete member types
+    // would incorrectly reject members with different surrounding shapes.
+    SmallVector<std::pair<TypeVarType, Type>> candidateBindings;
+    if (!collectMemberTypeVarBindings(op.getType(), newType, tracker_, candidateBindings)) {
+      return failure();
+    }
+    DenseMap<TypeVarType, Type> sharedBindings;
+    for (auto [variable, binding] : candidateBindings) {
+      // An unchanged variable cannot lose a shared constraint through this refinement.
+      if (variable == binding) {
+        continue;
+      }
+      auto [it, inserted] = sharedBindings.try_emplace(variable, binding);
+      if (inserted) {
+        continue;
+      }
+      auto commonType =
+          Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(it->second, binding, tracker_);
+      if (failed(commonType)) {
+        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+          diag.append("cannot refine ")
+              .append(variable)
+              .append(" because member '")
+              .append(op.getName())
+              .append("' is written with incompatible bindings ")
+              .append(it->second)
+              .append(" and ")
+              .append(binding);
+        });
+      }
+      it->second = *commonType;
+    }
+    if (!sharedBindings.empty()) {
       for (MemberDefOp sibling : parentRes.getOps<MemberDefOp>()) {
-        if (sibling == op || sibling.getType() != tvarOpTy) {
+        if (sibling == op) {
+          continue;
+        }
+        if (!referencesMemberTypeVar(sibling.getType(), &sharedBindings, tracker_)) {
           continue;
         }
         if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
@@ -6009,22 +6160,35 @@ public:
             if (!siblingWrite) {
               continue;
             }
-            Type siblingType = siblingWrite.getVal().getType();
-            auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
-                newType, siblingType, tracker_
-            );
-            if (failed(commonType)) {
-              return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-                diag.append("cannot refine ")
-                    .append(tvarOpTy)
-                    .append(" to ")
-                    .append(newType)
-                    .append(" because sibling member '")
-                    .append(sibling.getName())
-                    .append("' is written with incompatible type ")
-                    .append(siblingType);
-                diag.attachNote(siblingWrite.getLoc()).append("incompatible write is here");
-              });
+            SmallVector<std::pair<TypeVarType, Type>> siblingBindings;
+            if (!collectMemberTypeVarBindings(
+                    sibling.getType(), siblingWrite.getVal().getType(), tracker_, siblingBindings,
+                    &sharedBindings
+                )) {
+              return failure();
+            }
+            for (auto [variable, binding] : siblingBindings) {
+              auto it = sharedBindings.find(variable);
+              if (it == sharedBindings.end()) {
+                continue;
+              }
+              auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
+                  it->second, binding, tracker_
+              );
+              if (failed(commonType)) {
+                return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+                  diag.append("cannot refine ")
+                      .append(variable)
+                      .append(" to ")
+                      .append(it->second)
+                      .append(" because sibling member '")
+                      .append(sibling.getName())
+                      .append("' is written with incompatible type ")
+                      .append(binding);
+                  diag.attachNote(siblingWrite.getLoc()).append("incompatible write is here");
+                });
+              }
+              it->second = *commonType;
             }
           }
         }
