@@ -887,9 +887,6 @@ public:
   /// Check a witness's connected member-write requirements, including a cached replacement.
   /// Resolve an optional cached replacement in its original scope.
   LogicalResult verifyComponent(NonDetOp witness, Value extraValue = {}) {
-    if (!isa<StructType>(witness.getType())) {
-      return success();
-    }
     // Module checking shares visited nodes; mutation-time callers use a fresh checker.
     if (visited.contains(witness) && !extraValue) {
       return success();
