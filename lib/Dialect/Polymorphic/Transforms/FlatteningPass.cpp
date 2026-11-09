@@ -6017,18 +6017,43 @@ static bool collectMemberTypeVarBindings(
     for (auto [declaredParam, writtenParam] : llvm::zip_equal(declaredParams, writtenParams)) {
       auto writtenTypeParam = dyn_cast<TypeAttr>(writtenParam);
       if (!writtenTypeParam) {
+        if (relevantBindings && isa<SymbolRefAttr>(writtenParam)) {
+          bool isRelevantParam = false;
+          if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
+            isRelevantParam =
+                referencesMemberTypeVar(declaredTypeParam.getValue(), relevantBindings, tracker);
+          } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
+            isRelevantParam = relevantBindings->contains(TypeVarType::get(name));
+          }
+          // A symbolic argument supplies no concrete binding for the shared variable.
+          if (isRelevantParam) {
+            return false;
+          }
+        }
         continue;
       }
+      SmallVector<std::pair<TypeVarType, Type>> paramBindings;
       if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
         if (!collectMemberTypeVarBindings(
-                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, bindings,
+                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, paramBindings,
                 relevantBindings
             )) {
           return false;
         }
       } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
         // A type-valued argument identifies this symbolic parameter as a type binding.
-        bindings.emplace_back(TypeVarType::get(name), writtenTypeParam.getValue());
+        paramBindings.emplace_back(TypeVarType::get(name), writtenTypeParam.getValue());
+      }
+      for (auto [variable, binding] : paramBindings) {
+        // Check only projected shared bindings, so unrelated symbolic subtrees do not block
+        // refinement. A type argument can itself contain an unresolved symbolic binding.
+        // Identity candidate bindings retain their constraints while other arguments specialize.
+        bool mustResolve =
+            relevantBindings ? relevantBindings->contains(variable) : variable != binding;
+        if (mustResolve && referencesMemberTypeVar(binding, nullptr, tracker)) {
+          return false;
+        }
+        bindings.emplace_back(variable, binding);
       }
     }
   }
