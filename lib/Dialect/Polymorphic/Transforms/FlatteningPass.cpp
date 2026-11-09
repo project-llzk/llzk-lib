@@ -5948,6 +5948,25 @@ static bool referencesMemberTypeVar(
   }).wasInterrupted();
 }
 
+/// Record a projected type-variable binding only when its symbolic constraints can be retained.
+/// Candidate identity bindings remain in place; relevant sibling bindings must resolve before a
+/// different member can discard the shared variable from its declaration.
+static bool appendMemberTypeVarBinding(
+    TypeVarType variable, Type binding, const ConversionTracker &tracker,
+    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
+    const DenseMap<TypeVarType, Type> *relevantBindings
+) {
+  if (relevantBindings && !relevantBindings->contains(variable)) {
+    return true;
+  }
+  bool mustResolve = relevantBindings || variable != binding;
+  if (mustResolve && referencesMemberTypeVar(binding, nullptr, tracker)) {
+    return false;
+  }
+  bindings.emplace_back(variable, binding);
+  return true;
+}
+
 /// Collect type-variable bindings at matching positions within member and written types.
 /// Aggregate shapes belong to their members, while each nested type variable denotes a shared
 /// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
@@ -5961,8 +5980,7 @@ static bool collectMemberTypeVarBindings(
     return true;
   }
   if (auto variable = dyn_cast<TypeVarType>(declaredType)) {
-    bindings.emplace_back(variable, writtenType);
-    return true;
+    return appendMemberTypeVarBinding(variable, writtenType, tracker, bindings, relevantBindings);
   }
   if (auto declaredArray = dyn_cast<ArrayType>(declaredType)) {
     auto writtenArray = dyn_cast<ArrayType>(writtenType);
@@ -6034,28 +6052,21 @@ static bool collectMemberTypeVarBindings(
         }
         continue;
       }
-      SmallVector<std::pair<TypeVarType, Type>> paramBindings;
       if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
         if (!collectMemberTypeVarBindings(
-                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, paramBindings,
+                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, bindings,
                 relevantBindings
             )) {
           return false;
         }
       } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
         // A type-valued argument identifies this symbolic parameter as a type binding.
-        paramBindings.emplace_back(TypeVarType::get(name), writtenTypeParam.getValue());
-      }
-      for (auto [variable, binding] : paramBindings) {
-        // Check only projected shared bindings, so unrelated symbolic subtrees do not block
-        // refinement. A type argument can itself contain an unresolved symbolic binding.
-        // Identity candidate bindings retain their constraints while other arguments specialize.
-        bool mustResolve =
-            relevantBindings ? relevantBindings->contains(variable) : variable != binding;
-        if (mustResolve && referencesMemberTypeVar(binding, nullptr, tracker)) {
+        if (!appendMemberTypeVarBinding(
+                TypeVarType::get(name), writtenTypeParam.getValue(), tracker, bindings,
+                relevantBindings
+            )) {
           return false;
         }
-        bindings.emplace_back(variable, binding);
       }
     }
   }
