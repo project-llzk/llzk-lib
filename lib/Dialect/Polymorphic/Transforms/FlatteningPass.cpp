@@ -4438,10 +4438,6 @@ static LogicalResult rewriteLocalArray(
     return failure();
   }
 
-  DenseSet<Value> sourcesUsedByReads;
-  for (ReadArrayOp readOp : info.reads) {
-    sourcesUsedByReads.insert(info.valueByIndex.lookup(getIndexAsAttr(readOp)));
-  }
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
     auto canReplaceResult = canReplaceReadResultWithType(
@@ -4507,11 +4503,6 @@ static LogicalResult rewriteLocalArray(
   }
   if (info.createOp.getResult().use_empty()) {
     rewriter.eraseOp(info.createOp);
-  }
-  for (const auto &[source, _] : specializedTypeByNondet) {
-    if (!sourcesUsedByReads.contains(source) && source.use_empty()) {
-      rewriter.eraseOp(source.getDefiningOp<NonDetOp>());
-    }
   }
   return success();
 }
@@ -5744,6 +5735,12 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     return failure();
   }
 
+  DenseSet<Value> sourcesUsedByReads;
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (ReadArrayOp readOp : info.reads) {
+      sourcesUsedByReads.insert(info.valueByIndex.lookup(getIndexAsAttr(readOp)));
+    }
+  }
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
     auto rewriteRes = rewriteLocalArray(
@@ -5752,6 +5749,13 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     );
     if (failed(rewriteRes)) {
       return failure();
+    }
+  }
+  // Shared maps and candidate caches retain source Value handles throughout the rewrite loop.
+  // Erase unused original witnesses only after no remaining candidate can inspect those handles.
+  for (const auto &[source, _] : specializedTypeByNondet) {
+    if (!sourcesUsedByReads.contains(source) && source.use_empty()) {
+      rewriter.eraseOp(source.getDefiningOp<NonDetOp>());
     }
   }
   if (failed(rewriteExpandableMemberWrites(splitMembers, tables, rewriter, tracker))) {
