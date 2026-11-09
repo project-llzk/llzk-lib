@@ -1,0 +1,68 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+// RUN: llzk-opt -llzk-flatten %s | llzk-opt -llzk-flatten | FileCheck %s
+
+// The qualified struct operand must unify before the following felt operand can bind callee T.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Leaf {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@Leaf> {
+        %self = struct.new : !struct.type<@Leaf>
+        function.return %self : !struct.type<@Leaf>
+      }
+      function.def @constrain(%self: !struct.type<@Leaf>) { function.return }
+    }
+    poly.template @Box {
+      poly.param @T
+      struct.def @Box {
+        struct.member @value : !poly.tvar<@T> {column}
+        function.def @compute(%leaf: !struct.type<@Leaf>, %value: !poly.tvar<@T>) -> !struct.type<@Box::@Box<[@T]>> {
+          %self = struct.new : !struct.type<@Box::@Box<[@T]>>
+          struct.writem %self[@value] = %value : !struct.type<@Box::@Box<[@T]>>, !poly.tvar<@T>
+          function.return %self : !struct.type<@Box::@Box<[@T]>>
+        }
+        function.def @constrain(%self: !struct.type<@Box::@Box<[@T]>>, %leaf: !struct.type<@Leaf>, %value: !poly.tvar<@T>) { function.return }
+      }
+    }
+  }
+  poly.template @Client {
+    poly.param @U
+    function.def @forward(%leaf: !struct.type<@Lib::@Leaf>, %value: !felt.type) -> !struct.type<@Lib::@Box::@Box<[@U]>> attributes {function.allow_witness} {
+      %box = function.call @Lib::@Box::@Box::@compute(%leaf, %value) : (!struct.type<@Lib::@Leaf>, !felt.type) -> !struct.type<@Lib::@Box::@Box<[@U]>>
+      function.return %box : !struct.type<@Lib::@Box::@Box<[@U]>>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @Lib attributes {llzk.lang} {
+// CHECK-NEXT:      struct.def @Leaf {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Leaf> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Leaf>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box_f_Box {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Box_f_Box> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Box_f_Box>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@value] = %[[VAL_3]] : <@Box_f_Box>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Box_f_Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@Box_f_Box>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Client {
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      function.def @forward(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Leaf>, %[[VAL_9:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Lib::@Box_f_Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @Lib::@Box_f_Box::@compute(%[[VAL_8]], %[[VAL_9]]) : (!struct.type<@Lib::@Leaf>, !felt.type) -> !struct.type<@Lib::@Box_f_Box>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Lib::@Box_f_Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

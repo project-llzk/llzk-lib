@@ -2482,7 +2482,9 @@ public:
       if (failed(lookupRes)) {
         return failure();
       }
-      if (failed(instantiateViaTargetType(in, out, callArgTypes, lookupRes->get()))) {
+      if (failed(instantiateViaTargetType(
+              in, out, callArgTypes, lookupRes->get(), lookupRes->getNamespace()
+          ))) {
         return failure();
       }
       LLVM_DEBUG({
@@ -2524,7 +2526,8 @@ private:
   /// argument types to the function return type in the CallOp.
   inline LogicalResult instantiateViaTargetType(
       const AffineMapFolder::Input &in, AffineMapFolder::Output &out,
-      OperandRange::type_range callArgTypes, FuncDefOp targetFunc
+      OperandRange::type_range callArgTypes, FuncDefOp targetFunc,
+      ArrayRef<StringRef> targetNamespace
   ) const {
     assert(targetFunc.isStructCompute()); // since `op.calleeIsStructCompute()`
     ArrayAttr targetResTyParams = targetFunc.getSingleResultTypeOfCompute().getParams();
@@ -2548,7 +2551,8 @@ private:
     });
 
     UnificationMap unifications;
-    bool unifies = typeListsUnify(targetFunc.getArgumentTypes(), callArgTypes, {}, &unifications);
+    bool unifies =
+        typeListsUnify(callArgTypes, targetFunc.getArgumentTypes(), targetNamespace, &unifications);
     (void)unifies; // tell compiler it's intentionally unused in builds without assertions
     assert(unifies && "should have been checked by verifiers");
 
@@ -2557,7 +2561,7 @@ private:
                    << " unifications of arg types: " << debug::toStringList(unifications) << '\n';
     });
 
-    // Check for LHS SymRef (i.e., from the target function) that have RHS concrete Attributes (i.e.
+    // Check for RHS SymRef (i.e., from the target function) that have LHS concrete Attributes (i.e.
     // from the call argument types) without any struct parameters (because the type with concrete
     // struct parameters will be used to instantiate the target struct rather than the fully
     // flattened struct type resulting in type mismatch of the callee to target) and perform those
@@ -2575,7 +2579,7 @@ private:
           llvm::dbgs() << "[instantiateViaTargetType]   fromTgt = " << fromTgt << '\n';
         });
         assert(llvm::isa<SymbolRefAttr>(fromTgt));
-        auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
+        auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::RHS));
         if (it != unifications.end()) {
           Attribute unifiedAttr = it->second;
           LLVM_DEBUG({
