@@ -5411,45 +5411,6 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   };
   auto verifyExternalMemberWriteUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
                                            Location targetLoc) -> LogicalResult {
-    // Refining a stored generic nondet creates a replacement witness during rewriting. Every
-    // observation outside this array's initializer/write path would otherwise still refer to the
-    // original generic witness, splitting one witness into two independent values.
-    if (scalarValue.getType() != targetType && scalarValue.getDefiningOp<NonDetOp>()) {
-      FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), targetType, tracker);
-      if (succeeded(commonType) && *commonType != scalarValue.getType()) {
-        for (OpOperand &use : scalarValue.getUses()) {
-          Operation *owner = use.getOwner();
-          if (owner == createOp.getOperation()) {
-            continue;
-          }
-          auto arrayWrite = llvm::dyn_cast<WriteArrayOp>(owner);
-          if (arrayWrite && arrayWrite.getRvalue() == scalarValue &&
-              arrayWrite.getArrRef() == createOp.getResult()) {
-            continue;
-          }
-          // Struct constraint calls are retargeted to the specialized witness by
-          // rewriteExpandableLocalArray(). Existing external member writes are handled by the
-          // compatibility check below.
-          if (use.getOperandNumber() == 0 && llvm::isa<StructType>(*commonType)) {
-            if (auto call = llvm::dyn_cast<CallOp>(owner); call && call.calleeIsStructConstrain()) {
-              continue;
-            }
-          }
-          if (auto memberWrite = llvm::dyn_cast<MemberWriteOp>(owner);
-              memberWrite && memberWrite.getVal() == scalarValue) {
-            continue;
-          }
-          InFlightDiagnostic diag = createOp.emitError(
-              "cannot scalarize array because a generic nondeterministic initializer has an "
-              "unsupported external use"
-          );
-          diag.attachNote(owner->getLoc()) << "source witness is also used here";
-          diag.attachNote(targetLoc)
-              << "array index " << idx << " requires refined scalar member type " << targetType;
-          return diag;
-        }
-      }
-    }
     for (OpOperand &use : scalarValue.getUses()) {
       auto externalWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
       if (!externalWrite || externalWrite.getVal() != use.get()) {
@@ -5471,6 +5432,42 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       diag.attachNote(targetLoc) << "same value is also used for array index " << idx
                                  << " scalar member type " << targetType;
       return diag;
+    }
+
+    // Refining a stored generic nondet creates a replacement witness during rewriting. Every
+    // observation outside this array's initializer/write path would otherwise still refer to the
+    // original generic witness, splitting one witness into two independent values.
+    if (scalarValue.getType() != targetType && scalarValue.getDefiningOp<NonDetOp>()) {
+      FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), targetType, tracker);
+      if (succeeded(commonType) && *commonType != scalarValue.getType()) {
+        for (OpOperand &use : scalarValue.getUses()) {
+          Operation *owner = use.getOwner();
+          if (owner == createOp.getOperation()) {
+            continue;
+          }
+          auto arrayWrite = llvm::dyn_cast<WriteArrayOp>(owner);
+          if (arrayWrite && arrayWrite.getRvalue() == scalarValue &&
+              arrayWrite.getArrRef() == createOp.getResult()) {
+            continue;
+          }
+          // Struct constraint calls are retargeted to the specialized witness by
+          // rewriteExpandableLocalArray(). Other observations must retain the original witness;
+          // reject them before any candidate or expandable-array rewrite can create a clone.
+          if (use.getOperandNumber() == 0 && llvm::isa<StructType>(*commonType)) {
+            if (auto call = llvm::dyn_cast<CallOp>(owner); call && call.calleeIsStructConstrain()) {
+              continue;
+            }
+          }
+          InFlightDiagnostic diag = createOp.emitError(
+              "cannot scalarize array because a generic nondeterministic initializer has an "
+              "unsupported external use"
+          );
+          diag.attachNote(owner->getLoc()) << "source witness is also used here";
+          diag.attachNote(targetLoc)
+              << "array index " << idx << " requires refined scalar member type " << targetType;
+          return diag;
+        }
+      }
     }
     return success();
   };
@@ -5521,19 +5518,28 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     firstMaterializedUseByIndex.erase(idx);
     return success();
   };
+  // Reads are replaced with their stored SSA values during rewriting. Preserve that identity
+  // through subsequent local writes so preflight sees external observations of the actual source.
+  // Capture the value at the read, since a later write can overwrite its original array index.
+  DenseMap<Value, Value> sourceByRead;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(writeOp);
       if (failed(verifyMaterializedReadUsers(idx))) {
         return failure();
       }
-      valueByIndex[idx] = writeOp.getRvalue();
+      Value value = writeOp.getRvalue();
+      if (Value source = sourceByRead.lookup(value)) {
+        value = source;
+      }
+      valueByIndex[idx] = value;
       continue;
     }
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(readOp);
       Type readType = readOp.getResult().getType();
       if (Value scalarValue = valueByIndex.lookup(idx)) {
+        sourceByRead[readOp.getResult()] = scalarValue;
         if (failed(getCommonRefinedType(scalarValue.getType(), readType, tracker))) {
           InFlightDiagnostic diag =
               createOp.emitError("cannot split heterogeneous array member because ")
@@ -5803,15 +5809,24 @@ static LogicalResult rewriteExpandableLocalArray(
     existing->second = *commonType;
     return success();
   };
+  // Match preflight's snapshots when a read is forwarded through another local array write.
+  // Rewriting removes those reads, so specialize their original witness and its external uses.
+  DenseMap<Value, Value> sourceByRead;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      plannedValueByIndex[getIndexAsAttr(writeOp)] = writeOp.getRvalue();
+      Value value = writeOp.getRvalue();
+      if (Value source = sourceByRead.lookup(value)) {
+        value = source;
+      }
+      plannedValueByIndex[getIndexAsAttr(writeOp)] = value;
       continue;
     }
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
-      auto res = noteNondetSpecialization(
-          plannedValueByIndex.lookup(getIndexAsAttr(readOp)), readOp.getResult().getType()
-      );
+      Value source = plannedValueByIndex.lookup(getIndexAsAttr(readOp));
+      if (source) {
+        sourceByRead[readOp.getResult()] = source;
+      }
+      auto res = noteNondetSpecialization(source, readOp.getResult().getType());
       if (failed(res)) {
         return failure();
       }
@@ -5973,6 +5988,12 @@ static LogicalResult rewriteExpandableLocalArray(
   }
   if (createOp.getResult().use_empty()) {
     rewriter.eraseOp(createOp);
+  }
+  // All local read/write snapshots have been consumed; discard replaced witnesses only now.
+  for (const auto &[source, _] : specializedTypeByNondet) {
+    if (source.use_empty()) {
+      rewriter.eraseOp(source.getDefiningOp<NonDetOp>());
+    }
   }
   return success();
 }
