@@ -110,4 +110,13 @@ mlir::LogicalResult substituteFunctionBody(
     llvm::SmallVector<mlir::Diagnostic> &delayedDiagnostics
 );
 
+/// Substitute bindings in a copied template expression, including constant reads and dependent
+/// operation types and attributes. Append materialization warnings for the caller to report at
+/// the instantiation site. The caller owns insertion and erasing the clone on failure.
+mlir::LogicalResult substituteTemplateExprBody(
+    TemplateExprOp expr,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete,
+    llvm::SmallVector<mlir::Diagnostic> &delayedDiagnostics
+);
+
 } // namespace llzk::polymorphic::detail

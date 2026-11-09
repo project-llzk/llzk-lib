@@ -709,4 +709,19 @@ LogicalResult substituteFunctionBody(
   return applyFullConversion(newFunc, target, std::move(bodyPatterns));
 }
 
+LogicalResult substituteTemplateExprBody(
+    TemplateExprOp expr, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &delayedDiagnostics
+) {
+  MLIRContext *ctx = expr.getContext();
+  TemplateTypeConverter tyConv(paramNameToConcrete);
+  ConversionTarget target = newConverterDefinedTarget<YieldOp>(tyConv, ctx);
+  target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp op) {
+    return !tyConv.containsParam(op.getConstNameAttr()) && defaultLegalityCheck(tyConv, op);
+  });
+  RewritePatternSet patterns = newGeneralRewritePatternSet<YieldOp>(tyConv, ctx, target);
+  patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics);
+  return applyFullConversion(expr, target, std::move(patterns));
+}
+
 } // namespace llzk::polymorphic::detail

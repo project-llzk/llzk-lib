@@ -1313,27 +1313,15 @@ static LogicalResult applyBodyConversions(
   return failure(res.wasInterrupted());
 }
 
-/// Apply partial-instantiation substitutions throughout a copied template-expression body.
-/// Concrete reads have already been materialized before this runs; conversion updates remaining
-/// reads and all dependent operation result types before the expression enters its new scope.
-static LogicalResult applyTemplateExprBodyConversions(
-    TemplateExprOp expr, const DenseMap<Attribute, Attribute> &paramNameToConcrete
-) {
-  MLIRContext *ctx = expr.getContext();
-  TemplateTypeConverter typeConverter(paramNameToConcrete);
-  ConversionTarget target = newConverterDefinedTarget<YieldOp>(typeConverter, ctx);
-  RewritePatternSet patterns = newGeneralRewritePatternSet<YieldOp>(typeConverter, ctx, target);
-  return applyFullConversion(expr, target, std::move(patterns));
-}
-
 /// Copy unresolved template expressions referenced by `newFuncs` into their partially-instantiated
 /// parent template. Reads of concrete parameters within the copied expressions are materialized so
-/// the new template contains no references to parameters that it does not preserve.
+/// the new template contains no references to parameters that it does not preserve. Append
+/// materialization warnings for the caller to report at the instantiation site.
 static LogicalResult copyReferencedTemplateExprs(
     TemplateOp parentTemplate, Block &newTemplateBody, ArrayRef<FuncDefOp> newFuncs,
-    const DenseMap<Attribute, Attribute> &paramNameToConcrete
+    const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &delayedDiagnostics
 ) {
-  TemplateTypeConverter typeConverter(paramNameToConcrete);
   DenseSet<StringAttr> referencedExprNames;
   auto collectExprRef = [&referencedExprNames, &paramNameToConcrete](FlatSymbolRefAttr name) {
     if (!paramNameToConcrete.contains(name)) {
@@ -1367,26 +1355,7 @@ static LogicalResult copyReferencedTemplateExprs(
     }
 
     auto clonedExpr = llvm::cast<TemplateExprOp>(expr->clone());
-    SmallVector<ConstReadOp> concreteReads;
-    clonedExpr.walk([&](ConstReadOp readOp) {
-      if (paramNameToConcrete.contains(readOp.getConstNameAttr())) {
-        concreteReads.push_back(readOp);
-      }
-    });
-    for (ConstReadOp readOp : concreteReads) {
-      Attribute value = paramNameToConcrete.lookup(readOp.getConstNameAttr());
-      OpBuilder builder(readOp);
-      Type resultType = typeConverter.convertType(readOp.getType());
-      Value replacement = materializeTemplateConstant(builder, readOp.getLoc(), resultType, value);
-      if (!replacement) {
-        clonedExpr->erase();
-        return failure();
-      }
-      replacement.getDefiningOp()->setDiscardableAttrs(readOp->getDiscardableAttrDictionary());
-      readOp.replaceAllUsesWith(replacement);
-      readOp.erase();
-    }
-    if (failed(applyTemplateExprBodyConversions(clonedExpr, paramNameToConcrete))) {
+    if (failed(substituteTemplateExprBody(clonedExpr, paramNameToConcrete, delayedDiagnostics))) {
       clonedExpr->erase();
       return failure();
     }
@@ -1804,8 +1773,9 @@ private:
         parentTemplate, newTemplate, callTgt, newFunc, symTables, paramNameToConcrete,
         copiedSiblingCalls
     );
+    SmallVector<Diagnostic> expressionDiagnostics;
     auto copyRes = copyReferencedTemplateExprs(
-        parentTemplate, newTemplateBody, copiedFuncs, paramNameToConcrete
+        parentTemplate, newTemplateBody, copiedFuncs, paramNameToConcrete, expressionDiagnostics
     );
     if (failed(copyRes)) {
       for (FuncDefOp copiedFunc : copiedFuncs) {
@@ -1863,6 +1833,7 @@ private:
         llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation: " << newCallee
                      << '\n'
     );
+    llzk::polymorphic::detail::reportDelayedDiagnostics(op, std::move(expressionDiagnostics));
     // Publish only after insertion and body conversion have succeeded.
     tracker.recordPartialFuncInstantiation(callTgt, layout.concreteParamKey, newTemplate, newFunc);
     return newCallee;
