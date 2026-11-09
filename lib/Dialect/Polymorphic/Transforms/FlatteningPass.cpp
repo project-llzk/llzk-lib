@@ -567,6 +567,221 @@ static bool calleeReferencesTemplateParam(CallOp op) {
   return parentTemplate.hasConstNamed<TemplateParamOp>(callee.getRootReference());
 }
 
+/// Return whether a member type references a type variable, optionally limited to candidate
+/// bindings. Inspect struct parameters and their preimages without mistaking unrelated symbol names
+/// for type variables, so unrelated generic writes cannot delay this member's refinement.
+static bool referencesMemberTypeVar(
+    Type type, const DenseMap<TypeVarType, Type> *bindings, const ConversionTracker &tracker
+) {
+  return type
+      .walk([&](Type nestedType) {
+    if (auto variable = dyn_cast<TypeVarType>(nestedType);
+        variable && (!bindings || bindings->contains(variable))) {
+      return WalkResult::interrupt();
+    }
+    if (auto structType = dyn_cast<StructType>(nestedType)) {
+      if (ArrayAttr params = structType.getParams()) {
+        for (Attribute param : params) {
+          if (auto name = dyn_cast<FlatSymbolRefAttr>(param);
+              name && (!bindings || bindings->contains(TypeVarType::get(name)))) {
+            return WalkResult::interrupt();
+          }
+        }
+      }
+      if (auto preimage = tracker.getPreimage(structType);
+          preimage && referencesMemberTypeVar(*preimage, bindings, tracker)) {
+        return WalkResult::interrupt();
+      }
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
+/// Record a projected type-variable binding only when its symbolic constraints can be retained.
+/// Candidate identity bindings remain in place; relevant sibling bindings must resolve before a
+/// different member can discard the shared variable from its declaration.
+static bool appendMemberTypeVarBinding(
+    TypeVarType variable, Type binding, const ConversionTracker &tracker,
+    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
+    const DenseMap<TypeVarType, Type> *relevantBindings
+) {
+  if (relevantBindings && !relevantBindings->contains(variable)) {
+    return true;
+  }
+  bool mustResolve = relevantBindings || variable != binding;
+  if (mustResolve && referencesMemberTypeVar(binding, nullptr, tracker)) {
+    return false;
+  }
+  bindings.emplace_back(variable, binding);
+  return true;
+}
+
+/// Collect type-variable bindings at matching positions within member and written types.
+/// Aggregate shapes belong to their members, while each nested type variable denotes a shared
+/// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
+/// When checking a sibling, skip subtrees unrelated to the candidate bindings.
+static bool collectMemberTypeVarBindings(
+    Type declaredType, Type writtenType, const ConversionTracker &tracker,
+    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
+    const DenseMap<TypeVarType, Type> *relevantBindings = nullptr
+) {
+  if (!referencesMemberTypeVar(declaredType, relevantBindings, tracker)) {
+    return true;
+  }
+  if (auto variable = dyn_cast<TypeVarType>(declaredType)) {
+    return appendMemberTypeVarBinding(variable, writtenType, tracker, bindings, relevantBindings);
+  }
+  if (auto declaredArray = dyn_cast<ArrayType>(declaredType)) {
+    auto writtenArray = dyn_cast<ArrayType>(writtenType);
+    if (!writtenArray ||
+        writtenArray.getDimensionSizes().size() < declaredArray.getDimensionSizes().size()) {
+      return false;
+    }
+    // Array-valued bindings flatten into the enclosing array's trailing dimensions.
+    return collectMemberTypeVarBindings(
+        declaredArray.getElementType(),
+        writtenArray.getSelectionType(declaredArray.getDimensionSizes().size()), tracker, bindings,
+        relevantBindings
+    );
+  }
+  if (auto declaredPod = dyn_cast<pod::PodType>(declaredType)) {
+    auto writtenPod = dyn_cast<pod::PodType>(writtenType);
+    if (!writtenPod || declaredPod.getRecords().size() != writtenPod.getRecords().size()) {
+      return false;
+    }
+    for (auto [declaredRecord, writtenRecord] :
+         llvm::zip_equal(declaredPod.getRecords(), writtenPod.getRecords())) {
+      if (declaredRecord.getName() != writtenRecord.getName() ||
+          !collectMemberTypeVarBindings(
+              declaredRecord.getType(), writtenRecord.getType(), tracker, bindings, relevantBindings
+          )) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (auto declaredStruct = dyn_cast<StructType>(declaredType)) {
+    auto writtenStruct = dyn_cast<StructType>(writtenType);
+    if (!writtenStruct) {
+      return false;
+    }
+    // Concrete and partially instantiated structs hide their original parameter lists.
+    while (auto preimage = tracker.getPreimage(declaredStruct)) {
+      declaredStruct = *preimage;
+    }
+    while (auto preimage = tracker.getPreimage(writtenStruct)) {
+      writtenStruct = *preimage;
+    }
+    if (declaredStruct.getNameRef() != writtenStruct.getNameRef()) {
+      return false;
+    }
+    ArrayAttr declaredParams = declaredStruct.getParams();
+    ArrayAttr writtenParams = writtenStruct.getParams();
+    if (!declaredParams || !writtenParams) {
+      return !declaredParams && !writtenParams;
+    }
+    if (declaredParams.size() != writtenParams.size()) {
+      return false;
+    }
+    for (auto [declaredParam, writtenParam] : llvm::zip_equal(declaredParams, writtenParams)) {
+      auto writtenTypeParam = dyn_cast<TypeAttr>(writtenParam);
+      if (auto name = dyn_cast<FlatSymbolRefAttr>(writtenParam)) {
+        // Bare symbols and type-valued symbols retain the same binding constraints.
+        writtenTypeParam = TypeAttr::get(TypeVarType::get(name));
+      }
+      if (!writtenTypeParam) {
+        continue;
+      }
+      if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
+        if (!collectMemberTypeVarBindings(
+                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, bindings,
+                relevantBindings
+            )) {
+          return false;
+        }
+      } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
+        // Project symbolic parameters through the same binding checks as type-valued ones.
+        if (!appendMemberTypeVarBinding(
+                TypeVarType::get(name), writtenTypeParam.getValue(), tracker, bindings,
+                relevantBindings
+            )) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+/// Return whether a refinement would separate an unchanged variable from another occurrence.
+/// An identity for U does not prevent refining T, but T -> T and T -> felt must stay correlated.
+static bool refinesRepeatedMemberTypeVar(ArrayRef<std::pair<TypeVarType, Type>> bindings) {
+  DenseSet<TypeVarType> retained;
+  for (auto [variable, binding] : bindings) {
+    if (variable == binding) {
+      retained.insert(variable);
+    }
+  }
+  return llvm::any_of(bindings, [&](auto binding) {
+    return binding.first != binding.second && retained.contains(binding.first);
+  });
+}
+
+/// Return whether a member declaration contains more than one occurrence of a type variable.
+static bool hasRepeatedMemberTypeVar(Type type, const ConversionTracker &tracker) {
+  SmallVector<std::pair<TypeVarType, Type>> identities;
+  if (!collectMemberTypeVarBindings(type, type, tracker, identities)) {
+    return false;
+  }
+  DenseSet<TypeVarType> seen;
+  return llvm::any_of(identities, [&](auto binding) { return !seen.insert(binding.first).second; });
+}
+
+/// Keep partial instances in their original nominal family while a repeated binding is unresolved.
+/// Protect the whole participating family: substituting an enclosing template or propagating a
+/// function result can expose another partial instance during conversion. TypeConverter caches
+/// conversions, so discovering only individual protected types during rewriting would be too late.
+static FailureOr<DenseSet<Operation *>>
+collectDeferredMemberStructFamilies(ModuleOp module, const ConversionTracker &tracker) {
+  DenseSet<Operation *> deferred;
+  SymbolTableCollection tables;
+  std::function<void(Type, Operation *)> collect = [&](Type type, Operation *scope) {
+    type.walk([&](StructType structure) {
+      // A language module can refer to the same definition with local and qualified names.
+      if (auto definition = structure.getDefinition(tables, scope, /*reportMissing=*/false);
+          succeeded(definition)) {
+        deferred.insert(definition->get().getOperation());
+      }
+      if (auto preimage = tracker.getPreimage(structure)) {
+        // Tracker entries are use-site types resolved from the pass's root module.
+        collect(*preimage, module);
+      }
+    });
+  };
+  WalkResult result = module.walk([&](MemberWriteOp write) {
+    auto member = write.getMemberDefOp(tables);
+    if (failed(member)) {
+      return WalkResult::interrupt();
+    }
+    Type declaredType = member->get().getType();
+    SmallVector<std::pair<TypeVarType, Type>> bindings;
+    bool resolved =
+        collectMemberTypeVarBindings(declaredType, write.getVal().getType(), tracker, bindings);
+    if (refinesRepeatedMemberTypeVar(bindings) ||
+        (!resolved && hasRepeatedMemberTypeVar(declaredType, tracker))) {
+      // Both sides may have independent concrete parameters; renaming either side would hide
+      // the common family needed to verify the still-generic member write after this pass.
+      collect(declaredType, member->get());
+      collect(write.getVal().getType(), write);
+    }
+    return WalkResult::advance();
+  });
+  if (result.wasInterrupted()) {
+    return failure();
+  }
+  return deferred;
+}
+
 namespace Step1_InstantiateStructs {
 
 /// Implements cloning a `StructDefOp` for a specific instantiation site, using the concrete
@@ -719,6 +934,19 @@ public:
   StructCloner(ConversionTracker &tracker, ModuleOp root)
       : tracker_(tracker), rootMod(root), symTables() {}
 
+  /// Preserve partial instances of a protected definition, independently of reference spelling.
+  /// Full concrete instantiation remains eligible to verify the resolved binding constraints.
+  bool
+  shouldDeferPartialInstantiation(StructType type, const DenseSet<Operation *> &deferredFamilies) {
+    ArrayAttr params = type.getParams();
+    if (deferredFamilies.empty() || !params ||
+        llvm::all_of(params, [](Attribute param) { return isConcreteAttr<false>(param); })) {
+      return false;
+    }
+    auto definition = type.getDefinition(symTables, rootMod, /*reportMissing=*/false);
+    return succeeded(definition) && deferredFamilies.contains(definition->get().getOperation());
+  }
+
   /// Create a full or partial instantiated clone for `orig`, if `orig` has concrete parameters.
   FailureOr<StructType> createInstantiatedClone(StructType orig) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner] orig: " << orig << '\n');
@@ -741,13 +969,16 @@ class DisableReportMissing;
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   ConversionTracker &tracker_;
   StructCloner cloner;
+  const DenseSet<Operation *> &deferredMemberStructFamilies;
 
   friend DisableReportMissing;
 
 public:
   /// Build a type converter that instantiates parameterized struct uses on demand.
-  ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
-      : tracker_(tracker), cloner(tracker, root) {
+  ParameterizedStructUseTypeConverter(
+      ConversionTracker &tracker, ModuleOp root, const DenseSet<Operation *> &deferredFamilies
+  )
+      : tracker_(tracker), cloner(tracker, root), deferredMemberStructFamilies(deferredFamilies) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -756,6 +987,10 @@ public:
           llvm::dbgs() << "[ParameterizedStructUseTypeConverter] attempting conversion of "
                        << inputTy << '\n';
       );
+      // Preserve nominal compatibility until repeated member bindings can resolve together.
+      if (cloner.shouldDeferPartialInstantiation(inputTy, deferredMemberStructFamilies)) {
+        return inputTy;
+      }
       // First check for a cached entry
       if (auto opt = tracker_.getInstantiation(inputTy)) {
         return opt.value();
@@ -1022,7 +1257,11 @@ public:
 /// Run struct instantiation and call/member rewrites for the current module.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
-  ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
+  auto deferredFamilies = collectDeferredMemberStructFamilies(modOp, tracker);
+  if (failed(deferredFamilies)) {
+    return failure();
+  }
+  ParameterizedStructUseTypeConverter tyConv(tracker, modOp, *deferredFamilies);
   DisableReportMissing drm(tyConv);
   ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
   target.addDynamicallyLegalOp<NonDetOp>([&tyConv](Operation *op) {
@@ -5918,161 +6157,6 @@ static bool isFullySpecializedMemberType(Type type) {
   }).wasInterrupted();
 }
 
-/// Return whether a member type references a type variable, optionally limited to candidate
-/// bindings. Inspect struct parameters and their preimages without mistaking unrelated symbol names
-/// for type variables, so unrelated generic writes cannot delay this member's refinement.
-static bool referencesMemberTypeVar(
-    Type type, const DenseMap<TypeVarType, Type> *bindings, const ConversionTracker &tracker
-) {
-  return type
-      .walk([&](Type nestedType) {
-    if (auto variable = dyn_cast<TypeVarType>(nestedType);
-        variable && (!bindings || bindings->contains(variable))) {
-      return WalkResult::interrupt();
-    }
-    if (auto structType = dyn_cast<StructType>(nestedType)) {
-      if (ArrayAttr params = structType.getParams()) {
-        for (Attribute param : params) {
-          if (auto name = dyn_cast<FlatSymbolRefAttr>(param);
-              name && (!bindings || bindings->contains(TypeVarType::get(name)))) {
-            return WalkResult::interrupt();
-          }
-        }
-      }
-      if (auto preimage = tracker.getPreimage(structType);
-          preimage && referencesMemberTypeVar(*preimage, bindings, tracker)) {
-        return WalkResult::interrupt();
-      }
-    }
-    return WalkResult::advance();
-  }).wasInterrupted();
-}
-
-/// Record a projected type-variable binding only when its symbolic constraints can be retained.
-/// Candidate identity bindings remain in place; relevant sibling bindings must resolve before a
-/// different member can discard the shared variable from its declaration.
-static bool appendMemberTypeVarBinding(
-    TypeVarType variable, Type binding, const ConversionTracker &tracker,
-    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
-    const DenseMap<TypeVarType, Type> *relevantBindings
-) {
-  if (relevantBindings && !relevantBindings->contains(variable)) {
-    return true;
-  }
-  bool mustResolve = relevantBindings || variable != binding;
-  if (mustResolve && referencesMemberTypeVar(binding, nullptr, tracker)) {
-    return false;
-  }
-  bindings.emplace_back(variable, binding);
-  return true;
-}
-
-/// Collect type-variable bindings at matching positions within member and written types.
-/// Aggregate shapes belong to their members, while each nested type variable denotes a shared
-/// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
-/// When checking a sibling, skip subtrees unrelated to the candidate bindings.
-static bool collectMemberTypeVarBindings(
-    Type declaredType, Type writtenType, const ConversionTracker &tracker,
-    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
-    const DenseMap<TypeVarType, Type> *relevantBindings = nullptr
-) {
-  if (!referencesMemberTypeVar(declaredType, relevantBindings, tracker)) {
-    return true;
-  }
-  if (auto variable = dyn_cast<TypeVarType>(declaredType)) {
-    return appendMemberTypeVarBinding(variable, writtenType, tracker, bindings, relevantBindings);
-  }
-  if (auto declaredArray = dyn_cast<ArrayType>(declaredType)) {
-    auto writtenArray = dyn_cast<ArrayType>(writtenType);
-    if (!writtenArray ||
-        writtenArray.getDimensionSizes().size() < declaredArray.getDimensionSizes().size()) {
-      return false;
-    }
-    // Array-valued bindings flatten into the enclosing array's trailing dimensions.
-    return collectMemberTypeVarBindings(
-        declaredArray.getElementType(),
-        writtenArray.getSelectionType(declaredArray.getDimensionSizes().size()), tracker, bindings,
-        relevantBindings
-    );
-  }
-  if (auto declaredPod = dyn_cast<pod::PodType>(declaredType)) {
-    auto writtenPod = dyn_cast<pod::PodType>(writtenType);
-    if (!writtenPod || declaredPod.getRecords().size() != writtenPod.getRecords().size()) {
-      return false;
-    }
-    for (auto [declaredRecord, writtenRecord] :
-         llvm::zip_equal(declaredPod.getRecords(), writtenPod.getRecords())) {
-      if (declaredRecord.getName() != writtenRecord.getName() ||
-          !collectMemberTypeVarBindings(
-              declaredRecord.getType(), writtenRecord.getType(), tracker, bindings, relevantBindings
-          )) {
-        return false;
-      }
-    }
-    return true;
-  }
-  if (auto declaredStruct = dyn_cast<StructType>(declaredType)) {
-    auto writtenStruct = dyn_cast<StructType>(writtenType);
-    if (!writtenStruct) {
-      return false;
-    }
-    // Concrete and partially instantiated structs hide their original parameter lists.
-    while (auto preimage = tracker.getPreimage(declaredStruct)) {
-      declaredStruct = *preimage;
-    }
-    while (auto preimage = tracker.getPreimage(writtenStruct)) {
-      writtenStruct = *preimage;
-    }
-    if (declaredStruct.getNameRef() != writtenStruct.getNameRef()) {
-      return false;
-    }
-    ArrayAttr declaredParams = declaredStruct.getParams();
-    ArrayAttr writtenParams = writtenStruct.getParams();
-    if (!declaredParams || !writtenParams) {
-      return !declaredParams && !writtenParams;
-    }
-    if (declaredParams.size() != writtenParams.size()) {
-      return false;
-    }
-    for (auto [declaredParam, writtenParam] : llvm::zip_equal(declaredParams, writtenParams)) {
-      auto writtenTypeParam = dyn_cast<TypeAttr>(writtenParam);
-      if (!writtenTypeParam) {
-        if (relevantBindings && isa<SymbolRefAttr>(writtenParam)) {
-          bool isRelevantParam = false;
-          if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
-            isRelevantParam =
-                referencesMemberTypeVar(declaredTypeParam.getValue(), relevantBindings, tracker);
-          } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
-            isRelevantParam = relevantBindings->contains(TypeVarType::get(name));
-          }
-          // A symbolic argument supplies no concrete binding for the shared variable.
-          if (isRelevantParam) {
-            return false;
-          }
-        }
-        continue;
-      }
-      if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
-        if (!collectMemberTypeVarBindings(
-                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, bindings,
-                relevantBindings
-            )) {
-          return false;
-        }
-      } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
-        // A type-valued argument identifies this symbolic parameter as a type binding.
-        if (!appendMemberTypeVarBinding(
-                TypeVarType::get(name), writtenTypeParam.getValue(), tracker, bindings,
-                relevantBindings
-            )) {
-          return false;
-        }
-      }
-    }
-  }
-  return true;
-}
-
 /// Update the type of MemberDefOp instances by checking the updated types from MemberWriteOp.
 class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
   ConversionTracker &tracker_;
@@ -6164,9 +6248,12 @@ public:
     if (!collectMemberTypeVarBindings(op.getType(), newType, tracker_, candidateBindings)) {
       return failure();
     }
+    if (refinesRepeatedMemberTypeVar(candidateBindings)) {
+      return failure();
+    }
     DenseMap<TypeVarType, Type> sharedBindings;
     for (auto [variable, binding] : candidateBindings) {
-      // An unchanged variable cannot lose a shared constraint through this refinement.
+      // Unchanged variables are safe here because mixed repeated bindings were deferred above.
       if (variable == binding) {
         continue;
       }

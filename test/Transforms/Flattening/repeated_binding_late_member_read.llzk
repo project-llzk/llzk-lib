@@ -1,0 +1,124 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt -llzk-flatten %t/generic.llzk > %t/flattened.llzk
+// RUN: FileCheck %s --check-prefix=GENERIC < %t/flattened.llzk
+// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/felt.llzk > %t/direct-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/direct-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/felt.llzk > %t/staged-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/staged-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/index.llzk > %t/direct-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/direct-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/index.llzk > %t/staged-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/staged-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+
+//--- generic.llzk
+// Source-member propagation reveals the writer binding after nominal instantiation runs.
+module attributes {llzk.lang} {
+  poly.template @Pair {
+    poly.param @A
+    poly.param @B
+    struct.def @Pair {
+      struct.member @first : !poly.tvar<@A>
+      struct.member @second : !poly.tvar<@B>
+      function.def @compute() -> !struct.type<@Pair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@Pair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@Pair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@Pair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  poly.template @LateMember {
+    poly.param @T
+    poly.param @U
+    struct.def @Holder {
+      struct.member @pair : !struct.type<@Pair::@Pair<[@T, @T]>>
+      struct.member @source : !struct.type<@Pair::@Pair<[@T, @U]>>
+      function.def @compute(%input: !struct.type<@Pair::@Pair<[@T, !felt.type]>>) -> !struct.type<@LateMember::@Holder<[@T, @U]>> {
+        %self = struct.new : !struct.type<@LateMember::@Holder<[@T, @U]>>
+        struct.writem %self[@source] = %input : !struct.type<@LateMember::@Holder<[@T, @U]>>, !struct.type<@Pair::@Pair<[@T, !felt.type]>>
+        %read = struct.readm %self[@source] : !struct.type<@LateMember::@Holder<[@T, @U]>>, !struct.type<@Pair::@Pair<[@T, @U]>>
+        struct.writem %self[@pair] = %read : !struct.type<@LateMember::@Holder<[@T, @U]>>, !struct.type<@Pair::@Pair<[@T, @U]>>
+        function.return %self : !struct.type<@LateMember::@Holder<[@T, @U]>>
+      }
+      function.def @constrain(%self: !struct.type<@LateMember::@Holder<[@T, @U]>>, %input: !struct.type<@Pair::@Pair<[@T, !felt.type]>>) { function.return }
+    }
+  }
+}
+// GENERIC-LABEL: module attributes {llzk.lang} {
+// GENERIC-NEXT:    poly.template @Pair {
+// GENERIC-NEXT:      poly.param @A
+// GENERIC-NEXT:      poly.param @B
+// GENERIC-NEXT:      struct.def @Pair {
+// GENERIC-NEXT:        struct.member @first : !poly.tvar<@A>
+// GENERIC-NEXT:        struct.member @second : !poly.tvar<@B>
+// GENERIC-NEXT:        function.def @compute() -> !struct.type<@Pair::@Pair<[@A, @B]>> attributes {function.allow_witness} {
+// GENERIC-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Pair::@Pair<[@A, @B]>>
+// GENERIC-NEXT:          function.return %[[VAL_0]] : !struct.type<@Pair::@Pair<[@A, @B]>>
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair::@Pair<[@A, @B]>>) attributes {function.allow_constraint} {
+// GENERIC-NEXT:          function.return
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:      }
+// GENERIC-NEXT:    }
+// GENERIC-NEXT:    poly.template @LateMember {
+// GENERIC-NEXT:      poly.param @T
+// GENERIC-NEXT:      poly.param @U
+// GENERIC-NEXT:      struct.def @Holder {
+// GENERIC-NEXT:        struct.member @pair : !struct.type<@Pair::@Pair<[@T, @T]>>
+// GENERIC-NEXT:        struct.member @source : !struct.type<@Pair::@Pair<[@T, !felt.type]>>
+// GENERIC-NEXT:        function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair::@Pair<[@T, !felt.type]>>) -> !struct.type<@LateMember::@Holder<[@T, @U]>> attributes {function.allow_witness} {
+// GENERIC-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@LateMember::@Holder<[@T, @U]>>
+// GENERIC-NEXT:          struct.writem %[[VAL_3]][@source] = %[[VAL_2]] : <@LateMember::@Holder<[@T, @U]>>, !struct.type<@Pair::@Pair<[@T, !felt.type]>>
+// GENERIC-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@source] : <@LateMember::@Holder<[@T, @U]>>, !struct.type<@Pair::@Pair<[@T, !felt.type]>>
+// GENERIC-NEXT:          struct.writem %[[VAL_3]][@pair] = %[[VAL_4]] : <@LateMember::@Holder<[@T, @U]>>, !struct.type<@Pair::@Pair<[@T, !felt.type]>>
+// GENERIC-NEXT:          function.return %[[VAL_3]] : !struct.type<@LateMember::@Holder<[@T, @U]>>
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@LateMember::@Holder<[@T, @U]>>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair::@Pair<[@T, !felt.type]>>) attributes {function.allow_constraint} {
+// GENERIC-NEXT:          function.return
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:      }
+// GENERIC-NEXT:    }
+// GENERIC-NEXT:  }
+
+//--- felt.llzk
+  function.def @entry(%input: !struct.type<@Pair::@Pair<[!felt.type, !felt.type]>>) -> !struct.type<@LateMember::@Holder<[!felt.type, !felt.type]>> attributes {function.allow_witness} {
+    %result = function.call @LateMember::@Holder::@compute(%input) : (!struct.type<@Pair::@Pair<[!felt.type, !felt.type]>>) -> !struct.type<@LateMember::@Holder<[!felt.type, !felt.type]>>
+    function.return %result : !struct.type<@LateMember::@Holder<[!felt.type, !felt.type]>>
+  }
+// FELT-LABEL: module attributes {llzk.lang} {
+// FELT-NEXT:    struct.def @Pair_f_f_Pair {
+// FELT-NEXT:      struct.member @first : !felt.type
+// FELT-NEXT:      struct.member @second : !felt.type
+// FELT-NEXT:      function.def @compute() -> !struct.type<@Pair_f_f_Pair> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Pair_f_f_Pair>
+// FELT-NEXT:        function.return %[[VAL_0]] : !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_f_Pair>) attributes {function.allow_constraint} {
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    struct.def @LateMember_f_f_Holder {
+// FELT-NEXT:      struct.member @pair : !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:      struct.member @source : !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_f_Pair>) -> !struct.type<@LateMember_f_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@LateMember_f_f_Holder>
+// FELT-NEXT:        struct.writem %[[VAL_3]][@source] = %[[VAL_2]] : <@LateMember_f_f_Holder>, !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@source] : <@LateMember_f_f_Holder>, !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:        struct.writem %[[VAL_3]][@pair] = %[[VAL_4]] : <@LateMember_f_f_Holder>, !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:        function.return %[[VAL_3]] : !struct.type<@LateMember_f_f_Holder>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@LateMember_f_f_Holder>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_f_Pair>) attributes {function.allow_constraint} {
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    function.def @entry(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_f_Pair>) -> !struct.type<@LateMember_f_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @LateMember_f_f_Holder::@compute(%[[VAL_7]]) : (!struct.type<@Pair_f_f_Pair>) -> !struct.type<@LateMember_f_f_Holder>
+// FELT-NEXT:      function.return %[[VAL_8]] : !struct.type<@LateMember_f_f_Holder>
+// FELT-NEXT:    }
+// FELT-NEXT:  }
+
+//--- index.llzk
+  function.def @entry(%input: !struct.type<@Pair::@Pair<[index, !felt.type]>>) -> !struct.type<@LateMember::@Holder<[index, !felt.type]>> attributes {function.allow_witness} {
+    %result = function.call @LateMember::@Holder::@compute(%input) : (!struct.type<@Pair::@Pair<[index, !felt.type]>>) -> !struct.type<@LateMember::@Holder<[index, !felt.type]>>
+    function.return %result : !struct.type<@LateMember::@Holder<[index, !felt.type]>>
+  }
+// INDEX: error: 'struct.writem' op has wrong type; expected '!struct.type<@Pair_i_i_Pair>', got '!struct.type<@Pair_i_f_Pair>'

@@ -1,0 +1,116 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt -llzk-flatten %t/generic.llzk > %t/flattened.llzk
+// RUN: FileCheck %s --check-prefix=GENERIC < %t/flattened.llzk
+// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/felt.llzk > %t/direct-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/direct-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/felt.llzk > %t/staged-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/staged-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/index.llzk > %t/direct-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/direct-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/index.llzk > %t/staged-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/staged-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+
+//--- generic.llzk
+// Bare struct parameter identities retain the same repeated binding as POD type variables.
+module attributes {llzk.lang} {
+  poly.template @Pair {
+    poly.param @A
+    poly.param @B
+    struct.def @Pair {
+      struct.member @first : !poly.tvar<@A>
+      struct.member @second : !poly.tvar<@B>
+      function.def @compute() -> !struct.type<@Pair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@Pair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@Pair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@Pair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  poly.template @RepeatedStructIdentity {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @pair : !struct.type<@Pair::@Pair<[@T, @T]>>
+      function.def @compute() -> !struct.type<@RepeatedStructIdentity::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@RepeatedStructIdentity::@Holder<[@T]>>
+        %input = llzk.nondet : !struct.type<@Pair::@Pair<[!poly.tvar<@T>, !felt.type]>>
+        struct.writem %self[@pair] = %input : !struct.type<@RepeatedStructIdentity::@Holder<[@T]>>, !struct.type<@Pair::@Pair<[!poly.tvar<@T>, !felt.type]>>
+        function.return %self : !struct.type<@RepeatedStructIdentity::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@RepeatedStructIdentity::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+// GENERIC-LABEL: module attributes {llzk.lang} {
+// GENERIC-NEXT:    poly.template @Pair {
+// GENERIC-NEXT:      poly.param @A
+// GENERIC-NEXT:      poly.param @B
+// GENERIC-NEXT:      struct.def @Pair {
+// GENERIC-NEXT:        struct.member @first : !poly.tvar<@A>
+// GENERIC-NEXT:        struct.member @second : !poly.tvar<@B>
+// GENERIC-NEXT:        function.def @compute() -> !struct.type<@Pair::@Pair<[@A, @B]>> attributes {function.allow_witness} {
+// GENERIC-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Pair::@Pair<[@A, @B]>>
+// GENERIC-NEXT:          function.return %[[VAL_0]] : !struct.type<@Pair::@Pair<[@A, @B]>>
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair::@Pair<[@A, @B]>>) attributes {function.allow_constraint} {
+// GENERIC-NEXT:          function.return
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:      }
+// GENERIC-NEXT:    }
+// GENERIC-NEXT:    poly.template @RepeatedStructIdentity {
+// GENERIC-NEXT:      poly.param @T
+// GENERIC-NEXT:      struct.def @Holder {
+// GENERIC-NEXT:        struct.member @pair : !struct.type<@Pair::@Pair<[@T, @T]>>
+// GENERIC-NEXT:        function.def @compute() -> !struct.type<@RepeatedStructIdentity::@Holder<[@T]>> attributes {function.allow_witness} {
+// GENERIC-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedStructIdentity::@Holder<[@T]>>
+// GENERIC-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Pair::@Pair<[!poly.tvar<@T>, !felt.type]>>
+// GENERIC-NEXT:          struct.writem %[[VAL_2]][@pair] = %[[VAL_3]] : <@RepeatedStructIdentity::@Holder<[@T]>>, !struct.type<@Pair::@Pair<[!poly.tvar<@T>, !felt.type]>>
+// GENERIC-NEXT:          function.return %[[VAL_2]] : !struct.type<@RepeatedStructIdentity::@Holder<[@T]>>
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedStructIdentity::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// GENERIC-NEXT:          function.return
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:      }
+// GENERIC-NEXT:    }
+// GENERIC-NEXT:  }
+
+//--- felt.llzk
+  function.def @entry() -> !struct.type<@RepeatedStructIdentity::@Holder<[!felt.type]>> attributes {function.allow_witness} {
+    %result = function.call @RepeatedStructIdentity::@Holder::@compute() : () -> !struct.type<@RepeatedStructIdentity::@Holder<[!felt.type]>>
+    function.return %result : !struct.type<@RepeatedStructIdentity::@Holder<[!felt.type]>>
+  }
+// FELT-LABEL: module attributes {llzk.lang} {
+// FELT-NEXT:    struct.def @Pair_f_f_Pair {
+// FELT-NEXT:      struct.member @first : !felt.type
+// FELT-NEXT:      struct.member @second : !felt.type
+// FELT-NEXT:      function.def @compute() -> !struct.type<@Pair_f_f_Pair> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Pair_f_f_Pair>
+// FELT-NEXT:        function.return %[[VAL_0]] : !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_f_Pair>) attributes {function.allow_constraint} {
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    struct.def @RepeatedStructIdentity_f_Holder {
+// FELT-NEXT:      struct.member @pair : !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:      function.def @compute() -> !struct.type<@RepeatedStructIdentity_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedStructIdentity_f_Holder>
+// FELT-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:        struct.writem %[[VAL_2]][@pair] = %[[VAL_3]] : <@RepeatedStructIdentity_f_Holder>, !struct.type<@Pair_f_f_Pair>
+// FELT-NEXT:        function.return %[[VAL_2]] : !struct.type<@RepeatedStructIdentity_f_Holder>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedStructIdentity_f_Holder>) attributes {function.allow_constraint} {
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    function.def @entry() -> !struct.type<@RepeatedStructIdentity_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @RepeatedStructIdentity_f_Holder::@compute() : () -> !struct.type<@RepeatedStructIdentity_f_Holder>
+// FELT-NEXT:      function.return %[[VAL_5]] : !struct.type<@RepeatedStructIdentity_f_Holder>
+// FELT-NEXT:    }
+// FELT-NEXT:  }
+
+//--- index.llzk
+  function.def @entry() -> !struct.type<@RepeatedStructIdentity::@Holder<[index]>> attributes {function.allow_witness} {
+    %result = function.call @RepeatedStructIdentity::@Holder::@compute() : () -> !struct.type<@RepeatedStructIdentity::@Holder<[index]>>
+    function.return %result : !struct.type<@RepeatedStructIdentity::@Holder<[index]>>
+  }
+// INDEX: error: 'struct.writem' op has wrong type; expected '!struct.type<@Pair_i_i_Pair>', got '!struct.type<@Pair_i_f_Pair>'

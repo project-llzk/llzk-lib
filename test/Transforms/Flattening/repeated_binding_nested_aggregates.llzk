@@ -1,0 +1,74 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt -llzk-flatten %t/generic.llzk > %t/flattened.llzk
+// RUN: FileCheck %s --check-prefix=GENERIC < %t/flattened.llzk
+// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/felt.llzk > %t/direct-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/direct-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/felt.llzk > %t/staged-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/staged-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/index.llzk > %t/direct-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/direct-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/index.llzk > %t/staged-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/staged-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+
+//--- generic.llzk
+// Repeated bindings retain their relationship through nested array and POD shapes.
+module attributes {llzk.lang} {
+  poly.template @RepeatedIdentity {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @pair : !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !poly.tvar<@T>>]>>
+      function.def @compute(%input: !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@RepeatedIdentity::@Holder<[@T]>>
+        struct.writem %self[@pair] = %input : !struct.type<@RepeatedIdentity::@Holder<[@T]>>, !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>
+        function.return %self : !struct.type<@RepeatedIdentity::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@RepeatedIdentity::@Holder<[@T]>>, %input: !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>) { function.return }
+    }
+  }
+}
+// GENERIC-LABEL: module attributes {llzk.lang} {
+// GENERIC-NEXT:    poly.template @RepeatedIdentity {
+// GENERIC-NEXT:      poly.param @T
+// GENERIC-NEXT:      struct.def @Holder {
+// GENERIC-NEXT:        struct.member @pair : !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !poly.tvar<@T>>]>>
+// GENERIC-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[@T]>> attributes {function.allow_witness} {
+// GENERIC-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedIdentity::@Holder<[@T]>>
+// GENERIC-NEXT:          struct.writem %[[VAL_1]][@pair] = %[[VAL_0]] : <@RepeatedIdentity::@Holder<[@T]>>, !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>
+// GENERIC-NEXT:          function.return %[[VAL_1]] : !struct.type<@RepeatedIdentity::@Holder<[@T]>>
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedIdentity::@Holder<[@T]>>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>) attributes {function.allow_constraint} {
+// GENERIC-NEXT:          function.return
+// GENERIC-NEXT:        }
+// GENERIC-NEXT:      }
+// GENERIC-NEXT:    }
+// GENERIC-NEXT:  }
+
+//--- felt.llzk
+  function.def @entry(%input: !array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[!felt.type]>> attributes {function.allow_witness} {
+    %result = function.call @RepeatedIdentity::@Holder::@compute(%input) : (!array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[!felt.type]>>
+    function.return %result : !struct.type<@RepeatedIdentity::@Holder<[!felt.type]>>
+  }
+// FELT-LABEL: module attributes {llzk.lang} {
+// FELT-NEXT:    struct.def @RepeatedIdentity_f_Holder {
+// FELT-NEXT:      struct.member @pair : !array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>
+// FELT-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedIdentity_f_Holder>
+// FELT-NEXT:        struct.writem %[[VAL_1]][@pair] = %[[VAL_0]] : <@RepeatedIdentity_f_Holder>, !array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>
+// FELT-NEXT:        function.return %[[VAL_1]] : !struct.type<@RepeatedIdentity_f_Holder>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedIdentity_f_Holder>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>) attributes {function.allow_constraint} {
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    function.def @entry(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @RepeatedIdentity_f_Holder::@compute(%[[VAL_4]]) : (!array.type<2 x !pod.type<[@a: !array.type<3 x !felt.type>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity_f_Holder>
+// FELT-NEXT:      function.return %[[VAL_5]] : !struct.type<@RepeatedIdentity_f_Holder>
+// FELT-NEXT:    }
+// FELT-NEXT:  }
+
+//--- index.llzk
+  function.def @entry(%input: !array.type<2 x !pod.type<[@a: !array.type<3 x index>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[index]>> attributes {function.allow_witness} {
+    %result = function.call @RepeatedIdentity::@Holder::@compute(%input) : (!array.type<2 x !pod.type<[@a: !array.type<3 x index>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[index]>>
+    function.return %result : !struct.type<@RepeatedIdentity::@Holder<[index]>>
+  }
+// INDEX: error: 'struct.writem' op has wrong type; expected '!array.type<2 x !pod.type<[@a: !array.type<3 x index>, @b: !array.type<3 x index>]>>', got '!array.type<2 x !pod.type<[@a: !array.type<3 x index>, @b: !array.type<3 x !felt.type>]>>'
