@@ -3350,6 +3350,18 @@ specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *t
                ? ArrayType::get(specializedElem, specializedDims)
                : type;
   }
+  if (auto podTy = llvm::dyn_cast<pod::PodType>(type)) {
+    SmallVector<pod::RecordAttr> specializedRecords;
+    bool changed = false;
+    for (pod::RecordAttr record : podTy.getRecords()) {
+      Type specialized = specializeTypeForArrayIndex(record.getType(), idx, tracker);
+      specializedRecords.push_back(
+          pod::RecordAttr::get(type.getContext(), record.getName(), specialized)
+      );
+      changed |= specialized != record.getType();
+    }
+    return changed ? pod::PodType::get(type.getContext(), specializedRecords) : type;
+  }
   return type;
 }
 
