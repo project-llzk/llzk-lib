@@ -1,0 +1,121 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// Complementary POD writes join each record and preserve its name and position.
+module attributes {llzk.lang} {
+  poly.template @ComplementaryPod {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @value : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@ComplementaryPod::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@ComplementaryPod::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+        %b = llzk.nondet : !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+        struct.writem %self[@value] = %a : !struct.type<@ComplementaryPod::@Holder<[@T]>>, !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+        struct.writem %self[@value] = %b : !struct.type<@ComplementaryPod::@Holder<[@T]>>, !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+        function.return %self : !struct.type<@ComplementaryPod::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@ComplementaryPod::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ComplementaryPod {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @value : !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@ComplementaryPod::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@ComplementaryPod::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_1]] : <@ComplementaryPod::@Holder<[@T]>>, !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_2]] : <@ComplementaryPod::@Holder<[@T]>>, !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@ComplementaryPod::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@ComplementaryPod::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Common refinement recurses through nested POD records.
+module attributes {llzk.lang} {
+  poly.template @NestedComplementaryPod {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @value : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@NestedComplementaryPod::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@payload: !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>, @flag: i1]>
+        %b = llzk.nondet : !pod.type<[@payload: !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>, @flag: i1]>
+        struct.writem %self[@value] = %a : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>, !pod.type<[@payload: !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>, @flag: i1]>
+        struct.writem %self[@value] = %b : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>, !pod.type<[@payload: !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>, @flag: i1]>
+        function.return %self : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@NestedComplementaryPod::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @NestedComplementaryPod {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @value : !pod.type<[@payload: !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>, @flag: i1]>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@NestedComplementaryPod::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@NestedComplementaryPod::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@payload: !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>, @flag: i1]>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@payload: !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>, @flag: i1]>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_1]] : <@NestedComplementaryPod::@Holder<[@T]>>, !pod.type<[@payload: !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>, @flag: i1]>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_2]] : <@NestedComplementaryPod::@Holder<[@T]>>, !pod.type<[@payload: !pod.type<[@rows: !array.type<3,2 x !felt.type>, @tag: index]>, @flag: i1]>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@NestedComplementaryPod::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A shared type variable can bind to compatible, partially concrete POD types.
+module attributes {llzk.lang} {
+  poly.template @SharedPodBindings {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@SharedPodBindings::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedPodBindings::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+        %b = llzk.nondet : !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+        struct.writem %self[@first] = %a : !struct.type<@SharedPodBindings::@Holder<[@T]>>, !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+        struct.writem %self[@second] = %b : !struct.type<@SharedPodBindings::@Holder<[@T]>>, !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+        function.return %self : !struct.type<@SharedPodBindings::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedPodBindings::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @SharedPodBindings {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:        struct.member @second : !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@SharedPodBindings::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedPodBindings::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@first] = %[[VAL_1]] : <@SharedPodBindings::@Holder<[@T]>>, !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@second] = %[[VAL_2]] : <@SharedPodBindings::@Holder<[@T]>>, !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@SharedPodBindings::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedPodBindings::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

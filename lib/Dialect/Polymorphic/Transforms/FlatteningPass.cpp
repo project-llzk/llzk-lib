@@ -3067,6 +3067,27 @@ static FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const Conversion
     return commonStruct;
   }
 
+  if (auto lhsPod = llvm::dyn_cast<pod::PodType>(lhs)) {
+    auto rhsPod = llvm::dyn_cast<pod::PodType>(rhs);
+    if (!rhsPod || lhsPod.getRecords().size() != rhsPod.getRecords().size()) {
+      return failure();
+    }
+    SmallVector<pod::RecordAttr> commonRecords;
+    for (auto [lhsRecord, rhsRecord] : llvm::zip_equal(lhsPod.getRecords(), rhsPod.getRecords())) {
+      if (lhsRecord.getName() != rhsRecord.getName()) {
+        return failure();
+      }
+      auto commonRecord = getCommonRefinedType(lhsRecord.getType(), rhsRecord.getType(), tracker);
+      if (failed(commonRecord)) {
+        return failure();
+      }
+      commonRecords.push_back(
+          pod::RecordAttr::get(lhs.getContext(), lhsRecord.getName(), *commonRecord)
+      );
+    }
+    return pod::PodType::get(lhs.getContext(), commonRecords);
+  }
+
   if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhs)) {
     auto rhsArray = llvm::dyn_cast<ArrayType>(rhs);
     if (!rhsArray) {
