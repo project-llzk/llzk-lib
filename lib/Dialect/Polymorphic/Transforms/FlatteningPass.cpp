@@ -616,7 +616,7 @@ static bool appendMemberTypeVarBinding(
   return true;
 }
 
-/// Collect type-variable bindings at matching positions within member and written types.
+/// Collect type-variable bindings at matching positions within member and observed types.
 /// Aggregate shapes belong to their members, while each nested type variable denotes a shared
 /// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
 /// When checking a sibling, skip subtrees unrelated to the candidate bindings.
@@ -6540,22 +6540,37 @@ public:
         if (!referencesMemberTypeVar(sibling.getType(), &sharedBindings, tracker_)) {
           continue;
         }
+        bool hasBindingEvidence = false;
         if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
           for (SymbolTable::SymbolUse siblingUse : siblingUses.value()) {
             auto siblingWrite = llvm::dyn_cast<MemberWriteOp>(siblingUse.getUser());
-            if (!siblingWrite) {
+            auto siblingRead = llvm::dyn_cast<MemberReadOp>(siblingUse.getUser());
+            if (!siblingWrite && !siblingRead) {
               continue;
             }
+            Type observedType =
+                siblingWrite ? siblingWrite.getVal().getType() : siblingRead.getVal().getType();
             SmallVector<std::pair<TypeVarType, Type>> siblingBindings;
             if (!collectMemberTypeVarBindings(
-                    sibling.getType(), siblingWrite.getVal().getType(), tracker_, siblingBindings,
-                    &sharedBindings
+                    sibling.getType(), observedType, tracker_, siblingBindings, &sharedBindings
                 )) {
               return failure();
             }
+            hasBindingEvidence |= !siblingBindings.empty();
             for (auto [variable, binding] : siblingBindings) {
               auto it = sharedBindings.find(variable);
               if (it == sharedBindings.end()) {
+                continue;
+              }
+              if (siblingRead) {
+                // A read must retain the binding being removed from the other declaration.
+                // Mere compatibility is insufficient: an unresolved or less-specific read
+                // could accept a later instantiation that contradicts this member's write.
+                if (!Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+                        it->second, binding, tracker_, "UpdateMemberDefTypeFromWrite"
+                    )) {
+                  return failure();
+                }
                 continue;
               }
               auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
@@ -6577,6 +6592,12 @@ public:
               it->second = *commonType;
             }
           }
+        }
+        // An unused read may disappear before this pattern runs. The sibling declaration still
+        // contains the shared variable, so retain its equality until some use preserves the
+        // binding.
+        if (!hasBindingEvidence) {
+          return failure();
         }
       }
     }

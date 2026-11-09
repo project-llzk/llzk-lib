@@ -1,0 +1,191 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// A shared binding inside an array must remain correlated with a concrete index consumer.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: !array.type<2 x index>) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !array.type<2 x !poly.tvar<@T>>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !array.type<2 x !poly.tvar<@T>>
+        function.call @consumeIndex(%read) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @consumeIndex(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x index>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @SharedRead {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !poly.tvar<@T>
+// CHECK-NEXT:        struct.member @second : !array.type<2 x !poly.tvar<@T>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead::@Holder<[@T]>>, !array.type<2 x !poly.tvar<@T>>
+// CHECK-NEXT:          function.call @consumeIndex(%[[VAL_5]]) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A binding with symbolic array dimensions must remain correlated with its generic sibling read.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: index) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    poly.param @N : index
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !array.type<@N x !felt.type>) -> !struct.type<@SharedRead::@Holder<[@T, @N]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T, @N]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T, @N]>>, !array.type<@N x !felt.type>
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T, @N]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T, @N]>>, %input: !array.type<@N x !felt.type>) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T, @N]>>, !poly.tvar<@T>
+        function.call @consumeIndex(%read) : (!poly.tvar<@T>) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @consumeIndex(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @SharedRead {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !poly.tvar<@T>
+// CHECK-NEXT:        struct.member @second : !poly.tvar<@T>
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> !struct.type<@SharedRead::@Holder<[@T, @N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T, @N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T, @N]>>, !array.type<@N x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T, @N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T, @N]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead::@Holder<[@T, @N]>>, !poly.tvar<@T>
+// CHECK-NEXT:          function.call @consumeIndex(%[[VAL_5]]) : (!poly.tvar<@T>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A concrete read retains the shared element binding despite independent array dimensions.
+module attributes {llzk.lang} {
+  function.def @consumeFelt(%value: !array.type<2 x !felt.type>) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !array.type<? x !poly.tvar<@T>>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !array.type<2 x !felt.type>
+        function.call @consumeFelt(%read) : (!array.type<2 x !felt.type>) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @consumeFelt(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @SharedRead {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !felt.type
+// CHECK-NEXT:        struct.member @second : !array.type<? x !poly.tvar<@T>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead::@Holder<[@T]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          function.call @consumeFelt(%[[VAL_5]]) : (!array.type<2 x !felt.type>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A sibling read using unrelated U does not prevent refining T.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: index) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    poly.param @U
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@U>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T, @U]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T, @U]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T, @U]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T, @U]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T, @U]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T, @U]>>, !poly.tvar<@U>
+        function.call @consumeIndex(%read) : (!poly.tvar<@U>) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @consumeIndex(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @SharedRead {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !felt.type
+// CHECK-NEXT:        struct.member @second : !poly.tvar<@U>
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T, @U]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T, @U]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T, @U]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T, @U]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T, @U]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead::@Holder<[@T, @U]>>, !poly.tvar<@U>
+// CHECK-NEXT:          function.call @consumeIndex(%[[VAL_5]]) : (!poly.tvar<@U>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,191 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt -llzk-flatten %t/conflict.llzk > %t/conflict-flat.llzk
+// RUN: FileCheck %s --check-prefix=CONFLICT < %t/conflict-flat.llzk
+// RUN: python3 %S/Inputs/append_module_body.py %t/conflict.llzk %t/index.llzk > %t/conflict-direct.llzk
+// RUN: not llzk-opt -llzk-flatten %t/conflict-direct.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: python3 %S/Inputs/append_module_body.py %t/conflict-flat.llzk %t/index.llzk > %t/conflict-staged.llzk
+// RUN: not llzk-opt -llzk-flatten %t/conflict-staged.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: llzk-opt -llzk-flatten %t/unused.llzk > %t/unused-flat.llzk
+// RUN: FileCheck %s --check-prefix=UNUSED < %t/unused-flat.llzk
+// RUN: python3 %S/Inputs/append_module_body.py %t/unused.llzk %t/index.llzk > %t/unused-direct.llzk
+// RUN: not llzk-opt -llzk-flatten %t/unused-direct.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: python3 %S/Inputs/append_module_body.py %t/unused-flat.llzk %t/index.llzk > %t/unused-staged.llzk
+// RUN: not llzk-opt -llzk-flatten %t/unused-staged.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: llzk-opt -llzk-flatten %t/compatible.llzk > %t/compatible-flat.llzk
+// RUN: FileCheck %s --check-prefix=COMPATIBLE < %t/compatible-flat.llzk
+// RUN: python3 %S/Inputs/append_module_body.py %t/compatible.llzk %t/felt.llzk > %t/compatible-direct.llzk
+// RUN: llzk-opt -llzk-flatten %t/compatible-direct.llzk | FileCheck %s --check-prefix=FELT
+// RUN: python3 %S/Inputs/append_module_body.py %t/compatible-flat.llzk %t/felt.llzk > %t/compatible-staged.llzk
+// RUN: llzk-opt -llzk-flatten %t/compatible-staged.llzk | FileCheck %s --check-prefix=FELT
+
+//--- conflict.llzk
+// The index consumer constrains the sibling T; generic flattening must preserve the first write's felt binding.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: index) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !poly.tvar<@T>
+        function.call @consumeIndex(%read) : (!poly.tvar<@T>) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CONFLICT-LABEL: module attributes {llzk.lang} {
+// CONFLICT-NEXT:    function.def @consumeIndex(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) {
+// CONFLICT-NEXT:      function.return
+// CONFLICT-NEXT:    }
+// CONFLICT-NEXT:    poly.template @SharedRead {
+// CONFLICT-NEXT:      poly.param @T
+// CONFLICT-NEXT:      struct.def @Holder {
+// CONFLICT-NEXT:        struct.member @first : !poly.tvar<@T>
+// CONFLICT-NEXT:        struct.member @second : !poly.tvar<@T>
+// CONFLICT-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> attributes {function.allow_witness} {
+// CONFLICT-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T]>>
+// CONFLICT-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T]>>, !felt.type
+// CONFLICT-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T]>>
+// CONFLICT-NEXT:        }
+// CONFLICT-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CONFLICT-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead::@Holder<[@T]>>, !poly.tvar<@T>
+// CONFLICT-NEXT:          function.call @consumeIndex(%[[VAL_5]]) : (!poly.tvar<@T>) -> ()
+// CONFLICT-NEXT:          function.return
+// CONFLICT-NEXT:        }
+// CONFLICT-NEXT:      }
+// CONFLICT-NEXT:    }
+// CONFLICT-NEXT:  }
+
+//--- unused.llzk
+// Even if an unused read is erased, the sibling declaration must retain its equality with the first member.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: index) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !poly.tvar<@T>
+        function.return
+      }
+    }
+  }
+}
+
+// UNUSED-LABEL: module attributes {llzk.lang} {
+// UNUSED-NEXT:    function.def @consumeIndex(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) {
+// UNUSED-NEXT:      function.return
+// UNUSED-NEXT:    }
+// UNUSED-NEXT:    poly.template @SharedRead {
+// UNUSED-NEXT:      poly.param @T
+// UNUSED-NEXT:      struct.def @Holder {
+// UNUSED-NEXT:        struct.member @first : !poly.tvar<@T>
+// UNUSED-NEXT:        struct.member @second : !poly.tvar<@T>
+// UNUSED-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> attributes {function.allow_witness} {
+// UNUSED-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T]>>
+// UNUSED-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T]>>, !felt.type
+// UNUSED-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T]>>
+// UNUSED-NEXT:        }
+// UNUSED-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// UNUSED-NEXT:          function.return
+// UNUSED-NEXT:        }
+// UNUSED-NEXT:      }
+// UNUSED-NEXT:    }
+// UNUSED-NEXT:  }
+
+//--- compatible.llzk
+// A concrete felt read preserves the binding, allowing refinement before compatible specialization.
+module attributes {llzk.lang} {
+  function.def @consumeFelt(%value: !felt.type) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.call @consumeFelt(%read) : (!felt.type) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// COMPATIBLE-LABEL: module attributes {llzk.lang} {
+// COMPATIBLE-NEXT:    function.def @consumeFelt(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) {
+// COMPATIBLE-NEXT:      function.return
+// COMPATIBLE-NEXT:    }
+// COMPATIBLE-NEXT:    poly.template @SharedRead {
+// COMPATIBLE-NEXT:      poly.param @T
+// COMPATIBLE-NEXT:      struct.def @Holder {
+// COMPATIBLE-NEXT:        struct.member @first : !felt.type
+// COMPATIBLE-NEXT:        struct.member @second : !poly.tvar<@T>
+// COMPATIBLE-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> attributes {function.allow_witness} {
+// COMPATIBLE-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead::@Holder<[@T]>>
+// COMPATIBLE-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead::@Holder<[@T]>>, !felt.type
+// COMPATIBLE-NEXT:          function.return %[[VAL_2]] : !struct.type<@SharedRead::@Holder<[@T]>>
+// COMPATIBLE-NEXT:        }
+// COMPATIBLE-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// COMPATIBLE-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead::@Holder<[@T]>>, !felt.type
+// COMPATIBLE-NEXT:          function.call @consumeFelt(%[[VAL_5]]) : (!felt.type) -> ()
+// COMPATIBLE-NEXT:          function.return
+// COMPATIBLE-NEXT:        }
+// COMPATIBLE-NEXT:      }
+// COMPATIBLE-NEXT:    }
+// COMPATIBLE-NEXT:  }
+
+//--- index.llzk
+  function.def @entry(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[index]>> attributes {function.allow_witness} {
+    %self = function.call @SharedRead::@Holder::@compute(%input) : (!felt.type) -> !struct.type<@SharedRead::@Holder<[index]>>
+    function.return %self : !struct.type<@SharedRead::@Holder<[index]>>
+  }
+// INDEX: error: 'struct.writem' op has wrong type; expected 'index', got '!felt.type'
+
+//--- felt.llzk
+  function.def @entry(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[!felt.type]>> attributes {function.allow_witness} {
+    %self = function.call @SharedRead::@Holder::@compute(%input) : (!felt.type) -> !struct.type<@SharedRead::@Holder<[!felt.type]>>
+    function.return %self : !struct.type<@SharedRead::@Holder<[!felt.type]>>
+  }
+
+// FELT-LABEL: module attributes {llzk.lang} {
+// FELT-NEXT:    function.def @consumeFelt(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) {
+// FELT-NEXT:      function.return
+// FELT-NEXT:    }
+// FELT-NEXT:    struct.def @SharedRead_f_Holder {
+// FELT-NEXT:      struct.member @first : !felt.type
+// FELT-NEXT:      struct.member @second : !felt.type
+// FELT-NEXT:      function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead_f_Holder>
+// FELT-NEXT:        struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead_f_Holder>, !felt.type
+// FELT-NEXT:        function.return %[[VAL_2]] : !struct.type<@SharedRead_f_Holder>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead_f_Holder>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// FELT-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead_f_Holder>, !felt.type
+// FELT-NEXT:        function.call @consumeFelt(%[[VAL_5]]) : (!felt.type) -> ()
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    function.def @entry(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @SharedRead_f_Holder::@compute(%[[VAL_6]]) : (!felt.type) -> !struct.type<@SharedRead_f_Holder>
+// FELT-NEXT:      function.return %[[VAL_7]] : !struct.type<@SharedRead_f_Holder>
+// FELT-NEXT:    }
+// FELT-NEXT:  }
