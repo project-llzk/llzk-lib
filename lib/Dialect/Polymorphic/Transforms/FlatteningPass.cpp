@@ -1397,9 +1397,11 @@ static LogicalResult copyReferencedTemplateExprs(
 
 /// Clone every free function in `parentTemplate` reached through a call in the cloned functions.
 /// Rewriting these calls to the new template keeps partial instantiations self-contained.
+/// Record redirected calls so symbol collisions can rename only references to copied siblings.
 static SmallVector<FuncDefOp> copyReferencedTemplateSiblingFuncs(
     TemplateOp parentTemplate, TemplateOp newTemplate, FuncDefOp originalFunc, FuncDefOp newFunc,
-    SymbolTableCollection &symTables, const DenseMap<Attribute, Attribute> &paramNameToConcrete
+    SymbolTableCollection &symTables, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVectorImpl<CallOp> &copiedSiblingCalls
 ) {
   DenseMap<Operation *, FuncDefOp> cloned;
   DenseMap<Operation *, FuncDefOp> cloneSources;
@@ -1451,6 +1453,7 @@ static SmallVector<FuncDefOp> copyReferencedTemplateSiblingFuncs(
       calleePieces.push_back(FlatSymbolRefAttr::get(newTemplate.getSymNameAttr()));
       calleePieces.push_back(FlatSymbolRefAttr::get(clonedSibling.getSymNameAttr()));
       nestedCall.setCalleeAttr(asSymbolRefAttr(calleePieces));
+      copiedSiblingCalls.push_back(nestedCall);
     });
   }
   return copiedFuncs;
@@ -1796,8 +1799,10 @@ private:
 
     // Clone and partially convert the function (concretize only the concrete params).
     FuncDefOp newFunc = cloneFunctionWithConvertedCallees(callTgt, paramNameToConcrete);
+    SmallVector<CallOp> copiedSiblingCalls;
     SmallVector<FuncDefOp> copiedFuncs = copyReferencedTemplateSiblingFuncs(
-        parentTemplate, newTemplate, callTgt, newFunc, symTables, paramNameToConcrete
+        parentTemplate, newTemplate, callTgt, newFunc, symTables, paramNameToConcrete,
+        copiedSiblingCalls
     );
     auto copyRes = copyReferencedTemplateExprs(
         parentTemplate, newTemplateBody, copiedFuncs, paramNameToConcrete
@@ -1818,16 +1823,16 @@ private:
     StringAttr provisionalTemplateName = newTemplate.getSymNameAttr();
     symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
     if (newTemplate.getSymNameAttr() != provisionalTemplateName) {
-      for (FuncDefOp copiedFunc : copiedFuncs) {
-        copiedFunc.walk([&](CallOp nestedCall) {
-          SymbolRefAttr callee = nestedCall.getCalleeAttr();
-          SmallVector<FlatSymbolRefAttr> calleePieces = getPieces(callee);
-          auto count = calleePieces.size();
-          if (count >= 2 && calleePieces[count - 2].getAttr() == provisionalTemplateName) {
-            calleePieces[count - 2] = FlatSymbolRefAttr::get(newTemplate.getSymNameAttr());
-            nestedCall.setCalleeAttr(asSymbolRefAttr(calleePieces));
-          }
-        });
+      // Only calls redirected to copied siblings belong to this partial template. External
+      // callees can share its provisional name and must retain their original references.
+      for (CallOp copiedSiblingCall : copiedSiblingCalls) {
+        SmallVector<FlatSymbolRefAttr> calleePieces = getPieces(copiedSiblingCall.getCalleeAttr());
+        assert(
+            calleePieces.size() >= 2 && "copied sibling path must include template and function"
+        );
+        calleePieces[calleePieces.size() - 2] =
+            FlatSymbolRefAttr::get(newTemplate.getSymNameAttr());
+        copiedSiblingCall.setCalleeAttr(asSymbolRefAttr(calleePieces));
       }
     }
     for (FuncDefOp copiedFunc : copiedFuncs) {
