@@ -2935,10 +2935,16 @@ static LogicalResult seedValuesFromArrayElements(
 /// with an affine-map parameter that becomes a different concrete struct at each unrolled index.
 static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info) {
   SmallVector<Type> previousTypes;
+  DenseSet<Type> seenTypes;
   for (ArrayAttr idx : info.indices) {
     Type nextType = info.typeByIndex.lookup(idx);
     if (!nextType) {
       return false;
+    }
+    // Repeated types add no compatibility information. Keep comparing every distinct pair:
+    // unification is not transitive when a generic type unifies with incompatible concrete types.
+    if (!seenTypes.insert(nextType).second) {
+      continue;
     }
     for (Type previousType : previousTypes) {
       if (!typesUnify(previousType, nextType)) {
