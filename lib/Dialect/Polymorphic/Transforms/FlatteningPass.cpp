@@ -510,14 +510,21 @@ public:
           auto write = dyn_cast<MemberWriteOp>(use.getOwner());
           if (!write || write.getVal() != nondet.getResult()) {
             if (auto call = dyn_cast<CallOp>(use.getOwner())) {
+              // Affine-map operands instantiate result parameters; they have no callee argument
+              // requirement, even when the same witness also appears in the argument segment.
+              OperandRange arguments = call.getArgOperands();
+              if (arguments.empty()) {
+                continue;
+              }
+              unsigned argIdx = use.getOperandNumber() - arguments.getBeginOperandIndex();
+              if (argIdx >= arguments.size()) {
+                continue;
+              }
               auto callee = call.getCalleeTarget(tables);
               if (failed(callee)) {
                 return failure();
               }
-              unsigned argIdx =
-                  use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
-              if (argIdx >= call.getArgOperands().size() ||
-                  failed(addRequirement(
+              if (failed(addRequirement(
                       callee->get().getFunctionType().getInput(argIdx), call, callee->get()
                   ))) {
                 return failure();
