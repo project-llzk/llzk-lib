@@ -163,6 +163,9 @@ bool ConversionTracker::shouldSkipUnroll(Operation *op) {
 }
 
 bool ConversionTracker::mustPreserveLoop(Operation *op) {
+  if (!op) {
+    return false;
+  }
   for (Operation *p = op; p && !isa<SymbolOpInterface>(p); p = p->getParentOp()) {
     if (shouldSkipUnroll(p)) {
       return true;

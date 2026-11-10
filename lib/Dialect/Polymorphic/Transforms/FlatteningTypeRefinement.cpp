@@ -247,7 +247,7 @@ static bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
 }
 
 /// Array store operands supported by a consumer check. Reads and extracts have different contracts.
-enum class ArrayStoreKind { None, Element, Subarray };
+enum class ArrayStoreKind : std::uint8_t { None, Element, Subarray };
 
 /// Look up an independently declared consumer type after validating the operand's role.
 /// Callers choose which array stores they support and how to compare the returned type; this

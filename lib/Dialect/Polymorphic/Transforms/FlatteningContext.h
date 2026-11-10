@@ -97,6 +97,7 @@ public:
   bool shouldSkipUnroll(mlir::Operation *op);
 
   /// Preserve skipped loops, their bodies, and enclosing control flow that could erase them.
+  /// Return false for a null operation.
   bool mustPreserveLoop(mlir::Operation *op);
 
   /// Protect skipped loops and their nested/enclosing control flow from greedy rewriting.
