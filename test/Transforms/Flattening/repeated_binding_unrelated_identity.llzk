@@ -1,10 +1,5 @@
-// RUN: split-file %s %t
-// RUN: cat %t/generic.llzk %t/felt.llzk > %t/complete-felt.llzk
-// RUN: llzk-opt -llzk-flatten %t/complete-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s --check-prefix=FELT
 
-// Assemble each complete module before flattening; all instantiation sites are visible.
-
-//--- generic.llzk
 // Unchanged unrelated parameters permit a partially concrete candidate to specialize.
 module attributes {llzk.lang} {
   poly.template @Pair {
@@ -41,7 +36,6 @@ module attributes {llzk.lang} {
     }
   }
 
-//--- felt.llzk
   function.def @entry(%input: !felt.type) -> !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>> attributes {function.allow_witness} {
     %result = function.call @UnchangedUnrelatedSymbol::@Holder::@compute(%input) : (!felt.type) -> !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>>
     function.return %result : !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>>
