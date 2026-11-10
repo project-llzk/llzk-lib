@@ -2797,6 +2797,57 @@ static CallOp replaceStructConstraintCallWithSpecializedWitness(
   return replacement;
 }
 
+/// Validate external observations of a specialized witness and return the calls to retarget.
+/// The caller identifies uses handled by its own rewrite. Scalarization reports failures at
+/// `diagnosticOp`; speculative propagation leaves it null and simply declines the rewrite.
+static FailureOr<SmallVector<CallOp>> collectSpecializedWitnessConstraints(
+    Value source, Type type, SymbolTableCollection &tables,
+    llvm::function_ref<bool(OpOperand &)> isInternalUse, Operation *diagnosticOp = nullptr
+) {
+  SmallVector<CallOp> calls;
+  for (OpOperand &use : source.getUses()) {
+    if (isInternalUse(use)) {
+      continue;
+    }
+    auto call = dyn_cast<CallOp>(use.getOwner());
+    if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
+        !isa<StructType>(type)) {
+      if (diagnosticOp) {
+        auto diag = diagnosticOp->emitError(
+            "cannot scalarize array because a generic nondeterministic initializer has an "
+            "unsupported external use"
+        );
+        diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
+      }
+      return failure();
+    }
+    StructType structType = llvm::cast<StructType>(type);
+    SymbolRefAttr callee =
+        appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+    auto target = lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
+    if (failed(target)) {
+      return failure();
+    }
+    SmallVector<Type> argTypes(call.getArgOperands().getTypes());
+    argTypes.front() = type;
+    // Use the namespace-aware compatibility rule from CallOp verification, including generic
+    // companion arguments that need not exactly equal the specialized parameter types.
+    if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
+      if (diagnosticOp) {
+        auto diag = diagnosticOp->emitError(
+            "cannot scalarize array because specializing a generic nondeterministic initializer "
+            "would make an external constraint call incompatible with its retargeted callee"
+        );
+        diag.attachNote(call.getLoc())
+            << "retargeted constraint expects argument types " << target->get().getArgumentTypes();
+      }
+      return failure();
+    }
+    calls.push_back(call);
+  }
+  return calls;
+}
+
 /// Materialize a specialized nondeterministic witness after its source and retarget constraints.
 ///
 /// The caller must have validated that every constraint in `externalConstraints` can observe the
@@ -4430,7 +4481,7 @@ static LogicalResult collectSharedNondetSpecializationTypes(
   return success();
 }
 
-/// Verify that each shared witness can be specialized without changing external observations.
+/// Collect uses that candidate scalarization will rewrite internally.
 static DenseSet<Operation *> collectInternalSharedNondetUses(ArrayRef<ScalarizedArrayInfo> infos) {
   DenseSet<Operation *> internalUses;
   for (const ScalarizedArrayInfo &info : infos) {
@@ -4440,7 +4491,8 @@ static DenseSet<Operation *> collectInternalSharedNondetUses(ArrayRef<Scalarized
   return internalUses;
 }
 
-static LogicalResult verifySharedNondetSpecializationExternalUses(
+/// Validate shared witness observations once, retaining the calls for materialization.
+static FailureOr<DenseMap<Value, SmallVector<CallOp>>> collectSharedNondetExternalConstraints(
     ArrayRef<ScalarizedArrayInfo> infos, const DenseMap<Value, Type> &specializedTypeByNondet,
     SymbolTableCollection &tables
 ) {
@@ -4453,89 +4505,34 @@ static LogicalResult verifySharedNondetSpecializationExternalUses(
       }
     }
   }
+  DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
   for (const auto &[source, type] : specializedTypeByNondet) {
-    for (OpOperand &use : source.getUses()) {
-      if (internalUses.contains(use.getOwner())) {
-        continue;
-      }
-      auto call = llvm::dyn_cast<CallOp>(use.getOwner());
-      if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
-          !llvm::isa<StructType>(type)) {
-        InFlightDiagnostic diag = candidateBySource.lookup(source)->emitError(
-            "cannot scalarize array because a generic nondeterministic initializer has an "
-            "unsupported external use"
-        );
-        diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
-        return diag;
-      }
-
-      StructType structType = llvm::cast<StructType>(type);
-      SymbolRefAttr callee =
-          appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-      FailureOr<SymbolLookupResult<FuncDefOp>> target =
-          lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
-      if (failed(target)) {
-        return failure();
-      }
-
-      SmallVector<Type> argTypes(call.getArgOperands().getTypes());
-      argTypes.front() = type;
-      // Match the namespace-aware compatibility check performed by the CallOp verifier. The
-      // retargeted callee can accept a still-generic companion argument even when it is not
-      // exactly equal to the newly instantiated parameter type.
-      if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
-        InFlightDiagnostic diag = candidateBySource.lookup(source)->emitError(
-            "cannot scalarize array because specializing a generic nondeterministic initializer "
-            "would make an external constraint call incompatible with its retargeted callee"
-        );
-        diag.attachNote(call.getLoc())
-            << "retargeted constraint expects argument types " << target->get().getArgumentTypes();
-        return diag;
-      }
+    auto calls = collectSpecializedWitnessConstraints(source, type, tables, [&](OpOperand &use) {
+      return internalUses.contains(use.getOwner());
+    }, candidateBySource.lookup(source));
+    if (failed(calls)) {
+      return failure();
     }
+    externalCallsBySource[source] = std::move(*calls);
   }
-  return success();
+  return externalCallsBySource;
 }
 
-/// Materialize each refined witness once and redirect compatible external observations to it.
-///
-/// A static array read determines the concrete type of its source witness. Struct constraint calls
-/// observing that source can use the same concrete witness after their callee is redirected to the
-/// corresponding instantiated struct definition.
-static LogicalResult materializeSharedNondetSpecializations(
-    ArrayRef<ScalarizedArrayInfo> infos, const DenseMap<Value, Type> &specializedTypeByNondet,
-    SymbolTableCollection &tables, PatternRewriter &rewriter,
+/// Materialize each refined witness once and redirect its already-validated external calls.
+/// Place replacements after the source so they dominate calls preceding the array initializer.
+static void materializeSharedNondetSpecializations(
+    const DenseMap<Value, Type> &specializedTypeByNondet,
+    const DenseMap<Value, SmallVector<CallOp>> &externalCallsBySource, PatternRewriter &rewriter,
     DenseMap<Value, Value> &specializedNondetBySource
 ) {
-  auto verifyRes =
-      verifySharedNondetSpecializationExternalUses(infos, specializedTypeByNondet, tables);
-  if (failed(verifyRes)) {
-    return failure();
-  }
-
-  DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
-  DenseSet<Operation *> internalUses = collectInternalSharedNondetUses(infos);
-  for (const auto &[source, _] : specializedTypeByNondet) {
-    for (OpOperand &use : source.getUses()) {
-      if (internalUses.contains(use.getOwner())) {
-        continue;
-      }
-      externalCallsBySource[source].push_back(llvm::cast<CallOp>(use.getOwner()));
-    }
-  }
-
   for (const auto &[source, type] : specializedTypeByNondet) {
     NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
     assert(sourceNondet && "specialization map only contains nondeterministic values");
-    // The external constraint can precede the array initializer. The source witness dominates
-    // every one of its original uses, so materializing directly after it preserves SSA dominance
-    // for both those external calls and the scalarized array reads.
     Value specializedValue = materializeSpecializedNondet(
         rewriter, sourceNondet, sourceNondet.getLoc(), type, externalCallsBySource.lookup(source)
     );
     specializedNondetBySource[source] = specializedValue;
   }
-  return success();
 }
 
 /// Return the value that should replace `readOp` after scalarization.
@@ -5652,60 +5649,26 @@ static LogicalResult rewriteExpandableLocalArray(
     }
   }
 
-  auto isInternalNondetUse = [&createOp](Value source, Operation *owner) {
-    if (owner == createOp.getOperation()) {
-      return true;
-    }
-    auto writeOp = llvm::dyn_cast<WriteArrayOp>(owner);
-    return writeOp && writeOp.getRvalue() == source && writeOp.getArrRef() == createOp.getResult();
-  };
   DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
   for (const auto &[source, type] : specializedTypeByNondet) {
-    for (OpOperand &use : source.getUses()) {
-      if (isInternalNondetUse(source, use.getOwner())) {
-        continue;
+    auto calls = collectSpecializedWitnessConstraints(source, type, tables, [&](OpOperand &use) {
+      Operation *owner = use.getOwner();
+      if (owner == createOp.getOperation()) {
+        return true;
       }
-      auto call = llvm::dyn_cast<CallOp>(use.getOwner());
-      if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
-          !llvm::isa<StructType>(type)) {
-        InFlightDiagnostic diag = createOp.emitError(
-            "cannot scalarize array because a generic nondeterministic initializer has an "
-            "unsupported external use"
-        );
-        diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
-        return diag;
-      }
-      StructType structType = llvm::cast<StructType>(type);
-      SymbolRefAttr callee =
-          appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-      FailureOr<SymbolLookupResult<FuncDefOp>> target =
-          lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
-      if (failed(target)) {
-        return failure();
-      }
-      SmallVector<Type> argTypes(call.getArgOperands().getTypes());
-      argTypes.front() = type;
-      if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
-        InFlightDiagnostic diag = createOp.emitError(
-            "cannot scalarize array because specializing a generic nondeterministic initializer "
-            "would make an external constraint call incompatible with its retargeted callee"
-        );
-        diag.attachNote(call.getLoc())
-            << "retargeted constraint expects argument types " << target->get().getArgumentTypes();
-        return diag;
-      }
-      externalCallsBySource[source].push_back(call);
+      auto writeOp = dyn_cast<WriteArrayOp>(owner);
+      return writeOp && writeOp.getRvalue() == source &&
+             writeOp.getArrRef() == createOp.getResult();
+    }, createOp);
+    if (failed(calls)) {
+      return failure();
     }
+    externalCallsBySource[source] = std::move(*calls);
   }
   DenseMap<Value, Value> specializedNondetBySource;
-  for (const auto &[source, type] : specializedTypeByNondet) {
-    NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
-    assert(sourceNondet && "specialization map only contains nondeterministic values");
-    Value specializedValue = materializeSpecializedNondet(
-        rewriter, sourceNondet, sourceNondet.getLoc(), type, externalCallsBySource.lookup(source)
-    );
-    specializedNondetBySource[source] = specializedValue;
-  }
+  materializeSharedNondetSpecializations(
+      specializedTypeByNondet, externalCallsBySource, rewriter, specializedNondetBySource
+  );
 
   // Validate every consumer against the final shared type before replacing any read. This keeps a
   // later refinement from changing the type of a nondet value that an earlier replacement already
@@ -6032,20 +5995,19 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   DenseMap<Value, Type> specializedTypeByNondet;
   if (failed(collectSharedNondetSpecializationTypes(
           arraysToScalarize, tracker, splitTypesByMember, tables, specializedTypeByNondet
-      )) ||
-      failed(verifySharedNondetSpecializationExternalUses(
-          arraysToScalarize, specializedTypeByNondet, tables
       ))) {
+    return failure();
+  }
+  auto externalCalls =
+      collectSharedNondetExternalConstraints(arraysToScalarize, specializedTypeByNondet, tables);
+  if (failed(externalCalls)) {
     return failure();
   }
 
   DenseMap<Value, Value> specializedNondetBySource;
-  auto materializeRes = materializeSharedNondetSpecializations(
-      arraysToScalarize, specializedTypeByNondet, tables, rewriter, specializedNondetBySource
+  materializeSharedNondetSpecializations(
+      specializedTypeByNondet, *externalCalls, rewriter, specializedNondetBySource
   );
-  if (failed(materializeRes)) {
-    return failure();
-  }
 
   DenseSet<Value> sourcesUsedByReads;
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
@@ -6700,38 +6662,19 @@ static FailureOr<Value> materializeValueForMemberWrite(
   // concrete value for that write. This mirrors the retargeting performed for scalarized array
   // initializers: redirect the constraint to the instantiated struct definition and use the one
   // replacement witness for both observations.
-  SmallVector<CallOp> externalConstraints;
   SymbolTableCollection tables;
-  for (OpOperand &use : value.getUses()) {
-    auto memberWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
-    if (memberWrite && memberWrite.getVal() == use.get()) {
-      continue;
-    }
-    auto call = llvm::dyn_cast<CallOp>(use.getOwner());
-    if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
-        !llvm::isa<StructType>(type)) {
-      return failure();
-    }
-
-    StructType structType = llvm::cast<StructType>(type);
-    SymbolRefAttr callee =
-        appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-    FailureOr<SymbolLookupResult<FuncDefOp>> target =
-        lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
-    if (failed(target)) {
-      return failure();
-    }
-    SmallVector<Type> argTypes(call.getArgOperands().getTypes());
-    argTypes.front() = type;
-    if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
-      return failure();
-    }
-    externalConstraints.push_back(call);
+  auto externalConstraints =
+      collectSpecializedWitnessConstraints(value, type, tables, [](OpOperand &use) {
+    auto memberWrite = dyn_cast<MemberWriteOp>(use.getOwner());
+    return memberWrite && memberWrite.getVal() == use.get();
+  });
+  if (failed(externalConstraints)) {
+    return failure();
   }
 
   OpBuilder::InsertionGuard guard(rewriter);
   Value replacement =
-      materializeSpecializedNondet(rewriter, nondetOp, loc, type, externalConstraints);
+      materializeSpecializedNondet(rewriter, nondetOp, loc, type, *externalConstraints);
   typedNondetReplacements.try_emplace(value, replacement);
   return replacement;
 }
