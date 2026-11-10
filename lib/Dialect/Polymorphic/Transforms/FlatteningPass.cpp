@@ -5116,8 +5116,22 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
   }
   return success();
 }
-/// Reject expandable arrays that would store one SSA value into several split scalar members that
-/// cannot share one materialized value.
+
+/// Validated decisions for one expandable array, retained until its rewrite.
+struct ExpandableArrayPlan {
+  /// Original array users in execution order (or initializer-only cross-block users).
+  SmallVector<Operation *> users;
+  /// Final shared scalar type for each read, including later uses before an overwrite.
+  DenseMap<Operation *, Type> materializationTypeByRead;
+  /// Stable source operands and requested types for initialized scalar witnesses. Operands belong
+  /// to this array's create/write operations and follow RAUW by earlier candidate rewrites; storing
+  /// transient read results here would leave dangling Value handles when those reads are erased.
+  SmallVector<std::pair<OpOperand *, Type>> witnessRequests;
+  /// Cross-block initializer materializations must dominate all uses of the allocation.
+  Operation *materializationPoint = nullptr;
+};
+
+/// Plan scalar replacements while rejecting uses that cannot share one materialized value.
 ///
 /// Later type propagation may refine the value operand of each scalar member write. If two writes
 /// keep the same SSA value, refining one write also refines the other because MLIR values carry one
@@ -5126,10 +5140,10 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
 /// overwrites the index. Static reads of unwritten indices participate in the same pending
 /// materialization state because the rewrite caches their result-typed `llzk.nondet` value for
 /// later scalar member writes at that index.
-static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
+static LogicalResult planExpandableLocalArray(
     CreateArrayOp createOp,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
-    SymbolTableCollection &tables, const ConversionTracker &tracker,
+    SymbolTableCollection &tables, const ConversionTracker &tracker, ExpandableArrayPlan &plan,
     StringRef arrayDescription = "an expandable array"
 ) {
   if (splitTypesByMember.empty()) {
@@ -5162,13 +5176,19 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   }
   ArrayRef<ArrayAttr> indices = *maybeIndices;
 
-  DenseMap<ArrayAttr, Value> valueByIndex;
-  if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
-    return failure();
+  DenseMap<ArrayAttr, OpOperand *> sourceByIndex;
+  if (!createOp.getElements().empty()) {
+    if (createOp.getElements().size() != indices.size()) {
+      return failure();
+    }
+    unsigned firstElement = createOp.getElements().getBeginOperandIndex();
+    for (auto [i, idx] : llvm::enumerate(indices)) {
+      sourceByIndex[idx] = &createOp->getOpOperand(firstElement + i);
+    }
   }
 
   FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
-  SmallVector<Operation *> users;
+  SmallVector<Operation *> &users = plan.users;
   if (succeeded(maybeUsers)) {
     users = std::move(*maybeUsers);
   } else {
@@ -5176,6 +5196,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       return failure();
     }
     users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
+    plan.materializationPoint = createOp.getOperation();
   }
 
   /// First consumer that forced an array index to be materialized at a concrete type.
@@ -5202,7 +5223,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   DenseMap<ArrayAttr, SmallVector<ReadArrayOp>> readsByIndex;
   auto valueCompatibleWithTargetType = [&tracker](Value scalarValue, Type targetType) {
     return canUseScalarizedValueAsType(
-        scalarValue.getType(), targetType, tracker, "verifyNoSharedValuesForIncompatibleSplitTypes"
+        scalarValue.getType(), targetType, tracker, "planExpandableLocalArray"
     );
   };
   auto verifyExternalMemberWriteUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
@@ -5302,9 +5323,9 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       return success();
     }
     for (ReadArrayOp readOp : readsByIndex.lookup(idx)) {
+      plan.materializationTypeByRead[readOp] = materialization->second.type;
       if (!canReplaceReadResultWithType(
-              readOp, materialization->second.type, tracker,
-              "verifyNoSharedValuesForIncompatibleSplitTypes"
+              readOp, materialization->second.type, tracker, "planExpandableLocalArray"
           ) ||
           failed(canReplaceReadUsersWithType(readOp, materialization->second.type, tables))) {
         return failure();
@@ -5317,25 +5338,27 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   // Reads are replaced with their stored SSA values during rewriting. Preserve that identity
   // through subsequent local writes so preflight sees external observations of the actual source.
   // Capture the value at the read, since a later write can overwrite its original array index.
-  DenseMap<Value, Value> sourceByRead;
+  DenseMap<Value, OpOperand *> sourceByRead;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(writeOp);
       if (failed(verifyMaterializedReadUsers(idx))) {
         return failure();
       }
-      Value value = writeOp.getRvalue();
-      if (Value source = sourceByRead.lookup(value)) {
-        value = source;
+      OpOperand *source = sourceByRead.lookup(writeOp.getRvalue());
+      if (!source) {
+        source = &writeOp.getRvalueMutable();
       }
-      valueByIndex[idx] = value;
+      sourceByIndex[idx] = source;
       continue;
     }
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(readOp);
       Type readType = readOp.getResult().getType();
-      if (Value scalarValue = valueByIndex.lookup(idx)) {
-        sourceByRead[readOp.getResult()] = scalarValue;
+      if (OpOperand *source = sourceByIndex.lookup(idx)) {
+        Value scalarValue = source->get();
+        sourceByRead[readOp.getResult()] = source;
+        plan.witnessRequests.emplace_back(source, readType);
         if (failed(getCommonRefinedType(scalarValue.getType(), readType, tracker))) {
           InFlightDiagnostic diag =
               createOp.emitError("cannot split heterogeneous array member because ")
@@ -5376,8 +5399,8 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     }
 
     for (const auto &[idx, targetType] : splitIt->second) {
-      Value scalarValue = valueByIndex.lookup(idx);
-      if (!scalarValue) {
+      OpOperand *source = sourceByIndex.lookup(idx);
+      if (!source) {
         auto res = noteMaterializedUse(
             idx, targetType, memberWriteOp.getLoc(), "scalar member type", "unwritten index"
         );
@@ -5386,6 +5409,8 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         }
         continue;
       }
+      Value scalarValue = source->get();
+      plan.witnessRequests.emplace_back(source, targetType);
       auto existing = firstUseByValue.find(scalarValue);
       if (!valueCompatibleWithTargetType(scalarValue, targetType)) {
         InFlightDiagnostic diag =
@@ -5412,8 +5437,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         bool canMaterializeTarget;
         if (UnifiableCastOp castOp = scalarValue.getDefiningOp<UnifiableCastOp>()) {
           canMaterializeTarget = canUseScalarizedValueAsType(
-              castOp.getInput().getType(), targetType, tracker,
-              "verifyNoSharedValuesForIncompatibleSplitTypes"
+              castOp.getInput().getType(), targetType, tracker, "planExpandableLocalArray"
           );
         } else {
           // Array reads are replaced before member writes, so their replacement can carry the
@@ -5452,8 +5476,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       bool canMaterializeCommonType;
       if (UnifiableCastOp castOp = scalarValue.getDefiningOp<UnifiableCastOp>()) {
         canMaterializeCommonType = canUseScalarizedValueAsType(
-            castOp.getInput().getType(), *commonType, tracker,
-            "verifyNoSharedValuesForIncompatibleSplitTypes"
+            castOp.getInput().getType(), *commonType, tracker, "planExpandableLocalArray"
         );
       } else {
         canMaterializeCommonType = scalarValue.getDefiningOp<NonDetOp>();
@@ -5483,7 +5506,8 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
 /// Rewrite one expandable local array allocation in block order.
 static LogicalResult rewriteExpandableLocalArray(
     CreateArrayOp createOp, const DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
-    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
+    const ExpandableArrayPlan &plan
 ) {
   ArrayType arrTy = createOp.getType();
   std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
@@ -5492,100 +5516,15 @@ static LogicalResult rewriteExpandableLocalArray(
   }
   ArrayRef<ArrayAttr> indices = *maybeIndices;
 
-  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
-  Operation *materializationPoint = nullptr;
-  SmallVector<Operation *> users;
-  if (succeeded(maybeUsers)) {
-    users = std::move(*maybeUsers);
-  } else {
-    if (!isInitializerOnlyLocalArray(createOp, indices)) {
-      return failure();
-    }
-    users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
-    materializationPoint = createOp.getOperation();
-  }
-
   DenseMap<ArrayAttr, Value> valueByIndex;
   DenseMap<ArrayAttr, DictionaryAttr> writeDiscardableAttrsByIndex;
   if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
     return failure();
   }
 
-  // Plan one final type for every materialization before rewriting any reads. Reads of an
-  // unwritten index share a cached nondet value until an array write replaces it. In particular,
-  // a later complementary generic read can refine that cached value, so validating only the
-  // earlier read's initial replacement type can leave its consumers invalid after the refinement.
-  DenseMap<Operation *, Type> materializationTypeByRead;
-  DenseMap<ArrayAttr, Type> materializationTypeByIndex;
-  DenseMap<ArrayAttr, SmallVector<Operation *>> readsByIndex;
-  auto addMaterializationType = [&](ArrayAttr idx, Type type) -> LogicalResult {
-    auto existing = materializationTypeByIndex.find(idx);
-    if (existing == materializationTypeByIndex.end()) {
-      materializationTypeByIndex.try_emplace(idx, type);
-      return success();
-    }
-    FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
-    if (failed(commonType)) {
-      return failure();
-    }
-    existing->second = *commonType;
-    return success();
-  };
-  auto finishMaterialization = [&](ArrayAttr idx) {
-    Type finalType = materializationTypeByIndex.lookup(idx);
-    if (finalType) {
-      for (Operation *read : readsByIndex.lookup(idx)) {
-        materializationTypeByRead[read] = finalType;
-      }
-    }
-    materializationTypeByIndex.erase(idx);
-    readsByIndex.erase(idx);
-  };
-  for (Operation *user : users) {
-    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      finishMaterialization(getIndexAsAttr(writeOp));
-      continue;
-    }
-    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
-      ArrayAttr idx = getIndexAsAttr(readOp);
-      if (failed(addMaterializationType(idx, readOp.getResult().getType()))) {
-        return failure();
-      }
-      readsByIndex[idx].push_back(readOp);
-      continue;
-    }
-    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
-    if (!memberWriteOp) {
-      continue;
-    }
-    auto memberDef = memberWriteOp.getMemberDefOp(tables);
-    if (failed(memberDef)) {
-      return failure();
-    }
-    auto splitIt = splitMembers.find(memberDef->get());
-    if (splitIt == splitMembers.end()) {
-      return failure();
-    }
-    for (ArrayAttr idx : splitIt->second.indices) {
-      MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
-      if (!memberInfo.first || failed(addMaterializationType(idx, memberInfo.second))) {
-        return failure();
-      }
-    }
-  }
-  for (ArrayAttr idx : indices) {
-    finishMaterialization(idx);
-  }
-
-  // An initialized expandable array can require a generic nondeterministic element to be
-  // materialized at a concrete split-member type. Plan those specializations up front: cloning
-  // the witness later without also updating an external observation would turn one witness into
-  // two independent witnesses.
+  // Earlier candidate rewrites may have replaced an input read with its scalar witness. Resolve
+  // the planned source operands now, without replaying array writes or materialization lifetimes.
   DenseMap<Value, Type> specializedTypeByNondet;
-  DenseMap<ArrayAttr, Value> plannedValueByIndex;
-  if (failed(seedValuesFromArrayElements(createOp, indices, plannedValueByIndex))) {
-    return failure();
-  }
   auto noteNondetSpecialization = [&](Value value, Type type) -> LogicalResult {
     if (!value || value.getType() == type || !value.getDefiningOp<NonDetOp>()) {
       return success();
@@ -5605,47 +5544,9 @@ static LogicalResult rewriteExpandableLocalArray(
     existing->second = *commonType;
     return success();
   };
-  // Match preflight's snapshots when a read is forwarded through another local array write.
-  // Rewriting removes those reads, so specialize their original witness and its external uses.
-  DenseMap<Value, Value> sourceByRead;
-  for (Operation *user : users) {
-    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      Value value = writeOp.getRvalue();
-      if (Value source = sourceByRead.lookup(value)) {
-        value = source;
-      }
-      plannedValueByIndex[getIndexAsAttr(writeOp)] = value;
-      continue;
-    }
-    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
-      Value source = plannedValueByIndex.lookup(getIndexAsAttr(readOp));
-      if (source) {
-        sourceByRead[readOp.getResult()] = source;
-      }
-      auto res = noteNondetSpecialization(source, readOp.getResult().getType());
-      if (failed(res)) {
-        return failure();
-      }
-      continue;
-    }
-    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
-    if (!memberWriteOp) {
+  for (const auto &[source, type] : plan.witnessRequests) {
+    if (failed(noteNondetSpecialization(source->get(), type))) {
       return failure();
-    }
-    auto memberDef = memberWriteOp.getMemberDefOp(tables);
-    if (failed(memberDef)) {
-      return failure();
-    }
-    auto splitIt = splitMembers.find(memberDef->get());
-    if (splitIt == splitMembers.end()) {
-      return failure();
-    }
-    for (ArrayAttr idx : splitIt->second.indices) {
-      MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
-      if (!memberInfo.first ||
-          failed(noteNondetSpecialization(plannedValueByIndex.lookup(idx), memberInfo.second))) {
-        return failure();
-      }
     }
   }
 
@@ -5670,10 +5571,10 @@ static LogicalResult rewriteExpandableLocalArray(
       specializedTypeByNondet, externalCallsBySource, rewriter, specializedNondetBySource
   );
 
-  // Validate every consumer against the final shared type before replacing any read. This keeps a
-  // later refinement from changing the type of a nondet value that an earlier replacement already
-  // made visible to an incompatible consumer.
-  for (const auto &[read, finalType] : materializationTypeByRead) {
+  // Earlier candidate rewrites (and the witness specializations above) may retarget a call
+  // consuming this array's read. Recheck those live consumers against the already-planned type;
+  // the array's write/read history and common materialization types do not need recomputing.
+  for (const auto &[read, finalType] : plan.materializationTypeByRead) {
     if (failed(canReplaceReadUsersWithType(llvm::cast<ReadArrayOp>(read), finalType, tables))) {
       return failure();
     }
@@ -5688,10 +5589,10 @@ static LogicalResult rewriteExpandableLocalArray(
     }
     return getOrCreateScalarizedLocalArrayValue(
         valueByIndex, generatedMaterializations, idx, type, loc, rewriter, tracker,
-        materializationPoint
+        plan.materializationPoint
     );
   };
-  for (Operation *user : users) {
+  for (Operation *user : plan.users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(writeOp);
       valueByIndex[idx] = writeOp.getRvalue();
@@ -5703,7 +5604,7 @@ static LogicalResult rewriteExpandableLocalArray(
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(readOp);
       Type requestedType = readOp.getResult().getType();
-      if (Type materializationType = materializationTypeByRead.lookup(readOp.getOperation())) {
+      if (Type materializationType = plan.materializationTypeByRead.lookup(readOp.getOperation())) {
         requestedType = materializationType;
       }
       rewriter.setInsertionPoint(readOp);
@@ -5763,7 +5664,8 @@ static LogicalResult rewriteExpandableLocalArray(
 /// Rewrite remaining expandable whole-array writes to split members.
 static LogicalResult rewriteExpandableMemberWrites(
     DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
-    PatternRewriter &rewriter, const ConversionTracker &tracker
+    PatternRewriter &rewriter, const ConversionTracker &tracker,
+    const DenseMap<CreateArrayOp, ExpandableArrayPlan> &plans
 ) {
   DenseSet<MemberDefOp> splitMemberSet;
   DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
@@ -5809,7 +5711,11 @@ static LogicalResult rewriteExpandableMemberWrites(
       if (failed(res)) {
         return failure();
       }
-      if (failed(rewriteExpandableLocalArray(createOp, splitMembers, tables, rewriter, tracker))) {
+      auto plan = plans.find(createOp);
+      assert(plan != plans.end() && "expandable array must have passed preflight");
+      if (failed(rewriteExpandableLocalArray(
+              createOp, splitMembers, tables, rewriter, tracker, plan->second
+          ))) {
         return failure();
       }
     }
@@ -5824,7 +5730,7 @@ static LogicalResult rewriteExpandableMemberWrites(
 /// can also be expanded.
 static LogicalResult verifySplitMemberWritesExpandable(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
-    const ConversionTracker &tracker
+    const ConversionTracker &tracker, DenseMap<CreateArrayOp, ExpandableArrayPlan> &plans
 ) {
   DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
   DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
@@ -5881,8 +5787,10 @@ static LogicalResult verifySplitMemberWritesExpandable(
   DominanceInfo domInfo;
 
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
-    auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
-        info.createOp, splitTypesByMember, tables, tracker, "a scalarization candidate"
+    ExpandableArrayPlan candidatePlan;
+    auto verifyNoIncompatibleShares = planExpandableLocalArray(
+        info.createOp, splitTypesByMember, tables, tracker, candidatePlan,
+        "a scalarization candidate"
     );
     if (failed(verifyNoIncompatibleShares)) {
       return failure();
@@ -5925,8 +5833,11 @@ static LogicalResult verifySplitMemberWritesExpandable(
       if (failed(verifyExpandable)) {
         return failure();
       }
-      auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
-          *maybeCreateOp, splitTypesByMember, tables, tracker
+      if (plans.contains(*maybeCreateOp)) {
+        continue;
+      }
+      auto verifyNoIncompatibleShares = planExpandableLocalArray(
+          *maybeCreateOp, splitTypesByMember, tables, tracker, plans[*maybeCreateOp]
       );
       if (failed(verifyNoIncompatibleShares)) {
         return failure();
@@ -5982,7 +5893,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   if (failed(verifyRes)) {
     return failure();
   }
-  if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
+  DenseMap<CreateArrayOp, ExpandableArrayPlan> expandablePlans;
+  if (failed(
+          verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker, expandablePlans)
+      )) {
     return failure();
   }
   auto collectRes = collectSplitTypesByMember(
@@ -6032,7 +5946,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       rewriter.eraseOp(source.getDefiningOp<NonDetOp>());
     }
   }
-  if (failed(rewriteExpandableMemberWrites(splitMembers, tables, rewriter, tracker))) {
+  if (failed(
+          rewriteExpandableMemberWrites(splitMembers, tables, rewriter, tracker, expandablePlans)
+      )) {
     return failure();
   }
   if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter, tracker))) {
