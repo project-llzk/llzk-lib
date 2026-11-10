@@ -358,7 +358,7 @@ static bool refinesRepeatedMemberTypeVar(ArrayRef<std::pair<TypeVarType, Type>> 
   });
 }
 
-/// Reject incompatible requirements connected by shared witnesses and member declarations.
+/// Reject incompatible requirements connected by shared witnesses, members, and external calls.
 /// This only checks unification: a compatible type need not have a representable common refinement.
 /// No conversion or IR mutation occurs while collecting and checking the component.
 class NonDetMemberTypeVerifier {
@@ -471,18 +471,23 @@ public:
       Type normalized;
       Type original;
       Operation *origin;
+      bool external;
     };
     SmallVector<Requirement> requirements;
     DenseSet<Type> seenTypes;
-    auto addRequirement = [&](Type type, Operation *origin) -> LogicalResult {
-      Type comparison = normalize(type, origin);
+    bool hasExternalRequirement = false;
+    auto addRequirement = [&](Type type, Operation *origin,
+                              Operation *declaration = nullptr) -> LogicalResult {
+      bool external = declaration != nullptr;
+      hasExternalRequirement |= external;
+      Type comparison = normalize(type, external ? declaration : origin);
       if (!comparison) {
         return failure();
       }
       if (!seenTypes.insert(comparison).second) {
         return success();
       }
-      requirements.push_back({comparison, type, origin});
+      requirements.push_back({comparison, type, origin, external});
       return success();
     };
     if (extraValue && failed(addRequirement(extraValue.getType(), extraValue.getDefiningOp()))) {
@@ -504,6 +509,20 @@ public:
         for (OpOperand &use : nondet.getResult().getUses()) {
           auto write = dyn_cast<MemberWriteOp>(use.getOwner());
           if (!write || write.getVal() != nondet.getResult()) {
+            if (auto call = dyn_cast<CallOp>(use.getOwner())) {
+              auto callee = call.getCalleeTarget(tables);
+              if (failed(callee)) {
+                return failure();
+              }
+              unsigned argIdx =
+                  use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+              if (argIdx >= call.getArgOperands().size() ||
+                  failed(addRequirement(
+                      callee->get().getFunctionType().getInput(argIdx), call, callee->get()
+                  ))) {
+                return failure();
+              }
+            }
             continue;
           }
           auto member = write.getMemberDefOp(tables);
@@ -528,8 +547,10 @@ public:
         }
       }
     }
-    // A single write has no shared refinement to coordinate; retain its existing verifier errors.
-    if (memberWrites.size() < 2 && !extraValue) {
+    // A single write also needs coordination when an external call observes the witness.
+    // Components without member writes are not refined here.
+    if (!extraValue &&
+        (memberWrites.empty() || (memberWrites.size() < 2 && !hasExternalRequirement))) {
       return success();
     }
     for (size_t i = 0; i < requirements.size(); ++i) {
@@ -538,8 +559,11 @@ public:
         // Unification is not transitive: a generic type may unify with two conflicting types.
         if (!typesUnify(previous.normalized, current.normalized)) {
           auto diagnostic = witness.emitError(
-              "cannot refine shared nondeterministic witness because member writes require "
-              "incompatible types"
+              previous.external || current.external
+                  ? "cannot refine nondeterministic witness because an external call requires an "
+                    "incompatible type"
+                  : "cannot refine shared nondeterministic witness because member writes require "
+                    "incompatible types"
           );
           diagnostic.attachNote(previous.origin->getLoc())
               << "first required type: " << previous.original;
@@ -968,6 +992,24 @@ public:
     if (!canRefineAllMembers) {
       replacementInputType = op.getType();
       refinedMemberDefs.clear();
+    }
+
+    // Ordinary type conversion updates all users consistently. The additional member-driven
+    // refinement below only repairs member writes; it cannot leave other users observing an
+    // obsolete conversion cast or silently split their witness from the member writes.
+    if (replacementInputType != op.getType()) {
+      for (OpOperand &use : op.getResult().getUses()) {
+        auto write = dyn_cast<MemberWriteOp>(use.getOwner());
+        if (!write || write.getVal() != op.getResult()) {
+          auto diagnostic = op.emitError(
+              "cannot refine nondeterministic witness from member writes because it has an "
+              "unsupported external use"
+          );
+          diagnostic.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
+          hadConflict_ = true;
+          return failure();
+        }
+      }
     }
 
     Type newType = getTypeConverter()->convertType(replacementInputType);

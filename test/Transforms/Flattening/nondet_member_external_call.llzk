@@ -1,0 +1,50 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Ordinary type conversion keeps a single witness shared by a compatible call and member write,
+// preserves its attributes, and converts the independently declared callee parameter as well.
+// CHECK:    function.def @consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: index, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_8_Cell>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @item : !struct.type<@TCell_0_8_Cell>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_8_Cell> {test.marker = 42 : i64}
+// CHECK-NEXT:        function.call @consume(%[[VAL_4]], %[[VAL_6]]) : (index, !struct.type<@TCell_0_8_Cell>) -> ()
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@item] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_8_Cell>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    poly.param @M : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N, @M]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N, @M]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N, @M]>>) { function.return }
+    }
+  }
+  function.def @consume(%unused: index, %arg: !struct.type<@TCell::@Cell<[0, 8]>>) { function.return }
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[0, 8]>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %value = llzk.nondet : !struct.type<@TCell::@Cell<[0, 8]>> {test.marker = 42 : i64}
+      %unused = arith.constant 0 : index
+      function.call @consume(%unused, %value) : (index, !struct.type<@TCell::@Cell<[0, 8]>>) -> ()
+      struct.writem %self[@item] = %value : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0, 8]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
