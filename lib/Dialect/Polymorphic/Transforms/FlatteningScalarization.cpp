@@ -143,6 +143,7 @@ static inline bool canReplaceReadResultWithType(
 /// the type-ignoring replacement below.
 static LogicalResult canReplaceReadUsersWithType(
     ReadArrayOp readOp, Type replacementType, SymbolTableCollection &tables,
+    const ConversionTracker &tracker,
     const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp = nullptr
 ) {
   Value result = readOp.getResult();
@@ -294,9 +295,43 @@ static LogicalResult canReplaceReadUsersWithType(
       if (memberRead.getComponent() != result) {
         return failure();
       }
-      // The member-read propagation patterns will update the member result after this receiver
-      // is retagged. Unlike region terminators, a member read does not retain an independent
-      // result-type contract for the old generic receiver type.
+      // Resolve the member on the replacement receiver before changing the operand. A generic
+      // receiver can admit a result type that is incompatible with this particular array index.
+      auto receiverType = llvm::dyn_cast<StructType>(replacementType);
+      if (!receiverType) {
+        return failure();
+      }
+      auto receiver = receiverType.getDefinition(tables, memberRead);
+      if (failed(receiver)) {
+        return failure();
+      }
+      SmallVector<StringRef> receiverNamespace(receiver->getNamespace());
+      auto member = lookupSymbolIn<MemberDefOp>(
+          tables, SymbolRefAttr::get(memberRead.getContext(), memberRead.getMemberName()),
+          std::move(*receiver), memberRead
+      );
+      if (failed(member)) {
+        return failure();
+      }
+      member->prependNamespace(receiverNamespace);
+      Type memberType = member->get().getType();
+      Type readType = memberRead.getVal().getType();
+      // A generic result may follow a legal refinement, provided its own consumers accept it.
+      // Concrete but different result types must be rejected before the array read is erased.
+      auto commonType = getCommonRefinedType(readType, memberType, tracker);
+      Type refinedType = succeeded(commonType) ? *commonType : memberType;
+      if ((!typesUnify(readType, memberType, member->getNamespace()) && failed(commonType)) ||
+          (readType != refinedType &&
+           !canRefineMemberReadUsersToType(memberRead, refinedType, tables, tracker))) {
+        auto diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific receiver "
+            "type is incompatible with a member read"
+        );
+        diag.attachNote(memberRead.getLoc())
+            << "member read requires " << readType << ", but the replacement receiver's member "
+            << "has type " << memberType;
+        return failure();
+      }
       continue;
     }
     if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(user)) {
@@ -925,7 +960,7 @@ static LogicalResult verifyRefreshedCandidateReads(
         return failure();
       }
       auto canReplaceUsers = canReplaceReadUsersWithType(
-          readOp, info.typeByIndex.lookup(idx), tables, &candidateInfoByCreateOp
+          readOp, info.typeByIndex.lookup(idx), tables, tracker, &candidateInfoByCreateOp
       );
       if (failed(canReplaceUsers)) {
         return failure();
@@ -1261,7 +1296,7 @@ static LogicalResult rewriteLocalArray(
       return failure();
     }
     auto canReplaceUsers = canReplaceReadUsersWithType(
-        readOp, info.typeByIndex.lookup(idx), tables, candidateInfoByCreateOp
+        readOp, info.typeByIndex.lookup(idx), tables, tracker, candidateInfoByCreateOp
     );
     if (failed(canReplaceUsers)) {
       return failure();
@@ -1375,7 +1410,7 @@ static LogicalResult rewriteSplitMemberReads(
           )) {
         return failure();
       }
-      if (failed(canReplaceReadUsersWithType(readOp, memberInfo.second, tables))) {
+      if (failed(canReplaceReadUsersWithType(readOp, memberInfo.second, tables, tracker))) {
         return failure();
       }
       MemberReadOp scalarRead;
@@ -1492,7 +1527,7 @@ static LogicalResult verifySplitMemberReadRewritable(
       return diag;
     }
 
-    if (failed(canReplaceReadUsersWithType(readOp, replacementType, tables))) {
+    if (failed(canReplaceReadUsersWithType(readOp, replacementType, tables, tracker))) {
       return failure();
     }
   }
@@ -1853,7 +1888,9 @@ static LogicalResult planExpandableLocalArray(
       if (!canReplaceReadResultWithType(
               readOp, materialization->second.type, tracker, "planExpandableLocalArray"
           ) ||
-          failed(canReplaceReadUsersWithType(readOp, materialization->second.type, tables))) {
+          failed(
+              canReplaceReadUsersWithType(readOp, materialization->second.type, tables, tracker)
+          )) {
         return failure();
       }
     }
@@ -2101,7 +2138,9 @@ static LogicalResult rewriteExpandableLocalArray(
   // consuming this array's read. Recheck those live consumers against the already-planned type;
   // the array's write/read history and common materialization types do not need recomputing.
   for (const auto &[read, finalType] : plan.materializationTypeByRead) {
-    if (failed(canReplaceReadUsersWithType(llvm::cast<ReadArrayOp>(read), finalType, tables))) {
+    if (failed(
+            canReplaceReadUsersWithType(llvm::cast<ReadArrayOp>(read), finalType, tables, tracker)
+        )) {
       return failure();
     }
   }
