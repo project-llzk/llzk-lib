@@ -616,7 +616,7 @@ static bool appendMemberTypeVarBinding(
   return true;
 }
 
-/// Collect type-variable bindings at matching positions within member and observed types.
+/// Collect type-variable bindings at matching positions within member and written types.
 /// Aggregate shapes belong to their members, while each nested type variable denotes a shared
 /// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
 /// When checking a sibling, skip subtrees unrelated to the candidate bindings.
@@ -725,61 +725,6 @@ static bool refinesRepeatedMemberTypeVar(ArrayRef<std::pair<TypeVarType, Type>> 
   return llvm::any_of(bindings, [&](auto binding) {
     return binding.first != binding.second && retained.contains(binding.first);
   });
-}
-
-/// Return whether a member declaration contains more than one occurrence of a type variable.
-static bool hasRepeatedMemberTypeVar(Type type, const ConversionTracker &tracker) {
-  SmallVector<std::pair<TypeVarType, Type>> identities;
-  if (!collectMemberTypeVarBindings(type, type, tracker, identities)) {
-    return false;
-  }
-  DenseSet<TypeVarType> seen;
-  return llvm::any_of(identities, [&](auto binding) { return !seen.insert(binding.first).second; });
-}
-
-/// Keep partial instances in their original nominal family while a repeated binding is unresolved.
-/// Protect the whole participating family: substituting an enclosing template or propagating a
-/// function result can expose another partial instance during conversion. TypeConverter caches
-/// conversions, so discovering only individual protected types during rewriting would be too late.
-static FailureOr<DenseSet<Operation *>>
-collectDeferredMemberStructFamilies(ModuleOp module, const ConversionTracker &tracker) {
-  DenseSet<Operation *> deferred;
-  SymbolTableCollection tables;
-  std::function<void(Type, Operation *)> collect = [&](Type type, Operation *scope) {
-    type.walk([&](StructType structure) {
-      // A language module can refer to the same definition with local and qualified names.
-      if (auto definition = structure.getDefinition(tables, scope, /*reportMissing=*/false);
-          succeeded(definition)) {
-        deferred.insert(definition->get().getOperation());
-      }
-      if (auto preimage = tracker.getPreimage(structure)) {
-        // Tracker entries are use-site types resolved from the pass's root module.
-        collect(*preimage, module);
-      }
-    });
-  };
-  WalkResult result = module.walk([&](MemberWriteOp write) {
-    auto member = write.getMemberDefOp(tables);
-    if (failed(member)) {
-      return WalkResult::interrupt();
-    }
-    Type declaredType = member->get().getType();
-    SmallVector<std::pair<TypeVarType, Type>> bindings;
-    bool resolved =
-        collectMemberTypeVarBindings(declaredType, write.getVal().getType(), tracker, bindings);
-    if (refinesRepeatedMemberTypeVar(bindings) ||
-        (!resolved && hasRepeatedMemberTypeVar(declaredType, tracker))) {
-      // Both sides may have independent concrete parameters; renaming either side would hide
-      // the common family needed to verify the still-generic member write after this pass.
-      collect(declaredType, member->get());
-      collect(write.getVal().getType(), write);
-    }
-    return WalkResult::advance();
-  });
-  if (result.wasInterrupted()) {
-    return failure();
-  }
-  return deferred;
 }
 
 /// Reject incompatible requirements connected by shared witnesses and member declarations.
@@ -1137,19 +1082,6 @@ public:
   StructCloner(ConversionTracker &tracker, ModuleOp root)
       : tracker_(tracker), rootMod(root), symTables() {}
 
-  /// Preserve partial instances of a protected definition, independently of reference spelling.
-  /// Full concrete instantiation remains eligible to verify the resolved binding constraints.
-  bool
-  shouldDeferPartialInstantiation(StructType type, const DenseSet<Operation *> &deferredFamilies) {
-    ArrayAttr params = type.getParams();
-    if (deferredFamilies.empty() || !params ||
-        llvm::all_of(params, [](Attribute param) { return isConcreteAttr<false>(param); })) {
-      return false;
-    }
-    auto definition = type.getDefinition(symTables, rootMod, /*reportMissing=*/false);
-    return succeeded(definition) && deferredFamilies.contains(definition->get().getOperation());
-  }
-
   /// Create a full or partial instantiated clone for `orig`, if `orig` has concrete parameters.
   FailureOr<StructType> createInstantiatedClone(StructType orig) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner] orig: " << orig << '\n');
@@ -1172,16 +1104,13 @@ class DisableReportMissing;
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   ConversionTracker &tracker_;
   StructCloner cloner;
-  const DenseSet<Operation *> &deferredMemberStructFamilies;
 
   friend DisableReportMissing;
 
 public:
   /// Build a type converter that instantiates parameterized struct uses on demand.
-  ParameterizedStructUseTypeConverter(
-      ConversionTracker &tracker, ModuleOp root, const DenseSet<Operation *> &deferredFamilies
-  )
-      : tracker_(tracker), cloner(tracker, root), deferredMemberStructFamilies(deferredFamilies) {
+  ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
+      : tracker_(tracker), cloner(tracker, root) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -1190,10 +1119,6 @@ public:
           llvm::dbgs() << "[ParameterizedStructUseTypeConverter] attempting conversion of "
                        << inputTy << '\n';
       );
-      // Preserve nominal compatibility until repeated member bindings can resolve together.
-      if (cloner.shouldDeferPartialInstantiation(inputTy, deferredMemberStructFamilies)) {
-        return inputTy;
-      }
       // First check for a cached entry
       if (auto opt = tracker_.getInstantiation(inputTy)) {
         return opt.value();
@@ -1495,11 +1420,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     return failure();
   }
   bool hadConflict = false;
-  auto deferredFamilies = collectDeferredMemberStructFamilies(modOp, tracker);
-  if (failed(deferredFamilies)) {
-    return failure();
-  }
-  ParameterizedStructUseTypeConverter tyConv(tracker, modOp, *deferredFamilies);
+  ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   DisableReportMissing drm(tyConv);
   ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
   target.addDynamicallyLegalOp<NonDetOp>([&tyConv](Operation *op) {
@@ -6524,6 +6445,8 @@ public:
     if (!collectMemberTypeVarBindings(op.getType(), newType, tracker_, candidateBindings)) {
       return failure();
     }
+    // Later iterations can instantiate callers already present in this module. Keep repeated
+    // bindings correlated until those callers have been checked.
     if (refinesRepeatedMemberTypeVar(candidateBindings)) {
       return failure();
     }
@@ -6561,37 +6484,22 @@ public:
         if (!referencesMemberTypeVar(sibling.getType(), &sharedBindings, tracker_)) {
           continue;
         }
-        bool hasBindingEvidence = false;
         if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
           for (SymbolTable::SymbolUse siblingUse : siblingUses.value()) {
             auto siblingWrite = llvm::dyn_cast<MemberWriteOp>(siblingUse.getUser());
-            auto siblingRead = llvm::dyn_cast<MemberReadOp>(siblingUse.getUser());
-            if (!siblingWrite && !siblingRead) {
+            if (!siblingWrite) {
               continue;
             }
-            Type observedType =
-                siblingWrite ? siblingWrite.getVal().getType() : siblingRead.getVal().getType();
             SmallVector<std::pair<TypeVarType, Type>> siblingBindings;
             if (!collectMemberTypeVarBindings(
-                    sibling.getType(), observedType, tracker_, siblingBindings, &sharedBindings
+                    sibling.getType(), siblingWrite.getVal().getType(), tracker_, siblingBindings,
+                    &sharedBindings
                 )) {
               return failure();
             }
-            hasBindingEvidence |= !siblingBindings.empty();
             for (auto [variable, binding] : siblingBindings) {
               auto it = sharedBindings.find(variable);
               if (it == sharedBindings.end()) {
-                continue;
-              }
-              if (siblingRead) {
-                // A read must retain the binding being removed from the other declaration.
-                // Mere compatibility is insufficient: an unresolved or less-specific read
-                // could accept a later instantiation that contradicts this member's write.
-                if (!Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
-                        it->second, binding, tracker_, "UpdateMemberDefTypeFromWrite"
-                    )) {
-                  return failure();
-                }
                 continue;
               }
               auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
@@ -6613,12 +6521,6 @@ public:
               it->second = *commonType;
             }
           }
-        }
-        // An unused read may disappear before this pattern runs. The sibling declaration still
-        // contains the shared variable, so retain its equality until some use preserves the
-        // binding.
-        if (!hasBindingEvidence) {
-          return failure();
         }
       }
     }

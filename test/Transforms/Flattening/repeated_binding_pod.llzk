@@ -1,14 +1,10 @@
 // RUN: split-file %s %t
-// RUN: llzk-opt -llzk-flatten %t/generic.llzk > %t/flattened.llzk
-// RUN: FileCheck %s --check-prefix=GENERIC < %t/flattened.llzk
-// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/felt.llzk > %t/direct-felt.llzk
-// RUN: llzk-opt -llzk-flatten %t/direct-felt.llzk | FileCheck %s --check-prefix=FELT
-// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/felt.llzk > %t/staged-felt.llzk
-// RUN: llzk-opt -llzk-flatten %t/staged-felt.llzk | FileCheck %s --check-prefix=FELT
-// RUN: python3 %S/Inputs/append_module_body.py %t/generic.llzk %t/index.llzk > %t/direct-index.llzk
-// RUN: not llzk-opt -llzk-flatten %t/direct-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
-// RUN: python3 %S/Inputs/append_module_body.py %t/flattened.llzk %t/index.llzk > %t/staged-index.llzk
-// RUN: not llzk-opt -llzk-flatten %t/staged-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: cat %t/generic.llzk %t/felt.llzk > %t/complete-felt.llzk
+// RUN: llzk-opt -llzk-flatten %t/complete-felt.llzk | FileCheck %s --check-prefix=FELT
+// RUN: cat %t/generic.llzk %t/index.llzk > %t/complete-index.llzk
+// RUN: not llzk-opt -llzk-flatten %t/complete-index.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+
+// Assemble each complete module before flattening; all instantiation sites are visible.
 
 //--- generic.llzk
 // A repeated T identity must keep its relationship with the other occurrence of T.
@@ -25,29 +21,13 @@ module attributes {llzk.lang} {
       function.def @constrain(%self: !struct.type<@RepeatedIdentity::@Holder<[@T]>>, %input: !pod.type<[@a: !poly.tvar<@T>, @b: !felt.type]>) { function.return }
     }
   }
-}
-// GENERIC-LABEL: module attributes {llzk.lang} {
-// GENERIC-NEXT:    poly.template @RepeatedIdentity {
-// GENERIC-NEXT:      poly.param @T
-// GENERIC-NEXT:      struct.def @Holder {
-// GENERIC-NEXT:        struct.member @pair : !pod.type<[@a: !poly.tvar<@T>, @b: !poly.tvar<@T>]>
-// GENERIC-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !pod.type<[@a: !poly.tvar<@T>, @b: !felt.type]>) -> !struct.type<@RepeatedIdentity::@Holder<[@T]>> attributes {function.allow_witness} {
-// GENERIC-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedIdentity::@Holder<[@T]>>
-// GENERIC-NEXT:          struct.writem %[[VAL_1]][@pair] = %[[VAL_0]] : <@RepeatedIdentity::@Holder<[@T]>>, !pod.type<[@a: !poly.tvar<@T>, @b: !felt.type]>
-// GENERIC-NEXT:          function.return %[[VAL_1]] : !struct.type<@RepeatedIdentity::@Holder<[@T]>>
-// GENERIC-NEXT:        }
-// GENERIC-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedIdentity::@Holder<[@T]>>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !pod.type<[@a: !poly.tvar<@T>, @b: !felt.type]>) attributes {function.allow_constraint} {
-// GENERIC-NEXT:          function.return
-// GENERIC-NEXT:        }
-// GENERIC-NEXT:      }
-// GENERIC-NEXT:    }
-// GENERIC-NEXT:  }
 
 //--- felt.llzk
   function.def @entry(%input: !pod.type<[@a: !felt.type, @b: !felt.type]>) -> !struct.type<@RepeatedIdentity::@Holder<[!felt.type]>> attributes {function.allow_witness} {
     %result = function.call @RepeatedIdentity::@Holder::@compute(%input) : (!pod.type<[@a: !felt.type, @b: !felt.type]>) -> !struct.type<@RepeatedIdentity::@Holder<[!felt.type]>>
     function.return %result : !struct.type<@RepeatedIdentity::@Holder<[!felt.type]>>
   }
+}
 // FELT-LABEL: module attributes {llzk.lang} {
 // FELT-NEXT:    struct.def @RepeatedIdentity_f_Holder {
 // FELT-NEXT:      struct.member @pair : !pod.type<[@a: !felt.type, @b: !felt.type]>
@@ -71,4 +51,5 @@ module attributes {llzk.lang} {
     %result = function.call @RepeatedIdentity::@Holder::@compute(%input) : (!pod.type<[@a: index, @b: !felt.type]>) -> !struct.type<@RepeatedIdentity::@Holder<[index]>>
     function.return %result : !struct.type<@RepeatedIdentity::@Holder<[index]>>
   }
+}
 // INDEX: error: 'struct.writem' op has wrong type; expected '!pod.type<[@a: index, @b: index]>', got '!pod.type<[@a: index, @b: !felt.type]>'

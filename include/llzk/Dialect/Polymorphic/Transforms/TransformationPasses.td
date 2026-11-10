@@ -219,6 +219,9 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     - Clean up unused parameterized definitions according to the selected
       cleanup mode, remove empty templates, and remove unused discardable
       array allocations.
+
+    Note: Adding IR after this pass and rerunning it is not a supported
+    instantiation workflow.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.
