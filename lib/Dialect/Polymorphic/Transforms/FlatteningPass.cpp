@@ -3553,6 +3553,64 @@ static bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
   return typesUnify(lhsArrayType.getElementType(), rhsType);
 }
 
+/// Array store operands supported by a consumer check. Reads and extracts have different contracts.
+enum class ArrayStoreKind { None, Element, Subarray };
+
+/// Look up an independently declared consumer type after validating the operand's role.
+/// Callers choose which array stores they support and how to compare the returned type; this
+/// lookup does not decide whether equality, unification, or downstream propagation is required.
+static FailureOr<Type> getConsumerRequiredType(
+    OpOperand &use, SymbolTableCollection &tables, ArrayStoreKind arrayStore = ArrayStoreKind::None
+) {
+  Operation *user = use.getOwner();
+  Value value = use.get();
+  if (auto memberWrite = dyn_cast<MemberWriteOp>(user)) {
+    if (memberWrite.getVal() != value) {
+      return failure();
+    }
+    auto memberDef = memberWrite.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    return memberDef->get().getType();
+  }
+  if (auto call = dyn_cast<CallOp>(user)) {
+    unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+    if (argIdx >= call.getArgOperands().size()) {
+      return failure();
+    }
+    auto callee = call.getCalleeTarget(tables);
+    if (failed(callee)) {
+      return failure();
+    }
+    return callee->get().getFunctionType().getInput(argIdx);
+  }
+  if (auto returnOp = dyn_cast<ReturnOp>(user)) {
+    FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
+    TypeRange resultTypes = function.getFunctionType().getResults();
+    unsigned resultIdx = use.getOperandNumber();
+    if (resultIdx >= resultTypes.size()) {
+      return failure();
+    }
+    return resultTypes[resultIdx];
+  }
+  if (auto castOp = dyn_cast<UnifiableCastOp>(user)) {
+    if (castOp.getInput() != value) {
+      return failure();
+    }
+    return castOp.getResult().getType();
+  }
+  if (auto write = dyn_cast<WriteArrayOp>(user);
+      write && arrayStore == ArrayStoreKind::Element && write.getRvalue() == value) {
+    return write.getArrRefType().getElementType();
+  }
+  if (auto insert = dyn_cast<InsertArrayOp>(user);
+      insert && arrayStore == ArrayStoreKind::Subarray && insert.getRvalue() == value) {
+    return insert.getArrRefType().getSelectionType(insert.getIndices().size());
+  }
+  return failure();
+}
+
 /// Return true iff typed users of `array.new` can accept a refined result type.
 ///
 /// Retagging an array result updates its SSA value globally. Fully concrete consumers are not
@@ -3564,38 +3622,12 @@ static bool canRefineCreateArrayUsersToType(
   for (OpOperand &use : result.getUses()) {
     Operation *user = use.getOwner();
     Type requiredType;
-    if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
-      if (memberWrite.getVal() != result) {
+    if (isa<MemberWriteOp, CallOp, ReturnOp, UnifiableCastOp>(user)) {
+      auto requirement = getConsumerRequiredType(use, tables);
+      if (failed(requirement)) {
         return false;
       }
-      auto memberDef = memberWrite.getMemberDefOp(tables);
-      if (failed(memberDef)) {
-        return false;
-      }
-      requiredType = memberDef->get().getType();
-    } else if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
-      unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
-      if (argIdx >= call.getArgOperands().size()) {
-        return false;
-      }
-      auto callee = call.getCalleeTarget(tables);
-      if (failed(callee)) {
-        return false;
-      }
-      requiredType = callee->get().getFunctionType().getInput(argIdx);
-    } else if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(user)) {
-      FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
-      unsigned resultIdx = use.getOperandNumber();
-      TypeRange resultTypes = function.getFunctionType().getResults();
-      if (resultIdx >= resultTypes.size()) {
-        return false;
-      }
-      requiredType = resultTypes[resultIdx];
-    } else if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(user)) {
-      if (castOp.getInput() != result) {
-        return false;
-      }
-      requiredType = castOp.getResult().getType();
+      requiredType = *requirement;
     } else if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
       if (arrayWrite.getArrRef() != result) {
         return false;
@@ -3631,49 +3663,11 @@ static bool canRefineCreateArrayUsersToType(
       // subsequent array write that observes the read.
       Type refinedElementType = mlir::cast<ArrayType>(refinedType).getElementType();
       for (OpOperand &readUse : arrayRead.getResult().getUses()) {
-        Operation *readUser = readUse.getOwner();
-        Type readRequiredType;
-        if (CallOp readCall = llvm::dyn_cast<CallOp>(readUser)) {
-          unsigned argIdx =
-              readUse.getOperandNumber() - readCall.getArgOperands().getBeginOperandIndex();
-          if (argIdx >= readCall.getArgOperands().size()) {
-            return false;
-          }
-          auto callee = readCall.getCalleeTarget(tables);
-          if (failed(callee)) {
-            return false;
-          }
-          readRequiredType = callee->get().getFunctionType().getInput(argIdx);
-        } else if (ReturnOp readReturn = llvm::dyn_cast<ReturnOp>(readUser)) {
-          FuncDefOp function = readReturn->getParentOfType<FuncDefOp>();
-          unsigned resultIdx = readUse.getOperandNumber();
-          TypeRange resultTypes = function.getFunctionType().getResults();
-          if (resultIdx >= resultTypes.size()) {
-            return false;
-          }
-          readRequiredType = resultTypes[resultIdx];
-        } else if (UnifiableCastOp readCast = llvm::dyn_cast<UnifiableCastOp>(readUser)) {
-          if (readCast.getInput() != arrayRead.getResult()) {
-            return false;
-          }
-          readRequiredType = readCast.getResult().getType();
-        } else if (MemberWriteOp readMemberWrite = llvm::dyn_cast<MemberWriteOp>(readUser)) {
-          if (readMemberWrite.getVal() != arrayRead.getResult()) {
-            return false;
-          }
-          auto memberDef = readMemberWrite.getMemberDefOp(tables);
-          if (failed(memberDef)) {
-            return false;
-          }
-          readRequiredType = memberDef->get().getType();
-        } else if (WriteArrayOp readArrayWrite = llvm::dyn_cast<WriteArrayOp>(readUser)) {
-          if (readArrayWrite.getRvalue() != arrayRead.getResult()) {
-            return false;
-          }
-          readRequiredType = readArrayWrite.getArrRefType().getElementType();
-        } else {
+        auto requirement = getConsumerRequiredType(readUse, tables, ArrayStoreKind::Element);
+        if (failed(requirement)) {
           return false;
         }
+        Type readRequiredType = *requirement;
         if (readRequiredType != refinedElementType &&
             isFullyConcreteArrayConsumerType(readRequiredType)) {
           return false;
@@ -3691,51 +3685,11 @@ static bool canRefineCreateArrayUsersToType(
       Type refinedExtractType =
           mlir::cast<ArrayType>(refinedType).getSelectionType(arrayExtract.getIndices().size());
       for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
-        Operation *extractUser = extractUse.getOwner();
-        Type extractRequiredType;
-        if (CallOp extractCall = llvm::dyn_cast<CallOp>(extractUser)) {
-          unsigned argIdx =
-              extractUse.getOperandNumber() - extractCall.getArgOperands().getBeginOperandIndex();
-          if (argIdx >= extractCall.getArgOperands().size()) {
-            return false;
-          }
-          auto callee = extractCall.getCalleeTarget(tables);
-          if (failed(callee)) {
-            return false;
-          }
-          extractRequiredType = callee->get().getFunctionType().getInput(argIdx);
-        } else if (ReturnOp extractReturn = llvm::dyn_cast<ReturnOp>(extractUser)) {
-          FuncDefOp function = extractReturn->getParentOfType<FuncDefOp>();
-          unsigned resultIdx = extractUse.getOperandNumber();
-          TypeRange resultTypes = function.getFunctionType().getResults();
-          if (resultIdx >= resultTypes.size()) {
-            return false;
-          }
-          extractRequiredType = resultTypes[resultIdx];
-        } else if (UnifiableCastOp extractCast = llvm::dyn_cast<UnifiableCastOp>(extractUser)) {
-          if (extractCast.getInput() != arrayExtract.getResult()) {
-            return false;
-          }
-          extractRequiredType = extractCast.getResult().getType();
-        } else if (MemberWriteOp extractMemberWrite = llvm::dyn_cast<MemberWriteOp>(extractUser)) {
-          if (extractMemberWrite.getVal() != arrayExtract.getResult()) {
-            return false;
-          }
-          auto memberDef = extractMemberWrite.getMemberDefOp(tables);
-          if (failed(memberDef)) {
-            return false;
-          }
-          extractRequiredType = memberDef->get().getType();
-        } else if (InsertArrayOp extractArrayInsert = llvm::dyn_cast<InsertArrayOp>(extractUser)) {
-          if (extractArrayInsert.getRvalue() != arrayExtract.getResult()) {
-            return false;
-          }
-          extractRequiredType = extractArrayInsert.getArrRefType().getSelectionType(
-              extractArrayInsert.getIndices().size()
-          );
-        } else {
+        auto requirement = getConsumerRequiredType(extractUse, tables, ArrayStoreKind::Subarray);
+        if (failed(requirement)) {
           return false;
         }
+        Type extractRequiredType = *requirement;
         if (extractRequiredType != refinedExtractType) {
           return false;
         }
@@ -3914,55 +3868,18 @@ static bool canRefineMemberReadUsersToType(
       // type. Validate its independently declared users first: propagation does not retarget a
       // concrete consumer of that inferred result.
       for (OpOperand &arrayReadUse : arrayRead.getResult().getUses()) {
-        Operation *arrayReadUser = arrayReadUse.getOwner();
-        Type requiredType;
-        if (CallOp call = llvm::dyn_cast<CallOp>(arrayReadUser)) {
-          unsigned argIdx =
-              arrayReadUse.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
-          if (argIdx >= call.getArgOperands().size()) {
-            return false;
-          }
-          auto callee = call.getCalleeTarget(tables);
-          if (failed(callee)) {
-            return false;
-          }
-          requiredType = callee->get().getFunctionType().getInput(argIdx);
-        } else if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(arrayReadUser)) {
-          FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
-          unsigned resultIdx = arrayReadUse.getOperandNumber();
-          TypeRange resultTypes = function.getFunctionType().getResults();
-          if (resultIdx >= resultTypes.size()) {
-            return false;
-          }
-          requiredType = resultTypes[resultIdx];
-        } else if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(arrayReadUser)) {
-          if (castOp.getInput() != arrayRead.getResult()) {
-            return false;
-          }
-          requiredType = castOp.getResult().getType();
-        } else if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(arrayReadUser)) {
-          if (memberWrite.getVal() != arrayRead.getResult()) {
-            return false;
-          }
-          auto memberDef = memberWrite.getMemberDefOp(tables);
-          if (failed(memberDef)) {
-            return false;
-          }
-          requiredType = memberDef->get().getType();
-        } else if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(arrayReadUser)) {
-          if (arrayWrite.getRvalue() != arrayRead.getResult()) {
-            return false;
-          }
-          requiredType = arrayWrite.getArrRefType().getElementType();
-        } else if (MemberReadOp memberRead = llvm::dyn_cast<MemberReadOp>(arrayReadUser)) {
+        if (auto memberRead = dyn_cast<MemberReadOp>(arrayReadUse.getOwner())) {
           if (memberRead.getComponent() != arrayRead.getResult()) {
             return false;
           }
-          // The member-read propagation patterns retag this result after its receiver changes.
+          // Propagation retags this result after its receiver changes.
           continue;
-        } else {
+        }
+        auto requirement = getConsumerRequiredType(arrayReadUse, tables, ArrayStoreKind::Element);
+        if (failed(requirement)) {
           return false;
         }
+        Type requiredType = *requirement;
         if (requiredType != refinedArrayType.getElementType() &&
             isFullyConcreteArrayConsumerType(requiredType)) {
           return false;
@@ -3982,50 +3899,11 @@ static bool canRefineMemberReadUsersToType(
       // not retargeted by propagation, so they must already require the selected subarray type.
       Type refinedExtractType = refinedArrayType.getSelectionType(arrayExtract.getIndices().size());
       for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
-        Operation *extractUser = extractUse.getOwner();
-        Type requiredType;
-        if (CallOp call = llvm::dyn_cast<CallOp>(extractUser)) {
-          unsigned argIdx =
-              extractUse.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
-          if (argIdx >= call.getArgOperands().size()) {
-            return false;
-          }
-          auto callee = call.getCalleeTarget(tables);
-          if (failed(callee)) {
-            return false;
-          }
-          requiredType = callee->get().getFunctionType().getInput(argIdx);
-        } else if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(extractUser)) {
-          FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
-          unsigned resultIdx = extractUse.getOperandNumber();
-          TypeRange resultTypes = function.getFunctionType().getResults();
-          if (resultIdx >= resultTypes.size()) {
-            return false;
-          }
-          requiredType = resultTypes[resultIdx];
-        } else if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(extractUser)) {
-          if (castOp.getInput() != arrayExtract.getResult()) {
-            return false;
-          }
-          requiredType = castOp.getResult().getType();
-        } else if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(extractUser)) {
-          if (memberWrite.getVal() != arrayExtract.getResult()) {
-            return false;
-          }
-          auto memberDef = memberWrite.getMemberDefOp(tables);
-          if (failed(memberDef)) {
-            return false;
-          }
-          requiredType = memberDef->get().getType();
-        } else if (InsertArrayOp arrayInsert = llvm::dyn_cast<InsertArrayOp>(extractUser)) {
-          if (arrayInsert.getRvalue() != arrayExtract.getResult()) {
-            return false;
-          }
-          requiredType =
-              arrayInsert.getArrRefType().getSelectionType(arrayInsert.getIndices().size());
-        } else {
+        auto requirement = getConsumerRequiredType(extractUse, tables, ArrayStoreKind::Subarray);
+        if (failed(requirement)) {
           return false;
         }
+        Type requiredType = *requirement;
         if (requiredType != refinedExtractType) {
           return false;
         }
