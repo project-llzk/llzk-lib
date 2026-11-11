@@ -34,8 +34,8 @@ module attributes {llzk.lang} {
     %a = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
     %b = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
     %array = array.new %a, %b : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    %read0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
     // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
+    %read0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
     %read1 = array.read %array[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
     // expected-note@+1 {{replacement call signature}}
     function.call @Match::@consume(%read0, %read1) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()

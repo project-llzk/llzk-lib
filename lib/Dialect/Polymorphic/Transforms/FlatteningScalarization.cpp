@@ -986,37 +986,24 @@ static Type getReadReplacementType(
   return info.typeByIndex.lookup(idx);
 }
 
-/// Verify that dependent candidates and shared witnesses preserve every direct read replacement.
-///
-/// A candidate can cache a generic read from another candidate as the value for one of its
-/// indices. Refreshing the cache replaces that generic value and type with the upstream
-/// candidate's concrete scalar value. Recheck all local reads before any candidates are rewritten
-/// so an incompatible replacement cannot fail after earlier candidates have been erased.
-static LogicalResult verifyRefreshedCandidateReads(
-    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
-    const ConversionTracker &tracker,
+/// Check all planned scalar reads together, including dependencies exposed by earlier candidates.
+/// Companion operands must use their eventual types even when they come from another array or
+/// from a member that will be split later in the rewrite.
+static LogicalResult verifyPlannedReadUsers(
+    ModuleOp module, SymbolTableCollection &tables, const ConversionTracker &tracker,
     const DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp,
     const DenseMap<Value, Type> &plannedReadTypes
 ) {
-  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
-    for (ReadArrayOp readOp : info.reads) {
-      ArrayAttr idx = getIndexAsAttr(readOp);
-      if (!idx) {
-        return failure();
-      }
-      Type replacementType = plannedReadTypes.lookup(readOp.getResult());
-      bool canReplaceResult = canReplaceReadResultWithType(
-          readOp, replacementType, tracker, "verifyRefreshedCandidateReads"
-      );
-      if (!canReplaceResult) {
-        return failure();
-      }
-      auto canReplaceUsers = canReplaceReadUsersWithType(
-          readOp, replacementType, tables, tracker, &candidateInfoByCreateOp, &plannedReadTypes
-      );
-      if (failed(canReplaceUsers)) {
-        return failure();
-      }
+  for (ReadArrayOp read : walkCollect<ReadArrayOp>(module)) {
+    Type replacement = plannedReadTypes.lookup(read.getResult());
+    if (!replacement) {
+      continue;
+    }
+    if (!canReplaceReadResultWithType(read, replacement, tracker, "verifyPlannedReadUsers") ||
+        failed(canReplaceReadUsersWithType(
+            read, replacement, tables, tracker, &candidateInfoByCreateOp, &plannedReadTypes
+        ))) {
+      return failure();
     }
   }
   return success();
@@ -1411,7 +1398,8 @@ static LogicalResult rewriteLocalArray(
 /// is exactly the invalid representation this step removes.
 static LogicalResult rewriteSplitMemberReads(
     ModuleOp modOp, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
-    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
+    const DenseMap<Value, Type> &plannedReadTypes
 ) {
   for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
     auto memberDef = memberReadOp.getMemberDefOp(tables);
@@ -1458,7 +1446,9 @@ static LogicalResult rewriteSplitMemberReads(
           )) {
         return failure();
       }
-      if (failed(canReplaceReadUsersWithType(readOp, memberInfo.second, tables, tracker))) {
+      if (failed(canReplaceReadUsersWithType(
+              readOp, memberInfo.second, tables, tracker, nullptr, &plannedReadTypes
+          ))) {
         return failure();
       }
       MemberReadOp scalarRead;
@@ -1528,10 +1518,10 @@ static LogicalResult collectSplitTypesByMember(
   return success();
 }
 
-/// Verify one read of an array-typed member before the defining member is split.
-static LogicalResult verifySplitMemberReadRewritable(
+/// Plan one read of an array-typed member before validating its consumers with all companions.
+static LogicalResult planSplitMemberRead(
     MemberReadOp memberReadOp, MemberDefOp member, const DenseMap<ArrayAttr, Type> &splitTypes,
-    SymbolTableCollection &tables, const ConversionTracker &tracker
+    const ConversionTracker &tracker, DenseMap<Value, Type> &plannedReadTypes
 ) {
   for (Operation *user : memberReadOp.getResult().getUsers()) {
     auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
@@ -1564,9 +1554,7 @@ static LogicalResult verifySplitMemberReadRewritable(
       return diag;
     }
 
-    if (!canReplaceReadResultWithType(
-            readOp, replacementType, tracker, "verifySplitMemberReadsRewritable"
-        )) {
+    if (!canReplaceReadResultWithType(readOp, replacementType, tracker, "planSplitMemberReads")) {
       InFlightDiagnostic diag = readOp.emitError(
           "cannot split heterogeneous array member because a read result type is incompatible "
           "with the split scalar member type"
@@ -1575,17 +1563,16 @@ static LogicalResult verifySplitMemberReadRewritable(
       return diag;
     }
 
-    if (failed(canReplaceReadUsersWithType(readOp, replacementType, tables, tracker))) {
-      return failure();
-    }
+    plannedReadTypes[readOp.getResult()] = replacementType;
   }
   return success();
 }
 
-/// Verify reads of array-typed members before their defining members are split.
-static LogicalResult verifySplitMemberReadsRewritable(
+/// Gather the final scalar types of reads through every member that will be split.
+static LogicalResult planSplitMemberReads(
     ModuleOp modOp, const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
-    SymbolTableCollection &tables, const ConversionTracker &tracker
+    SymbolTableCollection &tables, const ConversionTracker &tracker,
+    DenseMap<Value, Type> &plannedReadTypes
 ) {
   for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
     auto memberDef = memberReadOp.getMemberDefOp(tables);
@@ -1596,8 +1583,8 @@ static LogicalResult verifySplitMemberReadsRewritable(
     if (splitIt == splitTypesByMember.end()) {
       continue;
     }
-    auto verifyRes = verifySplitMemberReadRewritable(
-        memberReadOp, memberDef->get(), splitIt->second, tables, tracker
+    auto verifyRes = planSplitMemberRead(
+        memberReadOp, memberDef->get(), splitIt->second, tracker, plannedReadTypes
     );
     if (failed(verifyRes)) {
       return failure();
@@ -1983,8 +1970,7 @@ static LogicalResult planExpandableLocalArray(
     return success();
   };
   // The rewrite replaces every read in one array-value lifetime with the same materialized
-  // scalar value. Check the final type against both the read result and its typed consumers before
-  // any candidate or expandable array rewrite can erase an earlier read.
+  // scalar value. Record its final type now; consumer validation waits for the complete plan.
   auto verifyMaterializedReadUsers = [&](ArrayAttr idx) -> LogicalResult {
     auto materialization = firstMaterializedUseByIndex.find(idx);
     if (materialization == firstMaterializedUseByIndex.end()) {
@@ -1994,9 +1980,6 @@ static LogicalResult planExpandableLocalArray(
       plan.materializationTypeByRead[readOp] = materialization->second.type;
       if (!canReplaceReadResultWithType(
               readOp, materialization->second.type, tracker, "planExpandableLocalArray"
-          ) ||
-          failed(
-              canReplaceReadUsersWithType(readOp, materialization->second.type, tables, tracker)
           )) {
         return failure();
       }
@@ -2177,7 +2160,7 @@ static LogicalResult planExpandableLocalArray(
 static LogicalResult rewriteExpandableLocalArray(
     CreateArrayOp createOp, const DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
-    const ExpandableArrayPlan &plan
+    const ExpandableArrayPlan &plan, const DenseMap<Value, Type> &plannedReadTypes
 ) {
   ArrayRef<ArrayAttr> indices = plan.indices;
 
@@ -2240,9 +2223,9 @@ static LogicalResult rewriteExpandableLocalArray(
   // consuming this array's read. Recheck those live consumers against the already-planned type;
   // the array's write/read history and common materialization types do not need recomputing.
   for (const auto &[read, finalType] : plan.materializationTypeByRead) {
-    if (failed(
-            canReplaceReadUsersWithType(llvm::cast<ReadArrayOp>(read), finalType, tables, tracker)
-        )) {
+    if (failed(canReplaceReadUsersWithType(
+            llvm::cast<ReadArrayOp>(read), finalType, tables, tracker, nullptr, &plannedReadTypes
+        ))) {
       return failure();
     }
   }
@@ -2332,7 +2315,8 @@ static LogicalResult rewriteExpandableLocalArray(
 static LogicalResult rewriteExpandableMemberWrites(
     DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
     PatternRewriter &rewriter, const ConversionTracker &tracker,
-    const DenseMap<CreateArrayOp, ExpandableArrayPlan> &plans
+    const DenseMap<CreateArrayOp, ExpandableArrayPlan> &plans,
+    const DenseMap<Value, Type> &plannedReadTypes
 ) {
   DenseSet<MemberDefOp> splitMemberSet;
   DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
@@ -2381,7 +2365,7 @@ static LogicalResult rewriteExpandableMemberWrites(
       auto plan = plans.find(createOp);
       assert(plan != plans.end() && "expandable array must have passed preflight");
       if (failed(rewriteExpandableLocalArray(
-              createOp, splitMembers, tables, rewriter, tracker, plan->second
+              createOp, splitMembers, tables, rewriter, tracker, plan->second, plannedReadTypes
           ))) {
         return failure();
       }
@@ -2566,8 +2550,7 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
   auto collectRes = collectSplitTypesByMember(
       arraysToScalarize, tables, splitIndicesByMember, splitTypesByMember, tracker
   );
-  if (failed(collectRes) ||
-      failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
+  if (failed(collectRes)) {
     return failure();
   }
   DenseMap<Value, Type> specializedTypeByNondet;
@@ -2583,9 +2566,18 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
           getReadReplacementType(readOp, info, specializedTypeByNondet);
     }
   }
-  if (failed(verifyRefreshedCandidateReads(
-          arraysToScalarize, tables, tracker, candidateInfoByCreateOp, plannedReadTypes
-      ))) {
+  for (const auto &[create, plan] : expandablePlans) {
+    for (const auto &[read, type] : plan.materializationTypeByRead) {
+      plannedReadTypes[llvm::cast<ReadArrayOp>(read).getResult()] = type;
+    }
+  }
+  if (failed(planSplitMemberReads(modOp, splitTypesByMember, tables, tracker, plannedReadTypes))) {
+    return failure();
+  }
+  extendPendingRefinements(modOp, plannedReadTypes, tracker);
+  if (failed(
+          verifyPlannedReadUsers(modOp, tables, tracker, candidateInfoByCreateOp, plannedReadTypes)
+      )) {
     return failure();
   }
   auto externalCalls =
@@ -2623,12 +2615,14 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
       rewriter.eraseOp(source.getDefiningOp<NonDetOp>());
     }
   }
-  if (failed(
-          rewriteExpandableMemberWrites(splitMembers, tables, rewriter, tracker, expandablePlans)
-      )) {
+  if (failed(rewriteExpandableMemberWrites(
+          splitMembers, tables, rewriter, tracker, expandablePlans, plannedReadTypes
+      ))) {
     return failure();
   }
-  if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter, tracker))) {
+  if (failed(
+          rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter, tracker, plannedReadTypes)
+      )) {
     return failure();
   }
   eraseUnusedOriginalMembers(splitMembers, rewriter);
