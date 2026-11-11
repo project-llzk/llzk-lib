@@ -1,0 +1,24 @@
+// RUN: llzk-opt -llzk-flatten %s -o /dev/null
+
+// The outer lookup root may remain anonymous. Nested roots can be reached
+// through named ordinary modules, and identical local names remain independent.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : <@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  module @Outer {
+    module @Lib attributes {llzk.lang} {
+      struct.def @Cell {
+        function.def @compute() -> !struct.type<@Cell> {
+          %self = struct.new : <@Cell>
+          function.return %self : !struct.type<@Cell>
+        }
+        function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+      }
+    }
+  }
+}

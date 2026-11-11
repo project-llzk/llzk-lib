@@ -3708,6 +3708,30 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
   /// Execute the full flattening pipeline until it reaches a fixpoint or the iteration limit.
   inline LogicalResult runOn(ModuleOp modOp) {
+    // The shared instantiation cache names nested lookup roots relative to this module.
+    // A language marker permits local lookup from an anonymous root, but does not make that
+    // root (or an unnamed intervening table) addressable from the pass's outer module.
+    WalkResult rootPaths = modOp.walk([&](ModuleOp nested) {
+      if (nested == modOp || !nested->hasAttr(LANG_ATTR_NAME)) {
+        return WalkResult::advance();
+      }
+      auto symbol = dyn_cast<SymbolOpInterface>(nested.getOperation());
+      if (!symbol) {
+        nested.emitOpError(
+            "cannot flatten an unnamed nested lookup root; nested modules "
+            "must have a name"
+        );
+        return WalkResult::interrupt();
+      }
+      auto path = getPathRelativeToAncestor(symbol, modOp, [&]() {
+        return nested.emitOpError("nested lookup root");
+      });
+      return failed(path) ? WalkResult::interrupt() : WalkResult::advance();
+    });
+    if (rootPaths.wasInterrupted()) {
+      return failure();
+    }
+
     FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
     // If the cleanup mode is set to remove anything not reachable from the main struct, do an
     // initial pass to remove things that are not reachable (as an optimization) because creating

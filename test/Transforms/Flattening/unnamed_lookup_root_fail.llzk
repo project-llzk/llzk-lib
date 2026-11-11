@@ -1,0 +1,36 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// A language marker permits lookup within this root, but does not provide a name
+// for the path from the outer module used by flattening's shared cache.
+module attributes {llzk.lang} {
+  // expected-error@+1 {{cannot flatten an unnamed nested lookup root; nested modules must have a name}}
+  module attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : <@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A named lookup root also needs names for every intervening symbol table.
+// expected-note@+1 {{symbol path must start from this module}}
+module attributes {llzk.lang} {
+  // expected-note@+1 {{unnamed symbol table prevents forming a symbol path}}
+  module {
+    // expected-error@+1 {{nested lookup root cannot be named relative to module "<unnamed>" because an intervening symbol table is unnamed}}
+    module @Lib attributes {llzk.lang} {
+      struct.def @Cell {
+        function.def @compute() -> !struct.type<@Cell> {
+          %self = struct.new : <@Cell>
+          function.return %self : !struct.type<@Cell>
+        }
+        function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+      }
+    }
+  }
+}
