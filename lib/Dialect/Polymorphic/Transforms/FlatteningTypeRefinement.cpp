@@ -39,8 +39,8 @@ using namespace llzk::polymorphic::detail;
 namespace llzk::polymorphic::detail::flattening {
 
 /// Return the common refinement of two matching type parameters, if it can be represented directly.
-static FailureOr<Attribute> getCommonRefinedParamAttr(
-    Attribute lhs, Attribute rhs, const ConversionTracker &tracker, bool unifyDynamicSize = false
+FailureOr<Attribute> getCommonRefinedParamAttr(
+    Attribute lhs, Attribute rhs, const ConversionTracker &tracker, bool unifyDynamicSize
 ) {
   assertValidAttrForParamOfType(lhs);
   assertValidAttrForParamOfType(rhs);

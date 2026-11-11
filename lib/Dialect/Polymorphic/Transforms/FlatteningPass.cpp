@@ -198,29 +198,38 @@ static bool calleeReferencesTemplateParam(CallOp op) {
   return parentTemplate.hasConstNamed<TemplateParamOp>(callee.getRootReference());
 }
 
-/// Return whether a member type references a type variable, optionally limited to candidate
+/// Return whether a member type references a template parameter, optionally limited to candidate
 /// bindings. Inspect struct parameters and their preimages without mistaking unrelated symbol names
-/// for type variables, so unrelated generic writes cannot delay this member's refinement.
-static bool referencesMemberTypeVar(
-    Type type, const DenseMap<TypeVarType, Type> *bindings, const ConversionTracker &tracker
+/// for template parameters, so unrelated generic writes cannot delay this member's refinement.
+static bool referencesMemberBinding(
+    Type type, const DenseMap<FlatSymbolRefAttr, Attribute> *bindings,
+    const ConversionTracker &tracker
 ) {
   return type
       .walk([&](Type nestedType) {
     if (auto variable = dyn_cast<TypeVarType>(nestedType);
-        variable && (!bindings || bindings->contains(variable))) {
+        variable && (!bindings || bindings->contains(variable.getNameRef()))) {
       return WalkResult::interrupt();
+    }
+    if (auto arrayType = dyn_cast<ArrayType>(nestedType)) {
+      for (Attribute dimension : arrayType.getDimensionSizes()) {
+        if (auto name = dyn_cast<FlatSymbolRefAttr>(dimension);
+            name && (!bindings || bindings->contains(name))) {
+          return WalkResult::interrupt();
+        }
+      }
     }
     if (auto structType = dyn_cast<StructType>(nestedType)) {
       if (ArrayAttr params = structType.getParams()) {
         for (Attribute param : params) {
           if (auto name = dyn_cast<FlatSymbolRefAttr>(param);
-              name && (!bindings || bindings->contains(TypeVarType::get(name)))) {
+              name && (!bindings || bindings->contains(name))) {
             return WalkResult::interrupt();
           }
         }
       }
       if (auto preimage = tracker.getPreimage(structType);
-          preimage && referencesMemberTypeVar(*preimage, bindings, tracker)) {
+          preimage && referencesMemberBinding(*preimage, bindings, tracker)) {
         return WalkResult::interrupt();
       }
     }
@@ -228,39 +237,52 @@ static bool referencesMemberTypeVar(
   }).wasInterrupted();
 }
 
-/// Record a projected type-variable binding only when its symbolic constraints can be retained.
-/// Candidate identity bindings remain in place; relevant sibling bindings must resolve before a
-/// different member can discard the shared variable from its declaration.
-static bool appendMemberTypeVarBinding(
-    TypeVarType variable, Type binding, const ConversionTracker &tracker,
-    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
-    const DenseMap<TypeVarType, Type> *relevantBindings
+/// Record a projected template-parameter binding only when its symbolic constraints can be
+/// retained. Candidate identity bindings remain in place; relevant sibling bindings must resolve
+/// before a different member can discard the shared variable from its declaration.
+static bool appendMemberBinding(
+    FlatSymbolRefAttr variable, Attribute binding, const ConversionTracker &tracker,
+    SmallVectorImpl<std::pair<FlatSymbolRefAttr, Attribute>> &bindings,
+    const DenseMap<FlatSymbolRefAttr, Attribute> *relevantBindings
 ) {
   if (relevantBindings && !relevantBindings->contains(variable)) {
     return true;
   }
+  if (auto type = dyn_cast<TypeAttr>(binding)) {
+    if (auto identity = dyn_cast<TypeVarType>(type.getValue())) {
+      binding = identity.getNameRef();
+    }
+  }
   bool mustResolve = relevantBindings || variable != binding;
-  if (mustResolve && referencesMemberTypeVar(binding, nullptr, tracker)) {
-    return false;
+  if (mustResolve) {
+    if (isa<FlatSymbolRefAttr>(binding)) {
+      return false;
+    }
+    if (auto type = dyn_cast<TypeAttr>(binding);
+        type && referencesMemberBinding(type.getValue(), nullptr, tracker)) {
+      return false;
+    }
   }
   bindings.emplace_back(variable, binding);
   return true;
 }
 
-/// Collect type-variable bindings at matching positions within member and written types.
-/// Aggregate shapes belong to their members, while each nested type variable denotes a shared
+/// Collect template-parameter bindings at matching positions within member and written types.
+/// Aggregate shapes belong to their members, while each nested template parameter denotes a shared
 /// template binding. Keep repeated occurrences so compatible partial bindings can be combined.
 /// When checking a sibling, skip subtrees unrelated to the candidate bindings.
-static bool collectMemberTypeVarBindings(
+static bool collectMemberBindings(
     Type declaredType, Type writtenType, const ConversionTracker &tracker,
-    SmallVectorImpl<std::pair<TypeVarType, Type>> &bindings,
-    const DenseMap<TypeVarType, Type> *relevantBindings = nullptr
+    SmallVectorImpl<std::pair<FlatSymbolRefAttr, Attribute>> &bindings,
+    const DenseMap<FlatSymbolRefAttr, Attribute> *relevantBindings = nullptr
 ) {
-  if (!referencesMemberTypeVar(declaredType, relevantBindings, tracker)) {
+  if (!referencesMemberBinding(declaredType, relevantBindings, tracker)) {
     return true;
   }
   if (auto variable = dyn_cast<TypeVarType>(declaredType)) {
-    return appendMemberTypeVarBinding(variable, writtenType, tracker, bindings, relevantBindings);
+    return appendMemberBinding(
+        variable.getNameRef(), TypeAttr::get(writtenType), tracker, bindings, relevantBindings
+    );
   }
   if (auto declaredArray = dyn_cast<ArrayType>(declaredType)) {
     auto writtenArray = dyn_cast<ArrayType>(writtenType);
@@ -268,8 +290,19 @@ static bool collectMemberTypeVarBindings(
         writtenArray.getDimensionSizes().size() < declaredArray.getDimensionSizes().size()) {
       return false;
     }
+    for (auto [declaredDimension, writtenDimension] : llvm::zip_equal(
+             declaredArray.getDimensionSizes(),
+             ArrayRef<Attribute>(writtenArray.getDimensionSizes())
+                 .take_front(declaredArray.getDimensionSizes().size())
+         )) {
+      if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredDimension);
+          name &&
+          !appendMemberBinding(name, writtenDimension, tracker, bindings, relevantBindings)) {
+        return false;
+      }
+    }
     // Array-valued bindings flatten into the enclosing array's trailing dimensions.
-    return collectMemberTypeVarBindings(
+    return collectMemberBindings(
         declaredArray.getElementType(),
         writtenArray.getSelectionType(declaredArray.getDimensionSizes().size()), tracker, bindings,
         relevantBindings
@@ -283,7 +316,7 @@ static bool collectMemberTypeVarBindings(
     for (auto [declaredRecord, writtenRecord] :
          llvm::zip_equal(declaredPod.getRecords(), writtenPod.getRecords())) {
       if (declaredRecord.getName() != writtenRecord.getName() ||
-          !collectMemberTypeVarBindings(
+          !collectMemberBindings(
               declaredRecord.getType(), writtenRecord.getType(), tracker, bindings, relevantBindings
           )) {
         return false;
@@ -315,27 +348,19 @@ static bool collectMemberTypeVarBindings(
       return false;
     }
     for (auto [declaredParam, writtenParam] : llvm::zip_equal(declaredParams, writtenParams)) {
-      auto writtenTypeParam = dyn_cast<TypeAttr>(writtenParam);
-      if (auto name = dyn_cast<FlatSymbolRefAttr>(writtenParam)) {
-        // Bare symbols and type-valued symbols retain the same binding constraints.
-        writtenTypeParam = TypeAttr::get(TypeVarType::get(name));
-      }
-      if (!writtenTypeParam) {
-        continue;
-      }
-      if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
-        if (!collectMemberTypeVarBindings(
-                declaredTypeParam.getValue(), writtenTypeParam.getValue(), tracker, bindings,
-                relevantBindings
-            )) {
+      if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
+        if (!appendMemberBinding(name, writtenParam, tracker, bindings, relevantBindings)) {
           return false;
         }
-      } else if (auto name = dyn_cast<FlatSymbolRefAttr>(declaredParam)) {
-        // Project symbolic parameters through the same binding checks as type-valued ones.
-        if (!appendMemberTypeVarBinding(
-                TypeVarType::get(name), writtenTypeParam.getValue(), tracker, bindings,
-                relevantBindings
-            )) {
+      } else if (auto declaredTypeParam = dyn_cast<TypeAttr>(declaredParam)) {
+        auto writtenTypeParam = dyn_cast<TypeAttr>(writtenParam);
+        if (auto writtenName = dyn_cast<FlatSymbolRefAttr>(writtenParam)) {
+          writtenTypeParam = TypeAttr::get(TypeVarType::get(writtenName));
+        }
+        if (!writtenTypeParam || !collectMemberBindings(
+                                     declaredTypeParam.getValue(), writtenTypeParam.getValue(),
+                                     tracker, bindings, relevantBindings
+                                 )) {
           return false;
         }
       }
@@ -346,8 +371,9 @@ static bool collectMemberTypeVarBindings(
 
 /// Return whether a refinement would separate an unchanged variable from another occurrence.
 /// An identity for U does not prevent refining T, but T -> T and T -> felt must stay correlated.
-static bool refinesRepeatedMemberTypeVar(ArrayRef<std::pair<TypeVarType, Type>> bindings) {
-  DenseSet<TypeVarType> retained;
+static bool
+refinesRepeatedMemberBinding(ArrayRef<std::pair<FlatSymbolRefAttr, Attribute>> bindings) {
+  DenseSet<FlatSymbolRefAttr> retained;
   for (auto [variable, binding] : bindings) {
     if (variable == binding) {
       retained.insert(variable);
@@ -356,6 +382,21 @@ static bool refinesRepeatedMemberTypeVar(ArrayRef<std::pair<TypeVarType, Type>> 
   return llvm::any_of(bindings, [&](auto binding) {
     return binding.first != binding.second && retained.contains(binding.first);
   });
+}
+
+/// Preserve type-oriented diagnostics for type bindings and name value parameters directly.
+static DiagnosticArgument
+memberBindingDiagnosticName(FlatSymbolRefAttr variable, Attribute binding) {
+  return isa<TypeAttr>(binding) ? DiagnosticArgument(TypeVarType::get(variable))
+                                : DiagnosticArgument(variable);
+}
+
+/// Print type-valued bindings as types, retaining the existing quoted type diagnostics.
+static DiagnosticArgument memberBindingDiagnosticValue(Attribute binding) {
+  if (auto type = dyn_cast<TypeAttr>(binding)) {
+    return DiagnosticArgument(type.getValue());
+  }
+  return DiagnosticArgument(binding);
 }
 
 /// Reject incompatible requirements connected by shared witnesses, members, and external calls.
@@ -2699,19 +2740,19 @@ inferMemberTypeFromWrites(MemberDefOp op, ConversionTracker &tracker, PatternRew
     }
   }
 
-  // Infer shared template bindings from the positions of type variables, including those
+  // Infer shared template bindings from type and value parameter positions, including those
   // inside arrays, POD records and struct parameters. Comparing the complete member types
   // would incorrectly reject members with different surrounding shapes.
-  SmallVector<std::pair<TypeVarType, Type>> candidateBindings;
-  if (!collectMemberTypeVarBindings(op.getType(), newType, tracker, candidateBindings)) {
+  SmallVector<std::pair<FlatSymbolRefAttr, Attribute>> candidateBindings;
+  if (!collectMemberBindings(op.getType(), newType, tracker, candidateBindings)) {
     return failure();
   }
   // Later iterations can instantiate callers already present in this module. Keep repeated
   // bindings correlated until those callers have been checked.
-  if (refinesRepeatedMemberTypeVar(candidateBindings)) {
+  if (refinesRepeatedMemberBinding(candidateBindings)) {
     return failure();
   }
-  DenseMap<TypeVarType, Type> sharedBindings;
+  DenseMap<FlatSymbolRefAttr, Attribute> sharedBindings;
   for (auto [variable, binding] : candidateBindings) {
     // Unchanged variables are safe here because mixed repeated bindings were deferred above.
     if (variable == binding) {
@@ -2721,17 +2762,17 @@ inferMemberTypeFromWrites(MemberDefOp op, ConversionTracker &tracker, PatternRew
     if (inserted) {
       continue;
     }
-    auto commonType = getCommonRefinedType(it->second, binding, tracker);
+    auto commonType = getCommonRefinedParamAttr(it->second, binding, tracker);
     if (failed(commonType)) {
       return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
         diag.append("cannot refine ")
-            .append(variable)
+            .append(memberBindingDiagnosticName(variable, binding))
             .append(" because member '")
             .append(op.getName())
             .append("' is written with incompatible bindings ")
-            .append(it->second)
+            .append(memberBindingDiagnosticValue(it->second))
             .append(" and ")
-            .append(binding);
+            .append(memberBindingDiagnosticValue(binding));
       });
     }
     it->second = *commonType;
@@ -2741,7 +2782,7 @@ inferMemberTypeFromWrites(MemberDefOp op, ConversionTracker &tracker, PatternRew
       if (sibling == op) {
         continue;
       }
-      if (!referencesMemberTypeVar(sibling.getType(), &sharedBindings, tracker)) {
+      if (!referencesMemberBinding(sibling.getType(), &sharedBindings, tracker)) {
         continue;
       }
       if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
@@ -2750,8 +2791,8 @@ inferMemberTypeFromWrites(MemberDefOp op, ConversionTracker &tracker, PatternRew
           if (!siblingWrite) {
             continue;
           }
-          SmallVector<std::pair<TypeVarType, Type>> siblingBindings;
-          if (!collectMemberTypeVarBindings(
+          SmallVector<std::pair<FlatSymbolRefAttr, Attribute>> siblingBindings;
+          if (!collectMemberBindings(
                   sibling.getType(), siblingWrite.getVal().getType(), tracker, siblingBindings,
                   &sharedBindings
               )) {
@@ -2762,17 +2803,17 @@ inferMemberTypeFromWrites(MemberDefOp op, ConversionTracker &tracker, PatternRew
             if (it == sharedBindings.end()) {
               continue;
             }
-            auto commonType = getCommonRefinedType(it->second, binding, tracker);
+            auto commonType = getCommonRefinedParamAttr(it->second, binding, tracker);
             if (failed(commonType)) {
               return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
                 diag.append("cannot refine ")
-                    .append(variable)
+                    .append(memberBindingDiagnosticName(variable, binding))
                     .append(" to ")
-                    .append(it->second)
+                    .append(memberBindingDiagnosticValue(it->second))
                     .append(" because sibling member '")
                     .append(sibling.getName())
                     .append("' is written with incompatible type ")
-                    .append(binding);
+                    .append(memberBindingDiagnosticValue(binding));
                 diag.attachNote(siblingWrite.getLoc()).append("incompatible write is here");
               });
             }

@@ -36,6 +36,12 @@ class ConversionTracker;
 mlir::FailureOr<mlir::Type>
 getCommonRefinedType(mlir::Type lhs, mlir::Type rhs, const ConversionTracker &tracker);
 
+/// Return a common type- or value-valued parameter refinement, preserving concrete conflicts.
+mlir::FailureOr<mlir::Attribute> getCommonRefinedParamAttr(
+    mlir::Attribute lhs, mlir::Attribute rhs, const ConversionTracker &tracker,
+    bool unifyDynamicSize = false
+);
+
 /// Return whether a scalar source can supply the requested common refinement.
 bool canUseScalarizedValueAsType(
     mlir::Type sourceType, mlir::Type targetType, const ConversionTracker &tracker,
