@@ -249,9 +249,9 @@ bool functionTypesUnify(
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
-/// Unify a complete signature and require every pair of bindings for each parameter to unify.
+/// Unify a complete signature with transitive, side-qualified symbolic bindings.
 /// Unlike UnificationMap's null entries, this distinguishes compatible unresolved bindings from
-/// conflicts, including repeated parameters within a single aggregate argument or result.
+/// conflicts, including alias chains and repeated parameters within aggregate arguments/results.
 bool functionTypesUnifyConsistently(
     mlir::FunctionType lhs, mlir::FunctionType rhs,
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}

@@ -737,7 +737,7 @@ struct UnifierImpl {
   }
 
   bool typesUnify(Type lhs, Type rhs) {
-    if (lhs == rhs) {
+    if (lhs == rhs && !bindingListener) {
       // Equal syntax in an included signature still refers to the included namespace.
       if (!rhsRevPrefix.empty()) {
         if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
@@ -779,7 +779,7 @@ struct UnifierImpl {
     if (llvm::isa<FunctionType>(lhs) && llvm::isa<FunctionType>(rhs)) {
       return functionTypesUnify(llvm::cast<FunctionType>(lhs), llvm::cast<FunctionType>(rhs));
     }
-    return false;
+    return lhs == rhs;
   }
 
 private:
@@ -854,7 +854,7 @@ private:
     assertValidAttrForParamOfType(lhsAttr);
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
-    if (lhsAttr == rhsAttr) {
+    if (lhsAttr == rhsAttr && !bindingListener) {
       if (!rhsRevPrefix.empty()) {
         if (auto lhsType = llvm::dyn_cast<TypeAttr>(lhsAttr)) {
           return typesUnify(lhsType.getValue(), llvm::cast<TypeAttr>(rhsAttr).getValue());
@@ -927,8 +927,166 @@ private:
         return typesUnify(lhsTy.getValue(), rhsTy.getValue());
       }
     }
-    // Otherwise, they do not unify.
-    return false;
+    // Equality must still succeed after traversing bindings in matching aggregate syntax.
+    return lhsAttr == rhsAttr;
+  }
+};
+
+/// Solve shared signature bindings as equations between side-qualified variables and terms.
+/// Keep every compatible term: an affine or unresolved term can unify with two concrete terms
+/// that conflict with each other. Unioning aliases must compare their entire sets of evidence.
+class SignatureBindingChecker {
+  using Variable = UnificationMap::key_type;
+  using Term = std::pair<Attribute, Side>;
+  DenseMap<Variable, Variable> parents;
+  DenseMap<Variable, SmallVector<Term>> terms;
+  SmallVector<std::pair<Term, Term>> pending;
+  DenseSet<std::pair<Term, Term>> compared;
+  ArrayRef<StringRef> rhsNamespace;
+
+  /// Find the representative for a variable without conflating the two signature scopes.
+  Variable find(Variable variable) {
+    auto [it, inserted] = parents.try_emplace(variable, variable);
+    if (inserted || it->second == variable) {
+      return variable;
+    }
+    Variable root = find(it->second);
+    parents[variable] = root;
+    return root;
+  }
+
+  /// Interpret symbolic type and value parameters uniformly, preserving their origin scope.
+  std::optional<Variable> variable(Term term) {
+    Attribute attr = term.first;
+    if (auto type = dyn_cast<TypeAttr>(attr)) {
+      if (auto typeVar = dyn_cast<TypeVarType>(type.getValue())) {
+        attr = typeVar.getNameRef();
+      }
+    }
+    if (auto name = dyn_cast<SymbolRefAttr>(attr)) {
+      return find({name, term.second});
+    }
+    return std::nullopt;
+  }
+
+  /// Reject recursive type equations, including cycles closed by a later alias binding.
+  bool occurs(Variable needle, Term term, DenseSet<Variable> &visited) {
+    if (auto root = variable(term)) {
+      if (*root == needle) {
+        return true;
+      }
+      if (!visited.insert(*root).second) {
+        return false;
+      }
+      auto it = terms.find(*root);
+      return it != terms.end() &&
+             llvm::any_of(it->second, [&](Term nested) { return occurs(needle, nested, visited); });
+    }
+    auto type = dyn_cast<TypeAttr>(term.first);
+    if (!type) {
+      return false;
+    }
+    return type.getValue()
+        .walk([&](Type nested) {
+      if (isa<TypeVarType>(nested) &&
+          occurs(needle, {TypeAttr::get(nested), term.second}, visited)) {
+        return WalkResult::interrupt();
+      }
+      ArrayRef<Attribute> params;
+      if (auto structure = dyn_cast<StructType>(nested); structure && structure.getParams()) {
+        params = structure.getParams().getValue();
+      } else if (auto array = dyn_cast<ArrayType>(nested)) {
+        params = array.getDimensionSizes();
+      }
+      for (Attribute param : params) {
+        if (isa<SymbolRefAttr>(param) && occurs(needle, {param, term.second}, visited)) {
+          return WalkResult::interrupt();
+        }
+      }
+      return WalkResult::advance();
+    }).wasInterrupted();
+  }
+
+  bool occurs(Variable needle, Term term) {
+    DenseSet<Variable> visited;
+    return occurs(needle, term, visited);
+  }
+
+  /// Add one term to an equivalence class and compare it with all prior evidence.
+  bool bind(Variable root, Term term) {
+    if (occurs(root, term)) {
+      return false;
+    }
+    auto &bindings = terms[root];
+    if (!llvm::is_contained(bindings, term)) {
+      for (Term previous : bindings) {
+        pending.emplace_back(previous, term);
+      }
+      bindings.push_back(term);
+    }
+    return true;
+  }
+
+public:
+  explicit SignatureBindingChecker(ArrayRef<StringRef> ns) : rhsNamespace(ns) {}
+
+  /// Collect structural equations and solve aliases to a fixed point without changing IR.
+  bool check(FunctionType lhs, FunctionType rhs) {
+    auto record = [&](Side side, SymbolRefAttr name, Attribute value) {
+      pending.push_back({{name, side}, {value, reverse(side)}});
+    };
+    if (!UnifierImpl(nullptr, rhsNamespace)
+             .withBindingListener(record)
+             .functionTypesUnify(lhs, rhs)) {
+      return false;
+    }
+    while (!pending.empty()) {
+      auto [left, right] = pending.pop_back_val();
+      auto leftVar = variable(left), rightVar = variable(right);
+      if (leftVar && rightVar) {
+        if (*leftVar == *rightVar) {
+          continue;
+        }
+        SmallVector<Term> merged = std::move(terms[*rightVar]);
+        terms.erase(*rightVar);
+        parents[*rightVar] = *leftVar;
+        for (Term term : terms[*leftVar]) {
+          if (occurs(*leftVar, term)) {
+            return false;
+          }
+        }
+        for (Term term : merged) {
+          if (!bind(*leftVar, term)) {
+            return false;
+          }
+        }
+      } else if (leftVar || rightVar) {
+        if (!bind(leftVar ? *leftVar : *rightVar, leftVar ? right : left)) {
+          return false;
+        }
+      } else {
+        // Cross-scope comparisons use the original callee namespace; comparisons of two
+        // terms originating in the same signature need no namespace adjustment.
+        if (left.second == Side::RHS && right.second == Side::LHS) {
+          std::swap(left, right);
+        }
+        if (!compared.insert({left, right}).second) {
+          continue;
+        }
+        auto recordNested = [&](Side side, SymbolRefAttr name, Attribute value) {
+          Side origin = side == Side::LHS ? left.second : right.second;
+          Side other = side == Side::LHS ? right.second : left.second;
+          pending.push_back({{name, origin}, {value, other}});
+        };
+        ArrayRef<StringRef> ns = left.second == right.second ? ArrayRef<StringRef>() : rhsNamespace;
+        if (!UnifierImpl(nullptr, ns)
+                 .withBindingListener(recordNested)
+                 .typeParamsUnify({left.first}, {right.first})) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 };
 
@@ -978,23 +1136,7 @@ bool functionTypesUnify(
 bool functionTypesUnifyConsistently(
     FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix
 ) {
-  DenseMap<UnificationMap::key_type, SmallVector<Attribute>> bindings;
-  bool consistent = true;
-  auto checkBinding = [&](Side side, SymbolRefAttr parameter, Attribute value) {
-    auto &previousValues = bindings[{parameter, side}];
-    for (Attribute previous : previousValues) {
-      if (!typeParamsUnify({previous}, {value})) {
-        consistent = false;
-      }
-    }
-    if (!llvm::is_contained(previousValues, value)) {
-      previousValues.push_back(value);
-    }
-  };
-  return UnifierImpl(nullptr, rhsReversePrefix)
-             .withBindingListener(checkBinding)
-             .functionTypesUnify(lhs, rhs) &&
-         consistent;
+  return SignatureBindingChecker(rhsReversePrefix).check(lhs, rhs);
 }
 
 bool typesUnify(

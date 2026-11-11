@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/IR/BuiltinTypeInterfaces.h>
@@ -257,6 +258,66 @@ TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_argumentAndResult) {
   auto actual = FunctionType::get(&ctx, {ArrayType::get(index, {8})}, {ArrayType::get(index, {9})});
   ASSERT_TRUE(functionTypesUnify(actual, declared));
   EXPECT_FALSE(functionTypesUnifyConsistently(actual, declared));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_transitiveAliases) {
+  auto s = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "S"));
+  auto t = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "T"));
+  auto u = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "U"));
+  Type index = IndexType::get(&ctx), felt = felt::FeltType::get(&ctx);
+  auto declared = FunctionType::get(&ctx, {t, t, u}, {u});
+  for (Type last : {index, felt, Type(s)}) {
+    auto actual = FunctionType::get(&ctx, {felt, s, s}, {last});
+    EXPECT_EQ(functionTypesUnifyConsistently(actual, declared), last != index);
+    EXPECT_EQ(functionTypesUnifyConsistently(declared, actual), last != index);
+  }
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_sameSpellingScopes) {
+  auto t = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "T"));
+  Type index = IndexType::get(&ctx), felt = felt::FeltType::get(&ctx);
+  EXPECT_TRUE(functionTypesUnifyConsistently(
+      FunctionType::get(&ctx, {t, felt}, {}), FunctionType::get(&ctx, {index, t}, {})
+  ));
+  // Equal syntax across scopes still establishes an alias between the two distinct variables.
+  EXPECT_FALSE(functionTypesUnifyConsistently(
+      FunctionType::get(&ctx, {t, t, felt}, {}), FunctionType::get(&ctx, {t, index, t}, {})
+  ));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_nestedAliases) {
+  auto s = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "S"));
+  auto u = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "U"));
+  Type felt = felt::FeltType::get(&ctx), index = IndexType::get(&ctx);
+  auto declared =
+      FunctionType::get(&ctx, {ArrayType::get(u, {1}), ArrayType::get(felt, {1}), u}, {});
+  EXPECT_FALSE(
+      functionTypesUnifyConsistently(FunctionType::get(&ctx, {s, s, index}, {}), declared)
+  );
+  EXPECT_TRUE(functionTypesUnifyConsistently(FunctionType::get(&ctx, {s, s, felt}, {}), declared));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_recursiveAliases) {
+  auto s = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "S"));
+  auto t = polymorphic::TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "T"));
+  EXPECT_FALSE(functionTypesUnifyConsistently(
+      FunctionType::get(&ctx, {t, ArrayType::get(t, {1})}, {}), FunctionType::get(&ctx, {s, s}, {})
+  ));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_affineEvidence) {
+  auto n = FlatSymbolRefAttr::get(&ctx, "N");
+  auto index = IndexType::get(&ctx);
+  auto affine = AffineMapAttr::get(OpBuilder(&ctx).getDimIdentityMap());
+  auto eight = IntegerAttr::get(index, 8), nine = IntegerAttr::get(index, 9);
+  auto actual = FunctionType::get(&ctx, {ArrayType::get(index, {affine, eight, nine})}, {});
+  auto declared = FunctionType::get(&ctx, {ArrayType::get(index, {n, n, n})}, {});
+  EXPECT_FALSE(functionTypesUnifyConsistently(actual, declared));
+  // Identical affine syntax is not itself a shared template variable.
+  EXPECT_TRUE(functionTypesUnifyConsistently(
+      FunctionType::get(&ctx, {ArrayType::get(index, {affine, affine})}, {}),
+      FunctionType::get(&ctx, {ArrayType::get(index, {eight, nine})}, {})
+  ));
 }
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {

@@ -138,3 +138,23 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
   }
 }
+
+// -----
+
+// Aliases connecting multiple callee variables must retain their transitive constraints.
+module attributes {llzk.lang} {
+  poly.template @Match {
+    poly.param @T
+    poly.param @U
+    // expected-note@+1 {{target function declared here}}
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>, %c: !poly.tvar<@U>, %d: !poly.tvar<@U>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @S
+    function.def @caller(%a: !felt.type, %shared: !poly.tvar<@S>, %d: index) {
+      // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
+      function.call @Match::@consume(%a, %shared, %shared, %d) : (!felt.type, !poly.tvar<@S>, !poly.tvar<@S>, index) -> ()
+      function.return
+    }
+  }
+}
