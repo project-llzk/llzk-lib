@@ -4,6 +4,7 @@
 module attributes {llzk.lang} {
   poly.template @T2 {
     poly.param @T : !poly.tvar<@T>
+    // expected-note@+1 {{target function declared here}}
     function.def @f(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
 
@@ -12,7 +13,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@Caller>
       %x = felt.const 0 : !felt.type
       %y = arith.constant 0 : index
-      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!felt.type', but found 'index' for operand number 1}}
+      // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
       function.call @T2::@f<[!felt.type]>(%x, %y) : (!felt.type, index) -> ()
       function.return %self : !struct.type<@Caller>
     }

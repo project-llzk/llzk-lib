@@ -660,11 +660,11 @@ void evaluateTemplateExprs(
   );
 }
 
-/// Return the callee-side unification-derived value for a template parameter, if any.
+/// Return an unambiguous callee-side binding; absent and unresolved entries have no value.
 std::optional<Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
   auto it = unifyResult.find({paramName, Side::RHS});
-  return (it == unifyResult.end()) ? std::nullopt : std::make_optional(it->second);
+  return (it == unifyResult.end() || !it->second) ? std::nullopt : std::make_optional(it->second);
 }
 
 LogicalResult substituteStructBody(

@@ -49,9 +49,12 @@ bool canRefineCreateArrayUsersToType(
 
 /// Check a full signature using shared, namespace-aware bindings across arguments and results.
 /// Compatible pending affine refinements are allowed, but conflicting concrete bindings are not.
+/// When allowUnresolvedStructs is true, compare instantiation preimages so a generic struct and
+/// its possible specialization can remain unresolved without being diagnosed as incompatible.
 bool callSignatureUnifies(
     mlir::FunctionType replacement, mlir::FunctionType callee,
-    llvm::ArrayRef<llvm::StringRef> calleeNamespace, const ConversionTracker &tracker
+    llvm::ArrayRef<llvm::StringRef> calleeNamespace, const ConversionTracker &tracker,
+    bool allowUnresolvedStructs = false
 );
 
 /// Build a call signature with every planned argument refinement and an optional overriding value.

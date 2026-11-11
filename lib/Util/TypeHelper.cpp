@@ -616,6 +616,7 @@ struct UnifierImpl {
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
+  llvm::function_ref<void(Side, SymbolRefAttr, Attribute)> bindingListener = nullptr;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
@@ -633,6 +634,13 @@ struct UnifierImpl {
 
   UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
     this->overrideSuccess = overrides;
+    return *this;
+  }
+
+  /// Observe each symbolic binding before unequal occurrences are collapsed to null in the map.
+  UnifierImpl &
+  withBindingListener(llvm::function_ref<void(Side, SymbolRefAttr, Attribute)> listener) {
+    bindingListener = listener;
     return *this;
   }
 
@@ -786,8 +794,18 @@ private:
     }
   }
 
-  void track(Side side, SymbolRefAttr symRef, Type ty) {
+  /// Record one binding in the optional map and notify the consistency checker.
+  void recordBinding(Side side, SymbolRefAttr symRef, Attribute attr) {
     if (unifications) {
+      track(*unifications, side, symRef, attr);
+    }
+    if (bindingListener) {
+      bindingListener(side, symRef, attr);
+    }
+  }
+
+  void track(Side side, SymbolRefAttr symRef, Type ty) {
+    if (unifications || bindingListener) {
       Attribute attr;
       if (TypeVarType tvar = dyn_cast<TypeVarType>(ty)) {
         // If 'ty' is TypeVarType<@S>, just map to @S directly.
@@ -798,12 +816,12 @@ private:
       }
       assert(symRef);
       assert(attr);
-      track(*unifications, side, symRef, attr);
+      recordBinding(side, symRef, attr);
     }
   }
 
   void track(Side side, SymbolRefAttr symRef, Attribute attr) {
-    if (unifications) {
+    if (unifications || bindingListener) {
       // If 'attr' is TypeAttr<TypeVarType<@S>>, just map to @S directly.
       if (TypeAttr tyAttr = dyn_cast<TypeAttr>(attr)) {
         if (TypeVarType tvar = dyn_cast<TypeVarType>(tyAttr.getValue())) {
@@ -817,9 +835,9 @@ private:
       // checks on the UnificationMap may do LHS checks, and in the case of both being
       // SymbolRefAttr, unification in either direction is possible.
       if (SymbolRefAttr otherSymAttr = dyn_cast<SymbolRefAttr>(attr)) {
-        track(*unifications, reverse(side), otherSymAttr, symRef);
+        recordBinding(reverse(side), otherSymAttr, symRef);
       }
-      track(*unifications, side, symRef, attr);
+      recordBinding(side, symRef, attr);
     }
   }
 
@@ -955,6 +973,28 @@ bool functionTypesUnify(
     UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
+}
+
+bool functionTypesUnifyConsistently(
+    FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix
+) {
+  DenseMap<UnificationMap::key_type, SmallVector<Attribute>> bindings;
+  bool consistent = true;
+  auto checkBinding = [&](Side side, SymbolRefAttr parameter, Attribute value) {
+    auto &previousValues = bindings[{parameter, side}];
+    for (Attribute previous : previousValues) {
+      if (!typeParamsUnify({previous}, {value})) {
+        consistent = false;
+      }
+    }
+    if (!llvm::is_contained(previousValues, value)) {
+      previousValues.push_back(value);
+    }
+  };
+  return UnifierImpl(nullptr, rhsReversePrefix)
+             .withBindingListener(checkBinding)
+             .functionTypesUnify(lhs, rhs) &&
+         consistent;
 }
 
 bool typesUnify(

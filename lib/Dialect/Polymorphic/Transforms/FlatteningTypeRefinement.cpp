@@ -206,61 +206,26 @@ FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker
   return failure();
 }
 
-/// Check a complete call signature without treating compatible pending refinements as conflicts.
-///
-/// Unification records null for any unequal bindings, including an affine size and its concrete
-/// specialization. Recover those bindings per argument/result and compare every pair: a generic
-/// binding may accept two concrete types that are incompatible with each other.
+/// Check every shared binding, accounting for struct instantiation in the current iteration.
 bool callSignatureUnifies(
     FunctionType replacement, FunctionType callee, ArrayRef<StringRef> calleeNamespace,
-    const ConversionTracker &tracker
+    const ConversionTracker &tracker, bool allowUnresolvedStructs
 ) {
-  // A read and its callee may be on opposite sides of struct instantiation in this iteration.
-  // Apply known instantiations without losing namespace qualification or inventing bindings.
+  // A proposed read refinement must agree with already-instantiated companions. Before function
+  // instantiation, however, a generic companion can still refine later: compare parameterized
+  // preimages to distinguish that case from two incompatible concrete specializations.
   AttrTypeReplacer instantiations;
   instantiations.addReplacement([&](StructType type) -> std::optional<Type> {
-    if (auto concrete = tracker.getInstantiation(type)) {
-      return *concrete;
+    auto mapped =
+        allowUnresolvedStructs ? tracker.getPreimage(type) : tracker.getInstantiation(type);
+    if (mapped) {
+      return *mapped;
     }
     return std::nullopt;
   });
   replacement = llvm::cast<FunctionType>(instantiations.replace(replacement));
   callee = llvm::cast<FunctionType>(instantiations.replace(callee));
-  UnificationMap bindings;
-  if (!functionTypesUnify(replacement, callee, calleeNamespace, &bindings)) {
-    return false;
-  }
-  if (llvm::all_of(bindings, [](const auto &binding) { return bool(binding.second); })) {
-    return true;
-  }
-
-  DenseMap<UnificationMap::key_type, SmallVector<Attribute>> bindingsByParameter;
-  auto checkTypes = [&](TypeRange actual, TypeRange declared) {
-    for (auto [actualType, declaredType] : llvm::zip_equal(actual, declared)) {
-      UnificationMap localBindings;
-      if (!typesUnify(actualType, declaredType, calleeNamespace, &localBindings)) {
-        return false;
-      }
-      for (const auto &[parameter, value] : localBindings) {
-        if (!value) {
-          return false;
-        }
-        auto &previousValues = bindingsByParameter[parameter];
-        for (Attribute previous : previousValues) {
-          if (!typeParamsUnify(
-                  ArrayAttr::get(replacement.getContext(), {previous}),
-                  ArrayAttr::get(replacement.getContext(), {value})
-              )) {
-            return false;
-          }
-        }
-        previousValues.push_back(value);
-      }
-    }
-    return true;
-  };
-  return checkTypes(replacement.getInputs(), callee.getInputs()) &&
-         checkTypes(replacement.getResults(), callee.getResults());
+  return functionTypesUnifyConsistently(replacement, callee, calleeNamespace);
 }
 
 /// Build the hypothetical call signature without changing any operands or result types.

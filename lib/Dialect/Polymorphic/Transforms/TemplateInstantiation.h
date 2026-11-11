@@ -87,7 +87,7 @@ void evaluateTemplateExprs(
     TemplateOp templateOp, llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
 );
 
-/// Return the callee-side unification-derived value for a template parameter, if any.
+/// Return an unambiguous callee-side binding; absent and unresolved entries have no value.
 std::optional<mlir::Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, mlir::SymbolRefAttr paramName);
 

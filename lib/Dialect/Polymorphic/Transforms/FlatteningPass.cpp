@@ -1550,7 +1550,8 @@ public:
     // middle but the overall chain does not unify. Hence, this unification may fail and should
     // produce a meaningful error message if it does.
     // See: `test/Transforms/Flattening/instantiate_funcs_fail.llzk`
-    FailureOr<UnificationMap> unifyResult = unifyTypeSignature(op, callTgt, rewriter);
+    FailureOr<UnificationMap> unifyResult =
+        unifyTypeSignature(op, callTgt, callTgtOpt->getNamespace(), rewriter);
     if (failed(unifyResult)) {
       return failure();
     }
@@ -1620,10 +1621,23 @@ public:
 private:
   /// Re-run call/callee type unification so flattening can surface a useful error if a chain of
   /// partially-instantiated calls stops unifying once earlier substitutions have been applied.
-  static FailureOr<UnificationMap>
-  unifyTypeSignature(CallOp op, FuncDefOp callTgt, PatternRewriter &rewriter) {
-    FailureOr<UnificationMap> unifyResult = op.unifyTypeSignature(callTgt.getFunctionType());
+  FailureOr<UnificationMap> unifyTypeSignature(
+      CallOp op, FuncDefOp callTgt, ArrayRef<StringRef> calleeNamespace, PatternRewriter &rewriter
+  ) const {
+    FailureOr<UnificationMap> unifyResult =
+        op.unifyTypeSignatureWithNamespace(callTgt.getFunctionType(), calleeNamespace);
     if (succeeded(unifyResult)) {
+      if (!callSignatureUnifies(
+              op.getTypeSignature(), callTgt.getFunctionType(), calleeNamespace, tracker_,
+              /*allowUnresolvedStructs=*/true
+          )) {
+        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+          diag.append("cannot instantiate function because the complete call signature has ")
+              .append("conflicting template bindings")
+              .attachNote(callTgt.getLoc())
+              .append("target function declared here");
+        });
+      }
       return unifyResult;
     }
     return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
@@ -1723,6 +1737,13 @@ private:
 
     WildcardTypeBodyInferer bodyInferer(symTables, paramNameToConcrete);
     for (auto [paramOp, paramName] : wildcardParams) {
+      // The signature checker accepted these unequal bindings as potentially compatible.
+      // Wait for propagation or enclosing-template substitution to resolve them; body inference
+      // must not choose one value and discard the other signature requirements.
+      auto binding = unifyResult.find({paramName, Side::RHS});
+      if (binding != unifyResult.end() && !binding->second) {
+        continue;
+      }
       auto inferredValOpt = inferUnifiedParam(unifyResult, paramName);
       if (inferredValOpt.has_value() && isConcreteStructParamAttr(*inferredValOpt)) {
         LLVM_DEBUG(

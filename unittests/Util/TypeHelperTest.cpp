@@ -203,6 +203,62 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   ASSERT_FALSE(functionTypesUnify(a, b));
 }
 
+// Repeated dimensions can be unresolved inside one aggregate, even though the ordinary
+// unification map cannot retain a single binding for N.
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_unresolvedAggregate) {
+  auto index = IndexType::get(&ctx);
+  auto parameter = FlatSymbolRefAttr::get(&ctx, "N");
+  auto declared = FunctionType::get(&ctx, {ArrayType::get(index, {parameter, parameter})}, {});
+  auto eight = IntegerAttr::get(index, 8);
+  for (Attribute unresolved : SmallVector<Attribute> {
+           FlatSymbolRefAttr::get(&ctx, "M"),
+           AffineMapAttr::get(OpBuilder(&ctx).getDimIdentityMap()),
+           IntegerAttr::get(index, ShapedType::kDynamic)
+       }) {
+    auto actual = FunctionType::get(&ctx, {ArrayType::get(index, {unresolved, eight})}, {});
+    UnificationMap bindings;
+    ASSERT_TRUE(functionTypesUnify(actual, declared, {}, &bindings));
+    ASSERT_TRUE(bindings.contains({parameter, Side::RHS}));
+    // A wildcard dimension is accepted without recording a binding; the other cases retain
+    // the incompatible spellings as a null entry, despite their possible common refinement.
+    if (auto integer = dyn_cast<IntegerAttr>(unresolved); integer && isDynamic(integer)) {
+      EXPECT_EQ(bindings.lookup({parameter, Side::RHS}), eight);
+    } else {
+      EXPECT_FALSE(bindings.lookup({parameter, Side::RHS}));
+    }
+    EXPECT_TRUE(functionTypesUnifyConsistently(actual, declared));
+    EXPECT_TRUE(functionTypesUnifyConsistently(declared, actual));
+  }
+}
+
+// A symbolic occurrence that unifies with both concrete bindings must not hide their conflict.
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_allOccurrences) {
+  auto index = IndexType::get(&ctx);
+  auto parameter = FlatSymbolRefAttr::get(&ctx, "N");
+  auto symbolic = FlatSymbolRefAttr::get(&ctx, "M");
+  auto eight = IntegerAttr::get(index, 8);
+  auto nine = IntegerAttr::get(index, 9);
+  auto declared =
+      FunctionType::get(&ctx, {ArrayType::get(index, {parameter, parameter, parameter})}, {});
+  for (const SmallVector<Attribute> &dimensions :
+       {SmallVector<Attribute> {symbolic, eight, nine},
+        SmallVector<Attribute> {nine, eight, symbolic}}) {
+    auto actual = FunctionType::get(&ctx, {ArrayType::get(index, dimensions)}, {});
+    ASSERT_TRUE(functionTypesUnify(actual, declared));
+    EXPECT_FALSE(functionTypesUnifyConsistently(actual, declared));
+    EXPECT_FALSE(functionTypesUnifyConsistently(declared, actual));
+  }
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnifyConsistently_argumentAndResult) {
+  auto index = IndexType::get(&ctx);
+  auto generic = ArrayType::get(index, {FlatSymbolRefAttr::get(&ctx, "N")});
+  auto declared = FunctionType::get(&ctx, {generic}, {generic});
+  auto actual = FunctionType::get(&ctx, {ArrayType::get(index, {8})}, {ArrayType::get(index, {9})});
+  ASSERT_TRUE(functionTypesUnify(actual, declared));
+  EXPECT_FALSE(functionTypesUnifyConsistently(actual, declared));
+}
+
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {
   // create a boolean IntegerAttr
   IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 1), 1);
