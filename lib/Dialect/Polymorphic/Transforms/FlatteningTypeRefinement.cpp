@@ -25,6 +25,8 @@
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/AttrTypeSubElements.h>
+
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
@@ -202,6 +204,84 @@ FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker
   }
 
   return failure();
+}
+
+/// Check a complete call signature without treating compatible pending refinements as conflicts.
+///
+/// Unification records null for any unequal bindings, including an affine size and its concrete
+/// specialization. Recover those bindings per argument/result and compare every pair: a generic
+/// binding may accept two concrete types that are incompatible with each other.
+bool callSignatureUnifies(
+    FunctionType replacement, FunctionType callee, ArrayRef<StringRef> calleeNamespace,
+    const ConversionTracker &tracker
+) {
+  // A read and its callee may be on opposite sides of struct instantiation in this iteration.
+  // Apply known instantiations without losing namespace qualification or inventing bindings.
+  AttrTypeReplacer instantiations;
+  instantiations.addReplacement([&](StructType type) -> std::optional<Type> {
+    if (auto concrete = tracker.getInstantiation(type)) {
+      return *concrete;
+    }
+    return std::nullopt;
+  });
+  replacement = llvm::cast<FunctionType>(instantiations.replace(replacement));
+  callee = llvm::cast<FunctionType>(instantiations.replace(callee));
+  UnificationMap bindings;
+  if (!functionTypesUnify(replacement, callee, calleeNamespace, &bindings)) {
+    return false;
+  }
+  if (llvm::all_of(bindings, [](const auto &binding) { return bool(binding.second); })) {
+    return true;
+  }
+
+  DenseMap<UnificationMap::key_type, SmallVector<Attribute>> bindingsByParameter;
+  auto checkTypes = [&](TypeRange actual, TypeRange declared) {
+    for (auto [actualType, declaredType] : llvm::zip_equal(actual, declared)) {
+      UnificationMap localBindings;
+      if (!typesUnify(actualType, declaredType, calleeNamespace, &localBindings)) {
+        return false;
+      }
+      for (const auto &[parameter, value] : localBindings) {
+        if (!value) {
+          return false;
+        }
+        auto &previousValues = bindingsByParameter[parameter];
+        for (Attribute previous : previousValues) {
+          if (!typeParamsUnify(
+                  ArrayAttr::get(replacement.getContext(), {previous}),
+                  ArrayAttr::get(replacement.getContext(), {value})
+              )) {
+            return false;
+          }
+        }
+        previousValues.push_back(value);
+      }
+    }
+    return true;
+  };
+  return checkTypes(replacement.getInputs(), callee.getInputs()) &&
+         checkTypes(replacement.getResults(), callee.getResults());
+}
+
+/// Build the hypothetical call signature without changing any operands or result types.
+FunctionType getRefinedCallSignature(
+    CallOp call, Value refinedValue, Type refinedType,
+    const DenseMap<Value, Type> *pendingRefinements
+) {
+  SmallVector<Type> argumentTypes;
+  for (Value argument : call.getArgOperands()) {
+    Type type = argument.getType();
+    if (pendingRefinements) {
+      if (Type pending = pendingRefinements->lookup(argument)) {
+        type = pending;
+      }
+    }
+    if (argument == refinedValue) {
+      type = refinedType;
+    }
+    argumentTypes.push_back(type);
+  }
+  return FunctionType::get(call.getContext(), argumentTypes, call.getResultTypes());
 }
 
 /// Return true iff a value of `sourceType` can be used where `targetType` is requested after
@@ -428,7 +508,7 @@ bool canRefineCreateArrayUsersToType(
 /// consuming operation invalid, so the member definition must remain generic.
 bool canRefineMemberReadUsersToType(
     MemberReadOp readOp, Type refinedType, SymbolTableCollection &tables,
-    const ConversionTracker &tracker
+    const ConversionTracker &tracker, const DenseMap<Value, Type> *pendingRefinements
 ) {
   Value result = readOp.getVal();
   for (OpOperand &use : result.getUses()) {
@@ -478,18 +558,18 @@ bool canRefineMemberReadUsersToType(
       continue;
     }
     if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
+      if (call.getArgOperands().empty()) {
+        return false;
+      }
       unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
       if (argIdx >= call.getArgOperands().size()) {
         return false;
       }
       auto callee = call.getCalleeTarget(tables);
-      if (failed(callee)) {
-        return false;
-      }
-      Type paramType = callee->get().getFunctionType().getInput(argIdx);
-      if (isConcreteType(paramType, /*allowStructParams=*/false) &&
-          !canUseScalarizedValueAsType(
-              refinedType, paramType, tracker, "UpdateMemberDefTypeFromWrite"
+      if (failed(callee) ||
+          !callSignatureUnifies(
+              getRefinedCallSignature(call, result, refinedType, pendingRefinements),
+              callee->get().getFunctionType(), callee->getNamespace(), tracker
           )) {
         return false;
       }

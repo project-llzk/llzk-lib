@@ -2607,205 +2607,332 @@ static bool isFullySpecializedMemberType(Type type) {
   }).wasInterrupted();
 }
 
-/// Update the type of MemberDefOp instances by checking the updated types from MemberWriteOp.
-class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
-  ConversionTracker &tracker_;
+/// Infer a member's write-derived refinement without changing its definition or reads.
+static FailureOr<Type>
+inferMemberTypeFromWrites(MemberDefOp op, ConversionTracker &tracker, PatternRewriter &rewriter) {
+  // Avoid a whole-struct symbol-use search when writes cannot refine the declaration.
+  if (isFullySpecializedMemberType(op.getType())) {
+    return failure();
+  }
 
-public:
-  /// Construct the member-definition propagation pattern.
-  UpdateMemberDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
+  // Find all uses of the member symbol name within its parent struct.
+  StructDefOp parentRes = getParentOfType<StructDefOp>(op);
+  assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def
 
-  /// Update a member definition type from compatible writes to that member.
-  LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
-    // Avoid a whole-struct symbol-use search when writes cannot refine the declaration.
-    if (isFullySpecializedMemberType(op.getType())) {
-      return failure();
-    }
-
-    // Find all uses of the member symbol name within its parent struct.
-    StructDefOp parentRes = getParentOfType<StructDefOp>(op);
-    assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def
-
-    // If the symbol is used by a MemberWriteOp with a different result type then change
-    // the type of the MemberDefOp to match the MemberWriteOp result type.
-    Type newType = nullptr;
-    if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
-      std::optional<Location> newTypeLoc = std::nullopt;
-      for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
-        if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
-          Type writeToType = writeOp.getVal().getType();
-          LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] checking " << writeOp << '\n');
-          if (!newType) {
-            // If a new type has not yet been discovered, store the new type.
-            newType = writeToType;
+  // If the symbol is used by a MemberWriteOp with a different result type then change
+  // the type of the MemberDefOp to match the MemberWriteOp result type.
+  Type newType = nullptr;
+  if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
+    std::optional<Location> newTypeLoc = std::nullopt;
+    for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
+      if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
+        Type writeToType = writeOp.getVal().getType();
+        LLVM_DEBUG(llvm::dbgs() << "[inferMemberTypeFromWrites] checking " << writeOp << '\n');
+        if (!newType) {
+          // If a new type has not yet been discovered, store the new type.
+          newType = writeToType;
+          newTypeLoc = writeOp.getLoc();
+        } else if (writeToType != newType) {
+          // Typically, there will only be one write for each member of a struct but do not rely
+          // on that assumption. If multiple writes with a different types A and B are found where
+          // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
+          // type B with the assumption that the write with type A will be updated by another
+          // pattern to also use type B.
+          auto commonType = getCommonRefinedType(newType, writeToType, tracker);
+          if (succeeded(commonType)) {
+            newType = *commonType;
             newTypeLoc = writeOp.getLoc();
-          } else if (writeToType != newType) {
-            // Typically, there will only be one write for each member of a struct but do not rely
-            // on that assumption. If multiple writes with a different types A and B are found where
-            // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
-            // type B with the assumption that the write with type A will be updated by another
-            // pattern to also use type B.
-            auto commonType = getCommonRefinedType(newType, writeToType, tracker_);
-            if (succeeded(commonType)) {
-              newType = *commonType;
+          } else if (!tracker.isLegalConversion(
+                         writeToType, newType, "inferMemberTypeFromWrites"
+                     )) {
+            if (tracker.isLegalConversion(newType, writeToType, "inferMemberTypeFromWrites")) {
+              // 'writeToType' is the more concrete type
+              newType = writeToType;
               newTypeLoc = writeOp.getLoc();
-            } else if (!tracker_.isLegalConversion(
-                           writeToType, newType, "UpdateMemberDefTypeFromWrite"
-                       )) {
-              if (tracker_.isLegalConversion(
-                      newType, writeToType, "UpdateMemberDefTypeFromWrite"
-                  )) {
-                // 'writeToType' is the more concrete type
-                newType = writeToType;
-                newTypeLoc = writeOp.getLoc();
-              } else {
-                // Give an error if the types are incompatible.
-                return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-                  diag.append(
-                      "Cannot update type of '", MemberDefOp::getOperationName(),
-                      "' because there are multiple '", MemberWriteOp::getOperationName(),
-                      "' with different value types"
-                  );
-                  if (newTypeLoc) {
-                    diag.attachNote(newTypeLoc).append("type written here is ", newType);
-                  }
-                  diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
-                });
-              }
+            } else {
+              // Give an error if the types are incompatible.
+              return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+                diag.append(
+                    "Cannot update type of '", MemberDefOp::getOperationName(),
+                    "' because there are multiple '", MemberWriteOp::getOperationName(),
+                    "' with different value types"
+                );
+                if (newTypeLoc) {
+                  diag.attachNote(newTypeLoc).append("type written here is ", newType);
+                }
+                diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
+              });
             }
           }
         }
       }
     }
-    if (!newType || newType == op.getType()) {
-      return failure(); // nothing changed
+  }
+  if (!newType || newType == op.getType()) {
+    return failure(); // nothing changed
+  }
+  if (!tracker.isLegalConversion(op.getType(), newType, "inferMemberTypeFromWrites")) {
+    auto commonType = getCommonRefinedType(op.getType(), newType, tracker);
+    if (failed(commonType) || *commonType != newType) {
+      return failure();
     }
-    if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateMemberDefTypeFromWrite")) {
-      auto commonType = getCommonRefinedType(op.getType(), newType, tracker_);
-      if (failed(commonType) || *commonType != newType) {
-        return failure();
-      }
-    }
+  }
 
-    // Infer shared template bindings from the positions of type variables, including those
-    // inside arrays, POD records and struct parameters. Comparing the complete member types
-    // would incorrectly reject members with different surrounding shapes.
-    SmallVector<std::pair<TypeVarType, Type>> candidateBindings;
-    if (!collectMemberTypeVarBindings(op.getType(), newType, tracker_, candidateBindings)) {
-      return failure();
+  // Infer shared template bindings from the positions of type variables, including those
+  // inside arrays, POD records and struct parameters. Comparing the complete member types
+  // would incorrectly reject members with different surrounding shapes.
+  SmallVector<std::pair<TypeVarType, Type>> candidateBindings;
+  if (!collectMemberTypeVarBindings(op.getType(), newType, tracker, candidateBindings)) {
+    return failure();
+  }
+  // Later iterations can instantiate callers already present in this module. Keep repeated
+  // bindings correlated until those callers have been checked.
+  if (refinesRepeatedMemberTypeVar(candidateBindings)) {
+    return failure();
+  }
+  DenseMap<TypeVarType, Type> sharedBindings;
+  for (auto [variable, binding] : candidateBindings) {
+    // Unchanged variables are safe here because mixed repeated bindings were deferred above.
+    if (variable == binding) {
+      continue;
     }
-    // Later iterations can instantiate callers already present in this module. Keep repeated
-    // bindings correlated until those callers have been checked.
-    if (refinesRepeatedMemberTypeVar(candidateBindings)) {
-      return failure();
+    auto [it, inserted] = sharedBindings.try_emplace(variable, binding);
+    if (inserted) {
+      continue;
     }
-    DenseMap<TypeVarType, Type> sharedBindings;
-    for (auto [variable, binding] : candidateBindings) {
-      // Unchanged variables are safe here because mixed repeated bindings were deferred above.
-      if (variable == binding) {
+    auto commonType = getCommonRefinedType(it->second, binding, tracker);
+    if (failed(commonType)) {
+      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        diag.append("cannot refine ")
+            .append(variable)
+            .append(" because member '")
+            .append(op.getName())
+            .append("' is written with incompatible bindings ")
+            .append(it->second)
+            .append(" and ")
+            .append(binding);
+      });
+    }
+    it->second = *commonType;
+  }
+  if (!sharedBindings.empty()) {
+    for (MemberDefOp sibling : parentRes.getOps<MemberDefOp>()) {
+      if (sibling == op) {
         continue;
       }
-      auto [it, inserted] = sharedBindings.try_emplace(variable, binding);
-      if (inserted) {
+      if (!referencesMemberTypeVar(sibling.getType(), &sharedBindings, tracker)) {
         continue;
       }
-      auto commonType = getCommonRefinedType(it->second, binding, tracker_);
-      if (failed(commonType)) {
-        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-          diag.append("cannot refine ")
-              .append(variable)
-              .append(" because member '")
-              .append(op.getName())
-              .append("' is written with incompatible bindings ")
-              .append(it->second)
-              .append(" and ")
-              .append(binding);
-        });
-      }
-      it->second = *commonType;
-    }
-    if (!sharedBindings.empty()) {
-      for (MemberDefOp sibling : parentRes.getOps<MemberDefOp>()) {
-        if (sibling == op) {
-          continue;
-        }
-        if (!referencesMemberTypeVar(sibling.getType(), &sharedBindings, tracker_)) {
-          continue;
-        }
-        if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
-          for (SymbolTable::SymbolUse siblingUse : siblingUses.value()) {
-            auto siblingWrite = llvm::dyn_cast<MemberWriteOp>(siblingUse.getUser());
-            if (!siblingWrite) {
+      if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
+        for (SymbolTable::SymbolUse siblingUse : siblingUses.value()) {
+          auto siblingWrite = llvm::dyn_cast<MemberWriteOp>(siblingUse.getUser());
+          if (!siblingWrite) {
+            continue;
+          }
+          SmallVector<std::pair<TypeVarType, Type>> siblingBindings;
+          if (!collectMemberTypeVarBindings(
+                  sibling.getType(), siblingWrite.getVal().getType(), tracker, siblingBindings,
+                  &sharedBindings
+              )) {
+            return failure();
+          }
+          for (auto [variable, binding] : siblingBindings) {
+            auto it = sharedBindings.find(variable);
+            if (it == sharedBindings.end()) {
               continue;
             }
-            SmallVector<std::pair<TypeVarType, Type>> siblingBindings;
-            if (!collectMemberTypeVarBindings(
-                    sibling.getType(), siblingWrite.getVal().getType(), tracker_, siblingBindings,
-                    &sharedBindings
-                )) {
-              return failure();
+            auto commonType = getCommonRefinedType(it->second, binding, tracker);
+            if (failed(commonType)) {
+              return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+                diag.append("cannot refine ")
+                    .append(variable)
+                    .append(" to ")
+                    .append(it->second)
+                    .append(" because sibling member '")
+                    .append(sibling.getName())
+                    .append("' is written with incompatible type ")
+                    .append(binding);
+                diag.attachNote(siblingWrite.getLoc()).append("incompatible write is here");
+              });
             }
-            for (auto [variable, binding] : siblingBindings) {
-              auto it = sharedBindings.find(variable);
-              if (it == sharedBindings.end()) {
-                continue;
-              }
-              auto commonType = getCommonRefinedType(it->second, binding, tracker_);
-              if (failed(commonType)) {
-                return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-                  diag.append("cannot refine ")
-                      .append(variable)
-                      .append(" to ")
-                      .append(it->second)
-                      .append(" because sibling member '")
-                      .append(sibling.getName())
-                      .append("' is written with incompatible type ")
-                      .append(binding);
-                  diag.attachNote(siblingWrite.getLoc()).append("incompatible write is here");
-                });
-              }
-              it->second = *commonType;
-            }
+            it->second = *commonType;
           }
         }
       }
     }
-
-    // Do not commit a write-derived refinement that an existing read or one of its typed consumers
-    // cannot adopt. In particular, two complementary writes can have a common refinement even
-    // when a generic read is independently consumed as an incompatible concrete type.
-    if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
-      SymbolTableCollection tables;
-      for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
-        if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
-          // A read of another member carries that source's independent type evidence. Wait
-          // for its own propagation to establish the candidate type before narrowing this
-          // destination; otherwise a generic read can hide an incompatible source write.
-          if (writeOp.getVal().getDefiningOp<MemberReadOp>() &&
-              writeOp.getVal().getType() != newType) {
-            return failure();
-          }
-        }
-        if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(symUse.getUser())) {
-          bool canUse = canUseScalarizedValueAsType(
-              readOp.getVal().getType(), newType, tracker_, "UpdateMemberDefTypeFromWrite"
-          );
-          if (!canUse) {
-            return failure();
-          }
-          bool canRefine = canRefineMemberReadUsersToType(readOp, newType, tables, tracker_);
-          if (!canRefine) {
-            return failure();
-          }
-        }
-      }
-    }
-    rewriter.modifyOpInPlace(op, [&op, &newType]() { op.setType(newType); });
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] updated type of " << op << '\n');
-    return success();
   }
-};
+
+  return newType;
+}
+
+/// Check a definition's consumers against the complete pending read plan.
+static bool canRefineMemberDefinition(
+    MemberDefOp op, Type newType, ConversionTracker &tracker, SymbolTableCollection &tables,
+    const DenseMap<Value, Type> &pendingReads
+) {
+  StructDefOp parentRes = getParentOfType<StructDefOp>(op);
+  // Do not commit a write-derived refinement that an existing read or one of its typed consumers
+  // cannot adopt. In particular, two complementary writes can have a common refinement even
+  // when a generic read is independently consumed as an incompatible concrete type.
+  if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
+    for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
+      if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
+        // A read of another member carries that source's independent type evidence. Wait
+        // for its own propagation to establish the candidate type before narrowing this
+        // destination; otherwise a generic read can hide an incompatible source write.
+        if (writeOp.getVal().getDefiningOp<MemberReadOp>() &&
+            writeOp.getVal().getType() != newType) {
+          return false;
+        }
+      }
+      if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(symUse.getUser())) {
+        bool canUse = canUseScalarizedValueAsType(
+            readOp.getVal().getType(), newType, tracker, "canRefineMemberDefinition"
+        );
+        if (!canUse) {
+          return false;
+        }
+        bool canRefine =
+            canRefineMemberReadUsersToType(readOp, newType, tables, tracker, &pendingReads);
+        if (!canRefine) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+/// Reject shared binding conflicts before committing any member definition or read refinement.
+/// Individual parameter mismatches remain speculative failures handled by consumer checks.
+static LogicalResult verifyPendingMemberCallBindings(
+    ModuleOp module, const DenseMap<Value, Type> &pendingReads, SymbolTableCollection &tables,
+    const ConversionTracker &tracker
+) {
+  WalkResult result = module.walk([&](CallOp call) {
+    if (!llvm::any_of(call.getArgOperands(), [&](Value value) {
+      return pendingReads.contains(value);
+    })) {
+      return WalkResult::advance();
+    }
+    auto callee = call.getCalleeTarget(tables);
+    if (failed(callee)) {
+      return WalkResult::interrupt();
+    }
+    FunctionType proposed = getRefinedCallSignature(call, {}, {}, &pendingReads);
+    FunctionType required = callee->get().getFunctionType();
+    if (!functionTypesUnify(proposed, required, callee->getNamespace()) ||
+        callSignatureUnifies(proposed, required, callee->getNamespace(), tracker)) {
+      return WalkResult::advance();
+    }
+    auto diag = call.emitError(
+        "cannot refine member reads because the complete call signature has conflicting "
+        "template bindings"
+    );
+    diag.attachNote(call.getLoc())
+        << "proposed call signature " << proposed << " must unify consistently with " << required;
+    DenseSet<Value> noted;
+    for (Value argument : call.getArgOperands()) {
+      if (Type type = pendingReads.lookup(argument); type && noted.insert(argument).second) {
+        diag.attachNote(argument.getLoc()) << "member read would refine to " << type;
+      }
+    }
+    return WalkResult::interrupt();
+  });
+  return failure(result.wasInterrupted());
+}
+
+/// Plan, validate and commit member definitions and reads as one batch.
+/// Removing a blocked definition also removes its proposed read types, so no call is accepted on
+/// the assumption that a refinement rejected by another consumer will eventually take place.
+static LogicalResult
+propagateMemberTypes(ModuleOp module, ConversionTracker &tracker, bool &changed) {
+  changed = false;
+  MatchFailureListener listener;
+  PatternRewriter rewriter(module.getContext());
+  rewriter.setListener(&listener);
+  SymbolTableCollection tables;
+  DenseMap<MemberDefOp, Type> pendingMembers;
+  module.walk([&](MemberDefOp member) {
+    if (auto type = inferMemberTypeFromWrites(member, tracker, rewriter); succeeded(type)) {
+      pendingMembers[member] = *type;
+    }
+  });
+  if (listener.hadFailure) {
+    return failure();
+  }
+
+  DenseMap<Value, Type> pendingReads;
+  DenseMap<Value, MemberDefOp> sourceByRead;
+  SmallVector<MemberReadOp> reads = walkCollect<MemberReadOp>(module);
+  for (MemberReadOp read : reads) {
+    auto source = read.getMemberDefOp(tables);
+    if (failed(source)) {
+      return failure();
+    }
+    MemberDefOp member = source->get();
+    Type type = pendingMembers.lookup(member);
+    if (!type) {
+      type = member.getType();
+    }
+    if (type != read.getVal().getType() &&
+        canUseScalarizedValueAsType(
+            read.getVal().getType(), type, tracker, "propagateMemberTypes"
+        )) {
+      pendingReads[read.getVal()] = type;
+      sourceByRead[read.getVal()] = member;
+    }
+  }
+
+  // Validate every jointly proposed call before rejecting individual candidates; otherwise
+  // visitation order could retain one conflicting member at a generic type and conceal the issue.
+  if (failed(verifyPendingMemberCallBindings(module, pendingReads, tables, tracker))) {
+    return failure();
+  }
+  bool removed;
+  do {
+    removed = false;
+    SmallVector<MemberDefOp> rejectedMembers;
+    for (const auto &[member, type] : pendingMembers) {
+      if (!canRefineMemberDefinition(member, type, tracker, tables, pendingReads)) {
+        rejectedMembers.push_back(member);
+      }
+    }
+    for (MemberDefOp member : rejectedMembers) {
+      pendingMembers.erase(member);
+      for (MemberReadOp read : reads) {
+        if (sourceByRead.lookup(read.getVal()) == member) {
+          pendingReads.erase(read.getVal());
+        }
+      }
+      removed = true;
+    }
+    SmallVector<Value> rejectedReads;
+    for (MemberReadOp read : reads) {
+      if (Type type = pendingReads.lookup(read.getVal());
+          type && !canRefineMemberReadUsersToType(read, type, tables, tracker, &pendingReads)) {
+        rejectedReads.push_back(read.getVal());
+      }
+    }
+    for (Value read : rejectedReads) {
+      pendingReads.erase(read);
+      removed = true;
+    }
+  } while (removed);
+
+  for (auto [member, type] : pendingMembers) {
+    rewriter.modifyOpInPlace(member, [&]() { member.setType(type); });
+    changed = true;
+  }
+  for (MemberReadOp read : reads) {
+    if (Type type = pendingReads.lookup(read.getVal())) {
+      rewriter.modifyOpInPlace(read, [&]() { read.getVal().setType(type); });
+      changed = true;
+    }
+  }
+  tracker.updateModifiedFlag(changed);
+  return success();
+}
 
 namespace {
 
@@ -2947,54 +3074,6 @@ public:
     (void)newOp; // tell compiler it's intentionally unused in release builds
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
-  }
-};
-
-namespace {
-
-/// Update a member read/write value type from the referenced member definition.
-LogicalResult updateMemberRefValFromMemberDef(
-    MemberRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
-) {
-  SymbolTableCollection tables;
-  auto def = op.getMemberDefOp(tables);
-  if (failed(def)) {
-    return failure();
-  }
-  Type oldResultType = op.getVal().getType();
-  Type newResultType = def->get().getType();
-  if (oldResultType == newResultType ||
-      !canUseScalarizedValueAsType(
-          oldResultType, newResultType, tracker, "updateMemberRefValFromMemberDef"
-      )) {
-    return failure();
-  }
-  if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(op.getOperation())) {
-    if (!canRefineMemberReadUsersToType(readOp, newResultType, tables, tracker)) {
-      return failure();
-    }
-  }
-  rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
-  LLVM_DEBUG(
-      llvm::dbgs() << "[updateMemberRefValFromMemberDef] updated value type in " << op << '\n'
-  );
-  return success();
-}
-
-} // namespace
-
-/// Update the type of MemberReadOp result based on updated types from MemberDefOp.
-class UpdateMemberReadValFromDef final : public OpRewritePattern<MemberReadOp> {
-  ConversionTracker &tracker_;
-
-public:
-  /// Construct the member-read value propagation pattern.
-  UpdateMemberReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
-
-  /// Update a member read result type from its referenced member definition.
-  LogicalResult matchAndRewrite(MemberReadOp op, PatternRewriter &rewriter) const override {
-    return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
   }
 };
 
@@ -3197,7 +3276,7 @@ public:
     }
 
     // A read derives its type from its source member, whose writes can carry independent
-    // concrete dimensions. Let UpdateMemberReadValFromDef refine it from that declaration;
+    // concrete dimensions. Let member-read propagation refine it from that declaration;
     // a destination write must not impose its own type on the source read.
     if (oldValue.getDefiningOp<MemberReadOp>()) {
       return failure();
@@ -3227,33 +3306,44 @@ public:
   }
 };
 
-/// Run all type-propagation patterns to a local fixpoint for the current iteration.
+/// Alternate ordinary propagation with jointly validated member refinements to a local fixpoint.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
-  if (failed(NonDetMemberTypeVerifier(modOp, tracker).verifyModule())) {
-    return failure();
-  }
-  bool hadConflict = false;
-  RewritePatternSet patterns(ctx);
-  patterns.add<
-      // Benefit of this one must be higher than rules that would propagate the type in the opposite
-      // direction (ex: `UpdateArrayElemFromArrRead`) else the greedy conversion would not converge.
-      //  benefit = 6
-      UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
-      //  benefit = 3
-      UpdateFreeFuncCallOpTypes,         // CallOp, targeting non-struct functions
-      UpdateFuncTypeFromReturn,          // FuncDefOp
-      UpdateNewArrayElemFromWrite,       // CreateArrayOp
-      UpdateArrayElemFromArrRead,        // ReadArrayOp
-      UpdateArrayElemFromArrWrite,       // WriteArrayOp
-      UpdateMemberDefTypeFromWrite,      // MemberDefOp
-      UpdateMemberReadValFromDef,        // MemberReadOp
-      UpdateUnifiableCastResultFromInput // UnifiableCastOp
-      >(ctx, tracker);
-  patterns.add<UpdateMemberWriteValFromDef>(ctx, tracker, modOp, hadConflict);
+  // Member types only become more concrete. Continue until read/write chains stop exposing
+  // refinements; the ordinary greedy sweeps retain their own convergence bound.
+  for (;;) {
+    if (failed(NonDetMemberTypeVerifier(modOp, tracker).verifyModule())) {
+      return failure();
+    }
+    bool hadConflict = false;
+    RewritePatternSet patterns(ctx);
+    patterns.add<
+        // Benefit of this one must be higher than rules that would propagate the type in the
+        // opposite direction (ex: `UpdateArrayElemFromArrRead`) else the greedy conversion would
+        // not converge.
+        //  benefit = 6
+        UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
+        //  benefit = 3
+        UpdateFreeFuncCallOpTypes,         // CallOp, targeting non-struct functions
+        UpdateFuncTypeFromReturn,          // FuncDefOp
+        UpdateNewArrayElemFromWrite,       // CreateArrayOp
+        UpdateArrayElemFromArrRead,        // ReadArrayOp
+        UpdateArrayElemFromArrWrite,       // WriteArrayOp
+        UpdateUnifiableCastResultFromInput // UnifiableCastOp
+        >(ctx, tracker);
+    patterns.add<UpdateMemberWriteValFromDef>(ctx, tracker, modOp, hadConflict);
 
-  LogicalResult result = applyAndFoldGreedily(modOp, tracker, std::move(patterns));
-  return failure(failed(result) || hadConflict);
+    if (failed(applyAndFoldGreedily(modOp, tracker, std::move(patterns))) || hadConflict) {
+      return failure();
+    }
+    bool membersChanged;
+    if (failed(propagateMemberTypes(modOp, tracker, membersChanged))) {
+      return failure();
+    }
+    if (!membersChanged) {
+      return success();
+    }
+  }
 }
 } // namespace Step6_PropagateTypes
 

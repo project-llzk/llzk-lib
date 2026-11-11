@@ -158,51 +158,6 @@ static inline bool canReplaceReadResultWithType(
          tracker.isLegalConversion(readResultType, replacementType, patName);
 }
 
-/// Check a complete call signature without treating compatible pending refinements as conflicts.
-///
-/// Unification records null for any unequal bindings, including an affine size and its concrete
-/// specialization. Recover those bindings per argument/result and compare every pair: a generic
-/// binding may accept two concrete types that are incompatible with each other.
-static bool callSignatureUnifies(
-    FunctionType replacement, FunctionType callee, ArrayRef<StringRef> calleeNamespace
-) {
-  UnificationMap bindings;
-  if (!functionTypesUnify(replacement, callee, calleeNamespace, &bindings)) {
-    return false;
-  }
-  if (llvm::all_of(bindings, [](const auto &binding) { return bool(binding.second); })) {
-    return true;
-  }
-
-  DenseMap<UnificationMap::key_type, SmallVector<Attribute>> bindingsByParameter;
-  auto checkTypes = [&](TypeRange actual, TypeRange declared) {
-    for (auto [actualType, declaredType] : llvm::zip_equal(actual, declared)) {
-      UnificationMap localBindings;
-      if (!typesUnify(actualType, declaredType, calleeNamespace, &localBindings)) {
-        return false;
-      }
-      for (const auto &[parameter, value] : localBindings) {
-        if (!value) {
-          return false;
-        }
-        auto &previousValues = bindingsByParameter[parameter];
-        for (Attribute previous : previousValues) {
-          if (!typeParamsUnify(
-                  ArrayAttr::get(replacement.getContext(), {previous}),
-                  ArrayAttr::get(replacement.getContext(), {value})
-              )) {
-            return false;
-          }
-        }
-        previousValues.push_back(value);
-      }
-    }
-    return true;
-  };
-  return checkTypes(replacement.getInputs(), callee.getInputs()) &&
-         checkTypes(replacement.getResults(), callee.getResults());
-}
-
 /// Return true iff direct typed consumers of `readOp` accept `replacementType`.
 ///
 /// Scalarizing a pseudo-homogeneous array can replace a generic read result with the concrete
@@ -288,20 +243,12 @@ static LogicalResult canReplaceReadUsersWithType(
       }
       // One template variable can constrain several arguments and results. Validate the whole
       // signature with shared bindings, including other reads that preflight will replace later.
-      SmallVector<Type> argumentTypes;
-      for (Value argument : call.getArgOperands()) {
-        Type type = argument == result ? replacementType : argument.getType();
-        if (plannedReadTypes && argument != result) {
-          if (Type plannedType = plannedReadTypes->lookup(argument)) {
-            type = plannedType;
-          }
-        }
-        argumentTypes.push_back(type);
-      }
       FunctionType replacementSignature =
-          FunctionType::get(call.getContext(), argumentTypes, call.getResultTypes());
+          getRefinedCallSignature(call, result, replacementType, plannedReadTypes);
       FunctionType calleeSignature = callee->get().getFunctionType();
-      if (!callSignatureUnifies(replacementSignature, calleeSignature, callee->getNamespace())) {
+      if (!callSignatureUnifies(
+              replacementSignature, calleeSignature, callee->getNamespace(), tracker
+          )) {
         InFlightDiagnostic diag = readOp.emitError(
             "cannot scalarize heterogeneous array read because its index-specific value type is "
             "incompatible with a function call"

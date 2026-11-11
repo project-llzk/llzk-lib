@@ -24,6 +24,7 @@
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
@@ -46,10 +47,25 @@ bool canRefineCreateArrayUsersToType(
     array::CreateArrayOp createOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables
 );
 
+/// Check a full signature using shared, namespace-aware bindings across arguments and results.
+/// Compatible pending affine refinements are allowed, but conflicting concrete bindings are not.
+bool callSignatureUnifies(
+    mlir::FunctionType replacement, mlir::FunctionType callee,
+    llvm::ArrayRef<llvm::StringRef> calleeNamespace, const ConversionTracker &tracker
+);
+
+/// Build a call signature with every planned argument refinement and an optional overriding value.
+/// Results retain their declared types. A null refinedValue applies only pendingRefinements.
+mlir::FunctionType getRefinedCallSignature(
+    function::CallOp call, mlir::Value refinedValue = {}, mlir::Type refinedType = {},
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
+);
+
 /// Check that a member-read refinement preserves each supported consumer's type contract.
 bool canRefineMemberReadUsersToType(
     component::MemberReadOp readOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables,
-    const ConversionTracker &tracker
+    const ConversionTracker &tracker,
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
 );
 
 /// Validate external witness observations and return the constraint calls to retarget.

@@ -1,0 +1,242 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+// RUN: not llzk-opt -split-input-file -llzk-flatten -mlir-print-ir-after-failure %s 2>&1 | FileCheck %s --check-prefix=ATOMIC --enable-var-scope
+
+// Pending definitions and reads must be rejected together, before either becomes concrete.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @right : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %one : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
+      // expected-note@+1 {{member read would refine to}}
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-note@+1 {{member read would refine to}}
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Match::@consume(%left, %right) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "left", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "right", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @left, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @right, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_11]], %[[VAL_12]]) <{callee = @Match::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>, !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> ()
+
+// -----
+
+// Declaration and read visitation order must not select one binding.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @right : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %one : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
+      // expected-note@+1 {{member read would refine to}}
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-note@+1 {{member read would refine to}}
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Match::@consume(%left, %right) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "right", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "left", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @right, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @left, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_12]], %[[VAL_11]]) <{callee = @Match::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>, !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> ()
+
+// -----
+
+// Also check pending reads when both member definitions are already concrete.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[0]>> {column}
+    struct.member @right : !struct.type<@TCell::@Cell<[1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %one : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
+      // expected-note@+1 {{member read would refine to}}
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-note@+1 {{member read would refine to}}
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Match::@consume(%left, %right) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "left", type = !struct.type<@TCell_0_Cell>}> : () -> ()
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "right", type = !struct.type<@TCell_1_Cell>}> : () -> ()
+// ATOMIC:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @left, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @right, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_11]], %[[VAL_12]]) <{callee = @Match::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>, !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> ()
+
+// -----
+
+// A separate concrete consumer blocks the right refinement. Recheck the left proposal
+// against that removal, preserving both generic definitions and reads on failure.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  function.def @consume1(%value: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @right : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %also_zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      // expected-error@+1 {{'struct.writem' op has wrong type}}
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %also_zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      function.call @consume1(%right) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.call @Match::@consume(%left, %right) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "left", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "right", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_9]]) <{mapOpGroupSizes = array<i32>, member_name = @left, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_9]]) <{mapOpGroupSizes = array<i32>, member_name = @right, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC:        "function.call"(%[[VAL_12]], %[[VAL_13]]) <{callee = @Match::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>, !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> ()
