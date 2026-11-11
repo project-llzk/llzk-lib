@@ -1,0 +1,113 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// A non-member call keeps a cast generic while split members require concrete values.
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @observe(%value: !struct.type<@TCell::@Cell<[#id]>>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      %generic0 = poly.unifiable_cast %item0 : (!struct.type<@TCell::@Cell<[0]>>) -> !struct.type<@TCell::@Cell<[#id]>>
+      %generic1 = poly.unifiable_cast %item1 : (!struct.type<@TCell::@Cell<[1]>>) -> !struct.type<@TCell::@Cell<[#id]>>
+      // expected-error@+1 {{cannot scalarize array because a cast-backed initializer has an unsupported external use}}
+      %local = array.new %generic0, %generic1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      // expected-note@+1 {{cast result is also used here}}
+      function.call @observe(%generic0) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+      scf.if %cond {
+        // expected-note@+1 {{requires refined scalar member type}}
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @observe(%value: !struct.type<@TCell::@Cell<[#id]>>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      %generic0 = poly.unifiable_cast %item0 : (!struct.type<@TCell::@Cell<[0]>>) -> !struct.type<@TCell::@Cell<[#id]>>
+      %generic1 = poly.unifiable_cast %item1 : (!struct.type<@TCell::@Cell<[1]>>) -> !struct.type<@TCell::@Cell<[#id]>>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      scf.if %cond {
+        %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      } else {
+        // Duplicate writes put this array on the expandable fallback path.
+        // expected-error@+1 {{cannot scalarize array because a cast-backed initializer has an unsupported external use}}
+        %fallback = array.new %generic0, %generic1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %fallback[%c0] = %generic0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+        array.write %fallback[%c0] = %generic0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+        // expected-note@+1 {{cast result is also used here}}
+        function.call @observe(%generic0) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+        // expected-note@+1 {{requires refined scalar member type}}
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}

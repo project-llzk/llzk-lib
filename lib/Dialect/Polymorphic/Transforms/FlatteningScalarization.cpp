@@ -1871,11 +1871,30 @@ static LogicalResult planExpandableLocalArray(
         scalarValue.getType(), targetType, tracker, "planExpandableLocalArray"
     );
   };
-  auto verifyExternalMemberWriteUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
-                                           Location targetLoc) -> LogicalResult {
+  auto verifyExternalScalarUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
+                                      Location targetLoc) -> LogicalResult {
     for (OpOperand &use : scalarValue.getUses()) {
       auto externalWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
       if (!externalWrite || externalWrite.getVal() != use.get()) {
+        // Split writes rely on cast-result propagation, which can only retag a cast when all
+        // remaining uses are member writes. Local array uses disappear during scalarization;
+        // any other observation would keep the generic cast feeding concrete split members.
+        if (scalarValue.getType() != targetType && scalarValue.getDefiningOp<UnifiableCastOp>()) {
+          Operation *owner = use.getOwner();
+          auto arrayWrite = llvm::dyn_cast<WriteArrayOp>(owner);
+          if (owner != createOp.getOperation() &&
+              !(arrayWrite && arrayWrite.getRvalue() == scalarValue &&
+                arrayWrite.getArrRef() == createOp.getResult())) {
+            InFlightDiagnostic diag = createOp.emitError(
+                "cannot scalarize array because a cast-backed initializer has an unsupported "
+                "external use"
+            );
+            diag.attachNote(owner->getLoc()) << "cast result is also used here";
+            diag.attachNote(targetLoc)
+                << "array index " << idx << " requires refined scalar member type " << targetType;
+            return diag;
+          }
+        }
         continue;
       }
       auto memberDef = externalWrite.getMemberDefOp(tables);
@@ -2070,7 +2089,7 @@ static LogicalResult planExpandableLocalArray(
         return diag;
       }
       auto verifyWritesRes =
-          verifyExternalMemberWriteUses(scalarValue, idx, targetType, memberWriteOp.getLoc());
+          verifyExternalScalarUses(scalarValue, idx, targetType, memberWriteOp.getLoc());
       if (failed(verifyWritesRes)) {
         return failure();
       }
