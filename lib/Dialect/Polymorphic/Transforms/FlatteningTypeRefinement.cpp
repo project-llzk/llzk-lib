@@ -41,7 +41,8 @@ namespace llzk::polymorphic::detail::flattening {
 
 /// Return the common refinement of two matching type parameters, if it can be represented directly.
 FailureOr<Attribute> getCommonRefinedParamAttr(
-    Attribute lhs, Attribute rhs, const ConversionTracker &tracker, bool unifyDynamicSize
+    Attribute lhs, Attribute rhs, const ConversionTracker &tracker, bool unifyDynamicSize,
+    Operation *scope
 ) {
   assertValidAttrForParamOfType(lhs);
   assertValidAttrForParamOfType(rhs);
@@ -80,7 +81,7 @@ FailureOr<Attribute> getCommonRefinedParamAttr(
   auto lhsTy = llvm::dyn_cast<TypeAttr>(lhs);
   auto rhsTy = llvm::dyn_cast<TypeAttr>(rhs);
   if (lhsTy && rhsTy) {
-    auto commonType = getCommonRefinedType(lhsTy.getValue(), rhsTy.getValue(), tracker);
+    auto commonType = getCommonRefinedType(lhsTy.getValue(), rhsTy.getValue(), tracker, scope);
     if (succeeded(commonType)) {
       return TypeAttr::get(*commonType);
     }
@@ -89,7 +90,13 @@ FailureOr<Attribute> getCommonRefinedParamAttr(
 }
 
 /// Return the common refinement of two unifying types, if this pass can name it safely.
-FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker &tracker) {
+FailureOr<Type>
+getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker &tracker, Operation *scope) {
+  if (scope) {
+    auto common =
+        getCommonRefinedType(tracker.scopeType(lhs, scope), tracker.scopeType(rhs, scope), tracker);
+    return failed(common) ? FailureOr<Type>(failure()) : tracker.scopeType(*common, scope, false);
+  }
   if (lhs == rhs) {
     return lhs;
   }
@@ -210,8 +217,21 @@ FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker
 /// Check every shared binding, accounting for struct instantiation in the current iteration.
 bool callSignatureUnifies(
     FunctionType replacement, FunctionType callee, ArrayRef<StringRef> calleeNamespace,
-    const ConversionTracker &tracker, bool allowUnresolvedStructs
+    const ConversionTracker &tracker, bool allowUnresolvedStructs, Operation *scope
 ) {
+  // Qualify declaration-local names before consulting the caller's instantiation history.
+  AttrTypeReplacer qualify;
+  qualify.addReplacement([&](StructType type) -> std::optional<Type> {
+    SymbolRefAttr name = type.getNameRef();
+    for (StringRef part : calleeNamespace) {
+      name = asSymbolRefAttr(StringAttr::get(type.getContext(), part), name);
+    }
+    return StructType::get(name, type.getParams());
+  });
+  replacement = llvm::cast<FunctionType>(tracker.scopeType(replacement, scope));
+  callee = llvm::cast<FunctionType>(tracker.scopeType(qualify.replace(callee), scope));
+  calleeNamespace = {};
+
   // Partial instantiations can already share a family even when only one signature has
   // an exact recorded preimage. Preserve that agreement before restoring original types.
   if (allowUnresolvedStructs &&
@@ -277,7 +297,7 @@ FailureOr<Type> getRefinedMemberReadType(
   if (!structure) {
     return failure();
   }
-  while (auto instantiated = tracker.getInstantiation(structure)) {
+  while (auto instantiated = tracker.getInstantiation(structure, read)) {
     structure = *instantiated;
   }
   auto receiver = structure.getDefinition(tables, read);
@@ -318,7 +338,7 @@ FailureOr<Type> getRefinedMemberReadType(
   if (projectedMemberType) {
     *projectedMemberType = memberType;
   }
-  return getCommonRefinedType(read.getVal().getType(), memberType, tracker);
+  return getCommonRefinedType(read.getVal().getType(), memberType, tracker, read);
 }
 
 /// Look up a proposed type, falling back to the unchanged SSA type.
@@ -383,7 +403,7 @@ void extendPendingRefinements(
       }
       if (result && type != plannedType(result, &pending) &&
           canUseScalarizedValueAsType(
-              plannedType(result, &pending), type, tracker, "extendPendingRefinements"
+              plannedType(result, &pending), type, tracker, "extendPendingRefinements", op
           )) {
         pending[result] = type;
         changed = true;
@@ -403,21 +423,24 @@ static bool canRefineCallUse(
     return false;
   }
   auto callee = call.getCalleeTarget(tables);
-  return succeeded(callee) && callSignatureUnifies(
-                                  getRefinedCallSignature(call, use.get(), type, pending),
-                                  callee->get().getFunctionType(), callee->getNamespace(), tracker
-                              );
+  return succeeded(callee) &&
+         callSignatureUnifies(
+             getRefinedCallSignature(call, use.get(), type, pending),
+             callee->get().getFunctionType(), callee->getNamespace(), tracker, false, call
+         );
 }
 
 /// Return true iff a value of `sourceType` can be used where `targetType` is requested after
 /// scalarization has retained the common refinement.
 bool canUseScalarizedValueAsType(
-    Type sourceType, Type targetType, const ConversionTracker &tracker, const char *patName
+    Type sourceType, Type targetType, const ConversionTracker &tracker, const char *patName,
+    Operation *scope
 ) {
-  if (sourceType == targetType || tracker.isLegalConversion(sourceType, targetType, patName)) {
+  if (sourceType == targetType ||
+      tracker.isLegalConversion(sourceType, targetType, patName, scope)) {
     return true;
   }
-  auto commonType = getCommonRefinedType(sourceType, targetType, tracker);
+  auto commonType = getCommonRefinedType(sourceType, targetType, tracker, scope);
   return succeeded(commonType) && *commonType == targetType;
 }
 
@@ -698,7 +721,7 @@ bool canRefineMemberReadUsersToType(
       Type memberType = memberDef->get().getType();
       if (isConcreteType(memberType, /*allowStructParams=*/false)) {
         auto canUse = canUseScalarizedValueAsType(
-            refinedType, memberType, tracker, "UpdateMemberDefTypeFromWrite"
+            refinedType, memberType, tracker, "UpdateMemberDefTypeFromWrite", readOp
         );
         if (!canUse) {
           return false;
@@ -722,7 +745,8 @@ bool canRefineMemberReadUsersToType(
             continue;
           }
           auto canUse = canUseScalarizedValueAsType(
-              refinedType, otherWrite.getVal().getType(), tracker, "UpdateMemberDefTypeFromWrite"
+              refinedType, otherWrite.getVal().getType(), tracker, "UpdateMemberDefTypeFromWrite",
+              readOp
           );
           if (!canUse) {
             return false;
@@ -746,7 +770,7 @@ bool canRefineMemberReadUsersToType(
       // the refined type and the array element type can be refined accordingly.
       bool canUse = canUseScalarizedValueAsType(
           createArray.getType().getElementType(), refinedType, tracker,
-          "UpdateMemberDefTypeFromWrite"
+          "UpdateMemberDefTypeFromWrite", readOp
       );
       if (!canUse) {
         return false;
@@ -887,7 +911,7 @@ bool canRefineMemberReadUsersToType(
       // changed to an incompatible concrete type after template instantiation.
       if (isConcreteType(otherOperand.getType(), /*allowStructParams=*/false) &&
           !canUseScalarizedValueAsType(
-              refinedType, otherOperand.getType(), tracker, "UpdateMemberDefTypeFromWrite"
+              refinedType, otherOperand.getType(), tracker, "UpdateMemberDefTypeFromWrite", readOp
           )) {
         return false;
       }
@@ -926,7 +950,7 @@ bool canRefineMemberReadUsersToType(
         return false;
       }
       auto canUse = canUseScalarizedValueAsType(
-          castResultType, refinedType, tracker, "UpdateUnifiableCastResultFromInput"
+          castResultType, refinedType, tracker, "UpdateUnifiableCastResultFromInput", readOp
       );
       if (!canUse) {
         return false;

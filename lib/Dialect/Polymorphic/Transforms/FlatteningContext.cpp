@@ -195,6 +195,33 @@ DenseSet<Operation *> ConversionTracker::getPreservedLoopOps(ModuleOp modOp) {
   return preserved;
 }
 
+Type ConversionTracker::scopeType(Type type, Operation *scope, bool toCache) const {
+  if (!scope || !cacheRoot) {
+    return type;
+  }
+  auto root = getRootModule(scope);
+  assert(succeeded(root) && "verified operations have a lookup root");
+  if (*root == cacheRoot) {
+    return type;
+  }
+  auto path =
+      getPathRelativeToAncestor(llvm::cast<SymbolOpInterface>(root->getOperation()), cacheRoot);
+  assert(succeeded(path) && "nested lookup roots must have a symbol path");
+  auto prefix = getPieces(*path);
+  AttrTypeReplacer names;
+  names.addReplacement([&](StructType nested) -> std::optional<Type> {
+    auto pieces = getPieces(nested.getNameRef());
+    if (toCache) {
+      pieces.insert(pieces.begin(), prefix.begin(), prefix.end());
+    } else {
+      assert(llvm::equal(ArrayRef(pieces).take_front(prefix.size()), prefix));
+      pieces.erase(pieces.begin(), pieces.begin() + prefix.size());
+    }
+    return StructType::get(asSymbolRefAttr(pieces), nested.getParams());
+  });
+  return names.replace(type);
+}
+
 void ConversionTracker::recordInstantiation(SymbolRefAttr funcName) {
   funcInstantiations.insert(funcName);
   modified = true;
@@ -220,18 +247,20 @@ void ConversionTracker::recordInstantiation(StructType oldType, StructType newTy
   assert(structInstantiations.size() == reverseInstantiations.size());
 }
 
-std::optional<StructType> ConversionTracker::getInstantiation(StructType oldType) const {
-  auto cachedResult = structInstantiations.find(oldType);
+std::optional<StructType>
+ConversionTracker::getInstantiation(StructType oldType, Operation *scope) const {
+  auto cachedResult = structInstantiations.find(llvm::cast<StructType>(scopeType(oldType, scope)));
   if (cachedResult != structInstantiations.end()) {
-    return cachedResult->second;
+    return llvm::cast<StructType>(scopeType(cachedResult->second, scope, false));
   }
   return std::nullopt;
 }
 
-std::optional<StructType> ConversionTracker::getPreimage(StructType newType) const {
-  auto cachedResult = reverseInstantiations.find(newType);
+std::optional<StructType>
+ConversionTracker::getPreimage(StructType newType, Operation *scope) const {
+  auto cachedResult = reverseInstantiations.find(llvm::cast<StructType>(scopeType(newType, scope)));
   if (cachedResult != reverseInstantiations.end()) {
-    return cachedResult->second;
+    return llvm::cast<StructType>(scopeType(cachedResult->second, scope, false));
   }
   return std::nullopt;
 }
@@ -265,6 +294,7 @@ DenseSet<SymbolRefAttr> ConversionTracker::getInstantiatedDefinitionNames() cons
 }
 
 void ConversionTracker::reportDelayedDiagnostics(StructType newType, CallOp caller) {
+  newType = llvm::cast<StructType>(scopeType(newType, caller));
   auto res = delayedDiagnostics.find(newType);
   if (res != delayedDiagnostics.end()) {
     llzk::polymorphic::detail::reportDelayedDiagnostics(caller, std::move(res->second));
@@ -288,7 +318,11 @@ void ConversionTracker::recordFullFuncInstantiation(
   fullFuncInstantiations.record(sourceFunc, concreteParamKey, instantiatedPath);
 }
 
-bool ConversionTracker::isLegalConversion(Type oldType, Type newType, const char *patName) const {
+bool ConversionTracker::isLegalConversion(
+    Type oldType, Type newType, const char *patName, Operation *scope
+) const {
+  oldType = scopeType(oldType, scope);
+  newType = scopeType(newType, scope);
   std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
     // Check if `oTy` is a struct with a known instantiation to `nTy`
     if (StructType oldStructType = llvm::dyn_cast<StructType>(oTy)) {

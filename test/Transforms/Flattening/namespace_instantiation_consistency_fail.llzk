@@ -1,0 +1,48 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// Namespace normalization preserves conflicting shared call bindings.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>, %known: !struct.type<@TCell::@Cell<[0]>>) {
+      function.return
+    }
+  }
+
+  }
+  struct.def @Holder {
+    struct.member @left : !struct.type<@Lib::@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @Lib::@TCell::@Cell::@compute() : () -> !struct.type<@Lib::@TCell::@Cell<[0]>>
+      %one = function.call @Lib::@TCell::@Cell::@compute() : () -> !struct.type<@Lib::@TCell::@Cell<[1]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@Lib::@TCell::@Cell<[0]>>
+      // expected-note@+1 {{member read would refine to}}
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@Lib::@TCell::@Cell<[#id]>>
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Lib::@Match::@consume(%left, %one, %zero) : (!struct.type<@Lib::@TCell::@Cell<[#id]>>, !struct.type<@Lib::@TCell::@Cell<[1]>>, !struct.type<@Lib::@TCell::@Cell<[0]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}

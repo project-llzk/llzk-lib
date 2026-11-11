@@ -63,6 +63,7 @@ public:
 
 /// Per-invocation instantiation history, legal refinements, and fixpoint/unroll state.
 class ConversionTracker {
+  mlir::ModuleOp cacheRoot;
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified = false;
   /// Maps original remote (i.e., use site) type to new remote type.
@@ -91,7 +92,11 @@ class ConversionTracker {
 
 public:
   /// Initialize the expansion limit for this invocation of the flattening pass.
-  explicit ConversionTracker(uint64_t limit) : modified(false), unrollIterationLimit(limit) {}
+  explicit ConversionTracker(uint64_t limit, mlir::ModuleOp root = {})
+      : cacheRoot(root), modified(false), unrollIterationLimit(limit) {}
+
+  /// Translate struct names between an operation's lookup root and the shared cache root.
+  mlir::Type scopeType(mlir::Type type, mlir::Operation *scope, bool toCache = true) const;
 
   /// Warn once per source location and reason when a loop cannot safely be expanded.
   bool shouldSkipUnroll(mlir::Operation *op);
@@ -117,10 +122,12 @@ public:
   void recordInstantiation(component::StructType oldType, component::StructType newType);
 
   /// Return the instantiated type of the given StructType, if any.
-  std::optional<component::StructType> getInstantiation(component::StructType oldType) const;
+  std::optional<component::StructType>
+  getInstantiation(component::StructType oldType, mlir::Operation *scope = nullptr) const;
 
   /// Return the original parameterized type that produced the given instantiated type, if any.
-  std::optional<component::StructType> getPreimage(component::StructType newType) const;
+  std::optional<component::StructType>
+  getPreimage(component::StructType newType, mlir::Operation *scope = nullptr) const;
 
   /// Record that the given free function was instantiated.
   void recordInstantiation(mlir::SymbolRefAttr funcName);
@@ -163,15 +170,21 @@ public:
 
   /// Check if the type conversion is legal, i.e., the new type unifies with and is more concrete
   /// than the old type with additional allowance for the results of struct flattening conversions.
-  bool isLegalConversion(mlir::Type oldType, mlir::Type newType, const char *patName) const;
+  bool isLegalConversion(
+      mlir::Type oldType, mlir::Type newType, const char *patName, mlir::Operation *scope = nullptr
+  ) const;
 
   /// Check whether every corresponding pair in `oldTypes` and `newTypes` is a legal conversion.
   template <typename T, typename U>
-  inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
+  inline bool areLegalConversions(
+      T oldTypes, U newTypes, const char *patName, mlir::Operation *scope = nullptr
+  ) const {
     return llvm::all_of(
         llvm::zip_equal(oldTypes, newTypes),
-        [this, &patName](std::tuple<mlir::Type, mlir::Type> oldThenNew) {
-      return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
+        [this, &patName, scope](std::tuple<mlir::Type, mlir::Type> oldThenNew) {
+      return this->isLegalConversion(
+          std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName, scope
+      );
     }
     );
   }

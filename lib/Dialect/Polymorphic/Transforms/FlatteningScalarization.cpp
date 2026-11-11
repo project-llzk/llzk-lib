@@ -155,7 +155,7 @@ static inline bool canReplaceReadResultWithType(
 ) {
   Type readResultType = readOp.getResult().getType();
   return readResultType == replacementType ||
-         tracker.isLegalConversion(readResultType, replacementType, patName);
+         tracker.isLegalConversion(readResultType, replacementType, patName, readOp);
 }
 
 /// Return true iff direct typed consumers of `readOp` accept `replacementType`.
@@ -247,7 +247,7 @@ static LogicalResult canReplaceReadUsersWithType(
           getRefinedCallSignature(call, result, replacementType, plannedReadTypes);
       FunctionType calleeSignature = callee->get().getFunctionType();
       if (!callSignatureUnifies(
-              replacementSignature, calleeSignature, callee->getNamespace(), tracker
+              replacementSignature, calleeSignature, callee->getNamespace(), tracker, false, call
           )) {
         InFlightDiagnostic diag = readOp.emitError(
             "cannot scalarize heterogeneous array read because its index-specific value type is "
@@ -455,13 +455,15 @@ static inline ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
   return op.indexOperandsToAttributeArray();
 }
 
-static Type
-specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *tracker = nullptr);
+static Type specializeTypeForArrayIndex(
+    Type type, ArrayAttr idx, const ConversionTracker *tracker, Operation *scope
+);
 
 /// Fold an affine-map attribute against the static array index, if the map only depends on that
 /// index.
-static Attribute
-specializeAttrForArrayIndex(Attribute attr, ArrayAttr idx, const ConversionTracker *tracker) {
+static Attribute specializeAttrForArrayIndex(
+    Attribute attr, ArrayAttr idx, const ConversionTracker *tracker, Operation *scope
+) {
   if (!attr) {
     return attr;
   }
@@ -488,7 +490,7 @@ specializeAttrForArrayIndex(Attribute attr, ArrayAttr idx, const ConversionTrack
     return result.front();
   }
   if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-    Type specialized = specializeTypeForArrayIndex(typeAttr.getValue(), idx, tracker);
+    Type specialized = specializeTypeForArrayIndex(typeAttr.getValue(), idx, tracker, scope);
     return specialized == typeAttr.getValue() ? attr : TypeAttr::get(specialized);
   }
   if (auto arrayAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
@@ -496,7 +498,7 @@ specializeAttrForArrayIndex(Attribute attr, ArrayAttr idx, const ConversionTrack
     SmallVector<Attribute> specializedAttrs;
     bool changed = false;
     for (Attribute nested : arrayAttr.getValue()) {
-      Attribute specialized = specializeAttrForArrayIndex(nested, idx, tracker);
+      Attribute specialized = specializeAttrForArrayIndex(nested, idx, tracker, scope);
       specializedAttrs.push_back(specialized);
       changed |= specialized != nested;
     }
@@ -506,8 +508,9 @@ specializeAttrForArrayIndex(Attribute attr, ArrayAttr idx, const ConversionTrack
 }
 
 /// Specialize affine-map parameters nested in `type` for the given static array index.
-static Type
-specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *tracker) {
+static Type specializeTypeForArrayIndex(
+    Type type, ArrayAttr idx, const ConversionTracker *tracker, Operation *scope
+) {
   if (auto structTy = llvm::dyn_cast<StructType>(type)) {
     ArrayAttr params = structTy.getParams();
     if (!params) {
@@ -516,7 +519,7 @@ specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *t
     SmallVector<Attribute> specializedParams;
     bool changed = false;
     for (Attribute param : params.getValue()) {
-      Attribute specialized = specializeAttrForArrayIndex(param, idx, tracker);
+      Attribute specialized = specializeAttrForArrayIndex(param, idx, tracker, scope);
       specializedParams.push_back(specialized);
       changed |= specialized != param;
     }
@@ -528,7 +531,7 @@ specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *t
     );
     if (tracker) {
       if (auto structInstantiation =
-              tracker->getInstantiation(llvm::cast<StructType>(specialized))) {
+              tracker->getInstantiation(llvm::cast<StructType>(specialized), scope)) {
         return *structInstantiation;
       }
     }
@@ -538,11 +541,12 @@ specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *t
     SmallVector<Attribute> specializedDims;
     bool dimsChanged = false;
     for (Attribute dim : arrayTy.getDimensionSizes()) {
-      Attribute specialized = specializeAttrForArrayIndex(dim, idx, tracker);
+      Attribute specialized = specializeAttrForArrayIndex(dim, idx, tracker, scope);
       specializedDims.push_back(specialized);
       dimsChanged |= specialized != dim;
     }
-    Type specializedElem = specializeTypeForArrayIndex(arrayTy.getElementType(), idx, tracker);
+    Type specializedElem =
+        specializeTypeForArrayIndex(arrayTy.getElementType(), idx, tracker, scope);
     return (dimsChanged || specializedElem != arrayTy.getElementType())
                ? ArrayType::get(specializedElem, specializedDims)
                : type;
@@ -551,7 +555,7 @@ specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *t
     SmallVector<pod::RecordAttr> specializedRecords;
     bool changed = false;
     for (pod::RecordAttr record : podTy.getRecords()) {
-      Type specialized = specializeTypeForArrayIndex(record.getType(), idx, tracker);
+      Type specialized = specializeTypeForArrayIndex(record.getType(), idx, tracker, scope);
       specializedRecords.push_back(
           pod::RecordAttr::get(type.getContext(), record.getName(), specialized)
       );
@@ -578,11 +582,11 @@ static LogicalResult seedValuesFromArrayElements(
     valueByIndex[idx] = value;
     if (typeByIndex) {
       Type specializedType =
-          specializeTypeForArrayIndex(createOp.getType().getElementType(), idx, tracker);
+          specializeTypeForArrayIndex(createOp.getType().getElementType(), idx, tracker, createOp);
       bool canUseSpecializedType =
           typesUnify(value.getType(), specializedType) ||
           (tracker && tracker->isLegalConversion(
-                          value.getType(), specializedType, "seedValuesFromArrayElements"
+                          value.getType(), specializedType, "seedValuesFromArrayElements", createOp
                       ));
       (*typeByIndex)[idx] = canUseSpecializedType ? specializedType : value.getType();
     }
@@ -637,19 +641,19 @@ static LogicalResult mergeSplitCandidateType(
   if (existingType == candidateType) {
     return success();
   }
-  if (tracker.isLegalConversion(existingType, candidateType, "mergeSplitCandidateType")) {
+  if (tracker.isLegalConversion(existingType, candidateType, "mergeSplitCandidateType", member)) {
     existing->second = candidateType;
     if (splitTypeOps) {
       (*splitTypeOps)[idx] = candidateOp;
     }
     return success();
   }
-  if (tracker.isLegalConversion(candidateType, existingType, "mergeSplitCandidateType") ||
+  if (tracker.isLegalConversion(candidateType, existingType, "mergeSplitCandidateType", member) ||
       existingType == candidateType) {
     return success();
   }
 
-  auto commonType = getCommonRefinedType(existingType, candidateType, tracker);
+  auto commonType = getCommonRefinedType(existingType, candidateType, tracker, member);
   if (succeeded(commonType)) {
     existing->second = *commonType;
     if (splitTypeOps) {
@@ -828,8 +832,9 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
       }
     }
     if (!scalarType) {
-      scalarType =
-          specializeTypeForArrayIndex(arrayInfo.createOp.getType().getElementType(), idx, &tracker);
+      scalarType = specializeTypeForArrayIndex(
+          arrayInfo.createOp.getType().getElementType(), idx, &tracker, arrayInfo.createOp
+      );
     }
     MemberDefOp newMember = MemberDefOp::create(
         rewriter, member.getLoc(), member.getSymNameAttr(), scalarType, member.getSignal(),
@@ -918,12 +923,13 @@ static LogicalResult refreshValuesFromArrayOperands(
   }
   if (!elements.empty()) {
     for (auto [idx, value] : llvm::zip_equal(info.indices, elements)) {
-      Type specializedType =
-          specializeTypeForArrayIndex(info.createOp.getType().getElementType(), idx, &tracker);
+      Type specializedType = specializeTypeForArrayIndex(
+          info.createOp.getType().getElementType(), idx, &tracker, info.createOp
+      );
       bool canUseSpecializedType =
           typesUnify(value.getType(), specializedType) ||
           tracker.isLegalConversion(
-              value.getType(), specializedType, "refreshValuesFromArrayOperands"
+              value.getType(), specializedType, "refreshValuesFromArrayOperands", info.createOp
           );
       setCachedValue(idx, value, canUseSpecializedType ? specializedType : value.getType());
     }
@@ -1037,7 +1043,9 @@ static LogicalResult collectSharedNondetSpecializationTypes(
       firstUseByNondet.try_emplace(value, FirstUse {idx, loc});
       return success();
     }
-    FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
+    FailureOr<Type> commonType = getCommonRefinedType(
+        existing->second, type, tracker, value.getParentRegion()->getParentOp()
+    );
     if (failed(commonType)) {
       auto firstUseIt = firstUseByNondet.find(value);
       assert(firstUseIt != firstUseByNondet.end() && "first use must be recorded");
@@ -1154,7 +1162,7 @@ static FailureOr<Value> buildReadReplacementValue(
     return failure();
   }
   if (!canUseScalarizedValueAsType(
-          replacementValue.getType(), replacementType, tracker, "buildReadReplacementValue"
+          replacementValue.getType(), replacementType, tracker, "buildReadReplacementValue", readOp
       )) {
     return failure();
   }
@@ -1279,7 +1287,9 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
   if (scalarValue.getType() == type) {
     return scalarValue;
   }
-  FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), type, tracker);
+  FailureOr<Type> commonType = getCommonRefinedType(
+      scalarValue.getType(), type, tracker, scalarValue.getParentRegion()->getParentOp()
+  );
   if (failed(commonType)) {
     return failure();
   }
@@ -1857,9 +1867,9 @@ static LogicalResult planExpandableLocalArray(
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, PendingMaterializationUse> firstMaterializedUseByIndex;
   DenseMap<ArrayAttr, SmallVector<ReadArrayOp>> readsByIndex;
-  auto valueCompatibleWithTargetType = [&tracker](Value scalarValue, Type targetType) {
+  auto valueCompatibleWithTargetType = [&tracker, createOp](Value scalarValue, Type targetType) {
     return canUseScalarizedValueAsType(
-        scalarValue.getType(), targetType, tracker, "planExpandableLocalArray"
+        scalarValue.getType(), targetType, tracker, "planExpandableLocalArray", createOp
     );
   };
   auto verifyExternalScalarUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
@@ -1893,7 +1903,7 @@ static LogicalResult planExpandableLocalArray(
         return failure();
       }
       Type externalType = memberDef->get().getType();
-      if (succeeded(getCommonRefinedType(externalType, targetType, tracker))) {
+      if (succeeded(getCommonRefinedType(externalType, targetType, tracker, createOp))) {
         continue;
       }
 
@@ -1910,7 +1920,8 @@ static LogicalResult planExpandableLocalArray(
     // observation outside this array's initializer/write path would otherwise still refer to the
     // original generic witness, splitting one witness into two independent values.
     if (scalarValue.getType() != targetType && scalarValue.getDefiningOp<NonDetOp>()) {
-      FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), targetType, tracker);
+      FailureOr<Type> commonType =
+          getCommonRefinedType(scalarValue.getType(), targetType, tracker, createOp);
       if (succeeded(commonType) && *commonType != scalarValue.getType()) {
         for (OpOperand &use : scalarValue.getUses()) {
           Operation *owner = use.getOwner();
@@ -1954,7 +1965,7 @@ static LogicalResult planExpandableLocalArray(
       return success();
     }
     Type existingType = existing->second.type;
-    FailureOr<Type> commonType = getCommonRefinedType(existingType, targetType, tracker);
+    FailureOr<Type> commonType = getCommonRefinedType(existingType, targetType, tracker, createOp);
     if (failed(commonType)) {
       InFlightDiagnostic diag =
           createOp.emitError("cannot split heterogeneous array member because ")
@@ -2012,7 +2023,7 @@ static LogicalResult planExpandableLocalArray(
         Value scalarValue = source->get();
         sourceByRead[readOp.getResult()] = source;
         plan.witnessRequests.emplace_back(source, readType);
-        if (failed(getCommonRefinedType(scalarValue.getType(), readType, tracker))) {
+        if (failed(getCommonRefinedType(scalarValue.getType(), readType, tracker, createOp))) {
           InFlightDiagnostic diag =
               createOp.emitError("cannot split heterogeneous array member because ")
               << arrayDescription << " stores a scalar value with an incompatible read result type";
@@ -2090,7 +2101,7 @@ static LogicalResult planExpandableLocalArray(
         bool canMaterializeTarget;
         if (UnifiableCastOp castOp = scalarValue.getDefiningOp<UnifiableCastOp>()) {
           canMaterializeTarget = canUseScalarizedValueAsType(
-              castOp.getInput().getType(), targetType, tracker, "planExpandableLocalArray"
+              castOp.getInput().getType(), targetType, tracker, "planExpandableLocalArray", createOp
           );
         } else {
           // Array reads are replaced before member writes, so their replacement can carry the
@@ -2115,7 +2126,8 @@ static LogicalResult planExpandableLocalArray(
         continue;
       }
       Type existingType = existing->second.first;
-      FailureOr<Type> commonType = getCommonRefinedType(existingType, targetType, tracker);
+      FailureOr<Type> commonType =
+          getCommonRefinedType(existingType, targetType, tracker, createOp);
       if (failed(commonType)) {
         InFlightDiagnostic diag =
             createOp.emitError("cannot split heterogeneous array member because ")
@@ -2129,7 +2141,7 @@ static LogicalResult planExpandableLocalArray(
       bool canMaterializeCommonType;
       if (UnifiableCastOp castOp = scalarValue.getDefiningOp<UnifiableCastOp>()) {
         canMaterializeCommonType = canUseScalarizedValueAsType(
-            castOp.getInput().getType(), *commonType, tracker, "planExpandableLocalArray"
+            castOp.getInput().getType(), *commonType, tracker, "planExpandableLocalArray", createOp
         );
       } else {
         canMaterializeCommonType = scalarValue.getDefiningOp<NonDetOp>();
@@ -2182,7 +2194,9 @@ static LogicalResult rewriteExpandableLocalArray(
       specializedTypeByNondet.try_emplace(value, type);
       return success();
     }
-    FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
+    FailureOr<Type> commonType = getCommonRefinedType(
+        existing->second, type, tracker, value.getParentRegion()->getParentOp()
+    );
     if (failed(commonType)) {
       return createOp.emitError(
           "cannot scalarize array because a shared nondeterministic initializer requires "

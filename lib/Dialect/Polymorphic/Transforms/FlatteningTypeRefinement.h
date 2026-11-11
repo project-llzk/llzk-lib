@@ -33,19 +33,21 @@ namespace llzk::polymorphic::detail::flattening {
 class ConversionTracker;
 
 /// Return a representable common refinement, accounting for this pass's instantiated types.
-mlir::FailureOr<mlir::Type>
-getCommonRefinedType(mlir::Type lhs, mlir::Type rhs, const ConversionTracker &tracker);
+mlir::FailureOr<mlir::Type> getCommonRefinedType(
+    mlir::Type lhs, mlir::Type rhs, const ConversionTracker &tracker,
+    mlir::Operation *scope = nullptr
+);
 
 /// Return a common type- or value-valued parameter refinement, preserving concrete conflicts.
 mlir::FailureOr<mlir::Attribute> getCommonRefinedParamAttr(
     mlir::Attribute lhs, mlir::Attribute rhs, const ConversionTracker &tracker,
-    bool unifyDynamicSize = false
+    bool unifyDynamicSize = false, mlir::Operation *scope = nullptr
 );
 
 /// Return whether a scalar source can supply the requested common refinement.
 bool canUseScalarizedValueAsType(
     mlir::Type sourceType, mlir::Type targetType, const ConversionTracker &tracker,
-    const char *patName
+    const char *patName, mlir::Operation *scope = nullptr
 );
 
 /// Check the independently declared type requirements of an array allocation's consumers.
@@ -69,7 +71,7 @@ void extendPendingRefinements(
 bool callSignatureUnifies(
     mlir::FunctionType replacement, mlir::FunctionType callee,
     llvm::ArrayRef<llvm::StringRef> calleeNamespace, const ConversionTracker &tracker,
-    bool allowUnresolvedStructs = false
+    bool allowUnresolvedStructs = false, mlir::Operation *scope = nullptr
 );
 
 /// Build a call signature with every planned argument refinement and an optional overriding value.
