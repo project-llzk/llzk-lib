@@ -980,7 +980,19 @@ static LogicalResult refreshValuesFromDependentCandidates(
   return failure();
 }
 
-/// Verify that refreshing dependent candidates did not invalidate a direct read replacement.
+/// Return the type actually used when replacing a candidate read, including shared refinements.
+static Type getReadReplacementType(
+    ReadArrayOp readOp, const ScalarizedArrayInfo &info,
+    const DenseMap<Value, Type> &specializedTypeByNondet
+) {
+  ArrayAttr idx = getIndexAsAttr(readOp);
+  if (Type sharedType = specializedTypeByNondet.lookup(info.valueByIndex.lookup(idx))) {
+    return sharedType;
+  }
+  return info.typeByIndex.lookup(idx);
+}
+
+/// Verify that dependent candidates and shared witnesses preserve every direct read replacement.
 ///
 /// A candidate can cache a generic read from another candidate as the value for one of its
 /// indices. Refreshing the cache replaces that generic value and type with the upstream
@@ -989,7 +1001,8 @@ static LogicalResult refreshValuesFromDependentCandidates(
 static LogicalResult verifyRefreshedCandidateReads(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
     const ConversionTracker &tracker,
-    const DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp
+    const DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp,
+    const DenseMap<Value, Type> &specializedTypeByNondet
 ) {
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     for (ReadArrayOp readOp : info.reads) {
@@ -997,14 +1010,15 @@ static LogicalResult verifyRefreshedCandidateReads(
       if (!idx) {
         return failure();
       }
+      Type replacementType = getReadReplacementType(readOp, info, specializedTypeByNondet);
       bool canReplaceResult = canReplaceReadResultWithType(
-          readOp, info.typeByIndex.lookup(idx), tracker, "verifyRefreshedCandidateReads"
+          readOp, replacementType, tracker, "verifyRefreshedCandidateReads"
       );
       if (!canReplaceResult) {
         return failure();
       }
       auto canReplaceUsers = canReplaceReadUsersWithType(
-          readOp, info.typeByIndex.lookup(idx), tables, tracker, &candidateInfoByCreateOp
+          readOp, replacementType, tables, tracker, &candidateInfoByCreateOp
       );
       if (failed(canReplaceUsers)) {
         return failure();
@@ -1176,9 +1190,6 @@ static FailureOr<Value> buildReadReplacementValue(
 
   if (NonDetOp sourceNondet = replacementValue.getDefiningOp<NonDetOp>()) {
     // Preserve sharing between every index initialized from the same generic witness.
-    if (Value cachedNondet = specializedNondetBySource.lookup(replacementValue)) {
-      return cachedNondet;
-    }
     Type specializedType = specializedTypeByNondet.lookup(replacementValue);
     if (!specializedType) {
       return failure();
@@ -1332,15 +1343,14 @@ static LogicalResult rewriteLocalArray(
   }
 
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
-    ArrayAttr idx = getIndexAsAttr(readOp);
-    auto canReplaceResult = canReplaceReadResultWithType(
-        readOp, info.typeByIndex.lookup(idx), tracker, "rewriteLocalArray"
-    );
+    Type replacementType = getReadReplacementType(readOp, info, specializedTypeByNondet);
+    auto canReplaceResult =
+        canReplaceReadResultWithType(readOp, replacementType, tracker, "rewriteLocalArray");
     if (!canReplaceResult) {
       return failure();
     }
     auto canReplaceUsers = canReplaceReadUsersWithType(
-        readOp, info.typeByIndex.lookup(idx), tables, tracker, candidateInfoByCreateOp
+        readOp, replacementType, tables, tracker, candidateInfoByCreateOp
     );
     if (failed(canReplaceUsers)) {
       return failure();
@@ -2553,11 +2563,6 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
   if (failed(refreshRes)) {
     return failure();
   }
-  auto verifyRes =
-      verifyRefreshedCandidateReads(arraysToScalarize, tables, tracker, candidateInfoByCreateOp);
-  if (failed(verifyRes)) {
-    return failure();
-  }
   DenseMap<CreateArrayOp, ExpandableArrayPlan> expandablePlans;
   if (failed(
           verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker, expandablePlans)
@@ -2574,6 +2579,11 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
   DenseMap<Value, Type> specializedTypeByNondet;
   if (failed(collectSharedNondetSpecializationTypes(
           arraysToScalarize, tracker, splitTypesByMember, tables, specializedTypeByNondet
+      ))) {
+    return failure();
+  }
+  if (failed(verifyRefreshedCandidateReads(
+          arraysToScalarize, tables, tracker, candidateInfoByCreateOp, specializedTypeByNondet
       ))) {
     return failure();
   }
