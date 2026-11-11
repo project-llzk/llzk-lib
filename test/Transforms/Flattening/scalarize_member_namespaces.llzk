@@ -1,0 +1,230 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s --enable-var-scope
+// RUN: llzk-opt -split-input-file -llzk-flatten -llzk-flatten %s | FileCheck %s --enable-var-scope
+
+// Qualify split members when reading them outside their language root.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    poly.template @TCell {
+      poly.param @N : index
+      struct.def @Cell {
+        struct.member @value : !felt.type {llzk.pub}
+        function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+          %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+          function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+        }
+        function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+      }
+    }
+    struct.def @Holder {
+      struct.member @cells : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {llzk.pub}
+      function.def @compute() -> !struct.type<@Holder> {
+        %self = struct.new : !struct.type<@Holder>
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %a = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %cell0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %cell1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        array.write %a[%zero] = %cell0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %a[%one] = %cell1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@cells] = %a : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        function.return %self : !struct.type<@Holder>
+      }
+      function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+    }
+  }
+  function.def @consume(%x: !struct.type<@Lib::@TCell::@Cell<[0]>>) { function.return }
+  function.def @test() attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %holder = function.call @Lib::@Holder::@compute() : () -> !struct.type<@Lib::@Holder>
+    %cells = struct.readm %holder[@cells] : !struct.type<@Lib::@Holder>, !array.type<2 x !struct.type<@Lib::@TCell::@Cell<[#id]>>>
+    %cell = array.read %cells[%zero] : !array.type<2 x !struct.type<@Lib::@TCell::@Cell<[#id]>>>, !struct.type<@Lib::@TCell::@Cell<[#id]>>
+    function.call @consume(%cell) : (!struct.type<@Lib::@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @cells_0 : !struct.type<@TCell_0_Cell> {llzk.pub}
+// CHECK-NEXT:        struct.member @cells_1 : !struct.type<@TCell_1_Cell> {llzk.pub}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_0] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_1] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @consume(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@TCell_0_Cell>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @Lib::@Holder::@compute() : () -> !struct.type<@Lib::@Holder>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cells_0] : <@Lib::@Holder>, !struct.type<@Lib::@TCell_0_Cell>
+// CHECK-NEXT:      function.call @consume(%[[VAL_10]]) : (!struct.type<@Lib::@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Rebase struct types nested in POD elements as well as direct struct elements.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    poly.template @TCell {
+      poly.param @N : index
+      struct.def @Cell {
+        struct.member @value : !felt.type {llzk.pub}
+        function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+          %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+          function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+        }
+        function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+      }
+    }
+    struct.def @Holder {
+      struct.member @cells : !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@Holder> {
+        %self = struct.new : !struct.type<@Holder>
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %a = array.new : !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>]>>
+        %inner0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %inner1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        %cell0 = pod.new { @cell = %inner0 } : <[@cell: !struct.type<@TCell::@Cell<[0]>>]>
+        %cell1 = pod.new { @cell = %inner1 } : <[@cell: !struct.type<@TCell::@Cell<[1]>>]>
+        array.write %a[%zero] = %cell0 : !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>]>>, !pod.type<[@cell: !struct.type<@TCell::@Cell<[0]>>]>
+        array.write %a[%one] = %cell1 : !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>]>>, !pod.type<[@cell: !struct.type<@TCell::@Cell<[1]>>]>
+        struct.writem %self[@cells] = %a : !struct.type<@Holder>, !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>]>>
+        function.return %self : !struct.type<@Holder>
+      }
+      function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+    }
+  }
+  function.def @consume(%x: !pod.type<[@cell: !struct.type<@Lib::@TCell::@Cell<[0]>>]>) { function.return }
+  function.def @test() attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %holder = function.call @Lib::@Holder::@compute() : () -> !struct.type<@Lib::@Holder>
+    %cells = struct.readm %holder[@cells] : !struct.type<@Lib::@Holder>, !array.type<2 x !pod.type<[@cell: !struct.type<@Lib::@TCell::@Cell<[#id]>>]>>
+    %cell = array.read %cells[%zero] : !array.type<2 x !pod.type<[@cell: !struct.type<@Lib::@TCell::@Cell<[#id]>>]>>, !pod.type<[@cell: !struct.type<@Lib::@TCell::@Cell<[#id]>>]>
+    function.call @consume(%cell) : (!pod.type<[@cell: !struct.type<@Lib::@TCell::@Cell<[#id]>>]>) -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @cells_0 : !pod.type<[@cell: !struct.type<@TCell_0_Cell>]> {llzk.pub}
+// CHECK-NEXT:        struct.member @cells_1 : !pod.type<[@cell: !struct.type<@TCell_1_Cell>]> {llzk.pub}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = pod.new { @cell = %[[VAL_5]] }  : <[@cell: !struct.type<@TCell_0_Cell>]>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = pod.new { @cell = %[[VAL_6]] }  : <[@cell: !struct.type<@TCell_1_Cell>]>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_0] = %[[VAL_7]] : <@Holder>, !pod.type<[@cell: !struct.type<@TCell_0_Cell>]>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_1] = %[[VAL_8]] : <@Holder>, !pod.type<[@cell: !struct.type<@TCell_1_Cell>]>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @consume(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !pod.type<[@cell: !struct.type<@Lib::@TCell_0_Cell>]>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @Lib::@Holder::@compute() : () -> !struct.type<@Lib::@Holder>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_11]][@cells_0] : <@Lib::@Holder>, !pod.type<[@cell: !struct.type<@Lib::@TCell_0_Cell>]>
+// CHECK-NEXT:      function.call @consume(%[[VAL_12]]) : (!pod.type<[@cell: !struct.type<@Lib::@TCell_0_Cell>]>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Keep expandable generic initializers consistent with externally read split members.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    poly.template @TCell {
+      poly.param @N : index
+      struct.def @Cell {
+        struct.member @value : !felt.type {llzk.pub}
+        function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+          %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+          function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+        }
+        function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+      }
+    }
+    struct.def @Holder {
+      struct.member @cells : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {llzk.pub}
+      function.def @compute() -> !struct.type<@Holder> {
+        %self = struct.new : !struct.type<@Holder>
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %a = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %cell0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %cell1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        array.write %a[%zero] = %cell0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %a[%one] = %cell1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@cells] = %a : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %generic0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+        %generic1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+        %items = array.new %generic0, %generic1 : <2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@cells] = %items : <@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        function.return %self : !struct.type<@Holder>
+      }
+      function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+    }
+  }
+  function.def @consume(%x: !struct.type<@Lib::@TCell::@Cell<[0]>>) { function.return }
+  function.def @test() attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %holder = function.call @Lib::@Holder::@compute() : () -> !struct.type<@Lib::@Holder>
+    %cells = struct.readm %holder[@cells] : !struct.type<@Lib::@Holder>, !array.type<2 x !struct.type<@Lib::@TCell::@Cell<[#id]>>>
+    %cell = array.read %cells[%zero] : !array.type<2 x !struct.type<@Lib::@TCell::@Cell<[#id]>>>, !struct.type<@Lib::@TCell::@Cell<[#id]>>
+    function.call @consume(%cell) : (!struct.type<@Lib::@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @cells_0 : !struct.type<@TCell_0_Cell> {llzk.pub}
+// CHECK-NEXT:        struct.member @cells_1 : !struct.type<@TCell_1_Cell> {llzk.pub}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_0] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_1] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_0] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@cells_1] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @consume(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@TCell_0_Cell>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @Lib::@Holder::@compute() : () -> !struct.type<@Lib::@Holder>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_11]][@cells_0] : <@Lib::@Holder>, !struct.type<@Lib::@TCell_0_Cell>
+// CHECK-NEXT:      function.call @consume(%[[VAL_12]]) : (!struct.type<@Lib::@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

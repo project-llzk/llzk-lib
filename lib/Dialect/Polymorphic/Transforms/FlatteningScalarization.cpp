@@ -16,6 +16,7 @@
 
 #include "FlatteningContext.h"
 #include "FlatteningTypeRefinement.h"
+#include "TemplateInstantiation.h"
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/POD/IR/Types.h"
@@ -620,6 +621,28 @@ static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info)
     previousTypes.push_back(nextType);
   }
   return false;
+}
+
+/// Re-spell a scalar type, including nested struct arguments, across a member-use boundary.
+static FailureOr<Type> rebaseScalarType(
+    Type type, Operation *source, Operation *destination, SymbolTableCollection &tables
+) {
+  auto sourceRoot = getRootModule(source);
+  auto destinationRoot = getRootModule(destination);
+  if (failed(sourceRoot) || failed(destinationRoot)) {
+    return failure();
+  }
+  if (*sourceRoot == *destinationRoot) {
+    return type;
+  }
+  auto rebased = rebaseTemplateParams(
+      tables, ArrayAttr::get(type.getContext(), {TypeAttr::get(type)}), source, *destinationRoot,
+      destination
+  );
+  if (failed(rebased)) {
+    return failure();
+  }
+  return cast<TypeAttr>((*rebased)[0]).getValue();
 }
 
 /// Merge one candidate scalar type into the split type map, keeping the most concrete refinement.
@@ -1451,6 +1474,11 @@ static LogicalResult rewriteSplitMemberReads(
       if (!memberInfo.first) {
         return failure();
       }
+      auto localType = rebaseScalarType(memberInfo.second, memberDef->get(), memberReadOp, tables);
+      if (failed(localType)) {
+        return failure();
+      }
+      memberInfo.second = *localType;
       if (!canReplaceReadResultWithType(
               readOp, memberInfo.second, tracker, "rewriteSplitMemberReads"
           )) {
@@ -1531,7 +1559,8 @@ static LogicalResult collectSplitTypesByMember(
 /// Plan one read of an array-typed member before validating its consumers with all companions.
 static LogicalResult planSplitMemberRead(
     MemberReadOp memberReadOp, MemberDefOp member, const DenseMap<ArrayAttr, Type> &splitTypes,
-    const ConversionTracker &tracker, DenseMap<Value, Type> &plannedReadTypes
+    const ConversionTracker &tracker, SymbolTableCollection &tables,
+    DenseMap<Value, Type> &plannedReadTypes
 ) {
   for (Operation *user : memberReadOp.getResult().getUsers()) {
     auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
@@ -1564,6 +1593,11 @@ static LogicalResult planSplitMemberRead(
       return diag;
     }
 
+    auto localType = rebaseScalarType(replacementType, member, memberReadOp, tables);
+    if (failed(localType)) {
+      return failure();
+    }
+    replacementType = *localType;
     if (!canReplaceReadResultWithType(readOp, replacementType, tracker, "planSplitMemberReads")) {
       InFlightDiagnostic diag = readOp.emitError(
           "cannot split heterogeneous array member because a read result type is incompatible "
@@ -1594,7 +1628,7 @@ static LogicalResult planSplitMemberReads(
       continue;
     }
     auto verifyRes = planSplitMemberRead(
-        memberReadOp, memberDef->get(), splitIt->second, tracker, plannedReadTypes
+        memberReadOp, memberDef->get(), splitIt->second, tracker, tables, plannedReadTypes
     );
     if (failed(verifyRes)) {
       return failure();
