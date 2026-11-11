@@ -212,6 +212,25 @@ bool callSignatureUnifies(
     FunctionType replacement, FunctionType callee, ArrayRef<StringRef> calleeNamespace,
     const ConversionTracker &tracker, bool allowUnresolvedStructs
 ) {
+  // Partial instantiations can already share a family even when only one signature has
+  // an exact recorded preimage. Preserve that agreement before restoring original types.
+  if (allowUnresolvedStructs &&
+      functionTypesUnifyConsistently(replacement, callee, calleeNamespace)) {
+    return true;
+  }
+  if (allowUnresolvedStructs) {
+    // Keep partial families aligned while restoring fully instantiated nested arguments.
+    AttrTypeReplacer concretePreimages;
+    concretePreimages.addReplacement([&](StructType type) -> std::optional<Type> {
+      return isNullOrEmpty(type.getParams()) ? tracker.getPreimage(type) : std::nullopt;
+    });
+    if (functionTypesUnifyConsistently(
+            llvm::cast<FunctionType>(concretePreimages.replace(replacement)),
+            llvm::cast<FunctionType>(concretePreimages.replace(callee)), calleeNamespace
+        )) {
+      return true;
+    }
+  }
   // A proposed read refinement must agree with already-instantiated companions. Before function
   // instantiation, however, a generic companion can still refine later: compare parameterized
   // preimages to distinguish that case from two incompatible concrete specializations.

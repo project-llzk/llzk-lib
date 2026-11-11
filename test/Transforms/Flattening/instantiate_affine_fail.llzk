@@ -20,6 +20,7 @@ module attributes {llzk.lang} {
     poly.param @T
 
     struct.def @Component01 {
+      // expected-note@+1 {{target function declared here}}
       function.def @compute(%inp: !struct.type<@TToFelt::@ToFelt<[@T]>>) -> !struct.type<@TComponent01::@Component01<[@T]>> {
         %self = struct.new : !struct.type<@TComponent01::@Component01<[@T]>>
         function.return %self : !struct.type<@TComponent01::@Component01<[@T]>>
@@ -35,7 +36,7 @@ module attributes {llzk.lang} {
       %n = arith.constant 2 : index
       %in = function.call @TToFelt::@ToFelt::@compute(){(%n)} : () -> !ToFelt
       // ERROR: The input argument here produces a `@Component01<[@T]>` not `@Component01<[!ToFelt]>` which is an error.
-      // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!struct.type<@TComponent01::@Component01<[2]>>', but found '!struct.type<@TComponent01::@Component01<[!struct.type<@TToFelt::@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
       %out = function.call @TComponent01::@Component01::@compute(%in) : (!ToFelt) -> !struct.type<@TComponent01::@Component01<[!ToFelt]>>
 
       %self = struct.new : !struct.type<@ComponentB>

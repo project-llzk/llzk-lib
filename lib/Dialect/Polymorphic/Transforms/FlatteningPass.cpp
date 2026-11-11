@@ -399,6 +399,42 @@ static DiagnosticArgument memberBindingDiagnosticValue(Attribute binding) {
   return DiagnosticArgument(binding);
 }
 
+/// Validate complete struct compute/constrain signatures before changing their parameterized
+/// receivers or results. These methods are not handled by free-function instantiation.
+static LogicalResult verifyStructCallBindings(ModuleOp module, const ConversionTracker &tracker) {
+  SymbolTableCollection tables;
+  WalkResult result = module.walk([&](CallOp call) {
+    if (calleeReferencesTemplateParam(call) ||
+        (!call.calleeIsStructCompute() && !call.calleeIsStructConstrain())) {
+      return WalkResult::advance();
+    }
+    auto target = call.getCalleeTarget(tables);
+    if (failed(target)) {
+      return WalkResult::interrupt();
+    }
+    // Leave structural mismatches to the existing instantiation/verifier diagnostics.
+    if (!typesUnify(
+            call.getTypeSignature(), target->get().getFunctionType(), target->getNamespace()
+        )) {
+      return WalkResult::advance();
+    }
+    if (!callSignatureUnifies(
+            call.getTypeSignature(), target->get().getFunctionType(), target->getNamespace(),
+            tracker, /*allowUnresolvedStructs=*/true
+        )) {
+      call.emitError(
+              "cannot instantiate struct call because the complete call signature has conflicting "
+              "template bindings"
+      )
+              .attachNote(target->get().getLoc())
+          << "target function declared here";
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Reject incompatible requirements connected by shared witnesses, members, and external calls.
 /// This only checks unification: a compatible type need not have a representable common refinement.
 /// No conversion or IR mutation occurs while collecting and checking the component.
@@ -1138,6 +1174,9 @@ public:
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   if (failed(NonDetMemberTypeVerifier(modOp, tracker).verifyModule())) {
+    return failure();
+  }
+  if (failed(verifyStructCallBindings(modOp, tracker))) {
     return failure();
   }
   bool hadConflict = false;
@@ -2457,8 +2496,9 @@ private:
     UnificationMap unifications;
     bool unifies =
         typeListsUnify(callArgTypes, targetFunc.getArgumentTypes(), targetNamespace, &unifications);
-    (void)unifies; // tell compiler it's intentionally unused in builds without assertions
-    assert(unifies && "should have been checked by verifiers");
+    if (!unifies) {
+      return failure();
+    }
 
     LLVM_DEBUG({
       llvm::dbgs() << '[' << __FUNCTION__ << ']'
@@ -2508,6 +2548,9 @@ private:
 
 /// Run affine-map and target-type instantiation over arrays and struct `compute` calls.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
+  if (failed(verifyStructCallBindings(modOp, tracker))) {
+    return failure();
+  }
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<
