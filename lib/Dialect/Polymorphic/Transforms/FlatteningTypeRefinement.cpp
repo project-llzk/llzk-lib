@@ -517,6 +517,14 @@ bool canRefineCreateArrayUsersToType(
     CreateArrayOp createOp, Type refinedType, SymbolTableCollection &tables,
     const ConversionTracker &tracker, const DenseMap<Value, Type> *pendingRefinements
 ) {
+  // The allocation's result and initializer operands have one exact element type. A write
+  // can suggest a refinement, but cannot retag an initializer owned by another producer.
+  Type elementType = mlir::cast<ArrayType>(refinedType).getElementType();
+  for (Value initializer : createOp.getElements()) {
+    if (plannedType(initializer, pendingRefinements) != elementType) {
+      return false;
+    }
+  }
   Value result = createOp.getResult();
   for (OpOperand &use : result.getUses()) {
     Operation *user = use.getOwner();
