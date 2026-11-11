@@ -15,6 +15,7 @@
 #include "FlatteningTypeRefinement.h"
 
 #include "FlatteningContext.h"
+#include "TemplateInstantiation.h"
 
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
@@ -249,6 +250,58 @@ FunctionType getRefinedCallSignature(
   return FunctionType::get(call.getContext(), argumentTypes, call.getResultTypes());
 }
 
+FailureOr<Type> getRefinedMemberReadType(
+    MemberReadOp read, Type receiverType, SymbolTableCollection &tables,
+    const ConversionTracker &tracker, Type *projectedMemberType
+) {
+  auto structure = dyn_cast<StructType>(receiverType);
+  if (!structure) {
+    return failure();
+  }
+  while (auto instantiated = tracker.getInstantiation(structure)) {
+    structure = *instantiated;
+  }
+  auto receiver = structure.getDefinition(tables, read);
+  if (failed(receiver)) {
+    return failure();
+  }
+  StructType declaredReceiver = receiver->get().getType();
+  SmallVector<StringRef> receiverNamespace(receiver->getNamespace());
+  auto member = lookupSymbolIn<MemberDefOp>(
+      tables, SymbolRefAttr::get(read.getContext(), read.getMemberName()), std::move(*receiver),
+      read
+  );
+  if (failed(member)) {
+    return failure();
+  }
+  member->prependNamespace(receiverNamespace);
+  // Re-spell declaration-local struct names before inserting caller-local parameter bindings.
+  AttrTypeReplacer qualify;
+  qualify.addReplacement([&](StructType type) -> std::optional<Type> {
+    SymbolRefAttr name = type.getNameRef();
+    for (StringRef part : member->getNamespace()) {
+      name = asSymbolRefAttr(StringAttr::get(read.getContext(), part), name);
+    }
+    return StructType::get(name, type.getParams());
+  });
+  Type memberType = qualify.replace(member->get().getType());
+  if (ArrayAttr params = structure.getParams()) {
+    ArrayAttr names = declaredReceiver.getParams();
+    if (!names || names.size() != params.size()) {
+      return failure();
+    }
+    DenseMap<Attribute, Attribute> bindings;
+    for (auto [name, value] : llvm::zip_equal(names, params)) {
+      bindings[name] = value;
+    }
+    memberType = TemplateTypeConverter(std::move(bindings)).convertType(memberType);
+  }
+  if (projectedMemberType) {
+    *projectedMemberType = memberType;
+  }
+  return getCommonRefinedType(read.getVal().getType(), memberType, tracker);
+}
+
 /// Look up a proposed type, falling back to the unchanged SSA type.
 static Type plannedType(Value value, const DenseMap<Value, Type> *pending) {
   if (pending) {
@@ -259,9 +312,10 @@ static Type plannedType(Value value, const DenseMap<Value, Type> *pending) {
   return value.getType();
 }
 
-void extendPendingArrayRefinements(
+void extendPendingRefinements(
     ModuleOp module, DenseMap<Value, Type> &pending, const ConversionTracker &tracker
 ) {
+  SymbolTableCollection tables;
   bool changed;
   do {
     changed = false;
@@ -296,10 +350,21 @@ void extendPendingArrayRefinements(
         }
         result = extract.getResult();
         type = array.getSelectionType(extract.getIndices().size());
+      } else if (auto memberRead = dyn_cast<MemberReadOp>(op)) {
+        Type receiver = pending.lookup(memberRead.getComponent());
+        if (!receiver) {
+          return;
+        }
+        auto refined = getRefinedMemberReadType(memberRead, receiver, tables, tracker);
+        if (failed(refined)) {
+          return;
+        }
+        result = memberRead.getVal();
+        type = *refined;
       }
       if (result && type != plannedType(result, &pending) &&
           canUseScalarizedValueAsType(
-              plannedType(result, &pending), type, tracker, "extendPendingArrayRefinements"
+              plannedType(result, &pending), type, tracker, "extendPendingRefinements"
           )) {
         pending[result] = type;
         changed = true;
@@ -582,6 +647,19 @@ bool canRefineMemberReadUsersToType(
   Value result = readOp.getVal();
   for (OpOperand &use : result.getUses()) {
     Operation *user = use.getOwner();
+    if (auto memberRead = dyn_cast<MemberReadOp>(user)) {
+      if (memberRead.getComponent() != result) {
+        return false;
+      }
+      auto type = getRefinedMemberReadType(memberRead, refinedType, tables, tracker);
+      if (failed(type) || (*type != memberRead.getVal().getType() &&
+                           !canRefineMemberReadUsersToType(
+                               memberRead, *type, tables, tracker, pendingRefinements
+                           ))) {
+        return false;
+      }
+      continue;
+    }
     if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
       if (memberWrite.getVal() != result) {
         return false;
@@ -705,7 +783,15 @@ bool canRefineMemberReadUsersToType(
           if (memberRead.getComponent() != arrayRead.getResult()) {
             return false;
           }
-          // Propagation retags this result after its receiver changes.
+          auto type = getRefinedMemberReadType(
+              memberRead, refinedArrayType.getElementType(), tables, tracker
+          );
+          if (failed(type) || (*type != memberRead.getVal().getType() &&
+                               !canRefineMemberReadUsersToType(
+                                   memberRead, *type, tables, tracker, pendingRefinements
+                               ))) {
+            return false;
+          }
           continue;
         }
         if (isa<CallOp>(arrayReadUse.getOwner())) {

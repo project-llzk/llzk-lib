@@ -333,32 +333,14 @@ static LogicalResult canReplaceReadUsersWithType(
       }
       // Resolve the member on the replacement receiver before changing the operand. A generic
       // receiver can admit a result type that is incompatible with this particular array index.
-      auto receiverType = llvm::dyn_cast<StructType>(replacementType);
-      if (!receiverType) {
-        return failure();
-      }
-      auto receiver = receiverType.getDefinition(tables, memberRead);
-      if (failed(receiver)) {
-        return failure();
-      }
-      SmallVector<StringRef> receiverNamespace(receiver->getNamespace());
-      auto member = lookupSymbolIn<MemberDefOp>(
-          tables, SymbolRefAttr::get(memberRead.getContext(), memberRead.getMemberName()),
-          std::move(*receiver), memberRead
-      );
-      if (failed(member)) {
-        return failure();
-      }
-      member->prependNamespace(receiverNamespace);
-      Type memberType = member->get().getType();
+      Type memberType;
+      auto refinedType =
+          getRefinedMemberReadType(memberRead, replacementType, tables, tracker, &memberType);
       Type readType = memberRead.getVal().getType();
-      // A generic result may follow a legal refinement, provided its own consumers accept it.
-      // Concrete but different result types must be rejected before the array read is erased.
-      auto commonType = getCommonRefinedType(readType, memberType, tracker);
-      Type refinedType = succeeded(commonType) ? *commonType : memberType;
-      if ((!typesUnify(readType, memberType, member->getNamespace()) && failed(commonType)) ||
-          (readType != refinedType &&
-           !canRefineMemberReadUsersToType(memberRead, refinedType, tables, tracker))) {
+      if (failed(refinedType) || (readType != *refinedType &&
+                                  !canRefineMemberReadUsersToType(
+                                      memberRead, *refinedType, tables, tracker, plannedReadTypes
+                                  ))) {
         auto diag = readOp.emitError(
             "cannot scalarize heterogeneous array read because its index-specific receiver "
             "type is incompatible with a member read"

@@ -55,9 +55,9 @@ bool canRefineCreateArrayUsersToType(
     const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
 );
 
-/// Extend a pending plan through array initializers, reads and extracts without changing IR.
+/// Extend a pending plan through array initializers, accesses and member reads without changing IR.
 /// Recompute from the retained seeds whenever a candidate is rejected.
-void extendPendingArrayRefinements(
+void extendPendingRefinements(
     mlir::ModuleOp module, llvm::DenseMap<mlir::Value, mlir::Type> &pendingRefinements,
     const ConversionTracker &tracker
 );
@@ -77,6 +77,13 @@ bool callSignatureUnifies(
 mlir::FunctionType getRefinedCallSignature(
     function::CallOp call, mlir::Value refinedValue = {}, mlir::Type refinedType = {},
     const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
+);
+
+/// Resolve a selected member at a hypothetical receiver, project its parameters and return a
+/// common refinement with the read's declared result. Optionally report the projected member type.
+mlir::FailureOr<mlir::Type> getRefinedMemberReadType(
+    component::MemberReadOp read, mlir::Type receiverType, mlir::SymbolTableCollection &tables,
+    const ConversionTracker &tracker, mlir::Type *projectedMemberType = nullptr
 );
 
 /// Check that a member-read refinement preserves each supported consumer's type contract.

@@ -2884,6 +2884,32 @@ static LogicalResult verifyPendingCallBindings(
   return failure(result.wasInterrupted());
 }
 
+/// Diagnose an incompatible selected member before changing a receiver or its source definition.
+static LogicalResult verifyPendingMemberReceivers(
+    ModuleOp module, const DenseMap<Value, Type> &pending, SymbolTableCollection &tables,
+    const ConversionTracker &tracker
+) {
+  WalkResult result = module.walk([&](MemberReadOp read) {
+    Type receiver = pending.lookup(read.getComponent());
+    if (!receiver) {
+      return WalkResult::advance();
+    }
+    auto type = getRefinedMemberReadType(read, receiver, tables, tracker);
+    if (failed(type) || (*type != read.getVal().getType() &&
+                         !canRefineMemberReadUsersToType(read, *type, tables, tracker, &pending))) {
+      read.emitError(
+              "cannot refine receiver because its selected member is incompatible with the read or "
+              "its users"
+      )
+              .attachNote(read.getLoc())
+          << "proposed receiver type " << receiver;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Plan all allocation refinements before validating complete call signatures. Recheck consumers
 /// after removing candidates, so a retained plan never relies on a rejected companion refinement.
 static LogicalResult
@@ -2897,7 +2923,7 @@ propagateArrayTypes(ModuleOp module, ConversionTracker &tracker, bool &changed) 
     }
   });
   DenseMap<Value, Type> pending = seeds;
-  extendPendingArrayRefinements(module, pending, tracker);
+  extendPendingRefinements(module, pending, tracker);
   if (failed(
           verifyPendingCallBindings(module, pending, tables, tracker, "arrays", "array value")
       )) {
@@ -2919,7 +2945,7 @@ propagateArrayTypes(ModuleOp module, ConversionTracker &tracker, bool &changed) 
       seeds.erase(value);
     }
     pending = seeds;
-    extendPendingArrayRefinements(module, pending, tracker);
+    extendPendingRefinements(module, pending, tracker);
   }
   // Derived reads/extracts follow through ordinary inferred-type propagation.
   for (auto [value, type] : seeds) {
@@ -2975,15 +3001,18 @@ propagateMemberTypes(ModuleOp module, ConversionTracker &tracker, bool &changed)
   // Validate every jointly proposed call before rejecting individual candidates; otherwise
   // visitation order could retain one conflicting member at a generic type and conceal the issue.
   DenseMap<Value, Type> pendingValues = pendingReads;
-  extendPendingArrayRefinements(module, pendingValues, tracker);
+  extendPendingRefinements(module, pendingValues, tracker);
   if (failed(verifyPendingCallBindings(module, pendingValues, tables, tracker))) {
+    return failure();
+  }
+  if (failed(verifyPendingMemberReceivers(module, pendingValues, tables, tracker))) {
     return failure();
   }
   bool removed;
   do {
     removed = false;
     pendingValues = pendingReads;
-    extendPendingArrayRefinements(module, pendingValues, tracker);
+    extendPendingRefinements(module, pendingValues, tracker);
     SmallVector<MemberDefOp> rejectedMembers;
     for (const auto &[member, type] : pendingMembers) {
       if (!canRefineMemberDefinition(member, type, tracker, tables, pendingValues)) {
