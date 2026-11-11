@@ -1,0 +1,298 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s --enable-var-scope
+// RUN: llzk-opt -split-input-file -llzk-flatten -llzk-flatten %s | FileCheck %s --enable-var-scope
+
+// Body evidence must select Lib::Cell even when the outer root has another Cell.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !struct.type<@Cell>) { function.return }
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      function.def @id(%arg: !poly.tvar<@U>) {
+        %cast = poly.unifiable_cast %arg : (!poly.tvar<@U>) -> !struct.type<@Cell>
+        function.call @consume(%cast) : (!struct.type<@Cell>) -> ()
+        function.return
+      }
+    }
+  }
+  struct.def @Cell {
+    struct.member @outer_only : index {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      function.call @Lib::@Inner::@id<[@T]>(%arg) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+  function.def @test() {
+    function.call @Outer::@wrap<[?]>() : () -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_id"(
+// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:        function.call @consume(%[[VAL_4]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Cell {
+// CHECK-NEXT:      struct.member @outer_only : index {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_id"(%[[VAL_7]]) : (!struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() {
+// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Find declaration-local struct evidence nested inside an array signature.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !array.type<1 x !struct.type<@Cell>>) { function.return }
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      function.def @id(%arg: !array.type<1 x !poly.tvar<@U>>) {
+        %cast = poly.unifiable_cast %arg : (!array.type<1 x !poly.tvar<@U>>) -> !array.type<1 x !struct.type<@Cell>>
+        function.call @consume(%cast) : (!array.type<1 x !struct.type<@Cell>>) -> ()
+        function.return
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !array.type<1 x !poly.tvar<@T>>
+      function.call @Lib::@Inner::@id<[@T]>(%arg) : (!array.type<1 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+  function.def @test() {
+    function.call @Outer::@wrap<[?]>() : () -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_id"(
+// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@Cell>>) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!array.type<1 x !struct.type<@Cell>>) -> !array.type<1 x !struct.type<@Cell>>
+// CHECK-NEXT:        function.call @consume(%[[VAL_4]]) : (!array.type<1 x !struct.type<@Cell>>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<1 x !struct.type<@Lib::@Cell>>
+// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_id"(%[[VAL_5]]) : (!array.type<1 x !struct.type<@Lib::@Cell>>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() {
+// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Follow a nested result; equal parameter spellings still denote separate scopes.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !struct.type<@Cell>) { function.return }
+    poly.template @Inner {
+      poly.param @T : !poly.tvar<@T>
+      function.def @id() -> !poly.tvar<@T> attributes {function.allow_witness} {
+        %cell = function.call @Cell::@compute() : () -> !struct.type<@Cell>
+        %cast = poly.unifiable_cast %cell : (!struct.type<@Cell>) -> !poly.tvar<@T>
+        function.return %cast : !poly.tvar<@T>
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() attributes {function.allow_witness} {
+      %arg = function.call @Lib::@Inner::@id<[@T]>() : () -> !poly.tvar<@T>
+      function.call @Lib::@consume(%arg) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+  function.def @test() attributes {function.allow_witness} {
+    function.call @Outer::@wrap<[?]>() : () -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_id"() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @Cell::@compute() : () -> !struct.type<@Cell>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @Lib::@"Inner_!s<@Cell>_id"() : () -> !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      function.call @Lib::@consume(%[[VAL_5]]) : (!struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Rebase explicit known companions into the nested callee before body inference.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !struct.type<@Cell>) { function.return }
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      poly.param @V : !poly.tvar<@V>
+      function.def @id(%arg: !poly.tvar<@U>, %known: !poly.tvar<@V>) {
+        %cast = poly.unifiable_cast %arg : (!poly.tvar<@U>) -> !poly.tvar<@V>
+        function.call @consume(%cast) : (!poly.tvar<@V>) -> ()
+        function.return
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @K : !poly.tvar<@K>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      %known = llzk.nondet : !poly.tvar<@K>
+      function.call @Lib::@Inner::@id<[@T, @K]>(%arg, %known) : (!poly.tvar<@T>, !poly.tvar<@K>) -> ()
+      function.return
+    }
+  }
+  function.def @test() {
+    function.call @Outer::@wrap<[?, !struct.type<@Lib::@Cell>]>() : () -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_!s<@Cell>_id"(
+// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:        function.call @consume(%[[VAL_5]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_!s<@Cell>_id"(%[[VAL_6]], %[[VAL_7]]) : (!struct.type<@Lib::@Cell>, !struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() {
+// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Rebase known companions inferred from a namespace-qualified call signature.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !struct.type<@Cell>) { function.return }
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      poly.param @V : !poly.tvar<@V>
+      function.def @id(%arg: !poly.tvar<@U>, %known: !poly.tvar<@V>) {
+        %cast = poly.unifiable_cast %arg : (!poly.tvar<@U>) -> !poly.tvar<@V>
+        function.call @consume(%cast) : (!poly.tvar<@V>) -> ()
+        function.return
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      %known = llzk.nondet : !struct.type<@Lib::@Cell>
+      function.call @Lib::@Inner::@id(%arg, %known) : (!poly.tvar<@T>, !struct.type<@Lib::@Cell>) -> ()
+      function.return
+    }
+  }
+  function.def @test() {
+    function.call @Outer::@wrap<[?]>() : () -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_!s<@Cell>_id"(
+// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:        function.call @consume(%[[VAL_5]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_!s<@Cell>_id"(%[[VAL_6]], %[[VAL_7]]) : (!struct.type<@Lib::@Cell>, !struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test() {
+// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

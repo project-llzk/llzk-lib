@@ -1348,27 +1348,47 @@ public:
   )
       : symTables_(symTables), paramNameToConcrete_(paramNameToConcrete) {}
 
-  /// Search `func` for a concrete value that can resolve `paramName`.
-  std::optional<Attribute> infer(FuncDefOp func, FlatSymbolRefAttr paramName) {
+  /// Search `func` for a concrete value, returning a null attribute if unresolved or ambiguous.
+  FailureOr<Attribute> infer(FuncDefOp func, FlatSymbolRefAttr paramName) {
     return infer(func, paramName, paramNameToConcrete_);
   }
 
 private:
+  /// Re-spell concrete evidence in the receiving function's lookup root before substitution.
+  FailureOr<Attribute> rebaseEvidence(Attribute value, Operation *source, Operation *destination) {
+    auto sourceRoot = getRootModule(source);
+    auto destinationRoot = getRootModule(destination);
+    if (failed(sourceRoot) || failed(destinationRoot)) {
+      return failure();
+    }
+    if (*sourceRoot == *destinationRoot) {
+      return value;
+    }
+    auto rebased = rebaseTemplateParams(
+        symTables_, ArrayAttr::get(value.getContext(), {value}), source, *destinationRoot, source
+    );
+    if (failed(rebased)) {
+      return failure();
+    }
+    return (*rebased)[0];
+  }
+
   /// Search `func` using concrete bindings expressed in that function's template scope.
-  std::optional<Attribute> infer(
+  FailureOr<Attribute> infer(
       FuncDefOp func, FlatSymbolRefAttr paramName,
       const DenseMap<Attribute, Attribute> &paramNameToConcrete
   ) {
     if (llvm::any_of(activeInferences_, [&](const auto &e) {
       return e.first == func.getOperation() && e.second == paramName;
     })) {
-      return std::nullopt;
+      return Attribute();
     }
     activeInferences_.emplace_back(func.getOperation(), paramName);
 
     TemplateTypeConverter tyConv(paramNameToConcrete);
     std::optional<Attribute> inferred;
     bool ambiguous = false;
+    bool invalidEvidence = false;
 
     // Record a concrete candidate unless it conflicts with an earlier one, in which
     // case the wildcard is treated as ambiguous and left unresolved.
@@ -1387,7 +1407,7 @@ private:
       return WalkResult::advance();
     };
 
-    WalkResult walkResult = func.walk([&](Operation *bodyOp) {
+    func.walk([&](Operation *bodyOp) {
       if (auto castOp = llvm::dyn_cast<UnifiableCastOp>(bodyOp)) {
         Type inputTy = tyConv.convertType(castOp.getInput().getType());
         Type resultTy = tyConv.convertType(castOp.getResult().getType());
@@ -1439,8 +1459,14 @@ private:
       // in a call result or in a call operand. In both cases, the corresponding nested
       // callee type variable may be concretely bound by the nested call.
       auto inferFromNestedBinding = [&](Type enclosingTy, Type nestedTy) {
-        DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
-            getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
+        auto nestedBindings = getNestedConcreteBindings(
+            nestedCall, nestedTgt, nestedTemplate, nestedTgtOpt->getNamespace(), tyConv
+        );
+        if (failed(nestedBindings)) {
+          invalidEvidence = true;
+          return WalkResult::interrupt();
+        }
+        auto &nestedParamNameToConcrete = *nestedBindings;
 
         // In addition to bindings from the call, type variables in the nested signature can
         // obtain their concrete values from the nested callee body. Add that evidence to the
@@ -1449,17 +1475,28 @@ private:
           if (nestedParamNameToConcrete.contains(nestedTvar.getNameRef())) {
             return;
           }
-          std::optional<Attribute> nestedCandidate =
+          auto nestedCandidate =
               infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete);
-          if (nestedCandidate) {
+          if (failed(nestedCandidate)) {
+            invalidEvidence = true;
+          } else if (*nestedCandidate) {
             nestedParamNameToConcrete[nestedTvar.getNameRef()] = *nestedCandidate;
           }
         });
+        if (invalidEvidence) {
+          return WalkResult::interrupt();
+        }
         TemplateTypeConverter nestedTyConv(nestedParamNameToConcrete);
         Type convertedNestedTy = nestedTyConv.convertType(nestedTy);
         if (!isConcreteType(convertedNestedTy)) {
           return WalkResult::advance();
         }
+        auto enclosingEvidence = rebaseEvidence(TypeAttr::get(convertedNestedTy), nestedTgt, func);
+        if (failed(enclosingEvidence)) {
+          invalidEvidence = true;
+          return WalkResult::interrupt();
+        }
+        convertedNestedTy = llvm::cast<TypeAttr>(*enclosingEvidence).getValue();
 
         Type convertedEnclosingTy = tyConv.convertType(enclosingTy);
         // Apply the nested call's bindings recursively before unifying. In particular, this
@@ -1494,19 +1531,19 @@ private:
     });
 
     activeInferences_.pop_back();
-    if (ambiguous || (walkResult.wasInterrupted() && !inferred.has_value())) {
-      return std::nullopt;
+    if (invalidEvidence) {
+      return failure();
     }
-    return inferred;
+    return ambiguous ? Attribute() : inferred.value_or(Attribute());
   }
 
   /// Map concrete bindings for a nested callee into the nested template's parameter scope.
   ///
   /// The current converter's keys name parameters of the enclosing template. Reusing it while
   /// walking a nested callee would therefore incorrectly bind same-named nested parameters.
-  static DenseMap<Attribute, Attribute> getNestedConcreteBindings(
+  FailureOr<DenseMap<Attribute, Attribute>> getNestedConcreteBindings(
       CallOp nestedCall, FuncDefOp nestedTgt, TemplateOp nestedTemplate,
-      const TemplateTypeConverter &enclosingTyConv
+      ArrayRef<StringRef> calleeNamespace, const TemplateTypeConverter &enclosingTyConv
   ) {
     DenseMap<Attribute, Attribute> bindings;
     auto nestedParams = nestedTemplate.getConstOps<TemplateParamOp>();
@@ -1524,22 +1561,30 @@ private:
     // Explicit wildcards and unresolved enclosing parameters can still acquire concrete
     // bindings from the nested call's signature. Preserve concrete explicit arguments as
     // the source of truth and fill only the remaining parameters from that evidence.
-    FailureOr<UnificationMap> unifyResult =
-        nestedCall.unifyTypeSignature(nestedTgt.getFunctionType());
-    if (failed(unifyResult)) {
-      return bindings;
-    }
-    for (TemplateParamOp paramOp : nestedParams) {
-      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
-      if (bindings.contains(paramName)) {
-        continue;
-      }
-      if (std::optional<Attribute> value = inferUnifiedParam(*unifyResult, paramName)) {
-        Attribute convertedValue = enclosingTyConv.convertAttr(*value);
-        if (isConcreteStructParamAttr(convertedValue)) {
-          bindings[paramName] = convertedValue;
+    auto unifyResult =
+        nestedCall.unifyTypeSignatureWithNamespace(nestedTgt.getFunctionType(), calleeNamespace);
+    if (succeeded(unifyResult)) {
+      for (TemplateParamOp paramOp : nestedParams) {
+        auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+        if (bindings.contains(paramName)) {
+          continue;
+        }
+        if (std::optional<Attribute> value = inferUnifiedParam(*unifyResult, paramName)) {
+          Attribute convertedValue = enclosingTyConv.convertAttr(*value);
+          if (isConcreteStructParamAttr(convertedValue)) {
+            bindings[paramName] = convertedValue;
+          }
         }
       }
+    }
+    // Call-site evidence uses the enclosing root; recursive body inference and substitution
+    // must see declaration-local types, including struct types nested inside aggregates.
+    for (auto &[name, value] : bindings) {
+      auto localValue = rebaseEvidence(value, nestedCall, nestedTgt);
+      if (failed(localValue)) {
+        return failure();
+      }
+      value = *localValue;
     }
     return bindings;
   }
@@ -1940,13 +1985,18 @@ private:
         continue;
       }
 
-      inferredValOpt = bodyInferer.infer(callTgt, paramName);
-      if (inferredValOpt.has_value() && isConcreteStructParamAttr(*inferredValOpt)) {
+      auto bodyValue = bodyInferer.infer(callTgt, paramName);
+      if (failed(bodyValue)) {
+        return rewriter.notifyMatchFailure(
+            op, "cannot infer wildcard bindings across lookup roots"
+        );
+      }
+      if (*bodyValue && isConcreteStructParamAttr(*bodyValue)) {
         LLVM_DEBUG(
             llvm::dbgs() << "[InstantiateFuncAtCallOp]  body-inferred value for param '"
-                         << paramName << "': " << *inferredValOpt << '\n'
+                         << paramName << "': " << *bodyValue << '\n'
         );
-        if (failed(recordConcreteParam(paramName, paramOp, *inferredValOpt, callTgt))) {
+        if (failed(recordConcreteParam(paramName, paramOp, *bodyValue, callTgt))) {
           return failure();
         }
       }
