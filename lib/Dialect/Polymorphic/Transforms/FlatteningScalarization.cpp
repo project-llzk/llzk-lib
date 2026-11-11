@@ -158,6 +158,51 @@ static inline bool canReplaceReadResultWithType(
          tracker.isLegalConversion(readResultType, replacementType, patName);
 }
 
+/// Check a complete call signature without treating compatible pending refinements as conflicts.
+///
+/// Unification records null for any unequal bindings, including an affine size and its concrete
+/// specialization. Recover those bindings per argument/result and compare every pair: a generic
+/// binding may accept two concrete types that are incompatible with each other.
+static bool callSignatureUnifies(
+    FunctionType replacement, FunctionType callee, ArrayRef<StringRef> calleeNamespace
+) {
+  UnificationMap bindings;
+  if (!functionTypesUnify(replacement, callee, calleeNamespace, &bindings)) {
+    return false;
+  }
+  if (llvm::all_of(bindings, [](const auto &binding) { return bool(binding.second); })) {
+    return true;
+  }
+
+  DenseMap<UnificationMap::key_type, SmallVector<Attribute>> bindingsByParameter;
+  auto checkTypes = [&](TypeRange actual, TypeRange declared) {
+    for (auto [actualType, declaredType] : llvm::zip_equal(actual, declared)) {
+      UnificationMap localBindings;
+      if (!typesUnify(actualType, declaredType, calleeNamespace, &localBindings)) {
+        return false;
+      }
+      for (const auto &[parameter, value] : localBindings) {
+        if (!value) {
+          return false;
+        }
+        auto &previousValues = bindingsByParameter[parameter];
+        for (Attribute previous : previousValues) {
+          if (!typeParamsUnify(
+                  ArrayAttr::get(replacement.getContext(), {previous}),
+                  ArrayAttr::get(replacement.getContext(), {value})
+              )) {
+            return false;
+          }
+        }
+        previousValues.push_back(value);
+      }
+    }
+    return true;
+  };
+  return checkTypes(replacement.getInputs(), callee.getInputs()) &&
+         checkTypes(replacement.getResults(), callee.getResults());
+}
+
 /// Return true iff direct typed consumers of `readOp` accept `replacementType`.
 ///
 /// Scalarizing a pseudo-homogeneous array can replace a generic read result with the concrete
@@ -168,7 +213,8 @@ static inline bool canReplaceReadResultWithType(
 static LogicalResult canReplaceReadUsersWithType(
     ReadArrayOp readOp, Type replacementType, SymbolTableCollection &tables,
     const ConversionTracker &tracker,
-    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp = nullptr
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp = nullptr,
+    const DenseMap<Value, Type> *plannedReadTypes = nullptr
 ) {
   Value result = readOp.getResult();
   for (OpOperand &use : result.getUses()) {
@@ -229,6 +275,9 @@ static LogicalResult canReplaceReadUsersWithType(
       continue;
     }
     if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
+      if (call.getArgOperands().empty()) {
+        return failure();
+      }
       unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
       if (argIdx >= call.getArgOperands().size()) {
         return failure();
@@ -237,15 +286,31 @@ static LogicalResult canReplaceReadUsersWithType(
       if (failed(callee)) {
         return failure();
       }
-      Type paramType = callee->get().getFunctionType().getInput(argIdx);
-      if (isConcreteType(paramType, /*allowStructParams=*/false) &&
-          !typesUnify(replacementType, paramType, callee->getNamespace())) {
+      // One template variable can constrain several arguments and results. Validate the whole
+      // signature with shared bindings, including other reads that preflight will replace later.
+      SmallVector<Type> argumentTypes;
+      for (Value argument : call.getArgOperands()) {
+        Type type = argument == result ? replacementType : argument.getType();
+        if (plannedReadTypes && argument != result) {
+          if (Type plannedType = plannedReadTypes->lookup(argument)) {
+            type = plannedType;
+          }
+        }
+        argumentTypes.push_back(type);
+      }
+      FunctionType replacementSignature =
+          FunctionType::get(call.getContext(), argumentTypes, call.getResultTypes());
+      FunctionType calleeSignature = callee->get().getFunctionType();
+      if (!callSignatureUnifies(replacementSignature, calleeSignature, callee->getNamespace())) {
         InFlightDiagnostic diag = readOp.emitError(
             "cannot scalarize heterogeneous array read because its index-specific value type is "
             "incompatible with a function call"
         );
-        diag.attachNote(call.getLoc()) << "call argument requires " << paramType
-                                       << ", but this read is replaced with " << replacementType;
+        diag.attachNote(call.getLoc())
+            << "call argument requires " << calleeSignature.getInput(argIdx)
+            << ", but this read is replaced with " << replacementType
+            << "; replacement call signature " << replacementSignature
+            << " must unify consistently with " << calleeSignature;
         return diag;
       }
       continue;
@@ -1002,7 +1067,7 @@ static LogicalResult verifyRefreshedCandidateReads(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
     const ConversionTracker &tracker,
     const DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp,
-    const DenseMap<Value, Type> &specializedTypeByNondet
+    const DenseMap<Value, Type> &plannedReadTypes
 ) {
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     for (ReadArrayOp readOp : info.reads) {
@@ -1010,7 +1075,7 @@ static LogicalResult verifyRefreshedCandidateReads(
       if (!idx) {
         return failure();
       }
-      Type replacementType = getReadReplacementType(readOp, info, specializedTypeByNondet);
+      Type replacementType = plannedReadTypes.lookup(readOp.getResult());
       bool canReplaceResult = canReplaceReadResultWithType(
           readOp, replacementType, tracker, "verifyRefreshedCandidateReads"
       );
@@ -1018,7 +1083,7 @@ static LogicalResult verifyRefreshedCandidateReads(
         return failure();
       }
       auto canReplaceUsers = canReplaceReadUsersWithType(
-          readOp, replacementType, tables, tracker, &candidateInfoByCreateOp
+          readOp, replacementType, tables, tracker, &candidateInfoByCreateOp, &plannedReadTypes
       );
       if (failed(canReplaceUsers)) {
         return failure();
@@ -1336,7 +1401,7 @@ static LogicalResult rewriteLocalArray(
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
     const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp,
     const DenseMap<Value, Type> &specializedTypeByNondet,
-    DenseMap<Value, Value> &specializedNondetBySource
+    DenseMap<Value, Value> &specializedNondetBySource, const DenseMap<Value, Type> &plannedReadTypes
 ) {
   if (failed(refreshValuesFromArrayOperands(info, tracker, candidateInfoByCreateOp))) {
     return failure();
@@ -1350,7 +1415,7 @@ static LogicalResult rewriteLocalArray(
       return failure();
     }
     auto canReplaceUsers = canReplaceReadUsersWithType(
-        readOp, replacementType, tables, tracker, candidateInfoByCreateOp
+        readOp, replacementType, tables, tracker, candidateInfoByCreateOp, &plannedReadTypes
     );
     if (failed(canReplaceUsers)) {
       return failure();
@@ -2582,8 +2647,15 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
       ))) {
     return failure();
   }
+  DenseMap<Value, Type> plannedReadTypes;
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (ReadArrayOp readOp : info.reads) {
+      plannedReadTypes[readOp.getResult()] =
+          getReadReplacementType(readOp, info, specializedTypeByNondet);
+    }
+  }
   if (failed(verifyRefreshedCandidateReads(
-          arraysToScalarize, tables, tracker, candidateInfoByCreateOp, specializedTypeByNondet
+          arraysToScalarize, tables, tracker, candidateInfoByCreateOp, plannedReadTypes
       ))) {
     return failure();
   }
@@ -2608,7 +2680,8 @@ LogicalResult scalarizeHeterogeneousArrays(ModuleOp modOp, ConversionTracker &tr
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
     auto rewriteRes = rewriteLocalArray(
         info, splitMembers, splitTypesByMember, splitIndicesByMember, tables, rewriter, tracker,
-        &candidateInfoByCreateOp, specializedTypeByNondet, specializedNondetBySource
+        &candidateInfoByCreateOp, specializedTypeByNondet, specializedNondetBySource,
+        plannedReadTypes
     );
     if (failed(rewriteRes)) {
       return failure();
