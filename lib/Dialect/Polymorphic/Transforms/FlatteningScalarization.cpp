@@ -17,6 +17,7 @@
 #include "FlatteningContext.h"
 #include "FlatteningTypeRefinement.h"
 
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -30,6 +31,9 @@
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 
+#include <limits>
+#include <utility>
+
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
@@ -41,6 +45,26 @@ using namespace llzk::polymorphic::detail;
 namespace llzk::polymorphic::detail::flattening {
 
 namespace {
+
+/// Count static elements without overflowing the signed index arithmetic used by ArrayIndexGen.
+/// Empty shapes are handled before multiplication, including shapes with large nonzero dimensions.
+static std::optional<int64_t> getStaticElementCount(ArrayType type) {
+  if (!type.hasStaticShape()) {
+    return std::nullopt;
+  }
+  ArrayRef<int64_t> shape = type.getShape();
+  if (llvm::is_contained(shape, 0)) {
+    return 0;
+  }
+  int64_t count = 1;
+  for (int64_t dimension : shape) {
+    if (count > std::numeric_limits<int64_t>::max() / dimension) {
+      return std::nullopt;
+    }
+    count *= dimension;
+  }
+  return count;
+}
 
 /// Information about a local array allocation that can be replaced with the final values of its
 /// statically-known elements.
@@ -399,15 +423,14 @@ static inline bool hasDirectArrayWrites(CreateArrayOp createOp) {
 }
 
 /// Return true iff `createOp` provides an initializer value for every static array element.
-static inline bool hasFullInitializer(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+static inline bool hasFullInitializer(CreateArrayOp createOp, int64_t elementCount) {
   Operation::operand_range elements = createOp.getElements();
-  return !elements.empty() && elements.size() == indices.size();
+  return !elements.empty() && std::cmp_equal(elements.size(), elementCount);
 }
 
 /// Return true iff all element values are immutable initializer operands.
-static inline bool
-isInitializerOnlyLocalArray(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
-  return hasFullInitializer(createOp, indices) && !hasDirectArrayWrites(createOp);
+static inline bool isInitializerOnlyLocalArray(CreateArrayOp createOp, int64_t elementCount) {
+  return hasFullInitializer(createOp, elementCount) && !hasDirectArrayWrites(createOp);
 }
 
 /// Return true iff the array allocation and every initializer value dominate `user`.
@@ -666,23 +689,20 @@ static LogicalResult mergeSplitCandidateType(
 static FailureOr<ScalarizedArrayInfo>
 getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
   ArrayType arrTy = op.getType();
-  if (!arrTy.hasStaticShape() || llvm::isa<NoneType>(arrTy.getElementType())) {
+  if (op.getResult().use_empty() || llvm::isa<NoneType>(arrTy.getElementType())) {
     return failure();
   }
-
-  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
-  if (!maybeIndices) {
+  auto elementCount = getStaticElementCount(arrTy);
+  if (!elementCount || *elementCount < 2) {
+    return failure();
+  }
+  bool initialized = hasFullInitializer(op, *elementCount);
+  if (!op.getElements().empty() && !initialized) {
     return failure();
   }
 
   ScalarizedArrayInfo info;
   info.createOp = op;
-  info.indices = std::move(*maybeIndices);
-  auto seedRes =
-      seedValuesFromArrayElements(op, info.indices, info.valueByIndex, &info.typeByIndex, &tracker);
-  if (failed(seedRes)) {
-    return failure();
-  }
   Value arrayValue = op.getResult();
 
   for (Operation *user : arrayValue.getUsers()) {
@@ -697,8 +717,6 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
       if (info.writeOpByIndex.contains(idx)) {
         return failure();
       }
-      info.valueByIndex[idx] = writeOp.getRvalue();
-      info.typeByIndex[idx] = writeOp.getRvalue().getType();
       info.writeOpByIndex[idx] = writeOp.getOperation();
       info.writeDiscardableAttrsByIndex[idx] = writeOp->getDiscardableAttrDictionary();
       info.writes.push_back(writeOp);
@@ -725,6 +743,37 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
     return failure();
   }
 
+  // Count only distinct, in-bounds writes. A sparse uninitialized allocation cannot become a
+  // candidate, regardless of its declared size. Inspect users before expanding the index space.
+  if (!initialized && !std::cmp_equal(info.writeOpByIndex.size(), *elementCount)) {
+    return failure();
+  }
+  for (ReadArrayOp readOp : info.reads) {
+    if (!allWritesAvailableAt(info, readOp)) {
+      return failure();
+    }
+  }
+  for (MemberWriteOp memberWriteOp : info.memberWrites) {
+    if (!allWritesAvailableAt(info, memberWriteOp)) {
+      return failure();
+    }
+  }
+
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  info.indices = std::move(*maybeIndices);
+  if (failed(seedValuesFromArrayElements(
+          op, info.indices, info.valueByIndex, &info.typeByIndex, &tracker
+      ))) {
+    return failure();
+  }
+  for (auto [idx, write] : info.writeOpByIndex) {
+    Value value = llvm::cast<WriteArrayOp>(write).getRvalue();
+    info.valueByIndex[idx] = value;
+    info.typeByIndex[idx] = value.getType();
+  }
   for (ArrayAttr idx : info.indices) {
     if (!info.valueByIndex.contains(idx)) {
       return failure();
@@ -732,17 +781,12 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
   }
   for (ReadArrayOp readOp : info.reads) {
     ArrayAttr idx = getIndexAsAttr(readOp);
-    if (!info.valueByIndex.contains(idx) || !allWritesAvailableAt(info, readOp)) {
+    if (!info.valueByIndex.contains(idx)) {
       return failure();
     }
     if (!canReplaceReadResultWithType(
             readOp, info.typeByIndex.lookup(idx), tracker, "getScalarizedArrayInfo"
         )) {
-      return failure();
-    }
-  }
-  for (MemberWriteOp memberWriteOp : info.memberWrites) {
-    if (!allWritesAvailableAt(info, memberWriteOp)) {
       return failure();
     }
   }
@@ -1581,23 +1625,22 @@ static LogicalResult verifyExpandableLocalArrayUsers(
     SymbolTableCollection &tables, const DominanceInfo &domInfo
 ) {
   Value arrayValue = createOp.getResult();
-  ArrayType arrTy = createOp.getType();
-  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
-  if (!maybeIndices) {
+  auto elementCount = getStaticElementCount(createOp.getType());
+  if (!elementCount) {
     return failure();
   }
-  bool allowCrossBlockMemberWrites = isInitializerOnlyLocalArray(createOp, *maybeIndices);
+  bool allowCrossBlockMemberWrites = isInitializerOnlyLocalArray(createOp, *elementCount);
   for (Operation *user : createOp.getResult().getUsers()) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      if (writeOp.getArrRef() != arrayValue || writeOp->getBlock() != createOp->getBlock() ||
-          !getIndexAsAttr(writeOp)) {
+      if (*elementCount == 0 || writeOp.getArrRef() != arrayValue ||
+          writeOp->getBlock() != createOp->getBlock() || !getIndexAsAttr(writeOp)) {
         return failure();
       }
       continue;
     }
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
-      if (readOp.getArrRef() != arrayValue || readOp->getBlock() != createOp->getBlock() ||
-          !getIndexAsAttr(readOp)) {
+      if (*elementCount == 0 || readOp.getArrRef() != arrayValue ||
+          readOp->getBlock() != createOp->getBlock() || !getIndexAsAttr(readOp)) {
         return failure();
       }
       continue;
@@ -1620,6 +1663,39 @@ static LogicalResult verifyExpandableLocalArrayUsers(
   return success();
 }
 
+/// Check membership in a static index space without computing its size or strides.
+static bool isIndexInShape(ArrayAttr index, ArrayRef<int64_t> shape) {
+  if (index.size() != shape.size()) {
+    return false;
+  }
+  for (auto [coordinate, dimension] : llvm::zip_equal(index, shape)) {
+    int64_t value = llvm::cast<IntegerAttr>(coordinate).getInt();
+    if (value < 0 || value >= dimension) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Find an extra source index while examining at most one more index than the known target set.
+/// The caller must have checked that the source element count fits ArrayIndexGen's arithmetic.
+static ArrayAttr findExtraIndex(ArrayType type, int64_t elementCount, ArrayRef<ArrayAttr> target) {
+  if (elementCount == 0) {
+    return {};
+  }
+  DenseSet<ArrayAttr> targetSet(target.begin(), target.end());
+  ArrayIndexGen indexGen = ArrayIndexGen::from(type);
+  for (int64_t i = 0; i < elementCount && std::cmp_less_equal(i, targetSet.size()); ++i) {
+    auto coordinates = indexGen.delinearize(i, type.getContext());
+    assert(coordinates && "checked static index must be in bounds");
+    ArrayAttr index = ArrayAttr::get(type.getContext(), *coordinates);
+    if (!targetSet.contains(index)) {
+      return index;
+    }
+  }
+  return {};
+}
+
 /// Verify that every split-member write fed by `createOp` has the same static index set as the
 /// local array allocation.
 ///
@@ -1632,11 +1708,10 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
     const DenseMap<MemberDefOp, Operation *> *splitIndexOpsByMember, SymbolTableCollection &tables
 ) {
   ArrayType arrTy = createOp.getType();
-  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
-  if (!maybeIndices) {
+  auto elementCount = getStaticElementCount(arrTy);
+  if (!elementCount) {
     return failure();
   }
-  ArrayRef<ArrayAttr> indices = *maybeIndices;
   Value arrayValue = createOp.getResult();
 
   for (Operation *user : arrayValue.getUsers()) {
@@ -1654,7 +1729,11 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
       continue;
     }
     ArrayRef<ArrayAttr> splitIndices = splitIt->second;
-    if (haveSameIndexSet(indices, splitIndices)) {
+    auto missing = llvm::find_if(splitIndices, [arrTy](ArrayAttr index) {
+      return !isIndexInShape(index, arrTy.getShape());
+    });
+    // The split indices are unique. Equal cardinality and containment prove equal index sets.
+    if (std::cmp_equal(*elementCount, splitIndices.size()) && missing == splitIndices.end()) {
       continue;
     }
 
@@ -1667,11 +1746,11 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
           << "candidate establishes " << splitIndices.size() << " split member indices";
     }
     Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
-                       << "expandable whole-array write has " << indices.size() << " array indices";
-    if (ArrayAttr extraIndex = findIndexMissingFrom(indices, splitIndices)) {
+                       << "expandable whole-array write has " << *elementCount << " array indices";
+    if (ArrayAttr extraIndex = findExtraIndex(arrTy, *elementCount, splitIndices)) {
       note << ", including extra index " << extraIndex;
-    } else if (ArrayAttr missingIndex = findIndexMissingFrom(splitIndices, indices)) {
-      note << ", missing index " << missingIndex;
+    } else if (missing != splitIndices.end()) {
+      note << ", missing index " << *missing;
     }
     return diag;
   }
@@ -1680,6 +1759,8 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
 
 /// Validated decisions for one expandable array, retained until its rewrite.
 struct ExpandableArrayPlan {
+  /// Canonical indices enumerated after preflight and reused during rewriting.
+  SmallVector<ArrayAttr> indices;
   /// Original array users in execution order (or initializer-only cross-block users).
   SmallVector<Operation *> users;
   /// Final shared scalar type for each read, including later uses before an overwrite.
@@ -1731,23 +1812,11 @@ static LogicalResult planExpandableLocalArray(
   }
 
   ArrayType arrTy = createOp.getType();
-  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
-  if (!maybeIndices) {
+  auto elementCount = getStaticElementCount(arrTy);
+  if (!elementCount ||
+      (!createOp.getElements().empty() && !hasFullInitializer(createOp, *elementCount))) {
     return failure();
   }
-  ArrayRef<ArrayAttr> indices = *maybeIndices;
-
-  DenseMap<ArrayAttr, OpOperand *> sourceByIndex;
-  if (!createOp.getElements().empty()) {
-    if (createOp.getElements().size() != indices.size()) {
-      return failure();
-    }
-    unsigned firstElement = createOp.getElements().getBeginOperandIndex();
-    for (auto [i, idx] : llvm::enumerate(indices)) {
-      sourceByIndex[idx] = &createOp->getOpOperand(firstElement + i);
-    }
-  }
-
   FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
   SmallVector<Operation *> &users = plan.users;
   if (succeeded(maybeUsers)) {
@@ -1758,6 +1827,21 @@ static LogicalResult planExpandableLocalArray(
     }
     users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
     plan.materializationPoint = createOp.getOperation();
+  }
+
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  plan.indices = std::move(*maybeIndices);
+  ArrayRef<ArrayAttr> indices = plan.indices;
+
+  DenseMap<ArrayAttr, OpOperand *> sourceByIndex;
+  if (!createOp.getElements().empty()) {
+    unsigned firstElement = createOp.getElements().getBeginOperandIndex();
+    for (auto [i, idx] : llvm::enumerate(indices)) {
+      sourceByIndex[idx] = &createOp->getOpOperand(firstElement + i);
+    }
   }
 
   /// First consumer that forced an array index to be materialized at a concrete type.
@@ -2072,12 +2156,7 @@ static LogicalResult rewriteExpandableLocalArray(
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
     const ExpandableArrayPlan &plan
 ) {
-  ArrayType arrTy = createOp.getType();
-  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
-  if (!maybeIndices) {
-    return failure();
-  }
-  ArrayRef<ArrayAttr> indices = *maybeIndices;
+  ArrayRef<ArrayAttr> indices = plan.indices;
 
   DenseMap<ArrayAttr, Value> valueByIndex;
   DenseMap<ArrayAttr, DictionaryAttr> writeDiscardableAttrsByIndex;

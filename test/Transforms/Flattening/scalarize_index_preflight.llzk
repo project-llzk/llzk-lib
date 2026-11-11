@@ -1,0 +1,148 @@
+// RUN: python3 -c "import subprocess, sys; subprocess.run(sys.argv[1:], check=True, timeout=10)" llzk-opt -llzk-flatten -split-input-file %s | FileCheck %s --enable-var-scope
+
+// Regressions must finish without enumerating the large non-candidates below.
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @unused() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @escaping() -> !array.type<1000000000 x !felt.type> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = array.new  : <1000000000 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<1000000000 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @sparse() -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <1000000000 x !felt.type>
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_1]]] = %[[VAL_2]] : <1000000000 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_1]]] : <1000000000 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @signed_overflow() -> !array.type<2,4611686018427387904 x !felt.type> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <2,4611686018427387904 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_5]] : !array.type<2,4611686018427387904 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wrapping_product() -> !array.type<3,6148914691236517206 x !felt.type> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <3,6148914691236517206 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_6]] : !array.type<3,6148914691236517206 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @empty() -> !array.type<9223372036854775807,9223372036854775807,0 x !felt.type> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.new  : <9223372036854775807,9223372036854775807,0 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_7]] : !array.type<9223372036854775807,9223372036854775807,0 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+module attributes {llzk.lang} {
+  // No users: discard the candidate before constructing any indices.
+  function.def @unused() attributes {function.allow_witness} {
+    %array = array.new : !array.type<1000000000 x !felt.type>
+    function.return
+  }
+  // Returning the array is an unsupported scalarization use.
+  function.def @escaping() -> !array.type<1000000000 x !felt.type> attributes {function.allow_witness} {
+    %array = array.new : !array.type<1000000000 x !felt.type>
+    function.return %array : !array.type<1000000000 x !felt.type>
+  }
+  // Supported users, but one write cannot initialize a billion elements.
+  function.def @sparse() -> !felt.type attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %value = llzk.nondet : !felt.type
+    %array = array.new : !array.type<1000000000 x !felt.type>
+    array.write %array[%zero] = %value : !array.type<1000000000 x !felt.type>, !felt.type
+    %read = array.read %array[%zero] : !array.type<1000000000 x !felt.type>, !felt.type
+    function.return %read : !felt.type
+  }
+  // The product exceeds signed 64-bit indexing, even though both dimensions fit.
+  function.def @signed_overflow() -> !array.type<2, 4611686018427387904 x !felt.type> attributes {function.allow_witness} {
+    %array = array.new : !array.type<2, 4611686018427387904 x !felt.type>
+    function.return %array : !array.type<2, 4611686018427387904 x !felt.type>
+  }
+  // Unchecked multiplication would wrap to the small, positive element count 2.
+  function.def @wrapping_product() -> !array.type<3, 6148914691236517206 x !felt.type> attributes {function.allow_witness} {
+    %array = array.new : !array.type<3, 6148914691236517206 x !felt.type>
+    function.return %array : !array.type<3, 6148914691236517206 x !felt.type>
+  }
+  // A zero dimension makes the product zero regardless of the preceding large dimensions.
+  function.def @empty() -> !array.type<9223372036854775807, 9223372036854775807, 0 x !felt.type> attributes {function.allow_witness} {
+    %array = array.new : !array.type<9223372036854775807, 9223372036854775807, 0 x !felt.type>
+    function.return %array : !array.type<9223372036854775807, 9223372036854775807, 0 x !felt.type>
+  }
+}
+
+// -----
+
+// A complete multidimensional candidate and a matching uninitialized fallback still scalarize.
+// CHECK-LABEL:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        scf.if %[[VAL_4]] {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+#id = affine_map<(i) -> (i)>
+#row = affine_map<(i, j) -> (i)>
+#col = affine_map<(i, j) -> (j)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      scf.if %cond {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %c2 = arith.constant 2 : index
+        %local = array.new{(%c2, %c1), (%c2, %c1)} : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+        %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        array.write %local[%c0, %c0] = %item0 : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1, %c0] = %item1 : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+      } else {
+        %rows = arith.constant 2 : index
+        %cols = arith.constant 1 : index
+        %fallback = array.new{(%rows, %cols), (%rows, %cols)} : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}
