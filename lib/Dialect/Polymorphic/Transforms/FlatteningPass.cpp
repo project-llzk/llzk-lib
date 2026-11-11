@@ -3303,7 +3303,31 @@ public:
   }
 };
 
-/// Update CallOp result type based on the updated return type from the target FuncDefOp.
+/// Return whether a result still depends on symbols owned by the callee's template.
+/// Struct names and POD record names are declarations, not template parameter bindings.
+static bool hasUnresolvedCallResultBindings(Type type) {
+  return type
+      .walk([](Type nested) {
+    if (llvm::isa<TypeVarType>(nested)) {
+      return WalkResult::interrupt();
+    }
+    ArrayRef<Attribute> parameters;
+    if (auto array = llvm::dyn_cast<ArrayType>(nested)) {
+      parameters = array.getDimensionSizes();
+    } else if (
+        auto structure = llvm::dyn_cast<StructType>(nested); structure && structure.getParams()
+    ) {
+      parameters = structure.getParams().getValue();
+    }
+    return llvm::any_of(
+               parameters, [](Attribute parameter) { return llvm::isa<SymbolRefAttr>(parameter); }
+           )
+               ? WalkResult::interrupt()
+               : WalkResult::advance();
+  }).wasInterrupted();
+}
+
+/// Update CallOp result types from independently refined callee results in the caller's namespace.
 /// This only applies to free (i.e., non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
@@ -3330,20 +3354,46 @@ public:
       // this pattern only applies when the callee is NOT in a struct
       return failure();
     }
-    if (op.getResultTypes() == targetFunc.getFunctionType().getResults()) {
-      return failure(); // nothing changed
+    auto callerRoot = getRootModule(op);
+    if (failed(callerRoot)) {
+      return failure();
     }
-    if (!tracker_.areLegalConversions(
-            op.getResultTypes(), targetFunc.getFunctionType().getResults(),
-            "UpdateFreeFuncCallOpTypes", op
+    SmallVector<Type> resultTypes;
+    for (auto [current, declared] :
+         llvm::zip_equal(op.getResultTypes(), targetFunc.getResultTypes())) {
+      // Instantiation owns substitutions of callee-local parameters. Even equal parameter
+      // spellings can denote different bindings in the caller, so leave these results alone.
+      if (hasUnresolvedCallResultBindings(declared)) {
+        resultTypes.push_back(current);
+        continue;
+      }
+      auto rebased = rebaseTemplateParams(
+          tables, rewriter.getArrayAttr({TypeAttr::get(declared)}), targetFunc, *callerRoot, op
+      );
+      if (failed(rebased)) {
+        return failure();
+      }
+      resultTypes.push_back(llvm::cast<TypeAttr>((*rebased)[0]).getValue());
+    }
+    if (op.getResultTypes() == TypeRange(resultTypes) ||
+        !tracker_.areLegalConversions(
+            op.getResultTypes(), resultTypes, "UpdateFreeFuncCallOpTypes", op
+        ) ||
+        !callSignatureUnifies(
+            rewriter.getFunctionType(op.getArgOperands().getTypes(), resultTypes),
+            targetFunc.getFunctionType(), lookupRes->getNamespace(), tracker_,
+            /*allowUnresolvedStructs=*/true, op
         )) {
       return failure();
     }
 
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateFreeFuncCallOpTypes] replaced " << op);
-    CallOp newOp = replaceOpWithNewOp<CallOp>(rewriter, op, targetFunc, op.getArgOperands());
-    (void)newOp; // tell compiler it's intentionally unused in release builds
-    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
+    // Preserve the call-site callee spelling, template arguments and all operation properties.
+    rewriter.modifyOpInPlace(op, [&]() {
+      for (auto [result, type] : llvm::zip_equal(op.getResults(), resultTypes)) {
+        result.setType(type);
+      }
+    });
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFreeFuncCallOpTypes] updated " << op << '\n');
     return success();
   }
 };
