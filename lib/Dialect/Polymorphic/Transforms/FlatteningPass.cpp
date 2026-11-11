@@ -2589,7 +2589,7 @@ static FailureOr<ArrayType> inferCreateArrayType(CreateArrayOp op, ConversionTra
   }
 
   // Both stores and independently typed reads can constrain an allocation. All such evidence
-  // belongs to this plan; array-access patterns must not retag the allocation separately.
+  // belongs to this plan; accesses do not retag arrays owned by other producers.
   for (Operation *user : createResult.getUsers()) {
     Type evidence;
     if (auto write = dyn_cast<WriteArrayOp>(user); write && write.getArrRef() == createResult) {
@@ -2616,64 +2616,6 @@ static FailureOr<ArrayType> inferCreateArrayType(CreateArrayOp op, ConversionTra
   ArrayType newType = createResultType.cloneWith(newResultElemType);
   return newType;
 }
-
-namespace {
-
-/// Update the array reference type on an array access op to match a scalar element type observed
-/// through that access.
-LogicalResult updateArrayElemFromArrAccessOp(
-    ArrayAccessOpInterface op, Type scalarElemTy, ConversionTracker &tracker,
-    PatternRewriter &rewriter
-) {
-  // Allocations are validated together so shared call bindings cannot depend on rewrite order.
-  if (op.getArrRef().getDefiningOp<CreateArrayOp>()) {
-    return failure();
-  }
-  ArrayType oldArrType = op.getArrRefType();
-  if (oldArrType.getElementType() == scalarElemTy) {
-    return failure(); // no change needed
-  }
-  ArrayType newArrType = oldArrType.cloneWith(scalarElemTy);
-  if (oldArrType == newArrType ||
-      !tracker.isLegalConversion(oldArrType, newArrType, "updateArrayElemFromArrAccessOp")) {
-    return failure();
-  }
-  rewriter.modifyOpInPlace(op, [&op, &newArrType]() { op.getArrRef().setType(newArrType); });
-  LLVM_DEBUG(
-      llvm::dbgs() << "[updateArrayElemFromArrAccessOp] updated base array type in " << op << '\n'
-  );
-  return success();
-}
-
-} // namespace
-
-class UpdateArrayElemFromArrWrite final : public OpRewritePattern<WriteArrayOp> {
-  ConversionTracker &tracker_;
-
-public:
-  /// Construct the array-write based element-type propagation pattern.
-  UpdateArrayElemFromArrWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
-
-  /// Update the referenced array type from the write value type.
-  LogicalResult matchAndRewrite(WriteArrayOp op, PatternRewriter &rewriter) const override {
-    return updateArrayElemFromArrAccessOp(op, op.getRvalue().getType(), tracker_, rewriter);
-  }
-};
-
-class UpdateArrayElemFromArrRead final : public OpRewritePattern<ReadArrayOp> {
-  ConversionTracker &tracker_;
-
-public:
-  /// Construct the array-read based element-type propagation pattern.
-  UpdateArrayElemFromArrRead(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
-
-  /// Update the referenced array type from the read result type.
-  LogicalResult matchAndRewrite(ReadArrayOp op, PatternRewriter &rewriter) const override {
-    return updateArrayElemFromArrAccessOp(op, op.getResult().getType(), tracker_, rewriter);
-  }
-};
 
 /// Return whether a member type cannot be refined by writes. Concrete struct arguments still
 /// need specialization, and wildcard array dimensions can become static even though
@@ -3439,10 +3381,9 @@ public:
       return failure();
     }
 
-    // A read derives its type from its source member, whose writes can carry independent
-    // concrete dimensions. Let member-read propagation refine it from that declaration;
-    // a destination write must not impose its own type on the source read.
-    if (oldValue.getDefiningOp<MemberReadOp>()) {
+    // Only a nondeterministic witness has no independently declared producer contract.
+    // Function/region arguments and other results must be refined by their owning operation.
+    if (!oldValue.getDefiningOp<NonDetOp>()) {
       return failure();
     }
 
@@ -3486,16 +3427,11 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     bool hadConflict = false;
     RewritePatternSet patterns(ctx);
     patterns.add<
-        // Benefit of this one must be higher than rules that would propagate the type in the
-        // opposite direction (ex: `UpdateArrayElemFromArrRead`) else the greedy conversion would
-        // not converge.
         //  benefit = 6
         UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
         //  benefit = 3
         UpdateFreeFuncCallOpTypes,         // CallOp, targeting non-struct functions
         UpdateFuncTypeFromReturn,          // FuncDefOp
-        UpdateArrayElemFromArrRead,        // ReadArrayOp
-        UpdateArrayElemFromArrWrite,       // WriteArrayOp
         UpdateUnifiableCastResultFromInput // UnifiableCastOp
         >(ctx, tracker);
     patterns.add<UpdateMemberWriteValFromDef>(ctx, tracker, modOp, hadConflict);
