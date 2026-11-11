@@ -50,7 +50,16 @@ bool canUseScalarizedValueAsType(
 
 /// Check the independently declared type requirements of an array allocation's consumers.
 bool canRefineCreateArrayUsersToType(
-    array::CreateArrayOp createOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables
+    array::CreateArrayOp createOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables,
+    const ConversionTracker &tracker,
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
+);
+
+/// Extend a pending plan through array initializers, reads and extracts without changing IR.
+/// Recompute from the retained seeds whenever a candidate is rejected.
+void extendPendingArrayRefinements(
+    mlir::ModuleOp module, llvm::DenseMap<mlir::Value, mlir::Type> &pendingRefinements,
+    const ConversionTracker &tracker
 );
 
 /// Check a full signature using shared, namespace-aware bindings across arguments and results.

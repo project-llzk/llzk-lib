@@ -1,0 +1,260 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+// RUN: not llzk-opt -split-input-file -llzk-flatten -mlir-print-ir-after-failure %s 2>&1 | FileCheck %s --check-prefix=ATOMIC --enable-var-scope
+
+// Reject conflicting allocation plans before either shared call operand changes.
+module attributes {llzk.lang} {
+  poly.template @Consume {
+    poly.param @T
+    function.def @consume(%a: !array.type<1 x !poly.tvar<@T>>, %b: !array.type<1 x !poly.tvar<@T>>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @T
+    function.def @caller(%a: !felt.type, %b: index) {
+      // expected-note@+1 {{array value would refine to}}
+      %aa = array.new : !array.type<1 x !poly.tvar<@T>>
+      // expected-note@+1 {{array value would refine to}}
+      %bb = array.new : !array.type<1 x !poly.tvar<@T>>
+      %c0 = arith.constant 0 : index
+      array.write %aa[%c0] = %a : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %bb[%c0] = %b : !array.type<1 x !poly.tvar<@T>>, index
+      // expected-error@+2 {{cannot refine arrays because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Consume::@consume(%aa, %bb) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+
+// ATOMIC-LABEL: module attributes {llzk.lang} {
+// ATOMIC:      function.def @caller(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) {
+// ATOMIC-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// ATOMIC-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <1 x !poly.tvar<@T>>, !felt.type
+// ATOMIC-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_4]]] = %[[VAL_3]] : <1 x !poly.tvar<@T>>, index
+// ATOMIC-NEXT:        function.call @Consume::@consume(%[[VAL_5]], %[[VAL_6]]) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+
+// -----
+
+// Validate independently typed reads through the same allocation plan.
+module attributes {llzk.lang} {
+  poly.template @Consume {
+    poly.param @T
+    function.def @consume(%a: !array.type<1 x !poly.tvar<@T>>, %b: !array.type<1 x !poly.tvar<@T>>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @T
+    function.def @caller(%a: !felt.type, %b: index) attributes {function.allow_constraint} {
+      // expected-note@+1 {{array value would refine to}}
+      %aa = array.new : !array.type<1 x !poly.tvar<@T>>
+      // expected-note@+1 {{array value would refine to}}
+      %bb = array.new : !array.type<1 x !poly.tvar<@T>>
+      %c0 = arith.constant 0 : index
+      %ra = array.read %aa[%c0] : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      constrain.eq %ra, %a : !felt.type, !felt.type
+      %rb = array.read %bb[%c0] : !array.type<1 x !poly.tvar<@T>>, index
+      constrain.eq %rb, %b : index, index
+      // expected-error@+2 {{cannot refine arrays because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Consume::@consume(%aa, %bb) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+
+// ATOMIC-LABEL: module attributes {llzk.lang} {
+// ATOMIC:      function.def @caller(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
+// ATOMIC-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// ATOMIC-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <1 x !poly.tvar<@T>>, !felt.type
+// ATOMIC-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_2]] : !felt.type, !felt.type
+// ATOMIC-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_4]]] : <1 x !poly.tvar<@T>>, index
+// ATOMIC-NEXT:        constrain.eq %[[VAL_8]], %[[VAL_3]] : index, index
+// ATOMIC-NEXT:        function.call @Consume::@consume(%[[VAL_5]], %[[VAL_6]]) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+
+// -----
+
+// Allocation visitation order must not select the surviving binding.
+module attributes {llzk.lang} {
+  poly.template @Consume {
+    poly.param @T
+    function.def @consume(%a: !array.type<1 x !poly.tvar<@T>>, %b: !array.type<1 x !poly.tvar<@T>>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @T
+    function.def @caller(%a: !felt.type, %b: index) {
+      // expected-note@+1 {{array value would refine to}}
+      %bb = array.new : !array.type<1 x !poly.tvar<@T>>
+      // expected-note@+1 {{array value would refine to}}
+      %aa = array.new : !array.type<1 x !poly.tvar<@T>>
+      %c0 = arith.constant 0 : index
+      array.write %aa[%c0] = %a : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %bb[%c0] = %b : !array.type<1 x !poly.tvar<@T>>, index
+      // expected-error@+2 {{cannot refine arrays because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Consume::@consume(%aa, %bb) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+
+// ATOMIC-LABEL: module attributes {llzk.lang} {
+// ATOMIC:      function.def @caller(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) {
+// ATOMIC-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// ATOMIC-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <1 x !poly.tvar<@T>>, !felt.type
+// ATOMIC-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_4]]] = %[[VAL_3]] : <1 x !poly.tvar<@T>>, index
+// ATOMIC-NEXT:        function.call @Consume::@consume(%[[VAL_6]], %[[VAL_5]]) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+
+// -----
+
+// Include the inferred element read types in the same call plan.
+module attributes {llzk.lang} {
+  poly.template @Consume {
+    poly.param @T
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @T
+    function.def @caller(%a: !felt.type, %b: index) {
+      %aa = array.new : !array.type<1 x !poly.tvar<@T>>
+      %bb = array.new : !array.type<1 x !poly.tvar<@T>>
+      %c0 = arith.constant 0 : index
+      array.write %aa[%c0] = %a : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %bb[%c0] = %b : !array.type<1 x !poly.tvar<@T>>, index
+      // expected-note@+1 {{array value would refine to}}
+      %ra = array.read %aa[%c0] : !array.type<1 x !poly.tvar<@T>>, !poly.tvar<@T>
+      // expected-note@+1 {{array value would refine to}}
+      %rb = array.read %bb[%c0] : !array.type<1 x !poly.tvar<@T>>, !poly.tvar<@T>
+      // expected-error@+2 {{cannot refine arrays because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Consume::@consume(%ra, %rb) : (!poly.tvar<@T>, !poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+}
+
+// ATOMIC-LABEL: module attributes {llzk.lang} {
+// ATOMIC:      function.def @caller(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) {
+// ATOMIC-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// ATOMIC-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <1 x !poly.tvar<@T>>, !felt.type
+// ATOMIC-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_4]]] = %[[VAL_3]] : <1 x !poly.tvar<@T>>, index
+// ATOMIC-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <1 x !poly.tvar<@T>>, !poly.tvar<@T>
+// ATOMIC-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_4]]] : <1 x !poly.tvar<@T>>, !poly.tvar<@T>
+// ATOMIC-NEXT:        function.call @Consume::@consume(%[[VAL_7]], %[[VAL_8]]) : (!poly.tvar<@T>, !poly.tvar<@T>) -> ()
+
+// -----
+
+// Include inferred subarray extracts in the same call plan.
+module attributes {llzk.lang} {
+  poly.template @Consume {
+    poly.param @T
+    function.def @consume(%a: !array.type<1 x !poly.tvar<@T>>, %b: !array.type<1 x !poly.tvar<@T>>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @T
+    function.def @caller(%a: !felt.type, %b: index) {
+      %aa = array.new : !array.type<1,1 x !poly.tvar<@T>>
+      %bb = array.new : !array.type<1,1 x !poly.tvar<@T>>
+      %c0 = arith.constant 0 : index
+      array.write %aa[%c0, %c0] = %a : !array.type<1,1 x !poly.tvar<@T>>, !felt.type
+      array.write %bb[%c0, %c0] = %b : !array.type<1,1 x !poly.tvar<@T>>, index
+      // expected-note@+1 {{array value would refine to}}
+      %ra = array.extract %aa[%c0] : !array.type<1,1 x !poly.tvar<@T>>
+      // expected-note@+1 {{array value would refine to}}
+      %rb = array.extract %bb[%c0] : !array.type<1,1 x !poly.tvar<@T>>
+      // expected-error@+2 {{cannot refine arrays because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Consume::@consume(%ra, %rb) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+
+// ATOMIC-LABEL: module attributes {llzk.lang} {
+// ATOMIC:      function.def @caller(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) {
+// ATOMIC-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// ATOMIC-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.new  : <1,1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <1,1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_2]] : <1,1 x !poly.tvar<@T>>, !felt.type
+// ATOMIC-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_3]] : <1,1 x !poly.tvar<@T>>, index
+// ATOMIC-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_4]]] : <1,1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_6]]{{\[}}%[[VAL_4]]] : <1,1 x !poly.tvar<@T>>
+// ATOMIC-NEXT:        function.call @Consume::@consume(%[[VAL_7]], %[[VAL_8]]) : (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) -> ()
+
+// -----
+
+// Include array initializers derived from pending member reads.
+
+// Pending definitions and reads must be rejected together, before either becomes concrete.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !array.type<1 x !poly.tvar<@T>>, %b: !array.type<1 x !poly.tvar<@T>>) {
+      function.return
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @right : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %one : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-note@+1 {{member read would refine to}}
+      %aa = array.new %left : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      // expected-note@+1 {{member read would refine to}}
+      %bb = array.new %right : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Match::@consume(%aa, %bb) : (!array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>, !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "left", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC-NEXT:      "struct.member"() <{column, sym_name = "right", type = !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>}> : () -> ()
+// ATOMIC-NEXT:      "function.def"() <{function_type = () -> !struct.type<@Holder>, sym_name = "compute"}> ({
+// ATOMIC-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @TCell_0_Cell::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@TCell_0_Cell>
+// ATOMIC-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @TCell_1_Cell::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@TCell_1_Cell>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_8]], %[[VAL_9]]) <{member_name = @left}> : (!struct.type<@Holder>, !struct.type<@TCell_0_Cell>) -> ()
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_8]], %[[VAL_10]]) <{member_name = @right}> : (!struct.type<@Holder>, !struct.type<@TCell_1_Cell>) -> ()
+// ATOMIC-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @left, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_8]]) <{mapOpGroupSizes = array<i32>, member_name = @right, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> !array.type<1 x !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_12]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> !array.type<1 x !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_13]], %[[VAL_14]]) <{callee = @Match::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!array.type<1 x !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>>, !array.type<1 x !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>>) -> ()

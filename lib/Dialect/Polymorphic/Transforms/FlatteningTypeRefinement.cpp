@@ -249,6 +249,82 @@ FunctionType getRefinedCallSignature(
   return FunctionType::get(call.getContext(), argumentTypes, call.getResultTypes());
 }
 
+/// Look up a proposed type, falling back to the unchanged SSA type.
+static Type plannedType(Value value, const DenseMap<Value, Type> *pending) {
+  if (pending) {
+    if (Type type = pending->lookup(value)) {
+      return type;
+    }
+  }
+  return value.getType();
+}
+
+void extendPendingArrayRefinements(
+    ModuleOp module, DenseMap<Value, Type> &pending, const ConversionTracker &tracker
+) {
+  bool changed;
+  do {
+    changed = false;
+    module.walk([&](Operation *op) {
+      Value result;
+      Type type;
+      if (auto create = dyn_cast<CreateArrayOp>(op)) {
+        if (create.getElements().empty() || !llvm::any_of(create.getElements(), [&](Value value) {
+          return pending.contains(value);
+        })) {
+          return;
+        }
+        Type element = plannedType(create.getElements().front(), &pending);
+        if (!llvm::all_of(create.getElements(), [&](Value value) {
+          return plannedType(value, &pending) == element;
+        })) {
+          return;
+        }
+        result = create.getResult();
+        type = create.getType().cloneWith(element);
+      } else if (auto read = dyn_cast<ReadArrayOp>(op)) {
+        auto array = dyn_cast_or_null<ArrayType>(pending.lookup(read.getArrRef()));
+        if (!array) {
+          return;
+        }
+        result = read.getResult();
+        type = array.getElementType();
+      } else if (auto extract = dyn_cast<ExtractArrayOp>(op)) {
+        auto array = dyn_cast_or_null<ArrayType>(pending.lookup(extract.getArrRef()));
+        if (!array) {
+          return;
+        }
+        result = extract.getResult();
+        type = array.getSelectionType(extract.getIndices().size());
+      }
+      if (result && type != plannedType(result, &pending) &&
+          canUseScalarizedValueAsType(
+              plannedType(result, &pending), type, tracker, "extendPendingArrayRefinements"
+          )) {
+        pending[result] = type;
+        changed = true;
+      }
+    });
+  } while (changed);
+}
+
+/// Check a call use against every proposed argument and the unchanged results.
+static bool canRefineCallUse(
+    OpOperand &use, Type type, SymbolTableCollection &tables, const ConversionTracker &tracker,
+    const DenseMap<Value, Type> *pending
+) {
+  auto call = cast<CallOp>(use.getOwner());
+  unsigned index = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+  if (index >= call.getArgOperands().size()) {
+    return false;
+  }
+  auto callee = call.getCalleeTarget(tables);
+  return succeeded(callee) && callSignatureUnifies(
+                                  getRefinedCallSignature(call, use.get(), type, pending),
+                                  callee->get().getFunctionType(), callee->getNamespace(), tracker
+                              );
+}
+
 /// Return true iff a value of `sourceType` can be used where `targetType` is requested after
 /// scalarization has retained the common refinement.
 bool canUseScalarizedValueAsType(
@@ -354,13 +430,19 @@ static FailureOr<Type> getConsumerRequiredType(
 /// Retagging an array result updates its SSA value globally. Fully concrete consumers are not
 /// retagged by propagation patterns, so they must already request the proposed array type.
 bool canRefineCreateArrayUsersToType(
-    CreateArrayOp createOp, Type refinedType, SymbolTableCollection &tables
+    CreateArrayOp createOp, Type refinedType, SymbolTableCollection &tables,
+    const ConversionTracker &tracker, const DenseMap<Value, Type> *pendingRefinements
 ) {
   Value result = createOp.getResult();
   for (OpOperand &use : result.getUses()) {
     Operation *user = use.getOwner();
     Type requiredType;
-    if (isa<MemberWriteOp, CallOp, ReturnOp, UnifiableCastOp>(user)) {
+    if (isa<CallOp>(user)) {
+      if (!canRefineCallUse(use, refinedType, tables, tracker, pendingRefinements)) {
+        return false;
+      }
+      continue;
+    } else if (isa<MemberWriteOp, ReturnOp, UnifiableCastOp>(user)) {
       auto requirement = getConsumerRequiredType(use, tables);
       if (failed(requirement)) {
         return false;
@@ -401,6 +483,20 @@ bool canRefineCreateArrayUsersToType(
       // subsequent array write that observes the read.
       Type refinedElementType = mlir::cast<ArrayType>(refinedType).getElementType();
       for (OpOperand &readUse : arrayRead.getResult().getUses()) {
+        if (auto equality = dyn_cast<EmitEqualityOp>(readUse.getOwner())) {
+          Value other = equality.getLhs() == readUse.get() ? equality.getRhs() : equality.getLhs();
+          Type otherType = plannedType(other, pendingRefinements);
+          if (otherType != refinedElementType && isFullyConcreteArrayConsumerType(otherType)) {
+            return false;
+          }
+          continue;
+        }
+        if (isa<CallOp>(readUse.getOwner())) {
+          if (!canRefineCallUse(readUse, refinedElementType, tables, tracker, pendingRefinements)) {
+            return false;
+          }
+          continue;
+        }
         auto requirement = getConsumerRequiredType(readUse, tables, ArrayStoreKind::Element);
         if (failed(requirement)) {
           return false;
@@ -423,6 +519,14 @@ bool canRefineCreateArrayUsersToType(
       Type refinedExtractType =
           mlir::cast<ArrayType>(refinedType).getSelectionType(arrayExtract.getIndices().size());
       for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
+        if (isa<CallOp>(extractUse.getOwner())) {
+          if (!canRefineCallUse(
+                  extractUse, refinedExtractType, tables, tracker, pendingRefinements
+              )) {
+            return false;
+          }
+          continue;
+        }
         auto requirement = getConsumerRequiredType(extractUse, tables, ArrayStoreKind::Subarray);
         if (failed(requirement)) {
           return false;
@@ -522,20 +626,8 @@ bool canRefineMemberReadUsersToType(
       }
       continue;
     }
-    if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
-      if (call.getArgOperands().empty()) {
-        return false;
-      }
-      unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
-      if (argIdx >= call.getArgOperands().size()) {
-        return false;
-      }
-      auto callee = call.getCalleeTarget(tables);
-      if (failed(callee) ||
-          !callSignatureUnifies(
-              getRefinedCallSignature(call, result, refinedType, pendingRefinements),
-              callee->get().getFunctionType(), callee->getNamespace(), tracker
-          )) {
+    if (isa<CallOp>(user)) {
+      if (!canRefineCallUse(use, refinedType, tables, tracker, pendingRefinements)) {
         return false;
       }
       continue;
@@ -555,12 +647,15 @@ bool canRefineMemberReadUsersToType(
         return false;
       }
       for (OpOperand &initializer : createArray->getOpOperands()) {
-        if (&initializer != &use && initializer.get().getType() != refinedType) {
+        if (&initializer != &use &&
+            plannedType(initializer.get(), pendingRefinements) != refinedType) {
           return false;
         }
       }
       ArrayType refinedArrayType = createArray.getType().cloneWith(refinedType);
-      if (!canRefineCreateArrayUsersToType(createArray, refinedArrayType, tables)) {
+      if (!canRefineCreateArrayUsersToType(
+              createArray, refinedArrayType, tables, tracker, pendingRefinements
+          )) {
         return false;
       }
       continue;
@@ -613,6 +708,15 @@ bool canRefineMemberReadUsersToType(
           // Propagation retags this result after its receiver changes.
           continue;
         }
+        if (isa<CallOp>(arrayReadUse.getOwner())) {
+          if (!canRefineCallUse(
+                  arrayReadUse, refinedArrayType.getElementType(), tables, tracker,
+                  pendingRefinements
+              )) {
+            return false;
+          }
+          continue;
+        }
         auto requirement = getConsumerRequiredType(arrayReadUse, tables, ArrayStoreKind::Element);
         if (failed(requirement)) {
           return false;
@@ -637,6 +741,14 @@ bool canRefineMemberReadUsersToType(
       // not retargeted by propagation, so they must already require the selected subarray type.
       Type refinedExtractType = refinedArrayType.getSelectionType(arrayExtract.getIndices().size());
       for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
+        if (isa<CallOp>(extractUse.getOwner())) {
+          if (!canRefineCallUse(
+                  extractUse, refinedExtractType, tables, tracker, pendingRefinements
+              )) {
+            return false;
+          }
+          continue;
+        }
         auto requirement = getConsumerRequiredType(extractUse, tables, ArrayStoreKind::Subarray);
         if (failed(requirement)) {
           return false;

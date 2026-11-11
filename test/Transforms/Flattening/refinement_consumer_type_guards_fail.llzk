@@ -543,6 +543,8 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
+    // The conflicting writes leave the allocation generic.
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
     struct.def @Cell {
       struct.member @value : !felt.type {column}
 

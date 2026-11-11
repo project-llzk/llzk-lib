@@ -2522,81 +2522,57 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step6_PropagateTypes {
 
-/// Update the array element type from compatible initializers and writes.
-class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
-  ConversionTracker &tracker_;
+/// Infer an allocation's element refinement without changing any value types.
+static FailureOr<ArrayType> inferCreateArrayType(CreateArrayOp op, ConversionTracker &tracker) {
+  Value createResult = op.getResult();
+  ArrayType createResultType = dyn_cast<ArrayType>(createResult.getType());
+  assert(createResultType && "CreateArrayOp must produce ArrayType");
+  Type oldResultElemType = createResultType.getElementType();
 
-public:
-  /// Construct the create-array element-type propagation pattern.
-  UpdateNewArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
-
-  /// Update an `array.new` result element type from compatible initializers and writes.
-  LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
-    Value createResult = op.getResult();
-    ArrayType createResultType = dyn_cast<ArrayType>(createResult.getType());
-    assert(createResultType && "CreateArrayOp must produce ArrayType");
-    Type oldResultElemType = createResultType.getElementType();
-
-    Type newResultElemType = nullptr;
-    // An initializer constrains array.new just as strongly as a later array.write: every element
-    // must have the result array's element type. A member-read refinement can change an
-    // initializer without creating a WriteArrayOp, so consider the explicit elements first.
-    if (!op.getElements().empty()) {
-      Type initializerType = op.getElements().front().getType();
-      if (!llvm::all_of(op.getElements(), [initializerType](Value element) {
-        return element.getType() == initializerType;
-      })) {
-        return failure();
-      }
-      if (initializerType != oldResultElemType) {
-        newResultElemType = initializerType;
-      }
-    }
-
-    // Look for WriteArrayOp where the array reference is the result of the CreateArrayOp and the
-    // element type is different.
-    for (Operation *user : createResult.getUsers()) {
-      if (WriteArrayOp writeOp = dyn_cast<WriteArrayOp>(user)) {
-        if (writeOp.getArrRef() != createResult) {
-          continue;
-        }
-        Type writeRValueType = writeOp.getRvalue().getType();
-        if (writeRValueType == oldResultElemType) {
-          continue;
-        }
-        if (newResultElemType && newResultElemType != writeRValueType) {
-          LLVM_DEBUG(
-              llvm::dbgs()
-              << "[UpdateNewArrayElemFromWrite] multiple possible element types for CreateArrayOp "
-              << newResultElemType << " vs " << writeRValueType << '\n'
-          );
-          return failure();
-        }
-        newResultElemType = writeRValueType;
-      }
-    }
-    if (!newResultElemType) {
-      // no replacement type found
+  Type newResultElemType = nullptr;
+  // An initializer constrains array.new just as strongly as a later array.write: every element
+  // must have the result array's element type. A member-read refinement can change an
+  // initializer without creating a WriteArrayOp, so consider the explicit elements first.
+  if (!op.getElements().empty()) {
+    Type initializerType = op.getElements().front().getType();
+    if (!llvm::all_of(op.getElements(), [initializerType](Value element) {
+      return element.getType() == initializerType;
+    })) {
       return failure();
     }
-    if (!tracker_.isLegalConversion(
-            oldResultElemType, newResultElemType, "UpdateNewArrayElemFromWrite"
-        )) {
-      return failure();
+    if (initializerType != oldResultElemType) {
+      newResultElemType = initializerType;
     }
-    ArrayType newType = createResultType.cloneWith(newResultElemType);
-    SymbolTableCollection tables;
-    if (!canRefineCreateArrayUsersToType(op, newType, tables)) {
-      return failure();
-    }
-    rewriter.modifyOpInPlace(op, [&createResult, &newType]() { createResult.setType(newType); });
-    LLVM_DEBUG(
-        llvm::dbgs() << "[UpdateNewArrayElemFromWrite] updated result type of " << op << '\n'
-    );
-    return success();
   }
-};
+
+  // Both stores and independently typed reads can constrain an allocation. All such evidence
+  // belongs to this plan; array-access patterns must not retag the allocation separately.
+  for (Operation *user : createResult.getUsers()) {
+    Type evidence;
+    if (auto write = dyn_cast<WriteArrayOp>(user); write && write.getArrRef() == createResult) {
+      evidence = write.getRvalue().getType();
+    } else if (auto read = dyn_cast<ReadArrayOp>(user); read && read.getArrRef() == createResult) {
+      evidence = read.getResult().getType();
+    }
+    if (!evidence || evidence == oldResultElemType ||
+        !tracker.isLegalConversion(oldResultElemType, evidence, "inferCreateArrayType")) {
+      continue;
+    }
+    if (newResultElemType && newResultElemType != evidence) {
+      return failure();
+    }
+    newResultElemType = evidence;
+  }
+  if (!newResultElemType) {
+    // no replacement type found
+    return failure();
+  }
+  if (!tracker.isLegalConversion(oldResultElemType, newResultElemType, "inferCreateArrayType")) {
+    return failure();
+  }
+  ArrayType newType = createResultType.cloneWith(newResultElemType);
+  return newType;
+}
 
 namespace {
 
@@ -2606,6 +2582,10 @@ LogicalResult updateArrayElemFromArrAccessOp(
     ArrayAccessOpInterface op, Type scalarElemTy, ConversionTracker &tracker,
     PatternRewriter &rewriter
 ) {
+  // Allocations are validated together so shared call bindings cannot depend on rewrite order.
+  if (op.getArrRef().getDefiningOp<CreateArrayOp>()) {
+    return failure();
+  }
   ArrayType oldArrType = op.getArrRefType();
   if (oldArrType.getElementType() == scalarElemTy) {
     return failure(); // no change needed
@@ -2865,15 +2845,16 @@ static bool canRefineMemberDefinition(
   return true;
 }
 
-/// Reject shared binding conflicts before committing any member definition or read refinement.
+/// Reject shared binding conflicts before committing a batch of value refinements.
 /// Individual parameter mismatches remain speculative failures handled by consumer checks.
-static LogicalResult verifyPendingMemberCallBindings(
-    ModuleOp module, const DenseMap<Value, Type> &pendingReads, SymbolTableCollection &tables,
-    const ConversionTracker &tracker
+static LogicalResult verifyPendingCallBindings(
+    ModuleOp module, const DenseMap<Value, Type> &pendingValues, SymbolTableCollection &tables,
+    const ConversionTracker &tracker, StringRef description = "member reads",
+    StringRef valueDescription = "member read"
 ) {
   WalkResult result = module.walk([&](CallOp call) {
     if (!llvm::any_of(call.getArgOperands(), [&](Value value) {
-      return pendingReads.contains(value);
+      return pendingValues.contains(value);
     })) {
       return WalkResult::advance();
     }
@@ -2881,27 +2862,72 @@ static LogicalResult verifyPendingMemberCallBindings(
     if (failed(callee)) {
       return WalkResult::interrupt();
     }
-    FunctionType proposed = getRefinedCallSignature(call, {}, {}, &pendingReads);
+    FunctionType proposed = getRefinedCallSignature(call, {}, {}, &pendingValues);
     FunctionType required = callee->get().getFunctionType();
     if (!functionTypesUnify(proposed, required, callee->getNamespace()) ||
         callSignatureUnifies(proposed, required, callee->getNamespace(), tracker)) {
       return WalkResult::advance();
     }
-    auto diag = call.emitError(
-        "cannot refine member reads because the complete call signature has conflicting "
-        "template bindings"
-    );
+    auto diag = call.emitError()
+                << "cannot refine " << description
+                << " because the complete call signature has conflicting template bindings";
     diag.attachNote(call.getLoc())
         << "proposed call signature " << proposed << " must unify consistently with " << required;
     DenseSet<Value> noted;
     for (Value argument : call.getArgOperands()) {
-      if (Type type = pendingReads.lookup(argument); type && noted.insert(argument).second) {
-        diag.attachNote(argument.getLoc()) << "member read would refine to " << type;
+      if (Type type = pendingValues.lookup(argument); type && noted.insert(argument).second) {
+        diag.attachNote(argument.getLoc()) << valueDescription << " would refine to " << type;
       }
     }
     return WalkResult::interrupt();
   });
   return failure(result.wasInterrupted());
+}
+
+/// Plan all allocation refinements before validating complete call signatures. Recheck consumers
+/// after removing candidates, so a retained plan never relies on a rejected companion refinement.
+static LogicalResult
+propagateArrayTypes(ModuleOp module, ConversionTracker &tracker, bool &changed) {
+  changed = false;
+  SymbolTableCollection tables;
+  DenseMap<Value, Type> seeds;
+  module.walk([&](CreateArrayOp create) {
+    if (auto type = inferCreateArrayType(create, tracker); succeeded(type)) {
+      seeds[create.getResult()] = *type;
+    }
+  });
+  DenseMap<Value, Type> pending = seeds;
+  extendPendingArrayRefinements(module, pending, tracker);
+  if (failed(
+          verifyPendingCallBindings(module, pending, tables, tracker, "arrays", "array value")
+      )) {
+    return failure();
+  }
+  for (;;) {
+    SmallVector<Value> rejected;
+    for (auto [value, type] : seeds) {
+      if (!canRefineCreateArrayUsersToType(
+              value.getDefiningOp<CreateArrayOp>(), type, tables, tracker, &pending
+          )) {
+        rejected.push_back(value);
+      }
+    }
+    if (rejected.empty()) {
+      break;
+    }
+    for (Value value : rejected) {
+      seeds.erase(value);
+    }
+    pending = seeds;
+    extendPendingArrayRefinements(module, pending, tracker);
+  }
+  // Derived reads/extracts follow through ordinary inferred-type propagation.
+  for (auto [value, type] : seeds) {
+    value.setType(type);
+    changed = true;
+  }
+  tracker.updateModifiedFlag(changed);
+  return success();
 }
 
 /// Plan, validate and commit member definitions and reads as one batch.
@@ -2948,15 +2974,19 @@ propagateMemberTypes(ModuleOp module, ConversionTracker &tracker, bool &changed)
 
   // Validate every jointly proposed call before rejecting individual candidates; otherwise
   // visitation order could retain one conflicting member at a generic type and conceal the issue.
-  if (failed(verifyPendingMemberCallBindings(module, pendingReads, tables, tracker))) {
+  DenseMap<Value, Type> pendingValues = pendingReads;
+  extendPendingArrayRefinements(module, pendingValues, tracker);
+  if (failed(verifyPendingCallBindings(module, pendingValues, tables, tracker))) {
     return failure();
   }
   bool removed;
   do {
     removed = false;
+    pendingValues = pendingReads;
+    extendPendingArrayRefinements(module, pendingValues, tracker);
     SmallVector<MemberDefOp> rejectedMembers;
     for (const auto &[member, type] : pendingMembers) {
-      if (!canRefineMemberDefinition(member, type, tracker, tables, pendingReads)) {
+      if (!canRefineMemberDefinition(member, type, tracker, tables, pendingValues)) {
         rejectedMembers.push_back(member);
       }
     }
@@ -2972,7 +3002,7 @@ propagateMemberTypes(ModuleOp module, ConversionTracker &tracker, bool &changed)
     SmallVector<Value> rejectedReads;
     for (MemberReadOp read : reads) {
       if (Type type = pendingReads.lookup(read.getVal());
-          type && !canRefineMemberReadUsersToType(read, type, tables, tracker, &pendingReads)) {
+          type && !canRefineMemberReadUsersToType(read, type, tables, tracker, &pendingValues)) {
         rejectedReads.push_back(read.getVal());
       }
     }
@@ -3377,6 +3407,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     if (failed(NonDetMemberTypeVerifier(modOp, tracker).verifyModule())) {
       return failure();
     }
+    bool arraysChanged;
+    if (failed(propagateArrayTypes(modOp, tracker, arraysChanged))) {
+      return failure();
+    }
     bool hadConflict = false;
     RewritePatternSet patterns(ctx);
     patterns.add<
@@ -3388,7 +3422,6 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
         //  benefit = 3
         UpdateFreeFuncCallOpTypes,         // CallOp, targeting non-struct functions
         UpdateFuncTypeFromReturn,          // FuncDefOp
-        UpdateNewArrayElemFromWrite,       // CreateArrayOp
         UpdateArrayElemFromArrRead,        // ReadArrayOp
         UpdateArrayElemFromArrWrite,       // WriteArrayOp
         UpdateUnifiableCastResultFromInput // UnifiableCastOp
@@ -3402,7 +3435,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     if (failed(propagateMemberTypes(modOp, tracker, membersChanged))) {
       return failure();
     }
-    if (!membersChanged) {
+    if (!membersChanged && !arraysChanged) {
       return success();
     }
   }
