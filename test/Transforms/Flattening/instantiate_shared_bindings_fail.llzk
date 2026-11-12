@@ -8,7 +8,7 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   function.def @caller(%a: !felt.type, %b: i1) {
-    // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
+    // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings at operand number 1}}
     function.call @Match::@consume(%a, %b) : (!felt.type, i1) -> ()
     function.return
   }
@@ -24,7 +24,7 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>) -> !poly.tvar<@T> { function.return %a : !poly.tvar<@T> }
   }
   function.def @caller(%a: !felt.type, %b: i1) {
-    // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
+    // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings at result number 0}}
     %result = function.call @Match::@consume<[?]>(%a) : (!felt.type) -> i1
     function.return
   }
@@ -40,7 +40,7 @@ module attributes {llzk.lang} {
     function.def @consume(%value: !array.type<@N,@N x !felt.type>) { function.return }
   }
   function.def @caller(%value: !array.type<8,9 x !felt.type>) {
-    // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
+    // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings at operand number 0}}
     function.call @Callee::@consume(%value) : (!array.type<8,9 x !felt.type>) -> ()
     function.return
   }
@@ -84,7 +84,7 @@ module attributes {llzk.lang} {
       struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
       // expected-note@+1 {{member read would refine to}}
       %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
-      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings at operand number 1}}
       // expected-note@+1 {{proposed call signature}}
       function.call @Match::@consume(%left, %one) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[1]>>) -> ()
       function.return %self : !struct.type<@Holder>
@@ -130,7 +130,7 @@ module attributes {llzk.lang} {
       struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
       // expected-note@+1 {{member read would refine to}}
       %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
-      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings at result number 0}}
       // expected-note@+1 {{proposed call signature}}
       %result = function.call @Match::@consume(%left) : (!struct.type<@TCell::@Cell<[#id]>>) -> !struct.type<@TCell::@Cell<[1]>>
       function.return %self : !struct.type<@Holder>
@@ -152,7 +152,7 @@ module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @S
     function.def @caller(%a: !felt.type, %shared: !poly.tvar<@S>, %d: index) {
-      // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings at operand number 3}}
       function.call @Match::@consume(%a, %shared, %shared, %d) : (!felt.type, !poly.tvar<@S>, !poly.tvar<@S>, index) -> ()
       function.return
     }

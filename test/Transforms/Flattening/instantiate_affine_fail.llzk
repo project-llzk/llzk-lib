@@ -36,7 +36,7 @@ module attributes {llzk.lang} {
       %n = arith.constant 2 : index
       %in = function.call @TToFelt::@ToFelt::@compute(){(%n)} : () -> !ToFelt
       // ERROR: The input argument here produces a `@Component01<[@T]>` not `@Component01<[!ToFelt]>` which is an error.
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at result number 0}}
       %out = function.call @TComponent01::@Component01::@compute(%in) : (!ToFelt) -> !struct.type<@TComponent01::@Component01<[!ToFelt]>>
 
       %self = struct.new : !struct.type<@ComponentB>

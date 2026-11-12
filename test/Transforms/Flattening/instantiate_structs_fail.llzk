@@ -23,7 +23,7 @@ module attributes {llzk.lang} {
       %arr = array.new %0, %1 : !array.type<2 x !felt.type>
       %a = arith.constant 8 : index
       %b = arith.constant 2 : index
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at result number 0}}
       %s = function.call @TUnpack::@Unpack::@compute(%arr) {()[%a, %b]}
         : (!array.type<2 x !felt.type>) -> !struct.type<@TUnpack::@Unpack<[8, 2, affine_map<()[s0, s1] -> (s0 floordiv s1)>]>>
       %self = struct.new : !struct.type<@User1>

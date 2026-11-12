@@ -17,7 +17,7 @@ module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @S
     function.def @caller(%a: !felt.type, %b: index) attributes {function.allow_witness} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at operand number 1}}
       %result = function.call @Family::@Box::@compute(%a, %b) : (!felt.type, index) -> !struct.type<@Family::@Box<[@S]>>
       function.return
     }
@@ -43,7 +43,7 @@ module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @S
     function.def @caller(%a: !felt.type, %b: !felt.type) attributes {function.allow_witness} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at result number 0}}
       %result = function.call @Family::@Box::@compute(%a, %b) : (!felt.type, !felt.type) -> !struct.type<@Family::@Box<[index]>>
       function.return
     }
@@ -70,7 +70,7 @@ module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @S
     function.def @caller(%a: !felt.type, %shared: !poly.tvar<@S>, %d: index) attributes {function.allow_witness} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at operand number 3}}
       %result = function.call @Family::@Box::@compute(%a, %shared, %shared, %d) : (!felt.type, !poly.tvar<@S>, !poly.tvar<@S>, index) -> !struct.type<@Family::@Box<[@S, @S]>>
       function.return
     }
@@ -96,7 +96,7 @@ module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @S
     function.def @caller(%self: !struct.type<@Family::@Box<[@S]>>, %a: !felt.type, %b: index) attributes {function.allow_constraint} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at operand number 2}}
       function.call @Family::@Box::@constrain(%self, %a, %b) : (!struct.type<@Family::@Box<[@S]>>, !felt.type, index) -> ()
       function.return
     }
@@ -122,7 +122,7 @@ module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @S
     function.def @caller(%a: !array.type<8 x !felt.type>, %b: !array.type<9 x !felt.type>, %n: index) attributes {function.allow_witness} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at operand number 1}}
       %result = function.call @Family::@Box::@compute(%a, %b) {(%n)} : (!array.type<8 x !felt.type>, !array.type<9 x !felt.type>) -> !struct.type<@Family::@Box<[affine_map<(i) -> (i)>]>>
       function.return
     }

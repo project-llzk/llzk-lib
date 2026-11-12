@@ -399,6 +399,41 @@ static DiagnosticArgument memberBindingDiagnosticValue(Attribute binding) {
   return DiagnosticArgument(binding);
 }
 
+/// Locate a known signature conflict by checking successively longer prefixes, arguments first.
+/// Reuse the same namespace and instantiation handling as validation; do this extra work only
+/// when emitting an error, so successful calls do not pay for diagnostic position tracking.
+static void appendCallBindingConflictLocation(
+    Diagnostic &diag, FunctionType actual, FunctionType declared,
+    ArrayRef<StringRef> calleeNamespace, const ConversionTracker &tracker,
+    bool allowUnresolvedStructs, Operation *scope
+) {
+  auto prefixUnifies = [&](unsigned inputs, unsigned results) {
+    return callSignatureUnifies(
+        FunctionType::get(
+            actual.getContext(), actual.getInputs().take_front(inputs),
+            actual.getResults().take_front(results)
+        ),
+        FunctionType::get(
+            declared.getContext(), declared.getInputs().take_front(inputs),
+            declared.getResults().take_front(results)
+        ),
+        calleeNamespace, tracker, allowUnresolvedStructs, scope
+    );
+  };
+  for (unsigned i = 0; i < actual.getNumInputs(); ++i) {
+    if (!prefixUnifies(i + 1, 0)) {
+      diag << " at operand number " << i;
+      return;
+    }
+  }
+  for (unsigned i = 0; i < actual.getNumResults(); ++i) {
+    if (!prefixUnifies(actual.getNumInputs(), i + 1)) {
+      diag << " at result number " << i;
+      return;
+    }
+  }
+}
+
 /// Validate complete struct compute/constrain signatures before changing their parameterized
 /// receivers or results. These methods are not handled by free-function instantiation.
 static LogicalResult verifyStructCallBindings(ModuleOp module, const ConversionTracker &tracker) {
@@ -422,12 +457,15 @@ static LogicalResult verifyStructCallBindings(ModuleOp module, const ConversionT
             call.getTypeSignature(), target->get().getFunctionType(), target->getNamespace(),
             tracker, /*allowUnresolvedStructs=*/true, call
         )) {
-      call.emitError(
-              "cannot instantiate struct call because the complete call signature has conflicting "
-              "template bindings"
-      )
-              .attachNote(target->get().getLoc())
-          << "target function declared here";
+      auto diag = call.emitError(
+          "cannot instantiate struct call because the complete call signature has conflicting "
+          "template bindings"
+      );
+      appendCallBindingConflictLocation(
+          *diag.getUnderlyingDiagnostic(), call.getTypeSignature(), target->get().getFunctionType(),
+          target->getNamespace(), tracker, /*allowUnresolvedStructs=*/true, call
+      );
+      diag.attachNote(target->get().getLoc()) << "target function declared here";
       return WalkResult::interrupt();
     }
     return WalkResult::advance();
@@ -1851,9 +1889,12 @@ private:
           )) {
         return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
           diag.append("cannot instantiate function because the complete call signature has ")
-              .append("conflicting template bindings")
-              .attachNote(callTgt.getLoc())
-              .append("target function declared here");
+              .append("conflicting template bindings");
+          appendCallBindingConflictLocation(
+              diag, op.getTypeSignature(), callTgt.getFunctionType(), calleeNamespace, tracker_,
+              /*allowUnresolvedStructs=*/true, op
+          );
+          diag.attachNote(callTgt.getLoc()).append("target function declared here");
         });
       }
       return unifyResult;
@@ -3021,6 +3062,10 @@ static LogicalResult verifyPendingCallBindings(
     auto diag = call.emitError()
                 << "cannot refine " << description
                 << " because the complete call signature has conflicting template bindings";
+    appendCallBindingConflictLocation(
+        *diag.getUnderlyingDiagnostic(), proposed, required, callee->getNamespace(), tracker,
+        /*allowUnresolvedStructs=*/false, call
+    );
     diag.attachNote(call.getLoc())
         << "proposed call signature " << proposed << " must unify consistently with " << required;
     DenseSet<Value> noted;

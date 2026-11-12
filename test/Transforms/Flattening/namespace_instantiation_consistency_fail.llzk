@@ -38,7 +38,7 @@ module attributes {llzk.lang} {
       struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@Lib::@TCell::@Cell<[0]>>
       // expected-note@+1 {{member read would refine to}}
       %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@Lib::@TCell::@Cell<[#id]>>
-      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings at operand number 1}}
       // expected-note@+1 {{proposed call signature}}
       function.call @Lib::@Match::@consume(%left, %one, %zero) : (!struct.type<@Lib::@TCell::@Cell<[#id]>>, !struct.type<@Lib::@TCell::@Cell<[1]>>, !struct.type<@Lib::@TCell::@Cell<[0]>>) -> ()
       function.return %self : !struct.type<@Holder>

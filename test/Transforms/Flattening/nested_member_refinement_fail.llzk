@@ -238,7 +238,7 @@ module attributes {llzk.lang} {
       %rightBox = array.read %rightBoxes[%zero] : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
       // expected-note@+1 {{member read would refine to}}
       %rightCell = struct.readm %rightBox[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
-      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings}}
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings at operand number 1}}
       // expected-note@+1 {{proposed call signature}}
       function.call @Match::@consume(%leftCell, %rightCell) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
       function.return %self : !struct.type<@Holder>

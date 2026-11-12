@@ -13,7 +13,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@Caller>
       %x = felt.const 0 : !felt.type
       %y = arith.constant 0 : index
-      // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings}}
+      // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings at operand number 1}}
       function.call @T2::@f<[!felt.type]>(%x, %y) : (!felt.type, index) -> ()
       function.return %self : !struct.type<@Caller>
     }
