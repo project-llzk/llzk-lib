@@ -1,4 +1,5 @@
 // RUN: python3 -c "import subprocess, sys; subprocess.run(sys.argv[1:], check=True, timeout=10)" llzk-opt -llzk-flatten -split-input-file -verify-diagnostics %s
+// COM: The Python wrapper enforces a 10-second timeout so accidental enumeration of billion-element index spaces fails promptly.
 
 // Reject a billion-element fallback by comparing against the two known split indices.
 #id = affine_map<(i) -> (i)>

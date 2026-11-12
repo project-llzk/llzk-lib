@@ -24,26 +24,26 @@ module attributes {llzk.lang} {
 
     function.def @product() -> !struct.type<@Holder>
         attributes {function.allow_witness, function.allow_constraint} {
-    %self = struct.new : !struct.type<@Holder>
-    %c0 = arith.constant 0 : index
-    %c1 = arith.constant 1 : index
+      %self = struct.new : !struct.type<@Holder>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
 
-    // Establish the concrete split-member types.
-    %first0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
-    %first1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-    %first = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    array.write %first[%c0] = %first0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-    array.write %first[%c1] = %first1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-    struct.writem %self[@items] = %first : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      // Establish the concrete split-member types.
+      %first0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %first1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      %first = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      array.write %first[%c0] = %first0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %first[%c1] = %first1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %first : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
 
-    // No local read refines %shared. Its generic constraint and scalar member write must still
-    // use the same concrete nondeterministic witness after scalarization.
-    %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "shared"}
-    %other = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-    %fallback = array.new %shared, %other : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    function.call @TCell::@Cell::@constrain(%shared) : (!struct.type<@TCell::@Cell<[#id]>>) -> () {product_source = "shared"}
-    struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    function.return %self : !struct.type<@Holder>
+      // No local read refines %shared. Its generic constraint and scalar member write must still
+      // use the same concrete nondeterministic witness after scalarization.
+      %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "shared"}
+      %other = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+      %fallback = array.new %shared, %other : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      function.call @TCell::@Cell::@constrain(%shared) : (!struct.type<@TCell::@Cell<[#id]>>) -> () {product_source = "shared"}
+      struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      function.return %self : !struct.type<@Holder>
     }
   }
 }

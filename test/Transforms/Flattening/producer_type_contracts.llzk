@@ -1,16 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 // Array writes preserve the function argument signature.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @Caller {
-// CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !poly.tvar<@T>>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
-// CHECK-NEXT:        array.write %[[VAL_0]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, !felt.type
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @T
@@ -21,10 +11,34 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !poly.tvar<@T>>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        array.write %[[VAL_0]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
 // A sole member write cannot change its function argument type.
+module attributes {llzk.lang} {
+  poly.template @Family {
+    poly.param @T
+    struct.def @Box {
+      struct.member @value : !felt.type
+      function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
+        struct.writem %self[@value] = %a : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@Family::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>) { function.return }
+    }
+  }
+}
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Family {
 // CHECK-NEXT:      poly.param @T
@@ -41,38 +55,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-module attributes {llzk.lang} {
-  poly.template @Family {
-    poly.param @T
-    struct.def @Box {
-      struct.member @value : !felt.type
-      function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
-        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
-        struct.writem %self[@value] = %a : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
-        function.return %self : !struct.type<@Family::@Box<[@T]>>
-      }
-      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>) { function.return }
-    }
-  }
-}
 
 // -----
 
 // Array writes preserve loop-carried argument and yield contracts.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @Caller {
-// CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !poly.tvar<@T>>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_.-]+]] = %[[VAL_3]] to %[[VAL_2]] step %[[VAL_4]] iter_args(%[[VAL_7:[0-9a-zA-Z_.-]+]] = %[[VAL_0]]) -> (!array.type<1 x !poly.tvar<@T>>) {
-// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, !felt.type
-// CHECK-NEXT:          scf.yield %[[VAL_7]] : !array.type<1 x !poly.tvar<@T>>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @T
@@ -87,10 +73,43 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !poly.tvar<@T>>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_.-]+]] = %[[VAL_3]] to %[[VAL_2]] step %[[VAL_4]] iter_args(%[[VAL_7:[0-9a-zA-Z_.-]+]] = %[[VAL_0]]) -> (!array.type<1 x !poly.tvar<@T>>) {
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_3]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_7]] : !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
 // A sole member write preserves a loop-carried scalar argument.
+module attributes {llzk.lang} {
+  poly.template @Family {
+    poly.param @T
+    struct.def @Box {
+      struct.member @value : !felt.type
+      function.def @compute(%a: !poly.tvar<@T>, %n: index) -> !struct.type<@Family::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
+        %zero = arith.constant 0 : index
+        %step = arith.constant 1 : index
+        %result = scf.for %i = %zero to %n step %step iter_args(%carried = %a) -> (!poly.tvar<@T>) {
+          struct.writem %self[@value] = %carried : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
+          scf.yield %a : !poly.tvar<@T>
+        }
+        function.return %self : !struct.type<@Family::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>, %n: index) { function.return }
+    }
+  }
+}
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Family {
 // CHECK-NEXT:      poly.param @T
@@ -112,29 +131,22 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-module attributes {llzk.lang} {
-  poly.template @Family {
-    poly.param @T
-    struct.def @Box {
-      struct.member @value : !felt.type
-      function.def @compute(%a: !poly.tvar<@T>, %n: index) -> !struct.type<@Family::@Box<[@T]>> {
-        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
-        %zero = arith.constant 0 : index
-        %step = arith.constant 1 : index
-        %result = scf.for %i = %zero to %n step %step iter_args(%carried = %a) -> (!poly.tvar<@T>) {
-          struct.writem %self[@value] = %carried : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
-          scf.yield %a : !poly.tvar<@T>
-        }
-        function.return %self : !struct.type<@Family::@Box<[@T]>>
-      }
-      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>, %n: index) { function.return }
-    }
-  }
-}
 
 // -----
 
 // Array writes do not retag results owned by a function call.
+module attributes {llzk.lang} {
+  poly.template @Caller {
+    poly.param @T
+    function.def @identity(%array: !array.type<1 x !poly.tvar<@T>>) -> !array.type<1 x !poly.tvar<@T>> { function.return %array : !array.type<1 x !poly.tvar<@T>> }
+    function.def @caller(%array: !array.type<1 x !poly.tvar<@T>>, %value: !felt.type) {
+      %zero = arith.constant 0 : index
+      %returned = function.call @Caller::@identity(%array) : (!array.type<1 x !poly.tvar<@T>>) -> !array.type<1 x !poly.tvar<@T>>
+      array.write %returned[%zero] = %value : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      function.return
+    }
+  }
+}
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Caller {
 // CHECK-NEXT:      poly.param @T
@@ -149,22 +161,25 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-module attributes {llzk.lang} {
-  poly.template @Caller {
-    poly.param @T
-    function.def @identity(%array: !array.type<1 x !poly.tvar<@T>>) -> !array.type<1 x !poly.tvar<@T>> { function.return %array : !array.type<1 x !poly.tvar<@T>> }
-    function.def @caller(%array: !array.type<1 x !poly.tvar<@T>>, %value: !felt.type) {
-      %zero = arith.constant 0 : index
-      %returned = function.call @Caller::@identity(%array) : (!array.type<1 x !poly.tvar<@T>>) -> !array.type<1 x !poly.tvar<@T>>
-      array.write %returned[%zero] = %value : !array.type<1 x !poly.tvar<@T>>, !felt.type
-      function.return
-    }
-  }
-}
 
 // -----
 
 // A nondeterministic witness can still refine to its destination member type.
+module attributes {llzk.lang} {
+  poly.template @Family {
+    poly.param @T
+    struct.def @Box {
+      struct.member @value : !felt.type
+      function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
+        %witness = llzk.nondet : !poly.tvar<@T>
+        struct.writem %self[@value] = %witness : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@Family::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>) { function.return }
+    }
+  }
+}
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Family {
 // CHECK-NEXT:      poly.param @T
@@ -182,18 +197,3 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-module attributes {llzk.lang} {
-  poly.template @Family {
-    poly.param @T
-    struct.def @Box {
-      struct.member @value : !felt.type
-      function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
-        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
-        %witness = llzk.nondet : !poly.tvar<@T>
-        struct.writem %self[@value] = %witness : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
-        function.return %self : !struct.type<@Family::@Box<[@T]>>
-      }
-      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>) { function.return }
-    }
-  }
-}

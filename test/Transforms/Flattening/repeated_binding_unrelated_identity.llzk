@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten %s | FileCheck %s --check-prefix=FELT
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
 
 // Unchanged unrelated parameters permit a partially concrete candidate to specialize.
 module attributes {llzk.lang} {
@@ -41,49 +41,49 @@ module attributes {llzk.lang} {
     function.return %result : !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>>
   }
 }
-// FELT-LABEL: module attributes {llzk.lang} {
-// FELT-NEXT:    poly.template @"Pair_f_\1A" {
-// FELT-NEXT:      poly.param @Y
-// FELT-NEXT:      struct.def @Pair {
-// FELT-NEXT:        struct.member @first : !felt.type
-// FELT-NEXT:        struct.member @second : !poly.tvar<@Y>
-// FELT-NEXT:        function.def @compute() -> !struct.type<@"Pair_f_\1A"::@Pair<[@Y]>> attributes {function.allow_witness} {
-// FELT-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"Pair_f_\1A"::@Pair<[@Y]>>
-// FELT-NEXT:          function.return %[[VAL_0]] : !struct.type<@"Pair_f_\1A"::@Pair<[@Y]>>
-// FELT-NEXT:        }
-// FELT-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"Pair_f_\1A"::@Pair<[@Y]>>) attributes {function.allow_constraint} {
-// FELT-NEXT:          function.return
-// FELT-NEXT:        }
-// FELT-NEXT:      }
-// FELT-NEXT:    } {poly.name_pattern = ["Pair_f_", ""]}
-// FELT-NEXT:    struct.def @Pair_f_i_Pair {
-// FELT-NEXT:      struct.member @first : !felt.type
-// FELT-NEXT:      struct.member @second : index
-// FELT-NEXT:      function.def @compute() -> !struct.type<@Pair_f_i_Pair> attributes {function.allow_witness} {
-// FELT-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@Pair_f_i_Pair>
-// FELT-NEXT:        function.return %[[VAL_2]] : !struct.type<@Pair_f_i_Pair>
-// FELT-NEXT:      }
-// FELT-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_i_Pair>) attributes {function.allow_constraint} {
-// FELT-NEXT:        function.return
-// FELT-NEXT:      }
-// FELT-NEXT:    }
-// FELT-NEXT:    struct.def @UnchangedUnrelatedSymbol_f_i_f_Holder {
-// FELT-NEXT:      struct.member @first : !felt.type
-// FELT-NEXT:      struct.member @second : !struct.type<@Pair_f_i_Pair>
-// FELT-NEXT:      struct.member @source : !struct.type<@Pair_f_i_Pair>
-// FELT-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder> attributes {function.allow_witness} {
-// FELT-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@UnchangedUnrelatedSymbol_f_i_f_Holder>
-// FELT-NEXT:        struct.writem %[[VAL_5]][@first] = %[[VAL_4]] : <@UnchangedUnrelatedSymbol_f_i_f_Holder>, !felt.type
-// FELT-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_5]][@source] : <@UnchangedUnrelatedSymbol_f_i_f_Holder>, !struct.type<@Pair_f_i_Pair>
-// FELT-NEXT:        struct.writem %[[VAL_5]][@second] = %[[VAL_6]] : <@UnchangedUnrelatedSymbol_f_i_f_Holder>, !struct.type<@Pair_f_i_Pair>
-// FELT-NEXT:        function.return %[[VAL_5]] : !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>
-// FELT-NEXT:      }
-// FELT-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
-// FELT-NEXT:        function.return
-// FELT-NEXT:      }
-// FELT-NEXT:    }
-// FELT-NEXT:    function.def @entry(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder> attributes {function.allow_witness} {
-// FELT-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @UnchangedUnrelatedSymbol_f_i_f_Holder::@compute(%[[VAL_9]]) : (!felt.type) -> !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>
-// FELT-NEXT:      function.return %[[VAL_10]] : !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>
-// FELT-NEXT:    }
-// FELT-NEXT:  }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Pair_f_\1A" {
+// CHECK-NEXT:      poly.param @Y
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @first : !felt.type
+// CHECK-NEXT:        struct.member @second : !poly.tvar<@Y>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"Pair_f_\1A"::@Pair<[@Y]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"Pair_f_\1A"::@Pair<[@Y]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@"Pair_f_\1A"::@Pair<[@Y]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"Pair_f_\1A"::@Pair<[@Y]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Pair_f_", ""]}
+// CHECK-NEXT:    struct.def @Pair_f_i_Pair {
+// CHECK-NEXT:      struct.member @first : !felt.type
+// CHECK-NEXT:      struct.member @second : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Pair_f_i_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@Pair_f_i_Pair>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Pair_f_i_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Pair_f_i_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @UnchangedUnrelatedSymbol_f_i_f_Holder {
+// CHECK-NEXT:      struct.member @first : !felt.type
+// CHECK-NEXT:      struct.member @second : !struct.type<@Pair_f_i_Pair>
+// CHECK-NEXT:      struct.member @source : !struct.type<@Pair_f_i_Pair>
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@UnchangedUnrelatedSymbol_f_i_f_Holder>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@first] = %[[VAL_4]] : <@UnchangedUnrelatedSymbol_f_i_f_Holder>, !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_5]][@source] : <@UnchangedUnrelatedSymbol_f_i_f_Holder>, !struct.type<@Pair_f_i_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@second] = %[[VAL_6]] : <@UnchangedUnrelatedSymbol_f_i_f_Holder>, !struct.type<@Pair_f_i_Pair>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @entry(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @UnchangedUnrelatedSymbol_f_i_f_Holder::@compute(%[[VAL_9]]) : (!felt.type) -> !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>
+// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@UnchangedUnrelatedSymbol_f_i_f_Holder>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

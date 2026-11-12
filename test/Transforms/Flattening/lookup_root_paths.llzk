@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten %s -o /dev/null
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 // The outer lookup root may remain anonymous. Nested roots can be reached
 // through named ordinary modules, and identical local names remain independent.
@@ -22,3 +22,28 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Cell {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @Outer {
+// CHECK-NEXT:      module @Lib attributes {llzk.lang} {
+// CHECK-NEXT:        struct.def @Cell {
+// CHECK-NEXT:          function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
+// CHECK-NEXT:            function.return %[[VAL_2]] : !struct.type<@Cell>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:            function.return
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

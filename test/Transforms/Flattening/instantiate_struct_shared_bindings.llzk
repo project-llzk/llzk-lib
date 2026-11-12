@@ -1,9 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 // Matching concrete compute arguments instantiate the result.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_witness} {
-// CHECK:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Family_f_Box::@compute(%[[VAL_6]], %[[VAL_7]]) : (!felt.type, !felt.type) -> !struct.type<@Family_f_Box>
 module attributes {llzk.lang} {
   poly.template @Family {
     poly.param @T
@@ -24,13 +21,13 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_witness} {
+// CHECK:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Family_f_Box::@compute(%[[VAL_6]], %[[VAL_7]]) : (!felt.type, !felt.type) -> !struct.type<@Family_f_Box>
 
 // -----
 
 // An unresolved companion remains compatible with a concrete binding.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !poly.tvar<@S>) attributes {function.allow_witness} {
-// CHECK:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Family_f_Box::@compute(%[[VAL_6]], %[[VAL_7]]) : (!felt.type, !poly.tvar<@S>) -> !struct.type<@Family_f_Box>
 module attributes {llzk.lang} {
   poly.template @Family {
     poly.param @T
@@ -51,13 +48,13 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !poly.tvar<@S>) attributes {function.allow_witness} {
+// CHECK:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Family_f_Box::@compute(%[[VAL_6]], %[[VAL_7]]) : (!felt.type, !poly.tvar<@S>) -> !struct.type<@Family_f_Box>
 
 // -----
 
 // Compatible unresolved receivers remain valid in constrain calls.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Family::@Box<[@S]>>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK:        function.call @Family::@Box::@constrain(%[[VAL_6]], %[[VAL_7]], %[[VAL_8]]) : (!struct.type<@Family::@Box<[@S]>>, !felt.type, !felt.type) -> ()
 module attributes {llzk.lang} {
   poly.template @Family {
     poly.param @T
@@ -78,3 +75,6 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Family::@Box<[@S]>>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:        function.call @Family::@Box::@constrain(%[[VAL_6]], %[[VAL_7]], %[[VAL_8]]) : (!struct.type<@Family::@Box<[@S]>>, !felt.type, !felt.type) -> ()

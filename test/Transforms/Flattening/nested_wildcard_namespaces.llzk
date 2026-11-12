@@ -42,35 +42,31 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-
-// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_id"(
-// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
-// CHECK-NEXT:        function.call @consume(%[[VAL_4]]) : (!struct.type<@Cell>) -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
+// CHECK-LABEL: function.def @"Inner_!s<@Cell>_id"(
+// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_4]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: struct.def @Cell {
+// CHECK-NEXT:    struct.member @outer_only : index {llzk.pub}
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
+// CHECK-NEXT:      function.return %[[VAL_5]] : !struct.type<@Cell>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @Cell {
-// CHECK-NEXT:      struct.member @outer_only : index {llzk.pub}
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
-// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Cell>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
-// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_id"(%[[VAL_7]]) : (!struct.type<@Lib::@Cell>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @test() {
-// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:    function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
+// CHECK-LABEL: function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:    function.call @Lib::@"Inner_!s<@Cell>_id"(%[[VAL_7]]) : (!struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @test() {
+// CHECK-NEXT:    function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
 
 // -----
 
@@ -107,25 +103,21 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-
-// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_id"(
-// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@Cell>>) {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!array.type<1 x !struct.type<@Cell>>) -> !array.type<1 x !struct.type<@Cell>>
-// CHECK-NEXT:        function.call @consume(%[[VAL_4]]) : (!array.type<1 x !struct.type<@Cell>>) -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<1 x !struct.type<@Lib::@Cell>>
-// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_id"(%[[VAL_5]]) : (!array.type<1 x !struct.type<@Lib::@Cell>>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @test() {
-// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
+// CHECK-LABEL: function.def @"Inner_!s<@Cell>_id"(
+// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@Cell>>) {
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!array.type<1 x !struct.type<@Cell>>) -> !array.type<1 x !struct.type<@Cell>>
+// CHECK-NEXT:    function.call @consume(%[[VAL_4]]) : (!array.type<1 x !struct.type<@Cell>>) -> ()
+// CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
-
+// CHECK-LABEL: function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<1 x !struct.type<@Lib::@Cell>>
+// CHECK-NEXT:    function.call @Lib::@"Inner_!s<@Cell>_id"(%[[VAL_5]]) : (!array.type<1 x !struct.type<@Lib::@Cell>>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @test() {
+// CHECK-NEXT:    function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
 
 // -----
 
@@ -162,24 +154,20 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-
-// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_id"() -> !struct.type<@Cell> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @Cell::@compute() : () -> !struct.type<@Cell>
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
-// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Cell>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @Lib::@"Inner_!s<@Cell>_id"() : () -> !struct.type<@Lib::@Cell>
-// CHECK-NEXT:      function.call @Lib::@consume(%[[VAL_5]]) : (!struct.type<@Lib::@Cell>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @test() attributes {function.allow_witness} {
-// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
+// CHECK-LABEL: function.def @"Inner_!s<@Cell>_id"() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @Cell::@compute() : () -> !struct.type<@Cell>
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:    function.return %[[VAL_4]] : !struct.type<@Cell>
 // CHECK-NEXT:  }
-
+// CHECK-LABEL: function.def @"Outer_!s<@Lib::@Cell>_wrap"() attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @Lib::@"Inner_!s<@Cell>_id"() : () -> !struct.type<@Lib::@Cell>
+// CHECK-NEXT:    function.call @Lib::@consume(%[[VAL_5]]) : (!struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @test() attributes {function.allow_witness} {
+// CHECK-NEXT:    function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
 
 // -----
 
@@ -219,26 +207,22 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-
-// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_!s<@Cell>_id"(
-// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
-// CHECK-NEXT:        function.call @consume(%[[VAL_5]]) : (!struct.type<@Cell>) -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_!s<@Lib::@Cell>_wrap"() {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
-// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_!s<@Cell>_id"(%[[VAL_6]], %[[VAL_7]]) : (!struct.type<@Lib::@Cell>, !struct.type<@Lib::@Cell>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @test() {
-// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_!s<@Lib::@Cell>_wrap"() : () -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
+// CHECK-LABEL: function.def @"Inner_!s<@Cell>_!s<@Cell>_id"(
+// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_5]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
-
+// CHECK-LABEL: function.def @"Outer_!s<@Lib::@Cell>_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:    function.call @Lib::@"Inner_!s<@Cell>_!s<@Cell>_id"(%[[VAL_6]], %[[VAL_7]]) : (!struct.type<@Lib::@Cell>, !struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @test() {
+// CHECK-NEXT:    function.call @"Outer_!s<@Lib::@Cell>_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
 
 // -----
 
@@ -277,22 +261,19 @@ module attributes {llzk.lang} {
     function.return
   }
 }
-
-// CHECK-LABEL:      function.def @"Inner_!s<@Cell>_!s<@Cell>_id"(
-// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
-// CHECK-NEXT:        function.call @consume(%[[VAL_5]]) : (!struct.type<@Cell>) -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
-// CHECK-NEXT:      function.call @Lib::@"Inner_!s<@Cell>_!s<@Cell>_id"(%[[VAL_6]], %[[VAL_7]]) : (!struct.type<@Lib::@Cell>, !struct.type<@Lib::@Cell>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @test() {
-// CHECK-NEXT:      function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
+// CHECK-LABEL: function.def @"Inner_!s<@Cell>_!s<@Cell>_id"(
+// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) {
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_5]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @"Outer_!s<@Lib::@Cell>_wrap"() {
+// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Lib::@Cell>
+// CHECK-NEXT:    function.call @Lib::@"Inner_!s<@Cell>_!s<@Cell>_id"(%[[VAL_6]], %[[VAL_7]]) : (!struct.type<@Lib::@Cell>, !struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @test() {
+// CHECK-NEXT:    function.call @"Outer_!s<@Lib::@Cell>_wrap"() : () -> ()
+// CHECK-NEXT:    function.return
 // CHECK-NEXT:  }

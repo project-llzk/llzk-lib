@@ -1,27 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 // Split member reads passed to one shared binding refine together.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:    struct.def @Holder {
-// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      struct.member @items_2 : !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_0] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_2] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items_1] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_10]], %[[VAL_9]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
-// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Holder>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
@@ -68,10 +47,6 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
   }
 }
-
-// -----
-
-// A local candidate read and a split-member read share the same pending signature.
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK:    struct.def @Holder {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell>
@@ -84,14 +59,19 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        struct.writem %[[VAL_6]][@items_0] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_6]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_6]][@items_2] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_9]], %[[VAL_7]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items_1] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_10]], %[[VAL_9]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
 // CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+
+// -----
+
+// A local candidate read and a split-member read share the same pending signature.
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
@@ -138,10 +118,6 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
   }
 }
-
-// -----
-
-// Uninitialized expandable reads use the final split-member types together.
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK:    struct.def @Holder {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell>
@@ -154,19 +130,18 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        struct.writem %[[VAL_6]][@items_0] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_6]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_6]][@items_2] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_0] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_1] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_2] = %[[VAL_11]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_9]], %[[VAL_10]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_9]], %[[VAL_7]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
 // CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+
+// -----
+
+// Uninitialized expandable reads use the final split-member types together.
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
@@ -214,33 +189,35 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      struct.member @items_2 : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_0] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_2] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_0] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_1] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@items_2] = %[[VAL_11]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_9]], %[[VAL_10]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
 
 // -----
 
 // Nested member reads inherit both pending receiver refinements.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:    struct.def @Holder {
-// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TBox_0_Box>
-// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TBox_0_Box>
-// CHECK-NEXT:      struct.member @items_2 : !struct.type<@TBox_1_Box>
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @TBox_0_Box::@compute() : () -> !struct.type<@TBox_0_Box>
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @TBox_1_Box::@compute() : () -> !struct.type<@TBox_1_Box>
-// CHECK-NEXT:        struct.writem %[[VAL_10]][@items_0] = %[[VAL_11]] : <@Holder>, !struct.type<@TBox_0_Box>
-// CHECK-NEXT:        struct.writem %[[VAL_10]][@items_1] = %[[VAL_11]] : <@Holder>, !struct.type<@TBox_0_Box>
-// CHECK-NEXT:        struct.writem %[[VAL_10]][@items_2] = %[[VAL_12]] : <@Holder>, !struct.type<@TBox_1_Box>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@items_1] : <@Holder>, !struct.type<@TBox_0_Box>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@items_0] : <@Holder>, !struct.type<@TBox_0_Box>
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_14]][@inner] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_13]][@inner] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_15]], %[[VAL_16]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
-// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Holder>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
@@ -307,3 +284,26 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TBox_0_Box>
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TBox_0_Box>
+// CHECK-NEXT:      struct.member @items_2 : !struct.type<@TBox_1_Box>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @TBox_0_Box::@compute() : () -> !struct.type<@TBox_0_Box>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @TBox_1_Box::@compute() : () -> !struct.type<@TBox_1_Box>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@items_0] = %[[VAL_11]] : <@Holder>, !struct.type<@TBox_0_Box>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@items_1] = %[[VAL_11]] : <@Holder>, !struct.type<@TBox_0_Box>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@items_2] = %[[VAL_12]] : <@Holder>, !struct.type<@TBox_1_Box>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@items_1] : <@Holder>, !struct.type<@TBox_0_Box>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_10]][@items_0] : <@Holder>, !struct.type<@TBox_0_Box>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_14]][@inner] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_13]][@inner] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_15]], %[[VAL_16]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }

@@ -1,10 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
+
 // Matching value bindings may refine both sibling members.
-// CHECK-LABEL:    poly.template @Shared {
-// CHECK-NEXT:      poly.param @N : index
-// CHECK-NEXT:      struct.def @Holder {
-// CHECK-NEXT:        struct.member @left : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.member @right : !struct.type<@TCell_0_Cell>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -38,16 +34,15 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL:    poly.template @Shared {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @left : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.member @right : !struct.type<@TCell_0_Cell>
 
 // -----
 
 // Independent parameters may specialize to different values.
-// CHECK-LABEL:    poly.template @Shared {
-// CHECK-NEXT:      poly.param @N : index
-// CHECK-NEXT:      poly.param @M : index
-// CHECK-NEXT:      struct.def @Holder {
-// CHECK-NEXT:        struct.member @left : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.member @right : !struct.type<@TCell_1_Cell>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -82,3 +77,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL:    poly.template @Shared {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @left : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.member @right : !struct.type<@TCell_1_Cell>

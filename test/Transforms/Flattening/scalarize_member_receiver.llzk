@@ -2,17 +2,6 @@
 
 // Scalarizing a receiver preserves a compatible concrete member read and refines a generic
 // member read to the same specialization without invalidating its ordinary function call.
-// CHECK-LABEL:    function.def @entry() attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @TBox_0_Box::@compute() : () -> !struct.type<@TBox_0_Box>
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @TBox_1_Box::@compute() : () -> !struct.type<@TBox_1_Box>
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cell] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      function.call @consume(%[[VAL_11]]) : (!struct.type<@TCell_0_Cell>) -> ()
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cell] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      function.call @consume(%[[VAL_12]]) : (!struct.type<@TCell_0_Cell>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
@@ -54,3 +43,12 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+// CHECK-LABEL: function.def @entry() attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @TBox_0_Box::@compute() : () -> !struct.type<@TBox_0_Box>
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @TBox_1_Box::@compute() : () -> !struct.type<@TBox_1_Box>
+// CHECK-NEXT:    %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cell] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_11]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:    %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cell] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_12]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }

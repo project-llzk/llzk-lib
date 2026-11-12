@@ -1,17 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 // A later write must not retag a generic initializer.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @Caller {
-// CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<1 x !poly.tvar<@T>> {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !poly.tvar<@T>>
-// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, !felt.type
-// CHECK-NEXT:        function.return %[[VAL_3]] : !array.type<1 x !poly.tvar<@T>>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @T
@@ -23,21 +12,21 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<1 x !poly.tvar<@T>> {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !poly.tvar<@T>>
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_3]] : !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
 // Every initializer must retain its producer type.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @Caller {
-// CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<2 x !poly.tvar<@T>> {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]], %[[VAL_1]] : <2 x !poly.tvar<@T>>
-// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_3]]] = %[[VAL_2]] : <2 x !poly.tvar<@T>>, !felt.type
-// CHECK-NEXT:        function.return %[[VAL_4]] : !array.type<2 x !poly.tvar<@T>>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @T
@@ -49,21 +38,21 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<2 x !poly.tvar<@T>> {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]], %[[VAL_1]] : <2 x !poly.tvar<@T>>
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_3]]] = %[[VAL_2]] : <2 x !poly.tvar<@T>>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]] : !array.type<2 x !poly.tvar<@T>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
 // Concrete initializers remain eligible for ordinary propagation.
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @Caller {
-// CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<1 x !felt.type> {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
-// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
-// CHECK-NEXT:        function.return %[[VAL_3]] : !array.type<1 x !felt.type>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   poly.template @Caller {
     poly.param @T
@@ -75,29 +64,21 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !array.type<1 x !felt.type> {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_3]] : !array.type<1 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
 // Two pending member reads can initialize the same refined array.
-// CHECK-LABEL:    struct.def @Holder {
-// CHECK-NEXT:      struct.member @left : !struct.type<@TCell_0_Cell> {column}
-// CHECK-NEXT:      struct.member @right : !struct.type<@TCell_0_Cell> {column}
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_4]][@left] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_4]][@right] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@left] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@right] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_7]], %[[VAL_8]] : <2 x !struct.type<@TCell_0_Cell>>
-// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_9]], %[[VAL_9]]) : (!array.type<2 x !struct.type<@TCell_0_Cell>>, !array.type<2 x !struct.type<@TCell_0_Cell>>) -> ()
-// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
@@ -142,3 +123,22 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
   }
 }
+// CHECK-LABEL:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @left : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @right : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@left] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@right] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@left] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@right] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_7]], %[[VAL_8]] : <2 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_9]], %[[VAL_9]]) : (!array.type<2 x !struct.type<@TCell_0_Cell>>, !array.type<2 x !struct.type<@TCell_0_Cell>>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
