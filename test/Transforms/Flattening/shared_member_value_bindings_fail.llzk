@@ -6,7 +6,6 @@ module attributes {llzk.lang} {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
 
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
@@ -47,7 +46,6 @@ module attributes {llzk.lang} {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
 
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
@@ -88,7 +86,6 @@ module attributes {llzk.lang} {
     poly.param @N : !felt.type
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
 
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
@@ -124,12 +121,12 @@ module attributes {llzk.lang} {
 // -----
 
 // Preserve repeated value bindings within one aggregate member.
+!ConflictingPair = !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
 
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
@@ -147,12 +144,12 @@ module attributes {llzk.lang} {
     struct.def @Holder {
       // expected-error@+1 {{cannot refine @N because member 'pair' is written with incompatible bindings 0 : index and 1 : index}}
       struct.member @pair : !pod.type<[@left: !struct.type<@TCell::@Cell<[@N]>>, @right: !struct.type<@TCell::@Cell<[@N]>>]>
-      function.def @compute(%a: !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>) -> !struct.type<@Shared::@Holder<[@N]>> {
+      function.def @compute(%a: !ConflictingPair) -> !struct.type<@Shared::@Holder<[@N]>> {
         %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
-        struct.writem %self[@pair] = %a : !struct.type<@Shared::@Holder<[@N]>>, !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>
+        struct.writem %self[@pair] = %a : !struct.type<@Shared::@Holder<[@N]>>, !ConflictingPair
         function.return %self : !struct.type<@Shared::@Holder<[@N]>>
       }
-      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>) { function.return }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !ConflictingPair) { function.return }
     }
   }
 }
@@ -165,7 +162,6 @@ module attributes {llzk.lang} {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
 
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>

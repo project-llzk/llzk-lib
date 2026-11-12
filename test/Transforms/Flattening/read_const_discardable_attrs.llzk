@@ -9,9 +9,6 @@ module attributes {llzk.lang} {
     poly.param @felt : !felt.type
 
     struct.def @Values {
-      struct.member @index : index
-      struct.member @boolean : i1
-      struct.member @felt : !felt.type
 
       function.def @compute(%input_index: index, %input_boolean: i1, %input_felt: !felt.type) -> !struct.type<@Constants::@Values<[@index, @boolean, @felt]>> {
         %index = poly.read_const @index : index {product_source = "A"}

@@ -1,6 +1,7 @@
 // RUN: llzk-opt -llzk-flatten %s | FileCheck %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -20,7 +21,7 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
 
     function.def @product() -> !struct.type<@Holder>
         attributes {function.allow_witness, function.allow_constraint} {
@@ -31,21 +32,21 @@ module attributes {llzk.lang} {
     // Establish the concrete split-member types.
     %first0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
     %first1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-    %first = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    array.write %first[%c0] = %first1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-    array.write %first[%c1] = %first0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-    struct.writem %self[@items] = %first : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %first = array.new : !array.type<2 x !Cell>
+    array.write %first[%c0] = %first1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+    array.write %first[%c1] = %first0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+    struct.writem %self[@items] = %first : !struct.type<@Holder>, !array.type<2 x !Cell>
 
     // Forward the witness through a read before overwriting its original array index.
     // The forwarded element and the external constraint must retain one witness.
-    %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "shared"}
-    %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    array.write %fallback[%c0] = %shared : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    %forward = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    array.write %fallback[%c1] = %forward : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    array.write %fallback[%c0] = %first1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-    function.call @TCell::@Cell::@constrain(%shared) : (!struct.type<@TCell::@Cell<[#id]>>) -> () {product_source = "shared"}
-    struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %shared = llzk.nondet : !Cell {product_source = "shared"}
+    %fallback = array.new : !array.type<2 x !Cell>
+    array.write %fallback[%c0] = %shared : !array.type<2 x !Cell>, !Cell
+    %forward = array.read %fallback[%c0] : !array.type<2 x !Cell>, !Cell
+    array.write %fallback[%c1] = %forward : !array.type<2 x !Cell>, !Cell
+    array.write %fallback[%c0] = %first1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+    function.call @TCell::@Cell::@constrain(%shared) : (!Cell) -> () {product_source = "shared"}
+    struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
     function.return %self : !struct.type<@Holder>
     }
   }

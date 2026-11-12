@@ -58,17 +58,14 @@ module attributes {llzk.lang} {
 // A wildcard nested in an aggregate operand is resolved from a concrete explicit
 // binding for the corresponding nested template parameter.
 module attributes {llzk.lang} {
-  struct.def @CallOuterAggregateExplicit {
-    function.def @compute() -> !struct.type<@CallOuterAggregateExplicit> {
-      %self = struct.new : !struct.type<@CallOuterAggregateExplicit>
-      function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
-      function.return %self : !struct.type<@CallOuterAggregateExplicit>
-    }
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
+    function.return
+  }
 
-    function.def @constrain(%self: !struct.type<@CallOuterAggregateExplicit>) {
-      function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
-      function.return
-    }
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
+    function.return
   }
 
   poly.template @InnerAggregateExplicit {
@@ -90,23 +87,20 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    struct.def @CallOuterAggregateExplicit {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateExplicit> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterAggregateExplicit>
-// CHECK-NEXT:        function.call @OuterAggregateExplicit_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateExplicit>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterAggregateExplicit>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.call @OuterAggregateExplicit_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterAggregateExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterAggregateExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterAggregateExplicit_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
-// CHECK-NEXT:      function.call @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_1]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -115,17 +109,14 @@ module attributes {llzk.lang} {
 // A wildcard with no call-site operand evidence can still be resolved when the
 // value it creates is passed to a nested template parameter with a concrete binding.
 module attributes {llzk.lang} {
-  struct.def @CallOuterExplicitInput {
-    function.def @compute() -> !struct.type<@CallOuterExplicitInput> {
-      %self = struct.new : !struct.type<@CallOuterExplicitInput>
-      function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
-      function.return %self : !struct.type<@CallOuterExplicitInput>
-    }
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
+    function.return
+  }
 
-    function.def @constrain(%self: !struct.type<@CallOuterExplicitInput>) {
-      function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
-      function.return
-    }
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
+    function.return
   }
 
   poly.template @InnerExplicitInput {
@@ -147,23 +138,20 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    struct.def @CallOuterExplicitInput {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterExplicitInput> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterExplicitInput>
-// CHECK-NEXT:        function.call @OuterExplicitInput_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterExplicitInput>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterExplicitInput>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.call @OuterExplicitInput_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterExplicitInput_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerExplicitInput_f_consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterExplicitInput_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerExplicitInput_f_consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterExplicitInput_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type<"bn128">
-// CHECK-NEXT:      function.call @InnerExplicitInput_f_consume(%[[VAL_3]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type<"bn128">
+// CHECK-NEXT:      function.call @InnerExplicitInput_f_consume(%[[VAL_1]]) : (!felt.type<"bn128">) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -172,17 +160,14 @@ module attributes {llzk.lang} {
 // A concrete nested binding must be applied inside the nested callee's aggregate signature
 // before it is unified with the enclosing wildcard.
 module attributes {llzk.lang} {
-  struct.def @CallOuterAggregateElementExplicit {
-    function.def @compute() -> !struct.type<@CallOuterAggregateElementExplicit> {
-      %self = struct.new : !struct.type<@CallOuterAggregateElementExplicit>
-      function.call @OuterAggregateElementExplicit::@wrap<[?]>() : () -> ()
-      function.return %self : !struct.type<@CallOuterAggregateElementExplicit>
-    }
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterAggregateElementExplicit::@wrap<[?]>() : () -> ()
+    function.return
+  }
 
-    function.def @constrain(%self: !struct.type<@CallOuterAggregateElementExplicit>) {
-      function.call @OuterAggregateElementExplicit::@wrap<[?]>() : () -> ()
-      function.return
-    }
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterAggregateElementExplicit::@wrap<[?]>() : () -> ()
+    function.return
   }
 
   poly.template @InnerAggregateElementExplicit {
@@ -204,23 +189,20 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    struct.def @CallOuterAggregateElementExplicit {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateElementExplicit> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterAggregateElementExplicit>
-// CHECK-NEXT:        function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateElementExplicit>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterAggregateElementExplicit>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerAggregateElementExplicit_f_consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerAggregateElementExplicit_f_consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterAggregateElementExplicit_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
-// CHECK-NEXT:      function.call @InnerAggregateElementExplicit_f_consume(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @InnerAggregateElementExplicit_f_consume(%[[VAL_1]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -229,17 +211,14 @@ module attributes {llzk.lang} {
 // A wildcard nested in a callee aggregate signature is resolved from evidence
 // in the nested callee body.
 module attributes {llzk.lang} {
-  struct.def @CallOuterAggregateElementBody {
-    function.def @compute() -> !struct.type<@CallOuterAggregateElementBody> {
-      %self = struct.new : !struct.type<@CallOuterAggregateElementBody>
-      function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
-      function.return %self : !struct.type<@CallOuterAggregateElementBody>
-    }
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
+    function.return
+  }
 
-    function.def @constrain(%self: !struct.type<@CallOuterAggregateElementBody>) {
-      function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
-      function.return
-    }
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
+    function.return
   }
 
   poly.template @InnerAggregateElementBody {
@@ -263,23 +242,20 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    struct.def @CallOuterAggregateElementBody {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateElementBody> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterAggregateElementBody>
-// CHECK-NEXT:        function.call @OuterAggregateElementBody_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateElementBody>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterAggregateElementBody>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.call @OuterAggregateElementBody_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterAggregateElementBody_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerAggregateElementBody_f_consume(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterAggregateElementBody_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerAggregateElementBody_f_consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @OuterAggregateElementBody_f_wrap() {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
-// CHECK-NEXT:      function.call @InnerAggregateElementBody_f_consume(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @InnerAggregateElementBody_f_consume(%[[VAL_1]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -481,17 +457,14 @@ module attributes {llzk.lang} {
 
 // A wildcard nested in a local unifiable cast is resolved from the concrete aggregate side.
 module attributes {llzk.lang} {
-  struct.def @LocalCastAggregateCaller {
-    function.def @compute() -> !struct.type<@LocalCastAggregateCaller> {
-      %self = struct.new : !struct.type<@LocalCastAggregateCaller>
-      function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
-      function.return %self : !struct.type<@LocalCastAggregateCaller>
-    }
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
+    function.return
+  }
 
-    function.def @constrain(%self: !struct.type<@LocalCastAggregateCaller>) {
-      function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
-      function.return
-    }
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
+    function.return
   }
 
   poly.template @LocalCastAggregate {
@@ -505,19 +478,16 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    struct.def @LocalCastAggregateCaller {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@LocalCastAggregateCaller> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@LocalCastAggregateCaller>
-// CHECK-NEXT:        function.call @LocalCastAggregate_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@LocalCastAggregateCaller>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalCastAggregateCaller>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.call @LocalCastAggregate_f_wrap() : () -> ()
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @LocalCastAggregate_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @LocalCastAggregate_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @LocalCastAggregate_f_wrap() {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

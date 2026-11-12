@@ -2,13 +2,12 @@
 
 // Different split-member replacements conflict at the shared call binding.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -25,25 +24,23 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+    struct.member @items : !array.type<2 x !Cell>
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
-      %c2 = arith.constant 2 : index
       %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      %items = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      array.write %items[%c0] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c1] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c2] = %one : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+      %items = array.new : !array.type<2 x !Cell>
+      array.write %items[%c0] = %zero : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c1] = %one : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<2 x !Cell>
+      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !Cell>
       // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
-      %a = array.read %values[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      %b = array.read %values[%c2] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+      %a = array.read %values[%c0] : !array.type<2 x !Cell>, !Cell
+      %b = array.read %values[%c1] : !array.type<2 x !Cell>, !Cell
       // expected-note@+1 {{replacement call signature}}
-      function.call @Match::@consume(%a, %b) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.call @Match::@consume(%a, %b) : (!Cell, !Cell) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -54,13 +51,12 @@ module attributes {llzk.lang} {
 
 // Expandable read replacements also reject incompatible shared call bindings.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -77,26 +73,24 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+    struct.member @items : !array.type<2 x !Cell>
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
-      %c2 = arith.constant 2 : index
       %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      %items = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      array.write %items[%c0] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c1] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c2] = %one : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %empty = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      struct.writem %self[@items] = %empty : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+      %items = array.new : !array.type<2 x !Cell>
+      array.write %items[%c0] = %zero : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c1] = %one : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<2 x !Cell>
+      %empty = array.new : !array.type<2 x !Cell>
+      struct.writem %self[@items] = %empty : !struct.type<@Holder>, !array.type<2 x !Cell>
       // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
-      %a = array.read %empty[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      %b = array.read %empty[%c2] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+      %a = array.read %empty[%c0] : !array.type<2 x !Cell>, !Cell
+      %b = array.read %empty[%c1] : !array.type<2 x !Cell>, !Cell
       // expected-note@+1 {{replacement call signature}}
-      function.call @Match::@consume(%a, %b) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.call @Match::@consume(%a, %b) : (!Cell, !Cell) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }

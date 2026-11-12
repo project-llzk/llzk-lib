@@ -1,13 +1,12 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -32,19 +31,19 @@ module attributes {llzk.lang} {
   function.def @compatible_calls() attributes {function.allow_witness} {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
-    %a = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-    %b = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-    %array = array.new %a, %b : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    %read0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    %read1 = array.read %array[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    %a = llzk.nondet : !Cell
+    %b = llzk.nondet : !Cell
+    %array = array.new %a, %b : !array.type<2 x !Cell>
+    %read0 = array.read %array[%c0] : !array.type<2 x !Cell>, !Cell
+    %read1 = array.read %array[%c1] : !array.type<2 x !Cell>, !Cell
     // Repeated uses of one read must all be substituted in the hypothetical signature.
-    function.call @Match::@same(%read0, %read0) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
-    %also0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    function.call @Match::@same(%read0, %read0) : (!Cell, !Cell) -> ()
+    %also0 = array.read %array[%c0] : !array.type<2 x !Cell>, !Cell
     // Distinct reads with a common specialization are valid, including while only
     // one of their replacements has been applied.
-    function.call @Match::@same(%read0, %also0) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.call @Match::@same(%read0, %also0) : (!Cell, !Cell) -> ()
     // Separate template variables can bind to different concrete types.
-    function.call @Independent::@different(%read0, %read1) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.call @Independent::@different(%read0, %read1) : (!Cell, !Cell) -> ()
     function.return
   }
 }

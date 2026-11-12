@@ -1,6 +1,7 @@
 // RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -20,23 +21,23 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
 
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
-      %source = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      %source = array.new : !array.type<2 x !Cell>
       %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      array.write %source[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %source[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      %from_source0 = array.read %source[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      %from_source1 = array.read %source[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      %copy = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-      array.write %copy[%c0] = %from_source0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %copy[%c1] = %from_source1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %copy : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      array.write %source[%c0] = %item0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %source[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      %from_source0 = array.read %source[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      %from_source1 = array.read %source[%c1] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      %copy = array.new : !array.type<2 x !Cell>
+      array.write %copy[%c0] = %from_source0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %copy[%c1] = %from_source1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %copy : !struct.type<@Holder>, !array.type<2 x !Cell>
       function.return %self : !struct.type<@Holder>
     }
 

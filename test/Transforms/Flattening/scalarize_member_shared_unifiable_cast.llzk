@@ -4,6 +4,7 @@
 // multiple whole-array writes. Scalarization must give both generated scalar writes the shared
 // concrete cast value rather than leaving both writes attached to the generic cast result.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -23,8 +24,8 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @left : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
-    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @left : !array.type<2 x !Cell> {column}
+    struct.member @right : !array.type<2 x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -33,20 +34,20 @@ module attributes {llzk.lang} {
       scf.if %cond {
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        %genericItem0 = poly.unifiable_cast %item0 : (!struct.type<@TCell::@Cell<[0]>>) -> !struct.type<@TCell::@Cell<[#id]>>
-        %genericItem1 = poly.unifiable_cast %item1 : (!struct.type<@TCell::@Cell<[1]>>) -> !struct.type<@TCell::@Cell<[#id]>>
-        %candidate = array.new %genericItem0, %genericItem1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        struct.writem %self[@left] = %candidate : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        struct.writem %self[@right] = %candidate : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %genericItem0 = poly.unifiable_cast %item0 : (!struct.type<@TCell::@Cell<[0]>>) -> !Cell
+        %genericItem1 = poly.unifiable_cast %item1 : (!struct.type<@TCell::@Cell<[1]>>) -> !Cell
+        %candidate = array.new %genericItem0, %genericItem1 : !array.type<2 x !Cell>
+        struct.writem %self[@left] = %candidate : !struct.type<@Holder>, !array.type<2 x !Cell>
+        struct.writem %self[@right] = %candidate : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new : !array.type<2 x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
-        %shared = poly.unifiable_cast %item0 : (!struct.type<@TCell::@Cell<[0]>>) -> !struct.type<@TCell::@Cell<[#id]>>
+        %shared = poly.unifiable_cast %item0 : (!struct.type<@TCell::@Cell<[0]>>) -> !Cell
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %fallback[%c0] = %shared : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-        array.write %fallback[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %fallback[%c0] = %shared : !array.type<2 x !Cell>, !Cell
+        array.write %fallback[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }

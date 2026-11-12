@@ -1,6 +1,7 @@
 // RUN: llzk-opt -llzk-flatten %s | FileCheck %s
 
 // Unchanged unrelated parameters permit a partially concrete candidate to specialize.
+!ConcreteHolder = !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>>
 module attributes {llzk.lang} {
   poly.template @Pair {
     poly.param @X
@@ -36,9 +37,9 @@ module attributes {llzk.lang} {
     }
   }
 
-  function.def @entry(%input: !felt.type) -> !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>> attributes {function.allow_witness} {
-    %result = function.call @UnchangedUnrelatedSymbol::@Holder::@compute(%input) : (!felt.type) -> !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>>
-    function.return %result : !struct.type<@UnchangedUnrelatedSymbol::@Holder<[!felt.type, index, !felt.type]>>
+  function.def @entry(%input: !felt.type) -> !ConcreteHolder attributes {function.allow_witness} {
+    %result = function.call @UnchangedUnrelatedSymbol::@Holder::@compute(%input) : (!felt.type) -> !ConcreteHolder
+    function.return %result : !ConcreteHolder
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {

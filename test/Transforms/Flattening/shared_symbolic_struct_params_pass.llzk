@@ -589,6 +589,7 @@ module attributes {llzk.lang} {
 // -----
 
 // An unrelated symbolic field inside a relevant type argument must not block the known binding.
+!SourceBox = !struct.type<@Box::@Box<[!pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>]>>
 module attributes {llzk.lang} {
   poly.template @Box {
     poly.param @X
@@ -608,12 +609,12 @@ module attributes {llzk.lang} {
     struct.def @Holder {
       struct.member @first : !poly.tvar<@T>
       struct.member @second : !struct.type<@Box::@Box<[!pod.type<[@first: !poly.tvar<@T>, @second: !array.type<1 x !poly.tvar<@U>>]>]>>
-      struct.member @source : !struct.type<@Box::@Box<[!pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>]>>
+      struct.member @source : !SourceBox
       function.def @compute(%a: !felt.type) -> !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>> {
         %self = struct.new : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>
         struct.writem %self[@first] = %a : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>, !felt.type
-        %b = struct.readm %self[@source] : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>, !struct.type<@Box::@Box<[!pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>]>>
-        struct.writem %self[@second] = %b : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>, !struct.type<@Box::@Box<[!pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>]>>
+        %b = struct.readm %self[@source] : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>, !SourceBox
+        struct.writem %self[@second] = %b : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>, !SourceBox
         function.return %self : !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>
       }
       function.def @constrain(%self: !struct.type<@UnrelatedTypedSubtree::@Holder<[@T, @U, @V]>>, %a: !felt.type) {

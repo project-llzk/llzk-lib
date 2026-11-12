@@ -4,15 +4,7 @@
 // for the path from the outer module used by flattening's shared cache.
 module attributes {llzk.lang} {
   // expected-error@+1 {{cannot flatten an unnamed nested lookup root; nested modules must have a name}}
-  module attributes {llzk.lang} {
-    struct.def @Cell {
-      function.def @compute() -> !struct.type<@Cell> {
-        %self = struct.new : <@Cell>
-        function.return %self : !struct.type<@Cell>
-      }
-      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
-    }
-  }
+  module attributes {llzk.lang} {}
 }
 
 // -----
@@ -23,14 +15,6 @@ module attributes {llzk.lang} {
   // expected-note@+1 {{unnamed symbol table prevents forming a symbol path}}
   module {
     // expected-error@+1 {{nested lookup root cannot be named relative to module "<unnamed>" because an intervening symbol table is unnamed}}
-    module @Lib attributes {llzk.lang} {
-      struct.def @Cell {
-        function.def @compute() -> !struct.type<@Cell> {
-          %self = struct.new : <@Cell>
-          function.return %self : !struct.type<@Cell>
-        }
-        function.def @constrain(%self: !struct.type<@Cell>) { function.return }
-      }
-    }
+    module @Lib attributes {llzk.lang} {}
   }
 }

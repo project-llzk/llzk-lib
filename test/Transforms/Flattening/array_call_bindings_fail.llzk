@@ -192,6 +192,7 @@ module attributes {llzk.lang} {
 
 // Pending definitions and reads must be rejected together, before either becomes concrete.
 #id = affine_map<(i) -> (i)>
+!GenericCells = !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -229,12 +230,12 @@ module attributes {llzk.lang} {
       %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
       %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
       // expected-note@+1 {{member read would refine to}}
-      %aa = array.new %left : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      %aa = array.new %left : !GenericCells
       // expected-note@+1 {{member read would refine to}}
-      %bb = array.new %right : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      %bb = array.new %right : !GenericCells
       // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings at operand number 1}}
       // expected-note@+1 {{proposed call signature}}
-      function.call @Match::@consume(%aa, %bb) : (!array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>, !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>) -> ()
+      function.call @Match::@consume(%aa, %bb) : (!GenericCells, !GenericCells) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }

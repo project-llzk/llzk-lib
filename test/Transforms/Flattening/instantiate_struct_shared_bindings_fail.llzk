@@ -40,13 +40,10 @@ module attributes {llzk.lang} {
       function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
     }
   }
-  poly.template @Caller {
-    poly.param @S
-    function.def @caller(%a: !felt.type, %b: !felt.type) attributes {function.allow_witness} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at result number 0}}
-      %result = function.call @Family::@Box::@compute(%a, %b) : (!felt.type, !felt.type) -> !struct.type<@Family::@Box<[index]>>
-      function.return
-    }
+  function.def @caller(%a: !felt.type, %b: !felt.type) attributes {function.allow_witness} {
+    // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at result number 0}}
+    %result = function.call @Family::@Box::@compute(%a, %b) : (!felt.type, !felt.type) -> !struct.type<@Family::@Box<[index]>>
+    function.return
   }
 }
 
@@ -119,12 +116,9 @@ module attributes {llzk.lang} {
       function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !array.type<@T x !felt.type>, %b: !array.type<@T x !felt.type>) { function.return }
     }
   }
-  poly.template @Caller {
-    poly.param @S
-    function.def @caller(%a: !array.type<8 x !felt.type>, %b: !array.type<9 x !felt.type>, %n: index) attributes {function.allow_witness} {
-      // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at operand number 1}}
-      %result = function.call @Family::@Box::@compute(%a, %b) {(%n)} : (!array.type<8 x !felt.type>, !array.type<9 x !felt.type>) -> !struct.type<@Family::@Box<[affine_map<(i) -> (i)>]>>
-      function.return
-    }
+  function.def @caller(%a: !array.type<8 x !felt.type>, %b: !array.type<9 x !felt.type>, %n: index) attributes {function.allow_witness} {
+    // expected-error@+1 {{cannot instantiate struct call because the complete call signature has conflicting template bindings at operand number 1}}
+    %result = function.call @Family::@Box::@compute(%a, %b) {(%n)} : (!array.type<8 x !felt.type>, !array.type<9 x !felt.type>) -> !struct.type<@Family::@Box<[affine_map<(i) -> (i)>]>>
+    function.return
   }
 }

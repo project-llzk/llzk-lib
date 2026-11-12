@@ -1,13 +1,12 @@
 // RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -25,13 +24,13 @@ module attributes {llzk.lang} {
 
   function.def @multiple_candidates() attributes {function.allow_witness} {
     %c0 = arith.constant 0 : index
-    %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %shared = llzk.nondet : !Cell
 
     // Both candidate arrays require the same specialization of %shared.
-    %first = array.new %shared, %shared : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    %second = array.new %shared, %shared : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    %firstRead = array.read %first[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-    %secondRead = array.read %second[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    %first = array.new %shared, %shared : !array.type<2 x !Cell>
+    %second = array.new %shared, %shared : !array.type<2 x !Cell>
+    %firstRead = array.read %first[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+    %secondRead = array.read %second[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
     function.call @consume0(%firstRead) : (!struct.type<@TCell::@Cell<[0]>>) -> ()
     function.call @consume0(%secondRead) : (!struct.type<@TCell::@Cell<[0]>>) -> ()
     function.return

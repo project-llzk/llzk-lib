@@ -7,7 +7,6 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -69,7 +68,6 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -131,7 +129,6 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -195,7 +192,6 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -277,7 +273,6 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>

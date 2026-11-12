@@ -142,8 +142,6 @@ module attributes {llzk.lang} {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCellB::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCellB::@Cell<[@N]>>
         function.return %self : !struct.type<@TCellB::@Cell<[@N]>>
@@ -183,7 +181,6 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCellB_1_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCellB_1_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCellB_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCellB_1_Cell>
@@ -193,7 +190,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCellB_0_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCellB_0_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCellB_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCellB_0_Cell>
@@ -235,8 +231,6 @@ module attributes {llzk.lang} {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCellC::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCellC::@Cell<[@N]>>
         function.return %self : !struct.type<@TCellC::@Cell<[@N]>>
@@ -352,13 +346,12 @@ module attributes {llzk.lang} {
 
 // pod.new keeps its declared record types when a member-read initializer is retagged. Rejecting
 // this unhandled consumer keeps both the read and POD initializer generic, avoiding invalid IR.
+!Holder = !struct.type<@TPodInitializerHolder::@Holder<[@T]>>
 module attributes {llzk.lang} {
   poly.template @TCellPod {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCellPod::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCellPod::@Cell<[@N]>>
         function.return %self : !struct.type<@TCellPod::@Cell<[@N]>>
@@ -376,15 +369,15 @@ module attributes {llzk.lang} {
     struct.def @Holder {
       struct.member @item : !poly.tvar<@T> {column}
 
-      function.def @compute() -> !struct.type<@TPodInitializerHolder::@Holder<[@T]>> {
-        %self = struct.new : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>
+      function.def @compute() -> !Holder {
+        %self = struct.new : !Holder
         %item0 = function.call @TCellPod::@Cell::@compute() : () -> !struct.type<@TCellPod::@Cell<[0]>>
-        struct.writem %self[@item] = %item0 : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>, !struct.type<@TCellPod::@Cell<[0]>>
-        function.return %self : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>
+        struct.writem %self[@item] = %item0 : !Holder, !struct.type<@TCellPod::@Cell<[0]>>
+        function.return %self : !Holder
       }
 
-      function.def @constrain(%self: !struct.type<@TPodInitializerHolder::@Holder<[@T]>>) {
-        %read = struct.readm %self[@item] : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>, !poly.tvar<@T>
+      function.def @constrain(%self: !Holder) {
+        %read = struct.readm %self[@item] : !Holder, !poly.tvar<@T>
         %pod = pod.new { @item = %read } : !pod.type<[@item: !poly.tvar<@T>]>
         function.return
       }

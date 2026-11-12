@@ -2,11 +2,11 @@
 
 // A concrete member result must agree with the receiver selected for this index.
 #id = affine_map<(i) -> (i)>
+!Box = !struct.type<@TBox::@Box<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -31,13 +31,13 @@ module attributes {llzk.lang} {
     %one = arith.constant 1 : index
     %box0 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
     %box1 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[1]>>
-    %boxes = array.new : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>
-    array.write %boxes[%zero] = %box0 : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[0]>>
-    array.write %boxes[%one] = %box1 : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[1]>>
+    %boxes = array.new : !array.type<2 x !Box>
+    array.write %boxes[%zero] = %box0 : !array.type<2 x !Box>, !struct.type<@TBox::@Box<[0]>>
+    array.write %boxes[%one] = %box1 : !array.type<2 x !Box>, !struct.type<@TBox::@Box<[1]>>
     // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific receiver type is incompatible with a member read}}
-    %box = array.read %boxes[%zero] : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+    %box = array.read %boxes[%zero] : !array.type<2 x !Box>, !Box
     // expected-note@+1 {{member read requires}}
-    %cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[1]>>
+    %cell = struct.readm %box[@cell] : !Box, !struct.type<@TCell::@Cell<[1]>>
     function.call @consume(%cell) : (!struct.type<@TCell::@Cell<[1]>>) -> ()
     function.return
   }
@@ -47,11 +47,11 @@ module attributes {llzk.lang} {
 
 // A generic member result must also remain compatible with its downstream consumers.
 #id = affine_map<(i) -> (i)>
+!Box = !struct.type<@TBox::@Box<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -76,13 +76,13 @@ module attributes {llzk.lang} {
     %one = arith.constant 1 : index
     %box0 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
     %box1 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[1]>>
-    %boxes = array.new : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>
-    array.write %boxes[%zero] = %box0 : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[0]>>
-    array.write %boxes[%one] = %box1 : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[1]>>
+    %boxes = array.new : !array.type<2 x !Box>
+    array.write %boxes[%zero] = %box0 : !array.type<2 x !Box>, !struct.type<@TBox::@Box<[0]>>
+    array.write %boxes[%one] = %box1 : !array.type<2 x !Box>, !struct.type<@TBox::@Box<[1]>>
     // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific receiver type is incompatible with a member read}}
-    %box = array.read %boxes[%zero] : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+    %box = array.read %boxes[%zero] : !array.type<2 x !Box>, !Box
     // expected-note@+1 {{member read requires}}
-    %cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
+    %cell = struct.readm %box[@cell] : !Box, !struct.type<@TCell::@Cell<[#id]>>
     function.call @consume(%cell) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
     function.return
   }

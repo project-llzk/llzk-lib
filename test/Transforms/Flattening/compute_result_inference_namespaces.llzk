@@ -5,7 +5,6 @@
 module attributes {llzk.lang} {
   module @Lib attributes {llzk.lang} {
     struct.def @Leaf {
-      struct.member @value : !felt.type {column}
       function.def @compute() -> !struct.type<@Leaf> {
         %self = struct.new : !struct.type<@Leaf>
         function.return %self : !struct.type<@Leaf>
@@ -37,7 +36,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    module @Lib attributes {llzk.lang} {
 // CHECK-NEXT:      struct.def @Leaf {
-// CHECK-NEXT:        struct.member @value : !felt.type {column}
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Leaf> attributes {function.allow_witness} {
 // CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Leaf>

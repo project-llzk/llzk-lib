@@ -2,6 +2,7 @@
 
 // A compatible insert must compare the complete refined read with the selected destination.
 #id = affine_map<(i) -> (i)>
+!Grid = !array.type<2,3 x !struct.type<@TCellOneIndex::@Cell<[0]>>>
 module attributes {llzk.lang} {
   poly.template @TCellOneIndex {
     poly.param @N : index
@@ -18,7 +19,7 @@ module attributes {llzk.lang} {
   }
   struct.def @HolderOneIndex {
     struct.member @row : !array.type<3 x !struct.type<@TCellOneIndex::@Cell<[#id]>>> {column}
-    struct.member @grid : !array.type<2,3 x !struct.type<@TCellOneIndex::@Cell<[0]>>> {column}
+    struct.member @grid : !Grid {column}
     function.def @compute() -> !struct.type<@HolderOneIndex> {
       %self = struct.new : !struct.type<@HolderOneIndex>
       %index = arith.constant 0 : index
@@ -26,9 +27,9 @@ module attributes {llzk.lang} {
       %row0 = array.new %item0, %item0, %item0 : !array.type<3 x !struct.type<@TCellOneIndex::@Cell<[0]>>>
       struct.writem %self[@row] = %row0 : !struct.type<@HolderOneIndex>, !array.type<3 x !struct.type<@TCellOneIndex::@Cell<[0]>>>
       %read = struct.readm %self[@row] : !struct.type<@HolderOneIndex>, !array.type<3 x !struct.type<@TCellOneIndex::@Cell<[#id]>>>
-      %destination = array.new : !array.type<2,3 x !struct.type<@TCellOneIndex::@Cell<[0]>>>
-      array.insert %destination[%index] = %read : !array.type<2,3 x !struct.type<@TCellOneIndex::@Cell<[0]>>>, !array.type<3 x !struct.type<@TCellOneIndex::@Cell<[#id]>>>
-      struct.writem %self[@grid] = %destination : !struct.type<@HolderOneIndex>, !array.type<2,3 x !struct.type<@TCellOneIndex::@Cell<[0]>>>
+      %destination = array.new : !Grid
+      array.insert %destination[%index] = %read : !Grid, !array.type<3 x !struct.type<@TCellOneIndex::@Cell<[#id]>>>
+      struct.writem %self[@grid] = %destination : !struct.type<@HolderOneIndex>, !Grid
       function.return %self : !struct.type<@HolderOneIndex>
     }
     function.def @constrain(%self: !struct.type<@HolderOneIndex>) {
@@ -72,6 +73,7 @@ module attributes {llzk.lang} {
 
 // Multiple insertion indices select only destination dimensions; preserve both read dimensions.
 #id = affine_map<(i) -> (i)>
+!Grid = !array.type<1,1,2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>>
 module attributes {llzk.lang} {
   poly.template @TCellTwoIndices {
     poly.param @N : index
@@ -88,7 +90,7 @@ module attributes {llzk.lang} {
   }
   struct.def @HolderTwoIndices {
     struct.member @row : !array.type<2,3 x !struct.type<@TCellTwoIndices::@Cell<[#id]>>> {column}
-    struct.member @grid : !array.type<1,1,2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>> {column}
+    struct.member @grid : !Grid {column}
     function.def @compute() -> !struct.type<@HolderTwoIndices> {
       %self = struct.new : !struct.type<@HolderTwoIndices>
       %index = arith.constant 0 : index
@@ -96,9 +98,9 @@ module attributes {llzk.lang} {
       %row0 = array.new %item0, %item0, %item0, %item0, %item0, %item0 : !array.type<2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>>
       struct.writem %self[@row] = %row0 : !struct.type<@HolderTwoIndices>, !array.type<2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>>
       %read = struct.readm %self[@row] : !struct.type<@HolderTwoIndices>, !array.type<2,3 x !struct.type<@TCellTwoIndices::@Cell<[#id]>>>
-      %destination = array.new : !array.type<1,1,2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>>
-      array.insert %destination[%index, %index] = %read : !array.type<1,1,2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>>, !array.type<2,3 x !struct.type<@TCellTwoIndices::@Cell<[#id]>>>
-      struct.writem %self[@grid] = %destination : !struct.type<@HolderTwoIndices>, !array.type<1,1,2,3 x !struct.type<@TCellTwoIndices::@Cell<[0]>>>
+      %destination = array.new : !Grid
+      array.insert %destination[%index, %index] = %read : !Grid, !array.type<2,3 x !struct.type<@TCellTwoIndices::@Cell<[#id]>>>
+      struct.writem %self[@grid] = %destination : !struct.type<@HolderTwoIndices>, !Grid
       function.return %self : !struct.type<@HolderTwoIndices>
     }
     function.def @constrain(%self: !struct.type<@HolderTwoIndices>) {

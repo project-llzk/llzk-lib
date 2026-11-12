@@ -33,7 +33,6 @@ module attributes {llzk.lang} {
 //--- unused.llzk
 // The conflicting instantiation is rejected even when the sibling read is unused.
 module attributes {llzk.lang} {
-  function.def @consumeIndex(%value: index) { function.return }
   poly.template @SharedRead {
     poly.param @T
     struct.def @Holder {

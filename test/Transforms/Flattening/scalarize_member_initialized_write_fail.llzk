@@ -1,6 +1,7 @@
 // RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -20,29 +21,26 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %c2 = arith.constant 2 : index
-        %local = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new : !array.type<2 x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
-        array.write %local[%c0] = %item0 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c2] = %item2 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
-        %init = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+        %init = llzk.nondet : !Cell
         // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate reuses one SSA value for incompatible scalar member types}}
-        %fallback = array.new %init, %init, %init : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new %init, %init : !array.type<2 x !Cell>
         // expected-note@+2 {{value is used for scalar member type}}
         // expected-note@+1 {{same value is also used for scalar member type}}
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }

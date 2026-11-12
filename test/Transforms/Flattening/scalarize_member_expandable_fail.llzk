@@ -1,6 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -20,7 +21,7 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
     struct.member @wrong : !struct.type<@TCell::@Cell<[1]>> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
@@ -28,23 +29,23 @@ module attributes {llzk.lang} {
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new : !array.type<2 x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
         %c0 = arith.constant 0 : index
         // Regression: reading an unwritten expandable index creates a result-typed pending
         // materialization, which must be checked against the later split-member scalar type.
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new : !array.type<2 x !Cell>
         // expected-note@+1 {{unwritten index [0 : index] is materialized for read result type '!struct.type<@TCell_1_Cell>'}}
-        %observed = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        %observed = array.read %fallback[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@wrong] = %observed : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
         // expected-note@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_0_Cell>'}}
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -58,6 +59,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -77,7 +79,7 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
     struct.member @wrong : !struct.type<@TCell::@Cell<[1]>> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
@@ -85,25 +87,25 @@ module attributes {llzk.lang} {
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new : !array.type<2 x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
         %c0 = arith.constant 0 : index
-        %init0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-        %init1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+        %init0 = llzk.nondet : !Cell
+        %init1 = llzk.nondet : !Cell
         // Regression: an initialized expandable index must reject an incompatible static read
         // before rewriteExpandableLocalArray starts mutating the local array.
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
-        %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new %init0, %init1 : !array.type<2 x !Cell>
         // expected-note@+1 {{array index [0 : index] is materialized for read result type '!struct.type<@TCell_1_Cell>'}}
-        %observed = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        %observed = array.read %fallback[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@wrong] = %observed : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
         // expected-note@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_0_Cell>'}}
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -117,6 +119,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -136,7 +139,7 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
     struct.member @wrong : !struct.type<@TCell::@Cell<[1]>> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
@@ -144,23 +147,23 @@ module attributes {llzk.lang} {
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new : !array.type<2 x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
         %c0 = arith.constant 0 : index
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array stores a scalar value with an incompatible read result type}}
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new : !array.type<2 x !Cell>
         // expected-note@+1 {{array index [0 : index] stores value type '!struct.type<@TCell_0_Cell>'}}
         %written0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
-        array.write %fallback[%c0] = %written0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %fallback[%c0] = %written0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
         // expected-note@+1 {{same index is read as '!struct.type<@TCell_1_Cell>'}}
-        %observed = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        %observed = array.read %fallback[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@wrong] = %observed : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -174,6 +177,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -194,7 +198,7 @@ module attributes {llzk.lang} {
 
   struct.def @Holder {
     // expected-error@+1 {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
-    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<#id x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -202,18 +206,18 @@ module attributes {llzk.lang} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         %c2 = arith.constant 2 : index
-        %local = array.new{(%c2)} : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new{(%c2)} : !array.type<#id x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c0] = %item0 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        array.write %local[%c0] = %item0 : !array.type<#id x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<#id x !Cell>, !struct.type<@TCell::@Cell<[1]>>
         // expected-note@+1 {{candidate establishes 2 split member indices}}
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#id x !Cell>
       } else {
         %c3 = arith.constant 3 : index
-        %fallback = array.new{(%c3)} : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new{(%c3)} : !array.type<#id x !Cell>
         // expected-note@+1 {{expandable whole-array write has 3 array indices, including extra index [2 : index]}}
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#id x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -227,6 +231,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -247,7 +252,7 @@ module attributes {llzk.lang} {
 
   struct.def @Holder {
     // expected-error@+1 {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
-    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<#id x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -255,21 +260,18 @@ module attributes {llzk.lang} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         %c2 = arith.constant 2 : index
-        %c3 = arith.constant 3 : index
-        %local = array.new{(%c3)} : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new{(%c2)} : !array.type<#id x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
-        array.write %local[%c0] = %item0 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c2] = %item2 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
-        // expected-note@+1 {{candidate establishes 3 split member indices}}
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<#id x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<#id x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        // expected-note@+1 {{candidate establishes 2 split member indices}}
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#id x !Cell>
       } else {
-        %c2 = arith.constant 2 : index
-        %fallback = array.new{(%c2)} : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{expandable whole-array write has 2 array indices, missing index [2 : index]}}
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        %c1 = arith.constant 1 : index
+        %fallback = array.new{(%c1)} : !array.type<#id x !Cell>
+        // expected-note@+1 {{expandable whole-array write has 1 array indices, missing index [1 : index]}}
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#id x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -283,6 +285,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -302,36 +305,36 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @left : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @left : !array.type<2 x !Cell> {column}
     // expected-error@+1 {{cannot split heterogeneous array member because candidate writes require incompatible scalar member types}}
-    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @right : !array.type<2 x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %left = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %left = array.new : !array.type<2 x !Cell>
         %left0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %left1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %left[%c0] = %left0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %left[%c1] = %left1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %left[%c0] = %left0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %left[%c1] = %left1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !Cell>
 
-        %right = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %right = array.new : !array.type<2 x !Cell>
         %right0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         %right1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
-        array.write %right[%c0] = %right0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %right[%c0] = %right0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        array.write %right[%c1] = %right1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
         // expected-note@+1 {{candidate writes index [0 : index] with type '!struct.type<@TCell_1_Cell>'}}
-        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
-        %init0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-        %init1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-        %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %init0 = llzk.nondet : !Cell
+        %init1 = llzk.nondet : !Cell
+        %fallback = array.new %init0, %init1 : !array.type<2 x !Cell>
+        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
         // expected-note@+1 {{conflicting candidate writes the same index with type '!struct.type<@TCell_0_Cell>'}}
-        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -345,6 +348,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -364,31 +368,31 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %local = array.new : !array.type<2 x !Cell>
         %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %local[%c0] = %item0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array stores a scalar value with an incompatible split-member type}}
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new : !array.type<2 x !Cell>
         // expected-note@+1 {{array index [0 : index] stores value type '!struct.type<@TCell_1_Cell>'}}
         %wrong0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         %ok1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %fallback[%c0] = %wrong0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        array.write %fallback[%c1] = %ok1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        array.write %fallback[%c0] = %wrong0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        array.write %fallback[%c1] = %ok1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
         // expected-note@+1 {{same index is written with scalar member type '!struct.type<@TCell_0_Cell>'}}
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -402,6 +406,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -421,35 +426,35 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @left : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
-    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @left : !array.type<2 x !Cell> {column}
+    struct.member @right : !array.type<2 x !Cell> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %left = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %left = array.new : !array.type<2 x !Cell>
         %left0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         %left1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-        array.write %left[%c0] = %left0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        array.write %left[%c1] = %left1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %left[%c0] = %left0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %left[%c1] = %left1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !Cell>
 
-        %right = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %right = array.new : !array.type<2 x !Cell>
         %right0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         %right1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
-        array.write %right[%c0] = %right0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        array.write %right[%c0] = %right0 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+        array.write %right[%c1] = %right1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !Cell>
       } else {
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %fallback = array.new : !array.type<2 x !Cell>
         // It's not deterministic which index is materialized first, so we have to accept either in the notes.
         // expected-note-re@+1 {{unwritten index [{{[01]}} : index] is materialized for scalar member type '!struct.type<@TCell_{{[01]}}_Cell>'}}
-        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
         // expected-note-re@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_{{[01]}}_Cell>'}}
-        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !Cell>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -463,6 +468,7 @@ module attributes {llzk.lang} {
 // -----
 
 #id = affine_map<(i) -> (i)>
+!Pair = !struct.type<@TPair::@Pair<[#id, #id]>>
 module attributes {llzk.lang} {
   poly.template @TPair {
     poly.param @A : index
@@ -483,41 +489,41 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @seed : !struct.type<@TPair::@Pair<[#id, #id]>> {column}
-    struct.member @left : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>> {column}
-    struct.member @right : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>> {column}
+    struct.member @seed : !Pair {column}
+    struct.member @left : !array.type<2 x !Pair> {column}
+    struct.member @right : !array.type<2 x !Pair> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       scf.if %cond {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %left = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        %left = array.new : !array.type<2 x !Pair>
         %left0 = llzk.nondet : !struct.type<@TPair::@Pair<[#id, 0]>>
         %left1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
-        array.write %left[%c0] = %left0 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[#id, 0]>>
-        array.write %left[%c1] = %left1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
-        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        array.write %left[%c0] = %left0 : !array.type<2 x !Pair>, !struct.type<@TPair::@Pair<[#id, 0]>>
+        array.write %left[%c1] = %left1 : !array.type<2 x !Pair>, !struct.type<@TPair::@Pair<[1, 1]>>
+        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !Pair>
 
-        %right = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        %right = array.new : !array.type<2 x !Pair>
         %right0 = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>>
         %right1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
-        array.write %right[%c0] = %right0 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[0, #id]>>
-        array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
-        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        array.write %right[%c0] = %right0 : !array.type<2 x !Pair>, !struct.type<@TPair::@Pair<[0, #id]>>
+        array.write %right[%c1] = %right1 : !array.type<2 x !Pair>, !struct.type<@TPair::@Pair<[1, 1]>>
+        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !Pair>
       } else {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         // expected-note@+1 {{array index [0 : index] stores value type '!struct.type<@TPair::@Pair<[affine_map<(d0) -> (d0)>, affine_map<(d0) -> (d0)>]>>'}}
-        %shared = struct.readm %self[@seed] : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id, #id]>>
+        %shared = struct.readm %self[@seed] : !struct.type<@Holder>, !Pair
         // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate uses a non-nondeterministic SSA value for a refined scalar member type}}
-        %fallback = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
-        array.write %fallback[%c0] = %shared : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[#id, #id]>>
+        %fallback = array.new : !array.type<2 x !Pair>
+        array.write %fallback[%c0] = %shared : !array.type<2 x !Pair>, !Pair
         %fallback1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
-        array.write %fallback[%c1] = %fallback1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
+        array.write %fallback[%c1] = %fallback1 : !array.type<2 x !Pair>, !struct.type<@TPair::@Pair<[1, 1]>>
         // expected-note@+1 {{same index is written with scalar member type '!struct.type<@"TPair_\1A_0"::@Pair<[affine_map<(d0) -> (d0)>]>>'}}
-        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
-        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !Pair>
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !Pair>
       }
       function.return %self : !struct.type<@Holder>
     }

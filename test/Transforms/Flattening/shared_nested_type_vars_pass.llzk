@@ -163,17 +163,18 @@ module attributes {llzk.lang} {
 // -----
 
 // Compatible partial bindings are combined rather than treated as a duplicate-key conflict.
+!PartialPair = !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>
 module attributes {llzk.lang} {
   poly.template @RepeatedPodPartial {
     poly.param @T
     struct.def @Holder {
       struct.member @member0 : !pod.type<[@first: !poly.tvar<@T>, @second: !poly.tvar<@T>]>
-      function.def @compute(%v0: !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>) -> !struct.type<@RepeatedPodPartial::@Holder<[@T]>> {
+      function.def @compute(%v0: !PartialPair) -> !struct.type<@RepeatedPodPartial::@Holder<[@T]>> {
         %self = struct.new : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>
-        struct.writem %self[@member0] = %v0 : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>
+        struct.writem %self[@member0] = %v0 : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, !PartialPair
         function.return %self : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>
       }
-      function.def @constrain(%self: !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, %v0: !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>) {
+      function.def @constrain(%self: !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, %v0: !PartialPair) {
         function.return
       }
     }

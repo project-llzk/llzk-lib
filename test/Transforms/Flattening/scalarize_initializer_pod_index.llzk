@@ -2,12 +2,11 @@
 
 // Initializer-only POD elements specialize their nested struct at each outer array index.
 #id = affine_map<(i) -> (i)>
-#next = affine_map<(i) -> (i + 1)>
+!Element = !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -16,13 +15,13 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>> {test.member = "items"}
+    struct.member @items : !array.type<2 x !Element> {test.member = "items"}
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
-      %first = llzk.nondet : !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]> {product_source = "first", test.marker = 0 : i64}
-      %second = llzk.nondet : !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]> {product_source = "second", test.marker = 1 : i64}
-      %array = array.new %first, %second : !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>
-      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>
+      %first = llzk.nondet : !Element {product_source = "first", test.marker = 0 : i64}
+      %second = llzk.nondet : !Element {product_source = "second", test.marker = 1 : i64}
+      %array = array.new %first, %second : !array.type<2 x !Element>
+      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !Element>
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -31,7 +30,6 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
@@ -41,7 +39,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
@@ -70,13 +67,12 @@ module attributes {llzk.lang} {
 // -----
 
 // Nested POD records retain field names and order while specializing an affine offset.
-#id = affine_map<(i) -> (i)>
 #next = affine_map<(i) -> (i + 1)>
+!Element = !pod.type<[@z_flag: i1, @payload: !pod.type<[@cell: !struct.type<@TCell::@Cell<[#next]>>, @a_tag: index]>]>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -85,13 +81,13 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !pod.type<[@z_flag: i1, @payload: !pod.type<[@cell: !struct.type<@TCell::@Cell<[#next]>>, @a_tag: index]>]>> {test.member = "items"}
+    struct.member @items : !array.type<2 x !Element> {test.member = "items"}
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
-      %first = llzk.nondet : !pod.type<[@z_flag: i1, @payload: !pod.type<[@cell: !struct.type<@TCell::@Cell<[#next]>>, @a_tag: index]>]> {product_source = "first", test.marker = 0 : i64}
-      %second = llzk.nondet : !pod.type<[@z_flag: i1, @payload: !pod.type<[@cell: !struct.type<@TCell::@Cell<[#next]>>, @a_tag: index]>]> {product_source = "second", test.marker = 1 : i64}
-      %array = array.new %first, %second : !array.type<2 x !pod.type<[@z_flag: i1, @payload: !pod.type<[@cell: !struct.type<@TCell::@Cell<[#next]>>, @a_tag: index]>]>>
-      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !pod.type<[@z_flag: i1, @payload: !pod.type<[@cell: !struct.type<@TCell::@Cell<[#next]>>, @a_tag: index]>]>>
+      %first = llzk.nondet : !Element {product_source = "first", test.marker = 0 : i64}
+      %second = llzk.nondet : !Element {product_source = "second", test.marker = 1 : i64}
+      %array = array.new %first, %second : !array.type<2 x !Element>
+      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !Element>
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -100,7 +96,6 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_1_Cell>
@@ -110,7 +105,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_2_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_2_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_2_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_2_Cell>
@@ -139,17 +133,17 @@ module attributes {llzk.lang} {
 // -----
 
 // POD fields can contain array dimensions that depend on the outer element index.
-#id = affine_map<(i) -> (i)>
 #next = affine_map<(i) -> (i + 1)>
+!Element = !pod.type<[@rows: !array.type<#next x !felt.type>, @tag: index]>
 module attributes {llzk.lang} {
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !pod.type<[@rows: !array.type<#next x !felt.type>, @tag: index]>> {test.member = "items"}
+    struct.member @items : !array.type<2 x !Element> {test.member = "items"}
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
-      %first = llzk.nondet : !pod.type<[@rows: !array.type<#next x !felt.type>, @tag: index]> {product_source = "first", test.marker = 0 : i64}
-      %second = llzk.nondet : !pod.type<[@rows: !array.type<#next x !felt.type>, @tag: index]> {product_source = "second", test.marker = 1 : i64}
-      %array = array.new %first, %second : !array.type<2 x !pod.type<[@rows: !array.type<#next x !felt.type>, @tag: index]>>
-      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !pod.type<[@rows: !array.type<#next x !felt.type>, @tag: index]>>
+      %first = llzk.nondet : !Element {product_source = "first", test.marker = 0 : i64}
+      %second = llzk.nondet : !Element {product_source = "second", test.marker = 1 : i64}
+      %array = array.new %first, %second : !array.type<2 x !Element>
+      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !Element>
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -178,12 +172,11 @@ module attributes {llzk.lang} {
 
 // Specialization recurses through alternating POD and array wrappers.
 #id = affine_map<(i) -> (i)>
-#next = affine_map<(i) -> (i + 1)>
+!Element = !pod.type<[@rows: !array.type<3 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>, @flag: i1]>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -192,13 +185,13 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !pod.type<[@rows: !array.type<3 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>, @flag: i1]>> {test.member = "items"}
+    struct.member @items : !array.type<2 x !Element> {test.member = "items"}
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
-      %first = llzk.nondet : !pod.type<[@rows: !array.type<3 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>, @flag: i1]> {product_source = "first", test.marker = 0 : i64}
-      %second = llzk.nondet : !pod.type<[@rows: !array.type<3 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>, @flag: i1]> {product_source = "second", test.marker = 1 : i64}
-      %array = array.new %first, %second : !array.type<2 x !pod.type<[@rows: !array.type<3 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>, @flag: i1]>>
-      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !pod.type<[@rows: !array.type<3 x !pod.type<[@cell: !struct.type<@TCell::@Cell<[#id]>>, @tag: index]>>, @flag: i1]>>
+      %first = llzk.nondet : !Element {product_source = "first", test.marker = 0 : i64}
+      %second = llzk.nondet : !Element {product_source = "second", test.marker = 1 : i64}
+      %array = array.new %first, %second : !array.type<2 x !Element>
+      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<2 x !Element>
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -207,7 +200,6 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @TCell_0_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
@@ -217,7 +209,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @TCell_1_Cell {
-// CHECK-NEXT:      struct.member @value : !felt.type {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
@@ -246,8 +237,6 @@ module attributes {llzk.lang} {
 // -----
 
 // A POD with no index-dependent fields remains a homogeneous array.
-#id = affine_map<(i) -> (i)>
-#next = affine_map<(i) -> (i + 1)>
 module attributes {llzk.lang} {
   struct.def @Holder {
     struct.member @items : !array.type<2 x !pod.type<[@rows: !array.type<3 x !felt.type>, @tag: index]>> {test.member = "items"}

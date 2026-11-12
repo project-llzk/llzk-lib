@@ -41,20 +41,21 @@ module attributes {llzk.lang} {
 // -----
 
 // Common refinement recurses through nested POD records.
+!Holder = !struct.type<@NestedComplementaryPod::@Holder<[@T]>>
 module attributes {llzk.lang} {
   poly.template @NestedComplementaryPod {
     poly.param @T
     struct.def @Holder {
       struct.member @value : !poly.tvar<@T>
-      function.def @compute() -> !struct.type<@NestedComplementaryPod::@Holder<[@T]>> {
-        %self = struct.new : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>
+      function.def @compute() -> !Holder {
+        %self = struct.new : !Holder
         %a = llzk.nondet : !pod.type<[@payload: !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>, @flag: i1]>
         %b = llzk.nondet : !pod.type<[@payload: !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>, @flag: i1]>
-        struct.writem %self[@value] = %a : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>, !pod.type<[@payload: !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>, @flag: i1]>
-        struct.writem %self[@value] = %b : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>, !pod.type<[@payload: !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>, @flag: i1]>
-        function.return %self : !struct.type<@NestedComplementaryPod::@Holder<[@T]>>
+        struct.writem %self[@value] = %a : !Holder, !pod.type<[@payload: !pod.type<[@rows: !array.type<?,2 x !felt.type>, @tag: index]>, @flag: i1]>
+        struct.writem %self[@value] = %b : !Holder, !pod.type<[@payload: !pod.type<[@rows: !array.type<3,? x !felt.type>, @tag: index]>, @flag: i1]>
+        function.return %self : !Holder
       }
-      function.def @constrain(%self: !struct.type<@NestedComplementaryPod::@Holder<[@T]>>) { function.return }
+      function.def @constrain(%self: !Holder) { function.return }
     }
   }
 }

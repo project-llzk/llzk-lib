@@ -1,13 +1,12 @@
 // RUN: llzk-opt -llzk-flatten %s | FileCheck %s
 
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -27,25 +26,24 @@ module attributes {llzk.lang} {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %c2 = arith.constant 2 : index
-    %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %shared = llzk.nondet : !Cell
     %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
     %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
 
     // The inline initializer specializes index zero to Cell<0>.
-    %first = array.new %shared, %shared, %shared : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-    array.write %first[%c1] = %item1 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-    array.write %first[%c2] = %item2 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
-    %firstRead = array.read %first[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    function.call @consume0(%firstRead) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+    %first = array.new %shared, %shared : !array.type<2 x !Cell>
+    array.write %first[%c1] = %item1 : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+    %firstRead = array.read %first[%c0] : !array.type<2 x !Cell>, !Cell
+    function.call @consume0(%firstRead) : (!Cell) -> ()
 
     // Explicit writes leave index zero's cached type generic. Its replacement must
     // nevertheless use the same Cell<0> witness as the first candidate.
-    %second = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-    array.write %second[%c0] = %shared : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    array.write %second[%c1] = %item1 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-    array.write %second[%c2] = %item2 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
-    %secondRead = array.read %second[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-    function.call @consume0(%secondRead) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+    %second = array.new : !array.type<3 x !Cell>
+    array.write %second[%c0] = %shared : !array.type<3 x !Cell>, !Cell
+    array.write %second[%c1] = %item1 : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+    array.write %second[%c2] = %item2 : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[2]>>
+    %secondRead = array.read %second[%c0] : !array.type<3 x !Cell>, !Cell
+    function.call @consume0(%secondRead) : (!Cell) -> ()
     function.return
   }
 }

@@ -170,13 +170,13 @@ module attributes {llzk.lang} {
     poly.param @T
     struct.def @Box {
       struct.member @value : !felt.type
-      function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
+      function.def @compute() -> !struct.type<@Family::@Box<[@T]>> {
         %self = struct.new : !struct.type<@Family::@Box<[@T]>>
         %witness = llzk.nondet : !poly.tvar<@T>
         struct.writem %self[@value] = %witness : !struct.type<@Family::@Box<[@T]>>, !poly.tvar<@T>
         function.return %self : !struct.type<@Family::@Box<[@T]>>
       }
-      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>) { function.return }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>) { function.return }
     }
   }
 }
@@ -185,13 +185,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @T
 // CHECK-NEXT:      struct.def @Box {
 // CHECK-NEXT:        struct.member @value : !felt.type
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@Family::@Box<[@T]>>
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
-// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_2]] : <@Family::@Box<[@T]>>, !felt.type
-// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Family::@Box<[@T]>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Family::@Box<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Family::@Box<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_1]] : <@Family::@Box<[@T]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Family::@Box<[@T]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Family::@Box<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Family::@Box<[@T]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }

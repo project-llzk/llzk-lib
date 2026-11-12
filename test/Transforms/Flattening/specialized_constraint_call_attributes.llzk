@@ -3,6 +3,7 @@
 // Retargeting a shared witness constraint must preserve call properties and discardable attributes.
 // Generic call syntax and output expose the argument/result properties hidden by custom assembly.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -22,12 +23,12 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @item : !Cell {column}
 
     function.def @product(%tag: !felt.type, %extra: !felt.type) -> !struct.type<@Holder>
         attributes {function.allow_witness, function.allow_constraint} {
       %self = struct.new : !struct.type<@Holder>
-      %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "shared"}
+      %shared = llzk.nondet : !Cell {product_source = "shared"}
       // All three positional dictionaries, including the empty middle one, must survive.
       // Constraint calls have no results, so the explicitly present result dictionary array is empty.
       "function.call"(%shared, %tag, %extra) <{
@@ -37,10 +38,10 @@ module attributes {llzk.lang} {
         operandSegmentSizes = array<i32: 3, 0>,
         arg_attrs = [{test.role = "witness"}, {}, {test.role = "extra"}],
         res_attrs = []
-      }> {product_source = "annotated"} : (!struct.type<@TCell::@Cell<[#id]>>, !felt.type, !felt.type) -> ()
+      }> {product_source = "annotated"} : (!Cell, !felt.type, !felt.type) -> ()
       // Absent optional dictionaries must remain absent on the other retargeted call.
-      function.call @TCell::@Cell::@constrain(%shared, %tag, %extra) : (!struct.type<@TCell::@Cell<[#id]>>, !felt.type, !felt.type) -> () {product_source = "unannotated"}
-      struct.writem %self[@item] = %shared : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      function.call @TCell::@Cell::@constrain(%shared, %tag, %extra) : (!Cell, !felt.type, !felt.type) -> () {product_source = "unannotated"}
+      struct.writem %self[@item] = %shared : !struct.type<@Holder>, !Cell
       %concrete = function.call @TCell::@Cell::@compute(%tag, %extra) : (!felt.type, !felt.type) -> !struct.type<@TCell::@Cell<[0]>>
       struct.writem %self[@item] = %concrete : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
       function.return %self : !struct.type<@Holder>
@@ -81,13 +82,12 @@ module attributes {llzk.lang} {
 // Array scalarization retargets the same call shape and must retain both argument dictionaries.
 // Generic call syntax and output expose the argument/result properties hidden by custom assembly.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute(%values: !array.type<@N x !felt.type>) -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self: !struct.type<@TCell::@Cell<[@N]>>
@@ -102,7 +102,7 @@ module attributes {llzk.lang} {
   function.def @generic_constraint_signature(%values: !array.type<#id x !felt.type>)
       attributes {function.allow_witness, function.allow_constraint} {
     %c0 = arith.constant 0 : index
-    %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %generic = llzk.nondet : !Cell
     "function.call"(%generic, %values) <{
       callee = @TCell::@Cell::@constrain,
       mapOpGroupSizes = array<i32>,
@@ -110,11 +110,11 @@ module attributes {llzk.lang} {
       operandSegmentSizes = array<i32: 2, 0>,
       arg_attrs = [{test.role = "witness"}, {test.role = "values"}],
       res_attrs = []
-    }> {product_source = "scalarized"} : (!struct.type<@TCell::@Cell<[#id]>>, !array.type<#id x !felt.type>) -> ()
+    }> {product_source = "scalarized"} : (!Cell, !array.type<#id x !felt.type>) -> ()
 
-    %other = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-    %local = array.new %generic, %other : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    %item0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    %other = llzk.nondet : !Cell
+    %local = array.new %generic, %other : !array.type<2 x !Cell>
+    %item0 = array.read %local[%c0] : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
     function.return
   }
 }
@@ -122,7 +122,6 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: "builtin.module"() ({
 // CHECK-NEXT:    "struct.def"() <{sym_name = "TCell_0_Cell"}> ({
-// CHECK-NEXT:      "struct.member"() <{column, sym_name = "value", type = !felt.type}> : () -> ()
 // CHECK-NEXT:      "function.def"() <{function_type = (!array.type<0 x !felt.type>) -> !struct.type<@TCell_0_Cell>, sym_name = "compute"}> ({
 // CHECK-NEXT:      ^bb0(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<0 x !felt.type>):
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@TCell_0_Cell>
@@ -136,7 +135,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    "poly.template"() <{sym_name = "TCell"}> ({
 // CHECK-NEXT:      "poly.param"() <{sym_name = "N", type_opt = index}> : () -> ()
 // CHECK-NEXT:      "struct.def"() <{sym_name = "Cell"}> ({
-// CHECK-NEXT:        "struct.member"() <{column, sym_name = "value", type = !felt.type}> : () -> ()
 // CHECK-NEXT:        "function.def"() <{function_type = (!array.type<@N x !felt.type>) -> !struct.type<@TCell::@Cell<[@N]>>, sym_name = "compute"}> ({
 // CHECK-NEXT:        ^bb0(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>):
 // CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@TCell::@Cell<[@N]>>

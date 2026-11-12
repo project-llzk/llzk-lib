@@ -23,7 +23,7 @@ module attributes {llzk.lang} {
     // expected-note@+1 {{target function declared here}}
     function.def @consume(%a: !poly.tvar<@T>) -> !poly.tvar<@T> { function.return %a : !poly.tvar<@T> }
   }
-  function.def @caller(%a: !felt.type, %b: i1) {
+  function.def @caller(%a: !felt.type) {
     // expected-error@+1 {{cannot instantiate function because the complete call signature has conflicting template bindings at result number 0}}
     %result = function.call @Match::@consume<[?]>(%a) : (!felt.type) -> i1
     function.return

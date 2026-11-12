@@ -8,17 +8,18 @@
 
 //--- generic.llzk
 // Repeated bindings retain their relationship through nested array and POD shapes.
+!WrittenPair = !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>
 module attributes {llzk.lang} {
   poly.template @RepeatedIdentity {
     poly.param @T
     struct.def @Holder {
       struct.member @pair : !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !poly.tvar<@T>>]>>
-      function.def @compute(%input: !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>) -> !struct.type<@RepeatedIdentity::@Holder<[@T]>> {
+      function.def @compute(%input: !WrittenPair) -> !struct.type<@RepeatedIdentity::@Holder<[@T]>> {
         %self = struct.new : !struct.type<@RepeatedIdentity::@Holder<[@T]>>
-        struct.writem %self[@pair] = %input : !struct.type<@RepeatedIdentity::@Holder<[@T]>>, !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>
+        struct.writem %self[@pair] = %input : !struct.type<@RepeatedIdentity::@Holder<[@T]>>, !WrittenPair
         function.return %self : !struct.type<@RepeatedIdentity::@Holder<[@T]>>
       }
-      function.def @constrain(%self: !struct.type<@RepeatedIdentity::@Holder<[@T]>>, %input: !array.type<2 x !pod.type<[@a: !array.type<3 x !poly.tvar<@T>>, @b: !array.type<3 x !felt.type>]>>) { function.return }
+      function.def @constrain(%self: !struct.type<@RepeatedIdentity::@Holder<[@T]>>, %input: !WrittenPair) { function.return }
     }
   }
 

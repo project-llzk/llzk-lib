@@ -137,6 +137,7 @@ module attributes {llzk.lang} {
 
 // Pending definitions and reads must be rejected together, before either becomes concrete.
 #id = affine_map<(i) -> (i)>
+!GenericCells = !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
@@ -173,9 +174,9 @@ module attributes {llzk.lang} {
       struct.writem %self[@right] = %one : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
       %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
       %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
-      %aa = array.new %left : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
-      %bb = array.new %right : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
-      function.call @Match::@consume(%aa, %bb) : (!array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>, !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>) -> ()
+      %aa = array.new %left : !GenericCells
+      %bb = array.new %right : !GenericCells
+      function.call @Match::@consume(%aa, %bb) : (!GenericCells, !GenericCells) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }

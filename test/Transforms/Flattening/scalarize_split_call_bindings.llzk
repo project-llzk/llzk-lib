@@ -2,13 +2,12 @@
 
 // Split member reads passed to one shared binding refine together.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -25,7 +24,7 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+    struct.member @items : !array.type<3 x !Cell>
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
@@ -33,15 +32,15 @@ module attributes {llzk.lang} {
       %c2 = arith.constant 2 : index
       %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      %items = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      array.write %items[%c0] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c1] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c2] = %one : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %a = array.read %values[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      %b = array.read %values[%c1] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      function.call @Match::@consume(%a, %b) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      %items = array.new : !array.type<3 x !Cell>
+      array.write %items[%c0] = %zero : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c1] = %zero : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c2] = %one : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !Cell>
+      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !Cell>
+      %a = array.read %values[%c0] : !array.type<3 x !Cell>, !Cell
+      %b = array.read %values[%c1] : !array.type<3 x !Cell>, !Cell
+      function.call @Match::@consume(%a, %b) : (!Cell, !Cell) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -73,13 +72,12 @@ module attributes {llzk.lang} {
 
 // A local candidate read and a split-member read share the same pending signature.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -96,7 +94,7 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+    struct.member @items : !array.type<3 x !Cell>
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
@@ -104,15 +102,15 @@ module attributes {llzk.lang} {
       %c2 = arith.constant 2 : index
       %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      %items = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      array.write %items[%c0] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c1] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c2] = %one : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %a = array.read %values[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      %b = array.read %items[%c1] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      function.call @Match::@consume(%a, %b) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      %items = array.new : !array.type<3 x !Cell>
+      array.write %items[%c0] = %zero : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c1] = %zero : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c2] = %one : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !Cell>
+      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !Cell>
+      %a = array.read %values[%c0] : !array.type<3 x !Cell>, !Cell
+      %b = array.read %items[%c1] : !array.type<3 x !Cell>, !Cell
+      function.call @Match::@consume(%a, %b) : (!Cell, !Cell) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -143,13 +141,12 @@ module attributes {llzk.lang} {
 
 // Uninitialized expandable reads use the final split-member types together.
 #id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -166,7 +163,7 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
+    struct.member @items : !array.type<3 x !Cell>
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
@@ -174,16 +171,16 @@ module attributes {llzk.lang} {
       %c2 = arith.constant 2 : index
       %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      %items = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      array.write %items[%c0] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c1] = %zero : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c2] = %one : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %empty = array.new : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      struct.writem %self[@items] = %empty : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
-      %a = array.read %empty[%c0] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      %b = array.read %empty[%c1] : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      function.call @Match::@consume(%a, %b) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      %items = array.new : !array.type<3 x !Cell>
+      array.write %items[%c0] = %zero : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c1] = %zero : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c2] = %one : !array.type<3 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !Cell>
+      %empty = array.new : !array.type<3 x !Cell>
+      struct.writem %self[@items] = %empty : !struct.type<@Holder>, !array.type<3 x !Cell>
+      %a = array.read %empty[%c0] : !array.type<3 x !Cell>, !Cell
+      %b = array.read %empty[%c1] : !array.type<3 x !Cell>, !Cell
+      function.call @Match::@consume(%a, %b) : (!Cell, !Cell) -> ()
       function.return %self : !struct.type<@Holder>
     }
     function.def @constrain(%self: !struct.type<@Holder>) { function.return }
@@ -219,13 +216,12 @@ module attributes {llzk.lang} {
 
 // Nested member reads inherit both pending receiver refinements.
 #id = affine_map<(i) -> (i)>
+!Box = !struct.type<@TBox::@Box<[#id]>>
 module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
     struct.def @Cell {
-      struct.member @value : !felt.type {column}
-
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N]>>
@@ -242,7 +238,6 @@ module attributes {llzk.lang} {
 
     struct.def @Box {
       struct.member @inner : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
-      struct.member @value : !felt.type {column}
 
       function.def @compute() -> !struct.type<@TBox::@Box<[@N]>> {
         %self = struct.new : !struct.type<@TBox::@Box<[@N]>>
@@ -260,7 +255,7 @@ module attributes {llzk.lang} {
     function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
   }
   struct.def @Holder {
-    struct.member @items : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>
+    struct.member @items : !array.type<3 x !Box>
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
       %c0 = arith.constant 0 : index
@@ -268,16 +263,16 @@ module attributes {llzk.lang} {
       %c2 = arith.constant 2 : index
       %zero = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
       %one = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[1]>>
-      %items = array.new : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>
-      array.write %items[%c0] = %zero : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[0]>>
-      array.write %items[%c1] = %zero : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[0]>>
-      array.write %items[%c2] = %one : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>
-      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>
-      %a = array.read %values[%c0] : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
-      %b = array.read %values[%c1] : !array.type<3 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
-      %ca = struct.readm %a[@inner] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
-      %cb = struct.readm %b[@inner] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
+      %items = array.new : !array.type<3 x !Box>
+      array.write %items[%c0] = %zero : !array.type<3 x !Box>, !struct.type<@TBox::@Box<[0]>>
+      array.write %items[%c1] = %zero : !array.type<3 x !Box>, !struct.type<@TBox::@Box<[0]>>
+      array.write %items[%c2] = %one : !array.type<3 x !Box>, !struct.type<@TBox::@Box<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<3 x !Box>
+      %values = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<3 x !Box>
+      %a = array.read %values[%c0] : !array.type<3 x !Box>, !Box
+      %b = array.read %values[%c1] : !array.type<3 x !Box>, !Box
+      %ca = struct.readm %a[@inner] : !Box, !struct.type<@TCell::@Cell<[#id]>>
+      %cb = struct.readm %b[@inner] : !Box, !struct.type<@TCell::@Cell<[#id]>>
       function.call @Match::@consume(%ca, %cb) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
       function.return %self : !struct.type<@Holder>
     }

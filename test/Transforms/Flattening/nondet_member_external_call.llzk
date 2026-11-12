@@ -7,7 +7,6 @@ module attributes {llzk.lang} {
     poly.param @N : index
     poly.param @M : index
     struct.def @Cell {
-      struct.member @value : !felt.type {llzk.pub}
       function.def @compute() -> !struct.type<@TCell::@Cell<[@N, @M]>> {
         %self = struct.new : !struct.type<@TCell::@Cell<[@N, @M]>>
         function.return %self : !struct.type<@TCell::@Cell<[@N, @M]>>
