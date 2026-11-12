@@ -1,0 +1,113 @@
+// RUN: split-file %s %t
+// RUN: cat %t/conflict.llzk %t/index.llzk > %t/conflict-complete.llzk
+// RUN: not llzk-opt -llzk-flatten %t/conflict-complete.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: cat %t/unused.llzk %t/index.llzk > %t/unused-complete.llzk
+// RUN: not llzk-opt -llzk-flatten %t/unused-complete.llzk 2>&1 | FileCheck %s --check-prefix=INDEX
+// RUN: cat %t/compatible.llzk %t/felt.llzk > %t/compatible-complete.llzk
+// RUN: llzk-opt -llzk-flatten %t/compatible-complete.llzk | FileCheck %s --check-prefix=FELT
+
+// All concrete callers are present before flattening begins.
+
+//--- conflict.llzk
+// An index instantiation conflicts with the felt write and is rejected.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: index) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !poly.tvar<@T>
+        function.call @consumeIndex(%read) : (!poly.tvar<@T>) -> ()
+        function.return
+      }
+    }
+  }
+
+//--- unused.llzk
+// The conflicting instantiation is rejected even when the sibling read is unused.
+module attributes {llzk.lang} {
+  function.def @consumeIndex(%value: index) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !poly.tvar<@T>
+        function.return
+      }
+    }
+  }
+
+//--- compatible.llzk
+// A felt instantiation agrees with both the write and the sibling read.
+module attributes {llzk.lang} {
+  function.def @consumeFelt(%value: !felt.type) { function.return }
+  poly.template @SharedRead {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@SharedRead::@Holder<[@T]>>
+        struct.writem %self[@first] = %input : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@SharedRead::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@SharedRead::@Holder<[@T]>>, %input: !felt.type) {
+        %read = struct.readm %self[@second] : !struct.type<@SharedRead::@Holder<[@T]>>, !felt.type
+        function.call @consumeFelt(%read) : (!felt.type) -> ()
+        function.return
+      }
+    }
+  }
+
+//--- index.llzk
+  function.def @entry(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[index]>> attributes {function.allow_witness} {
+    %self = function.call @SharedRead::@Holder::@compute(%input) : (!felt.type) -> !struct.type<@SharedRead::@Holder<[index]>>
+    function.return %self : !struct.type<@SharedRead::@Holder<[index]>>
+  }
+}
+// INDEX: error: 'struct.writem' op has wrong type; expected 'index', got '!felt.type'
+
+//--- felt.llzk
+  function.def @entry(%input: !felt.type) -> !struct.type<@SharedRead::@Holder<[!felt.type]>> attributes {function.allow_witness} {
+    %self = function.call @SharedRead::@Holder::@compute(%input) : (!felt.type) -> !struct.type<@SharedRead::@Holder<[!felt.type]>>
+    function.return %self : !struct.type<@SharedRead::@Holder<[!felt.type]>>
+  }
+}
+
+// FELT-LABEL: module attributes {llzk.lang} {
+// FELT-NEXT:    function.def @consumeFelt(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) {
+// FELT-NEXT:      function.return
+// FELT-NEXT:    }
+// FELT-NEXT:    struct.def @SharedRead_f_Holder {
+// FELT-NEXT:      struct.member @first : !felt.type
+// FELT-NEXT:      struct.member @second : !felt.type
+// FELT-NEXT:      function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@SharedRead_f_Holder>
+// FELT-NEXT:        struct.writem %[[VAL_2]][@first] = %[[VAL_1]] : <@SharedRead_f_Holder>, !felt.type
+// FELT-NEXT:        function.return %[[VAL_2]] : !struct.type<@SharedRead_f_Holder>
+// FELT-NEXT:      }
+// FELT-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@SharedRead_f_Holder>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// FELT-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@second] : <@SharedRead_f_Holder>, !felt.type
+// FELT-NEXT:        function.call @consumeFelt(%[[VAL_5]]) : (!felt.type) -> ()
+// FELT-NEXT:        function.return
+// FELT-NEXT:      }
+// FELT-NEXT:    }
+// FELT-NEXT:    function.def @entry(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@SharedRead_f_Holder> attributes {function.allow_witness} {
+// FELT-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @SharedRead_f_Holder::@compute(%[[VAL_6]]) : (!felt.type) -> !struct.type<@SharedRead_f_Holder>
+// FELT-NEXT:      function.return %[[VAL_7]] : !struct.type<@SharedRead_f_Holder>
+// FELT-NEXT:    }
+// FELT-NEXT:  }

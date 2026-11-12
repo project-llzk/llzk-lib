@@ -1,0 +1,333 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+// RUN: not llzk-opt -split-input-file -llzk-flatten -mlir-print-ir-after-failure %s 2>&1 | FileCheck %s --check-prefix=ATOMIC --enable-var-scope
+
+// Reject a concrete result incompatible with the selected member before retagging its receiver.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  poly.template @TBox {
+    poly.param @N : index
+    struct.def @Box {
+      struct.member @cell : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@TBox::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@N]>>
+        function.return %self : !struct.type<@TBox::@Box<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@N]>>) { function.return }
+    }
+  }
+  function.def @consume(%arg: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+  struct.def @Holder {
+    struct.member @boxes : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = arith.constant 0 : index
+      %box0 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
+      %values = array.new %box0 : !array.type<1 x !struct.type<@TBox::@Box<[0]>>>
+      struct.writem %self[@boxes] = %values : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[0]>>>
+      %boxes = struct.readm %self[@boxes] : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+      %box = array.read %boxes[%zero] : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+      // expected-error@+2 {{cannot refine receiver because its selected member is incompatible with the read or its users}}
+      // expected-note@+1 {{proposed receiver type}}
+      %cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[1]>>
+      function.call @consume(%cell) : (!struct.type<@TCell::@Cell<[1]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{sym_name = "boxes", type = !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>}> : () -> ()
+// ATOMIC-NEXT:      "function.def"() <{function_type = () -> !struct.type<@Holder>, sym_name = "compute"}> ({
+// ATOMIC-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = "arith.constant"() <{value = 0 : index}> : () -> index
+// ATOMIC-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @TBox_0_Box::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@TBox_0_Box>
+// ATOMIC-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TBox_0_Box>) -> !array.type<1 x !struct.type<@TBox_0_Box>>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_10]], %[[VAL_12]]) <{member_name = @boxes}> : (!struct.type<@Holder>, !array.type<1 x !struct.type<@TBox_0_Box>>) -> ()
+// ATOMIC-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_10]]) <{mapOpGroupSizes = array<i32>, member_name = @boxes, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = "array.read"(%[[VAL_13]], %[[VAL_9]]) : (!array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>, index) -> !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_14]]) <{mapOpGroupSizes = array<i32>, member_name = @cell, numDimsPerMap = array<i32>}> : (!struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>) -> !struct.type<@TCell_1_Cell>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_15]]) <{callee = @consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TCell_1_Cell>) -> ()
+
+// -----
+
+// Validate consumers before refining a generic nested result.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  poly.template @TBox {
+    poly.param @N : index
+    struct.def @Box {
+      struct.member @cell : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@TBox::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@N]>>
+        function.return %self : !struct.type<@TBox::@Box<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@N]>>) { function.return }
+    }
+  }
+  function.def @consume(%arg: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+  struct.def @Holder {
+    struct.member @boxes : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = arith.constant 0 : index
+      %box0 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
+      %values = array.new %box0 : !array.type<1 x !struct.type<@TBox::@Box<[0]>>>
+      struct.writem %self[@boxes] = %values : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[0]>>>
+      %boxes = struct.readm %self[@boxes] : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+      %box = array.read %boxes[%zero] : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+      // expected-error@+2 {{cannot refine receiver because its selected member is incompatible with the read or its users}}
+      // expected-note@+1 {{proposed receiver type}}
+      %cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
+      function.call @consume(%cell) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{sym_name = "boxes", type = !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>}> : () -> ()
+// ATOMIC-NEXT:      "function.def"() <{function_type = () -> !struct.type<@Holder>, sym_name = "compute"}> ({
+// ATOMIC-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = "arith.constant"() <{value = 0 : index}> : () -> index
+// ATOMIC-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @TBox_0_Box::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@TBox_0_Box>
+// ATOMIC-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TBox_0_Box>) -> !array.type<1 x !struct.type<@TBox_0_Box>>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_10]], %[[VAL_12]]) <{member_name = @boxes}> : (!struct.type<@Holder>, !array.type<1 x !struct.type<@TBox_0_Box>>) -> ()
+// ATOMIC-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_10]]) <{mapOpGroupSizes = array<i32>, member_name = @boxes, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = "array.read"(%[[VAL_13]], %[[VAL_9]]) : (!array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>, index) -> !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_14]]) <{mapOpGroupSizes = array<i32>, member_name = @cell, numDimsPerMap = array<i32>}> : (!struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_15]]) <{callee = @consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> ()
+
+// -----
+
+// Project the selected member while another receiver parameter remains unresolved.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  poly.template @TBox {
+    poly.param @N : index
+    poly.param @M : index
+    struct.def @Box {
+      struct.member @cell : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@TBox::@Box<[@N, @M]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@N, @M]>>
+        function.return %self : !struct.type<@TBox::@Box<[@N, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@N, @M]>>) { function.return }
+    }
+  }
+  function.def @consume(%arg: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+  struct.def @Holder {
+    struct.member @boxes : !array.type<1 x !struct.type<@TBox::@Box<[#id, #id]>>>
+    function.def @compute(%idx: index) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = arith.constant 0 : index
+      %box0 = function.call @TBox::@Box::@compute() {(%idx)} : () -> !struct.type<@TBox::@Box<[0, #id]>>
+      %values = array.new %box0 : !array.type<1 x !struct.type<@TBox::@Box<[0, #id]>>>
+      struct.writem %self[@boxes] = %values : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[0, #id]>>>
+      %boxes = struct.readm %self[@boxes] : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[#id, #id]>>>
+      %box = array.read %boxes[%zero] : !array.type<1 x !struct.type<@TBox::@Box<[#id, #id]>>>, !struct.type<@TBox::@Box<[#id, #id]>>
+      // expected-error@+2 {{cannot refine receiver because its selected member is incompatible with the read or its users}}
+      // expected-note@+1 {{proposed receiver type}}
+      %cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id, #id]>>, !struct.type<@TCell::@Cell<[1]>>
+      function.call @consume(%cell) : (!struct.type<@TCell::@Cell<[1]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>, %idx: index) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{sym_name = "boxes", type = !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]], #[[$ATTR_0]]]>>>}> : () -> ()
+// ATOMIC-NEXT:      "function.def"() <{function_type = (index) -> !struct.type<@Holder>, sym_name = "compute"}> ({
+// ATOMIC-NEXT:      ^bb0(%[[VAL_9:[0-9a-zA-Z_.-]+]]: index):
+// ATOMIC-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "arith.constant"() <{value = 0 : index}> : () -> index
+// ATOMIC-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "function.call"(%[[VAL_9]]) <{callee = @"TBox_0_\1A"::@Box::@compute, mapOpGroupSizes = array<i32: 1>, numDimsPerMap = array<i32: 1>, operandSegmentSizes = array<i32: 0, 1>}> : (index) -> !struct.type<@"TBox_0_\1A"::@Box<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_12]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@"TBox_0_\1A"::@Box<[#[[$ATTR_0]]]>>) -> !array.type<1 x !struct.type<@"TBox_0_\1A"::@Box<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_11]], %[[VAL_13]]) <{member_name = @boxes}> : (!struct.type<@Holder>, !array.type<1 x !struct.type<@"TBox_0_\1A"::@Box<[#[[$ATTR_0]]]>>>) -> ()
+// ATOMIC-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, member_name = @boxes, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]], #[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = "array.read"(%[[VAL_14]], %[[VAL_10]]) : (!array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]], #[[$ATTR_0]]]>>>, index) -> !struct.type<@TBox::@Box<[#[[$ATTR_0]], #[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_15]]) <{mapOpGroupSizes = array<i32>, member_name = @cell, numDimsPerMap = array<i32>}> : (!struct.type<@TBox::@Box<[#[[$ATTR_0]], #[[$ATTR_0]]]>>) -> !struct.type<@TCell_1_Cell>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_16]]) <{callee = @consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TCell_1_Cell>) -> ()
+
+// -----
+
+// Validate shared call bindings across every pending nested-member result.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  poly.template @TBox {
+    poly.param @N : index
+    struct.def @Box {
+      struct.member @cell : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@TBox::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@N]>>
+        function.return %self : !struct.type<@TBox::@Box<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Match {
+    poly.param @T
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+  }
+  struct.def @Holder {
+    struct.member @left : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+    struct.member @right : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = arith.constant 0 : index
+      %box0 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
+      %leftValues = array.new %box0 : !array.type<1 x !struct.type<@TBox::@Box<[0]>>>
+      struct.writem %self[@left] = %leftValues : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[0]>>>
+      %leftBoxes = struct.readm %self[@left] : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+      %leftBox = array.read %leftBoxes[%zero] : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+      // expected-note@+1 {{member read would refine to}}
+      %leftCell = struct.readm %leftBox[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
+      %box1 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[1]>>
+      %rightValues = array.new %box1 : !array.type<1 x !struct.type<@TBox::@Box<[1]>>>
+      struct.writem %self[@right] = %rightValues : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[1]>>>
+      %rightBoxes = struct.readm %self[@right] : !struct.type<@Holder>, !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>
+      %rightBox = array.read %rightBoxes[%zero] : !array.type<1 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+      // expected-note@+1 {{member read would refine to}}
+      %rightCell = struct.readm %rightBox[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-error@+2 {{cannot refine member reads because the complete call signature has conflicting template bindings at operand number 1}}
+      // expected-note@+1 {{proposed call signature}}
+      function.call @Match::@consume(%leftCell, %rightCell) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{sym_name = "left", type = !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>}> : () -> ()
+// ATOMIC-NEXT:      "struct.member"() <{sym_name = "right", type = !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>}> : () -> ()
+// ATOMIC-NEXT:      "function.def"() <{function_type = () -> !struct.type<@Holder>, sym_name = "compute"}> ({
+// ATOMIC-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "arith.constant"() <{value = 0 : index}> : () -> index
+// ATOMIC-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @TBox_0_Box::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@TBox_0_Box>
+// ATOMIC-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_12]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TBox_0_Box>) -> !array.type<1 x !struct.type<@TBox_0_Box>>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_11]], %[[VAL_13]]) <{member_name = @left}> : (!struct.type<@Holder>, !array.type<1 x !struct.type<@TBox_0_Box>>) -> ()
+// ATOMIC-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, member_name = @left, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = "array.read"(%[[VAL_14]], %[[VAL_10]]) : (!array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>, index) -> !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_15]]) <{mapOpGroupSizes = array<i32>, member_name = @cell, numDimsPerMap = array<i32>}> : (!struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_17:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @TBox_1_Box::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@TBox_1_Box>
+// ATOMIC-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_17]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@TBox_1_Box>) -> !array.type<1 x !struct.type<@TBox_1_Box>>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_11]], %[[VAL_18]]) <{member_name = @right}> : (!struct.type<@Holder>, !array.type<1 x !struct.type<@TBox_1_Box>>) -> ()
+// ATOMIC-NEXT:        %[[VAL_19:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, member_name = @right, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_20:[0-9a-zA-Z_.-]+]] = "array.read"(%[[VAL_19]], %[[VAL_10]]) : (!array.type<1 x !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>>, index) -> !struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_21:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_20]]) <{mapOpGroupSizes = array<i32>, member_name = @cell, numDimsPerMap = array<i32>}> : (!struct.type<@TBox::@Box<[#[[$ATTR_0]]]>>) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_16]], %[[VAL_21]]) <{callee = @Match::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>, !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>) -> ()
+
+// -----
+
+// Resolve selected member types in the receiver namespace.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  poly.template @TBox {
+    poly.param @N : index
+    struct.def @Box {
+      struct.member @cell : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@TBox::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@N]>>
+        function.return %self : !struct.type<@TBox::@Box<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@N]>>) { function.return }
+    }
+  }
+  }
+  function.def @consume(%arg: !struct.type<@Lib::@TCell::@Cell<[1]>>) { function.return }
+  struct.def @Holder {
+    struct.member @boxes : !array.type<1 x !struct.type<@Lib::@TBox::@Box<[#id]>>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = arith.constant 0 : index
+      %box0 = function.call @Lib::@TBox::@Box::@compute() : () -> !struct.type<@Lib::@TBox::@Box<[0]>>
+      %values = array.new %box0 : !array.type<1 x !struct.type<@Lib::@TBox::@Box<[0]>>>
+      struct.writem %self[@boxes] = %values : !struct.type<@Holder>, !array.type<1 x !struct.type<@Lib::@TBox::@Box<[0]>>>
+      %boxes = struct.readm %self[@boxes] : !struct.type<@Holder>, !array.type<1 x !struct.type<@Lib::@TBox::@Box<[#id]>>>
+      %box = array.read %boxes[%zero] : !array.type<1 x !struct.type<@Lib::@TBox::@Box<[#id]>>>, !struct.type<@Lib::@TBox::@Box<[#id]>>
+      // expected-error@+2 {{cannot refine receiver because its selected member is incompatible with the read or its users}}
+      // expected-note@+1 {{proposed receiver type}}
+      %cell = struct.readm %box[@cell] : !struct.type<@Lib::@TBox::@Box<[#id]>>, !struct.type<@Lib::@TCell::@Cell<[1]>>
+      function.call @consume(%cell) : (!struct.type<@Lib::@TCell::@Cell<[1]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// ATOMIC: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// ATOMIC-LABEL:    "struct.def"() <{sym_name = "Holder"}> ({
+// ATOMIC-NEXT:      "struct.member"() <{sym_name = "boxes", type = !array.type<1 x !struct.type<@Lib::@TBox::@Box<[#[[$ATTR_0]]]>>>}> : () -> ()
+// ATOMIC-NEXT:      "function.def"() <{function_type = () -> !struct.type<@Holder>, sym_name = "compute"}> ({
+// ATOMIC-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = "arith.constant"() <{value = 0 : index}> : () -> index
+// ATOMIC-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// ATOMIC-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @Lib::@TBox_0_Box::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@Lib::@TBox_0_Box>
+// ATOMIC-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = "array.new"(%[[VAL_11]]) <{mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@Lib::@TBox_0_Box>) -> !array.type<1 x !struct.type<@Lib::@TBox_0_Box>>
+// ATOMIC-NEXT:        "struct.writem"(%[[VAL_10]], %[[VAL_12]]) <{member_name = @boxes}> : (!struct.type<@Holder>, !array.type<1 x !struct.type<@Lib::@TBox_0_Box>>) -> ()
+// ATOMIC-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_10]]) <{mapOpGroupSizes = array<i32>, member_name = @boxes, numDimsPerMap = array<i32>}> : (!struct.type<@Holder>) -> !array.type<1 x !struct.type<@Lib::@TBox::@Box<[#[[$ATTR_0]]]>>>
+// ATOMIC-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = "array.read"(%[[VAL_13]], %[[VAL_9]]) : (!array.type<1 x !struct.type<@Lib::@TBox::@Box<[#[[$ATTR_0]]]>>>, index) -> !struct.type<@Lib::@TBox::@Box<[#[[$ATTR_0]]]>>
+// ATOMIC-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = "struct.readm"(%[[VAL_14]]) <{mapOpGroupSizes = array<i32>, member_name = @cell, numDimsPerMap = array<i32>}> : (!struct.type<@Lib::@TBox::@Box<[#[[$ATTR_0]]]>>) -> !struct.type<@Lib::@TCell_1_Cell>
+// ATOMIC-NEXT:        "function.call"(%[[VAL_15]]) <{callee = @consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@Lib::@TCell_1_Cell>) -> ()

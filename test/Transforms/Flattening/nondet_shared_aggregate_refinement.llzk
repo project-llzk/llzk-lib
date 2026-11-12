@@ -1,0 +1,104 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file %s | FileCheck --enable-var-scope %s
+
+// array complementary: all writes retain one witness and its metadata.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    struct.member @first : !array.type<1,? x !felt.type>
+    struct.member @second : !array.type<?,2 x !felt.type>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !array.type<?,? x !felt.type> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !array.type<?,? x !felt.type>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !array.type<?,? x !felt.type>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !array.type<1,2 x !felt.type>
+// CHECK-NEXT:      struct.member @second : !array.type<1,2 x !felt.type>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<1,2 x !felt.type> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@first] = %[[VAL_1]] : <@Holder>, !array.type<1,2 x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@second] = %[[VAL_1]] : <@Holder>, !array.type<1,2 x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// pod compatible: all writes retain one witness and its metadata.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    struct.member @first : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+    struct.member @second : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:      struct.member @second : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@first] = %[[VAL_1]] : <@Holder>, !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@second] = %[[VAL_1]] : <@Holder>, !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// nested complementary: all writes retain one witness and its metadata.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    struct.member @first : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1,? x !felt.type>]>]>>
+    struct.member @second : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<?,2 x !felt.type>]>]>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<?,? x !felt.type>]>]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<?,? x !felt.type>]>]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<?,? x !felt.type>]>]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1,2 x !felt.type>]>]>>
+// CHECK-NEXT:      struct.member @second : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1,2 x !felt.type>]>]>>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1,2 x !felt.type>]>]>> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@first] = %[[VAL_1]] : <@Holder>, !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1,2 x !felt.type>]>]>>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@second] = %[[VAL_1]] : <@Holder>, !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1,2 x !felt.type>]>]>>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,113 @@
+//===-- FlatteningTypeRefinement.h ------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// Private type-refinement contracts used by scalarization and propagation.
+///
+//===----------------------------------------------------------------------===//
+
+#pragma once
+
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+
+#include <mlir/IR/PatternMatch.h>
+#include <mlir/IR/SymbolTable.h>
+#include <mlir/Support/LogicalResult.h>
+
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/STLFunctionalExtras.h>
+#include <llvm/ADT/SmallVector.h>
+
+namespace llzk::polymorphic::detail::flattening {
+
+class ConversionTracker;
+
+/// Return a representable common refinement, accounting for this pass's instantiated types.
+mlir::FailureOr<mlir::Type> getCommonRefinedType(
+    mlir::Type lhs, mlir::Type rhs, const ConversionTracker &tracker,
+    mlir::Operation *scope = nullptr
+);
+
+/// Return a common type- or value-valued parameter refinement, preserving concrete conflicts.
+mlir::FailureOr<mlir::Attribute> getCommonRefinedParamAttr(
+    mlir::Attribute lhs, mlir::Attribute rhs, const ConversionTracker &tracker,
+    bool unifyDynamicSize = false, mlir::Operation *scope = nullptr
+);
+
+/// Return whether a scalar source can supply the requested common refinement.
+bool canUseScalarizedValueAsType(
+    mlir::Type sourceType, mlir::Type targetType, const ConversionTracker &tracker,
+    const char *patName, mlir::Operation *scope = nullptr
+);
+
+/// Check the independently declared type requirements of an array allocation's consumers.
+bool canRefineCreateArrayUsersToType(
+    array::CreateArrayOp createOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables,
+    const ConversionTracker &tracker,
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
+);
+
+/// Extend a pending plan through array initializers, accesses and member reads without changing IR.
+/// Recompute from the retained seeds whenever a candidate is rejected.
+void extendPendingRefinements(
+    mlir::ModuleOp module, llvm::DenseMap<mlir::Value, mlir::Type> &pendingRefinements,
+    const ConversionTracker &tracker
+);
+
+/// Check a full signature using shared, namespace-aware bindings across arguments and results.
+/// Compatible pending affine refinements are allowed, but conflicting concrete bindings are not.
+/// When allowUnresolvedStructs is true, compare instantiation preimages so a generic struct and
+/// its possible specialization can remain unresolved without being diagnosed as incompatible.
+bool callSignatureUnifies(
+    mlir::FunctionType replacement, mlir::FunctionType callee,
+    llvm::ArrayRef<llvm::StringRef> calleeNamespace, const ConversionTracker &tracker,
+    bool allowUnresolvedStructs = false, mlir::Operation *scope = nullptr
+);
+
+/// Build a call signature with every planned argument refinement and an optional overriding value.
+/// Results retain their declared types. A null refinedValue applies only pendingRefinements.
+mlir::FunctionType getRefinedCallSignature(
+    function::CallOp call, mlir::Value refinedValue = {}, mlir::Type refinedType = {},
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
+);
+
+/// Resolve a selected member at a hypothetical receiver, project its parameters and return a
+/// common refinement with the read's declared result. Optionally report the projected member type.
+mlir::FailureOr<mlir::Type> getRefinedMemberReadType(
+    component::MemberReadOp read, mlir::Type receiverType, mlir::SymbolTableCollection &tables,
+    const ConversionTracker &tracker, mlir::Type *projectedMemberType = nullptr
+);
+
+/// Check that a member-read refinement preserves each supported consumer's type contract.
+bool canRefineMemberReadUsersToType(
+    component::MemberReadOp readOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables,
+    const ConversionTracker &tracker,
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr
+);
+
+/// Validate external witness observations and return the constraint calls to retarget.
+/// `isInternalUse` identifies operands the caller rewrites itself. Failures are silent unless
+/// `diagnosticOp` is provided, allowing speculative propagation and diagnosed scalarization.
+mlir::FailureOr<llvm::SmallVector<function::CallOp>> collectSpecializedWitnessConstraints(
+    mlir::Value source, mlir::Type type, mlir::SymbolTableCollection &tables,
+    llvm::function_ref<bool(mlir::OpOperand &)> isInternalUse,
+    mlir::Operation *diagnosticOp = nullptr
+);
+
+/// Create a refined witness after its source and retarget already-validated constraint calls.
+mlir::Value materializeSpecializedNondet(
+    mlir::PatternRewriter &rewriter, NonDetOp sourceNondet, mlir::Location loc, mlir::Type type,
+    llvm::ArrayRef<function::CallOp> externalConstraints = {}
+);
+
+} // namespace llzk::polymorphic::detail::flattening

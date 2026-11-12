@@ -1,0 +1,52 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// A generic source member is written with Cell<0>, then read through a cast that independently
+// declares Cell<1>. The cast result is only written to the generic destination member. Although
+// both generic members initially unify with Cell<0>, the destination refines from the cast's
+// actual Cell<1> write. The source read must remain generic: retagging it to Cell<0> would leave
+// an invalid Cell<0>-to-Cell<1> cast.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @THolder {
+    poly.param @T
+
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!struct.type<@TCell_0_Cell>' because sibling member 'destination' is written with incompatible type '!struct.type<@TCell_1_Cell>'}}
+      struct.member @source : !poly.tvar<@T> {column}
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!struct.type<@TCell_1_Cell>' because sibling member 'source' is written with incompatible type '!struct.type<@TCell_0_Cell>'}}
+      struct.member @destination : !poly.tvar<@T> {column}
+
+      function.def @compute() -> !struct.type<@THolder::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@THolder::@Holder<[@T]>>
+        %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@source] = %item0 : !struct.type<@THolder::@Holder<[@T]>>, !struct.type<@TCell::@Cell<[0]>>
+        %read = struct.readm %self[@source] : !struct.type<@THolder::@Holder<[@T]>>, !poly.tvar<@T>
+        %as1 = poly.unifiable_cast %read : (!poly.tvar<@T>) -> !struct.type<@TCell::@Cell<[1]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@destination] = %as1 : !struct.type<@THolder::@Holder<[@T]>>, !struct.type<@TCell::@Cell<[1]>>
+        function.return %self : !struct.type<@THolder::@Holder<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@THolder::@Holder<[@T]>>) {
+        function.return
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
+
+// Matching value bindings may refine both sibling members.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : index
+    struct.def @Holder {
+      struct.member @left : !struct.type<@TCell::@Cell<[@N]>>
+      struct.member @right : !struct.type<@TCell::@Cell<[@N]>>
+      function.def @compute(%a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[0]>>) -> !struct.type<@Shared::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
+        struct.writem %self[@left] = %a : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[0]>>
+        struct.writem %self[@right] = %b : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[0]>>
+        function.return %self : !struct.type<@Shared::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[0]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL:    poly.template @Shared {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @left : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.member @right : !struct.type<@TCell_0_Cell>
+
+// -----
+
+// Independent parameters may specialize to different values.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : index
+    poly.param @M : index
+    struct.def @Holder {
+      struct.member @left : !struct.type<@TCell::@Cell<[@N]>>
+      struct.member @right : !struct.type<@TCell::@Cell<[@M]>>
+      function.def @compute(%a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[1]>>) -> !struct.type<@Shared::@Holder<[@N, @M]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N, @M]>>
+        struct.writem %self[@left] = %a : !struct.type<@Shared::@Holder<[@N, @M]>>, !struct.type<@TCell::@Cell<[0]>>
+        struct.writem %self[@right] = %b : !struct.type<@Shared::@Holder<[@N, @M]>>, !struct.type<@TCell::@Cell<[1]>>
+        function.return %self : !struct.type<@Shared::@Holder<[@N, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N, @M]>>, %a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL:    poly.template @Shared {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @left : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.member @right : !struct.type<@TCell_1_Cell>

@@ -1,0 +1,50 @@
+// RUN: not llzk-opt -llzk-flatten %s 2>&1 | FileCheck %s
+// COM: Uses FileCheck instead of `-verify-diagnostics` because there is sometimes an additional error
+// COM: reported on the `return` from `@readItem` but it's not always present due to non-deterministic
+// COM: ordering of some transformations within the `-llzk-flatten` pass.
+
+// A write proposes Cell<0> for @item, while this public member read is returned through a function declared
+// as Cell<1>. The write-derived refinement must be rejected before the read is retagged to Cell<0>.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column, llzk.pub}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@item] = %item : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+
+  function.def @readItem(%self: !struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[1]>> {
+    // The unsupported return consumer leaves the public read generic; the refined member then
+    // exposes the existing declaration mismatch instead of retagging the read unsafely.
+    %item = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+    function.return %item : !struct.type<@TCell::@Cell<[#id]>>
+  }
+}
+// CHECK: error: 'struct.readm' op has wrong type; expected '!struct.type<@TCell_0_Cell>', got '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>'
+// CHECK-NEXT: %item = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>

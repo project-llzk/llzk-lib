@@ -1,0 +1,54 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s --implicit-check-not='array.'
+
+// Scalarizing a receiver preserves a compatible concrete member read and refines a generic
+// member read to the same specialization without invalidating its ordinary function call.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  poly.template @TBox {
+    poly.param @N : index
+    struct.def @Box {
+      struct.member @cell : !struct.type<@TCell::@Cell<[@N]>> {llzk.pub}
+      function.def @compute() -> !struct.type<@TBox::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@N]>>
+        function.return %self : !struct.type<@TBox::@Box<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@N]>>) { function.return }
+    }
+  }
+  function.def @consume(%arg: !struct.type<@TCell::@Cell<[0]>>) { function.return }
+  function.def @entry() attributes {function.allow_witness} {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %box0 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[0]>>
+    %box1 = function.call @TBox::@Box::@compute() : () -> !struct.type<@TBox::@Box<[1]>>
+    %boxes = array.new : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>
+    array.write %boxes[%zero] = %box0 : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[0]>>
+    array.write %boxes[%one] = %box1 : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[1]>>
+    %box = array.read %boxes[%zero] : !array.type<2 x !struct.type<@TBox::@Box<[#id]>>>, !struct.type<@TBox::@Box<[#id]>>
+    %cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[0]>>
+    function.call @consume(%cell) : (!struct.type<@TCell::@Cell<[0]>>) -> ()
+    %generic_cell = struct.readm %box[@cell] : !struct.type<@TBox::@Box<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>
+    function.call @consume(%generic_cell) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: function.def @entry() attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @TBox_0_Box::@compute() : () -> !struct.type<@TBox_0_Box>
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @TBox_1_Box::@compute() : () -> !struct.type<@TBox_1_Box>
+// CHECK-NEXT:    %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cell] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_11]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:    %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_9]][@cell] : <@TBox_0_Box>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:    function.call @consume(%[[VAL_12]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }

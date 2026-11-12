@@ -1,0 +1,528 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file %s | FileCheck --enable-var-scope %s
+
+// A fully generic witness remains shared when both members require the same type.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @first : !struct.type<@TPair::@Pair<[1]>> {column}
+    struct.member @second : !struct.type<@TPair::@Pair<[1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[#id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TPair_1_Pair {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_1_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair_1_Pair>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TPair_1_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair_1_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !struct.type<@TPair_1_Pair> {column}
+// CHECK-NEXT:      struct.member @second : !struct.type<@TPair_1_Pair> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TPair_1_Pair> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@first] = %[[VAL_3]] : <@Holder>, !struct.type<@TPair_1_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@second] = %[[VAL_3]] : <@Holder>, !struct.type<@TPair_1_Pair>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A partially instantiated witness remains shared across compatible concrete members.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @first : !struct.type<@TPair::@Pair<[0, 1]>> {column}
+    struct.member @second : !struct.type<@TPair::@Pair<[0, 1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TPair_0_1_Pair {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_0_1_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair_0_1_Pair>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TPair_0_1_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair_0_1_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"TPair_0_\1A" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A"::@Pair<[@B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_0_", ""]}
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !struct.type<@TPair_0_1_Pair> {column}
+// CHECK-NEXT:      struct.member @second : !struct.type<@TPair_0_1_Pair> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TPair_0_1_Pair> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@first] = %[[VAL_5]] : <@Holder>, !struct.type<@TPair_0_1_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@second] = %[[VAL_5]] : <@Holder>, !struct.type<@TPair_0_1_Pair>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// All three member requirements contribute to one common witness refinement.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    poly.param @C : index
+    poly.param @D : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @first : !struct.type<@TPair::@Pair<[#id, 1, #id, #id]>> {column}
+    struct.member @second : !struct.type<@TPair::@Pair<[#id, #id, 2, #id]>> {column}
+    struct.member @third : !struct.type<@TPair::@Pair<[#id, #id, #id, 3]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id, #id, #id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      struct.writem %self[@third] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"TPair_\1A_1_\1A_\1A" {
+// CHECK-NEXT:      poly.param @D : index
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_", "_1_", "_", ""]}
+// CHECK-NEXT:    poly.template @"TPair_\1A_\1A_2_\1A" {
+// CHECK-NEXT:      poly.param @D : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_", "_", "_2_", ""]}
+// CHECK-NEXT:    poly.template @"TPair_\1A_\1A_\1A_3" {
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_", "_", "_", "_3"]}
+// CHECK-NEXT:    poly.template @"TPair_0_\1A_\1A_\1A" {
+// CHECK-NEXT:      poly.param @D : index
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_0_", "_", "_", ""]}
+// CHECK-NEXT:    struct.def @TPair_0_1_2_3_Pair {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_0_1_2_3_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair_0_1_2_3_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !struct.type<@TPair_0_1_2_3_Pair> {column}
+// CHECK-NEXT:      struct.member @second : !struct.type<@TPair_0_1_2_3_Pair> {column}
+// CHECK-NEXT:      struct.member @third : !struct.type<@TPair_0_1_2_3_Pair> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TPair_0_1_2_3_Pair> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@first] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@second] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@third] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Reversing the write order computes the same common refinement.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    poly.param @C : index
+    poly.param @D : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @first : !struct.type<@TPair::@Pair<[#id, 1, #id, #id]>> {column}
+    struct.member @second : !struct.type<@TPair::@Pair<[#id, #id, 2, #id]>> {column}
+    struct.member @third : !struct.type<@TPair::@Pair<[#id, #id, #id, 3]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id, #id, #id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@third] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"TPair_\1A_1_\1A_\1A" {
+// CHECK-NEXT:      poly.param @D : index
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_1_\1A_\1A"::@Pair<[@D, @C, @A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_", "_1_", "_", ""]}
+// CHECK-NEXT:    poly.template @"TPair_\1A_\1A_2_\1A" {
+// CHECK-NEXT:      poly.param @D : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_\1A_2_\1A"::@Pair<[@D, @B, @A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_", "_", "_2_", ""]}
+// CHECK-NEXT:    poly.template @"TPair_\1A_\1A_\1A_3" {
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_\1A_\1A_\1A_3"::@Pair<[@C, @B, @A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_", "_", "_", "_3"]}
+// CHECK-NEXT:    poly.template @"TPair_0_\1A_\1A_\1A" {
+// CHECK-NEXT:      poly.param @D : index
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_0_\1A_\1A_\1A"::@Pair<[@D, @C, @B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_0_", "_", "_", ""]}
+// CHECK-NEXT:    struct.def @TPair_0_1_2_3_Pair {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_0_1_2_3_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair_0_1_2_3_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @first : !struct.type<@TPair_0_1_2_3_Pair> {column}
+// CHECK-NEXT:      struct.member @second : !struct.type<@TPair_0_1_2_3_Pair> {column}
+// CHECK-NEXT:      struct.member @third : !struct.type<@TPair_0_1_2_3_Pair> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TPair_0_1_2_3_Pair> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@third] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@second] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_10]][@first] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_1_2_3_Pair>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A symbolic dimension can remain unifiable without an integer/affine common refinement.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @N : index
+    struct.def @Holder {
+      struct.member @first : !struct.type<@TPair::@Pair<[0, @N]>> {column}
+      struct.member @second : !struct.type<@TPair::@Pair<[0, @N]>> {column}
+      function.def @compute() -> !struct.type<@Outer::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Outer::@Holder<[@N]>>
+        %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>> {product_source = "shared", test.marker = 42 : i64}
+        struct.writem %self[@first] = %shared : !struct.type<@Outer::@Holder<[@N]>>, !struct.type<@TPair::@Pair<[0, #id]>>
+        struct.writem %self[@second] = %shared : !struct.type<@Outer::@Holder<[@N]>>, !struct.type<@TPair::@Pair<[0, #id]>>
+        function.return %self : !struct.type<@Outer::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Holder<[@N]>>) { function.return }
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"TPair_0_\1A" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A"::@Pair<[@B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_0_", ""]}
+// CHECK-NEXT:    poly.template @"TPair_0_\1A_0" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A_0"::@Pair<[@B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@"TPair_0_\1A_0"::@Pair<[@B]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@"TPair_0_\1A_0"::@Pair<[@B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@"TPair_0_\1A_0"::@Pair<[@B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TPair_0_", ""]}
+// CHECK-NEXT:    poly.template @Outer {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !struct.type<@"TPair_0_\1A_0"::@Pair<[#[[$ATTR_0]]]>> {column}
+// CHECK-NEXT:        struct.member @second : !struct.type<@"TPair_0_\1A_0"::@Pair<[#[[$ATTR_0]]]>> {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Outer::@Holder<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Outer::@Holder<[@N]>>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@"TPair_0_\1A_0"::@Pair<[#[[$ATTR_0]]]>> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@first] = %[[VAL_5]] : <@Outer::@Holder<[@N]>>, !struct.type<@"TPair_0_\1A_0"::@Pair<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@second] = %[[VAL_5]] : <@Outer::@Holder<[@N]>>, !struct.type<@"TPair_0_\1A_0"::@Pair<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@Outer::@Holder<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Outer::@Holder<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Unresolved type-valued parameters remain valid when no concrete conflict is known.
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A
+    poly.param @B
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @N
+    poly.param @M
+    poly.param @U
+    struct.def @Holder {
+      struct.member @first : !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>> {column}
+      struct.member @second : !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>> {column}
+      function.def @compute() -> !struct.type<@Outer::@Holder<[@N, @M, @U]>> {
+        %self = struct.new : !struct.type<@Outer::@Holder<[@N, @M, @U]>>
+        %shared = llzk.nondet : !struct.type<@TPair::@Pair<[!poly.tvar<@N>, !poly.tvar<@U>]>> {product_source = "shared", test.marker = 42 : i64}
+        struct.writem %self[@first] = %shared : !struct.type<@Outer::@Holder<[@N, @M, @U]>>, !struct.type<@TPair::@Pair<[!poly.tvar<@N>, !poly.tvar<@U>]>>
+        struct.writem %self[@second] = %shared : !struct.type<@Outer::@Holder<[@N, @M, @U]>>, !struct.type<@TPair::@Pair<[!poly.tvar<@N>, !poly.tvar<@U>]>>
+        function.return %self : !struct.type<@Outer::@Holder<[@N, @M, @U]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Holder<[@N, @M, @U]>>) { function.return }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TPair {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair::@Pair<[@A, @B]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TPair::@Pair<[@A, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair::@Pair<[@A, @B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Outer {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @M
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>> {column}
+// CHECK-NEXT:        struct.member @second : !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>> {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Outer::@Holder<[@N, @M, @U]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@Outer::@Holder<[@N, @M, @U]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>> {product_source = "shared", test.marker = 42 : i64}
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@first] = %[[VAL_3]] : <@Outer::@Holder<[@N, @M, @U]>>, !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@second] = %[[VAL_3]] : <@Outer::@Holder<[@N, @M, @U]>>, !struct.type<@TPair::@Pair<[!poly.tvar<@M>, !poly.tvar<@U>]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@Outer::@Holder<[@N, @M, @U]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Outer::@Holder<[@N, @M, @U]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

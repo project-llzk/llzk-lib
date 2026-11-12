@@ -1,0 +1,109 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// The same nested type variable cannot become felt and index in sibling arrays.
+module attributes {llzk.lang} {
+  poly.template @ArrayConflict {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'member1' is written with incompatible type 'index'}}
+      struct.member @member0 : !array.type<1 x !poly.tvar<@T>>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'member0' is written with incompatible type '!felt.type'}}
+      struct.member @member1 : !array.type<1 x !poly.tvar<@T>>
+      function.def @compute(%v0: !array.type<1 x !felt.type>, %v1: !array.type<1 x index>) -> !struct.type<@ArrayConflict::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@ArrayConflict::@Holder<[@T]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@member0] = %v0 : !struct.type<@ArrayConflict::@Holder<[@T]>>, !array.type<1 x !felt.type>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@member1] = %v1 : !struct.type<@ArrayConflict::@Holder<[@T]>>, !array.type<1 x index>
+        function.return %self : !struct.type<@ArrayConflict::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@ArrayConflict::@Holder<[@T]>>, %v0: !array.type<1 x !felt.type>, %v1: !array.type<1 x index>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Nested and direct occurrences denote the same binding.
+module attributes {llzk.lang} {
+  poly.template @NestedDirectConflict {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'member1' is written with incompatible type 'index'}}
+      struct.member @member0 : !array.type<2 x !poly.tvar<@T>>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'member0' is written with incompatible type '!felt.type'}}
+      struct.member @member1 : !poly.tvar<@T>
+      function.def @compute(%v0: !array.type<2 x !felt.type>, %v1: index) -> !struct.type<@NestedDirectConflict::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@NestedDirectConflict::@Holder<[@T]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@member0] = %v0 : !struct.type<@NestedDirectConflict::@Holder<[@T]>>, !array.type<2 x !felt.type>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@member1] = %v1 : !struct.type<@NestedDirectConflict::@Holder<[@T]>>, index
+        function.return %self : !struct.type<@NestedDirectConflict::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@NestedDirectConflict::@Holder<[@T]>>, %v0: !array.type<2 x !felt.type>, %v1: index) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Repeated occurrences inside one POD must agree, even without a sibling member.
+module attributes {llzk.lang} {
+  poly.template @RepeatedPodConflict {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' because member 'member0' is written with incompatible bindings '!felt.type' and 'index'}}
+      struct.member @member0 : !pod.type<[@first: !poly.tvar<@T>, @second: !poly.tvar<@T>]>
+      function.def @compute(%v0: !pod.type<[@first: !felt.type, @second: index]>) -> !struct.type<@RepeatedPodConflict::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@RepeatedPodConflict::@Holder<[@T]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@RepeatedPodConflict::@Holder<[@T]>>, !pod.type<[@first: !felt.type, @second: index]>
+        function.return %self : !struct.type<@RepeatedPodConflict::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@RepeatedPodConflict::@Holder<[@T]>>, %v0: !pod.type<[@first: !felt.type, @second: index]>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Recover type-valued struct parameters after concrete structs have been flattened.
+module attributes {llzk.lang} {
+  poly.template @Box {
+    poly.param @U
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@U>
+      function.def @compute() -> !struct.type<@Box::@Box<[@U]>> {
+        %self = struct.new : !struct.type<@Box::@Box<[@U]>>
+        function.return %self : !struct.type<@Box::@Box<[@U]>>
+      }
+      function.def @constrain(%self: !struct.type<@Box::@Box<[@U]>>) { function.return }
+    }
+  }
+  poly.template @StructConflict {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'member1' is written with incompatible type 'index'}}
+      struct.member @member0 : !struct.type<@Box::@Box<[@T]>>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'member0' is written with incompatible type '!felt.type'}}
+      struct.member @member1 : !array.type<1 x !poly.tvar<@T>>
+      function.def @compute(%v0: !struct.type<@Box::@Box<[!felt.type]>>, %v1: !array.type<1 x index>) -> !struct.type<@StructConflict::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@StructConflict::@Holder<[@T]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@member0] = %v0 : !struct.type<@StructConflict::@Holder<[@T]>>, !struct.type<@Box::@Box<[!felt.type]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@member1] = %v1 : !struct.type<@StructConflict::@Holder<[@T]>>, !array.type<1 x index>
+        function.return %self : !struct.type<@StructConflict::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@StructConflict::@Holder<[@T]>>, %v0: !struct.type<@Box::@Box<[!felt.type]>>, %v1: !array.type<1 x index>) {
+        function.return
+      }
+    }
+  }
+}

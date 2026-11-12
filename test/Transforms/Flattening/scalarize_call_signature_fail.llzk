@@ -1,0 +1,89 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// Each argument alone unifies with T. Their planned Cell<0>/Cell<1> replacements
+// must be checked together before either read is erased.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  function.def @conflicting_call() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %a = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %b = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %array = array.new %a, %b : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
+    %read0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    %read1 = array.read %array[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // expected-note@+1 {{replacement call signature}}
+    function.call @Match::@consume(%read0, %read1) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}
+
+// -----
+
+// Planned replacements must also be combined across different candidate arrays.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  function.def @conflicting_call() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %a = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %b = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %array = array.new %a, %b : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %other = array.new %a, %b : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
+    %read0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    %read1 = array.read %other[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // expected-note@+1 {{replacement call signature}}
+    function.call @Match::@consume(%read0, %read1) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}

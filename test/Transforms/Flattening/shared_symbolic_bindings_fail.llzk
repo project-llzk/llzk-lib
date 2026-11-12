@@ -1,0 +1,89 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// Delayed direct bindings must expose conflicting shared types before either member narrows.
+module attributes {llzk.lang} {
+  poly.template @DelayedDirectConflict {
+    poly.param @T
+    poly.param @V
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'second' is written with incompatible type 'index'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'first' is written with incompatible type '!felt.type'}}
+      struct.member @second : !poly.tvar<@T>
+      struct.member @source : !poly.tvar<@V>
+      function.def @compute(%a: !felt.type, %b: index) -> !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>> {
+        %self = struct.new : !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>, !felt.type
+        struct.writem %self[@source] = %b : !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>, index
+        %v = struct.readm %self[@source] : !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>, !poly.tvar<@V>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %v : !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>, !poly.tvar<@V>
+        function.return %self : !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@DelayedDirectConflict::@Holder<[@T, @V]>>, %a: !felt.type, %b: index) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Delayed array bindings must expose conflicting shared types before either member narrows.
+module attributes {llzk.lang} {
+  poly.template @DelayedArrayConflict {
+    poly.param @T
+    poly.param @V
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'second' is written with incompatible type 'index'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'first' is written with incompatible type '!felt.type'}}
+      struct.member @second : !array.type<2 x !poly.tvar<@T>>
+      struct.member @source : !array.type<2 x !poly.tvar<@V>>
+      function.def @compute(%a: !felt.type, %b: !array.type<2 x index>) -> !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>> {
+        %self = struct.new : !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>, !felt.type
+        struct.writem %self[@source] = %b : !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>, !array.type<2 x index>
+        %v = struct.readm %self[@source] : !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>, !array.type<2 x !poly.tvar<@V>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %v : !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>, !array.type<2 x !poly.tvar<@V>>
+        function.return %self : !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@DelayedArrayConflict::@Holder<[@T, @V]>>, %a: !felt.type, %b: !array.type<2 x index>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Delayed pod bindings must expose conflicting shared types before either member narrows.
+module attributes {llzk.lang} {
+  poly.template @DelayedPodConflict {
+    poly.param @T
+    poly.param @V
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'second' is written with incompatible type 'index'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'first' is written with incompatible type '!felt.type'}}
+      struct.member @second : !pod.type<[@value: !poly.tvar<@T>]>
+      struct.member @source : !pod.type<[@value: !poly.tvar<@V>]>
+      function.def @compute(%a: !felt.type, %b: !pod.type<[@value: index]>) -> !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>> {
+        %self = struct.new : !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>, !felt.type
+        struct.writem %self[@source] = %b : !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>, !pod.type<[@value: index]>
+        %v = struct.readm %self[@source] : !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>, !pod.type<[@value: !poly.tvar<@V>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %v : !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>, !pod.type<[@value: !poly.tvar<@V>]>
+        function.return %self : !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@DelayedPodConflict::@Holder<[@T, @V]>>, %a: !felt.type, %b: !pod.type<[@value: index]>) {
+        function.return
+      }
+    }
+  }
+}

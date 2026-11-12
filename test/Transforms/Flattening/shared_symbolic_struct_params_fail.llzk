@@ -1,0 +1,41 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// A delayed concrete source must expose conflicting shared bindings before either declaration narrows.
+module attributes {llzk.lang} {
+  poly.template @Box {
+    poly.param @X
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@X>
+      function.def @compute() -> !struct.type<@Box::@Box<[@X]>> {
+        %self = struct.new : !struct.type<@Box::@Box<[@X]>>
+        function.return %self : !struct.type<@Box::@Box<[@X]>>
+      }
+      function.def @constrain(%self: !struct.type<@Box::@Box<[@X]>>) { function.return }
+    }
+  }
+  poly.template @DelayedConflict {
+    poly.param @T
+    poly.param @U
+    poly.param @V
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!felt.type' because sibling member 'second' is written with incompatible type 'index'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to 'index' because sibling member 'first' is written with incompatible type '!felt.type'}}
+      struct.member @second : !struct.type<@Box::@Box<[@T]>>
+      struct.member @source : !struct.type<@Box::@Box<[@V]>>
+      function.def @compute(%a: !felt.type, %indexBox: !struct.type<@Box::@Box<[index]>>) -> !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>> {
+        %self = struct.new : !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>, !felt.type
+        struct.writem %self[@source] = %indexBox : !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>, !struct.type<@Box::@Box<[index]>>
+        %b = struct.readm %self[@source] : !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>, !struct.type<@Box::@Box<[@V]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %b : !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>, !struct.type<@Box::@Box<[@V]>>
+        function.return %self : !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@DelayedConflict::@Holder<[@T, @U, @V]>>, %a: !felt.type, %indexBox: !struct.type<@Box::@Box<[index]>>) {
+        function.return
+      }
+    }
+  }
+}

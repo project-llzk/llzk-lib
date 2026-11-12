@@ -1,0 +1,159 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -mlir-print-op-generic %s | FileCheck --enable-var-scope %s
+
+// Retargeting a shared witness constraint must preserve call properties and discardable attributes.
+// Generic call syntax and output expose the argument/result properties hidden by custom assembly.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute(%tag: !felt.type, %extra: !felt.type) -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>, %tag: !felt.type, %extra: !felt.type) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column}
+
+    function.def @product(%tag: !felt.type, %extra: !felt.type) -> !struct.type<@Holder>
+        attributes {function.allow_witness, function.allow_constraint} {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "shared"}
+      // All three positional dictionaries, including the empty middle one, must survive.
+      // Constraint calls have no results, so the explicitly present result dictionary array is empty.
+      "function.call"(%shared, %tag, %extra) <{
+        callee = @TCell::@Cell::@constrain,
+        mapOpGroupSizes = array<i32>,
+        numDimsPerMap = array<i32>,
+        operandSegmentSizes = array<i32: 3, 0>,
+        arg_attrs = [{test.role = "witness"}, {}, {test.role = "extra"}],
+        res_attrs = []
+      }> {product_source = "annotated"} : (!struct.type<@TCell::@Cell<[#id]>>, !felt.type, !felt.type) -> ()
+      // Absent optional dictionaries must remain absent on the other retargeted call.
+      function.call @TCell::@Cell::@constrain(%shared, %tag, %extra) : (!struct.type<@TCell::@Cell<[#id]>>, !felt.type, !felt.type) -> () {product_source = "unannotated"}
+      struct.writem %self[@item] = %shared : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %concrete = function.call @TCell::@Cell::@compute(%tag, %extra) : (!felt.type, !felt.type) -> !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@item] = %concrete : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      function.return %self : !struct.type<@Holder>
+    }
+  }
+}
+// CHECK-LABEL: "builtin.module"() ({
+// CHECK-NEXT:    "struct.def"() <{sym_name = "TCell_0_Cell"}> ({
+// CHECK-NEXT:      "struct.member"() <{column, sym_name = "value", type = !felt.type}> : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!felt.type, !felt.type) -> !struct.type<@TCell_0_Cell>, sym_name = "compute"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type):
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        "function.return"(%[[VAL_2]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      }) {function.allow_witness} : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!struct.type<@TCell_0_Cell>, !felt.type, !felt.type) -> (), sym_name = "constrain"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type):
+// CHECK-NEXT:        "function.return"() : () -> ()
+// CHECK-NEXT:      }) {function.allow_constraint} : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:    "struct.def"() <{sym_name = "Holder"}> ({
+// CHECK-NEXT:      "struct.member"() <{column, sym_name = "item", type = !struct.type<@TCell_0_Cell>}> : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!felt.type, !felt.type) -> !struct.type<@Holder>, sym_name = "product"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type):
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@Holder>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = "llzk.nondet"() {product_source = "shared"} : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        "function.call"(%[[VAL_9]], %[[VAL_6]], %[[VAL_7]]) <{callee = @TCell_0_Cell::@constrain, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 3, 0>}> {product_source = "unannotated"} : (!struct.type<@TCell_0_Cell>, !felt.type, !felt.type) -> ()
+// CHECK-NEXT:        "function.call"(%[[VAL_9]], %[[VAL_6]], %[[VAL_7]]) <{arg_attrs = [{test.role = "witness"}, {}, {test.role = "extra"}], callee = @TCell_0_Cell::@constrain, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 3, 0>, res_attrs = []}> {product_source = "annotated"} : (!struct.type<@TCell_0_Cell>, !felt.type, !felt.type) -> ()
+// CHECK-NEXT:        "struct.writem"(%[[VAL_8]], %[[VAL_9]]) <{member_name = @item}> : (!struct.type<@Holder>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = "function.call"(%[[VAL_6]], %[[VAL_7]]) <{callee = @TCell_0_Cell::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>}> : (!felt.type, !felt.type) -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        "struct.writem"(%[[VAL_8]], %[[VAL_10]]) <{member_name = @item}> : (!struct.type<@Holder>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        "function.return"(%[[VAL_8]]) : (!struct.type<@Holder>) -> ()
+// CHECK-NEXT:      }) {function.allow_constraint, function.allow_witness} : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:  }) {llzk.lang} : () -> ()
+
+// -----
+
+// Array scalarization retargets the same call shape and must retain both argument dictionaries.
+// Generic call syntax and output expose the argument/result properties hidden by custom assembly.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute(%values: !array.type<@N x !felt.type>) -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self: !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>, %values: !array.type<@N x !felt.type>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @generic_constraint_signature(%values: !array.type<#id x !felt.type>)
+      attributes {function.allow_witness, function.allow_constraint} {
+    %c0 = arith.constant 0 : index
+    %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    "function.call"(%generic, %values) <{
+      callee = @TCell::@Cell::@constrain,
+      mapOpGroupSizes = array<i32>,
+      numDimsPerMap = array<i32>,
+      operandSegmentSizes = array<i32: 2, 0>,
+      arg_attrs = [{test.role = "witness"}, {test.role = "values"}],
+      res_attrs = []
+    }> {product_source = "scalarized"} : (!struct.type<@TCell::@Cell<[#id]>>, !array.type<#id x !felt.type>) -> ()
+
+    %other = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %local = array.new %generic, %other : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %item0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    function.return
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+
+// CHECK-LABEL: "builtin.module"() ({
+// CHECK-NEXT:    "struct.def"() <{sym_name = "TCell_0_Cell"}> ({
+// CHECK-NEXT:      "struct.member"() <{column, sym_name = "value", type = !felt.type}> : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!array.type<0 x !felt.type>) -> !struct.type<@TCell_0_Cell>, sym_name = "compute"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<0 x !felt.type>):
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        "function.return"(%[[VAL_1]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      }) {function.allow_witness} : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!struct.type<@TCell_0_Cell>, !array.type<0 x !felt.type>) -> (), sym_name = "constrain"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<0 x !felt.type>):
+// CHECK-NEXT:        "function.return"() : () -> ()
+// CHECK-NEXT:      }) {function.allow_constraint} : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:    "poly.template"() <{sym_name = "TCell"}> ({
+// CHECK-NEXT:      "poly.param"() <{sym_name = "N", type_opt = index}> : () -> ()
+// CHECK-NEXT:      "struct.def"() <{sym_name = "Cell"}> ({
+// CHECK-NEXT:        "struct.member"() <{column, sym_name = "value", type = !felt.type}> : () -> ()
+// CHECK-NEXT:        "function.def"() <{function_type = (!array.type<@N x !felt.type>) -> !struct.type<@TCell::@Cell<[@N]>>, sym_name = "compute"}> ({
+// CHECK-NEXT:        ^bb0(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>):
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = "struct.new"() : () -> !struct.type<@TCell::@Cell<[@N]>>
+// CHECK-NEXT:          "function.return"(%[[VAL_5]]) : (!struct.type<@TCell::@Cell<[@N]>>) -> ()
+// CHECK-NEXT:        }) {function.allow_witness} : () -> ()
+// CHECK-NEXT:        "function.def"() <{function_type = (!struct.type<@TCell::@Cell<[@N]>>, !array.type<@N x !felt.type>) -> (), sym_name = "constrain"}> ({
+// CHECK-NEXT:        ^bb0(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell::@Cell<[@N]>>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>):
+// CHECK-NEXT:          "function.return"() : () -> ()
+// CHECK-NEXT:        }) {function.allow_constraint} : () -> ()
+// CHECK-NEXT:      }) : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:    "function.def"() <{function_type = (!array.type<#[[$ATTR_0]] x !felt.type>) -> (), sym_name = "generic_constraint_signature"}> ({
+// CHECK-NEXT:    ^bb0(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !array.type<#[[$ATTR_0]] x !felt.type>):
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = "llzk.nondet"() : () -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = "llzk.nondet"() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      "function.call"(%[[VAL_10]], %[[VAL_8]]) <{arg_attrs = [{test.role = "witness"}, {test.role = "values"}], callee = @TCell_0_Cell::@constrain, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>, res_attrs = []}> {product_source = "scalarized"} : (!struct.type<@TCell_0_Cell>, !array.type<#[[$ATTR_0]] x !felt.type>) -> ()
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = "llzk.nondet"() : () -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      "function.return"() : () -> ()
+// CHECK-NEXT:    }) {function.allow_constraint, function.allow_witness} : () -> ()
+// CHECK-NEXT:  }) {llzk.lang} : () -> ()

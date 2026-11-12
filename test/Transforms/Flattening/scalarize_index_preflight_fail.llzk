@@ -1,0 +1,167 @@
+// RUN: python3 -c "import subprocess, sys; subprocess.run(sys.argv[1:], check=True, timeout=10)" llzk-opt -llzk-flatten -split-input-file -verify-diagnostics %s
+// COM: The Python wrapper enforces a 10-second timeout so accidental enumeration of billion-element index spaces fails promptly.
+
+// Reject a billion-element fallback by comparing against the two known split indices.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    // expected-error@+1 {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
+    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      scf.if %cond {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %c2 = arith.constant 2 : index
+        %local = array.new{(%c2)} : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        array.write %local[%c0] = %item0 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1] = %item1 : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        // expected-note@+1 {{candidate establishes 2 split member indices}}
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+      } else {
+        %c3 = arith.constant 1000000000 : index
+        %fallback = array.new{(%c3)} : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+        // expected-note@+1 {{expandable whole-array write has 1000000000 array indices, including extra index [2 : index]}}
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Equal element counts do not imply equal multidimensional index sets.
+#id = affine_map<(i) -> (i)>
+#row = affine_map<(i, j) -> (i)>
+#col = affine_map<(i, j) -> (j)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    // expected-error@+1 {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
+    struct.member @items : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      scf.if %cond {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %c2 = arith.constant 2 : index
+        %local = array.new{(%c2, %c1), (%c2, %c1)} : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+        %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        array.write %local[%c0, %c0] = %item0 : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1, %c0] = %item1 : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        // expected-note@+1 {{candidate establishes 2 split member indices}}
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+      } else {
+        %rows = arith.constant 1 : index
+        %cols = arith.constant 2 : index
+        %fallback = array.new{(%rows, %cols), (%rows, %cols)} : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+        // expected-note@+1 {{expandable whole-array write has 2 array indices, including extra index [0 : index, 1 : index]}}
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An overflowing product must not wrap to a small, apparently expandable array.
+#id = affine_map<(i) -> (i)>
+#row = affine_map<(i, j) -> (i)>
+#col = affine_map<(i, j) -> (j)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    // expected-error@+1 {{cannot split heterogeneous array member because not every write to it can be scalarized}}
+    struct.member @items : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      scf.if %cond {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %c2 = arith.constant 2 : index
+        %local = array.new{(%c2, %c1), (%c2, %c1)} : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+        %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+        array.write %local[%c0, %c0] = %item0 : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        array.write %local[%c1, %c0] = %item1 : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+      } else {
+        %rows = arith.constant 3 : index
+        %cols = arith.constant 6148914691236517206 : index
+        %fallback = array.new{(%rows, %cols), (%rows, %cols)} : !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+        // expected-note@+1 {{whole-array write is not backed by a scalarization candidate}}
+        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<#row, #col x !struct.type<@TCell::@Cell<[#id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}

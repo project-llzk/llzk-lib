@@ -26,7 +26,7 @@ module attributes {llzk.lang} {
   struct.def @Main {
     function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{failure while creating instantiated function 'template_a2_8_9_b_f'}}
+      // expected-error@+1 {{failure while creating instantiated function "template_a2_8_9_b_f"}}
       function.call @template_a2::@f(%z) : (!array.type<8,9 x i1>) -> i1
       function.return %self : !struct.type<@Main>
     }
@@ -64,7 +64,7 @@ module attributes {llzk.lang} {
   struct.def @Main {
     function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{failure while creating instantiated function 'template_b2_8_9_b_f'}}
+      // expected-error@+1 {{failure while creating instantiated function "template_b2_8_9_b_f"}}
       function.call @template_b2::@f<[8,9,i1]>(%z) : (!array.type<8,9 x i1>) -> i1
       function.return %self : !struct.type<@Main>
     }
@@ -106,7 +106,7 @@ module attributes {llzk.lang} {
   struct.def @Main {
     function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{failure while creating instantiated function 'template_c2_8_9_b_f'}}
+      // expected-error@+1 {{failure while creating instantiated function "template_c2_8_9_b_f"}}
       function.call @template_c2::@f(%z) : (!array.type<8,9 x i1>) -> i1
       function.return %self : !struct.type<@Main>
     }

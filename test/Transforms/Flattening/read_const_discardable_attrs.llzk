@@ -1,0 +1,63 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Instantiating a templated struct materializes each read as a concrete constant
+// while preserving source provenance from the original reads.
+module attributes {llzk.lang} {
+  poly.template @Constants {
+    poly.param @index : index
+    poly.param @boolean : i1
+    poly.param @felt : !felt.type
+
+    struct.def @Values {
+      struct.member @index : index
+      struct.member @boolean : i1
+      struct.member @felt : !felt.type
+
+      function.def @compute(%input_index: index, %input_boolean: i1, %input_felt: !felt.type) -> !struct.type<@Constants::@Values<[@index, @boolean, @felt]>> {
+        %index = poly.read_const @index : index {product_source = "A"}
+        %boolean = poly.read_const @boolean : i1 {product_source = "B"}
+        %felt = poly.read_const @felt : !felt.type {product_source = "C"}
+        %self = struct.new : !struct.type<@Constants::@Values<[@index, @boolean, @felt]>>
+        function.return %self : !struct.type<@Constants::@Values<[@index, @boolean, @felt]>>
+      }
+      function.def @constrain(%self: !struct.type<@Constants::@Values<[@index, @boolean, @felt]>>, %input_index: index, %input_boolean: i1, %input_felt: !felt.type) {
+        %index = poly.read_const @index : index {product_source = "A"}
+        %boolean = poly.read_const @boolean : i1 {product_source = "B"}
+        %felt = poly.read_const @felt : !felt.type {product_source = "C"}
+        constrain.eq %input_index, %index : index
+        constrain.eq %input_boolean, %boolean : i1
+        constrain.eq %input_felt, %felt : !felt.type
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @values : !struct.type<@Constants::@Values<[7, true, #felt<const 11>]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %index = arith.constant 7 : index
+      %boolean = arith.constant true
+      %felt = felt.const 11
+      %values = function.call @Constants::@Values::@compute(%index, %boolean, %felt) : (index, i1, !felt.type) -> !struct.type<@Constants::@Values<[7, true, #felt<const 11>]>>
+      struct.writem %self[@values] = %values : !struct.type<@Main>, !struct.type<@Constants::@Values<[7, true, #felt<const 11>]>>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %values = struct.readm %self[@values] : !struct.type<@Main>, !struct.type<@Constants::@Values<[7, true, #felt<const 11>]>>
+      %index = arith.constant 7 : index
+      %boolean = arith.constant true
+      %felt = felt.const 11
+      function.call @Constants::@Values::@constrain(%values, %index, %boolean, %felt) : (!struct.type<@Constants::@Values<[7, true, #felt<const 11>]>>, index, i1, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @"Constants_7_1_f<11>_Values" {
+// CHECK: function.def @compute(%{{.*}}: index, %{{.*}}: i1, %{{.*}}: !felt.type) -> !struct.type<@"Constants_7_1_f<11>_Values">
+// CHECK: function.def @constrain(
+// CHECK: arith.constant {product_source = "A"} 7 : index
+// CHECK: arith.constant {product_source = "B"} true
+// CHECK: felt.const 11 {product_source = "C"}

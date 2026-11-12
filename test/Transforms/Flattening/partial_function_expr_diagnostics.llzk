@@ -1,0 +1,166 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Noncanonical: expression and function reads share boolean materialization diagnostics.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @A
+    poly.param @B : index
+    poly.param @C
+    poly.expr @Number {
+      // expected-warning@+1 {{Interpreting non-zero value 2 as true}}
+      %flag = poly.read_const @A : i1
+      %value = poly.read_const @A : index {product_source = "expression-integer"}
+      %b = poly.read_const @B : index
+      %sum = arith.addi %b, %value : index
+      %difference = arith.subi %b, %value : index
+      %result = arith.select %flag, %sum, %difference : index
+      poly.yield %result : index
+    }
+    function.def @f(%input: !array.type<@B x !felt.type>) -> (index, i1) {
+      %number = poly.read_const @Number : index
+      // expected-warning@+1 {{Interpreting non-zero value 2 as true}}
+      %flag = poly.read_const @C : i1 {product_source = "function-boolean"}
+      function.return %number, %flag : index, i1
+    }
+  }
+  poly.template @Caller {
+    poly.param @N : index
+    function.def @g(%input: !array.type<@N x !felt.type>) -> (index, i1) {
+      // expected-note@+2 {{when instantiating 'struct.def' parameter "@A" for this specialization}}
+      // expected-note@+1 {{when instantiating 'struct.def' parameter "@C" for this specialization}}
+      %number, %flag = function.call @Callee::@f<[2, @N, 2]>(%input) : (!array.type<@N x !felt.type>) -> (index, i1)
+      function.return %number, %flag : index, i1
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_2_\1A_2" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.expr @Number {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "expression-integer"} 2 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = poly.read_const @B : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<@B x !felt.type>) -> (index, i1) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "function-boolean"} true
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.read_const @Number : index
+// CHECK-NEXT:        function.return %[[VAL_5]], %[[VAL_4]] : index, i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_2_", "_2"]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @g(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> (index, i1) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]]:2 = function.call @"Callee_2_\1A_2"::@f<[@N]>(%[[VAL_6]]) : (!array.type<@N x !felt.type>) -> (index, i1)
+// CHECK-NEXT:        function.return %[[VAL_7]]#0, %[[VAL_7]]#1 : index, i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Zero: expression and function reads share boolean materialization diagnostics.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @A
+    poly.param @B : index
+    poly.param @C
+    poly.expr @Number {
+      %flag = poly.read_const @A : i1
+      %value = poly.read_const @A : index {product_source = "expression-integer"}
+      %b = poly.read_const @B : index
+      %sum = arith.addi %b, %value : index
+      %difference = arith.subi %b, %value : index
+      %result = arith.select %flag, %sum, %difference : index
+      poly.yield %result : index
+    }
+    function.def @f(%input: !array.type<@B x !felt.type>) -> (index, i1) {
+      %number = poly.read_const @Number : index
+      %flag = poly.read_const @C : i1 {product_source = "function-boolean"}
+      function.return %number, %flag : index, i1
+    }
+  }
+  poly.template @Caller {
+    poly.param @N : index
+    function.def @g(%input: !array.type<@N x !felt.type>) -> (index, i1) {
+      %number, %flag = function.call @Callee::@f<[0, @N, 0]>(%input) : (!array.type<@N x !felt.type>) -> (index, i1)
+      function.return %number, %flag : index, i1
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_0_\1A_0" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.expr @Number {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = poly.read_const @B : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<@B x !felt.type>) -> (index, i1) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "function-boolean"} false
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = poly.read_const @Number : index
+// CHECK-NEXT:        function.return %[[VAL_3]], %[[VAL_2]] : index, i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_0_", "_0"]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @g(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> (index, i1) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]]:2 = function.call @"Callee_0_\1A_0"::@f<[@N]>(%[[VAL_4]]) : (!array.type<@N x !felt.type>) -> (index, i1)
+// CHECK-NEXT:        function.return %[[VAL_5]]#0, %[[VAL_5]]#1 : index, i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// One: expression and function reads share boolean materialization diagnostics.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @A
+    poly.param @B : index
+    poly.param @C
+    poly.expr @Number {
+      %flag = poly.read_const @A : i1
+      %value = poly.read_const @A : index {product_source = "expression-integer"}
+      %b = poly.read_const @B : index
+      %sum = arith.addi %b, %value : index
+      %difference = arith.subi %b, %value : index
+      %result = arith.select %flag, %sum, %difference : index
+      poly.yield %result : index
+    }
+    function.def @f(%input: !array.type<@B x !felt.type>) -> (index, i1) {
+      %number = poly.read_const @Number : index
+      %flag = poly.read_const @C : i1 {product_source = "function-boolean"}
+      function.return %number, %flag : index, i1
+    }
+  }
+  poly.template @Caller {
+    poly.param @N : index
+    function.def @g(%input: !array.type<@N x !felt.type>) -> (index, i1) {
+      %number, %flag = function.call @Callee::@f<[1, @N, 1]>(%input) : (!array.type<@N x !felt.type>) -> (index, i1)
+      function.return %number, %flag : index, i1
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_1_\1A_1" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.expr @Number {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "expression-integer"} 1 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = poly.read_const @B : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<@B x !felt.type>) -> (index, i1) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "function-boolean"} true
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.read_const @Number : index
+// CHECK-NEXT:        function.return %[[VAL_5]], %[[VAL_4]] : index, i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_1_", "_1"]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @g(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> (index, i1) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]]:2 = function.call @"Callee_1_\1A_1"::@f<[@N]>(%[[VAL_6]]) : (!array.type<@N x !felt.type>) -> (index, i1)
+// CHECK-NEXT:        function.return %[[VAL_7]]#0, %[[VAL_7]]#1 : index, i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

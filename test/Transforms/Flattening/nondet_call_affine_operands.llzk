@@ -1,0 +1,72 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file %s | FileCheck %s --enable-var-scope
+
+// A map-only index witness has no member-write component or callee argument requirement.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  function.def @entry() attributes {function.allow_witness} {
+    %n = llzk.nondet : index
+    %cell = function.call @TCell::@Cell::@compute(){(%n)} : () -> !struct.type<@TCell::@Cell<[#id]>>
+    function.return
+  }
+}
+// CHECK:       #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// CHECK-LABEL: function.def @entry() attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : index
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @TCell::@Cell::@compute() {(%[[VAL_2]])} : () -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+
+// -----
+
+// One witness may be a member value, an ordinary argument, and dimensions/symbols in multiple map groups.
+#id = affine_map<(i) -> (i)>
+#symbol = affine_map<()[s] -> (s)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    poly.param @M : index
+    struct.def @Cell {
+      function.def @compute(%arg: index) -> !struct.type<@TCell::@Cell<[@N, @M]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N, @M]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N, @M]>>, %arg: index) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @count : index
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %n = llzk.nondet : index
+      struct.writem %self[@count] = %n : !struct.type<@Holder>, index
+      %cell = function.call @TCell::@Cell::@compute(%n){(%n), ()[%n]} : (index) -> !struct.type<@TCell::@Cell<[#id, #symbol]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+// CHECK:       #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// CHECK:       #[[$ATTR_1:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: struct.def @Holder {
+// CHECK-NEXT:    struct.member @count : index
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : index
+// CHECK-NEXT:      struct.writem %[[VAL_4]][@count] = %[[VAL_5]] : <@Holder>, index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell::@Cell::@compute(%[[VAL_5]]) {(%[[VAL_5]]), (){{\[}}%[[VAL_5]]]} : (index) -> !struct.type<@TCell::@Cell<[#[[$ATTR_0]], #[[$ATTR_1]]]>>
+// CHECK-NEXT:      function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,103 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @same(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+  }
+  poly.template @Independent {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+    function.def @different(%a: !poly.tvar<@T>, %b: !poly.tvar<@U>) { function.return }
+  }
+
+  function.def @compatible_calls() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %a = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %b = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %array = array.new %a, %b : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %read0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    %read1 = array.read %array[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // Repeated uses of one read must all be substituted in the hypothetical signature.
+    function.call @Match::@same(%read0, %read0) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    %also0 = array.read %array[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // Distinct reads with a common specialization are valid, including while only
+    // one of their replacements has been applied.
+    function.call @Match::@same(%read0, %also0) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    // Separate template variables can bind to different concrete types.
+    function.call @Independent::@different(%read0, %read1) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}
+
+// CHECK-LABEL:   function.def @compatible_calls() attributes {function.allow_witness} {
+// CHECK:           %[[VAL_11:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK:           %[[VAL_13:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:      function.call @"Match_!s<@TCell_0_Cell>_same"(%[[VAL_11]], %[[VAL_11]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      function.call @"Match_!s<@TCell_0_Cell>_same"(%[[VAL_11]], %[[VAL_11]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      function.call @"Independent_!s<@TCell_0_Cell>_!s<@TCell_1_Cell>_different"(%[[VAL_11]], %[[VAL_13]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_1_Cell>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+
+// -----
+
+// Check the entire signature in the callee namespace, including untouched operands.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Marker {
+      function.def @compute() -> !struct.type<@Marker> {
+        %self = struct.new : !struct.type<@Marker>
+        function.return %self : !struct.type<@Marker>
+      }
+      function.def @constrain(%self: !struct.type<@Marker>) { function.return }
+    }
+    struct.def @Other {
+      function.def @compute() -> !struct.type<@Other> {
+        %self = struct.new : !struct.type<@Other>
+        function.return %self : !struct.type<@Other>
+      }
+      function.def @constrain(%self: !struct.type<@Other>) { function.return }
+    }
+    function.def @consume(%value: !struct.type<@Marker>, %marker: !struct.type<@Marker>) {
+      function.return
+    }
+  }
+  poly.template @Caller {
+    poly.param @T
+    function.def @namespaced_call(%marker: !struct.type<@Lib::@Marker>, %other: !struct.type<@Lib::@Other>) attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %array = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %array[%c0] = %marker : !array.type<2 x !poly.tvar<@T>>, !struct.type<@Lib::@Marker>
+      array.write %array[%c1] = %other : !array.type<2 x !poly.tvar<@T>>, !struct.type<@Lib::@Other>
+      %read = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      function.call @Lib::@consume(%read, %marker) : (!poly.tvar<@T>, !struct.type<@Lib::@Marker>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:     function.def @namespaced_call(
+// CHECK-SAME:      %[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Marker>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Other>) attributes {function.allow_witness} {
+// CHECK-NEXT:        function.call @Lib::@consume(%[[VAL_6]], %[[VAL_6]]) : (!struct.type<@Lib::@Marker>, !struct.type<@Lib::@Marker>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }

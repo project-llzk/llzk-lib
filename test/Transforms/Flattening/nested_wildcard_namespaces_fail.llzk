@@ -1,0 +1,49 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// Inaccessible evidence must fail the pass rather than emit errors and report success.
+module attributes {llzk.lang} {
+  // expected-note@+1 {{symbol path must start from this module}}
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !struct.type<@Cell>) { function.return }
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      poly.param @V : !poly.tvar<@V>
+      function.def @id(%arg: !poly.tvar<@U>, %known: !poly.tvar<@V>) {
+        %cast = poly.unifiable_cast %arg : (!poly.tvar<@U>) -> !poly.tvar<@V>
+        function.call @consume(%cast) : (!poly.tvar<@V>) -> ()
+        function.return
+      }
+    }
+  }
+  // expected-note@+1 {{symbol is defined outside the supplied module}}
+  struct.def @Other {
+    function.def @compute() -> !struct.type<@Other> {
+      %self = struct.new : <@Other>
+      function.return %self : !struct.type<@Other>
+    }
+    function.def @constrain(%self: !struct.type<@Other>) { function.return }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @K : !poly.tvar<@K>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      %known = llzk.nondet : !poly.tvar<@K>
+      // expected-error@+1 {{struct type argument '!struct.type<@Other>' is not visible from module "Lib"}}
+      function.call @Lib::@Inner::@id<[@T, @K]>(%arg, %known) : (!poly.tvar<@T>, !poly.tvar<@K>) -> ()
+      function.return
+    }
+  }
+  function.def @test() {
+    // expected-error@+1 {{cannot infer wildcard bindings across lookup roots}}
+    function.call @Outer::@wrap<[?, !struct.type<@Other>]>() : () -> ()
+    function.return
+  }
+}

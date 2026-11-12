@@ -1,0 +1,199 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// Reject incompatible values of a shared struct parameter.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : index
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine @N to 0 : index because sibling member 'right' is written with incompatible type 1 : index}}
+      struct.member @left : !struct.type<@TCell::@Cell<[@N]>>
+      // expected-error@+1 {{cannot refine @N to 1 : index because sibling member 'left' is written with incompatible type 0 : index}}
+      struct.member @right : !struct.type<@TCell::@Cell<[@N]>>
+      function.def @compute(%a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[1]>>) -> !struct.type<@Shared::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@left] = %a : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[0]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@right] = %b : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[1]>>
+        function.return %self : !struct.type<@Shared::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Reject the same conflict regardless of declaration order.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : index
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine @N to 1 : index because sibling member 'left' is written with incompatible type 0 : index}}
+      struct.member @right : !struct.type<@TCell::@Cell<[@N]>>
+      // expected-error@+1 {{cannot refine @N to 0 : index because sibling member 'right' is written with incompatible type 1 : index}}
+      struct.member @left : !struct.type<@TCell::@Cell<[@N]>>
+      function.def @compute(%a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[1]>>) -> !struct.type<@Shared::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@left] = %a : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[0]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@right] = %b : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[1]>>
+        function.return %self : !struct.type<@Shared::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !struct.type<@TCell::@Cell<[0]>>, %b: !struct.type<@TCell::@Cell<[1]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Track felt-valued parameters as well as index parameters.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : !felt.type
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : !felt.type
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine @N to #felt<const 0> : !felt.type because sibling member 'right' is written with incompatible type #felt<const 1> : !felt.type}}
+      struct.member @left : !struct.type<@TCell::@Cell<[@N]>>
+      // expected-error@+1 {{cannot refine @N to #felt<const 1> : !felt.type because sibling member 'left' is written with incompatible type #felt<const 0> : !felt.type}}
+      struct.member @right : !struct.type<@TCell::@Cell<[@N]>>
+      function.def @compute(%a: !struct.type<@TCell::@Cell<[#felt<const 0>]>>, %b: !struct.type<@TCell::@Cell<[#felt<const 1>]>>) -> !struct.type<@Shared::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@left] = %a : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[#felt<const 0>]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@right] = %b : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[#felt<const 1>]>>
+        function.return %self : !struct.type<@Shared::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !struct.type<@TCell::@Cell<[#felt<const 0>]>>, %b: !struct.type<@TCell::@Cell<[#felt<const 1>]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Preserve repeated value bindings within one aggregate member.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : index
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine @N because member 'pair' is written with incompatible bindings 0 : index and 1 : index}}
+      struct.member @pair : !pod.type<[@left: !struct.type<@TCell::@Cell<[@N]>>, @right: !struct.type<@TCell::@Cell<[@N]>>]>
+      function.def @compute(%a: !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>) -> !struct.type<@Shared::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
+        struct.writem %self[@pair] = %a : !struct.type<@Shared::@Holder<[@N]>>, !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>
+        function.return %self : !struct.type<@Shared::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !pod.type<[@left: !struct.type<@TCell::@Cell<[0]>>, @right: !struct.type<@TCell::@Cell<[1]>>]>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Share value bindings between struct parameters and array dimensions.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Shared {
+    poly.param @N : index
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine @N to 0 : index because sibling member 'right' is written with incompatible type 1 : index}}
+      struct.member @left : !struct.type<@TCell::@Cell<[@N]>>
+      // expected-error@+1 {{cannot refine @N to 1 : index because sibling member 'left' is written with incompatible type 0 : index}}
+      struct.member @right : !array.type<@N x !felt.type>
+      function.def @compute(%a: !struct.type<@TCell::@Cell<[0]>>, %b: !array.type<1 x !felt.type>) -> !struct.type<@Shared::@Holder<[@N]>> {
+        %self = struct.new : !struct.type<@Shared::@Holder<[@N]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@left] = %a : !struct.type<@Shared::@Holder<[@N]>>, !struct.type<@TCell::@Cell<[0]>>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@right] = %b : !struct.type<@Shared::@Holder<[@N]>>, !array.type<1 x !felt.type>
+        function.return %self : !struct.type<@Shared::@Holder<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Shared::@Holder<[@N]>>, %a: !struct.type<@TCell::@Cell<[0]>>, %b: !array.type<1 x !felt.type>) { function.return }
+    }
+  }
+}

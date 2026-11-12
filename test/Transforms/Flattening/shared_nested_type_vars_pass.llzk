@@ -1,0 +1,521 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s --enable-var-scope
+
+// Surrounding array shapes may differ while the shared element binding agrees.
+module attributes {llzk.lang} {
+  poly.template @DifferentArrayShapes {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @member0 : !array.type<1 x !poly.tvar<@T>>
+      struct.member @member1 : !array.type<2 x !poly.tvar<@T>>
+      function.def @compute(%v0: !array.type<1 x !felt.type>, %v1: !array.type<2 x !felt.type>) -> !struct.type<@DifferentArrayShapes::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@DifferentArrayShapes::@Holder<[@T]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@DifferentArrayShapes::@Holder<[@T]>>, !array.type<1 x !felt.type>
+        struct.writem %self[@member1] = %v1 : !struct.type<@DifferentArrayShapes::@Holder<[@T]>>, !array.type<2 x !felt.type>
+        function.return %self : !struct.type<@DifferentArrayShapes::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@DifferentArrayShapes::@Holder<[@T]>>, %v0: !array.type<1 x !felt.type>, %v1: !array.type<2 x !felt.type>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @DifferentArrayShapes {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @member0 : !array.type<1 x !felt.type>
+// CHECK-NEXT:        struct.member @member1 : !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) -> !struct.type<@DifferentArrayShapes::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@DifferentArrayShapes::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@member0] = %[[VAL_0]] : <@DifferentArrayShapes::@Holder<[@T]>>, !array.type<1 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@member1] = %[[VAL_1]] : <@DifferentArrayShapes::@Holder<[@T]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@DifferentArrayShapes::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@DifferentArrayShapes::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// One binding can appear both directly and inside an aggregate.
+module attributes {llzk.lang} {
+  poly.template @NestedDirectConsistent {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @member0 : !array.type<2 x !poly.tvar<@T>>
+      struct.member @member1 : !poly.tvar<@T>
+      function.def @compute(%v0: !array.type<2 x !felt.type>, %v1: !felt.type) -> !struct.type<@NestedDirectConsistent::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@NestedDirectConsistent::@Holder<[@T]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@NestedDirectConsistent::@Holder<[@T]>>, !array.type<2 x !felt.type>
+        struct.writem %self[@member1] = %v1 : !struct.type<@NestedDirectConsistent::@Holder<[@T]>>, !felt.type
+        function.return %self : !struct.type<@NestedDirectConsistent::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@NestedDirectConsistent::@Holder<[@T]>>, %v0: !array.type<2 x !felt.type>, %v1: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @NestedDirectConsistent {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @member0 : !array.type<2 x !felt.type>
+// CHECK-NEXT:        struct.member @member1 : !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@NestedDirectConsistent::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@NestedDirectConsistent::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@member0] = %[[VAL_0]] : <@NestedDirectConsistent::@Holder<[@T]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@member1] = %[[VAL_1]] : <@NestedDirectConsistent::@Holder<[@T]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@NestedDirectConsistent::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@NestedDirectConsistent::@Holder<[@T]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Distinct parameters remain independent.
+module attributes {llzk.lang} {
+  poly.template @IndependentVariables {
+    poly.param @T
+    poly.param @U
+    struct.def @Holder {
+      struct.member @member0 : !array.type<1 x !poly.tvar<@T>>
+      struct.member @member1 : !array.type<2 x !poly.tvar<@U>>
+      function.def @compute(%v0: !array.type<1 x !felt.type>, %v1: !array.type<2 x index>) -> !struct.type<@IndependentVariables::@Holder<[@T, @U]>> {
+        %self = struct.new : !struct.type<@IndependentVariables::@Holder<[@T, @U]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@IndependentVariables::@Holder<[@T, @U]>>, !array.type<1 x !felt.type>
+        struct.writem %self[@member1] = %v1 : !struct.type<@IndependentVariables::@Holder<[@T, @U]>>, !array.type<2 x index>
+        function.return %self : !struct.type<@IndependentVariables::@Holder<[@T, @U]>>
+      }
+      function.def @constrain(%self: !struct.type<@IndependentVariables::@Holder<[@T, @U]>>, %v0: !array.type<1 x !felt.type>, %v1: !array.type<2 x index>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @IndependentVariables {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @member0 : !array.type<1 x !felt.type>
+// CHECK-NEXT:        struct.member @member1 : !array.type<2 x index>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<2 x index>) -> !struct.type<@IndependentVariables::@Holder<[@T, @U]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@IndependentVariables::@Holder<[@T, @U]>>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@member0] = %[[VAL_0]] : <@IndependentVariables::@Holder<[@T, @U]>>, !array.type<1 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@member1] = %[[VAL_1]] : <@IndependentVariables::@Holder<[@T, @U]>>, !array.type<2 x index>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@IndependentVariables::@Holder<[@T, @U]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@IndependentVariables::@Holder<[@T, @U]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !array.type<2 x index>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Repeated POD occurrences with equal bindings remain valid.
+module attributes {llzk.lang} {
+  poly.template @RepeatedPodConsistent {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @member0 : !pod.type<[@first: !poly.tvar<@T>, @second: !poly.tvar<@T>]>
+      function.def @compute(%v0: !pod.type<[@first: !felt.type, @second: !felt.type]>) -> !struct.type<@RepeatedPodConsistent::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@RepeatedPodConsistent::@Holder<[@T]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@RepeatedPodConsistent::@Holder<[@T]>>, !pod.type<[@first: !felt.type, @second: !felt.type]>
+        function.return %self : !struct.type<@RepeatedPodConsistent::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@RepeatedPodConsistent::@Holder<[@T]>>, %v0: !pod.type<[@first: !felt.type, @second: !felt.type]>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @RepeatedPodConsistent {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @member0 : !pod.type<[@first: !felt.type, @second: !felt.type]>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !pod.type<[@first: !felt.type, @second: !felt.type]>) -> !struct.type<@RepeatedPodConsistent::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedPodConsistent::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@member0] = %[[VAL_0]] : <@RepeatedPodConsistent::@Holder<[@T]>>, !pod.type<[@first: !felt.type, @second: !felt.type]>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@RepeatedPodConsistent::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedPodConsistent::@Holder<[@T]>>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !pod.type<[@first: !felt.type, @second: !felt.type]>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Compatible partial bindings are combined rather than treated as a duplicate-key conflict.
+module attributes {llzk.lang} {
+  poly.template @RepeatedPodPartial {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @member0 : !pod.type<[@first: !poly.tvar<@T>, @second: !poly.tvar<@T>]>
+      function.def @compute(%v0: !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>) -> !struct.type<@RepeatedPodPartial::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>
+        function.return %self : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, %v0: !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @RepeatedPodPartial {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @member0 : !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>) -> !struct.type<@RepeatedPodPartial::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedPodPartial::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@member0] = %[[VAL_0]] : <@RepeatedPodPartial::@Holder<[@T]>>, !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@RepeatedPodPartial::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedPodPartial::@Holder<[@T]>>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !pod.type<[@first: !array.type<?,2 x !felt.type>, @second: !array.type<3,? x !felt.type>]>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Bare type-valued struct parameters share their binding with nested array elements.
+module attributes {llzk.lang} {
+  poly.template @Box {
+    poly.param @U
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@U>
+      function.def @compute() -> !struct.type<@Box::@Box<[@U]>> {
+        %self = struct.new : !struct.type<@Box::@Box<[@U]>>
+        function.return %self : !struct.type<@Box::@Box<[@U]>>
+      }
+      function.def @constrain(%self: !struct.type<@Box::@Box<[@U]>>) { function.return }
+    }
+  }
+  poly.template @StructConsistent {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @member0 : !struct.type<@Box::@Box<[@T]>>
+      struct.member @member1 : !array.type<2 x !poly.tvar<@T>>
+      function.def @compute(%v0: !struct.type<@Box::@Box<[!felt.type]>>, %v1: !array.type<2 x !felt.type>) -> !struct.type<@StructConsistent::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@StructConsistent::@Holder<[@T]>>
+        struct.writem %self[@member0] = %v0 : !struct.type<@StructConsistent::@Holder<[@T]>>, !struct.type<@Box::@Box<[!felt.type]>>
+        struct.writem %self[@member1] = %v1 : !struct.type<@StructConsistent::@Holder<[@T]>>, !array.type<2 x !felt.type>
+        function.return %self : !struct.type<@StructConsistent::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@StructConsistent::@Holder<[@T]>>, %v0: !struct.type<@Box::@Box<[!felt.type]>>, %v1: !array.type<2 x !felt.type>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Box_f_Box {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Box_f_Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Box_f_Box>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Box_f_Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Box_f_Box>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @StructConsistent {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @member0 : !struct.type<@Box_f_Box>
+// CHECK-NEXT:        struct.member @member1 : !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Box_f_Box>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) -> !struct.type<@StructConsistent::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@StructConsistent::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@member0] = %[[VAL_2]] : <@StructConsistent::@Holder<[@T]>>, !struct.type<@Box_f_Box>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@member1] = %[[VAL_3]] : <@StructConsistent::@Holder<[@T]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@StructConsistent::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@StructConsistent::@Holder<[@T]>>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Box_f_Box>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unrelated generic write provides no concrete binding and must not block this refinement.
+module attributes {llzk.lang} {
+  poly.template @UnrelatedGeneric {
+    poly.param @T
+    poly.param @U
+    poly.param @V
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !array.type<1 x !poly.tvar<@U>>
+      struct.member @source : !poly.tvar<@V>
+      function.def @compute(%a: !felt.type) -> !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>> {
+        %self = struct.new : !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>
+        struct.writem %self[@first] = %a : !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, !felt.type
+        %b = struct.readm %self[@source] : !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+        struct.writem %self[@second] = %b : !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+        function.return %self : !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, %a: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @UnrelatedGeneric {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      poly.param @V
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !felt.type
+// CHECK-NEXT:        struct.member @second : !array.type<1 x !poly.tvar<@U>>
+// CHECK-NEXT:        struct.member @source : !poly.tvar<@V>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@UnrelatedGeneric::@Holder<[@T, @U, @V]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@first] = %[[VAL_0]] : <@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_1]][@source] : <@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@second] = %[[VAL_2]] : <@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@UnrelatedGeneric::@Holder<[@T, @U, @V]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A namespaced concrete struct named T is not a reference to the template parameter T.
+module attributes {llzk.lang} {
+  module @Other {
+    struct.def @T {
+      function.def @compute() -> !struct.type<@Other::@T> {
+        %self = struct.new : !struct.type<@Other::@T>
+        function.return %self : !struct.type<@Other::@T>
+      }
+      function.def @constrain(%self: !struct.type<@Other::@T>) { function.return }
+    }
+  }
+  poly.template @UnrelatedStructNamedT {
+    poly.param @T
+    poly.param @V
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !struct.type<@Other::@T>
+      struct.member @source : !poly.tvar<@V>
+      function.def @compute(%a: !felt.type) -> !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>> {
+        %self = struct.new : !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>
+        struct.writem %self[@first] = %a : !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>, !felt.type
+        %b = struct.readm %self[@source] : !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>, !poly.tvar<@V>
+        struct.writem %self[@second] = %b : !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>, !poly.tvar<@V>
+        function.return %self : !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>, %a: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @Other {
+// CHECK-NEXT:      struct.def @T {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Other::@T> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Other::@T>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Other::@T>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Other::@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @UnrelatedStructNamedT {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @V
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !felt.type
+// CHECK-NEXT:        struct.member @second : !struct.type<@Other::@T>
+// CHECK-NEXT:        struct.member @source : !poly.tvar<@V>
+// CHECK-NEXT:        function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@UnrelatedStructNamedT::@Holder<[@T, @V]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@first] = %[[VAL_2]] : <@UnrelatedStructNamedT::@Holder<[@T, @V]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@source] : <@UnrelatedStructNamedT::@Holder<[@T, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@second] = %[[VAL_4]] : <@UnrelatedStructNamedT::@Holder<[@T, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@UnrelatedStructNamedT::@Holder<[@T, @V]>>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A related aggregate write still has generic type V, so defer the shared T refinement until its binding is known.
+module attributes {llzk.lang} {
+  poly.template @RelatedGeneric {
+    poly.param @T
+    poly.param @V
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !array.type<1 x !poly.tvar<@T>>
+      struct.member @source : !poly.tvar<@V>
+      function.def @compute(%a: !felt.type) -> !struct.type<@RelatedGeneric::@Holder<[@T, @V]>> {
+        %self = struct.new : !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>
+        struct.writem %self[@first] = %a : !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>, !felt.type
+        %b = struct.readm %self[@source] : !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>, !poly.tvar<@V>
+        struct.writem %self[@second] = %b : !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>, !poly.tvar<@V>
+        function.return %self : !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>, %a: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @RelatedGeneric {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @V
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !poly.tvar<@T>
+// CHECK-NEXT:        struct.member @second : !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:        struct.member @source : !poly.tvar<@V>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@RelatedGeneric::@Holder<[@T, @V]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@RelatedGeneric::@Holder<[@T, @V]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@first] = %[[VAL_0]] : <@RelatedGeneric::@Holder<[@T, @V]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_1]][@source] : <@RelatedGeneric::@Holder<[@T, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@second] = %[[VAL_2]] : <@RelatedGeneric::@Holder<[@T, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@RelatedGeneric::@Holder<[@T, @V]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unknown unrelated field inside a related POD must not block the shared T binding.
+module attributes {llzk.lang} {
+  poly.template @UnrelatedNestedGeneric {
+    poly.param @T
+    poly.param @U
+    poly.param @V
+    struct.def @Holder {
+      struct.member @first : !poly.tvar<@T>
+      struct.member @second : !pod.type<[@first: !poly.tvar<@T>, @second: !array.type<1 x !poly.tvar<@U>>]>
+      struct.member @source : !pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>
+      function.def @compute(%a: !felt.type) -> !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>> {
+        %self = struct.new : !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>
+        struct.writem %self[@first] = %a : !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, !felt.type
+        %b = struct.readm %self[@source] : !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, !pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>
+        struct.writem %self[@second] = %b : !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, !pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>
+        function.return %self : !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, %a: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @UnrelatedNestedGeneric {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      poly.param @V
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !felt.type
+// CHECK-NEXT:        struct.member @second : !pod.type<[@first: !poly.tvar<@T>, @second: !array.type<1 x !poly.tvar<@U>>]>
+// CHECK-NEXT:        struct.member @source : !pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@first] = %[[VAL_0]] : <@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_1]][@source] : <@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, !pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@second] = %[[VAL_2]] : <@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, !pod.type<[@first: !felt.type, @second: !poly.tvar<@V>]>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@UnrelatedNestedGeneric::@Holder<[@T, @U, @V]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unchanged U binding in the candidate must not make unrelated generic U writes block T.
+module attributes {llzk.lang} {
+  poly.template @UnchangedCandidateVariable {
+    poly.param @T
+    poly.param @U
+    poly.param @V
+    struct.def @Holder {
+      struct.member @first : !pod.type<[@first: !poly.tvar<@T>, @second: !poly.tvar<@U>]>
+      struct.member @second : !array.type<1 x !poly.tvar<@U>>
+      struct.member @source : !poly.tvar<@V>
+      function.def @compute(%a: !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>) -> !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>> {
+        %self = struct.new : !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>
+        struct.writem %self[@first] = %a : !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>
+        %b = struct.readm %self[@source] : !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+        struct.writem %self[@second] = %b : !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+        function.return %self : !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>
+      }
+      function.def @constrain(%self: !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, %a: !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @UnchangedCandidateVariable {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      poly.param @V
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @first : !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>
+// CHECK-NEXT:        struct.member @second : !array.type<1 x !poly.tvar<@U>>
+// CHECK-NEXT:        struct.member @source : !poly.tvar<@V>
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>) -> !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@first] = %[[VAL_0]] : <@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_1]][@source] : <@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@second] = %[[VAL_2]] : <@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, !poly.tvar<@V>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@UnchangedCandidateVariable::@Holder<[@T, @U, @V]>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !pod.type<[@first: !felt.type, @second: !poly.tvar<@U>]>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

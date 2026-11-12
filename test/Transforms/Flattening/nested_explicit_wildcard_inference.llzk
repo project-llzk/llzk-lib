@@ -1,0 +1,309 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Infer outer T from the nested result type even when the nested argument list explicitly
+// requests inference with ?. Both templates must specialize to felt.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @Outer::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+  poly.template @Inner {
+    poly.param @U : !poly.tvar<@U>
+    function.def @id(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      function.return %arg : !poly.tvar<@U>
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      %res = function.call @Inner::@id<[?]>(%arg) : (!poly.tvar<@T>) -> !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @Outer_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Inner_f_id(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Outer_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = function.call @Inner_f_id(%[[VAL_3]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unresolved enclosing symbol in the nested argument list has the same signature
+// evidence as an explicit wildcard and must not suppress inference.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @Outer::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+  poly.template @Inner {
+    poly.param @U : !poly.tvar<@U>
+    function.def @id(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      function.return %arg : !poly.tvar<@U>
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      %res = function.call @Inner::@id<[@T]>(%arg) : (!poly.tvar<@T>) -> !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @Outer_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Inner_f_id(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Outer_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = function.call @Inner_f_id(%[[VAL_3]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Signature-derived bindings must reach a type variable nested in an aggregate,
+// while preserving the array dimensions.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @Outer::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+  poly.template @Inner {
+    poly.param @U : !poly.tvar<@U>
+    function.def @id(%arg: !array.type<2 x !poly.tvar<@U>>) -> !array.type<2 x !poly.tvar<@U>> {
+      function.return %arg : !array.type<2 x !poly.tvar<@U>>
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      %res = function.call @Inner::@id<[?]>(%arg) : (!array.type<2 x !poly.tvar<@T>>) -> !array.type<2 x !felt.type>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @Outer_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Inner_f_id(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<2 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Outer_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = function.call @Inner_f_id(%[[VAL_3]]) : (!array.type<2 x !felt.type>) -> !array.type<2 x !felt.type>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Keep concrete explicit bindings and resolve each template in its own scope:
+// outer T and inner U are index, while outer U and inner T must both become felt.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @Outer::@wrap<[index, ?]>() : () -> ()
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+  poly.template @Inner {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+    function.def @id(%arg: !poly.tvar<@T>, %tag: !poly.tvar<@U>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@U>
+      %tag = arith.constant 0 : index
+      %res = function.call @Inner::@id<[?, index]>(%arg, %tag) : (!poly.tvar<@U>, index) -> !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @Outer_i_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Inner_f_i_id(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Outer_i_f_wrap() {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @Inner_f_i_id(%[[VAL_5]], %[[VAL_4]]) : (!felt.type, index) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A fully concrete nested argument remains authoritative when the signature only
+// contains the unresolved outer type variable.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @Outer::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+  poly.template @Inner {
+    poly.param @U : !poly.tvar<@U>
+    function.def @id(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      function.return %arg : !poly.tvar<@U>
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !poly.tvar<@T>
+      %res = function.call @Inner::@id<[!felt.type]>(%arg) : (!poly.tvar<@T>) -> !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @Outer_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Inner_f_id(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Outer_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = function.call @Inner_f_id(%[[VAL_3]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Infer outer T from a concrete nested operand when the result carries the unresolved
+// outer variable. Operand and result evidence must work in both directions.
+module attributes {llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @Outer::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+  poly.template @Inner {
+    poly.param @U : !poly.tvar<@U>
+    function.def @id(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      function.return %arg : !poly.tvar<@U>
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() {
+      %arg = llzk.nondet : !felt.type
+      %res = function.call @Inner::@id<[?]>(%arg) : (!felt.type) -> !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @Outer_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Inner_f_id(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Outer_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = function.call @Inner_f_id(%[[VAL_3]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

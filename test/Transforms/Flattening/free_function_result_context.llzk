@@ -1,0 +1,186 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -mlir-print-op-generic %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -mlir-print-op-generic %s | llzk-opt -split-input-file -llzk-flatten -mlir-print-op-generic | FileCheck --enable-var-scope %s
+
+// A generic result must remain in the caller template until instantiation resolves it.
+// Refining the callee body later must preserve the qualified call and specialize both templates.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : !struct.type<@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @consume(%cell: !struct.type<@Cell>) { function.return }
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      function.def @id() -> !poly.tvar<@U> attributes {function.allow_witness} {
+        %cell = function.call @Cell::@compute() : () -> !struct.type<@Cell>
+        %cast = poly.unifiable_cast %cell : (!struct.type<@Cell>) -> !poly.tvar<@U>
+        function.return %cast : !poly.tvar<@U>
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    function.def @wrap() attributes {function.allow_witness} {
+      %arg = function.call @Lib::@Inner::@id<[@T]>() : () -> !poly.tvar<@T>
+      function.call @Lib::@consume(%arg) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+  function.def @test() attributes {function.allow_witness} {
+    function.call @Outer::@wrap<[?]>() : () -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: "builtin.module"() ({
+// CHECK-NEXT:    "builtin.module"() <{sym_name = "Lib"}> ({
+// CHECK:      "function.def"() <{function_type = () -> !struct.type<@Cell>, sym_name = "Inner_!s<@Cell>_id"}> ({
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @Cell::@compute, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@Cell>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = "poly.unifiable_cast"(%[[VAL_3]]) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+// CHECK-NEXT:        "function.return"(%[[VAL_4]]) : (!struct.type<@Cell>) -> ()
+// CHECK-NEXT:      }) {function.allow_witness} : () -> ()
+// CHECK:    "function.def"() <{function_type = () -> (), sym_name = "Outer_!s<@Lib::@Cell>_wrap"}> ({
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = "function.call"() <{callee = @Lib::@"Inner_!s<@Cell>_id", mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> !struct.type<@Lib::@Cell>
+// CHECK-NEXT:      "function.call"(%[[VAL_5]]) <{callee = @Lib::@consume, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>}> : (!struct.type<@Lib::@Cell>) -> ()
+// CHECK-NEXT:      "function.return"() : () -> ()
+// CHECK-NEXT:    }) {function.allow_witness} : () -> ()
+// CHECK:    "function.def"() <{function_type = () -> (), sym_name = "test"}> ({
+// CHECK-NEXT:      "function.call"() <{callee = @"Outer_!s<@Lib::@Cell>_wrap", mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 0, 0>}> : () -> ()
+// CHECK-NEXT:      "function.return"() : () -> ()
+// CHECK-NEXT:    }) {function.allow_witness} : () -> ()
+
+// -----
+
+// Concrete struct results, including those nested in PODs and arrays, use the caller namespace.
+// The unrelated caller-local Cell must not capture references to Lib::Cell.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@Cell> {
+        %self = struct.new : <@Cell>
+        function.return %self : !struct.type<@Cell>
+      }
+      function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+    }
+    function.def @produce(%first: !struct.type<@Cell>, %second: !pod.type<[@cell: !struct.type<@Cell>]>, %third: !array.type<1 x !struct.type<@Cell>>) -> (!struct.type<@Cell>, !pod.type<[@cell: !struct.type<@Cell>]>, !array.type<1 x !struct.type<@Cell>>) {
+      function.return %first, %second, %third : !struct.type<@Cell>, !pod.type<[@cell: !struct.type<@Cell>]>, !array.type<1 x !struct.type<@Cell>>
+    }
+  }
+  struct.def @Cell {
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : <@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+    function.def @forward(%cell: !struct.type<@Lib::@Cell>, %pod: !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, %array: !array.type<1 x !struct.type<@Lib::@Cell>>) -> (!poly.tvar<@T>, !pod.type<[@cell: !poly.tvar<@T>]>, !array.type<1 x !poly.tvar<@T>>) {
+      %first, %second, %third = function.call @Lib::@produce(%cell, %pod, %array) : (!struct.type<@Lib::@Cell>, !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, !array.type<1 x !struct.type<@Lib::@Cell>>) -> (!poly.tvar<@T>, !pod.type<[@cell: !poly.tvar<@T>]>, !array.type<1 x !poly.tvar<@T>>)
+      function.return %first, %second, %third : !poly.tvar<@T>, !pod.type<[@cell: !poly.tvar<@T>]>, !array.type<1 x !poly.tvar<@T>>
+    }
+  }
+}
+// CHECK-LABEL: "builtin.module"() ({
+// CHECK:    "poly.template"() <{sym_name = "Caller"}> ({
+// CHECK-NEXT:      "poly.param"() <{sym_name = "T", type_opt = !poly.tvar<@T>}> : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!struct.type<@Lib::@Cell>, !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, !array.type<1 x !struct.type<@Lib::@Cell>>) -> (!struct.type<@Lib::@Cell>, !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, !array.type<1 x !struct.type<@Lib::@Cell>>), sym_name = "forward"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Cell>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, %[[VAL_9:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@Lib::@Cell>>):
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]]:3 = "function.call"(%[[VAL_7]], %[[VAL_8]], %[[VAL_9]]) <{callee = @Lib::@produce, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 3, 0>}> : (!struct.type<@Lib::@Cell>, !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, !array.type<1 x !struct.type<@Lib::@Cell>>) -> (!struct.type<@Lib::@Cell>, !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, !array.type<1 x !struct.type<@Lib::@Cell>>)
+// CHECK-NEXT:        "function.return"(%[[VAL_10]]#0, %[[VAL_10]]#1, %[[VAL_10]]#2) : (!struct.type<@Lib::@Cell>, !pod.type<[@cell: !struct.type<@Lib::@Cell>]>, !array.type<1 x !struct.type<@Lib::@Cell>>) -> ()
+// CHECK-NEXT:      }) : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:  }) {llzk.lang} : () -> ()
+
+// -----
+
+// Refine independent concrete results without importing callee-local type variables.
+// Preserve explicit template arguments, positional argument/result dictionaries (including empty
+// entries), and discardable attributes. Generic output exposes all call properties.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    poly.template @Inner {
+      poly.param @U : !poly.tvar<@U>
+      function.def @pair(%arg: !poly.tvar<@U>) -> (!poly.tvar<@U>, index) {
+        %one = arith.constant 1 : index
+        function.return %arg, %one : !poly.tvar<@U>, index
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @V : !poly.tvar<@V>
+    function.def @forward(%arg: !poly.tvar<@T>) -> (!poly.tvar<@T>, !poly.tvar<@V>) {
+      %value, %count = "function.call"(%arg) <{
+        callee = @Lib::@Inner::@pair,
+        templateParams = [@T],
+        mapOpGroupSizes = array<i32>,
+        numDimsPerMap = array<i32>,
+        operandSegmentSizes = array<i32: 1, 0>,
+        arg_attrs = [{test.arg = "preserved"}],
+        res_attrs = [{test.result = "value"}, {}]
+      }> {test.call = "preserved"} : (!poly.tvar<@T>) -> (!poly.tvar<@T>, !poly.tvar<@V>)
+      function.return %value, %count : !poly.tvar<@T>, !poly.tvar<@V>
+    }
+  }
+}
+// CHECK-LABEL: "builtin.module"() ({
+// CHECK:    "poly.template"() <{sym_name = "Outer"}> ({
+// CHECK-NEXT:      "poly.param"() <{sym_name = "T", type_opt = !poly.tvar<@T>}> : () -> ()
+// CHECK-NEXT:      "poly.param"() <{sym_name = "V", type_opt = !poly.tvar<@V>}> : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!poly.tvar<@T>) -> (!poly.tvar<@T>, index), sym_name = "forward"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>):
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]]:2 = "function.call"(%[[VAL_2]]) <{arg_attrs = [{test.arg = "preserved"}], callee = @Lib::@Inner::@pair, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 1, 0>, res_attrs = [{test.result = "value"}, {}], templateParams = [@T]}> {test.call = "preserved"} : (!poly.tvar<@T>) -> (!poly.tvar<@T>, index)
+// CHECK-NEXT:        "function.return"(%[[VAL_3]]#0, %[[VAL_3]]#1) : (!poly.tvar<@T>, index) -> ()
+// CHECK-NEXT:      }) : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:  }) {llzk.lang} : () -> ()
+
+// -----
+
+// Callee-local array dimensions and struct parameters must not escape their template.
+// Keep the caller result types and symbolic template argument until instantiation can resolve them.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    poly.template @TCell {
+      poly.param @N : index
+      struct.def @Cell {
+        function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+          %self = struct.new : <@TCell::@Cell<[@N]>>
+          function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+        }
+        function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+      }
+    }
+    poly.template @Inner {
+      poly.param @N : index
+      function.def @pair(%array: !array.type<@N x !felt.type>, %cell: !struct.type<@TCell::@Cell<[@N]>>) -> (!array.type<@N x !felt.type>, !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return %array, %cell : !array.type<@N x !felt.type>, !struct.type<@TCell::@Cell<[@N]>>
+      }
+    }
+  }
+  poly.template @Outer {
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+    function.def @forward(%array: !array.type<@M x !felt.type>, %cell: !struct.type<@Lib::@TCell::@Cell<[@M]>>) -> (!poly.tvar<@T>, !poly.tvar<@U>) {
+      %array_result, %cell_result = function.call @Lib::@Inner::@pair<[@M]>(%array, %cell) : (!array.type<@M x !felt.type>, !struct.type<@Lib::@TCell::@Cell<[@M]>>) -> (!poly.tvar<@T>, !poly.tvar<@U>)
+      function.return %array_result, %cell_result : !poly.tvar<@T>, !poly.tvar<@U>
+    }
+  }
+}
+// CHECK-LABEL: "builtin.module"() ({
+// CHECK:    "poly.template"() <{sym_name = "Outer"}> ({
+// CHECK-NEXT:      "poly.param"() <{sym_name = "M", type_opt = index}> : () -> ()
+// CHECK-NEXT:      "poly.param"() <{sym_name = "T", type_opt = !poly.tvar<@T>}> : () -> ()
+// CHECK-NEXT:      "poly.param"() <{sym_name = "U", type_opt = !poly.tvar<@U>}> : () -> ()
+// CHECK-NEXT:      "function.def"() <{function_type = (!array.type<@M x !felt.type>, !struct.type<@Lib::@TCell::@Cell<[@M]>>) -> (!poly.tvar<@T>, !poly.tvar<@U>), sym_name = "forward"}> ({
+// CHECK-NEXT:      ^bb0(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<@M x !felt.type>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@TCell::@Cell<[@M]>>):
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]]:2 = "function.call"(%[[VAL_4]], %[[VAL_5]]) <{callee = @Lib::@Inner::@pair, mapOpGroupSizes = array<i32>, numDimsPerMap = array<i32>, operandSegmentSizes = array<i32: 2, 0>, templateParams = [@M]}> : (!array.type<@M x !felt.type>, !struct.type<@Lib::@TCell::@Cell<[@M]>>) -> (!poly.tvar<@T>, !poly.tvar<@U>)
+// CHECK-NEXT:        "function.return"(%[[VAL_6]]#0, %[[VAL_6]]#1) : (!poly.tvar<@T>, !poly.tvar<@U>) -> ()
+// CHECK-NEXT:      }) : () -> ()
+// CHECK-NEXT:    }) : () -> ()
+// CHECK-NEXT:  }) {llzk.lang} : () -> ()

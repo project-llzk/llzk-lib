@@ -1,0 +1,190 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// Matching shared bindings and repeated uses of the same read remain supported.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @right : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %also_zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %also_zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      // Both reads must adopt the common binding. Repeated uses of a single read are also valid.
+      function.call @Match::@consume(%left, %left) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.call @Match::@consume(%left, %right) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL:   struct.def @Holder {
+// CHECK-NEXT:      struct.member @left : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @right : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@left] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@right] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@left] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@right] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_7]], %[[VAL_7]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_7]], %[[VAL_8]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+
+// -----
+
+// Independent type variables may bind to different member types.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@U>) {
+      function.return
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @right : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %one = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@right] = %one : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %right = struct.readm %self[@right] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      function.call @Match::@consume(%left, %right) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL:   struct.def @Holder {
+// CHECK-NEXT:      struct.member @left : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @right : !struct.type<@TCell_1_Cell> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@left] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@right] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@left] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_6]][@right] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_!s<@TCell_1_Cell>_consume"(%[[VAL_9]], %[[VAL_10]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_1_Cell>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+
+// -----
+
+// Both proposed argument types resolve in the callee namespace.
+module attributes {llzk.lang} {
+  module @Lib attributes {llzk.lang} {
+    struct.def @Marker {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@Marker> {
+        %self = struct.new : !struct.type<@Marker>
+        function.return %self : !struct.type<@Marker>
+      }
+      function.def @constrain(%self: !struct.type<@Marker>) { function.return }
+    }
+    function.def @consume(%value: !struct.type<@Marker>, %marker: !struct.type<@Marker>) {
+      function.return
+    }
+  }
+  poly.template @Caller {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @left : !poly.tvar<@T> {column}
+      struct.member @right : !poly.tvar<@T> {column}
+      function.def @compute(%value: !struct.type<@Lib::@Marker>) -> !struct.type<@Caller::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@Caller::@Holder<[@T]>>
+        struct.writem %self[@left] = %value : !struct.type<@Caller::@Holder<[@T]>>, !struct.type<@Lib::@Marker>
+        struct.writem %self[@right] = %value : !struct.type<@Caller::@Holder<[@T]>>, !struct.type<@Lib::@Marker>
+        %left = struct.readm %self[@left] : !struct.type<@Caller::@Holder<[@T]>>, !poly.tvar<@T>
+        %right = struct.readm %self[@right] : !struct.type<@Caller::@Holder<[@T]>>, !poly.tvar<@T>
+        function.call @Lib::@consume(%left, %right) : (!poly.tvar<@T>, !poly.tvar<@T>) -> ()
+        function.return %self : !struct.type<@Caller::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Holder<[@T]>>, %value: !struct.type<@Lib::@Marker>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL:     struct.def @Holder {
+// CHECK-NEXT:        struct.member @left : !struct.type<@Lib::@Marker> {column}
+// CHECK-NEXT:        struct.member @right : !struct.type<@Lib::@Marker> {column}
+// CHECK-NEXT:        function.def @compute(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Marker>) -> !struct.type<@Caller::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.new : <@Caller::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_7]][@left] = %[[VAL_6]] : <@Caller::@Holder<[@T]>>, !struct.type<@Lib::@Marker>
+// CHECK-NEXT:          struct.writem %[[VAL_7]][@right] = %[[VAL_6]] : <@Caller::@Holder<[@T]>>, !struct.type<@Lib::@Marker>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@left] : <@Caller::@Holder<[@T]>>, !struct.type<@Lib::@Marker>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@right] : <@Caller::@Holder<[@T]>>, !struct.type<@Lib::@Marker>
+// CHECK-NEXT:          function.call @Lib::@consume(%[[VAL_8]], %[[VAL_9]]) : (!struct.type<@Lib::@Marker>, !struct.type<@Lib::@Marker>) -> ()
+// CHECK-NEXT:          function.return %[[VAL_7]] : !struct.type<@Caller::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Caller::@Holder<[@T]>>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Marker>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }

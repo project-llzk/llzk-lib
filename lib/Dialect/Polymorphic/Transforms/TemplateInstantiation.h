@@ -62,6 +62,13 @@ mlir::FailureOr<mlir::ArrayAttr> rebaseTemplateParams(
     mlir::Operation *lookupFrom, mlir::ModuleOp destinationRoot, mlir::Operation *requestSite
 );
 
+/// Materialize a template value as a constant of the requested type, or return null
+/// when no supported constant operation can represent it. Callers diagnose lossy
+/// conversions, including nonzero integers interpreted as booleans.
+mlir::Value materializeTemplateConstant(
+    mlir::OpBuilder &builder, mlir::Location loc, mlir::Type resultType, mlir::Attribute value
+);
+
 /// Report diagnostics emitted while substituting a clone, preserving notes and
 /// moving notes with unknown locations to the instantiation site.
 void reportDelayedDiagnostics(
@@ -80,7 +87,7 @@ void evaluateTemplateExprs(
     TemplateOp templateOp, llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
 );
 
-/// Return the callee-side unification-derived value for a template parameter, if any.
+/// Return an unambiguous callee-side binding; absent and unresolved entries have no value.
 std::optional<mlir::Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, mlir::SymbolRefAttr paramName);
 
@@ -99,6 +106,15 @@ mlir::LogicalResult substituteStructBody(
 /// Does not clone, insert symbols, infer parameters, inline calls or unroll loops.
 mlir::LogicalResult substituteFunctionBody(
     function::FuncDefOp newFunc,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete,
+    llvm::SmallVector<mlir::Diagnostic> &delayedDiagnostics
+);
+
+/// Substitute bindings in a copied template expression, including constant reads and dependent
+/// operation types and attributes. Append materialization warnings for the caller to report at
+/// the instantiation site. The caller owns insertion and erasing the clone on failure.
+mlir::LogicalResult substituteTemplateExprBody(
+    TemplateExprOp expr,
     const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete,
     llvm::SmallVector<mlir::Diagnostic> &delayedDiagnostics
 );
