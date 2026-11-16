@@ -19,6 +19,7 @@
 #include "TemplateInstantiation.h"
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -39,6 +40,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::constrain;
 using namespace llzk::function;
 using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
@@ -175,6 +177,31 @@ static LogicalResult canReplaceReadUsersWithType(
   Value result = readOp.getResult();
   for (OpOperand &use : result.getUses()) {
     Operation *user = use.getOwner();
+    if (EmitEqualityOp equalityOp = llvm::dyn_cast<EmitEqualityOp>(user)) {
+      Value other = use.getOperandNumber() == 0 ? equalityOp.getRhs() : equalityOp.getLhs();
+      Type otherType = other.getType();
+      // Both sides may be refined in the same batch. Check their eventual types, including
+      // self-equality, before replacing either operand with an index-specific value.
+      if (plannedReadTypes) {
+        if (Type planned = plannedReadTypes->lookup(other)) {
+          otherType = planned;
+        }
+      }
+      if (other == result) {
+        otherType = replacementType;
+      }
+      if (!typesUnify(replacementType, otherType)) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with an equality constraint"
+        );
+        diag.attachNote(equalityOp.getLoc())
+            << "other equality operand requires " << otherType
+            << ", but this read is replaced with " << replacementType;
+        return diag;
+      }
+      continue;
+    }
     if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
       if (memberWrite.getVal() != result) {
         return failure();
