@@ -202,6 +202,34 @@ static LogicalResult canReplaceReadUsersWithType(
       }
       continue;
     }
+    if (auto containmentOp = llvm::dyn_cast<EmitContainmentOp>(user)) {
+      // Validate the complete constraint with each operand's eventual type, regardless of
+      // which operand uses this read. The table and queried value must stay compatible.
+      auto eventualType = [&](Value operand) {
+        if (operand == result) {
+          return replacementType;
+        }
+        if (plannedReadTypes) {
+          if (Type planned = plannedReadTypes->lookup(operand)) {
+            return planned;
+          }
+        }
+        return operand.getType();
+      };
+      Type lhsType = eventualType(containmentOp.getLhs());
+      Type rhsType = eventualType(containmentOp.getRhs());
+      if (!areValidContainmentOperandTypes(lhsType, rhsType)) {
+        auto diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with a containment constraint"
+        );
+        diag.attachNote(containmentOp.getLoc())
+            << "replacement containment operands " << lhsType << " and " << rhsType
+            << " must form an array and a compatible element or subarray";
+        return diag;
+      }
+      continue;
+    }
     if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
       if (memberWrite.getVal() != result) {
         return failure();

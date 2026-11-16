@@ -50,6 +50,10 @@ bool canUseScalarizedValueAsType(
     const char *patName, mlir::Operation *scope = nullptr
 );
 
+/// Check the array/element or array/subarray type relationship required by constrain.in.
+/// Shared by member refinement and index-specific read replacement.
+bool areValidContainmentOperandTypes(mlir::Type lhsType, mlir::Type rhsType);
+
 /// Check the independently declared type requirements of an array allocation's consumers.
 bool canRefineCreateArrayUsersToType(
     array::CreateArrayOp createOp, mlir::Type refinedType, mlir::SymbolTableCollection &tables,

@@ -457,9 +457,9 @@ static bool isFullyConcreteArrayConsumerType(Type type) {
 
 /// Return true iff `rhsType` remains a valid containment operand for `lhsType`.
 ///
-/// This mirrors EmitContainmentOp::verify without emitting a diagnostic, so member-read
-/// refinement can reject a type change that would invalidate constrain.in.
-static bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
+/// This mirrors the type compatibility checks in EmitContainmentOp::verify without emitting
+/// a diagnostic, so preflight can reject a type change that would invalidate constrain.in.
+bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
   auto lhsArrayType = llvm::dyn_cast<ArrayType>(lhsType);
   if (!lhsArrayType) {
     return false;
