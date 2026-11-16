@@ -477,14 +477,23 @@ static LogicalResult verifyStructCallBindings(ModuleOp module, const ConversionT
 /// This only checks unification: a compatible type need not have a representable common refinement.
 /// No conversion or IR mutation occurs while collecting and checking the component.
 class NonDetMemberTypeVerifier {
+  /// Root module whose nondeterministic witnesses are checked by verifyModule().
   ModuleOp module;
+  /// Conversion history used to recover original parameterized types for comparison.
   const ConversionTracker &tracker;
+  /// Cached symbol tables for resolving struct, member, and callee definitions.
   SymbolTableCollection tables;
+  /// Witness and member nodes already reached, shared across component checks.
   DenseSet<Operation *> visited;
+  /// Struct definitions whose bodies have already been scanned for member writes.
   DenseSet<Operation *> indexedStructs;
+  /// Writes grouped by their resolved member definition, populated lazily by indexWriters().
   DenseMap<Operation *, SmallVector<MemberWriteOp>> writesByMember;
+  /// Private comparison names keyed by struct family definition, independent of namespace spelling.
   DenseMap<Operation *, SymbolRefAttr> comparisonNames;
+  /// Normalized types cached by original type and symbol-resolution scope.
   DenseMap<std::pair<Type, Operation *>, Type> normalizedTypes;
+  /// Retained lookup results keeping included struct definitions used as comparison keys alive.
   SmallVector<SymbolLookupResult<StructDefOp>> resolvedDefinitions;
 
   /// Normalize instantiated families and namespace spellings for comparison, preserving parameters.
@@ -691,7 +700,7 @@ public:
               << "first required type: " << previous.original;
           diagnostic.attachNote(current.origin->getLoc())
               << "conflicting required type: " << current.original;
-          return failure();
+          return diagnostic;
         }
       }
     }
@@ -1172,7 +1181,7 @@ public:
           );
           diagnostic.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
           hadConflict_ = true;
-          return failure();
+          return diagnostic;
         }
       }
     }

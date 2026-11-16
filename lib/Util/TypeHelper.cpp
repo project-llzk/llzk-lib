@@ -936,12 +936,19 @@ private:
 /// Keep every compatible term: an affine or unresolved term can unify with two concrete terms
 /// that conflict with each other. Unioning aliases must compare their entire sets of evidence.
 class SignatureBindingChecker {
+  /// Symbolic parameter identified by its name and originating signature side.
   using Variable = UnificationMap::key_type;
+  /// Type or value attribute paired with its originating signature side.
   using Term = std::pair<Attribute, Side>;
+  /// Union-find parent links for aliased variables; representatives point to themselves.
   DenseMap<Variable, Variable> parents;
+  /// All distinct terms bound to each representative, retained for pairwise compatibility checks.
   DenseMap<Variable, SmallVector<Term>> terms;
+  /// Worklist of term equations awaiting alias resolution, binding, or structural comparison.
   SmallVector<std::pair<Term, Term>> pending;
+  /// Non-variable term pairs already compared, avoiding repeated structural checks.
   DenseSet<std::pair<Term, Term>> compared;
+  /// Reversed RHS namespace prefix used when comparing terms from different signature scopes.
   ArrayRef<StringRef> rhsNamespace;
 
   /// Find the representative for a variable without conflating the two signature scopes.
