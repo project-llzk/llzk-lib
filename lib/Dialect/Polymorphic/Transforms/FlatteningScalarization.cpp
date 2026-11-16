@@ -22,13 +22,16 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Dominance.h>
+#include <mlir/IR/Matchers.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
@@ -98,6 +101,8 @@ struct ScalarizedArrayInfo {
   SmallVector<WriteArrayOp> writes;
   /// Direct reads from the local allocation.
   SmallVector<ReadArrayOp> reads;
+  /// Direct length observations and their statically selected dimension sizes.
+  SmallVector<std::pair<ArrayLengthOp, int64_t>> lengths;
   /// Direct writes that store the whole local allocation into a struct member.
   SmallVector<MemberWriteOp> memberWrites;
 };
@@ -805,7 +810,8 @@ static LogicalResult mergeSplitCandidateType(
 ///
 /// A candidate must:
 /// - have a static shape and a real element type,
-/// - have only direct reads, direct writes, and whole-array struct member writes as users,
+/// - have only direct reads, direct writes, static length observations, and whole-array struct
+///   member writes as users,
 /// - use only static array indices,
 /// - have an initializer or exactly one write for every static element index,
 /// - have all reads/member writes after every explicit element write, and
@@ -855,6 +861,21 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
         return failure();
       }
       info.reads.push_back(readOp);
+      continue;
+    }
+    if (auto lengthOp = llvm::dyn_cast<ArrayLengthOp>(user)) {
+      llvm::APInt dimension;
+      if (lengthOp.getArrRef() != arrayValue ||
+          !matchPattern(lengthOp.getDim(), m_ConstantInt(&dimension))) {
+        return failure();
+      }
+      std::optional<int64_t> index = dimension.trySExtValue();
+      ArrayRef<int64_t> shape = arrTy.getShape();
+      if (!index || *index < 0 || !std::cmp_less(*index, shape.size())) {
+        return failure();
+      }
+      // Shape observations are independent of initialization and can precede element writes.
+      info.lengths.emplace_back(lengthOp, shape[*index]);
       continue;
     }
     if (auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user)) {
@@ -1518,6 +1539,12 @@ static LogicalResult rewriteLocalArray(
     rewriter.eraseOp(memberWriteOp);
   }
 
+  // All scalarization preflight has succeeded. Fold shape-only users before erasing the
+  // allocation, retaining the original length operation's location and discardable metadata.
+  for (const auto &[lengthOp, length] : info.lengths) {
+    rewriter.setInsertionPoint(lengthOp);
+    replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, lengthOp, length);
+  }
   for (WriteArrayOp writeOp : llvm::make_early_inc_range(info.writes)) {
     rewriter.eraseOp(writeOp);
   }
