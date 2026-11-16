@@ -360,16 +360,34 @@ static LogicalResult canReplaceReadUsersWithType(
       if (resultIdx >= resultTypes.size()) {
         return failure();
       }
-      Type resultType = resultTypes[resultIdx];
-      if (isConcreteType(resultType, /*allowStructParams=*/false) &&
-          !typesUnify(replacementType, resultType)) {
+      // Results can share template variables even when no individual result is concrete.
+      // Check every planned replacement together before rewriting any return operand.
+      SmallVector<Type> replacementTypes;
+      for (Value operand : returnOp.getOperands()) {
+        Type type = operand.getType();
+        if (plannedReadTypes) {
+          if (Type planned = plannedReadTypes->lookup(operand)) {
+            type = planned;
+          }
+        }
+        if (operand == result) {
+          type = replacementType;
+        }
+        replacementTypes.push_back(type);
+      }
+      FunctionType replacementSignature =
+          FunctionType::get(returnOp.getContext(), {}, replacementTypes);
+      FunctionType declaredSignature = FunctionType::get(returnOp.getContext(), {}, resultTypes);
+      if (!callSignatureUnifies(
+              replacementSignature, declaredSignature, {}, tracker, false, returnOp
+          )) {
         InFlightDiagnostic diag = readOp.emitError(
             "cannot scalarize heterogeneous array read because its index-specific value type is "
             "incompatible with a function return"
         );
         diag.attachNote(returnOp.getLoc())
-            << "function return requires " << resultType << ", but this read is replaced with "
-            << replacementType;
+            << "replacement return signature " << replacementSignature
+            << " does not unify with declared return signature " << declaredSignature;
         return diag;
       }
       continue;
