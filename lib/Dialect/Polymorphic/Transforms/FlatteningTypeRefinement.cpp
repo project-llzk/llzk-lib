@@ -563,6 +563,26 @@ bool canRefineCreateArrayUsersToType(
         return false;
       }
       requiredType = *requirement;
+      if (auto returnOp = dyn_cast<ReturnOp>(user)) {
+        // Results can share template variables even when no individual requirement is concrete.
+        // Validate every pending return type with shared bindings before accepting this array.
+        SmallVector<Type> replacementTypes;
+        for (Value operand : returnOp.getOperands()) {
+          replacementTypes.push_back(
+              operand == result ? refinedType : plannedType(operand, pendingRefinements)
+          );
+        }
+        FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
+        FunctionType replacementSignature =
+            FunctionType::get(returnOp.getContext(), {}, replacementTypes);
+        FunctionType declaredSignature =
+            FunctionType::get(returnOp.getContext(), {}, function.getFunctionType().getResults());
+        if (!callSignatureUnifies(
+                replacementSignature, declaredSignature, {}, tracker, false, returnOp
+            )) {
+          return false;
+        }
+      }
     } else if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
       if (arrayWrite.getArrRef() != result) {
         return false;
