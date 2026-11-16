@@ -20,6 +20,7 @@
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -379,6 +380,35 @@ static LogicalResult canReplaceReadUsersWithType(
         );
         diag.attachNote(castOp.getLoc()) << "unifiable cast result requires " << castResultType
                                          << ", but this read is replaced with " << replacementType;
+        return diag;
+      }
+      continue;
+    }
+    if (pod::ReadPodOp podRead = llvm::dyn_cast<pod::ReadPodOp>(user)) {
+      Type recordType;
+      if (auto replacementPod = llvm::dyn_cast<pod::PodType>(replacementType)) {
+        for (pod::RecordAttr record : replacementPod.getRecords()) {
+          if (record.getName() == podRead.getRecordNameAttr()) {
+            recordType = record.getType();
+            break;
+          }
+        }
+      }
+      // POD reads require exact record/result types and do not infer a new
+      // result type. An invariant record leaves every downstream user unchanged.
+      if (recordType != podRead.getResult().getType()) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific receiver "
+            "type is incompatible with a POD read"
+        );
+        auto &note = diag.attachNote(podRead.getLoc());
+        note << "POD read requires exactly " << podRead.getResult().getType();
+        if (recordType) {
+          note << ", but the replacement receiver's record has type " << recordType;
+        } else {
+          note << ", but the replacement receiver has no record named '" << podRead.getRecordName()
+               << "'";
+        }
         return diag;
       }
       continue;
