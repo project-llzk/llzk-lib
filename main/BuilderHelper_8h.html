@@ -135,17 +135,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('BuilderHelper_
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="ErrorHelper_8h_source.html">llzk/Util/ErrorHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
+<code>#include &lt;mlir/IR/Block.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
+<code>#include &lt;mlir/IR/IRMapping.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Location.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for BuilderHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__incl.svg" width="1579" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__incl.svg" width="2107" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__dep__incl.svg" width="1146" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__dep__incl.svg" width="1602" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="BuilderHelper_8h_source.html">Go to the source code of this file.</a></p>
@@ -156,6 +160,8 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a3882852352efd6990d227988ba562b27" id="r_a3882852352efd6990d227988ba562b27"><td class="memItemLeft">llvm::SmallVector&lt; mlir::Value &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a3882852352efd6990d227988ba562b27">llzk::cloneBlockWithMappedArguments</a> (mlir::OpBuilder &amp;builder, mlir::Block &amp;block, mlir::ValueRange arguments, mlir::ValueRange forwarded)</td></tr>
+<tr class="memdesc:a3882852352efd6990d227988ba562b27"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clone a block's non-terminator operations with the supplied argument bindings and return the remapped forwarded values.  <br /></td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a" id="r_ad19f7db21d0d9d7f998bb6f00782e35a"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename... Args&gt; </td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a template"><td class="memItemLeft">OpClass&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">llzk::delegate_to_build</a> (mlir::Location location, Args &amp;&amp;...args)</td></tr>
 <tr class="memitem:ae84de17f3956dc25edb6816991ded1ef" id="r_ae84de17f3956dc25edb6816991ded1ef"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>

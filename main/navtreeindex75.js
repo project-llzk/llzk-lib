@@ -1,5 +1,11 @@
 var NAVTREEINDEX75 =
 {
+"r1cs-backend.html#r1csneg-r1csnegop":[8,0,0,0,6],
+"r1cs-backend.html#r1csto_linear-r1cstolinearop":[8,0,0,0,7],
+"r1cs-backend.html#results-42":[8,0,0,0,0,1],
+"r1cs-backend.html#results-43":[8,0,0,0,2,1],
+"r1cs-backend.html#results-44":[8,0,0,0,4,1],
+"r1cs-backend.html#results-45":[8,0,0,0,5,2],
 "r1cs-backend.html#results-46":[8,0,0,0,6,1],
 "r1cs-backend.html#results-47":[8,0,0,0,7,1],
 "r1cs-backend.html#signaltype":[8,0,0,2,1],
@@ -243,11 +249,5 @@ var NAVTREEINDEX75 =
 "structOldOpBuildFuncHelper.html#a09a0015f5ef08512ef0ac7a926e68a61":[13,0,85,0],
 "structOldOpBuildFuncHelper.html#a1555c1971d03bc35d340088b752fa851":[13,0,85,1],
 "structOpGeneratorData.html":[13,0,86],
-"structOpGeneratorData.html#a078202de65f2ba9f3d98b99c26ffbfbf":[13,0,86,0],
-"structOpGeneratorData.html#a37aa2c3f06efcfff3ba47849480eb022":[13,0,86,3],
-"structOpGeneratorData.html#a4d47bc147f71867151197612b35190e8":[13,0,86,1],
-"structOpGeneratorData.html#a56c47286fe805d5a93c6d06ad5625970":[13,0,86,7],
-"structOpGeneratorData.html#a5a45f365e33738373d4dac57e1ea0f27":[13,0,86,4],
-"structOpGeneratorData.html#ad41a0f6b92052ec48081b65a3d01330c":[13,0,86,5],
-"structOpGeneratorData.html#afd33b430fe9e86b0364b74e634ca7532":[13,0,86,2]
+"structOpGeneratorData.html#a078202de65f2ba9f3d98b99c26ffbfbf":[13,0,86,0]
 };

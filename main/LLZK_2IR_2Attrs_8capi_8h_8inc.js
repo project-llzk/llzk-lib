@@ -5,6 +5,7 @@ var LLZK_2IR_2Attrs_8capi_8h_8inc =
     [ "llzkLlzk_LoopBoundsAttrGet", "LLZK_2IR_2Attrs_8capi_8h_8inc.html#a9ddf13851f0416bbc9d648024b6bc20d", null ],
     [ "llzkLlzk_LoopBoundsAttrGetLower", "LLZK_2IR_2Attrs_8capi_8h_8inc.html#a12eda644be78b76b194d75fb3bb39726", null ],
     [ "llzkLlzk_LoopBoundsAttrGetStep", "LLZK_2IR_2Attrs_8capi_8h_8inc.html#a951038185129d5fa27d2458cebb016d9", null ],
+    [ "llzkLlzk_LoopBoundsAttrGetTripCount", "LLZK_2IR_2Attrs_8capi_8h_8inc.html#a24da076c52aab94c406d09dfd4996840", null ],
     [ "llzkLlzk_LoopBoundsAttrGetUpper", "LLZK_2IR_2Attrs_8capi_8h_8inc.html#a9aa6e0604aa00ed7e1d181f5c4f2b0b1", null ],
     [ "llzkLlzk_PublicAttrGet", "LLZK_2IR_2Attrs_8capi_8h_8inc.html#a3507c6bc275a3b166b2fd31e05607574", null ]
 ];

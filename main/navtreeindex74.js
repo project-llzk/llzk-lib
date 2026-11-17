@@ -1,5 +1,11 @@
 var NAVTREEINDEX74 =
 {
+"namespacellzk_1_1verif.html":[11,0,3,21],
+"namespacellzk_1_1verif.html#a0497408c6f000900a125534dc2b9e849":[11,0,3,21,78],
+"namespacellzk_1_1verif.html#a4eee2e847b41c04baf5d2b33d10284bc":[11,0,3,21,65],
+"namespacellzk_1_1verif.html#a53b28ec4a1d345083518a4b91d14da44":[11,0,3,21,66],
+"namespacellzk_1_1verif.html#a5779cd4460ca024c3161ff72a10eb3ce":[11,0,3,21,63],
+"namespacellzk_1_1verif.html#a6c6e9c2237d93cab449bd123c18f10b2":[11,0,3,21,75],
 "namespacellzk_1_1verif.html#a6f399ab88c68b5d90aeb54490666d7e1":[11,0,3,21,64],
 "namespacellzk_1_1verif.html#a7dbe51b1fe29c482165d73cfe5082010":[11,0,3,21,68],
 "namespacellzk_1_1verif.html#ab5b1ba23977eeade15c06246fe2f0f01":[11,0,3,21,76],
@@ -243,11 +249,5 @@ var NAVTREEINDEX74 =
 "r1cs-backend.html#r1csconst-r1csconstop":[8,0,0,0,2],
 "r1cs-backend.html#r1csconstrain-r1csconstrainop":[8,0,0,0,3],
 "r1cs-backend.html#r1csdef-r1cssignaldefop":[8,0,0,0,4],
-"r1cs-backend.html#r1csmul_const-r1csmulconstop":[8,0,0,0,5],
-"r1cs-backend.html#r1csneg-r1csnegop":[8,0,0,0,6],
-"r1cs-backend.html#r1csto_linear-r1cstolinearop":[8,0,0,0,7],
-"r1cs-backend.html#results-42":[8,0,0,0,0,1],
-"r1cs-backend.html#results-43":[8,0,0,0,2,1],
-"r1cs-backend.html#results-44":[8,0,0,0,4,1],
-"r1cs-backend.html#results-45":[8,0,0,0,5,2]
+"r1cs-backend.html#r1csmul_const-r1csmulconstop":[8,0,0,0,5]
 };

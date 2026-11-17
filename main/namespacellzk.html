@@ -766,6 +766,8 @@ Functions</h2></td></tr>
 <tr class="memitem:aaa4a11b9841dc711843a40d178fea482" id="r_aaa4a11b9841dc711843a40d178fea482"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses&gt; </td></tr>
 <tr class="memitem:aaa4a11b9841dc711843a40d178fea482 template"><td class="memItemLeft">mlir::RewritePatternSet&#160;</td><td class="memItemRight"><a class="el" href="#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
 <tr class="memdesc:aaa4a11b9841dc711843a40d178fea482"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> covering all LLZK op types that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a>.  <br /></td></tr>
+<tr class="memitem:a3882852352efd6990d227988ba562b27" id="r_a3882852352efd6990d227988ba562b27"><td class="memItemLeft">llvm::SmallVector&lt; mlir::Value &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a3882852352efd6990d227988ba562b27">cloneBlockWithMappedArguments</a> (mlir::OpBuilder &amp;builder, mlir::Block &amp;block, mlir::ValueRange arguments, mlir::ValueRange forwarded)</td></tr>
+<tr class="memdesc:a3882852352efd6990d227988ba562b27"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clone a block's non-terminator operations with the supplied argument bindings and return the remapped forwarded values.  <br /></td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a" id="r_ad19f7db21d0d9d7f998bb6f00782e35a"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename... Args&gt; </td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a template"><td class="memItemLeft">OpClass&#160;</td><td class="memItemRight"><a class="el" href="#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build</a> (mlir::Location location, Args &amp;&amp;...args)</td></tr>
 <tr class="memitem:ae84de17f3956dc25edb6816991ded1ef" id="r_ae84de17f3956dc25edb6816991ded1ef"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
@@ -1501,7 +1503,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00027">27</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00049">49</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
 
 </div>
 </div>
@@ -3013,6 +3015,50 @@ template&lt;typename T, typename U&gt; </div>
 
 </div>
 </div>
+<a id="a3882852352efd6990d227988ba562b27" name="a3882852352efd6990d227988ba562b27"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3882852352efd6990d227988ba562b27">&#9670;&#160;</a></span>cloneBlockWithMappedArguments()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::SmallVector&lt; mlir::Value &gt; llzk::cloneBlockWithMappedArguments </td>
+          <td>(</td>
+          <td class="paramtype">mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Block &amp;</td>          <td class="paramname"><span class="paramname"><em>block</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>arguments</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>forwarded</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Clone a block's non-terminator operations with the supplied argument bindings and return the remapped forwarded values. </p>
+<p>A fresh mapping keeps separate invocations independent; captures outside the block retain their original values. </p>
+
+<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00028">28</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
+
+</div>
+</div>
 <a id="a562ddceaa4861060a3920d4427ac2909" name="a562ddceaa4861060a3920d4427ac2909"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a562ddceaa4861060a3920d4427ac2909">&#9670;&#160;</a></span>cmp()</h2>
 
@@ -4034,7 +4080,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00021">21</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00043">43</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
 
 </div>
 </div>
@@ -6214,7 +6260,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8cpp_source.html#l00038">38</a> of file <a class="el" href="LLZK_2IR_2Attrs_8cpp_source.html">Attrs.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8cpp_source.html#l00051">51</a> of file <a class="el" href="LLZK_2IR_2Attrs_8cpp_source.html">Attrs.cpp</a>.</p>
 
 </div>
 </div>

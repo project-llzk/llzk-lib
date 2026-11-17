@@ -28,6 +28,8 @@ var namespacellzk_1_1polymorphic_1_1detail_1_1flattening =
     [ "getCommonRefinedType", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#ad6e52f5223e78f9ea03ced0dfe6459de", null ],
     [ "getConstantTripCount", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#ab9c79f0f27cb2bc7e7bc0610a3368e6e", null ],
     [ "getConstantTripCount", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#ae82c208dedfafebaf43dc5c364d80cd3", null ],
+    [ "getInductionStorageWidth", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#a1e51df125e3c7420825ad61b2b305228", null ],
+    [ "getInductionStorageWidth", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#add2f2baaa0172ad7cb0fa7fd58619853", null ],
     [ "getRefinedCallSignature", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#aa5b177e3b129775931b7bb31cb94245e", null ],
     [ "getRefinedCallSignature", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#aca6283b6bacae9fd57d3bbccea01b77a", null ],
     [ "getRefinedMemberReadType", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#ad8d00b4691d0bebba9fbf5585d6b5aef", null ],

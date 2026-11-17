@@ -153,8 +153,11 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:add2f2baaa0172ad7cb0fa7fd58619853" id="r_add2f2baaa0172ad7cb0fa7fd58619853"><td class="memItemLeft">unsigned&#160;</td><td class="memItemRight"><a class="el" href="#add2f2baaa0172ad7cb0fa7fd58619853">getInductionStorageWidth</a> (Type type)</td></tr>
 <tr class="memitem:ab9c79f0f27cb2bc7e7bc0610a3368e6e" id="r_ab9c79f0f27cb2bc7e7bc0610a3368e6e"><td class="memItemLeft">std::optional&lt; APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab9c79f0f27cb2bc7e7bc0610a3368e6e">getConstantTripCount</a> (LoopLikeOpInterface loopOp)</td></tr>
 <tr class="memdesc:ab9c79f0f27cb2bc7e7bc0610a3368e6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the trip count from the loop itself, independently of any trusted annotation.  <br /></td></tr>
+<tr class="memitem:a1e51df125e3c7420825ad61b2b305228" id="r_a1e51df125e3c7420825ad61b2b305228"><td class="memItemLeft">unsigned&#160;</td><td class="memItemRight"><a class="el" href="#a1e51df125e3c7420825ad61b2b305228">getInductionStorageWidth</a> (mlir::Type type)</td></tr>
+<tr class="memdesc:a1e51df125e3c7420825ad61b2b305228"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the storage width used to encode an integer or index induction variable.  <br /></td></tr>
 <tr class="memitem:ae82c208dedfafebaf43dc5c364d80cd3" id="r_ae82c208dedfafebaf43dc5c364d80cd3"><td class="memItemLeft">std::optional&lt; llvm::APInt &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ae82c208dedfafebaf43dc5c364d80cd3">getConstantTripCount</a> (mlir::LoopLikeOpInterface loopOp)</td></tr>
 <tr class="memdesc:ae82c208dedfafebaf43dc5c364d80cd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute a loop trip count independently of trusted annotations.  <br /></td></tr>
 <tr class="memitem:a8994f38688a019ce128539314a3b26ae" id="r_a8994f38688a019ce128539314a3b26ae"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a8994f38688a019ce128539314a3b26ae">scalarizeHeterogeneousArrays</a> (ModuleOp modOp, <a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html">ConversionTracker</a> &amp;tracker)</td></tr>
@@ -972,7 +975,7 @@ Functions</h2></td></tr>
 
 <p>Compute the trip count from the loop itself, independently of any trusted annotation. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningContext_8cpp_source.html#l00047">47</a> of file <a class="el" href="FlatteningContext_8cpp_source.html">FlatteningContext.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningContext_8cpp_source.html#l00052">52</a> of file <a class="el" href="FlatteningContext_8cpp_source.html">FlatteningContext.cpp</a>.</p>
 
 </div>
 </div>
@@ -992,6 +995,44 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Compute a loop trip count independently of trusted annotations. </p>
+
+</div>
+</div>
+<a id="a1e51df125e3c7420825ad61b2b305228" name="a1e51df125e3c7420825ad61b2b305228"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e51df125e3c7420825ad61b2b305228">&#9670;&#160;</a></span>getInductionStorageWidth() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned llzk::polymorphic::detail::flattening::getInductionStorageWidth </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the storage width used to encode an integer or index induction variable. </p>
+
+</div>
+</div>
+<a id="add2f2baaa0172ad7cb0fa7fd58619853" name="add2f2baaa0172ad7cb0fa7fd58619853"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add2f2baaa0172ad7cb0fa7fd58619853">&#9670;&#160;</a></span>getInductionStorageWidth() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned llzk::polymorphic::detail::flattening::getInductionStorageWidth </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="FlatteningContext_8cpp_source.html#l00046">46</a> of file <a class="el" href="FlatteningContext_8cpp_source.html">FlatteningContext.cpp</a>.</p>
 
 </div>
 </div>

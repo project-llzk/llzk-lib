@@ -159,6 +159,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a9aa6e0604aa00ed7e1d181f5c4f2b0b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'upper' value. The callback must copy the text to retain it.  <br /></td></tr>
 <tr class="memitem:a951038185129d5fa27d2458cebb016d9" id="r_a951038185129d5fa27d2458cebb016d9"><td class="memItemLeft">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight"><a class="el" href="#a951038185129d5fa27d2458cebb016d9">llzkLlzk_LoopBoundsAttrGetStep</a> (MlirAttribute, MlirStringCallback callback, void *userData)</td></tr>
 <tr class="memdesc:a951038185129d5fa27d2458cebb016d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the exact signed decimal 'step' value. The callback must copy the text to retain it.  <br /></td></tr>
+<tr class="memitem:a24da076c52aab94c406d09dfd4996840" id="r_a24da076c52aab94c406d09dfd4996840"><td class="memItemLeft">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight"><a class="el" href="#a24da076c52aab94c406d09dfd4996840">llzkLlzk_LoopBoundsAttrGetTripCount</a> (MlirAttribute inp, MlirStringCallback callback, void *userData)</td></tr>
+<tr class="memdesc:a24da076c52aab94c406d09dfd4996840"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the nonnegative mathematical trip count of this verified annotation.  <br /></td></tr>
 <tr class="memitem:a0be07662675b160010825d9b7b9a0bd5" id="r_a0be07662675b160010825d9b7b9a0bd5"><td class="memItemLeft">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight"><a class="el" href="#a0be07662675b160010825d9b7b9a0bd5">llzkAttributeIsA_Llzk_PublicAttr</a> (MlirAttribute)</td></tr>
 <tr class="memdesc:a0be07662675b160010825d9b7b9a0bd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::PublicAttr.  <br /></td></tr>
 <tr class="memitem:a3507c6bc275a3b166b2fd31e05607574" id="r_a3507c6bc275a3b166b2fd31e05607574"><td class="memItemLeft">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a3507c6bc275a3b166b2fd31e05607574">llzkLlzk_PublicAttrGet</a> (MlirContext ctx)</td></tr>
@@ -203,7 +205,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Attribute is a ::llzk::PublicAttr. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00054">54</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00060">60</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -302,6 +304,37 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a24da076c52aab94c406d09dfd4996840" name="a24da076c52aab94c406d09dfd4996840"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24da076c52aab94c406d09dfd4996840">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetTripCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkLlzk_LoopBoundsAttrGetTripCount </td>
+          <td>(</td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringCallback</td>          <td class="paramname"><span class="paramname"><em>callback</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>userData</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the nonnegative mathematical trip count of this verified annotation. </p>
+<p>Supports either step direction without field reduction or fixed-width truncation. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00054">54</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a9aa6e0604aa00ed7e1d181f5c4f2b0b1" name="a9aa6e0604aa00ed7e1d181f5c4f2b0b1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9aa6e0604aa00ed7e1d181f5c4f2b0b1">&#9670;&#160;</a></span>llzkLlzk_LoopBoundsAttrGetUpper()</h2>
 
@@ -349,7 +382,7 @@ Functions</h2></td></tr>
 
 <p>Create a ::llzk::PublicAttr Attribute with the given parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00058">58</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00064">64</a> of file <a class="el" href="LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

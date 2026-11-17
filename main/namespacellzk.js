@@ -241,6 +241,7 @@ var namespacellzk =
     [ "checkValidType", "namespacellzk.html#ae30042843555f938699fed6daf364eac", null ],
     [ "classifyAttrConcreteness", "namespacellzk.html#a5b7b247b9d299875ee108f15066493e7", null ],
     [ "classifyAttrConcreteness", "namespacellzk.html#af6e26e61350d513b129fd1541e233f2d", null ],
+    [ "cloneBlockWithMappedArguments", "namespacellzk.html#a3882852352efd6990d227988ba562b27", null ],
     [ "cmp", "namespacellzk.html#a562ddceaa4861060a3920d4427ac2909", null ],
     [ "collectFields", "namespacellzk.html#ade0a132d2633c09a60ea3dc041c501ef", null ],
     [ "collectSplitFunctionNameInfo", "namespacellzk.html#acf9d9148e9ad315cad36f0a144450de5", null ],
