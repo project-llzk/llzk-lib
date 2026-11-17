@@ -53,7 +53,7 @@ bool canUseScalarizedValueAsType(
 /// Strength of the independently declared type requirement. In-place propagation must preserve
 /// exact concrete types (including affine specializations); scalar replacement can use unification.
 /// Refinement additionally recognizes specializations recorded by this pass.
-enum class ConsumerTypeCheck {
+enum class ConsumerTypeCheck : std::uint8_t {
   /// The consumer's declared type must match, even if it is still generic.
   Exact,
   /// Concrete declarations must match exactly; generic declarations may remain unresolved.
