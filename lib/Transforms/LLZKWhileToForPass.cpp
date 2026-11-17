@@ -138,8 +138,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   OpBuilder builder(op);
   // Materialize a felt bound before the loop in the supplied induction variable type.
   auto createBound = [&builder, &op](const llvm::DynamicAPInt &value, FeltType type) -> Value {
-    auto attr = FeltConstAttr::get(builder.getContext(), value, type);
-    return FeltConstantOp::create(builder, op.getLoc(), attr).getResult();
+    return FeltConstantOp::create(builder, op.getLoc(), type, value).getResult();
   };
 
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
