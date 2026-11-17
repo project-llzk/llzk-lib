@@ -48,11 +48,10 @@ LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &symbolT
   );
 }
 
-LogicalResult EmitContainmentOp::verify() {
-  ArrayType arrType = getLhs().getType();
-  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
-
-  if (failed(verifySubArrayOrElementType(errFn, arrType, getRhs().getType()))) {
+/// Check containment types with the caller's diagnostic policy.
+static LogicalResult
+verifyContainmentOperandTypes(ArrayType arrType, Type rhsType, EmitErrorFn errFn) {
+  if (failed(verifySubArrayOrElementType(errFn, arrType, rhsType))) {
     // error already reported
     return failure();
   }
@@ -65,6 +64,27 @@ LogicalResult EmitContainmentOp::verify() {
     );
   }
   return success();
+}
+
+LogicalResult EmitContainmentOp::verify() {
+  return verifyContainmentOperandTypes(
+      getLhs().getType(), getRhs().getType(), getEmitOpErrFn(this)
+  );
+}
+
+bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
+  auto arrayType = dyn_cast<ArrayType>(lhsType);
+  if (!arrayType) {
+    return false;
+  }
+  // Silent diagnostics carry no failure status, so remember whether validation requested one.
+  bool valid = true;
+  auto silentError = [&]() {
+    valid = false;
+    return InFlightDiagnosticWrapper::createSilent(lhsType.getContext());
+  };
+  (void)verifyContainmentOperandTypes(arrayType, rhsType, silentError);
+  return valid;
 }
 
 } // namespace llzk::constrain

@@ -1,0 +1,98 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Independently refined reads must use their pending types on both sides of constraints.
+// The felt/felt equality is compatible; the felt/index equality and containment are not.
+!Holder = !struct.type<@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>
+module attributes {llzk.lang} {
+  poly.template @Template {
+    poly.param @G
+    poly.param @H
+    poly.param @L
+    poly.param @R
+    poly.param @A
+    poly.param @B
+    struct.def @Holder {
+      struct.member @good : !poly.tvar<@G> {column}
+      struct.member @also_good : !poly.tvar<@H> {column}
+      struct.member @compatible_table : !array.type<2 x !poly.tvar<@G>> {column}
+      struct.member @left : !poly.tvar<@L> {column}
+      struct.member @right : !poly.tvar<@R> {column}
+      struct.member @table : !array.type<2 x !poly.tvar<@A>> {column}
+      struct.member @query : !poly.tvar<@B> {column}
+      function.def @compute(%felt: !felt.type, %index: index, %table: !array.type<2 x !felt.type>) -> !Holder {
+        %self = struct.new : !Holder
+        struct.writem %self[@good] = %felt : !Holder, !felt.type
+        struct.writem %self[@also_good] = %felt : !Holder, !felt.type
+        struct.writem %self[@compatible_table] = %table : !Holder, !array.type<2 x !felt.type>
+        struct.writem %self[@left] = %felt : !Holder, !felt.type
+        struct.writem %self[@right] = %index : !Holder, index
+        struct.writem %self[@table] = %table : !Holder, !array.type<2 x !felt.type>
+        struct.writem %self[@query] = %index : !Holder, index
+        function.return %self : !Holder
+      }
+      function.def @constrain(%self: !Holder, %felt: !felt.type, %index: index, %input_table: !array.type<2 x !felt.type>) {
+        %a = struct.readm %self[@good] : !Holder, !poly.tvar<@G>
+        %b = struct.readm %self[@also_good] : !Holder, !poly.tvar<@H>
+        constrain.eq %a, %b : !poly.tvar<@G>, !poly.tvar<@H>
+        constrain.eq %a, %a : !poly.tvar<@G>
+        %compatible = struct.readm %self[@compatible_table] : !Holder, !array.type<2 x !poly.tvar<@G>>
+        constrain.in %compatible, %a : !array.type<2 x !poly.tvar<@G>>, !poly.tvar<@G>
+        constrain.in %compatible, %compatible : !array.type<2 x !poly.tvar<@G>>, !array.type<2 x !poly.tvar<@G>>
+        %lhs = struct.readm %self[@left] : !Holder, !poly.tvar<@L>
+        %rhs = struct.readm %self[@right] : !Holder, !poly.tvar<@R>
+        constrain.eq %lhs, %rhs : !poly.tvar<@L>, !poly.tvar<@R>
+        %table = struct.readm %self[@table] : !Holder, !array.type<2 x !poly.tvar<@A>>
+        %query = struct.readm %self[@query] : !Holder, !poly.tvar<@B>
+        constrain.in %table, %query : !array.type<2 x !poly.tvar<@A>>, !poly.tvar<@B>
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Template {
+// CHECK-NEXT:      poly.param @G
+// CHECK-NEXT:      poly.param @H
+// CHECK-NEXT:      poly.param @L
+// CHECK-NEXT:      poly.param @R
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @good : !felt.type {column}
+// CHECK-NEXT:        struct.member @also_good : !felt.type {column}
+// CHECK-NEXT:        struct.member @compatible_table : !array.type<2 x !felt.type> {column}
+// CHECK-NEXT:        struct.member @left : !poly.tvar<@L> {column}
+// CHECK-NEXT:        struct.member @right : !poly.tvar<@R> {column}
+// CHECK-NEXT:        struct.member @table : !array.type<2 x !poly.tvar<@A>> {column}
+// CHECK-NEXT:        struct.member @query : !poly.tvar<@B> {column}
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) -> !struct.type<@Template::@Holder<[@G, @H, @L, @R, @A, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@good] = %[[VAL_0]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@also_good] = %[[VAL_0]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@compatible_table] = %[[VAL_2]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@left] = %[[VAL_0]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@right] = %[[VAL_1]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, index
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@table] = %[[VAL_2]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@query] = %[[VAL_1]] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, index
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_.-]+]]: index, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@good] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@also_good] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@compatible_table] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          constrain.in %[[VAL_10]], %[[VAL_8]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:          constrain.in %[[VAL_10]], %[[VAL_10]] : <2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@left] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !poly.tvar<@L>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@right] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !poly.tvar<@R>
+// CHECK-NEXT:          constrain.eq %[[VAL_11]], %[[VAL_12]] : !poly.tvar<@L>, !poly.tvar<@R>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@table] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !array.type<2 x !poly.tvar<@A>>
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@query] : <@Template::@Holder<[@G, @H, @L, @R, @A, @B]>>, !poly.tvar<@B>
+// CHECK-NEXT:          constrain.in %[[VAL_13]], %[[VAL_14]] : <2 x !poly.tvar<@A>>, !poly.tvar<@B>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

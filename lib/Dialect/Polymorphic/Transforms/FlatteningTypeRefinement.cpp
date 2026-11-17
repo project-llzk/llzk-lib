@@ -412,24 +412,6 @@ void extendPendingRefinements(
   } while (changed);
 }
 
-/// Check a call use against every proposed argument and the unchanged results.
-static bool canRefineCallUse(
-    OpOperand &use, Type type, SymbolTableCollection &tables, const ConversionTracker &tracker,
-    const DenseMap<Value, Type> *pending
-) {
-  auto call = cast<CallOp>(use.getOwner());
-  unsigned index = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
-  if (index >= call.getArgOperands().size()) {
-    return false;
-  }
-  auto callee = call.getCalleeTarget(tables);
-  return succeeded(callee) &&
-         callSignatureUnifies(
-             getRefinedCallSignature(call, use.get(), type, pending),
-             callee->get().getFunctionType(), callee->getNamespace(), tracker, false, call
-         );
-}
-
 /// Return true iff a value of `sourceType` can be used where `targetType` is requested after
 /// scalarization has retained the common refinement.
 bool canUseScalarizedValueAsType(
@@ -455,81 +437,239 @@ static bool isFullyConcreteArrayConsumerType(Type type) {
   }) && isFullyConcreteArrayConsumerType(arrayType.getElementType());
 }
 
-/// Return true iff `rhsType` remains a valid containment operand for `lhsType`.
-///
-/// This mirrors the type compatibility checks in EmitContainmentOp::verify without emitting
-/// a diagnostic, so preflight can reject a type change that would invalidate constrain.in.
-bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
-  auto lhsArrayType = llvm::dyn_cast<ArrayType>(lhsType);
-  if (!lhsArrayType) {
-    return false;
-  }
-  if (auto rhsArrayType = llvm::dyn_cast<ArrayType>(rhsType)) {
-    ArrayRef<Attribute> lhsDims = lhsArrayType.getDimensionSizes();
-    ArrayRef<Attribute> rhsDims = rhsArrayType.getDimensionSizes();
-    return lhsDims.size() >= rhsDims.size() &&
-           typeParamsUnify(lhsDims.drop_front(lhsDims.size() - rhsDims.size()), rhsDims) &&
-           typesUnify(lhsArrayType.getElementType(), rhsArrayType.getElementType());
-  }
-  return typesUnify(lhsArrayType.getElementType(), rhsType);
-}
-
-/// Array store operands supported by a consumer check. Reads and extracts have different contracts.
-enum class ArrayStoreKind : std::uint8_t { None, Element, Subarray };
-
-/// Look up an independently declared consumer type after validating the operand's role.
-/// Callers choose which array stores they support and how to compare the returned type; this
-/// lookup does not decide whether equality, unification, or downstream propagation is required.
-static FailureOr<Type> getConsumerRequiredType(
-    OpOperand &use, SymbolTableCollection &tables, ArrayStoreKind arrayStore = ArrayStoreKind::None
+/// Check the independently declared requirements of a consumer using eventual operand types.
+/// Producer-specific propagation (array/member reads, initializers and cast repair) stays with
+/// the caller; this routine never changes IR or assumes a new consumer will be rewritten.
+bool canRefineConsumerUse(
+    OpOperand &use, Type refinedType, SymbolTableCollection &tables,
+    const ConversionTracker &tracker, ConsumerTypeCheck typeCheck,
+    const DenseMap<Value, Type> *pendingRefinements, Operation *diagnosticOp
 ) {
   Operation *user = use.getOwner();
   Value value = use.get();
-  if (auto memberWrite = dyn_cast<MemberWriteOp>(user)) {
-    if (memberWrite.getVal() != value) {
-      return failure();
+  auto eventualType = [&](Value operand) {
+    return operand == value ? refinedType : plannedType(operand, pendingRefinements);
+  };
+  auto accepts = [&](Type requiredType) {
+    switch (typeCheck) {
+    case ConsumerTypeCheck::Exact:
+      return refinedType == requiredType;
+    case ConsumerTypeCheck::ConcreteExact:
+      return !isFullyConcreteArrayConsumerType(requiredType) || refinedType == requiredType;
+    case ConsumerTypeCheck::Refinement:
+      return canUseScalarizedValueAsType(
+          refinedType, requiredType, tracker, "ConsumerRefinement", user
+      );
+    case ConsumerTypeCheck::Unification:
+      return typesUnify(refinedType, requiredType);
     }
-    auto memberDef = memberWrite.getMemberDefOp(tables);
-    if (failed(memberDef)) {
-      return failure();
+    llvm_unreachable("unknown consumer type check");
+  };
+  auto incompatible = [&](StringRef contract, Operation *observation,
+                          function_ref<void(Diagnostic &)> explain) {
+    if (diagnosticOp) {
+      auto diag = diagnosticOp->emitError()
+                  << "cannot scalarize heterogeneous array read because its index-specific value "
+                     "type is incompatible with "
+                  << contract;
+      explain(diag.attachNote(observation->getLoc()));
     }
-    return memberDef->get().getType();
+    return false;
+  };
+  auto requiresType = [&](Type requiredType, StringRef contract, StringRef description,
+                          Operation *observation) {
+    if (accepts(requiredType)) {
+      return true;
+    }
+    return incompatible(contract, observation, [&](Diagnostic &note) {
+      note << description << " requires " << requiredType << ", but this read is replaced with "
+           << refinedType;
+    });
+  };
+
+  // Independently generic requirements remain valid until their owning producer is refined.
+  // Exact propagation paths deliberately require agreement even with a generic declaration.
+  auto requiresDeclaredType = [&](Type requiredType, StringRef contract, StringRef description) {
+    return (typeCheck != ConsumerTypeCheck::Exact &&
+            !isFullyConcreteArrayConsumerType(requiredType)) ||
+           requiresType(requiredType, contract, description, user);
+  };
+
+  if (auto equality = dyn_cast<EmitEqualityOp>(user)) {
+    Type otherType =
+        eventualType(use.getOperandNumber() == 0 ? equality.getRhs() : equality.getLhs());
+    if (!isValidEmitEqType(refinedType) || !isValidEmitEqType(otherType)) {
+      return incompatible("an equality constraint", user, [&](Diagnostic &note) {
+        note << "equality operands must exclude struct and string types, but replacement operands "
+                "are "
+             << refinedType << " and " << otherType;
+      });
+    }
+    if ((typeCheck == ConsumerTypeCheck::Refinement &&
+         !isFullyConcreteArrayConsumerType(otherType)) ||
+        accepts(otherType)) {
+      return true;
+    }
+    return incompatible("an equality constraint", user, [&](Diagnostic &note) {
+      note << "other equality operand requires " << otherType << ", but this read is replaced with "
+           << refinedType;
+    });
+  }
+  if (auto containment = dyn_cast<EmitContainmentOp>(user)) {
+    Type lhsType = eventualType(containment.getLhs());
+    Type rhsType = eventualType(containment.getRhs());
+    if (areValidContainmentOperandTypes(lhsType, rhsType)) {
+      return true;
+    }
+    return incompatible("a containment constraint", user, [&](Diagnostic &note) {
+      note << "replacement containment operands " << lhsType << " and " << rhsType
+           << " must form an array and a compatible element or subarray";
+    });
   }
   if (auto call = dyn_cast<CallOp>(user)) {
     unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
     if (argIdx >= call.getArgOperands().size()) {
-      return failure();
+      return false;
     }
     auto callee = call.getCalleeTarget(tables);
     if (failed(callee)) {
-      return failure();
+      return false;
     }
-    return callee->get().getFunctionType().getInput(argIdx);
+    FunctionType signature = getRefinedCallSignature(call, value, refinedType, pendingRefinements);
+    FunctionType declared = callee->get().getFunctionType();
+    if (callSignatureUnifies(signature, declared, callee->getNamespace(), tracker, false, call)) {
+      return true;
+    }
+    return incompatible("a function call", user, [&](Diagnostic &note) {
+      note << "call argument requires " << declared.getInput(argIdx)
+           << ", but this read is replaced with " << refinedType << "; replacement call signature "
+           << signature << " must unify consistently with " << declared;
+    });
   }
   if (auto returnOp = dyn_cast<ReturnOp>(user)) {
     FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
     TypeRange resultTypes = function.getFunctionType().getResults();
-    unsigned resultIdx = use.getOperandNumber();
-    if (resultIdx >= resultTypes.size()) {
-      return failure();
+    if (use.getOperandNumber() >= resultTypes.size()) {
+      return false;
     }
-    return resultTypes[resultIdx];
+    SmallVector<Type> replacementTypes;
+    for (Value operand : returnOp.getOperands()) {
+      replacementTypes.push_back(eventualType(operand));
+    }
+    FunctionType signature = FunctionType::get(user->getContext(), {}, replacementTypes);
+    FunctionType declared = FunctionType::get(user->getContext(), {}, resultTypes);
+    if (callSignatureUnifies(signature, declared, {}, tracker, false, user) &&
+        (typeCheck == ConsumerTypeCheck::Unification ||
+         accepts(resultTypes[use.getOperandNumber()]))) {
+      return true;
+    }
+    return incompatible("a function return", user, [&](Diagnostic &note) {
+      note << "replacement return signature " << signature
+           << " does not unify with declared return signature " << declared;
+    });
+  }
+  if (auto memberWrite = dyn_cast<MemberWriteOp>(user)) {
+    if (memberWrite.getVal() != value) {
+      return false;
+    }
+    auto memberDef = memberWrite.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return false;
+    }
+    Type memberType = memberDef->get().getType();
+    if (isFullyConcreteArrayConsumerType(memberType) || typeCheck == ConsumerTypeCheck::Exact) {
+      return requiresType(memberType, "a member write", "member write", user);
+    }
+    // A generic destination may be independently refined by its other writes. Check those
+    // writes with their pending types before accepting any one source's refinement.
+    auto parent = getParentOfType<StructDefOp>(memberDef->get());
+    if (!parent) {
+      return false;
+    }
+    auto uses = llzk::getSymbolUses(memberDef->get(), parent);
+    if (!uses) {
+      return false;
+    }
+    for (SymbolTable::SymbolUse memberUse : *uses) {
+      auto otherWrite = dyn_cast<MemberWriteOp>(memberUse.getUser());
+      if (otherWrite && otherWrite != memberWrite &&
+          !requiresType(
+              eventualType(otherWrite.getVal()), "another member write", "other member write",
+              otherWrite
+          )) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (auto write = dyn_cast<WriteArrayOp>(user)) {
+    if (write.getRvalue() != value) {
+      return false;
+    }
+    auto arrayType = dyn_cast<ArrayType>(eventualType(write.getArrRef()));
+    return arrayType &&
+           requiresDeclaredType(arrayType.getElementType(), "an array write", "array write");
+  }
+  if (auto insert = dyn_cast<InsertArrayOp>(user)) {
+    if (insert.getRvalue() != value) {
+      return false;
+    }
+    auto arrayType = dyn_cast<ArrayType>(eventualType(insert.getArrRef()));
+    return arrayType && requiresDeclaredType(
+                            arrayType.getSelectionType(insert.getIndices().size()),
+                            "an array insert", "array insert"
+                        );
   }
   if (auto castOp = dyn_cast<UnifiableCastOp>(user)) {
-    if (castOp.getInput() != value) {
-      return failure();
+    return castOp.getInput() == value &&
+           requiresDeclaredType(
+               castOp.getResult().getType(), "a unifiable cast", "unifiable cast result"
+           );
+  }
+  if (auto create = dyn_cast<CreateArrayOp>(user)) {
+    if (use.getOperandNumber() >= create.getElements().size()) {
+      return false;
     }
-    return castOp.getResult().getType();
+    // The caller handles arrays whose result is also changed or removed by its plan.
+    Type elementType = create.getType().getElementType();
+    if (refinedType == elementType) {
+      return true;
+    }
+    return incompatible("an array initializer", user, [&](Diagnostic &note) {
+      note << "array initializer requires exactly " << elementType
+           << ", but this read is replaced with " << refinedType;
+    });
   }
-  if (auto write = dyn_cast<WriteArrayOp>(user);
-      write && arrayStore == ArrayStoreKind::Element && write.getRvalue() == value) {
-    return write.getArrRefType().getElementType();
+  if (diagnosticOp) {
+    auto diag = diagnosticOp->emitError(
+        "cannot scalarize heterogeneous array read because it has an unsupported result user"
+    );
+    diag.attachNote(user->getLoc()) << "unsupported read result user is here";
   }
-  if (auto insert = dyn_cast<InsertArrayOp>(user);
-      insert && arrayStore == ArrayStoreKind::Subarray && insert.getRvalue() == value) {
-    return insert.getArrRefType().getSelectionType(insert.getIndices().size());
+  return false;
+}
+
+/// Validate inferred array-access results using the same contracts for every source array.
+static bool canRefineArrayAccessUsers(
+    Value result, Type type, SymbolTableCollection &tables, const ConversionTracker &tracker,
+    ConsumerTypeCheck typeCheck, const DenseMap<Value, Type> *pending
+) {
+  for (OpOperand &use : result.getUses()) {
+    if (auto read = dyn_cast<MemberReadOp>(use.getOwner())) {
+      if (read.getComponent() != result) {
+        return false;
+      }
+      auto refined = getRefinedMemberReadType(read, type, tables, tracker);
+      if (failed(refined) ||
+          (*refined != read.getVal().getType() &&
+           !canRefineMemberReadUsersToType(read, *refined, tables, tracker, pending))) {
+        return false;
+      }
+    } else if (!canRefineConsumerUse(use, type, tables, tracker, typeCheck, pending)) {
+      return false;
+    }
   }
-  return failure();
+  return true;
 }
 
 /// Return true iff typed users of `array.new` can accept a refined result type.
@@ -551,39 +691,7 @@ bool canRefineCreateArrayUsersToType(
   Value result = createOp.getResult();
   for (OpOperand &use : result.getUses()) {
     Operation *user = use.getOwner();
-    Type requiredType;
-    if (isa<CallOp>(user)) {
-      if (!canRefineCallUse(use, refinedType, tables, tracker, pendingRefinements)) {
-        return false;
-      }
-      continue;
-    } else if (isa<MemberWriteOp, ReturnOp, UnifiableCastOp>(user)) {
-      auto requirement = getConsumerRequiredType(use, tables);
-      if (failed(requirement)) {
-        return false;
-      }
-      requiredType = *requirement;
-      if (auto returnOp = dyn_cast<ReturnOp>(user)) {
-        // Results can share template variables even when no individual requirement is concrete.
-        // Validate every pending return type with shared bindings before accepting this array.
-        SmallVector<Type> replacementTypes;
-        for (Value operand : returnOp.getOperands()) {
-          replacementTypes.push_back(
-              operand == result ? refinedType : plannedType(operand, pendingRefinements)
-          );
-        }
-        FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
-        FunctionType replacementSignature =
-            FunctionType::get(returnOp.getContext(), {}, replacementTypes);
-        FunctionType declaredSignature =
-            FunctionType::get(returnOp.getContext(), {}, function.getFunctionType().getResults());
-        if (!callSignatureUnifies(
-                replacementSignature, declaredSignature, {}, tracker, false, returnOp
-            )) {
-          return false;
-        }
-      }
-    } else if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
+    if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
       if (arrayWrite.getArrRef() != result) {
         return false;
       }
@@ -591,7 +699,8 @@ bool canRefineCreateArrayUsersToType(
       // does not change the write's rvalue. In particular, concrete affine specializations can
       // unify while still symbolic and become incompatible after instantiation, so require an
       // exact element-type match instead of the usual unification check.
-      if (arrayWrite.getRvalue().getType() != mlir::cast<ArrayType>(refinedType).getElementType()) {
+      if (plannedType(arrayWrite.getRvalue(), pendingRefinements) !=
+          mlir::cast<ArrayType>(refinedType).getElementType()) {
         return false;
       }
       continue;
@@ -604,101 +713,29 @@ bool canRefineCreateArrayUsersToType(
       // than relying on pre-instantiation unification of concrete affine specializations.
       ArrayType refinedArrayType = mlir::cast<ArrayType>(refinedType);
       Type refinedRvalueType = refinedArrayType.getSelectionType(arrayInsert.getIndices().size());
-      if (arrayInsert.getRvalue().getType() != refinedRvalueType) {
+      if (plannedType(arrayInsert.getRvalue(), pendingRefinements) != refinedRvalueType) {
         return false;
       }
       continue;
-    } else if (ReadArrayOp arrayRead = llvm::dyn_cast<ReadArrayOp>(user)) {
-      if (arrayRead.getArrRef() != result) {
+    } else if (auto read = dyn_cast<ReadArrayOp>(user)) {
+      if (read.getArrRef() != result || !canRefineArrayAccessUsers(
+                                            read.getResult(), elementType, tables, tracker,
+                                            ConsumerTypeCheck::ConcreteExact, pendingRefinements
+                                        )) {
         return false;
       }
-      // Retagging the allocation also changes this inferred read result. Check the result's
-      // independently declared consumers before accepting the retag: unlike the allocation
-      // itself, propagation does not retarget a concrete call, cast, return, member write, or
-      // subsequent array write that observes the read.
-      Type refinedElementType = mlir::cast<ArrayType>(refinedType).getElementType();
-      for (OpOperand &readUse : arrayRead.getResult().getUses()) {
-        if (auto equality = dyn_cast<EmitEqualityOp>(readUse.getOwner())) {
-          Value other = equality.getLhs() == readUse.get() ? equality.getRhs() : equality.getLhs();
-          Type otherType = plannedType(other, pendingRefinements);
-          if (otherType != refinedElementType && isFullyConcreteArrayConsumerType(otherType)) {
-            return false;
-          }
-          continue;
-        }
-        if (isa<CallOp>(readUse.getOwner())) {
-          if (!canRefineCallUse(readUse, refinedElementType, tables, tracker, pendingRefinements)) {
-            return false;
-          }
-          continue;
-        }
-        auto requirement = getConsumerRequiredType(readUse, tables, ArrayStoreKind::Element);
-        if (failed(requirement)) {
-          return false;
-        }
-        Type readRequiredType = *requirement;
-        if (readRequiredType != refinedElementType &&
-            isFullyConcreteArrayConsumerType(readRequiredType)) {
-          return false;
-        }
-      }
-      continue;
-    } else if (ExtractArrayOp arrayExtract = llvm::dyn_cast<ExtractArrayOp>(user)) {
-      if (arrayExtract.getArrRef() != result) {
+    } else if (auto extract = dyn_cast<ExtractArrayOp>(user)) {
+      Type selected = cast<ArrayType>(refinedType).getSelectionType(extract.getIndices().size());
+      if (extract.getArrRef() != result || !canRefineArrayAccessUsers(
+                                               extract.getResult(), selected, tables, tracker,
+                                               ConsumerTypeCheck::Exact, pendingRefinements
+                                           )) {
         return false;
       }
-      // Retagging the allocation also changes this inferred extract result. As with array.read,
-      // its typed consumers are not retargeted by propagation patterns, so they must already
-      // request the refined subarray type. In particular, a parameterized struct type may still
-      // have concrete arguments that are instantiated only after this propagation step.
-      Type refinedExtractType =
-          mlir::cast<ArrayType>(refinedType).getSelectionType(arrayExtract.getIndices().size());
-      for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
-        if (isa<CallOp>(extractUse.getOwner())) {
-          if (!canRefineCallUse(
-                  extractUse, refinedExtractType, tables, tracker, pendingRefinements
-              )) {
-            return false;
-          }
-          continue;
-        }
-        auto requirement = getConsumerRequiredType(extractUse, tables, ArrayStoreKind::Subarray);
-        if (failed(requirement)) {
-          return false;
-        }
-        Type extractRequiredType = *requirement;
-        if (extractRequiredType != refinedExtractType) {
-          return false;
-        }
-      }
-      continue;
-    } else if (EmitEqualityOp equalityOp = llvm::dyn_cast<EmitEqualityOp>(user)) {
-      Value otherOperand;
-      if (equalityOp.getLhs() == result) {
-        otherOperand = equalityOp.getRhs();
-      } else if (equalityOp.getRhs() == result) {
-        otherOperand = equalityOp.getLhs();
-      } else {
-        return false;
-      }
-      // constrain.eq is not retagged when an array allocation is refined. Its other operand
-      // must therefore already have the proposed type when concrete; otherwise two array types
-      // that unify before template instantiation can become incompatible concrete types later.
-      if (otherOperand.getType() != refinedType &&
-          isFullyConcreteArrayConsumerType(otherOperand.getType())) {
-        return false;
-      }
-      continue;
-    } else {
-      // Retagging changes this SSA value for every direct user. Be conservative until each
-      // type-constraining use is explicitly checked above.
-      return false;
-    }
-    // Array element specializations with distinct concrete affine arguments can still unify
-    // before template instantiation. This array result is retagged in place, though, and no
-    // propagation pattern retargets these users, so a fully concrete requirement must match
-    // exactly.
-    if (isFullyConcreteArrayConsumerType(requiredType) && refinedType != requiredType) {
+    } else if (!canRefineConsumerUse(
+                   use, refinedType, tables, tracker, ConsumerTypeCheck::ConcreteExact,
+                   pendingRefinements
+               )) {
       return false;
     }
   }
@@ -726,57 +763,6 @@ bool canRefineMemberReadUsersToType(
                            !canRefineMemberReadUsersToType(
                                memberRead, *type, tables, tracker, pendingRefinements
                            ))) {
-        return false;
-      }
-      continue;
-    }
-    if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
-      if (memberWrite.getVal() != result) {
-        return false;
-      }
-      auto memberDef = memberWrite.getMemberDefOp(tables);
-      if (failed(memberDef)) {
-        return false;
-      }
-      Type memberType = memberDef->get().getType();
-      if (isConcreteType(memberType, /*allowStructParams=*/false)) {
-        auto canUse = canUseScalarizedValueAsType(
-            refinedType, memberType, tracker, "UpdateMemberDefTypeFromWrite", readOp
-        );
-        if (!canUse) {
-          return false;
-        }
-      }
-      if (!isConcreteType(memberType, /*allowStructParams=*/false)) {
-        // A generic destination may be independently refined by its other writes. Retagging this
-        // read before checking them can make a previously valid generic write incompatible with
-        // a concrete sibling write after template instantiation.
-        StructDefOp parentStruct = getParentOfType<StructDefOp>(memberDef->get());
-        if (!parentStruct) {
-          return false;
-        }
-        auto memberUses = llzk::getSymbolUses(memberDef->get(), parentStruct);
-        if (!memberUses) {
-          return false;
-        }
-        for (SymbolTable::SymbolUse memberUse : memberUses.value()) {
-          MemberWriteOp otherWrite = llvm::dyn_cast<MemberWriteOp>(memberUse.getUser());
-          if (!otherWrite || otherWrite == memberWrite) {
-            continue;
-          }
-          auto canUse = canUseScalarizedValueAsType(
-              refinedType, otherWrite.getVal().getType(), tracker, "UpdateMemberDefTypeFromWrite",
-              readOp
-          );
-          if (!canUse) {
-            return false;
-          }
-        }
-      }
-      continue;
-    }
-    if (isa<CallOp>(user)) {
-      if (!canRefineCallUse(use, refinedType, tables, tracker, pendingRefinements)) {
         return false;
       }
       continue;
@@ -809,148 +795,24 @@ bool canRefineMemberReadUsersToType(
       }
       continue;
     }
-    if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
-      if (arrayWrite.getRvalue() != result) {
-        return false;
-      }
-      Type elementType = arrayWrite.getArrRefType().getElementType();
-      // array.write's rvalue is not independently converted by the member refinement. Its
-      // destination must therefore already require exactly the proposed read type. In
-      // particular, do not use the normal unification-based conversion check here: symbolic
-      // Cell<0> and Cell<1> can appear compatible before their template instantiations are
-      // materialized, but become distinct concrete element types later in flattening.
-      if (refinedType != elementType) {
-        return false;
-      }
-      continue;
-    }
-    if (InsertArrayOp arrayInsert = llvm::dyn_cast<InsertArrayOp>(user)) {
-      if (arrayInsert.getRvalue() != result) {
-        return false;
-      }
-      // The refined read already has the complete inserted subarray type. Only select the
-      // destination dimensions; selecting the read again would discard its leading dimensions.
-      // Require exact agreement because affine specializations that unify before instantiation
-      // can otherwise diverge later.
-      if (refinedType !=
-          arrayInsert.getArrRefType().getSelectionType(arrayInsert.getIndices().size())) {
-        return false;
-      }
-      continue;
-    }
-    if (ReadArrayOp arrayRead = llvm::dyn_cast<ReadArrayOp>(user)) {
-      if (arrayRead.getArrRef() != result) {
-        return false;
-      }
-      auto refinedArrayType = llvm::dyn_cast<ArrayType>(refinedType);
-      if (!refinedArrayType) {
-        return false;
-      }
-      // A member-read refinement retags the array.read result to the array's refined element
-      // type. Validate its independently declared users first: propagation does not retarget a
-      // concrete consumer of that inferred result.
-      for (OpOperand &arrayReadUse : arrayRead.getResult().getUses()) {
-        if (auto memberRead = dyn_cast<MemberReadOp>(arrayReadUse.getOwner())) {
-          if (memberRead.getComponent() != arrayRead.getResult()) {
-            return false;
-          }
-          auto type = getRefinedMemberReadType(
-              memberRead, refinedArrayType.getElementType(), tables, tracker
-          );
-          if (failed(type) || (*type != memberRead.getVal().getType() &&
-                               !canRefineMemberReadUsersToType(
-                                   memberRead, *type, tables, tracker, pendingRefinements
-                               ))) {
-            return false;
-          }
-          continue;
-        }
-        if (isa<CallOp>(arrayReadUse.getOwner())) {
-          if (!canRefineCallUse(
-                  arrayReadUse, refinedArrayType.getElementType(), tables, tracker,
-                  pendingRefinements
-              )) {
-            return false;
-          }
-          continue;
-        }
-        auto requirement = getConsumerRequiredType(arrayReadUse, tables, ArrayStoreKind::Element);
-        if (failed(requirement)) {
-          return false;
-        }
-        Type requiredType = *requirement;
-        if (requiredType != refinedArrayType.getElementType() &&
-            isFullyConcreteArrayConsumerType(requiredType)) {
-          return false;
-        }
-      }
-      continue;
-    }
-    if (ExtractArrayOp arrayExtract = llvm::dyn_cast<ExtractArrayOp>(user)) {
-      if (arrayExtract.getArrRef() != result) {
-        return false;
-      }
-      auto refinedArrayType = llvm::dyn_cast<ArrayType>(refinedType);
-      if (!refinedArrayType) {
-        return false;
-      }
-      // Refining the member read retags this inferred extract result. Its direct consumers are
-      // not retargeted by propagation, so they must already require the selected subarray type.
-      Type refinedExtractType = refinedArrayType.getSelectionType(arrayExtract.getIndices().size());
-      for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
-        if (isa<CallOp>(extractUse.getOwner())) {
-          if (!canRefineCallUse(
-                  extractUse, refinedExtractType, tables, tracker, pendingRefinements
-              )) {
-            return false;
-          }
-          continue;
-        }
-        auto requirement = getConsumerRequiredType(extractUse, tables, ArrayStoreKind::Subarray);
-        if (failed(requirement)) {
-          return false;
-        }
-        Type requiredType = *requirement;
-        if (requiredType != refinedExtractType) {
-          return false;
-        }
-      }
-      continue;
-    }
-    if (EmitEqualityOp equalityOp = llvm::dyn_cast<EmitEqualityOp>(user)) {
-      Value otherOperand;
-      if (equalityOp.getLhs() == result) {
-        otherOperand = equalityOp.getRhs();
-      } else if (equalityOp.getRhs() == result) {
-        otherOperand = equalityOp.getLhs();
-      } else {
-        return false;
-      }
-      // constrain.eq is not retagged when a member read is refined. A concrete other operand
-      // must therefore already accept the proposed read type; otherwise a generic read can be
-      // changed to an incompatible concrete type after template instantiation.
-      if (isConcreteType(otherOperand.getType(), /*allowStructParams=*/false) &&
-          !canUseScalarizedValueAsType(
-              refinedType, otherOperand.getType(), tracker, "UpdateMemberDefTypeFromWrite", readOp
+    if (auto read = dyn_cast<ReadArrayOp>(user)) {
+      auto arrayType = dyn_cast<ArrayType>(refinedType);
+      if (read.getArrRef() != result || !arrayType ||
+          !canRefineArrayAccessUsers(
+              read.getResult(), arrayType.getElementType(), tables, tracker,
+              ConsumerTypeCheck::ConcreteExact, pendingRefinements
           )) {
         return false;
       }
       continue;
     }
-    if (EmitContainmentOp containmentOp = llvm::dyn_cast<EmitContainmentOp>(user)) {
-      // constrain.in is not retagged when a member read is refined. Validate both roles: a
-      // refined containment LHS must still contain its RHS, and a refined RHS must still be
-      // contained by its LHS. Otherwise dimensions that unify while generic can become
-      // incompatible after refinement.
-      if (containmentOp.getLhs() == result) {
-        if (!areValidContainmentOperandTypes(refinedType, containmentOp.getRhs().getType())) {
-          return false;
-        }
-      } else if (containmentOp.getRhs() == result) {
-        if (!areValidContainmentOperandTypes(containmentOp.getLhs().getType(), refinedType)) {
-          return false;
-        }
-      } else {
+    if (auto extract = dyn_cast<ExtractArrayOp>(user)) {
+      auto arrayType = dyn_cast<ArrayType>(refinedType);
+      if (extract.getArrRef() != result || !arrayType ||
+          !canRefineArrayAccessUsers(
+              extract.getResult(), arrayType.getSelectionType(extract.getIndices().size()), tables,
+              tracker, ConsumerTypeCheck::Exact, pendingRefinements
+          )) {
         return false;
       }
       continue;
@@ -987,11 +849,14 @@ bool canRefineMemberReadUsersToType(
       }
       continue;
     }
-    // Retagging a member read changes its SSA value but does not update arbitrary users. In
-    // particular, pod.new verifies that every initializer exactly matches its declared record
-    // type, so a read-derived refinement could otherwise leave the POD invalid. Keep the read
-    // generic until each additional typed consumer has an explicit compatibility check here.
-    return false;
+    // Stores retain exact destination types; ordinary member consumers can also use a known
+    // specialization. Cast repair above remains specific to this propagation path.
+    ConsumerTypeCheck check = isa<WriteArrayOp, InsertArrayOp>(user)
+                                  ? ConsumerTypeCheck::Exact
+                                  : ConsumerTypeCheck::Refinement;
+    if (!canRefineConsumerUse(use, refinedType, tables, tracker, check, pendingRefinements)) {
+      return false;
+    }
   }
   return true;
 }

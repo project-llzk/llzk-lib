@@ -50,9 +50,29 @@ bool canUseScalarizedValueAsType(
     const char *patName, mlir::Operation *scope = nullptr
 );
 
-/// Check the array/element or array/subarray type relationship required by constrain.in.
-/// Shared by member refinement and index-specific read replacement.
-bool areValidContainmentOperandTypes(mlir::Type lhsType, mlir::Type rhsType);
+/// Strength of the independently declared type requirement. In-place propagation must preserve
+/// exact concrete types (including affine specializations); scalar replacement can use unification.
+/// Refinement additionally recognizes specializations recorded by this pass.
+enum class ConsumerTypeCheck {
+  /// The consumer's declared type must match, even if it is still generic.
+  Exact,
+  /// Concrete declarations must match exactly; generic declarations may remain unresolved.
+  ConcreteExact,
+  /// A concrete declaration may also be a specialization recorded by this pass.
+  Refinement,
+  /// Index-specific replacements may unify with the consumer's declared type.
+  Unification
+};
+
+/// Validate one existing consumer against a proposed type and every pending companion type.
+/// Producer-specific rewrites remain with the caller. Unsupported uses are rejected. When
+/// diagnosticOp is supplied, report scalarization diagnostics there; otherwise fail silently.
+bool canRefineConsumerUse(
+    mlir::OpOperand &use, mlir::Type refinedType, mlir::SymbolTableCollection &tables,
+    const ConversionTracker &tracker, ConsumerTypeCheck typeCheck,
+    const llvm::DenseMap<mlir::Value, mlir::Type> *pendingRefinements = nullptr,
+    mlir::Operation *diagnosticOp = nullptr
+);
 
 /// Check the independently declared type requirements of an array allocation's consumers.
 bool canRefineCreateArrayUsersToType(
