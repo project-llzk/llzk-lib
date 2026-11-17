@@ -166,8 +166,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     // scf.for also requires the value after the final increment to fit, even though it is
     // outside the iteration range. Compute it with mathematical integers to avoid overflow.
     if (bounds.getLower() < bounds.getUpper()) {
-      auto distance = bounds.getUpper() - bounds.getLower();
-      auto tripCount = (distance + bounds.getStep() - 1) / bounds.getStep();
+      auto tripCount = bounds.getTripCount();
       auto end = bounds.getLower() + tripCount * bounds.getStep();
       if (auto convertedEnd = llzk::checkedToInt64(end); !convertedEnd) {
         reportFailureReason("loopbounds final induction value cannot be represented as an index")

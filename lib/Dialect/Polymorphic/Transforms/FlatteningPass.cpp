@@ -2242,18 +2242,12 @@ public:
     if (!bounds || tracker.mustPreserveLoop(loopOp)) {
       return failure();
     }
-    const llvm::DynamicAPInt &lower = bounds.getLower();
-    const llvm::DynamicAPInt &upper = bounds.getUpper();
-    const llvm::DynamicAPInt &step = bounds.getStep();
-    if (step == 0) {
+    if (bounds.getStep() == 0) {
       return rewriter.notifyMatchFailure(
           loopOp, "llzk.loopbounds requires a nonzero step for unrolling"
       );
     }
-    llvm::DynamicAPInt count = llvm::ceilDiv(upper - lower, step);
-    if (count < 0) {
-      count = llvm::DynamicAPInt(0);
-    }
+    llvm::DynamicAPInt count = bounds.getTripCount();
     if (auto computed = getConstantTripCount(loopOp);
         computed && toDynamicAPInt(*computed) != count) {
       loopOp.emitWarning() << "llzk.loopbounds trip count " << llvm::toString(toAPSInt(count), 10)

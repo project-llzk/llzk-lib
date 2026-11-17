@@ -73,9 +73,7 @@ static std::optional<std::string> getUnrollSkipReason(Operation *op, uint64_t li
     if (bounds.getStep() == 0) {
       return std::nullopt; // The annotated unroller diagnoses invalid steps separately.
     }
-    llvm::DynamicAPInt count =
-        llvm::ceilDiv(bounds.getUpper() - bounds.getLower(), bounds.getStep());
-    auto checked = checkedToUInt64(std::max(count, llvm::DynamicAPInt(0)));
+    auto checked = checkedToUInt64(bounds.getTripCount());
     if (!checked) {
       llvm::consumeError(checked.takeError());
       return "llzk.loopbounds trip count does not fit in uint64_t; leaving loop unchanged";

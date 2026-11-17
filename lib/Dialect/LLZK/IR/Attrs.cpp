@@ -15,6 +15,9 @@
 
 #include <mlir/IR/BuiltinAttributes.h>
 
+#include <algorithm>
+#include <cassert>
+
 using namespace mlir;
 
 namespace llzk {
@@ -33,6 +36,11 @@ LogicalResult LoopBoundsAttr::verify(
     return emitError() << "loopbounds step must be nonzero";
   }
   return success();
+}
+
+llvm::DynamicAPInt LoopBoundsAttr::getTripCount() const {
+  assert(getStep() != 0 && "loopbounds step must be nonzero");
+  return std::max(llvm::ceilDiv(getUpper() - getLower(), getStep()), llvm::DynamicAPInt(0));
 }
 
 FailureOr<StructType> getTypeFromLlzkMainAttr(ModuleOp op, Attribute attr) {
