@@ -190,6 +190,9 @@ public:
   }
 };
 
+/// Return the storage width used to encode an integer or index induction variable.
+unsigned getInductionStorageWidth(mlir::Type type);
+
 /// Compute a loop trip count independently of trusted annotations.
 std::optional<llvm::APInt> getConstantTripCount(mlir::LoopLikeOpInterface loopOp);
 

@@ -43,6 +43,11 @@ llvm::DynamicAPInt LoopBoundsAttr::getTripCount() const {
   return std::max(llvm::ceilDiv(getUpper() - getLower(), getStep()), llvm::DynamicAPInt(0));
 }
 
+llvm::DynamicAPInt LoopBoundsAttr::getInductionValue(const llvm::DynamicAPInt &iteration) const {
+  assert(iteration >= 0 && "iteration must be nonnegative");
+  return getLower() + iteration * getStep();
+}
+
 FailureOr<StructType> getTypeFromLlzkMainAttr(ModuleOp op, Attribute attr) {
   assert(op);   // pre-condition
   assert(attr); // pre-condition

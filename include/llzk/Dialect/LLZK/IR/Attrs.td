@@ -91,6 +91,10 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
     /// Return the nonnegative mathematical trip count of this verified annotation.
     /// Supports either step direction without field reduction or fixed-width truncation.
     ::llvm::DynamicAPInt getTripCount() const;
+
+    /// Return lower + iteration * step as an unreduced mathematical integer.
+    /// The nonnegative iteration may equal the trip count to obtain the final increment.
+    ::llvm::DynamicAPInt getInductionValue(const ::llvm::DynamicAPInt &iteration) const;
   }];
 
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";

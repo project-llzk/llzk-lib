@@ -2276,8 +2276,7 @@ private:
 
     Value iv = loopOp.getInductionVar();
     Type ivType = iv.getType();
-    unsigned width =
-        ivType.isIndex() ? IndexType::kInternalStorageBitWidth : ivType.getIntOrFloatBitWidth();
+    unsigned width = getInductionStorageWidth(ivType);
 
     // The preservation guard already checked all induction values that will be materialized.
     SmallVector<Value> results(loopOp.getInits());

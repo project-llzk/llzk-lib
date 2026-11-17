@@ -167,17 +167,18 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     // outside the iteration range. Compute it with mathematical integers to avoid overflow.
     if (bounds.getLower() < bounds.getUpper()) {
       auto tripCount = bounds.getTripCount();
-      auto end = bounds.getLower() + tripCount * bounds.getStep();
+      auto end = bounds.getInductionValue(tripCount);
       if (auto convertedEnd = llzk::checkedToInt64(end); !convertedEnd) {
         reportFailureReason("loopbounds final induction value cannot be represented as an index")
             << ": " << llvm::toString(convertedEnd.takeError());
         return info;
       }
       // Only executed IVs need to fit the field, not the exclusive upper bound or final
-      // increment. Positive steps make end - step the largest executed IV. Empty loops
+      // increment. Positive steps make the last executed IV the largest. Empty loops
       // retain ASSERT because the body cast never executes, even with an unknown field.
       if (auto type = dyn_cast<FeltType>(ivarBefore.getType());
-          type && (!type.hasField() || end - bounds.getStep() >= type.getField().prime())) {
+          type && (!type.hasField() ||
+                   bounds.getInductionValue(tripCount - 1) >= type.getField().prime())) {
         info.ivarOverflow = llzk::cast::OverflowSemantics::WRAP;
       }
     }
