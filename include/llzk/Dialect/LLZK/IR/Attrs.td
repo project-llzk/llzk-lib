@@ -39,6 +39,25 @@ def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
   }];
 }
 
+def LLZK_IdempotentAttr : LLZKDialectAttr<"Idempotent", "idempotent"> {
+  let summary = "A unit attribute marking repeatable function results";
+  let description = [{
+    The unit attribute `llzk.idempotent` may be attached to any `function.def`,
+    including struct `compute` and `constrain` functions, free functions, and
+    external function declarations. It promises that repeated calls with the
+    same arguments return the same results.
+
+    It does not imply that the function is free of side effects.
+
+    Example:
+
+    ```llzk
+    function.def private @external_fn(!felt.type) -> !felt.type
+        attributes {llzk.idempotent}
+    ```
+  }];
+}
+
 def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
   let summary = "Trusted annotation with the bounds of a loop";
   let description = [{

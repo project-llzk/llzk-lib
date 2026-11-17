@@ -112,6 +112,14 @@ LogicalResult verifyLlzkMainAttr(Operation *op, Attribute attr) {
 } // namespace
 
 LogicalResult LLZKDialect::verifyOperationAttribute(Operation *op, NamedAttribute attr) {
+  if (attr.getName() == IdempotentAttr::name) {
+    if (!isa<function::FuncDefOp>(op)) {
+      return op->emitError("'llzk.idempotent' attribute is only valid on 'function.def'");
+    }
+    if (!isa<UnitAttr>(attr.getValue())) {
+      return op->emitError("'llzk.idempotent' attribute must be a unit attribute");
+    }
+  }
   if (attr.getName() == MAIN_ATTR_NAME) {
     return verifyLlzkMainAttr(op, attr.getValue());
   }

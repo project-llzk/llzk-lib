@@ -271,6 +271,16 @@ FuncDefOp FuncDefOp::clone() {
   return clone(mapper);
 }
 
+bool FuncDefOp::hasIdempotentAttr() { return getOperation()->hasAttr(IdempotentAttr::name); }
+
+void FuncDefOp::setIdempotentAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(IdempotentAttr::name, UnitAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(IdempotentAttr::name);
+  }
+}
+
 void FuncDefOp::setAllowConstraintAttr(bool newValue) {
   if (newValue) {
     getOperation()->setAttr(AllowConstraintAttr::name, UnitAttr::get(getContext()));
