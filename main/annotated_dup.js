@@ -391,6 +391,10 @@ var annotated_dup =
       ] ],
       [ "polymorphic", "namespacellzk_1_1polymorphic.html", [
         [ "detail", "namespacellzk_1_1polymorphic_1_1detail.html", [
+          [ "flattening", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html", [
+            [ "ConversionTracker", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker" ],
+            [ "FunctionInstantiationCache", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1FunctionInstantiationCache.html", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1FunctionInstantiationCache" ]
+          ] ],
           [ "AccessPath", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath" ],
           [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
           [ "CleanupBase", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase" ],

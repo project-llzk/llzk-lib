@@ -700,10 +700,16 @@ Options</h5>
 <span class="tt">-llzk-flatten</span></h4>
 <p><em>Flatten structs and unroll loops</em></p>
 <p>Performs the following transformations:</p><ul>
-<li>Instantiate <span class="tt">affine_map</span> parameters of StructType and ArrayType to constant values using the arguments at the instantiation site</li>
-<li>Replace parameterized structs with flattened (i.e., no parameter) versions of those structs based on requested return type at calls to <span class="tt">compute()</span> functions and unroll loops</li>
-<li>Unroll loops. When present, trusted <span class="tt">llzk.loopbounds</span> annotations determine the trip count. A warning is emitted if this differs from a statically computed count, but the annotation still takes precedence. Loops exceeding <span class="tt">max-unroll</span> remain rolled. Array type instantiation and propagation still run inside their bodies.</li>
+<li>Instantiate the main struct, when one is specified.</li>
+<li>Instantiate parameterized structs and free functions when concrete template arguments are available at use sites.</li>
+<li>Replace instantiated <span class="tt">poly.read_const</span> uses, symbolic member table offsets, wildcard array reads/writes, and callees rooted at concrete template parameters inside cloned bodies.</li>
+<li>Unroll loops with statically-known trip counts. When present, trusted <span class="tt">llzk.loopbounds</span> annotations determine the trip count. A warning is emitted if this differs from a statically computed count, but the annotation still takes precedence. Loops exceeding <span class="tt">max-unroll</span> remain rolled. Array type instantiation and propagation still run inside their bodies.</li>
+<li>Fold <span class="tt">affine_map</span> parameters of StructType and ArrayType to constant values using the operands at the instantiation site.</li>
+<li>Scalarize pseudo-homogeneous arrays whose static elements refine to different concrete types after instantiation.</li>
+<li>Propagate refined types through arrays, members, calls, returns, inferred result types, and unifiable casts until a fixpoint is reached.</li>
+<li>Clean up unused parameterized definitions according to the selected cleanup mode, remove empty templates, and remove unused discardable array allocations.</li>
 </ul>
+<p>Note: Adding IR after this pass and rerunning it is not a supported instantiation workflow.</p>
 <h5 class="doxsection"><a class="anchor" id="options-12"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter   : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>

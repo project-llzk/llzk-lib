@@ -11,6 +11,7 @@ var TypeHelper_8cpp =
     [ "llzk::forceIntAttrTypes", "namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72", null ],
     [ "llzk::forceIntType", "namespacellzk.html#a4347ca404454b983d3c978e268aca917", null ],
     [ "llzk::functionTypesUnify", "namespacellzk.html#acaf3a6e4759cdd42fbf5df6c43ed2e40", null ],
+    [ "llzk::functionTypesUnifyConsistently", "namespacellzk.html#ade5a3bb748ed22d26104131d4a3ff94c", null ],
     [ "llzk::hasAffineMapAttr", "namespacellzk.html#ae16625d8c85094fae24fb003012b2380", null ],
     [ "llzk::isConcreteType", "namespacellzk.html#a2bbb039982f4d0a01e53f8901fdaa34d", null ],
     [ "llzk::isDynamic", "namespacellzk.html#aac04ef36bb784819019624d62b493ce6", null ],

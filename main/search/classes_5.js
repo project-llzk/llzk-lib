@@ -65,9 +65,10 @@ var searchData=
   ['functionattributelinktests_62',['FunctionAttributeLinkTests',['../classFunctionAttributeLinkTests.html',1,'']]],
   ['functiondialect_63',['FunctionDialect',['../classllzk_1_1function_1_1FunctionDialect.html',1,'llzk::function']]],
   ['functiondialectlinktests_64',['FunctionDialectLinkTests',['../classFunctionDialectLinkTests.html',1,'']]],
-  ['functioninterpreter_65',['FunctionInterpreter',['../classllzk_1_1witgen_1_1FunctionInterpreter.html',1,'llzk::witgen']]],
-  ['functionoperationlinktests_66',['FunctionOperationLinkTests',['../classFunctionOperationLinkTests.html',1,'']]],
-  ['functiontypeconverter_67',['FunctionTypeConverter',['../classllzk_1_1FunctionTypeConverter.html',1,'llzk']]],
-  ['fuseproductcontrolflowpassbase_68',['FuseProductControlFlowPassBase',['../classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html',1,'llzk::impl']]],
-  ['fuzzyset_69',['FuzzySet',['../classllzk_1_1FuzzySet.html',1,'llzk']]]
+  ['functioninstantiationcache_65',['FunctionInstantiationCache',['../classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1FunctionInstantiationCache.html',1,'llzk::polymorphic::detail::flattening']]],
+  ['functioninterpreter_66',['FunctionInterpreter',['../classllzk_1_1witgen_1_1FunctionInterpreter.html',1,'llzk::witgen']]],
+  ['functionoperationlinktests_67',['FunctionOperationLinkTests',['../classFunctionOperationLinkTests.html',1,'']]],
+  ['functiontypeconverter_68',['FunctionTypeConverter',['../classllzk_1_1FunctionTypeConverter.html',1,'llzk']]],
+  ['fuseproductcontrolflowpassbase_69',['FuseProductControlFlowPassBase',['../classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html',1,'llzk::impl']]],
+  ['fuzzyset_70',['FuzzySet',['../classllzk_1_1FuzzySet.html',1,'llzk']]]
 ];

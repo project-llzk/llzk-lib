@@ -150,11 +150,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TemplateInstan
 <code>#include &quot;<a class="el" href="SymbolTableLLZK_8h_source.html">llzk/Util/SymbolTableLLZK.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
 <code>#include &lt;mlir/IR/AttrTypeSubElements.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Matchers.h&gt;</code><br />
+<code>#include &lt;mlir/IR/OwningOpRef.h&gt;</code><br />
+<code>#include &lt;mlir/Transforms/FoldUtils.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/TypeSwitch.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for TemplateInstantiation.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TemplateInstantiation_8cpp__incl.svg" width="5576" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="TemplateInstantiation_8cpp__incl.svg" width="6004" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="TemplateInstantiation_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -172,15 +175,17 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a9a7c9f70abc3c3b8a227c9b96027d41a" id="r_a9a7c9f70abc3c3b8a227c9b96027d41a"><td class="memItemLeft">Value&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a9a7c9f70abc3c3b8a227c9b96027d41a">llzk::polymorphic::detail::materializeTemplateConstant</a> (OpBuilder &amp;builder, Location loc, Type resultType, Attribute value)</td></tr>
 <tr class="memitem:afcfd886e0e2a27bbe62a25e39ecb7b4c" id="r_afcfd886e0e2a27bbe62a25e39ecb7b4c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#afcfd886e0e2a27bbe62a25e39ecb7b4c">llzk::polymorphic::detail::reportDelayedDiagnostics</a> (Operation *site, SmallVector&lt; Diagnostic &gt; &amp;&amp;diagnostics)</td></tr>
 <tr class="memitem:a34c952b8c58b9f01620486084d04cb9e" id="r_a34c952b8c58b9f01620486084d04cb9e"><td class="memItemLeft">FailureOr&lt; ArrayAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a34c952b8c58b9f01620486084d04cb9e">llzk::polymorphic::detail::rebaseTemplateParams</a> (SymbolTableCollection &amp;tables, ArrayAttr templateParams, Operation *lookupFrom, ModuleOp destinationRoot, Operation *requestSite)</td></tr>
 <tr class="memitem:acef0db0f683b8b501d7b6afd3ff47cc3" id="r_acef0db0f683b8b501d7b6afd3ff47cc3"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#acef0db0f683b8b501d7b6afd3ff47cc3">llzk::polymorphic::detail::convertCalleesInPlace</a> (Operation *op, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToValue)</td></tr>
 <tr class="memitem:ac2e791f15775aea6b58ee53d32df9d6c" id="r_ac2e791f15775aea6b58ee53d32df9d6c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#ac2e791f15775aea6b58ee53d32df9d6c">llzk::polymorphic::detail::evaluateTemplateExprs</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete)</td></tr>
 <tr class="memdesc:ac2e791f15775aea6b58ee53d32df9d6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate all <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">TemplateExprOp</a></span>s in <span class="tt">templateOp</span> that can be computed from the currently-known concrete param values in <span class="tt">paramNameToConcrete</span>, and add their results to the map.  <br /></td></tr>
 <tr class="memitem:a5ddbefc3debaeb3802ceef20fc6a88ca" id="r_a5ddbefc3debaeb3802ceef20fc6a88ca"><td class="memItemLeft">std::optional&lt; Attribute &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a5ddbefc3debaeb3802ceef20fc6a88ca">llzk::polymorphic::detail::inferUnifiedParam</a> (const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifyResult, SymbolRefAttr paramName)</td></tr>
-<tr class="memdesc:a5ddbefc3debaeb3802ceef20fc6a88ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the callee-side unification-derived value for a template parameter, if any.  <br /></td></tr>
+<tr class="memdesc:a5ddbefc3debaeb3802ceef20fc6a88ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return an unambiguous callee-side binding; absent and unresolved entries have no value.  <br /></td></tr>
 <tr class="memitem:a65ec5c47d8e8b96d6b01b0e12575af54" id="r_a65ec5c47d8e8b96d6b01b0e12575af54"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a65ec5c47d8e8b96d6b01b0e12575af54">llzk::polymorphic::detail::substituteStructBody</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> newStruct, <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> typeAtDef, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete, SmallVector&lt; Diagnostic &gt; &amp;diagnostics)</td></tr>
 <tr class="memitem:a87a1ef6b9b3d15a0703954fd3df9d27e" id="r_a87a1ef6b9b3d15a0703954fd3df9d27e"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a87a1ef6b9b3d15a0703954fd3df9d27e">llzk::polymorphic::detail::substituteFunctionBody</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> newFunc, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete, SmallVector&lt; Diagnostic &gt; &amp;delayedDiagnostics)</td></tr>
+<tr class="memitem:a0eed1c06f1938729e3bad405d4d84109" id="r_a0eed1c06f1938729e3bad405d4d84109"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a0eed1c06f1938729e3bad405d4d84109">llzk::polymorphic::detail::substituteTemplateExprBody</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">TemplateExprOp</a> expr, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete, SmallVector&lt; Diagnostic &gt; &amp;delayedDiagnostics)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Private parameter substitution helpers shared by polymorphic transformations. </p>
@@ -200,7 +205,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00036">36</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TemplateInstantiation_8cpp_source.html#l00039">39</a> of file <a class="el" href="TemplateInstantiation_8cpp_source.html">TemplateInstantiation.cpp</a>.</p>
 
 </div>
 </div>

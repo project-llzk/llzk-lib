@@ -9,8 +9,8 @@ var namespaces_dup =
     [ "Step2_InstantiateFunctions", "namespaceStep2__InstantiateFunctions.html", null ],
     [ "Step3_Unroll", "namespaceStep3__Unroll.html", null ],
     [ "Step4_InstantiateAffineMaps", "namespaceStep4__InstantiateAffineMaps.html", null ],
-    [ "Step5_PropagateTypes", "namespaceStep5__PropagateTypes.html", null ],
-    [ "Step6_Cleanup", "namespaceStep6__Cleanup.html", null ],
+    [ "Step6_PropagateTypes", "namespaceStep6__PropagateTypes.html", null ],
+    [ "Step7_Cleanup", "namespaceStep7__Cleanup.html", null ],
     [ "test_templates", "namespacetest__templates.html", null ],
     [ "WildcardFunctionSpecialization", "namespaceWildcardFunctionSpecialization.html", null ]
 ];

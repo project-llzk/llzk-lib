@@ -564,6 +564,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a449db750fee6d61e2ec3aa36a969d483" id="r_a449db750fee6d61e2ec3aa36a969d483"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a449db750fee6d61e2ec3aa36a969d483">structTypesUnify</a> (<a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> lhs, <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:a5ebb9644ae9afb3d88ae5a5ea4a15ef0" id="r_a5ebb9644ae9afb3d88ae5a5ea4a15ef0"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a5ebb9644ae9afb3d88ae5a5ea4a15ef0">podTypesUnify</a> (<a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> lhs, <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:acaf3a6e4759cdd42fbf5df6c43ed2e40" id="r_acaf3a6e4759cdd42fbf5df6c43ed2e40"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#acaf3a6e4759cdd42fbf5df6c43ed2e40">functionTypesUnify</a> (FunctionType lhs, FunctionType rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
+<tr class="memitem:ade5a3bb748ed22d26104131d4a3ff94c" id="r_ade5a3bb748ed22d26104131d4a3ff94c"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ade5a3bb748ed22d26104131d4a3ff94c">functionTypesUnifyConsistently</a> (FunctionType lhs, FunctionType rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix)</td></tr>
 <tr class="memitem:abc5c6fc1f85b22d1d6e46755e5da1626" id="r_abc5c6fc1f85b22d1d6e46755e5da1626"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a> (Type lhs, Type rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:ac69242a61e4e25958e9c6e8fa0f8549e" id="r_ac69242a61e4e25958e9c6e8fa0f8549e"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a> (Type oldTy, Type newTy, llvm::function_ref&lt; bool(Type oldTy, Type newTy)&gt; knownOldToNew)</td></tr>
 <tr class="memitem:a4347ca404454b983d3c978e268aca917" id="r_a4347ca404454b983d3c978e268aca917"><td class="memItemLeft">FailureOr&lt; IntegerAttr &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4347ca404454b983d3c978e268aca917">forceIntType</a> (IntegerAttr attr, <a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
@@ -999,6 +1000,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8ef40e513bbc28e319dc57cb51892ab5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> instances are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
 <tr class="memitem:a7f9e5ec8059996c90a89f6de02767394" id="r_a7f9e5ec8059996c90a89f6de02767394"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a7f9e5ec8059996c90a89f6de02767394">functionTypesUnify</a> (mlir::FunctionType lhs, mlir::FunctionType rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
 <tr class="memdesc:a7f9e5ec8059996c90a89f6de02767394"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two FunctionType instances are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
+<tr class="memitem:a9a3bc2c857df42b86bd35c59014b908d" id="r_a9a3bc2c857df42b86bd35c59014b908d"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a9a3bc2c857df42b86bd35c59014b908d">functionTypesUnifyConsistently</a> (mlir::FunctionType lhs, mlir::FunctionType rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={})</td></tr>
+<tr class="memdesc:a9a3bc2c857df42b86bd35c59014b908d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unify a complete signature with transitive, side-qualified symbolic bindings.  <br /></td></tr>
 <tr class="memitem:a8a7476f05c4dce2ef7554e0ba1c3d567" id="r_a8a7476f05c4dce2ef7554e0ba1c3d567"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a8a7476f05c4dce2ef7554e0ba1c3d567">typesUnify</a> (mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
 <tr class="memdesc:a8a7476f05c4dce2ef7554e0ba1c3d567"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types).  <br /></td></tr>
 <tr class="memitem:a290cbd8f2848b2ab447a3b296adf6830" id="r_a290cbd8f2848b2ab447a3b296adf6830"><td class="memTemplParams" colspan="2">template&lt;typename Iter1, typename Iter2&gt; </td></tr>
@@ -1768,7 +1771,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00934">934</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01117">1117</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -1787,7 +1790,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01088">1088</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01277">1277</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4257,7 +4260,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01022">1022</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01211">1211</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4303,7 +4306,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01030">1030</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01219">1219</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4349,7 +4352,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00995">995</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01184">1184</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4434,7 +4437,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00953">953</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01136">1136</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4468,6 +4471,63 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p>Return <span class="tt">true</span> iff the two FunctionType instances are equivalent or could be equivalent after full instantiation of template parameters. </p>
+
+</div>
+</div>
+<a id="ade5a3bb748ed22d26104131d4a3ff94c" name="ade5a3bb748ed22d26104131d4a3ff94c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade5a3bb748ed22d26104131d4a3ff94c">&#9670;&#160;</a></span>functionTypesUnifyConsistently() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::functionTypesUnifyConsistently </td>
+          <td>(</td>
+          <td class="paramtype">FunctionType</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FunctionType</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayRef&lt; StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01143">1143</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a9a3bc2c857df42b86bd35c59014b908d" name="a9a3bc2c857df42b86bd35c59014b908d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a3bc2c857df42b86bd35c59014b908d">&#9670;&#160;</a></span>functionTypesUnifyConsistently() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::functionTypesUnifyConsistently </td>
+          <td>(</td>
+          <td class="paramtype">mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ArrayRef&lt; llvm::StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unify a complete signature with transitive, side-qualified symbolic bindings. </p>
+<p>Unlike <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a>'s null entries, this distinguishes compatible unresolved bindings from conflicts, including alias chains and repeated parameters within aggregate arguments/results. </p>
 
 </div>
 </div>
@@ -4589,7 +4649,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00297">297</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00305">305</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4891,7 +4951,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00293">293</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00301">301</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -6610,7 +6670,7 @@ template&lt;typename GraphT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01154">1154</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01343">1343</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6721,7 +6781,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00966">966</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01155">1155</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7126,7 +7186,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01167">1167</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01356">1356</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -8845,7 +8905,7 @@ template&lt;unsigned N&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00947">947</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01130">1130</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11412,7 +11472,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00273">273</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00281">281</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -11604,7 +11664,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00940">940</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01123">1123</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12133,7 +12193,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the two lists of Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types). </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00262">262</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00270">270</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -12163,7 +12223,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00928">928</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01111">1111</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12191,7 +12251,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00919">919</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01102">1102</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12313,7 +12373,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00960">960</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01149">1149</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12395,7 +12455,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01057">1057</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01246">1246</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12441,7 +12501,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01079">1079</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01268">1268</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12520,7 +12580,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01084">1084</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01273">1273</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12543,7 +12603,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01042">1042</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01231">1231</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12743,7 +12803,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01075">1075</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01264">1264</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12878,7 +12938,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01140">1140</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01329">1329</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -12909,7 +12969,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 <p>Determine if the <span class="tt">subArrayType</span> is a valid subarray of <span class="tt">arrayType</span>. </p>
 <p><span class="tt">arrayType</span> must be an array of dimension N and <span class="tt">subArrayType</span> must be an array of dimension M, where N &gt; M &gt;= 1. For example, &lt;3,7 x int&gt; is a valid subarray of &lt;5,3,7 x int&gt;, but &lt;8 x int&gt; is not an neither is &lt;3,7 x string&gt;. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01100">1100</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01289">1289</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>

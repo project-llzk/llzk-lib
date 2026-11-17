@@ -303,6 +303,8 @@ var namespacellzk =
     [ "fromAPInt", "namespacellzk.html#ab58b991633496850e1ed92acd413908d", null ],
     [ "functionTypesUnify", "namespacellzk.html#acaf3a6e4759cdd42fbf5df6c43ed2e40", null ],
     [ "functionTypesUnify", "namespacellzk.html#a7f9e5ec8059996c90a89f6de02767394", null ],
+    [ "functionTypesUnifyConsistently", "namespacellzk.html#ade5a3bb748ed22d26104131d4a3ff94c", null ],
+    [ "functionTypesUnifyConsistently", "namespacellzk.html#a9a3bc2c857df42b86bd35c59014b908d", null ],
     [ "getAllChildren", "namespacellzk.html#a5d53fd22e97d25b2e902d7be58def81d", null ],
     [ "getAllChildren", "namespacellzk.html#a7e1c43792a8af65233e41d99908fcb95", null ],
     [ "getAllChildren", "namespacellzk.html#a4f05d37ad335a901ee40a3eed866b8d0", null ],

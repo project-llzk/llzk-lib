@@ -1,5 +1,6 @@
 var namespacellzk_1_1polymorphic_1_1detail =
 [
+    [ "flattening", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html", "namespacellzk_1_1polymorphic_1_1detail_1_1flattening" ],
     [ "AccessPath", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath.html", "structllzk_1_1polymorphic_1_1detail_1_1AccessPath" ],
     [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
     [ "CleanupBase", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase" ],
@@ -47,6 +48,8 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "inferUnifiedParam", "namespacellzk_1_1polymorphic_1_1detail.html#a5ddbefc3debaeb3802ceef20fc6a88ca", null ],
     [ "isErasableDefinition", "namespacellzk_1_1polymorphic_1_1detail.html#aea1b21a65533d5e3fb2063434628d565", null ],
     [ "isInvariantTrueCondition", "namespacellzk_1_1polymorphic_1_1detail.html#a9ba034ba12eeace14acd9e7ebe97072a", null ],
+    [ "materializeTemplateConstant", "namespacellzk_1_1polymorphic_1_1detail.html#ab7f6bcd589c8f9c49a14e3210c453b2a", null ],
+    [ "materializeTemplateConstant", "namespacellzk_1_1polymorphic_1_1detail.html#a9a7c9f70abc3c3b8a227c9b96027d41a", null ],
     [ "newBaseTarget", "namespacellzk_1_1polymorphic_1_1detail.html#afa4db6a4baedb109176585c4bfc46e48", null ],
     [ "newConverterDefinedTarget", "namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386", null ],
     [ "newConverterDefinedTargetWithCallback", "namespacellzk_1_1polymorphic_1_1detail.html#a07f9f8f9a4106a59ae12e59ab7241dc6", null ],
@@ -61,5 +64,7 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "substituteFunctionBody", "namespacellzk_1_1polymorphic_1_1detail.html#a9d6fccbcc0c12c13083da47f2e0df7de", null ],
     [ "substituteStructBody", "namespacellzk_1_1polymorphic_1_1detail.html#a54feb10a723d7d9c0dc9dbfeffbbbf58", null ],
     [ "substituteStructBody", "namespacellzk_1_1polymorphic_1_1detail.html#a65ec5c47d8e8b96d6b01b0e12575af54", null ],
+    [ "substituteTemplateExprBody", "namespacellzk_1_1polymorphic_1_1detail.html#a0eed1c06f1938729e3bad405d4d84109", null ],
+    [ "substituteTemplateExprBody", "namespacellzk_1_1polymorphic_1_1detail.html#a61ddd4b1619834ae62c4dadd2f34e26b", null ],
     [ "CONSTRAINT_DIAGNOSTIC_PREFIX", "namespacellzk_1_1polymorphic_1_1detail.html#a65ca84a437e6fea891384c2b3a7e9a7b", null ]
 ];

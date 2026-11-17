@@ -332,6 +332,7 @@ var hierarchy =
       [ "llzk::verif::ContractOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1ContractOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits", "structllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::polymorphic::detail::flattening::ConversionTracker", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html", null ],
     [ "llzk::array::detail::CreateArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::CreateArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1CreateArrayOpGenericAdaptor.html", null ],
       [ "llzk::array::CreateArrayOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1array_1_1CreateArrayOpGenericAdaptor.html", [
@@ -505,6 +506,7 @@ var hierarchy =
       ] ],
       [ "llzk::function::FuncDefOpGenericAdaptor< RangeT >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::polymorphic::detail::flattening::FunctionInstantiationCache", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1FunctionInstantiationCache.html", null ],
     [ "llzk::witgen::FunctionInterpreter", "classllzk_1_1witgen_1_1FunctionInterpreter.html", null ],
     [ "llzk::FunctionTypeConverter", "classllzk_1_1FunctionTypeConverter.html", null ],
     [ "llzk::FuzzySet", "classllzk_1_1FuzzySet.html", null ],

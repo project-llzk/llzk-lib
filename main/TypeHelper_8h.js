@@ -22,6 +22,7 @@ var TypeHelper_8h =
     [ "llzk::forceIntAttrTypes", "namespacellzk.html#addd241b1e4627ad4ccde996cefb6cd1f", null ],
     [ "llzk::forceIntType", "namespacellzk.html#a3243df5ce2b09cb3dfbe2195e8f9aac9", null ],
     [ "llzk::functionTypesUnify", "namespacellzk.html#a7f9e5ec8059996c90a89f6de02767394", null ],
+    [ "llzk::functionTypesUnifyConsistently", "namespacellzk.html#a9a3bc2c857df42b86bd35c59014b908d", null ],
     [ "llzk::getAtIndex", "namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7", null ],
     [ "llzk::getIfSingleton", "namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c", null ],
     [ "llzk::hasAffineMapAttr", "namespacellzk.html#a21a0759043e8fb39b7ccae07f0d788da", null ],

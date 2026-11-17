@@ -4,5 +4,6 @@ var searchData=
   ['entire_1',['Entire',['../classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f',1,'llzk::Interval']]],
   ['eq_2',['EQ',['../namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37a2dcbad7477fd40561e8b8198f173bd47',1,'llzk::boolean']]],
   ['errs_3',['Errs',['../namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1',1,'llzk']]],
-  ['executionengine_4',['ExecutionEngine',['../namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500',1,'llzk::witgen']]]
+  ['exact_4',['Exact',['../namespacellzk_1_1polymorphic_1_1detail_1_1flattening.html#a6007e5e2b02a91065307f5f77a6e5d5ea1649aed298f99d587e2eb30c1db5946b',1,'llzk::polymorphic::detail::flattening']]],
+  ['executionengine_5',['ExecutionEngine',['../namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500',1,'llzk::witgen']]]
 ];

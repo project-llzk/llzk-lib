@@ -1,0 +1,25 @@
+var classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker =
+[
+    [ "ConversionTracker", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#abe4b110a8903ce6c2f83aabad35b389c", null ],
+    [ "areLegalConversions", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a6470fff0ab649a8c5720274d11a34eb4", null ],
+    [ "clearPartialFuncInstantiations", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a68a46574222a9ba7eaba4444b53d18af", null ],
+    [ "delayedDiagnosticSet", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#aba7ea6c3bec3125a4566428cebd57dc1", null ],
+    [ "getFullFuncInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#ae995f1171c0a4919745ae7f44ca77502", null ],
+    [ "getInstantiatedDefinitionNames", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a067fc932a7de7bb50d9d410a186487e0", null ],
+    [ "getInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a5ea983b5100101d2415d4bba50116beb", null ],
+    [ "getPreimage", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a7a91188c565a410b623ebb556a4487ca", null ],
+    [ "getPreservedLoopOps", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#afd2ae783a2c1671a189b7e9df1997931", null ],
+    [ "isLegalConversion", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a34e8d4f9c89a6bdf5e9a5ae3536d9c0c", null ],
+    [ "isModified", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a2dc113f64e11631dd63ba217e459aa0e", null ],
+    [ "lookupPartialFuncInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a2c04863d77a1cb1c6ae78ae260cc10ad", null ],
+    [ "mustPreserveLoop", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#aea3eb805897ca4eb55156386a75955ed", null ],
+    [ "recordFullFuncInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#ae80e032e95cfa13e5949b3ff94b1064c", null ],
+    [ "recordInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#aa17192851424e02bacc14bcc5e22aed9", null ],
+    [ "recordInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a98888965547a206cfbbc39c2024142cf", null ],
+    [ "recordPartialFuncInstantiation", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#aa31a6c4db293e33e02c429b94b6b1a1f", null ],
+    [ "reportDelayedDiagnostics", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#addaba4a824272debb97aa396229ddd09", null ],
+    [ "resetModifiedFlag", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#afedcbf34afd147d0cb95cb3241d96809", null ],
+    [ "scopeType", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a0b2fc1f0deb5298311d31871c87caf5c", null ],
+    [ "shouldSkipUnroll", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#a116d19e6dca7fa9a0f208778940c06bb", null ],
+    [ "updateModifiedFlag", "classllzk_1_1polymorphic_1_1detail_1_1flattening_1_1ConversionTracker.html#accdddae87ded2402ad83cb186fa0242f", null ]
+];
