@@ -1,0 +1,7 @@
+fixed:
+  - "Fix issue #296 so flattening pass creates multiple instantiated structs for heterogeneous arrays of structs."
+  - "In flattening pass, fix wildcard inference and preserve expressions and sibling functions in partial function instantiations."
+  - "In flattening pass, fix specialization caching, generated-name collisions, and symbol resolution across nested modules."
+  - "In flattening pass, reject conflicting shared template bindings while preserving compatible unresolved bindings."
+  - "In flattening pass, preserve producer and consumer type contracts when refining shared values, members, calls, and returns."
+  - "In flattening pass, fix dangling operand ranges when partially folding affine maps."

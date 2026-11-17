@@ -1,0 +1,69 @@
+// RUN: llzk-opt -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=disabled})' %s | FileCheck --enable-var-scope %s
+
+// Isolate function-instantiation cache behavior from cleanup pruning. Each sibling root defines
+// the same relative @T::@f symbol and instantiates the same argument list.
+
+module attributes {llzk.lang} {
+  module @Left attributes {llzk.lang} {
+    poly.template @T {
+      poly.param @N : index
+
+      function.def @f(%inp: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+        function.return %inp : !array.type<@N x !felt.type>
+      }
+    }
+
+    function.def @test(%inp: !array.type<4 x !felt.type>) attributes {function.allow_witness} {
+      %out = function.call @T::@f(%inp) : (!array.type<4 x !felt.type>) -> (!array.type<4 x !felt.type>)
+      function.return
+    }
+  }
+
+  module @Right attributes {llzk.lang} {
+    poly.template @T {
+      poly.param @N : index
+
+      function.def @f(%inp: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+        function.return %inp : !array.type<@N x !felt.type>
+      }
+    }
+
+    function.def @test(%inp: !array.type<4 x !felt.type>) attributes {function.allow_witness} {
+      %out = function.call @T::@f(%inp) : (!array.type<4 x !felt.type>) -> (!array.type<4 x !felt.type>)
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @Left attributes {llzk.lang} {
+// CHECK-NEXT:      function.def @T_4_f(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @T {
+// CHECK-NEXT:        poly.param @N : index
+// CHECK-NEXT:        function.def @f(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+// CHECK-NEXT:          function.return %[[VAL_1]] : !array.type<@N x !felt.type>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @test(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = function.call @T_4_f(%[[VAL_2]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @Right attributes {llzk.lang} {
+// CHECK-NEXT:      function.def @T_4_f(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @T {
+// CHECK-NEXT:        poly.param @N : index
+// CHECK-NEXT:        function.def @f(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+// CHECK-NEXT:          function.return %[[VAL_5]] : !array.type<@N x !felt.type>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @test(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !array.type<4 x !felt.type>) attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @T_4_f(%[[VAL_6]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

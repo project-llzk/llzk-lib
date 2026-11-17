@@ -1,0 +1,83 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Refinements can unify both operands yet introduce types forbidden by constrain.in or constrain.eq.
+!Holder = !struct.type<@Template::@Holder<[@T, @U]>>
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  poly.template @Template {
+    poly.param @T
+    poly.param @U
+    struct.def @Holder {
+      struct.member @cells : !array.type<1 x !poly.tvar<@T>> {column}
+      struct.member @equal_cells : !array.type<1 x !poly.tvar<@T>> {column}
+      struct.member @equal_strings : !array.type<1 x !poly.tvar<@U>> {column}
+      struct.member @strings : !array.type<1 x !poly.tvar<@U>> {column}
+      function.def @compute(%cells: !array.type<1 x !struct.type<@Cell>>, %strings: !array.type<1 x !string.type>, %cell: !poly.tvar<@T>, %string: !poly.tvar<@U>) -> !Holder {
+        %self = struct.new : !Holder
+        struct.writem %self[@cells] = %cells : !Holder, !array.type<1 x !struct.type<@Cell>>
+        struct.writem %self[@strings] = %strings : !Holder, !array.type<1 x !string.type>
+        struct.writem %self[@equal_cells] = %cells : !Holder, !array.type<1 x !struct.type<@Cell>>
+        struct.writem %self[@equal_strings] = %strings : !Holder, !array.type<1 x !string.type>
+        function.return %self : !Holder
+      }
+      function.def @constrain(%self: !Holder, %input_cells: !array.type<1 x !struct.type<@Cell>>, %input_strings: !array.type<1 x !string.type>, %cell: !poly.tvar<@T>, %string: !poly.tvar<@U>) {
+        %cells = struct.readm %self[@cells] : !Holder, !array.type<1 x !poly.tvar<@T>>
+        %strings = struct.readm %self[@strings] : !Holder, !array.type<1 x !poly.tvar<@U>>
+        %equal_cells = struct.readm %self[@equal_cells] : !Holder, !array.type<1 x !poly.tvar<@T>>
+        %equal_strings = struct.readm %self[@equal_strings] : !Holder, !array.type<1 x !poly.tvar<@U>>
+        constrain.eq %equal_cells, %equal_cells : !array.type<1 x !poly.tvar<@T>>
+        constrain.eq %equal_strings, %equal_strings : !array.type<1 x !poly.tvar<@U>>
+        constrain.in %cells, %cell : !array.type<1 x !poly.tvar<@T>>, !poly.tvar<@T>
+        constrain.in %strings, %string : !array.type<1 x !poly.tvar<@U>>, !poly.tvar<@U>
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Cell {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Template {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @cells : !array.type<1 x !poly.tvar<@T>> {column}
+// CHECK-NEXT:        struct.member @equal_cells : !array.type<1 x !poly.tvar<@T>> {column}
+// CHECK-NEXT:        struct.member @equal_strings : !array.type<1 x !poly.tvar<@U>> {column}
+// CHECK-NEXT:        struct.member @strings : !array.type<1 x !poly.tvar<@U>> {column}
+// CHECK-NEXT:        function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@Cell>>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<1 x !string.type>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !poly.tvar<@U>) -> !struct.type<@Template::@Holder<[@T, @U]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@Template::@Holder<[@T, @U]>>
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@cells] = %[[VAL_2]] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !struct.type<@Cell>>
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@strings] = %[[VAL_3]] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !string.type>
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@equal_cells] = %[[VAL_2]] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !struct.type<@Cell>>
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@equal_strings] = %[[VAL_3]] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !string.type>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@Template::@Holder<[@T, @U]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Template::@Holder<[@T, @U]>>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !array.type<1 x !struct.type<@Cell>>, %[[VAL_9:[0-9a-zA-Z_.-]+]]: !array.type<1 x !string.type>, %[[VAL_10:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !poly.tvar<@U>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@cells] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@strings] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !poly.tvar<@U>>
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@equal_cells] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@equal_strings] : <@Template::@Holder<[@T, @U]>>, !array.type<1 x !poly.tvar<@U>>
+// CHECK-NEXT:          constrain.eq %[[VAL_14]], %[[VAL_14]] : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:          constrain.eq %[[VAL_15]], %[[VAL_15]] : !array.type<1 x !poly.tvar<@U>>, !array.type<1 x !poly.tvar<@U>>
+// CHECK-NEXT:          constrain.in %[[VAL_12]], %[[VAL_10]] : <1 x !poly.tvar<@T>>, !poly.tvar<@T>
+// CHECK-NEXT:          constrain.in %[[VAL_13]], %[[VAL_11]] : <1 x !poly.tvar<@U>>, !poly.tvar<@U>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
