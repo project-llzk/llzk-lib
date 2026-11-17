@@ -32,6 +32,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
@@ -137,8 +138,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   OpBuilder builder(op);
   // Materialize a felt bound before the loop in the supplied induction variable type.
   auto createBound = [&builder, &op](const llvm::DynamicAPInt &value, FeltType type) -> Value {
-    auto attr = FeltConstAttr::get(builder.getContext(), value, type);
-    return FeltConstantOp::create(builder, op.getLoc(), attr).getResult();
+    return FeltConstantOp::create(builder, op.getLoc(), type, value).getResult();
   };
 
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
@@ -166,19 +166,19 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     // scf.for also requires the value after the final increment to fit, even though it is
     // outside the iteration range. Compute it with mathematical integers to avoid overflow.
     if (bounds.getLower() < bounds.getUpper()) {
-      auto distance = bounds.getUpper() - bounds.getLower();
-      auto tripCount = (distance + bounds.getStep() - 1) / bounds.getStep();
-      auto end = bounds.getLower() + tripCount * bounds.getStep();
+      auto tripCount = bounds.getTripCount();
+      auto end = bounds.getInductionValue(tripCount);
       if (auto convertedEnd = llzk::checkedToInt64(end); !convertedEnd) {
         reportFailureReason("loopbounds final induction value cannot be represented as an index")
             << ": " << llvm::toString(convertedEnd.takeError());
         return info;
       }
       // Only executed IVs need to fit the field, not the exclusive upper bound or final
-      // increment. Positive steps make end - step the largest executed IV. Empty loops
+      // increment. Positive steps make the last executed IV the largest. Empty loops
       // retain ASSERT because the body cast never executes, even with an unknown field.
       if (auto type = dyn_cast<FeltType>(ivarBefore.getType());
-          type && (!type.hasField() || end - bounds.getStep() >= type.getField().prime())) {
+          type && (!type.hasField() ||
+                   bounds.getInductionValue(tripCount - 1) >= type.getField().prime())) {
         info.ivarOverflow = llzk::cast::OverflowSemantics::WRAP;
       }
     }
@@ -354,57 +354,33 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
                        .getResult();
   }
 
-  // Start by mapping the `before` block to the loop body
-  // Each block arg of the before block should get mapped to the corresponding iter_arg, with the
-  // exception of the induction var which should get mapped to the induction var
-  for (size_t i = 0; i < whilePreamble->getNumArguments(); i++) {
-    if (i == info.ivarIndexBefore) {
-      mapping.map(whilePreamble->getArgument(i), inductionVar);
-      continue;
-    }
-    mapping.map(
-        whilePreamble->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
+  // Substitute the index-driven IV while retaining the other loop-carried arguments.
+  SmallVector<Value> beforeArguments;
+  for (size_t i = 0; i < whilePreamble->getNumArguments(); ++i) {
+    beforeArguments.push_back(
+        i == info.ivarIndexBefore ? inductionVar
+                                  : forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
     );
   }
+  auto forwarded = llzk::cloneBlockWithMappedArguments(
+      rewriter, *whilePreamble, beforeArguments, op.getConditionOp().getArgs()
+  );
+  auto yielded = llzk::cloneBlockWithMappedArguments(
+      rewriter, *op.getAfterBody(), forwarded, op.getYieldedValues()
+  );
 
-  // Emit the preamble into the for loop body
-  for (auto &preambleOp : *whilePreamble) {
-    // Don't emit the scf.condition; rather, use it to update the mapping in preparation for the
-    // loop body
-    if (auto condOp = dyn_cast<scf::ConditionOp>(&preambleOp)) {
-      for (auto [value, blockArg] : llvm::zip(condOp.getArgs(), op.getAfterArguments())) {
-        // TODO: maybe this isn't transitive?
-        mapping.map(blockArg, mapping.lookupOrDefault(value));
-      }
-      continue;
+  // The index IV drives the next iteration; carry its original yield only for the final check.
+  SmallVector<Value> valuesToYield;
+  for (auto [i, value] : llvm::enumerate(yielded)) {
+    if (i != info.ivarIndexAfter) {
+      valuesToYield.push_back(value);
     }
-    rewriter.clone(preambleOp, mapping);
   }
-
-  auto *whileBody = op.getAfterBody();
-
-  for (auto &bodyOp : *whileBody) {
-    // The index IV drives the next iteration; other values remain loop-carried.
-    if (auto yieldOp = dyn_cast<scf::YieldOp>(&bodyOp)) {
-      SmallVector<Value> valuesToYield;
-      for (auto [i, val] : llvm::enumerate(yieldOp.getResults())) {
-        if (i == info.ivarIndexAfter) {
-          continue;
-        }
-        // Other yielded values should point to the correct iter_arg.
-        valuesToYield.push_back(mapping.lookupOrDefault(val));
-      }
-      if (preserveFinalCondition) {
-        valuesToYield.push_back(
-            mapping.lookupOrDefault(yieldOp.getResults()[*info.ivarIndexBefore])
-        );
-      }
-      if (!valuesToYield.empty()) {
-        scf::YieldOp::create(rewriter, yieldOp.getLoc(), valuesToYield);
-      }
-      continue;
-    }
-    rewriter.clone(bodyOp, mapping);
+  if (preserveFinalCondition) {
+    valuesToYield.push_back(yielded[*info.ivarIndexBefore]);
+  }
+  if (!valuesToYield.empty()) {
+    scf::YieldOp::create(rewriter, op.getYieldOp().getLoc(), valuesToYield);
   }
 
   // Match the original result list, retaining the final IV when the condition region needs it.
@@ -424,15 +400,10 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
 
   if (preserveFinalCondition) {
     rewriter.setInsertionPointAfter(forOp);
-    IRMapping finalMapping;
-    for (auto [arg, value] : llvm::zip(op.getBeforeArguments(), replacedValues)) {
-      finalMapping.map(arg, value);
-    }
-    // A while loop executes its condition region once more after the last body iteration.
-    // Use a fresh mapping so no references to values inside the for loop escape its region.
-    for (auto &preambleOp : whilePreamble->without_terminator()) {
-      rewriter.clone(preambleOp, finalMapping);
-    }
+    // The helper uses a fresh mapping so values inside the for loop cannot escape its region.
+    llzk::cloneBlockWithMappedArguments(
+        rewriter, *whilePreamble, replacedValues, op.getConditionOp().getArgs()
+    );
   }
 
   rewriter.replaceOp(op, replacedValues);

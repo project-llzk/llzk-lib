@@ -468,10 +468,7 @@ Value materializeTemplateConstant(
 ) {
   if (auto integer = dyn_cast<IntegerAttr>(value)) {
     if (auto type = dyn_cast<FeltType>(resultType)) {
-      return FeltConstantOp::create(
-          builder, loc,
-          FeltConstAttr::get(builder.getContext(), integerAttrToDynamicAPInt(integer), type)
-      );
+      return FeltConstantOp::create(builder, loc, type, integerAttrToDynamicAPInt(integer));
     }
     if (isa<IndexType>(resultType)) {
       return arith::ConstantIndexOp::create(builder, loc, fromAPInt(integer.getValue()));

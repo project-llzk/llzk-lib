@@ -43,6 +43,11 @@ using namespace llzk::polymorphic::detail;
 
 namespace llzk::polymorphic::detail::flattening {
 
+unsigned getInductionStorageWidth(Type type) {
+  return type.isIndex() ? IndexType::kInternalStorageBitWidth
+                        : llvm::cast<IntegerType>(type).getWidth();
+}
+
 /// Compute the trip count from the loop itself, independently of any trusted annotation.
 std::optional<APInt> getConstantTripCount(LoopLikeOpInterface loopOp) {
   if (auto whileOp = dyn_cast<scf::WhileOp>(loopOp.getOperation());
@@ -73,9 +78,7 @@ static std::optional<std::string> getUnrollSkipReason(Operation *op, uint64_t li
     if (bounds.getStep() == 0) {
       return std::nullopt; // The annotated unroller diagnoses invalid steps separately.
     }
-    llvm::DynamicAPInt count =
-        llvm::ceilDiv(bounds.getUpper() - bounds.getLower(), bounds.getStep());
-    auto checked = checkedToUInt64(std::max(count, llvm::DynamicAPInt(0)));
+    auto checked = checkedToUInt64(bounds.getTripCount());
     if (!checked) {
       llvm::consumeError(checked.takeError());
       return "llzk.loopbounds trip count does not fit in uint64_t; leaving loop unchanged";
@@ -110,10 +113,9 @@ static std::optional<std::string> getUnrollSkipReason(Operation *op, uint64_t li
     }
     if (iv && !iv.use_empty()) {
       Type ivType = iv.getType();
-      unsigned width =
-          ivType.isIndex() ? IndexType::kInternalStorageBitWidth : ivType.getIntOrFloatBitWidth();
+      unsigned width = getInductionStorageWidth(ivType);
       const llvm::DynamicAPInt &lower = bounds.getLower();
-      auto last = lower + toDynamicAPInt(tripCount - 1) * bounds.getStep();
+      auto last = bounds.getInductionValue(toDynamicAPInt(tripCount - 1));
       // All intermediate induction values lie between these endpoints.
       for (const auto &value : {lower, last}) {
         auto encoded = checkedToAPInt(value, width, isSigned);

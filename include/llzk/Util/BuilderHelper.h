@@ -12,10 +12,32 @@
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/IRMapping.h>
 #include <mlir/IR/Location.h>
 
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
+
 namespace llzk {
+
+/// Clone a block's non-terminator operations with the supplied argument bindings and return
+/// the remapped forwarded values. A fresh mapping keeps separate invocations independent;
+/// captures outside the block retain their original values.
+inline llvm::SmallVector<mlir::Value> cloneBlockWithMappedArguments(
+    mlir::OpBuilder &builder, mlir::Block &block, mlir::ValueRange arguments,
+    mlir::ValueRange forwarded
+) {
+  mlir::IRMapping mapping;
+  mapping.map(block.getArguments(), arguments);
+  for (mlir::Operation &op : block.without_terminator()) {
+    builder.clone(op, mapping);
+  }
+  return llvm::map_to_vector(forwarded, [&](mlir::Value value) {
+    return mapping.lookupOrDefault(value);
+  });
+}
 
 template <typename OpClass, typename... Args>
 inline OpClass delegate_to_build(mlir::Location location, Args &&...args) {
