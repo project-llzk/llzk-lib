@@ -29,6 +29,9 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/AttrTypeSubElements.h>
+#include <mlir/IR/Matchers.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Transforms/FoldUtils.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -417,12 +420,17 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
 /// constant-folded; otherwise returns `std::nullopt`.
 static std::optional<Attribute>
 evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
-  // Map from SSA value in the expr body to its concrete Attribute.
-  DenseMap<Value, Attribute> valueMap;
-  for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
+  // Folding may rewrite operations in place. Evaluate a disposable copy so subsequent
+  // specializations and partially instantiated templates retain the original expression.
+  OwningOpRef<TemplateExprOp> evaluation(exprOp.clone());
+  TemplateTypeConverter typeConverter(paramNameToConcrete);
+  IRRewriter rewriter(exprOp.getContext());
+  OperationFolder folder(exprOp.getContext());
+  for (Operation &bodyOp : llvm::make_early_inc_range(evaluation->getInitializerRegion().front())) {
     if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
-      auto it = valueMap.find(yieldOp.getVal());
-      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+      Attribute result;
+      return matchPattern(yieldOp.getVal(), m_Constant(&result)) ? std::make_optional(result)
+                                                                 : std::nullopt;
     }
 
     if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
@@ -430,41 +438,23 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
       if (it == paramNameToConcrete.end()) {
         return std::nullopt; // a referenced param is not concrete
       }
-      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
-      // a `FeltConstAttr`.
-      Attribute val = it->second;
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
-        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
-          val = FeltConstAttr::get(bodyOp.getContext(), integerAttrToDynamicAPInt(intAttr), feltTy);
-        }
+      Type resultType = typeConverter.convertType(constReadOp.getType());
+      if (!resultType) {
+        return std::nullopt;
       }
-      valueMap[constReadOp.getResult()] = val;
+      rewriter.setInsertionPoint(constReadOp);
+      Value constant =
+          materializeTemplateConstant(rewriter, constReadOp.getLoc(), resultType, it->second);
+      if (!constant) {
+        return std::nullopt;
+      }
+      rewriter.replaceOp(constReadOp, constant);
       continue;
     }
 
-    // Gather constant attributes for all operands.
-    SmallVector<Attribute> operandAttrs;
-    operandAttrs.reserve(bodyOp.getNumOperands());
-    for (Value operand : bodyOp.getOperands()) {
-      auto it = valueMap.find(operand);
-      if (it == valueMap.end()) {
-        return std::nullopt; // operand not known as a constant
-      }
-      operandAttrs.push_back(it->second);
-    }
-
-    // Try constant folding.
-    SmallVector<OpFoldResult> foldResults;
-    if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
-        foldResults.size() == bodyOp.getNumResults()) {
-      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
-        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
-          valueMap[result] = a;
-        } else {
-          return std::nullopt;
-        }
-      }
-    }
+    // Use the standard folder for attribute results, existing SSA values and in-place
+    // updates. A non-foldable result remains non-constant and cannot be yielded below.
+    (void)folder.tryToFold(&bodyOp);
   }
   return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
 }

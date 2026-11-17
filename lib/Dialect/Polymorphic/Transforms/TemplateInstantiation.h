@@ -82,6 +82,7 @@ void convertCalleesInPlace(
 );
 
 /// Add foldable template-expression results to bindings in declaration order.
+/// Evaluation folds a disposable expression clone, preserving the shared template body.
 /// Expressions with unresolved operands are skipped to allow partial instantiation.
 void evaluateTemplateExprs(
     TemplateOp templateOp, llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
