@@ -47,17 +47,17 @@ module attributes {llzk.lang} {
 }
 // FELT-LABEL: module attributes {llzk.lang} {
 // FELT-NEXT:    poly.template @"Pair_\1A_\1A_8" {
-// FELT-NEXT:      poly.param @B
 // FELT-NEXT:      poly.param @T
+// FELT-NEXT:      poly.param @B
 // FELT-NEXT:      struct.def @Pair {
 // FELT-NEXT:        struct.member @first : !poly.tvar<@T>
 // FELT-NEXT:        struct.member @second : !poly.tvar<@B>
 // FELT-NEXT:        struct.member @values : !array.type<8 x !felt.type>
-// FELT-NEXT:        function.def @compute() -> !struct.type<@"Pair_\1A_\1A_8"::@Pair<[@B, @T]>> attributes {function.allow_witness} {
-// FELT-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"Pair_\1A_\1A_8"::@Pair<[@B, @T]>>
-// FELT-NEXT:          function.return %[[VAL_0]] : !struct.type<@"Pair_\1A_\1A_8"::@Pair<[@B, @T]>>
+// FELT-NEXT:        function.def @compute() -> !struct.type<@"Pair_\1A_\1A_8"::@Pair<[@T, @B]>> attributes {function.allow_witness} {
+// FELT-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@"Pair_\1A_\1A_8"::@Pair<[@T, @B]>>
+// FELT-NEXT:          function.return %[[VAL_0]] : !struct.type<@"Pair_\1A_\1A_8"::@Pair<[@T, @B]>>
 // FELT-NEXT:        }
-// FELT-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"Pair_\1A_\1A_8"::@Pair<[@B, @T]>>) attributes {function.allow_constraint} {
+// FELT-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@"Pair_\1A_\1A_8"::@Pair<[@T, @B]>>) attributes {function.allow_constraint} {
 // FELT-NEXT:          function.return
 // FELT-NEXT:        }
 // FELT-NEXT:      }

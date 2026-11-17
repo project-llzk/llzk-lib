@@ -171,17 +171,22 @@ static FuncDefOp cloneFunctionWithConvertedCallees(
   return clone;
 }
 
-/// Create the initially empty shell of a partially-instantiated template.
-///
-/// The caller owns insertion and populating the preserved template symbols, because those steps
-/// vary between struct and function instantiation.
-static TemplateOp
-createPartialInstantiationTemplate(TemplateOp sourceTemplate, const InstantiationLayout &layout) {
+/// Create a partial template with its remaining parameters in binding order.
+/// The caller owns insertion and populating the specialized definitions and expressions.
+static TemplateOp createPartialInstantiationTemplate(
+    TemplateOp sourceTemplate, const InstantiationLayout &layout, SymbolTableCollection &tables
+) {
   TemplateOp newTemplate = sourceTemplate.cloneWithoutRegions();
   newTemplate.setSymName(layout.templateNameWithAttrs);
   setInstantiationNamePattern(newTemplate, layout.namePattern);
   assert(newTemplate->getNumRegions() > 0 && "template must have a body region");
-  newTemplate.getBodyRegion().emplaceBlock();
+  Block &body = newTemplate.getBodyRegion().emplaceBlock();
+  for (Attribute name : layout.remainingNames) {
+    auto nameSym = llvm::cast<FlatSymbolRefAttr>(name);
+    Operation *paramOp = tables.getSymbolTable(sourceTemplate).lookup(nameSym.getAttr());
+    assert(paramOp && "symbol must exist");
+    body.push_back(paramOp->clone());
+  }
   return newTemplate;
 }
 
@@ -821,17 +826,8 @@ class StructCloner {
       typeAtCallerSymPieces.pop_back();
     } else { // PARTIAL INSTANTIATION CASE
       // Clone the template and set instantiated name.
-      TemplateOp newTemplate = createPartialInstantiationTemplate(parentTemplate, layout);
-
-      // Clone preserved const param/expr ops.
-      for (Attribute name : layout.remainingNames) {
-        FlatSymbolRefAttr nameSym = llvm::dyn_cast<FlatSymbolRefAttr>(name);
-        assert(nameSym && "expected FlatSymbolRefAttr");
-
-        Operation *symOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
-        assert(symOp && "symbol must exist");
-        newTemplate.insert(newTemplate.begin(), symOp->clone());
-      }
+      TemplateOp newTemplate =
+          createPartialInstantiationTemplate(parentTemplate, layout, symTables);
 
       // Insert the struct into the template and the template into the module. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
@@ -2141,15 +2137,8 @@ private:
       );
       return cachedCallee;
     }
-    TemplateOp newTemplate = createPartialInstantiationTemplate(parentTemplate, layout);
-
+    TemplateOp newTemplate = createPartialInstantiationTemplate(parentTemplate, layout, symTables);
     Block &newTemplateBody = newTemplate.getBodyRegion().front();
-    for (Attribute name : layout.remainingNames) {
-      FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
-      Operation *paramOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
-      assert(paramOp && "symbol must exist");
-      newTemplateBody.push_back(paramOp->clone());
-    }
 
     // Clone and partially convert the function (concretize only the concrete params).
     FuncDefOp newFunc = cloneFunctionWithConvertedCallees(callTgt, paramNameToConcrete);
