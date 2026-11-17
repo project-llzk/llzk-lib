@@ -32,6 +32,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
@@ -354,57 +355,33 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
                        .getResult();
   }
 
-  // Start by mapping the `before` block to the loop body
-  // Each block arg of the before block should get mapped to the corresponding iter_arg, with the
-  // exception of the induction var which should get mapped to the induction var
-  for (size_t i = 0; i < whilePreamble->getNumArguments(); i++) {
-    if (i == info.ivarIndexBefore) {
-      mapping.map(whilePreamble->getArgument(i), inductionVar);
-      continue;
-    }
-    mapping.map(
-        whilePreamble->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
+  // Substitute the index-driven IV while retaining the other loop-carried arguments.
+  SmallVector<Value> beforeArguments;
+  for (size_t i = 0; i < whilePreamble->getNumArguments(); ++i) {
+    beforeArguments.push_back(
+        i == info.ivarIndexBefore ? inductionVar
+                                  : forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
     );
   }
+  auto forwarded = llzk::cloneBlockWithMappedArguments(
+      rewriter, *whilePreamble, beforeArguments, op.getConditionOp().getArgs()
+  );
+  auto yielded = llzk::cloneBlockWithMappedArguments(
+      rewriter, *op.getAfterBody(), forwarded, op.getYieldedValues()
+  );
 
-  // Emit the preamble into the for loop body
-  for (auto &preambleOp : *whilePreamble) {
-    // Don't emit the scf.condition; rather, use it to update the mapping in preparation for the
-    // loop body
-    if (auto condOp = dyn_cast<scf::ConditionOp>(&preambleOp)) {
-      for (auto [value, blockArg] : llvm::zip(condOp.getArgs(), op.getAfterArguments())) {
-        // TODO: maybe this isn't transitive?
-        mapping.map(blockArg, mapping.lookupOrDefault(value));
-      }
-      continue;
+  // The index IV drives the next iteration; carry its original yield only for the final check.
+  SmallVector<Value> valuesToYield;
+  for (auto [i, value] : llvm::enumerate(yielded)) {
+    if (i != info.ivarIndexAfter) {
+      valuesToYield.push_back(value);
     }
-    rewriter.clone(preambleOp, mapping);
   }
-
-  auto *whileBody = op.getAfterBody();
-
-  for (auto &bodyOp : *whileBody) {
-    // The index IV drives the next iteration; other values remain loop-carried.
-    if (auto yieldOp = dyn_cast<scf::YieldOp>(&bodyOp)) {
-      SmallVector<Value> valuesToYield;
-      for (auto [i, val] : llvm::enumerate(yieldOp.getResults())) {
-        if (i == info.ivarIndexAfter) {
-          continue;
-        }
-        // Other yielded values should point to the correct iter_arg.
-        valuesToYield.push_back(mapping.lookupOrDefault(val));
-      }
-      if (preserveFinalCondition) {
-        valuesToYield.push_back(
-            mapping.lookupOrDefault(yieldOp.getResults()[*info.ivarIndexBefore])
-        );
-      }
-      if (!valuesToYield.empty()) {
-        scf::YieldOp::create(rewriter, yieldOp.getLoc(), valuesToYield);
-      }
-      continue;
-    }
-    rewriter.clone(bodyOp, mapping);
+  if (preserveFinalCondition) {
+    valuesToYield.push_back(yielded[*info.ivarIndexBefore]);
+  }
+  if (!valuesToYield.empty()) {
+    scf::YieldOp::create(rewriter, op.getYieldOp().getLoc(), valuesToYield);
   }
 
   // Match the original result list, retaining the final IV when the condition region needs it.
@@ -424,15 +401,10 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
 
   if (preserveFinalCondition) {
     rewriter.setInsertionPointAfter(forOp);
-    IRMapping finalMapping;
-    for (auto [arg, value] : llvm::zip(op.getBeforeArguments(), replacedValues)) {
-      finalMapping.map(arg, value);
-    }
-    // A while loop executes its condition region once more after the last body iteration.
-    // Use a fresh mapping so no references to values inside the for loop escape its region.
-    for (auto &preambleOp : whilePreamble->without_terminator()) {
-      rewriter.clone(preambleOp, finalMapping);
-    }
+    // The helper uses a fresh mapping so values inside the for loop cannot escape its region.
+    llzk::cloneBlockWithMappedArguments(
+        rewriter, *whilePreamble, replacedValues, op.getConditionOp().getArgs()
+    );
   }
 
   rewriter.replaceOp(op, replacedValues);

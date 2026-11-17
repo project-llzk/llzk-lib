@@ -28,6 +28,7 @@
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
@@ -2306,23 +2307,18 @@ private:
   /// controls how often the after region executes; the regions themselves compute carried values.
   static LogicalResult
   unroll(scf::WhileOp loopOp, PatternRewriter &rewriter, LoopBoundsAttr, uint64_t tripCount) {
-    auto cloneBlock = [&](Block *block, ValueRange arguments, ValueRange forwarded) {
-      IRMapping mapping;
-      mapping.map(block->getArguments(), arguments);
-      for (Operation &op : block->without_terminator()) {
-        rewriter.clone(op, mapping);
-      }
-      return llvm::map_to_vector(forwarded, [&](Value value) {
-        return mapping.lookupOrDefault(value);
-      });
-    };
-
     SmallVector<Value> values(loopOp.getInits());
     for (uint64_t i = 0; i < tripCount; ++i) {
-      values = cloneBlock(loopOp.getBeforeBody(), values, loopOp.getConditionOp().getArgs());
-      values = cloneBlock(loopOp.getAfterBody(), values, loopOp.getYieldOp().getResults());
+      values = cloneBlockWithMappedArguments(
+          rewriter, *loopOp.getBeforeBody(), values, loopOp.getConditionOp().getArgs()
+      );
+      values = cloneBlockWithMappedArguments(
+          rewriter, *loopOp.getAfterBody(), values, loopOp.getYieldOp().getResults()
+      );
     }
-    values = cloneBlock(loopOp.getBeforeBody(), values, loopOp.getConditionOp().getArgs());
+    values = cloneBlockWithMappedArguments(
+        rewriter, *loopOp.getBeforeBody(), values, loopOp.getConditionOp().getArgs()
+    );
     rewriter.replaceOp(loopOp, values);
     return success();
   }
