@@ -12,6 +12,15 @@
 
 include "llzk/Pass/PassBase.td"
 
+def InferIdempotenceAttributePass : LLZKPass<"infer-idempotence-attribute"> {
+  let summary = "Infer the llzk.idempotent function attribute (scaffold)";
+  let description = [{
+    Entry point for inferring the `llzk.idempotent` attribute on functions.
+    Currently this pass is a scaffold: it leaves the IR unchanged and preserves
+    all analyses. Attribute inference is not yet implemented.
+  }];
+}
+
 def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";

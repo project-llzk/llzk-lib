@@ -1,0 +1,169 @@
+// RUN: llzk-opt %s --infer-idempotence-attribute --verify-diagnostics | FileCheck %s
+
+// Verify inference, preservation, and removal of llzk.idempotent.
+// Unannotated non-idempotent functions must not produce diagnostics.
+module attributes {llzk.lang} {
+  global.def const @constant : !felt.type = 7
+  global.def @mutable : !felt.type
+  // Local struct reads and constant globals are repeatable.
+  struct.def @LocalUnmarked {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type) -> !struct.type<@LocalUnmarked> {
+      %self = struct.new : !struct.type<@LocalUnmarked>
+      struct.writem %self[@value] = %x : !struct.type<@LocalUnmarked>, !felt.type
+      %local = struct.readm %self[@value] : !struct.type<@LocalUnmarked>, !felt.type
+      %constant = global.read const @constant : !felt.type
+      %result = felt.add %local, %constant : !felt.type
+      struct.writem %self[@value] = %result : !struct.type<@LocalUnmarked>, !felt.type
+      function.return %self : !struct.type<@LocalUnmarked>
+    }
+    function.def @constrain(%self: !struct.type<@LocalUnmarked>, %x: !felt.type) {
+      function.return
+    }
+  }
+
+  // Local struct reads and constant globals are repeatable.
+  struct.def @LocalMarked {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type) -> !struct.type<@LocalMarked> attributes {llzk.idempotent} {
+      %self = struct.new : !struct.type<@LocalMarked>
+      struct.writem %self[@value] = %x : !struct.type<@LocalMarked>, !felt.type
+      %local = struct.readm %self[@value] : !struct.type<@LocalMarked>, !felt.type
+      %constant = global.read const @constant : !felt.type
+      %result = felt.add %local, %constant : !felt.type
+      struct.writem %self[@value] = %result : !struct.type<@LocalMarked>, !felt.type
+      function.return %self : !struct.type<@LocalMarked>
+    }
+    function.def @constrain(%self: !struct.type<@LocalMarked>, %x: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @external_unmarked(!felt.type) -> !felt.type
+  function.def private @external_marked(!felt.type) -> !felt.type attributes {llzk.idempotent}
+
+  function.def @felt_arithmetic_unmarked(%x: !felt.type) -> !felt.type {
+    %one = felt.const 1
+    %sum = felt.add %x, %one : !felt.type
+    %result = felt.mul %sum, %x : !felt.type
+    function.return %result : !felt.type
+  }
+
+  function.def @felt_arithmetic_marked(%x: !felt.type) -> !felt.type attributes {llzk.idempotent} {
+    %one = felt.const 1
+    %sum = felt.add %x, %one : !felt.type
+    %result = felt.mul %sum, %x : !felt.type
+    function.return %result : !felt.type
+  }
+
+  function.def @mutable_global_unmarked() -> !felt.type {
+    %result = global.read @mutable : !felt.type
+    function.return %result : !felt.type
+  }
+
+  // expected-warning@+1 {{removing llzk.idempotent applied to non-idempotent function}}
+  function.def @mutable_global_marked() -> !felt.type attributes {llzk.idempotent} {
+    // expected-note@+1 {{non-constant global read}}
+    %result = global.read @mutable : !felt.type
+    function.return %result : !felt.type
+  }
+
+  function.def @non_self_read_unmarked(%other: !struct.type<@LocalUnmarked>) -> !felt.type {
+    %result = struct.readm %other[@value] : !struct.type<@LocalUnmarked>, !felt.type
+    function.return %result : !felt.type
+  }
+
+  // expected-warning@+1 {{removing llzk.idempotent applied to non-idempotent function}}
+  function.def @non_self_read_marked(%other: !struct.type<@LocalUnmarked>) -> !felt.type attributes {llzk.idempotent} {
+    // expected-note@+1 {{non-self struct member read}}
+    %result = struct.readm %other[@value] : !struct.type<@LocalUnmarked>, !felt.type
+    function.return %result : !felt.type
+  }
+
+  function.def @ram_load_unmarked(%address: index) -> !felt.type attributes {function.allow_witness} {
+    %result = ram.load %address : !felt.type
+    function.return %result : !felt.type
+  }
+
+  // expected-warning@+1 {{removing llzk.idempotent applied to non-idempotent function}}
+  function.def @ram_load_marked(%address: index) -> !felt.type attributes {function.allow_witness, llzk.idempotent} {
+    // expected-note@+1 {{RAM load}}
+    %result = ram.load %address : !felt.type
+    function.return %result : !felt.type
+  }
+
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @constant : !felt.type =  7
+// CHECK-NEXT:    global.def @mutable : !felt.type
+// CHECK-NEXT:    struct.def @LocalUnmarked {
+// CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@LocalUnmarked> attributes {function.allow_witness, llzk.idempotent} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@LocalUnmarked>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@LocalUnmarked>, !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_1]][@value] : <@LocalUnmarked>, !felt.type
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = global.read const @constant : !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_2]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_4]] : <@LocalUnmarked>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@LocalUnmarked>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalUnmarked>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint, llzk.idempotent} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @LocalMarked {
+// CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@LocalMarked> attributes {function.allow_witness, llzk.idempotent} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.new : <@LocalMarked>
+// CHECK-NEXT:        struct.writem %[[VAL_8]][@value] = %[[VAL_7]] : <@LocalMarked>, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_8]][@value] : <@LocalMarked>, !felt.type
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = global.read const @constant : !felt.type
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_8]][@value] = %[[VAL_11]] : <@LocalMarked>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@LocalMarked>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalMarked>, %[[VAL_13:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint, llzk.idempotent} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def private @external_unmarked(!felt.type) -> !felt.type
+// CHECK-NEXT:    function.def private @external_marked(!felt.type) -> !felt.type attributes {llzk.idempotent}
+// CHECK-NEXT:    function.def @felt_arithmetic_unmarked(%[[VAL_14:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type attributes {llzk.idempotent} {
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_14]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_16]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_17]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @felt_arithmetic_marked(%[[VAL_18:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type attributes {llzk.idempotent} {
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_.-]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_18]], %[[VAL_19]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_20]], %[[VAL_18]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_21]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @mutable_global_unmarked() -> !felt.type {
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_.-]+]] = global.read @mutable : !felt.type
+// CHECK-NEXT:      function.return %[[VAL_22]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @mutable_global_marked() -> !felt.type {
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_.-]+]] = global.read @mutable : !felt.type
+// CHECK-NEXT:      function.return %[[VAL_23]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @non_self_read_unmarked(%[[VAL_24:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalUnmarked>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_24]][@value] : <@LocalUnmarked>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_25]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @non_self_read_marked(%[[VAL_26:[0-9a-zA-Z_.-]+]]: !struct.type<@LocalUnmarked>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_26]][@value] : <@LocalUnmarked>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_27]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @ram_load_unmarked(%[[VAL_28:[0-9a-zA-Z_.-]+]]: index) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_.-]+]] = ram.load %[[VAL_28]] : !felt.type
+// CHECK-NEXT:      function.return %[[VAL_29]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @ram_load_marked(%[[VAL_30:[0-9a-zA-Z_.-]+]]: index) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_.-]+]] = ram.load %[[VAL_30]] : !felt.type
+// CHECK-NEXT:      function.return %[[VAL_31]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
