@@ -1,0 +1,4 @@
+fixed:
+  - Preserve known RAM values across stores to distinct constant addresses in
+    duplicate read/write elimination, allowing subsequent loads to reuse those
+    values while still invalidating potentially aliasing addresses.
