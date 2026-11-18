@@ -879,8 +879,8 @@ module attributes {llzk.lang} {
       ASSERT_NE(quotients.back(), nullptr);
 
       // Bind the symbolic inputs only after analysis, so constant folding cannot hide a collision.
-      auto input = field.felt(index + 1);
-      auto expectedInverse = smt->mkBitvector(toAPSInt(field.inv(input)), field.bitWidth());
+      auto input = field.felt(static_cast<int>(index) + 1);
+      const auto *expectedInverse = smt->mkBitvector(toAPSInt(field.inv(input)), field.bitWidth());
       smt->addConstraint(
           smt->mkEqual(inputs.back(), smt->mkBitvector(toAPSInt(input), field.bitWidth()))
       );
