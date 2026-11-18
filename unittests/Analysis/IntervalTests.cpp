@@ -696,12 +696,12 @@ module attributes {llzk.lang} {
 
   for (auto [first, second] : llvm::zip(functions[0].getArguments(), functions[1].getArguments())) {
     EXPECT_EQ(buildStringViaPrint(first), buildStringViaPrint(second));
-    auto symbol = analysis->getOrCreateSymbol(first);
+    const auto *symbol = analysis->getOrCreateSymbol(first);
     EXPECT_EQ(symbol, analysis->getOrCreateSymbol(first));
-    auto other = analysis->getOrCreateSymbol(second);
+    const auto *other = analysis->getOrCreateSymbol(second);
     EXPECT_FALSE(*symbol == *other);
     EXPECT_EQ(symbol, analysis->getOrCreateSymbol(first));
-    auto sort = smt->getSort(symbol);
+    const auto *sort = smt->getSort(symbol);
     if (first.getType().isInteger(1)) {
       EXPECT_TRUE(sort->isBooleanSort());
     } else {
@@ -713,7 +713,7 @@ module attributes {llzk.lang} {
     functions[0].setArgName(first.getArgNumber(), buildStringViaPrint(*symbol));
     SourceRef ref(first);
     EXPECT_EQ(buildStringViaPrint(ref), buildStringViaPrint(*symbol));
-    auto refSymbol = analysis->getOrCreateSymbol(ref);
+    const auto *refSymbol = analysis->getOrCreateSymbol(ref);
     EXPECT_EQ(refSymbol, analysis->getOrCreateSymbol(ref));
     EXPECT_FALSE(*symbol == *refSymbol);
     EXPECT_TRUE(*sort == *smt->getSort(refSymbol));
@@ -735,8 +735,8 @@ TEST_F(IntervalAnalysisAPITests, ValueSymbolsRemainDistinctAcrossAnalysesSharing
     auto *second = secondSolver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
     firstSymbol = first->getOrCreateSymbol(value);
     firstRef = first->getOrCreateSymbol(SourceRef(value));
-    auto secondSymbol = second->getOrCreateSymbol(value);
-    auto secondRef = second->getOrCreateSymbol(SourceRef(value));
+    const auto *secondSymbol = second->getOrCreateSymbol(value);
+    const auto *secondRef = second->getOrCreateSymbol(SourceRef(value));
     EXPECT_FALSE(*firstSymbol == *secondSymbol);
     EXPECT_FALSE(*firstSymbol == *secondRef);
     EXPECT_FALSE(*firstRef == *secondSymbol);
@@ -752,7 +752,7 @@ TEST_F(IntervalAnalysisAPITests, ValueSymbolsRemainDistinctAcrossAnalysesSharing
   {
     DataFlowSolver solver;
     auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
-    auto symbol = analysis->getOrCreateSymbol(value);
+    const auto *symbol = analysis->getOrCreateSymbol(value);
     EXPECT_FALSE(*firstSymbol == *symbol);
     EXPECT_FALSE(*firstRef == *symbol);
     EXPECT_FALSE(*firstRef == *analysis->getOrCreateSymbol(SourceRef(value)));
