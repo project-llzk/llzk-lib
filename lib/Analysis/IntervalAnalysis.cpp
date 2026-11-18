@@ -1333,7 +1333,8 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const SourceRef &r)
   if (it != refSymbols.end()) {
     return it->second;
   }
-  llvm::SMTExprRef sym = createSymbol(r);
+  std::string name = symbolNamespace + "ref." + std::to_string(refSymbols.size());
+  llvm::SMTExprRef sym = createSymbol(r.getType(), name.c_str());
   refSymbols[r] = sym;
   return sym;
 }
@@ -1343,11 +1344,6 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(mlir::Type ty, const cha
     return smtSolver->mkSymbol(name, smtSolver->getBoolSort());
   }
   return field.get().createSymbol(smtSolver, name);
-}
-
-llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(const SourceRef &r) const {
-  std::string name = symbolNamespace + "ref." + buildStringViaPrint(r);
-  return createSymbol(r.getType(), name.c_str());
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(Value val) {

@@ -720,6 +720,61 @@ module attributes {llzk.lang} {
   }
 }
 
+// Printed references may coincide across functions, including paths into aggregate arguments.
+TEST_F(IntervalAnalysisAPITests, SourceRefSymbolsCacheIdentityAndPreserveSorts) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @first(%felt: !felt.type, %flag: i1, %index: index,
+                      %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+  function.def @second(%felt: !felt.type, %flag: i1, %index: index,
+                       %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto functions = llvm::to_vector(mod->getOps<function::FuncDefOp>());
+  ASSERT_EQ(functions.size(), 2U);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver;
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+
+  llvm::SmallVector<SourceRef> firstRefs, secondRefs;
+  for (auto [first, second] : llvm::zip(functions[0].getArguments(), functions[1].getArguments())) {
+    firstRefs.emplace_back(first);
+    secondRefs.emplace_back(second);
+  }
+  for (int64_t index : {0, 1}) {
+    auto first = SourceRef(functions[0].getArgument(3)).createChild(SourceRefIndex(index));
+    auto second = SourceRef(functions[1].getArgument(3)).createChild(SourceRefIndex(index));
+    ASSERT_TRUE(succeeded(first));
+    ASSERT_TRUE(succeeded(second));
+    firstRefs.push_back(*first);
+    secondRefs.push_back(*second);
+  }
+  for (auto [first, second] : llvm::zip(firstRefs, secondRefs)) {
+    EXPECT_NE(first, second);
+    EXPECT_EQ(buildStringViaPrint(first), buildStringViaPrint(second));
+    const auto *symbol = analysis->getOrCreateSymbol(first);
+    const auto *other = analysis->getOrCreateSymbol(second);
+    EXPECT_EQ(symbol, analysis->getOrCreateSymbol(SourceRef(first)));
+    EXPECT_FALSE(*symbol == *other);
+    const auto *sort = smt->getSort(symbol);
+    EXPECT_TRUE(*sort == *smt->getSort(other));
+    if (first.getType().isInteger(1)) {
+      EXPECT_TRUE(sort->isBooleanSort());
+    } else {
+      ASSERT_TRUE(sort->isBitvectorSort());
+      EXPECT_EQ(sort->getBitvectorSortSize(), field.bitWidth());
+    }
+    smt->addConstraint(smt->mkNot(smt->mkEqual(symbol, other)));
+  }
+  EXPECT_EQ(smt->check(), std::optional<bool>(true));
+}
+
 // Namespace allocation outlives an analysis when another owner retains its SMT solver.
 TEST_F(IntervalAnalysisAPITests, ValueSymbolsRemainDistinctAcrossAnalysesSharingSolver) {
   auto mod = parseModule(kDynamicNonAssertCastModule);

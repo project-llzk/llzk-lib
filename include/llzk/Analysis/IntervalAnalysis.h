@@ -315,10 +315,8 @@ public:
       mlir::ArrayRef<Lattice *> results
   ) override;
 
-  /// @brief Either return the existing SMT expression that corresponds to the SourceRef,
-  /// or create one.
-  /// @param r
-  /// @return
+  /// Return the cached symbol for a source reference, allocating an internal identity on
+  /// first use. Printed reference names do not determine SMT symbol identity.
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
 
   /// Return the cached symbol for a value, allocating an internal identity on first use.
@@ -386,8 +384,6 @@ private:
   std::optional<UnreducedInterval> getRefUnreducedInterval(const SourceRef &ref);
 
   llvm::SMTExprRef createSymbol(mlir::Type ty, const char *name) const;
-
-  llvm::SMTExprRef createSymbol(const SourceRef &r) const;
 
   ExpressionValue createUnknownValue(mlir::Value val) {
     return ExpressionValue(
