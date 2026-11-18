@@ -10,6 +10,7 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -815,6 +816,82 @@ TEST_F(IntervalAnalysisAPITests, ValueSymbolsRemainDistinctAcrossAnalysesSharing
   std::weak_ptr<llvm::SMTSolver> weakSolver = smt;
   smt.reset();
   EXPECT_TRUE(weakSolver.expired());
+}
+
+// Inverse equations must remain independent for identical operations in different contexts.
+TEST_F(IntervalAnalysisAPITests, InverseSymbolsRemainDistinctAcrossFunctionsAndAnalyses) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @first(%value: !felt.type) -> (!felt.type, !felt.type)
+      attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %one = felt.const 1 : !felt.type
+    %inverse = felt.inv %value : !felt.type
+    %quotient = felt.div %one, %value : !felt.type, !felt.type
+    function.return %inverse, %quotient : !felt.type, !felt.type
+  }
+  function.def @second(%value: !felt.type) -> (!felt.type, !felt.type)
+      attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %one = felt.const 1 : !felt.type
+    %inverse = felt.inv %value : !felt.type
+    %quotient = felt.div %one, %value : !felt.type, !felt.type
+    function.return %inverse, %quotient : !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  llvm::SmallVector<felt::InvFeltOp> invOps;
+  llvm::SmallVector<felt::DivFeltOp> divOps;
+  mod->walk([&](felt::InvFeltOp op) { invOps.push_back(op); });
+  mod->walk([&](felt::DivFeltOp op) { divOps.push_back(op); });
+  ASSERT_EQ(invOps.size(), 2U);
+  ASSERT_EQ(divOps.size(), 2U);
+  EXPECT_EQ(buildStringViaInsertionOp(*invOps[0]), buildStringViaInsertionOp(*invOps[1]));
+  EXPECT_EQ(buildStringViaInsertionOp(*divOps[0]), buildStringViaInsertionOp(*divOps[1]));
+
+  const Field &field = Field::getField("babybear");
+  for (bool separateAnalyses : {false, true}) {
+    SCOPED_TRACE(
+        separateAnalyses ? "shared solver, same operation" : "same analysis, two functions"
+    );
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver first(DataFlowConfig().setInterprocedural(false));
+    DataFlowSolver second(DataFlowConfig().setInterprocedural(false));
+    llvm::SmallVector<llvm::SMTExprRef> inputs, inverses, quotients;
+    for (unsigned index = 0; index < 2; ++index) {
+      auto &solver = separateAnalyses && index == 1 ? second : first;
+      if (index == 0 || separateAnalyses) {
+        llzk::dataflow::loadRequiredAnalyses(solver);
+        solver.load<SourceRefAnalysis>();
+        solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+        ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      }
+      unsigned opIndex = separateAnalyses ? 0 : index;
+      auto getExpr = [&](Value value) -> llvm::SMTExprRef {
+        const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+        EXPECT_NE(lattice, nullptr);
+        return lattice ? lattice->getValue().getScalarValue().getExpr() : nullptr;
+      };
+      inputs.push_back(getExpr(invOps[opIndex]->getOperand(0)));
+      inverses.push_back(getExpr(invOps[opIndex].getResult()));
+      quotients.push_back(getExpr(divOps[opIndex].getResult()));
+      ASSERT_NE(inputs.back(), nullptr);
+      ASSERT_NE(inverses.back(), nullptr);
+      ASSERT_NE(quotients.back(), nullptr);
+
+      // Bind the symbolic inputs only after analysis, so constant folding cannot hide a collision.
+      auto input = field.felt(index + 1);
+      auto expectedInverse = smt->mkBitvector(toAPSInt(field.inv(input)), field.bitWidth());
+      smt->addConstraint(
+          smt->mkEqual(inputs.back(), smt->mkBitvector(toAPSInt(input), field.bitWidth()))
+      );
+      smt->addConstraint(smt->mkEqual(inverses.back(), expectedInverse));
+      smt->addConstraint(smt->mkEqual(quotients.back(), expectedInverse));
+    }
+    EXPECT_FALSE(*inputs[0] == *inputs[1]);
+    EXPECT_FALSE(*inverses[0] == *inverses[1]);
+    EXPECT_FALSE(*quotients[0] == *quotients[1]);
+    EXPECT_EQ(smt->check(), std::optional<bool>(true));
+  }
 }
 
 TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) {

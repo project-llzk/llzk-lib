@@ -149,9 +149,10 @@ public:
   friend ExpressionValue
   mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
+  /// Divide using an analysis-scoped symbol for the divisor's inverse.
   friend ExpressionValue
   div(const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
-      const ExpressionValue &rhs);
+      const ExpressionValue &rhs, llvm::SMTExprRef inverseSymbol);
 
   friend ExpressionValue uintDiv(
       const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
@@ -202,8 +203,10 @@ public:
 
   friend ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
+  /// Overapproximate a unary operation, using an analysis-scoped symbol for field inversion.
   friend ExpressionValue fallbackUnaryOp(
-      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &val
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &val,
+      llvm::SMTExprRef inverseSymbol
   );
 
   /* Utility */
@@ -342,6 +345,9 @@ private:
   /// Cached SMT symbols keyed by SSA value identity, independent of printed value names.
   mlir::DenseMap<mlir::Value, llvm::SMTExprRef> valueSymbols;
 
+  /// Cached inverse symbols keyed by operation identity, separate from value and ref symbols.
+  mlir::DenseMap<mlir::Operation *, llvm::SMTExprRef> inverseSymbols;
+
   /// Symbol-name prefix unique to this analysis within `smtSolver`.
   /// Reserved for the solver's entire lifetime, even after this analysis is destroyed.
   std::string symbolNamespace;
@@ -384,6 +390,9 @@ private:
   std::optional<UnreducedInterval> getRefUnreducedInterval(const SourceRef &ref);
 
   llvm::SMTExprRef createSymbol(mlir::Type ty, const char *name) const;
+
+  /// Return a stable, analysis-scoped inverse symbol for a felt.inv or felt.div operation.
+  llvm::SMTExprRef getOrCreateInverseSymbol(mlir::Operation *op);
 
   ExpressionValue createUnknownValue(mlir::Value val) {
     return ExpressionValue(

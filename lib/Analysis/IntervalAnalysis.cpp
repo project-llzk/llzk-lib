@@ -234,9 +234,9 @@ collectDirectEqualityRefs(DataFlowSolver &solver, FuncDefOp fn) {
 
 /* ExpressionValue */
 
+/// Build the inverse relation using a symbol reserved by the calling analysis.
 llvm::SMTExprRef createFieldInverseExpr(
-    const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val,
-    StringRef suffix = ""
+    const llvm::SMTSolverRef &solver, const ExpressionValue &val, llvm::SMTExprRef invSym
 ) {
   const Field &field = val.getField();
   const Interval &iv = val.getInterval();
@@ -246,13 +246,7 @@ llvm::SMTExprRef createFieldInverseExpr(
   }
 
   // The definition of an inverse X^-1 is Y s.t. XY % prime = 1.
-  // To create this expression, we create a new symbol for Y and add the
-  // XY % prime = 1 constraint to the solver.
-  std::string symName = buildStringViaInsertionOp(*op);
-  if (!suffix.empty()) {
-    symName += suffix.str();
-  }
-  llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
+  // Use the operation's cached symbol for Y and add the XY % prime = 1 constraint.
   llvm::SMTExprRef one = solver->mkBitvector(APSInt::get(1), field.bitWidth());
   llvm::SMTExprRef prime = solver->mkBitvector(toAPSInt(field.prime()), field.bitWidth());
   llvm::SMTExprRef mult = solver->mkBVMul(val.getExpr(), invSym);
@@ -350,7 +344,7 @@ mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expressi
 
 ExpressionValue
 div(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &lhs,
-    const ExpressionValue &rhs) {
+    const ExpressionValue &rhs, llvm::SMTExprRef inverseSymbol) {
   ExpressionValue res;
   auto divRes = feltDiv(lhs.i, rhs.i);
   if (failed(divRes)) {
@@ -383,7 +377,7 @@ div(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &lhs,
   } else {
     res.i = *divRes;
   }
-  llvm::SMTExprRef invExpr = createFieldInverseExpr(solver, op, rhs, ".div_inv");
+  llvm::SMTExprRef invExpr = createFieldInverseExpr(solver, rhs, inverseSymbol);
   res.expr = solver->mkBVMul(lhs.expr, invExpr);
   return res;
 }
@@ -610,14 +604,16 @@ ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue 
   return res;
 }
 
-ExpressionValue
-fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val) {
+ExpressionValue fallbackUnaryOp(
+    const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val,
+    llvm::SMTExprRef inverseSymbol
+) {
   const Field &field = val.getField();
   ExpressionValue res;
   res.i = Interval::Entire(field);
   res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
                  .Case<InvFeltOp>([&](auto) {
-    return createFieldInverseExpr(solver, op, val);
+    return createFieldInverseExpr(solver, val, inverseSymbol);
   }).Default([](Operation *unsupported) {
     llvm::report_fatal_error(
         "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
@@ -1357,6 +1353,17 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(Value val) {
   return sym;
 }
 
+llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateInverseSymbol(Operation *op) {
+  auto it = inverseSymbols.find(op);
+  if (it != inverseSymbols.end()) {
+    return it->second;
+  }
+  std::string name = symbolNamespace + "inverse." + std::to_string(inverseSymbols.size());
+  llvm::SMTExprRef sym = field.get().createSymbol(smtSolver, name.c_str());
+  inverseSymbols[op] = sym;
+  return sym;
+}
+
 llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
 
@@ -1400,7 +1407,9 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<AddFeltOp>([&](auto) { return add(smtSolver, lhs, rhs); })
                  .Case<SubFeltOp>([&](auto) { return sub(smtSolver, lhs, rhs); })
                  .Case<MulFeltOp>([&](auto) { return mul(smtSolver, lhs, rhs); })
-                 .Case<DivFeltOp>([&](auto) {return div(smtSolver, op, lhs, rhs); })
+                 .Case<DivFeltOp>([&](auto) {
+                   return div(smtSolver, op, lhs, rhs, getOrCreateInverseSymbol(op));
+                 })
                  .Case<UnsignedIntDivFeltOp>([&](auto) {return uintDiv(smtSolver, op, lhs, rhs); })
                  .Case<SignedIntDivFeltOp>([&](auto) {return sintDiv(smtSolver, op, lhs, rhs); })
                  .Case<UnsignedModFeltOp>([&](auto) { return mod(smtSolver, lhs, rhs); })
@@ -1441,14 +1450,14 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
                  .Case<NotBoolOp>([&](auto) { return boolNot(smtSolver, val); })
                  // The inverse op is currently overapproximated
                  .Case<InvFeltOp>([&](auto inv) {
-    return fallbackUnaryOp(smtSolver, inv, val);
+    return fallbackUnaryOp(smtSolver, inv, val, getOrCreateInverseSymbol(inv));
   }).Default([&](auto *unsupported) {
     unsupported
         ->emitWarning(
             "unsupported unary arithmetic operation, defaulting to over-approximated interval"
         )
         .report();
-    return fallbackUnaryOp(smtSolver, unsupported, val);
+    return fallbackUnaryOp(smtSolver, unsupported, val, nullptr);
   });
 
   ensure(res.getExpr(), "arithmetic produced null smt expr");

@@ -1,2 +1,3 @@
 fixed:
   - Keep interval-analysis SMT symbols distinct for unrelated source references with identical printed names.
+  - Isolate field-inverse SMT symbols across functions and analyses sharing a solver.
