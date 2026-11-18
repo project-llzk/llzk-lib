@@ -39,10 +39,10 @@ def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
   }];
 }
 
-def LLZK_IdempotentAttr : LLZKDialectAttr<"Idempotent", "idempotent"> {
+def LLZK_DeterministicAttr : LLZKDialectAttr<"Deterministic", "deterministic"> {
   let summary = "A unit attribute marking repeatable function results";
   let description = [{
-    The unit attribute `llzk.idempotent` may be attached to any `function.def`,
+    The unit attribute `llzk.deterministic` may be attached to any `function.def`,
     including struct `compute` and `constrain` functions, free functions, and
     external function declarations. It promises that repeated calls with the
     same arguments return the same results.
@@ -53,7 +53,7 @@ def LLZK_IdempotentAttr : LLZKDialectAttr<"Idempotent", "idempotent"> {
 
     ```llzk
     function.def private @external_fn(!felt.type) -> !felt.type
-        attributes {llzk.idempotent}
+        attributes {llzk.deterministic}
     ```
   }];
 }
