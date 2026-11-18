@@ -1,0 +1,3 @@
+added:
+  - Add the `infer-determinism-attribute` transformation pass to infer and preserve `llzk.deterministic` on function definitions without non-constant global reads, non-local struct member reads, or RAM loads. External declarations are left unchanged.
+  - Warn and remove existing `llzk.deterministic` annotations when these reads are found, with a diagnostic note identifying the offending operation. Unannotated functions with these reads remain unannotated without warnings.

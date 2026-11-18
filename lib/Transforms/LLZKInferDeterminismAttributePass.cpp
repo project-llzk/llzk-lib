@@ -1,4 +1,4 @@
-//===-- LLZKInferIdempotenceAttributePass.cpp --------------------*- C++ -*-===//
+//===-- LLZKInferDeterminismAttributePass.cpp --------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file provides the `-infer-idempotence-attribute` pass scaffold.
+/// This file provides the `-infer-determinism-attribute` pass.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -25,7 +25,7 @@
 #include <llvm/ADT/StringRef.h>
 
 namespace llzk {
-#define GEN_PASS_DEF_INFERIDEMPOTENCEATTRIBUTEPASS
+#define GEN_PASS_DEF_INFERDETERMINISMATTRIBUTEPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
@@ -43,9 +43,9 @@ bool isLocalRead(component::MemberReadOp read) {
   return false;
 }
 
-/// Transformation pass reserved for inferring function idempotence attributes.
-class PassImpl : public llzk::impl::InferIdempotenceAttributePassBase<PassImpl> {
-  using Base = InferIdempotenceAttributePassBase<PassImpl>;
+/// Infer function determinism attributes and remove invalid annotations.
+class PassImpl : public llzk::impl::InferDeterminismAttributePassBase<PassImpl> {
+  using Base = InferDeterminismAttributePassBase<PassImpl>;
   using Base::Base;
 
   void runOnOperation() override {
@@ -54,7 +54,7 @@ class PassImpl : public llzk::impl::InferIdempotenceAttributePassBase<PassImpl> 
         return;
       }
 
-      bool hasAttr = funcDef->hasAttr(IdempotentAttr::name);
+      bool hasAttr = funcDef->hasAttr(DeterministicAttr::name);
       bool shouldHaveAttr = !funcDef
                                  .walk([&hasAttr, &funcDef](mlir::Operation *op) {
         auto reportBadAttr = [&hasAttr, op, funcDef](llvm::StringRef reason) {
@@ -62,11 +62,11 @@ class PassImpl : public llzk::impl::InferIdempotenceAttributePassBase<PassImpl> 
             return;
           }
           funcDef->emitWarning(
-                     "removing " + IdempotentAttr::name + " applied to non-idempotent function"
+                     "removing " + DeterministicAttr::name + " applied to non-deterministic function"
           )
                   .attachNote(op->getLoc())
               << reason;
-          funcDef->removeAttr(IdempotentAttr::name);
+          funcDef->removeAttr(DeterministicAttr::name);
         };
         if (auto globalRead = dyn_cast<global::GlobalReadOp>(op);
             globalRead && !globalRead.isConstant()) {
@@ -86,7 +86,7 @@ class PassImpl : public llzk::impl::InferIdempotenceAttributePassBase<PassImpl> 
       }).wasInterrupted();
 
       if (shouldHaveAttr) {
-        funcDef->setAttr(IdempotentAttr::name, mlir::UnitAttr::get(funcDef.getContext()));
+        funcDef->setAttr(DeterministicAttr::name, mlir::UnitAttr::get(funcDef.getContext()));
       }
     });
   }
