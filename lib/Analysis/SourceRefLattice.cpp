@@ -42,11 +42,12 @@ using namespace polymorphic;
 /* SourceRefLatticeValue */
 
 mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
+  auto rhsVal = SourceRefLatticeValue(rhs);
   if (isScalar()) {
-    return getScalarValue().insert(rhs).second ? mlir::ChangeResult::Change
-                                               : mlir::ChangeResult::NoChange;
+    return updateScalar(rhsVal.getScalarValue());
+  } else {
+    return foldAndUpdate(rhsVal);
   }
-  return foldAndUpdate(SourceRefLatticeValue(rhs));
 }
 
 mlir::ChangeResult SourceRefLatticeValue::remove(const SourceRef &ref) {
