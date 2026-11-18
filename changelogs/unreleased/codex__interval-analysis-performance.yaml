@@ -1,2 +1,5 @@
 changed:
-  - Improve interval analysis performance by caching SMT value symbols with solver-scoped identities and avoiding unnecessary source-reference dependency-set copies.
+  - Improve interval analysis performance by caching SMT symbols and replacing printed IR names with internal identities.
+
+fixed:
+  - Prevent SMT symbol collisions for distinct values, source references, and field-inverse operations across functions and analyses sharing a solver.
