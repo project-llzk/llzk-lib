@@ -332,15 +332,32 @@ public:
   const llvm::DenseMap<SourceRef, ExpressionValue> &getWriteResults() const { return writeResults; }
 
 private:
+  /// Dataflow solver used to query source-reference analysis state.
   mlir::DataFlowSolver &_dataflowSolver;
+
+  /// Shared SMT solver that owns the symbols and expressions used by this analysis.
   llvm::SMTSolverRef smtSolver;
+
+  /// Cached SMT symbols keyed by source-reference identity.
   SymbolMap refSymbols;
+
+  /// Cached SMT symbols keyed by SSA value identity, independent of printed value names.
   mlir::DenseMap<mlir::Value, llvm::SMTExprRef> valueSymbols;
-  // Reserved for this analysis for the entire lifetime of smtSolver.
+
+  /// Symbol-name prefix unique to this analysis within `smtSolver`.
+  /// Reserved for the solver's entire lifetime, even after this analysis is destroyed.
   std::string symbolNamespace;
+
+  /// Finite field used for modular intervals and SMT bitvector widths.
   std::reference_wrapper<const Field> field;
+
+  /// Whether to propagate constrain-function input intervals to matching compute inputs.
   bool propagateInputConstraints;
+
+  /// Whether to track integer bounds before field reduction alongside modular intervals.
   bool trackUnreducedIntervals;
+
+  /// Cached symbol tables used to resolve struct member definitions.
   mlir::SymbolTableCollection tables;
 
   // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
