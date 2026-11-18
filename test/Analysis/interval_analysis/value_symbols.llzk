@@ -1,0 +1,95 @@
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
+
+module attributes {llzk.lang} {
+  // Non-assert casts forget the input relation. Constraints on two unknown
+  // results must independently refine their members, leaving both inputs unknown.
+  struct.def @UnknownCastIndependence {
+    struct.member @first : !felt.type
+    struct.member @second : !felt.type
+
+    function.def @compute(%x: index, %y: index) -> !struct.type<@UnknownCastIndependence> {
+      %self = struct.new : !struct.type<@UnknownCastIndependence>
+      function.return %self : !struct.type<@UnknownCastIndependence>
+    }
+
+    function.def @constrain(%self: !struct.type<@UnknownCastIndependence>, %x: index, %y: index) {
+      %first = cast.tofelt sat %x : index
+      %second = cast.tofelt sat %y : index
+      %one = felt.const 1
+      %two = felt.const 2
+      %a = struct.readm %self[@first] : !struct.type<@UnknownCastIndependence>, !felt.type
+      %b = struct.readm %self[@second] : !struct.type<@UnknownCastIndependence>, !felt.type
+      constrain.eq %a, %first : !felt.type
+      constrain.eq %b, %second : !felt.type
+      constrain.eq %first, %one : !felt.type
+      constrain.eq %second, %two : !felt.type
+      function.return
+    }
+  }
+
+  // The loop may execute zero times. Its results and comparisons must keep
+  // their conservative interval summaries across repeated visits and uses.
+  struct.def @LoopResultSymbols {
+    struct.member @first : !felt.type
+    struct.member @second : !felt.type
+    struct.member @same : i1
+    struct.member @different : i1
+
+    function.def @compute(%end: index) -> !struct.type<@LoopResultSymbols> {
+      %self = struct.new : !struct.type<@LoopResultSymbols>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %f0 = felt.const 0
+      %f1 = felt.const 1
+      %first, %second = scf.for %i = %zero to %end step %one
+          iter_args(%a = %f0, %b = %f1) -> (!felt.type, !felt.type) {
+        %nextA = felt.add %a, %f1
+        %nextB = felt.add %b, %f1
+        scf.yield %nextA, %nextB : !felt.type, !felt.type
+      }
+      %same = bool.cmp eq(%first, %first)
+      %different = bool.cmp eq(%first, %second)
+      struct.writem %self[@first] = %first : !struct.type<@LoopResultSymbols>, !felt.type
+      struct.writem %self[@second] = %second : !struct.type<@LoopResultSymbols>, !felt.type
+      struct.writem %self[@same] = %same : !struct.type<@LoopResultSymbols>, i1
+      struct.writem %self[@different] = %different : !struct.type<@LoopResultSymbols>, i1
+      function.return %self : !struct.type<@LoopResultSymbols>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopResultSymbols>, %end: index) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @UnknownCastIndependence StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Degenerate(1)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Degenerate(2)
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @LoopResultSymbols StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

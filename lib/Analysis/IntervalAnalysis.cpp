@@ -25,6 +25,8 @@
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <functional>
+#include <limits>
+#include <map>
 
 using namespace mlir;
 
@@ -39,6 +41,20 @@ using namespace felt;
 using namespace function;
 
 namespace {
+
+/// Allocate a namespace that is never reused while the SMT solver remains alive.
+/// Weak ownership keeps independent solvers independent without extending their lifetimes.
+/// In particular, destroying an analysis must not reset a still-live solver's counter.
+std::string allocateSymbolNamespace(const llvm::SMTSolverRef &solver) {
+  using WeakSolver = std::weak_ptr<llvm::SMTSolver>;
+  static std::map<WeakSolver, uint64_t, std::owner_less<WeakSolver>> nextIDs;
+  static std::mutex mutex;
+  std::lock_guard lock(mutex);
+  std::erase_if(nextIDs, [](const auto &entry) { return entry.first.expired(); });
+  auto &nextID = nextIDs[solver];
+  ensure(nextID != std::numeric_limits<uint64_t>::max(), "SMT symbol namespace exhausted");
+  return "llzk.interval." + std::to_string(nextID++) + ".";
+}
 
 std::optional<UnreducedInterval> mergeUnreducedIntervals(
     const std::optional<UnreducedInterval> &lhs, const std::optional<UnreducedInterval> &rhs
@@ -673,6 +689,15 @@ ChangeResult IntervalAnalysisLattice::addSolverConstraint(const ExpressionValue 
 
 /* IntervalDataFlowAnalysis */
 
+IntervalDataFlowAnalysis::IntervalDataFlowAnalysis(
+    mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
+    bool propInputConstraints, bool shouldTrackUnreducedIntervals
+)
+    : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
+      smtSolver(std::move(smt)), symbolNamespace(allocateSymbolNamespace(smtSolver)), field(f),
+      propagateInputConstraints(propInputConstraints),
+      trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
+
 SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
   return SourceRefAnalysis::getValueState(_dataflowSolver, val);
 }
@@ -918,7 +943,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // We only care about scalar type values here, so ignore aggregate storage values.
     Type valTy = val.getType();
     if (llvm::isa<ArrayType, StructType, pod::PodType>(valTy)) {
-      ExpressionValue anyVal(field.get(), createSymbol(valTy, buildStringViaPrint(val).c_str()));
+      ExpressionValue anyVal(field.get(), getOrCreateSymbol(val));
       operandVals.emplace_back(anyVal);
       continue;
     }
@@ -1239,7 +1264,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       ExpressionValue newResVal = operandVals[idx].getScalarValue();
       if (auto loopOp = llvm::dyn_cast<LoopLikeOpInterface>(parent)) {
         // We overapproximate for loops because we aren't going to try to track trip count.
-        newResVal = ExpressionValue(createSymbol(parentRes), Interval::Entire(field.get()));
+        newResVal = ExpressionValue(getOrCreateSymbol(parentRes), Interval::Entire(field.get()));
       }
       if (exprVal.getExpr() != nullptr) {
         newResVal =
@@ -1249,7 +1274,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
                 ));
       } else {
         newResVal = ExpressionValue(
-            createSymbol(parentRes), newResVal.getInterval(),
+            getOrCreateSymbol(parentRes), newResVal.getInterval(),
             newResVal.getOptionalUnreducedInterval()
         );
       }
@@ -1321,13 +1346,19 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(mlir::Type ty, const cha
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(const SourceRef &r) const {
-  std::string name = buildStringViaPrint(r);
+  std::string name = symbolNamespace + "ref." + buildStringViaPrint(r);
   return createSymbol(r.getType(), name.c_str());
 }
 
-llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(Value v) const {
-  std::string name = buildStringViaPrint(v);
-  return createSymbol(v.getType(), name.c_str());
+llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(Value val) {
+  auto it = valueSymbols.find(val);
+  if (it != valueSymbols.end()) {
+    return it->second;
+  }
+  std::string name = symbolNamespace + "value." + std::to_string(valueSymbols.size());
+  llvm::SMTExprRef sym = createSymbol(val.getType(), name.c_str());
+  valueSymbols[val] = sym;
+  return sym;
 }
 
 llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {

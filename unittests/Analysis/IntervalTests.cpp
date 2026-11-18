@@ -672,6 +672,96 @@ module attributes {llzk.lang} {
   }
 };
 
+// Equal-looking values in separate functions must still have separate SMT identities.
+TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @first(%felt: !felt.type, %flag: i1, %index: index,
+                      %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+  function.def @second(%felt: !felt.type, %flag: i1, %index: index,
+                       %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto functions = llvm::to_vector(mod->getOps<function::FuncDefOp>());
+  ASSERT_EQ(functions.size(), 2U);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver;
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+
+  for (auto [first, second] : llvm::zip(functions[0].getArguments(), functions[1].getArguments())) {
+    EXPECT_EQ(buildStringViaPrint(first), buildStringViaPrint(second));
+    auto symbol = analysis->getOrCreateSymbol(first);
+    EXPECT_EQ(symbol, analysis->getOrCreateSymbol(first));
+    auto other = analysis->getOrCreateSymbol(second);
+    EXPECT_FALSE(*symbol == *other);
+    EXPECT_EQ(symbol, analysis->getOrCreateSymbol(first));
+    auto sort = smt->getSort(symbol);
+    if (first.getType().isInteger(1)) {
+      EXPECT_TRUE(sort->isBooleanSort());
+    } else {
+      ASSERT_TRUE(sort->isBitvectorSort());
+      EXPECT_EQ(sort->getBitvectorSortSize(), field.bitWidth());
+    }
+
+    // Even a user-supplied SourceRef name matching the internal value name is separate.
+    functions[0].setArgName(first.getArgNumber(), buildStringViaPrint(*symbol));
+    SourceRef ref(first);
+    EXPECT_EQ(buildStringViaPrint(ref), buildStringViaPrint(*symbol));
+    auto refSymbol = analysis->getOrCreateSymbol(ref);
+    EXPECT_EQ(refSymbol, analysis->getOrCreateSymbol(ref));
+    EXPECT_FALSE(*symbol == *refSymbol);
+    EXPECT_TRUE(*sort == *smt->getSort(refSymbol));
+  }
+}
+
+// Namespace allocation outlives an analysis when another owner retains its SMT solver.
+TEST_F(IntervalAnalysisAPITests, ValueSymbolsRemainDistinctAcrossAnalysesSharingSolver) {
+  auto mod = parseModule(kDynamicNonAssertCastModule);
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto value = structDef.getComputeFuncOp().getArguments().front();
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  llvm::SMTExprRef firstSymbol, firstRef;
+  {
+    DataFlowSolver firstSolver, secondSolver;
+    auto *first = firstSolver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    auto *second = secondSolver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    firstSymbol = first->getOrCreateSymbol(value);
+    firstRef = first->getOrCreateSymbol(SourceRef(value));
+    auto secondSymbol = second->getOrCreateSymbol(value);
+    auto secondRef = second->getOrCreateSymbol(SourceRef(value));
+    EXPECT_FALSE(*firstSymbol == *secondSymbol);
+    EXPECT_FALSE(*firstSymbol == *secondRef);
+    EXPECT_FALSE(*firstRef == *secondSymbol);
+    EXPECT_FALSE(*firstRef == *secondRef);
+    EXPECT_EQ(firstSymbol, first->getOrCreateSymbol(value));
+    EXPECT_EQ(secondSymbol, second->getOrCreateSymbol(value));
+    smt->addConstraint(smt->mkNot(smt->mkEqual(firstSymbol, secondSymbol)));
+    EXPECT_EQ(smt->check(), std::optional<bool>(true));
+  }
+
+  // Solver reset removes constraints, but existing symbol names remain allocated.
+  smt->reset();
+  {
+    DataFlowSolver solver;
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    auto symbol = analysis->getOrCreateSymbol(value);
+    EXPECT_FALSE(*firstSymbol == *symbol);
+    EXPECT_FALSE(*firstRef == *symbol);
+    EXPECT_FALSE(*firstRef == *analysis->getOrCreateSymbol(SourceRef(value)));
+  }
+  std::weak_ptr<llvm::SMTSolver> weakSolver = smt;
+  smt.reset();
+  EXPECT_TRUE(weakSolver.expired());
+}
+
 TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) {
   auto mod = parseModule(kDynamicNonAssertCastModule);
   auto structDef = *mod->getOps<StructDefOp>().begin();

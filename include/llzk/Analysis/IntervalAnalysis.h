@@ -308,10 +308,7 @@ public:
   explicit IntervalDataFlowAnalysis(
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
       bool propInputConstraints, bool shouldTrackUnreducedIntervals
-  )
-      : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
-        smtSolver(std::move(smt)), field(f), propagateInputConstraints(propInputConstraints),
-        trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
+  );
 
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
@@ -324,6 +321,10 @@ public:
   /// @return
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
 
+  /// Return the cached symbol for a value, allocating an internal identity on first use.
+  /// Value and SourceRef symbols occupy separate namespaces, unique within the SMT solver.
+  llvm::SMTExprRef getOrCreateSymbol(mlir::Value val);
+
   const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getReadResults() const {
     return readResults;
   }
@@ -334,6 +335,9 @@ private:
   mlir::DataFlowSolver &_dataflowSolver;
   llvm::SMTSolverRef smtSolver;
   SymbolMap refSymbols;
+  mlir::DenseMap<mlir::Value, llvm::SMTExprRef> valueSymbols;
+  // Reserved for this analysis for the entire lifetime of smtSolver.
+  std::string symbolNamespace;
   std::reference_wrapper<const Field> field;
   bool propagateInputConstraints;
   bool trackUnreducedIntervals;
@@ -368,11 +372,9 @@ private:
 
   llvm::SMTExprRef createSymbol(const SourceRef &r) const;
 
-  llvm::SMTExprRef createSymbol(mlir::Value val) const;
-
-  ExpressionValue createUnknownValue(mlir::Value val) const {
+  ExpressionValue createUnknownValue(mlir::Value val) {
     return ExpressionValue(
-        createSymbol(val), getDefaultIntervalForType(val.getType()),
+        getOrCreateSymbol(val), getDefaultIntervalForType(val.getType()),
         getDefaultUnreducedIntervalForType(val.getType())
     );
   }
