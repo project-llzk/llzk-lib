@@ -1,0 +1,2 @@
+changed:
+  - Improve interval analysis performance by caching SMT value symbols with solver-scoped identities and avoiding unnecessary source-reference dependency-set copies.
