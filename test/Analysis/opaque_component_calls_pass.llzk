@@ -1,0 +1,85 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=CDG
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=CDG
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear" %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=INTERVAL
+
+// Type-variable results and calls to defined generic functions remain supported.
+// The supported calls must still allow inference of a constant member interval.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @produce() -> !poly.tvar<@T>
+    function.def @inspect(%value: !poly.tvar<@T>, %values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) {
+      function.return
+    }
+    struct.def @Cell {
+      struct.member @value : !felt.type {llzk.pub}
+      function.def @compute(%values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) -> !struct.type<@Generic::@Cell<[@T]>> {
+        %self = struct.new : !struct.type<@Generic::@Cell<[@T]>>
+        function.return %self : !struct.type<@Generic::@Cell<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Generic::@Cell<[@T]>>, %values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) {
+        %seven = felt.const 7
+        %value = function.call @Generic::@produce() : () -> !poly.tvar<@T>
+        function.call @Generic::@inspect(%value, %values, %pod) : (!poly.tvar<@T>, !array.type<2 x !poly.tvar<@T>>, !pod.type<[@value: !poly.tvar<@T>]>) -> ()
+        %actual = struct.readm %self[@value] : !struct.type<@Generic::@Cell<[@T]>>, !felt.type
+        constrain.eq %actual, %seven : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CDG-LABEL: @Generic::@Cell ConstraintDependencyGraph {
+// CDG-NEXT:      { %self.value, <felt.const: 7> }
+// CDG-NEXT:  }
+
+// INTERVAL-LABEL: @Generic::@Cell StructIntervals {
+// INTERVAL-NEXT:      %self.value in Degenerate(7)
+// INTERVAL-NEXT:      %arg1[0] in Entire
+// INTERVAL-NEXT:      %arg1[1] in Entire
+// INTERVAL-NEXT:      %arg2.value in Entire
+// INTERVAL-NEXT:  }
+
+// -----
+
+// Plain value arguments, handle results, and defined functions remain supported.
+// The opaque value-only call preserves the scalar's known interval. A member
+// read from an opaque handle result still contributes a constraint dependency.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%scalar: !felt.type, %array: !array.type<2 x !felt.type>, %pod: !pod.type<[@value: !felt.type]>) -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>, %scalar: !felt.type, %array: !array.type<2 x !felt.type>, %pod: !pod.type<[@value: !felt.type]>) {
+      %seven = felt.const 7
+      constrain.eq %scalar, %seven : !felt.type
+      function.call @values(%scalar, %array, %pod) : (!felt.type, !array.type<2 x !felt.type>, !pod.type<[@value: !felt.type]>) -> ()
+      %cell = function.call @produce() : () -> !struct.type<@Cell>
+      function.call @inspect(%cell) : (!struct.type<@Cell>) -> ()
+      %read = struct.readm %cell[@value] : !struct.type<@Cell>, !felt.type
+      %actual = struct.readm %self[@value] : !struct.type<@Cell>, !felt.type
+      constrain.eq %actual, %read : !felt.type
+      function.return
+    }
+  }
+  function.def private @values(!felt.type, !array.type<2 x !felt.type>, !pod.type<[@value: !felt.type]>)
+  function.def private @produce() -> !struct.type<@Cell>
+  function.def @inspect(%cell: !struct.type<@Cell>) {
+    function.return
+  }
+}
+
+// CDG-LABEL: @Cell ConstraintDependencyGraph {
+// CDG-NEXT:      { %self.value, <call @produce %0>.value },
+// CDG-NEXT:      { %arg1, <felt.const: 7> }
+// CDG-NEXT:  }
+
+// INTERVAL-LABEL: @Cell StructIntervals {
+// INTERVAL-NEXT:      %self.value in Entire
+// INTERVAL-NEXT:      %arg1 in Degenerate(7)
+// INTERVAL-NEXT:      %arg2[0] in Entire
+// INTERVAL-NEXT:      %arg2[1] in Entire
+// INTERVAL-NEXT:      %arg3.value in Entire
+// INTERVAL-NEXT:  }

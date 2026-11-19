@@ -1,0 +1,129 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs -verify-diagnostics %s -o /dev/null
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" -verify-diagnostics %s -o /dev/null
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear" -verify-diagnostics %s -o /dev/null
+
+// A resultless opaque call could change an existing component before it is read.
+module attributes {llzk.lang} {
+  function.def private @scribble(!struct.type<@Cell>)
+  struct.def @Cell {
+    struct.member @value : !felt.type
+    struct.member @observed : !felt.type
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      %seven = felt.const 7
+      struct.writem %self[@value] = %seven : !struct.type<@Cell>, !felt.type
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @scribble(%self) : (!struct.type<@Cell>) -> ()
+      %read = struct.readm %self[@value] : !struct.type<@Cell>, !felt.type
+      struct.writem %self[@observed] = %read : !struct.type<@Cell>, !felt.type
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Value aggregates still preserve the identity of nested component handles.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @helper(%handles: !array.type<2 x !struct.type<@Cell>>) {
+    // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+    function.call @opaque(%handles) : (!array.type<2 x !struct.type<@Cell>>) -> ()
+    function.return
+  }
+  // Forward declarations must also be recognized as opaque.
+  function.def private @opaque(!array.type<2 x !struct.type<@Cell>>)
+}
+
+// -----
+
+// Value aggregates still preserve the identity of nested component handles.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @helper(%handles: !pod.type<[@handles: !array.type<2 x !struct.type<@Cell>>]>) {
+    // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+    function.call @opaque(%handles) : (!pod.type<[@handles: !array.type<2 x !struct.type<@Cell>>]>) -> ()
+    function.return
+  }
+  // Forward declarations must also be recognized as opaque.
+  function.def private @opaque(!pod.type<[@handles: !array.type<2 x !struct.type<@Cell>>]>)
+}
+
+// -----
+
+// Type variables can be instantiated with component handles.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @opaque(!poly.tvar<@T>)
+    function.def @helper(%value: !poly.tvar<@T>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%value) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Arrays can carry component identity through their unresolved element type.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def @helper(%values: !array.type<2 x !poly.tvar<@T>>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%values) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+    function.def nested @opaque(!array.type<2 x !poly.tvar<@T>>)
+  }
+}
+
+// -----
+
+// POD records can also have unresolved types that carry component identity.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @opaque(!pod.type<[@value: !poly.tvar<@T>]>)
+    function.def @helper(%value: !pod.type<[@value: !poly.tvar<@T>]>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%value) : (!pod.type<[@value: !poly.tvar<@T>]>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The check recurses through mixed aggregates containing type variables.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @opaque(!pod.type<[@values: !array.type<2 x !poly.tvar<@T>>]>)
+    function.def @helper(%values: !pod.type<[@values: !array.type<2 x !poly.tvar<@T>>]>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%values) : (!pod.type<[@values: !array.type<2 x !poly.tvar<@T>>]>) -> ()
+      function.return
+    }
+  }
+}

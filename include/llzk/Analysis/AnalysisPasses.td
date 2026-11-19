@@ -68,6 +68,11 @@ def ConstraintDependencyGraphPrinterPass
     rejected with a diagnostic before analysis begins. This restriction applies
     throughout the input module, including helper functions and unreachable
     regions, in both interprocedural and intraprocedural modes.
+
+    Opaque calls receiving `struct.type` handles, including handles nested in
+    arrays or PODs, are rejected because their storage effects are unknown.
+    Unresolved `poly.tvar` arguments are treated as possible component handles,
+    including when nested in arrays or PODs.
   }];
   let options = [OutputStreamOption,
                  Option<"runIntraprocedural", "intraprocedural", "bool",
@@ -89,6 +94,11 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
     analyzed with modulus `5`, both before and after constant canonicalization.
     The option changes the analysis field; it does not retarget declared felt
     types or reinterpret their literals as raw integers in another field.
+
+    Opaque calls receiving `struct.type` handles, including handles nested in
+    arrays or PODs, are rejected because their storage effects are unknown.
+    Unresolved `poly.tvar` arguments are treated as possible component handles,
+    including when nested in arrays or PODs.
   }];
   let options =
       [OutputStreamOption,

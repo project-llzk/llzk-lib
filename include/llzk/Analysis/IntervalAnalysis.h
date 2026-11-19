@@ -665,6 +665,11 @@ public:
   void setTrackUnreducedIntervals(bool track) { ctx.trackUnreducedIntervals = track; }
 
 protected:
+  /// Reject opaque calls with shared component arguments before interval or SourceRef dataflow.
+  mlir::LogicalResult validateInput(mlir::ModuleOp module) const override {
+    return SourceRefAnalysis::validateInput(module);
+  }
+
   void initializeSolver() override {
     ensure(ctx.hasField(), "field not set, could not generate analysis context");
     (void)solver.load<SourceRefAnalysis>();
